@@ -56,7 +56,7 @@ TARGET_LIB = lib_simvascular_solverio.$(STATICEXT)
 
 $(TOP)/lib/$(TARGET_LIB) : $(OBJS)
 	$(AR)$(TARGET_LIB) $(OBJS)
-	mv $(TARGET_LIB) $(TOP)/lib
+	mv $(TARGET_LIB) $(TOP)/lib/
 	
 clean:
 	-$(RM) $(OBJS) $(TOP)/lib/$(TARGET_LIB) *.pdb *.manifest

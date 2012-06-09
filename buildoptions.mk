@@ -27,7 +27,7 @@ ifeq ($(MAKE_OPTIMIZED),1)
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
 else
    DEBUG_FLAGS     = -O0 -debug -g2   
-   DEBUG_FFLAGS    = -g -zero -fpstkchk
+   DEBUG_FFLAGS    = -g
    OPT_FLAGS       =
    OPT_FFLAGS      =
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 

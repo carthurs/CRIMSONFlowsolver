@@ -1,0 +1,7 @@
+#!/bin/bash
+ulimit -s unlimited
+
+export LES_LICENSE_SERVER="name_of_license_computer"
+export PHASTA_CONFIG="$HOME/dev/simvascular/configs"
+
+mpirun -n $1 $HOME/dev/bin/flowsolver $2 $3

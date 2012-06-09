@@ -1,0 +1,4 @@
+#!/bin/sh
+export ACUSIM_HOME=/home/nxiao/dev/simvascular2012/external/x64-linux/leslib-1.4
+$ACUSIM_HOME/acuLmd -lmfile $ACUSIM_HOME/license.dat
+

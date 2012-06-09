@@ -1,0 +1,4 @@
+#!/bin/sh
+export ACUSIM_HOME=/home/nxiao/dev/simvascular2012/external/x64-linux/leslib-1.4
+$ACUSIM_HOME/acuLmg -lmfile $ACUSIM_HOME/license.dat -code LesLib -lmhost blackbook2v2  -lmd $ACUSIM_HOME/acuLmd -lmco $ACUSIM_HOME/acuLmco -stats
+

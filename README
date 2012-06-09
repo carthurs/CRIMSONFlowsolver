@@ -1,0 +1,11 @@
+1. Edit the buildoptions file and change the lines for CC,CXX,F90 to specify the names of the compilers to use.
+   The code compiles with either the Intel or GNU compilers, but the Intel compilers are preferred because the LesLib
+   library was compiled with dependencies on a certain Fortran libraries ...
+   
+2. Edit the three lines MPI_TOP, MPI_INCDIR, and MPI_LIBS to specify the location of the MPI library.  Optionally, you can use
+   the mpicc,mpicxx,mpif90 commands in step 1 and leave these lines blank.
+   
+3. "Make" should compile the code and place an executable called flowsolver in the bin folder
+
+4. Edit the launch script called "mysolver" in the bin folder as necessary to specify the name of the license server, the location
+   of the config file (default location is the config folder in the top directory), and the path to the flowsolver executable.

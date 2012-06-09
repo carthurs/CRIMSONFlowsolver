@@ -37,12 +37,14 @@ DAMAGE.
 **********************************************************************/
 #include <iostream>
 #include <vector>
-#include <string>
+#include <cstring>
 #include <map>
 #include <utility>
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "cvSolverIO.h"
 
 #ifdef intel 

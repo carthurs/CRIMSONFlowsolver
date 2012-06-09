@@ -36,7 +36,7 @@
 
 TOP=.
 
-include $(TOP)/buildoptions
+include $(TOP)/buildoptions.mk
 
 SUBDIRS = solverio/src 
 

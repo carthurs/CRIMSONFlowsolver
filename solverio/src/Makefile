@@ -35,9 +35,9 @@
 # DAMAGE.
 
 
-TOP=../../
+TOP=../..
 
-include $(TOP)/buildoptions
+include $(TOP)/buildoptions.mk
 
 # --------------
 # Compiler flags

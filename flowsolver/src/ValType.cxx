@@ -38,6 +38,8 @@ DAMAGE.
 #include <string>
 #include <vector>
 #include <sstream>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "ValType.h"
 

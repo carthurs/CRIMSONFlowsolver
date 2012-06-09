@@ -46,9 +46,9 @@ EXTERNAL_LIB_DIR = $(HOME_DIR)/external/x64-linux
  
 SOLVERIO_INCDIR = -I $(HOME_DIR)/solverio/src
  
-MPI_TOP        = /opt/mpich2/ch3_nemesis_tcp-gnu
-MPI_INCDIR     = -I $(MPI_TOP)/include
-MPI_LIBS       = -L $(MPI_TOP)/lib -lmpich -lfmpich
+MPI_TOP        = 
+MPI_INCDIR     = 
+MPI_LIBS       = 
  
 METIS_TOP      = $(EXTERNAL_LIB_DIR)/metis-4.0
 METIS_INCDIR   = -I $(METIS_TOP)

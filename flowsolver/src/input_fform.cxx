@@ -38,7 +38,9 @@ DAMAGE.
 #include <fstream>
 #include <stdlib.h>
 #include <vector>
-#include <string>
+#include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "Input.h"
 #include "common_c.h"

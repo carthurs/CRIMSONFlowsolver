@@ -35,7 +35,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
 **********************************************************************/
-
+#include <cstdlib>
 #include <fstream>
 #include "Input.h"
 #include "ValType.h"

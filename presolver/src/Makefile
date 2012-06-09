@@ -34,9 +34,9 @@
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
 
-TOP=../../
+TOP=../..
 
-include $(TOP)/buildoptions
+include $(TOP)/buildoptions.mk
 
 # --------------
 # Compiler flags

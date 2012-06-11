@@ -95,10 +95,10 @@ VERDANDI_INCDIR  = -I $(VERDANDI_TOP) \
 		 -I $(VERDANDI_TOP)/include/lua/src \
 		 -I $(VERDANDI_TOP)/include/seldon \
 
-SELDON_TOP  = $(HOME_DIR)/../verdandi-1.2.1
+SELDON_TOP  = $(VERDANDI_TOP)
 SELDON_INCDIR  = -I $(SELDON_TOP)/include/seldon
 
-LUA_LIBS = $(HOME_DIR)/../verdandi-1.2.1/include/lua/src/liblua.a
+LUA_LIBS = $(VERDANDI_TOP)/include/lua/src/liblua.a
 
 PETSC_TOP    = $(HOME_DIR)/../petsc-3.2-p7
 PETSC_INCDIR = -I $(PETSC_TOP)/include -I $(PETSC_TOP)/arch-linux2-c-opt/include

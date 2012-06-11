@@ -1,45 +1,9 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-c-----------------------------------------------------------------------
-c
-c  This module conveys temporal BC data.  Below functions read in the data
-c  and interpolate it to the current time level. 
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!  This module conveys temporal BC data.  Below functions read in the data
+!  and interpolate it to the current time level. 
+!
+!-----------------------------------------------------------------------
       module specialBC
 
       real*8, allocatable ::  BCt(:,:,:), acs(:,:), spamp(:)
@@ -48,15 +12,29 @@ c-----------------------------------------------------------------------
      
 
       integer ntv,nptsmax
-c$$$      integer itvn
+!$$$      integer itvn
       end module
 
-c-----------------------------------------------------------------------
-c
-c  This module conveys coupled inflow BC(INCP) data.  Below functions read
-c in the data and interpolate it to the current time level. 
-c
-c-----------------------------------------------------------------------
+      subroutine DspecialBC
+      use specialBC
+  use phcommonvars  
+  IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(matflg(5,1).ge.4 .and. allocated(ytarget)) deallocate (ytarget)
+      if(iabc.eq.1 .and. allocated(acs)) deallocate (acs)
+      if(itvn.gt.0) then
+         if(allocated(BCt)) deallocate (BCt)
+         if(allocated(nBCt)) deallocate (nBCt)
+         if(allocated(numBCt)) deallocate (numBCt)
+      endif
+      return
+      end
+
+!-----------------------------------------------------------------------
+!
+!  This module conveys coupled inflow BC(INCP) data.  Below functions read
+! in the data and interpolate it to the current time level. 
+!
+!-----------------------------------------------------------------------
       module incpBC
 
       real*8, allocatable  ::  ValueVv(:,:),         Tmax(:) 
@@ -69,18 +47,47 @@ c-----------------------------------------------------------------------
       real*8, allocatable  ::  VLV(:,:),             QAV(:,:)
       real*8, allocatable  ::  Qaorta(:,:),          Eadjust(:)
       integer, allocatable ::  inactive(:)
+      
+      !(actually allocated in itrdrv.f but destroyed
+      !with global destructor)
+      real*8, allocatable :: iBCs(:,:)
+      real*8, allocatable :: iBCd(:)
+      
       integer nptsElast,   INCPSwitch
       integer nptsPvenous, nptsINCP
       
       end module
       
-c-----------------------------------------------------------------------
-c
-c  This module conveys flow rate history for the different impedance outlets
-c  over one period. Below functions read in the data and store it for the
-c  current time level. 
-c
-c-----------------------------------------------------------------------
+      
+!-----------------------------------------------------------------------
+!
+!     Deallocate incpBC:
+!
+!-----------------------------------------------------------------------      
+
+      subroutine DincpBC
+      use incpBC
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(incpfile .gt. 0) then
+         if (allocated(INCPConvCoef)) deallocate (INCPConvCoef)
+         if (allocated(INCPCoef)) deallocate (INCPCoef)
+         if (allocated(InflowArea)) deallocate (InflowArea)
+         if (allocated(poldINCP)) deallocate (poldINCP)
+         if (allocated(QHistINCP)) deallocate (QHistINCP)
+         if (allocated(Eadjust)) deallocate (Eadjust)
+         if (allocated(inactive)) deallocate (inactive)
+      end if
+      
+      end
+      
+!-----------------------------------------------------------------------
+!
+!  This module conveys flow rate history for the different impedance outlets
+!  over one period. Below functions read in the data and store it for the
+!  current time level. 
+!
+!-----------------------------------------------------------------------
       module convolImpFlow
 
       real*8, allocatable ::  QHistImp(:,:), ValueImpt(:,:,:)
@@ -92,14 +99,40 @@ c-----------------------------------------------------------------------
       real*8, allocatable ::  QHistTry(:,:), QHistTryF(:,:) !filter
       integer cutfreq !filter
       end module
-c-----------------------------------------------------------------------
-c
-c  This module conveys the parameters for the different RCR outlets.
-c  Below functions read in the inputs (proximal resistance, capacitance, 
-c  distal resistance and distal pressure) and store it for the
-c  current time level. 
-c
-c-----------------------------------------------------------------------
+      
+!-----------------------------------------------------------------------
+!
+!     Deallocate convolvImpFlow:
+!
+!-----------------------------------------------------------------------
+      subroutine DconvolImpFlow
+      use convolImpFlow
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(impfile.gt.0) then
+         if (allocated(numImpt)) deallocate (numImpt)
+         if (allocated(ValueImpt)) deallocate (ValueImpt)
+         if (allocated(ValueListImp)) deallocate (ValueListImp)
+         if (allocated(poldImp)) deallocate (poldImp)
+         if (allocated(QHistImp)) deallocate (QHistImp)
+         if (allocated(QHistTry)) deallocate (QHistTry) 
+         if (allocated(QHistTryF)) deallocate (QHistTryF)
+      endif
+      if(numImpSrfs.gt.zero) then
+         if (allocated(ConvCoef)) deallocate (ConvCoef)
+         if (allocated(ImpConvCoef)) deallocate (ImpConvCoef)
+      endif
+   
+      return
+      end      
+!-----------------------------------------------------------------------
+!
+!  This module conveys the parameters for the different RCR outlets.
+!  Below functions read in the inputs (proximal resistance, capacitance, 
+!  distal resistance and distal pressure) and store it for the
+!  current time level. 
+!
+!-----------------------------------------------------------------------
       module convolRCRFlow
 
       real*8, allocatable ::  ValueListRCR(:,:), ValuePdist(:,:,:) !inputs
@@ -110,13 +143,39 @@ c-----------------------------------------------------------------------
       integer nptsRCRmax,numDataRCR, nptsRCR !to read inputs
       integer, allocatable :: numRCRt(:) !to read inputs
       end module
-c-----------------------------------------------------------------------
-c
-c This module conveys the parameters for the different Coronary outlets.
-c Below functions read in the inputs (coronary resistances, capacitances,
-c and left ventricular pressure) and store it for the current time level.
-c
-c-----------------------------------------------------------------------
+      
+!-----------------------------------------------------------------------
+!
+!     Deallocate convolvRCRFlow:
+!
+!-----------------------------------------------------------------------
+
+      subroutine DconvolRCRFlow
+      use convolRCRFlow
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(ircrfile .gt. 0 ) then
+         if(allocated(poldRCR)) deallocate (poldRCR)
+         if(allocated(HopRCR)) deallocate (HopRCR)
+         if(allocated(numRCRt)) deallocate (numRCRt)  
+         if(allocated(RCRArea)) deallocate (RCRArea)  
+         if(allocated(ValuePdist)) deallocate (ValuePdist)
+         if(allocated(ValueListRCR)) deallocate (ValueListRCR)
+         if(allocated(dtRCR)) deallocate (dtRCR)
+         if(allocated(QHistRCR)) deallocate (QHistRCR)
+         if(allocated(PHistRCR)) deallocate (PHistRCR)
+         if(allocated(RCRConvCoef)) deallocate (RCRConvCoef)
+         if(allocated(RCRic)) deallocate (RCRic)
+      endif
+      end
+      
+!-----------------------------------------------------------------------
+!
+! This module conveys the parameters for the different Coronary outlets.
+! Below functions read in the inputs (coronary resistances, capacitances,
+! and left ventricular pressure) and store it for the current time level.
+!
+!-----------------------------------------------------------------------
       module convolCORFlow
 
       real*8, allocatable  :: ValuePlvist(:,:,:),    PlvHistCOR(:,:)
@@ -132,33 +191,88 @@ c-----------------------------------------------------------------------
       integer, allocatable :: numCORt(:)
       integer nptsCORmax, numDataCOR, nptsCOR
       end module
-c-----------------------------------------------------------------------
-c
-c This module conveys the parameters to save flow and pressure history.
-c
-c-----------------------------------------------------------------------
+      
+      
+!-----------------------------------------------------------------------
+!
+!     Deallocate convolvCORFlow:
+!
+!-----------------------------------------------------------------------  
+
+      subroutine DconvolCORFlow
+      use convolCORFlow
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(icorfile .gt. 0 ) then
+         if(allocated(CORArea)) deallocate (CORArea)
+         if(allocated(CORic)) deallocate (CORic)
+         if(allocated(poldCOR)) deallocate (poldCOR) !for pressure part that depends on the history only
+         if(allocated(plvoldCOR)) deallocate (plvoldCOR)
+         if(allocated(HopCOR)) deallocate (HopCOR)
+         if(allocated(numCORt)) deallocate (numCORt)  
+         if(allocated(ValuePlvist)) deallocate (ValuePlvist)
+         if(allocated(ValueListCOR)) deallocate (ValueListCOR)
+         if(allocated(dQinidT)) deallocate (dQinidT)
+         if(allocated(dPinidT)) deallocate (dPinidT)
+         if(allocated(CORScaleFactor)) deallocate (CORScaleFactor)
+         if(allocated(dtCOR)) deallocate (dtCOR)
+         if(allocated(COR)) deallocate (COR)
+         if(allocated(CoefCOR)) deallocate (CoefCOR)
+         if(allocated(DetCOR)) deallocate (DetCOR)
+         if(allocated(CORConvCoef)) deallocate (CORConvCoef)
+         if(allocated(CORPlvConvCoef)) deallocate (CORPlvConvCoef)
+         if(allocated(QHistCOR)) deallocate (QHistCOR)
+         if(allocated(PlvHistCOR)) deallocate (PlvHistCOR)
+         if(allocated(PHistCOR)) deallocate (PHistCOR)
+      endif
+      end    
+      
+!-----------------------------------------------------------------------
+!
+! This module conveys the parameters to save flow and pressure history.
+!
+!-----------------------------------------------------------------------
       module calcFlowPressure
 
       real*8, allocatable  :: FlowHist(:,:),         PressHist(:,:)
       real*8, allocatable  :: CalcArea(:)
       end module
-c-----------------------------------------------------------------------
-c
-c This module conveys the parameters to save residuals.
-c
-c-----------------------------------------------------------------------
+      
+!-----------------------------------------------------------------------
+!
+!     Deallocate calcFlowPressure:
+!
+!-----------------------------------------------------------------------      
+      
+      subroutine DcalcFlowPressure
+      use calcFlowPressure
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(numCalcSrfs .gt. 0) then
+         if(allocated(CalcArea)) deallocate (CalcArea)           
+         if(allocated(FlowHist)) deallocate (FlowHist)
+         if(allocated(PressHist)) deallocate (PressHist)
+      endif
+      end
+      
+!-----------------------------------------------------------------------
+!
+! This module conveys the parameters to save residuals.
+!
+!-----------------------------------------------------------------------
       module ResidualControl 
 
       real*8   controlResidual
       integer  CurrentIter
       end module
-c-----------------------------------------------------------------------
-c
-c  This module conveys parameters for Lagrange multipliers. Below 
-c  function reads in the inputs (LagCenter, LagRadius and ProfileOrder).
-c  Defined variables are used to construct LHS and RHS of the solver. 
-c
-c-----------------------------------------------------------------------
+      
+!-----------------------------------------------------------------------
+!
+!  This module conveys parameters for Lagrange multipliers. Below 
+!  function reads in the inputs (LagCenter, LagRadius and ProfileOrder).
+!  Defined variables are used to construct LHS and RHS of the solver. 
+!
+!-----------------------------------------------------------------------
       module LagrangeMultipliers
 
       real*8, allocatable  :: QLagrange(:,:),        PQLagrange(:,:)
@@ -177,16 +291,56 @@ c-----------------------------------------------------------------------
       integer, allocatable :: ProfileOrder(:) 
       integer LagSwitch  
       end module
+      
+!-----------------------------------------------------------------------
+!
+!     Deallocate LagrangeMultipliers:
+!
+!-----------------------------------------------------------------------
 
-c-----------------------------------------------------------------------
-c
-c     Initialize:
-c
-c-----------------------------------------------------------------------
+      subroutine DLagrangeMultipliers
+      use LagrangeMultipliers
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      if(iLagfile .gt. 0) then
+         if(allocated(QLagrange)) deallocate (QLagrange)        
+         if(allocated(PQLagrange)) deallocate (PQLagrange)
+         if(allocated(NANBLagrange)) deallocate (NANBLagrange)
+         if(allocated(IPLagrange)) deallocate (IPLagrange)
+         if(allocated(Lag)) deallocate (Lag)              
+         if(allocated(Lagold)) deallocate (Lagold)
+         if(allocated(Lagincr)) deallocate (Lagincr)
+         if(allocated(Lagalpha)) deallocate (Lagalpha)
+         if(allocated(LagCenter)) deallocate (LagCenter)        
+         if(allocated(LagRadius)) deallocate (LagRadius)
+         if(allocated(ProfileDelta)) deallocate (ProfileDelta)
+         if(allocated(LagProfileArea)) deallocate (LagProfileArea)
+         if(allocated(loclhsLag)) deallocate (loclhsLag)
+         if(allocated(lhsLagL)) deallocate (lhsLagL)
+         if(allocated(LagErrorHist)) deallocate (LagErrorHist)
+         if(allocated(LagHist)) deallocate (LagHist)
+         if(allocated(PenaltyCoeff)) deallocate (PenaltyCoeff)
+         if(allocated(Penalty)) deallocate (Penalty)
+         if(allocated(ScaleFactor)) deallocate (ScaleFactor)
+         if(allocated(AddLag)) deallocate (AddLag)
+         if(allocated(LagAPproduct)) deallocate (LagAPproduct)
+         if(allocated(resL)) deallocate (resL)
+         if(allocated(LagInplaneVectors)) deallocate (LagInplaneVectors)
+         if(allocated(LagMeanFlow)) deallocate (LagMeanFlow)
+         if(allocated(ProfileOrder)) deallocate (ProfileOrder)
+      endif
+      end        
+
+!-----------------------------------------------------------------------
+!
+!     Initialize:
+!
+!-----------------------------------------------------------------------
       subroutine initSponge( y,x)
       
       use     specialBC
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8   y(nshg,nflow), x(numnp,3)
       allocate (ytarget(nshg,nflow))  
@@ -197,11 +351,11 @@ c-----------------------------------------------------------------------
       else
          write(*,*) 'calculating Analytic sponge'
 
-c
-c OLD style sponge pushed onto target.  You need to be sure that your
-c solver.inp entries for start and stop of sponge match as well as the
-c growth rates
-c
+!
+! OLD style sponge pushed onto target.  You need to be sure that your
+! solver.inp entries for start and stop of sponge match as well as the
+! growth rates
+!
       vcl=datmat(1,5,1)         ! velocity on centerline
       rslc=datmat(2,5,1)        ! shear layer center radius
       bfz=datmat(3,5,1)
@@ -212,12 +366,12 @@ c
       radsts=radst*radst
       do id=1,numnp
          radsqr=x(id,2)**2+x(id,1)**2
-c         if((x(id,3).gt. zstart) .or. (radsqr.gt.radsts))  then
+!         if((x(id,3).gt. zstart) .or. (radsqr.gt.radsts))  then
             rad=sqrt(radsqr)
             radc=max(rad,radst)
             zval=max(x(id,3),zstart)
-            utarget=(tanh(rsteep*(rslc-rad))+one)/two*
-     &                    (vcl-we) + we
+            utarget=(tanh(rsteep*(rslc-rad))+one)/two* &
+                          (vcl-we) + we
             Ttarget  = press/(ro*Rgas)
             ptarget= press
             ytarget(id,1) = zero
@@ -225,55 +379,56 @@ c         if((x(id,3).gt. zstart) .or. (radsqr.gt.radsts))  then
             ytarget(id,3) = utarget
             ytarget(id,4) = ptarget
             ytarget(id,5) = Ttarget            
-c         endif
+!         endif
       enddo
       endif
       return
       end
 
 
-c-----------------------------------------------------------------------
-c
-c     Initialize:time varying boundary condition
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!     Initialize:time varying boundary condition
+!
+!-----------------------------------------------------------------------
       subroutine initBCt( x, iBC, BC )
       
       use     specialBC
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8   x(numnp,nsd), BC(nshg,ndofBC), rj1,rj2,rj3,rj4,distd,epsd
       integer  iBC(numnp)
       character*80 card
       real*8 distds
       real*8 dd
-c
-c  This one should be used for boundary layer meshes where bct.dat must
-c  be given to greater precision than is currently being generated.
-c
-c      epsd=1.0d-12    ! this is distance SQUARED to save square root
+!
+!  This one should be used for boundary layer meshes where bct.dat must
+!  be given to greater precision than is currently being generated.
+!
+!      epsd=1.0d-12    ! this is distance SQUARED to save square root
 
-c      epsd=1.0d-8              ! this is distance SQUARED to save square root
+!      epsd=1.0d-8              ! this is distance SQUARED to save square root
       epsd=1.0d-6              ! new distance to avoid problems when using mm
 
       ic=0                      !count the number on this processor
      
       if(any(ibits(iBC,3,3).eq.7)) then
          write(*,*) 'opening bct.dat'
-c         open(unit=567, file='bct.dat',status='old')
+!         open(unit=567, file='bct.dat',status='old')
          open(unit=567, file='bct.dat',ACTION='READ',STATUS='old')
          read (567,'(a80)') card
            read (card,*) ntv, nptsmax
-c        read(567,*) ntv,nptsmax
+!        read(567,*) ntv,nptsmax
          allocate (nBCt(numnp))  
          allocate (numBCt(ntv))  
          allocate (BCt(ntv,nptsmax,4))  
          do k=1,ntv
             read(567,*) x1,x2,x3,ntpts
-c
-c Find the point on the boundary (if it is on this processor)
-c that matches this point
-c
+!
+! Find the point on the boundary (if it is on this processor)
+! that matches this point
+!
             do i=1,numnp
                if(ibits(ibc(i),3,3) .eq.7) then
                   dd= distds(x1,x2,x3,x(i,1),x(i,2),x(i,3))
@@ -282,7 +437,7 @@ c
                      nBCt(ic)=i ! the pointer to this point
                      numBCt(ic)=ntpts ! the number of time series
                      do j=1,ntpts
-c                        read(567,*) BCt(ic,j,4),(BCt(ic,j,n),n=1,3)
+!                        read(567,*) BCt(ic,j,4),(BCt(ic,j,n),n=1,3)
                         read(567,*) (BCt(ic,j,n),n=1,4)
                      enddo
                      exit
@@ -290,10 +445,10 @@ c                        read(567,*) BCt(ic,j,4),(BCt(ic,j,n),n=1,3)
                endif
             enddo
             if(i.eq.numnp+1) then
-c
-c  if we get here the point was not found.  It must be on another
-c  processor so we read past this record and move on
-c
+!
+!  if we get here the point was not found.  It must be on another
+!  processor so we read past this record and move on
+!
                do j=1,ntpts
                   read(567,*) rj1,rj2,rj3,rj4
                enddo
@@ -314,14 +469,15 @@ c
 
       use     specialBC ! brings in itvn,nbct, bct, numbct, nptsmax
 
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       real*8   BC(nshg,ndofBC), timel,t
-      real*8   x(numnp,nsd),   
-     &         shp(MAXTOP,maxsh,MAXQPT),
-     &         shgl(MAXTOP,nsd,maxsh,MAXQPT),
-     &         shpb(MAXTOP,maxsh,MAXQPT),
-     &         shglb(MAXTOP,nsd,maxsh,MAXQPT)
+      real*8   x(numnp,nsd), &
+               shp(MAXTOP,maxsh,MAXQPT), &
+               shgl(MAXTOP,nsd,maxsh,MAXQPT), &
+               shpb(MAXTOP,maxsh,MAXQPT), &
+               shglb(MAXTOP,nsd,maxsh,MAXQPT)
 
       integer  iBC(numnp),nlast,i,j,nper 
 
@@ -338,8 +494,8 @@ c
             if(BCt(i,j,4).gt.t) then  ! this is upper bound, j-1 is lower
 
                wr=(t-BCt(i,j-1,4))/(BCt(i,j,4)-BCt(i,j-1,4))
-               BC(nbct(i),3:5)= BCt(i,j-1,1:3)*(one-wr) 
-     &                        + BCt(i,j,1:3)*wr
+               BC(nbct(i),3:5)= BCt(i,j-1,1:3)*(one-wr) &
+                              + BCt(i,j,1:3)*wr
                exit
 
             endif
@@ -357,15 +513,36 @@ c
       distds=x*x+y*y+z*z
       return
       end
-c-----------------------------------------------------------------------
-c   initialize the impedance boundary condition:
-c   read the data in initImpt
-c   interpolate the data to match the process time step in Impint
-c-----------------------------------------------------------------------
+      
+      subroutine initCalcSrfst()
+      
+      use calcFlowPressure
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      
+      allocate (FlowHist(lstep+nstep(1)+1,numCalcSrfs)) !for flow history
+      allocate (PressHist(lstep+nstep(1)+1,numCalcSrfs)) !for pressure history
+      FlowHist = zero
+      PressHist = zero
+      if (lstep .gt. 0) then
+         call ReadDataFile(FlowHist(1:lstep+1,:),lstep+1,numCalcSrfs, &
+            'FlowHist.dat',1004)
+         call ReadDataFile(PressHist(1:lstep+1,:),lstep+1,numCalcSrfs, &
+            'PressHist.dat',1005)
+      endif
+      
+      end
+      
+!-----------------------------------------------------------------------
+!   initialize the impedance boundary condition:
+!   read the data in initImpt
+!   interpolate the data to match the process time step in Impint
+!-----------------------------------------------------------------------
       subroutine initImpt()
       
       use convolImpFlow
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       open(unit=817, file='impt.dat',status='old')
          read (817,*) nptsImpmax
@@ -392,7 +569,8 @@ c-----------------------------------------------------------------------
       subroutine Impint(ctime,jstep)
       
       use convolImpFlow
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8 ctime, ptime
       integer nlast, nper, k, j , jstep
@@ -406,10 +584,10 @@ c-----------------------------------------------------------------------
          do j=2,nlast   !loop to find the interval that we are in
 
             if(ValueImpt(j,1,k).gt.ptime) then  ! this is upper bound, j-1 is lower
-               wr=(ptime-ValueImpt(j-1,1,k))
-     &             / ( ValueImpt(j,1,k)-ValueImpt(j-1,1,k) )
-               ValueListImp(jstep,k)= ValueImpt(j-1,2,k)*(one-wr) 
-     &                        + ValueImpt(j,2,k)*wr
+               wr=(ptime-ValueImpt(j-1,1,k)) &
+                   / ( ValueImpt(j,1,k)-ValueImpt(j-1,1,k) ) 
+               ValueListImp(jstep,k)= ValueImpt(j-1,2,k)*(one-wr)  &
+                              + ValueImpt(j,2,k)*wr
                exit
             endif
 
@@ -418,13 +596,14 @@ c-----------------------------------------------------------------------
       return
       end
 
-c-----------------------------------------------------------------------------
-c     time filter for a periodic function (sin cardinal + window function)     
-c     is used for the impedance and the flow rate history
-c-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
+!     time filter for a periodic function (sin cardinal + window function)     
+!     is used for the impedance and the flow rate history
+!-----------------------------------------------------------------------------
       subroutine Filter(Filtered,DataHist,nptf,timestep,cutfreq)
       
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       integer nptf, cutfreq, j, k, m, s, Filtime(nptf)
       real*8  DataHist(nptf,numImpSrfs), Window(nptf)
@@ -434,8 +613,8 @@ c-----------------------------------------------------------------------------
       windK = cutfreq*2 + 1
       do j=1,nptf
          Filtime(j) = j-1
-         Window(j) = 0.42+0.5*cos(2*pi*Filtime(j)/nptf)
-     &              +0.08*cos(4*pi*Filtime(j)/nptf)
+         Window(j) = 0.42+0.5*cos(2*pi*Filtime(j)/nptf) &
+                    +0.08*cos(4*pi*Filtime(j)/nptf)
          Sinc(j) = sin(pi*Filtime(j)*windK/nptf)/sin(pi*Filtime(j)/nptf) 
       enddo          
       Sinc(1) = windK
@@ -451,22 +630,23 @@ c-----------------------------------------------------------------------------
             if(s.eq.zero) then
                s=nptf
             endif
-            Filtered(m,:) = Filtered(m,:)
-     &              +FilterSW(j)*DataHist(s,:)/nptf !filter convolution
+            Filtered(m,:) = Filtered(m,:) &
+                    +FilterSW(j)*DataHist(s,:)/nptf !filter convolution
          enddo
       enddo
       
       return
       end
-c-----------------------------------------------------------------------
-c   initialize the RCR boundary condition:
-c   read the data in initRCRt
-c   interpolate the data to match the process time step in RCRint
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!   initialize the RCR boundary condition:
+!   read the data in initRCRt
+!   interpolate the data to match the process time step in RCRint
+!-----------------------------------------------------------------------
       subroutine initRCRt()
       
       use convolRCRFlow
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       open(unit=818, file='rcrt.dat',status='old')
          read (818,*) nptsRCRmax
@@ -490,24 +670,18 @@ c-----------------------------------------------------------------------
       close(818)
 
       allocate (dtRCR(numRCRSrfs))
-      if (lstep .eq. 0) then
-         nptsRCR = 0
-         allocate (QHistRCR(nstep(1)+1,numRCRSrfs)) !for flow history
-         allocate (PHistRCR(nstep(1)+1,numRCRSrfs)) !for flow history
-         allocate (RCRConvCoef(nstep(1)+2,numRCRSrfs)) !for convolution coeff
-         QHistRCR = zero
-         PHistRCR = zero
-      elseif (lstep .gt. 0) then   
-         nptsRCR = lstep            
-         allocate (QHistRCR(lstep+nstep(1)+1,numRCRSrfs))
-         allocate (RCRConvCoef(lstep+nstep(1)+2,numRCRSrfs)) !for convolution coeff
-         allocate (PHistRCR(lstep+nstep(1)+1,numRCRSrfs))
-         PHistRCR = zero
-         QHistRCR = zero
-         call ReadDataFile(QHistRCR(1:lstep+1,:),lstep+1,numRCRSrfs,
-     &      'QHistRCR.dat',870)
-         call ReadDataFile(PHistRCR(1:lstep+1,:),lstep+1,numRCRSrfs,
-     &      'PHistRCR.dat',871)
+      
+      nptsRCR = lstep            
+      allocate (QHistRCR(lstep+nstep(1)+1,numRCRSrfs))
+      allocate (RCRConvCoef(lstep+nstep(1)+2,numRCRSrfs)) !for convolution coeff
+      allocate (PHistRCR(lstep+nstep(1)+1,numRCRSrfs))
+      PHistRCR = zero
+      QHistRCR = zero
+      if (lstep .gt. 0) then
+         call ReadDataFile(QHistRCR(1:lstep+1,:),lstep+1,numRCRSrfs, &
+            'QHistRCR.dat',870)
+         call ReadDataFile(PHistRCR(1:lstep+1,:),lstep+1,numRCRSrfs, &
+            'PHistRCR.dat',871)
       endif
       
       return
@@ -517,7 +691,8 @@ c-----------------------------------------------------------------------
       subroutine RCRint(ctime,Pdist)
       
       use convolRCRFlow ! brings numRCRSrfs, ValuePdist
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8  ctime, ptime
       integer nlast, nper, k, j
@@ -531,10 +706,10 @@ c-----------------------------------------------------------------------
          do j=2,nlast   !loop to find the interval that we are in
 
             if(ValuePdist(j,1,k).gt.ptime) then  ! this is upper bound, j-1 is lower
-               wr=(ptime-ValuePdist(j-1,1,k))
-     &             / ( ValuePdist(j,1,k)-ValuePdist(j-1,1,k) )
-               Pdist(k)= ValuePdist(j-1,2,k)*(one-wr) 
-     &                        + ValuePdist(j,2,k)*wr
+               wr=(ptime-ValuePdist(j-1,1,k)) &
+                   / ( ValuePdist(j,1,k)-ValuePdist(j-1,1,k) )
+               Pdist(k)= ValuePdist(j-1,2,k)*(one-wr) &
+                              + ValuePdist(j,2,k)*wr
                exit
             endif
 
@@ -543,15 +718,16 @@ c-----------------------------------------------------------------------
       return
       end
       
-c-----------------------------------------------------------------------
-c   initialize the Coronary boundary condition:
-c   read the data in initCORt
-c   interpolate the data to match the process time step in CORint
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!   initialize the Coronary boundary condition:
+!   read the data in initCORt
+!   interpolate the data to match the process time step in CORint
+!-----------------------------------------------------------------------
       subroutine initCORt()
       
       use convolCORFlow
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       open(unit=815, file='cort.dat',status='old')
          read (815,*)
@@ -614,12 +790,12 @@ c-----------------------------------------------------------------------
          QHistCOR = zero
          PlvHistCOR = zero
          PHistCOR = zero
-         call ReadDataFile(QHistCOR(1:lstep+1,:),lstep+1,numCORSrfs,
-     &      'QHistCOR.dat',876)
-         call ReadDataFile(PHistCOR(1:lstep+1,:),lstep+1,numCORSrfs,
-     &      'PHistCOR.dat',877)
-         call ReadDataFile(PlvHistCOR(1:lstep+1,:),lstep+1,numCORSrfs,
-     &      'PlvHistCOR.dat',879)
+         call ReadDataFile(QHistCOR(1:lstep+1,:),lstep+1,numCORSrfs, &
+            'QHistCOR.dat',876)
+         call ReadDataFile(PHistCOR(1:lstep+1,:),lstep+1,numCORSrfs, &
+            'PHistCOR.dat',877)
+         call ReadDataFile(PlvHistCOR(1:lstep+1,:),lstep+1,numCORSrfs, &
+            'PlvHistCOR.dat',879)
       endif
 
       return
@@ -630,7 +806,8 @@ c-----------------------------------------------------------------------
       
       use convolCORFlow ! brings numCORSrfs, ValuePlvist
       use incpBC
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8  ctime, ptime
       integer nlast, nper, k, j, curstep, Switch
@@ -643,10 +820,10 @@ c-----------------------------------------------------------------------
          if (incp .eq. zero) then
             do j=2,nlast   !loop to find the interval that we are in
                if(ValuePlvist(j,1,k).gt.ptime) then  ! this is upper bound, j-1 is lower
-                  wr=(ptime-ValuePlvist(j-1,1,k))
-     &                / ( ValuePlvist(j,1,k)-ValuePlvist(j-1,1,k) )
-                  Plvist(k)= ValuePlvist(j-1,2,k)*(one-wr) 
-     &                        + ValuePlvist(j,2,k)*wr
+                  wr=(ptime-ValuePlvist(j-1,1,k)) &
+                      / ( ValuePlvist(j,1,k)-ValuePlvist(j-1,1,k) )
+                  Plvist(k)= ValuePlvist(j-1,2,k)*(one-wr) &
+                              + ValuePlvist(j,2,k)*wr
                   exit
                endif
             enddo
@@ -657,23 +834,24 @@ c-----------------------------------------------------------------------
             elseif(Switch .eq. one .and. INCPSwitch .lt. two) then
                Plvist(k)=PLV(curstep,1)
             else
-              Plvist(k)=PLV(curstep,1)*(one-alfi)+
-     &           alfi*PLV(curstep+1,1)
+              Plvist(k)=PLV(curstep,1)*(one-alfi)+ &
+                 alfi*PLV(curstep+1,1)
             endif
          endif
       enddo
       
       return
       end
-c-----------------------------------------------------------------------
-c   initialize the coupled inflow boundary condition:
-c   read the data in initINCPt
-c   interpolate the data to match the process time step in INCPint
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!   initialize the coupled inflow boundary condition:
+!   read the data in initINCPt
+!   interpolate the data to match the process time step in INCPint
+!-----------------------------------------------------------------------
       subroutine initINCPt()
       
       use incpBC
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       allocate(ValueVv(7,numINCPSrfs))
       allocate(Period(numINCPSrfs))
@@ -742,32 +920,33 @@ c-----------------------------------------------------------------------
          allocate (PLV(nstep(1)+nptsINCP+1,numINCPSrfs))
          allocate (VLV(nstep(1)+nptsINCP+1,numINCPSrfs))
          allocate (QAV(nstep(1)+nptsINCP+1,numINCPSrfs))
-         call ReadDataFile(Paorta(1:lstep+1,:),lstep+1,numINCPSrfs,
-     &      'Paorta.dat',821)
-         call ReadDataFile(Qaorta(1:lstep+1,:),lstep+1,numINCPSrfs,
-     &      'Qaorta.dat',822)
-         call ReadDataFile(PLV(1:lstep+1,:),lstep+1,numINCPSrfs,
-     &      'PLV.dat',823)
-         call ReadDataFile(VLV(1:lstep+1,:),lstep+1,numINCPSrfs,
-     &      'VLV.dat',824)
-         call ReadDataFile(QAV(1:lstep+1,:),lstep+1,numINCPSrfs,
-     &      'QAV.dat',825)
+         call ReadDataFile(Paorta(1:lstep+1,:),lstep+1,numINCPSrfs, &
+            'Paorta.dat',821)
+         call ReadDataFile(Qaorta(1:lstep+1,:),lstep+1,numINCPSrfs, &
+            'Qaorta.dat',822)
+         call ReadDataFile(PLV(1:lstep+1,:),lstep+1,numINCPSrfs, &
+            'PLV.dat',823)
+         call ReadDataFile(VLV(1:lstep+1,:),lstep+1,numINCPSrfs, &
+            'VLV.dat',824)
+         call ReadDataFile(QAV(1:lstep+1,:),lstep+1,numINCPSrfs, &
+            'QAV.dat',825)
       endif
-      VLV(1,1:numINCPSrfs) = ValueVv(3,1:numINCPSrfs)-
-     &        ValueVv(4,1:numINCPSrfs)
+      VLV(1,1:numINCPSrfs) = ValueVv(3,1:numINCPSrfs)- &
+              ValueVv(4,1:numINCPSrfs)
       
       return
       end
       
-c
-c.... This function scales the normalized elastance function according
-c.... to the input parameters and interpolates the data to match the 
-c.... process time step
+!
+!.... This function scales the normalized elastance function according
+!.... to the input parameters and interpolates the data to match the 
+!.... process time step
 
       subroutine INCPint(ctime, Elastance, curPvenous)
       
       use incpBC   !Need Period, Tmax, Emax, Enormal
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8   ctime, ptime, shifttime, Elast
       integer  nlast, nper, j, k, l
@@ -782,27 +961,27 @@ c.... process time step
          ptime = ctime+shifttime-nper*Period(k)   !now time in periodic domain, 0 to Period(k)
          Etime = Enormal(:,1)*Tmax(k) 
          Evalue = Enormal(:,2)*Emax(k)*1333.2237
-c         if (Etime(nlast) .gt. Period(k)) then
-c            do l=2, nlast
-c               if (Etime(l) .gt. Period(k)) then
-c                  wr=(Period(k)-Etime(l-1))/(Etime(l)-Etime(l-1))
-c                  Elast = Evalue(l-1)*(one-wr)+Evalue(l)*wr
-c                  exit
-c               endif
-c            enddo
-c         else 
-c            Elast = Evalue(nlast)
-c         endif 
+!         if (Etime(nlast) .gt. Period(k)) then
+!            do l=2, nlast
+!               if (Etime(l) .gt. Period(k)) then
+!                  wr=(Period(k)-Etime(l-1))/(Etime(l)-Etime(l-1))
+!                  Elast = Evalue(l-1)*(one-wr)+Evalue(l)*wr
+!                  exit
+!               endif
+!            enddo
+!         else 
+!            Elast = Evalue(nlast)
+!         endif 
          Elast = Evalue(nlast)
 
-c
-c.... Here I assume the simulation starts at the onset of systole
-c
+!
+!.... Here I assume the simulation starts at the onset of systole
+!
          do j=2, nlast
             if (Etime(j) .gt. ptime) then 
                wr=(ptime-Etime(j-1))/(Etime(j)-Etime(j-1))
                Elastance(k) = Evalue(j-1)*(one-wr)+Evalue(j)*wr
-               if (nper .gt. 0 .and. j .eq. 2 .or. j. eq. nlast) then
+               if (nper .gt. 0 .and. j .eq. 2 .or. j .eq. nlast) then
                   wr=(ptime-Etime(j-1))/(Etime(j)-Etime(j-1))
                   Elastance(k) = Elast*(one-wr)+Evalue(j)*wr 
                endif 
@@ -815,10 +994,10 @@ c
          nlast=nptsPvenous     ! number of time series to interpolate from 
          do j=2,nlast   !loop to find the interval that we are in
             if(Pvenous(j,1,k).gt.ptime) then  ! this is upper bound, j-1 is lower
-               wr=(ptime-Pvenous(j-1,1,k))
-     &             / ( Pvenous(j,1,k)-Pvenous(j-1,1,k) )
-               curPvenous(k)= Pvenous(j-1,2,k)*(one-wr) 
-     &                        + Pvenous(j,2,k)*wr
+               wr=(ptime-Pvenous(j-1,1,k)) &
+                   / ( Pvenous(j,1,k)-Pvenous(j-1,1,k) )
+               curPvenous(k)= Pvenous(j-1,2,k)*(one-wr) &
+                              + Pvenous(j,2,k)*wr
                exit
             endif
          enddo
@@ -826,14 +1005,15 @@ c
       
       return
       end
-c-----------------------------------------------------------------------
-c   Read data for Lagrange multipliers: read input data in initLagrange
-c   This data is required to generate profile functions
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!   Read data for Lagrange multipliers: read input data in initLagrange
+!   This data is required to generate profile functions
+!-----------------------------------------------------------------------
       subroutine initLagrange()
       
       use LagrangeMultipliers 
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       integer NumOfData
       
       allocate(LagCenter(3,numLagrangeSrfs))
@@ -891,22 +1071,23 @@ c-----------------------------------------------------------------------
       enddo
       close(800)
       if (lstep .gt. zero) then
-         call ReadDataFile(LagHist(1:lstep+1,:),lstep+1,NumOfData,
-     &      'LagrangeMultipliers.dat',801)
-         call ReadDataFile(LagErrorHist(1:lstep+1,:),lstep+1,NumOfData,
-     &      'LagrangeErrors.dat',802)
+         call ReadDataFile(LagHist(1:lstep+1,:),lstep+1,NumOfData, &
+           'LagrangeMultipliers.dat',801)
+         call ReadDataFile(LagErrorHist(1:lstep+1,:),lstep+1,NumOfData, &
+           'LagrangeErrors.dat',802)
       endif
       
       return
       end         
-c----------------------------------------------------------------------- 
-c     returns in pold the history dependent part of the pressure in the
-c     impedance/flow rate convolution for the impedance, RCR, Coronary 
-c     and INCP BC      
-c-----------------------------------------------------------------------      
+!----------------------------------------------------------------------- 
+!     returns in pold the history dependent part of the pressure in the
+!     impedance/flow rate convolution for the impedance, RCR, Coronary 
+!     and INCP BC      
+!-----------------------------------------------------------------------      
       subroutine pHist(pressHist,QHist,betas,nTimePoint,nSrfs)
 
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       integer  nTimePoint,nSrfs
       real*8   pressHist(0:MAXSURF)
@@ -923,14 +1104,15 @@ c-----------------------------------------------------------------------
       end
 
 
-c----------------------------------------------------------------------- 
-c This subroutine reads a data file and copies to a data array
-c----------------------------------------------------------------------- 
+!----------------------------------------------------------------------- 
+! This subroutine reads a data file and copies to a data array
+!----------------------------------------------------------------------- 
       subroutine ReadDataFile(DataFile,nrows,ncolms,Filename,UnitNumber)
 
-      include "common.h"
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      character*40 Filename
+      character(*) Filename
       real*8    DataFile(nrows,ncolms)
       integer   nrows, ncolms, UnitNumber
       

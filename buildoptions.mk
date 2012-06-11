@@ -2,9 +2,10 @@ SHELL           = /bin/sh
 CXX             = mpicxx
 CC              = mpicc
 F90             = mpif90
-AR              = ar -cru 
+F77             = mpif77
+AR              = xiar cr 
  
-GLOBAL_DEFINES = -DUSE_NOTIMER -DUNIX -Dsgi
+GLOBAL_DEFINES = -DUNIX
  
 STATICEXT = a
 OBJECTEXT = o
@@ -12,12 +13,15 @@ OBJECTEXT = o
 MAKE_WITH_PRESOLVER = 1
 MAKE_WITH_POSTSOLVER = 1
 MAKE_WITH_FLOWSOLVER = 1
+MAKE_WITH_MAIN = 1
+MAKE_WITH_ESTIMATOR = 1
 
 TARGET_FLOWSOLVER = flowsolver
+TARGET_ESTIMATOR = estimator
 TARGET_POSTSOLVER = postsolver
 TARGET_PRESOLVER = presolver
  
-MAKE_OPTIMIZED = 1
+MAKE_OPTIMIZED = 0
  
 ifeq ($(MAKE_OPTIMIZED),1)
    DEBUG_FLAGS     =
@@ -25,30 +29,37 @@ ifeq ($(MAKE_OPTIMIZED),1)
    OPT_FLAGS       = -O2
    OPT_FFLAGS      = -O2
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
+   #LINK_EXE        = $(CXX) -o 
 else
-   DEBUG_FLAGS     = -O0 -debug -g2   
-   DEBUG_FFLAGS    = -g
+   DEBUG_FLAGS     = -O0 -g
+   DEBUG_FFLAGS    = -O0 -g
    OPT_FLAGS       =
    OPT_FFLAGS      =
+   #LINK_EXE        = $(CXX) -o 
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
 endif
  
 BUILDFLAGS      = $(GLOBAL_DEFINES)
-GLOBAL_CXXFLAGS = $(BUILDFLAGS) $(DEBUG_FLAGS) $(OPT_FLAGS) 
+GLOBAL_CXXFLAGS = $(BUILDFLAGS) $(DEBUG_FLAGS) $(OPT_FLAGS)
 GLOBAL_CFLAGS   = $(BUILDFLAGS) $(DEBUG_FLAGS) $(OPT_FLAGS)
 GLOBAL_FFLAGS   = $(BUILDFLAGS) $(DEBUG_FFLAGS) $(OPT_FFLAGS)
- 
-CXX_LIBS    = 
-F90_LIBS    = 
+#CXX_LIBS    =
+CXX_LIBS    = -lrt
+#F90_LIBS    =
+F90_LIBS    =
  
 HOME_DIR = ../..
 EXTERNAL_LIB_DIR = $(HOME_DIR)/external/x64-linux
  
 SOLVERIO_INCDIR = -I $(HOME_DIR)/solverio/src
+SOLVERIO_LIBS = -L $(HOME_DIR)/lib -lsimvascular_solverio
+
+FLOWSOLVER_INCDIR = -I $(HOME_DIR)/flowsolver/src
+FLOWSOLVER_LIBS = -L $(HOME_DIR)/lib -lsimvascular_flowsolver
  
 MPI_TOP        = 
-MPI_INCDIR     = 
-MPI_LIBS       = 
+MPI_INCDIR     = #-I
+MPI_LIBS       = #-lmpi_f90 -lmpi_f77 -lmpi_cxx -lmpi
  
 METIS_TOP      = $(EXTERNAL_LIB_DIR)/metis-4.0
 METIS_INCDIR   = -I $(METIS_TOP)
@@ -57,7 +68,7 @@ METIS_LIBS     = -L $(METIS_TOP) -lmetis
 LESLIB_DEFS    = -DACUSIM_LINUX -DACUSIM_LESLIB_VER_1_4
 LESLIB_TOP     = $(EXTERNAL_LIB_DIR)/leslib-1.4
 LESLIB_INCDIR  = -I $(LESLIB_TOP)
-LESLIB_LIBS    = -L $(LESLIB_TOP) -lles
+LESLIB_LIBS    = -L $(LESLIB_TOP) -lles #-L $(LESLIB_TOP)/deps -lifcore -lifport -limf -lirc
 
 NSPCG_TOP      = $(EXTERNAL_LIB_DIR)/NSPCG
 NSPCG_INCDIR   = -I $(NSPCG_TOP)
@@ -71,11 +82,52 @@ ZLIB_TOP       = $(EXTERNAL_LIB_DIR)/zlib-1.2.3
 ZLIB_INCDIR    = -I $(ZLIB_TOP)
 ZLIB_LIBS      = -L $(ZLIB_TOP) -lz
 
+VERDANDI_TOP  = $(HOME_DIR)/../verdandi-1.2.1
+VERDANDI_INCDIR  = -I $(VERDANDI_TOP) \
+		 -I $(VERDANDI_TOP)/container \
+		 -I $(VERDANDI_TOP)/error \
+		 -I $(VERDANDI_TOP)/method \
+		 -I $(VERDANDI_TOP)/model \
+		 -I $(VERDANDI_TOP)/observation_manager \
+		 -I $(VERDANDI_TOP)/output_saver \
+		 -I $(VERDANDI_TOP)/share \
+		 -I $(VERDANDI_TOP)/include \
+		 -I $(VERDANDI_TOP)/include/lua/src \
+		 -I $(VERDANDI_TOP)/include/seldon \
+
+SELDON_TOP  = $(HOME_DIR)/../verdandi-1.2.1
+SELDON_INCDIR  = -I $(SELDON_TOP)/include/seldon
+
+LUA_LIBS = $(HOME_DIR)/../verdandi-1.2.1/include/lua/src/liblua.a
+
+PETSC_TOP    = $(HOME_DIR)/../petsc-3.2-p7
+PETSC_INCDIR = -I $(PETSC_TOP)/include -I $(PETSC_TOP)/arch-linux2-c-opt/include
+PETSC_LIBS   = -L $(PETSC_TOP)/arch-linux2-c-opt/lib -lpetsc
+
+CGAL_TOP     = $(HOME_DIR)/../CGAL-install
+CGAL_INCDIR  = -I $(CGAL_TOP)/include
+CGAL_LIBS    = -L $(CGAL_TOP)/lib -lCGAL -lCGAL_Core -lCGAL_ImageIO
+
+BOOSTCPP_TOP    = $(HOME_DIR)/../boost_1_40_0
+BOOSTCPP_INCDIR = -I $(BOOSTCPP_TOP)
+BOOSTCPP_LIBS   = -L $(BOOSTCPP_TOP)/stage/lib -lboost_thread
+
+VTK_TOP    = $(HOME_DIR)/../VTK-install
+VTK_INCDIR = -I $(VTK_TOP)/include/vtk-5.8
+VTK_LIBS   = -L $(VTK_TOP)/lib/vtk-5.8 -lvtkGraphics -lvtkFiltering -lvtkGenericFiltering -lvtkIO -lvtkCommon -lvtksys 
+
+MKL_TOP      = /opt/intel/mkl
+MKL_LIBS     = -L $(MKL_TOP)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+
+
 %.$(OBJECTEXT): %.cxx
 	$(CXX) $(CXXFLAGS) -c $<
 
 %.$(OBJECTEXT): %.c
 	$(CC) $(CFLAGS) -c $<
 
-%.$(OBJECTEXT): %.f
+%.$(OBJECTEXT): %.f90
 	$(F90) $(FFLAGS) -c $<
+
+%.$(OBJECTEXT): %.f
+	$(F77) $(FFLAGS) -c $<

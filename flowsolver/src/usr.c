@@ -1,48 +1,14 @@
-/*********************************************************************
-
-Copyright (c) 2000-2007, Stanford University, 
-    Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-    Charles A. Taylor (see SimVascular Acknowledgements file 
-    for additional contributors to the source code).
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions 
-are met:
-
-Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer. 
-Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
-documentation and/or other materials provided with the distribution. 
-Neither the name of the Stanford University or Rensselaer Polytechnic
-Institute nor the names of its contributors may be used to endorse or
-promote products derived from this software without specific prior 
-written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-**********************************************************************/
-
+/*===========================================================================
+ *
+ * "usr.c":  user's function
+ *
+ *===========================================================================
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include "usr.h"
 #include "les.h"
 #include "cvSolverIO.h"
-
-extern char phasta_iotype[80];
 
 /*===========================================================================
  *
@@ -59,6 +25,8 @@ extern char phasta_iotype[80];
  *===========================================================================
  */
 #include "mpi.h"
+#include "common_c.h"
+
 static int lmNum = 0; 
 static LesHd lesArray[8];
 
@@ -315,7 +283,8 @@ void    myflesnew_(	     Integer*	lesId,
                          char*      lmhost,
                          Integer*   len             ) {
     int procId;
-    MPI_Comm_rank( MPI_COMM_WORLD, &procId ) ;
+    MPI_Comm iNewComm_C = MPI_Comm_f2c(newcom.iNewComm);
+    MPI_Comm_rank( iNewComm_C, &procId ) ;
     if(lmNum==0){
         if(procId==0){
             lesArray[ *lesId ] = lesNew( lmhost, *lmport, &lmNum, *eqnType,
@@ -323,9 +292,9 @@ void    myflesnew_(	     Integer*	lesId,
                                          *prjFlag, *nPrjs, *presPrjFlag, *nPresPrjs,
                                          *tol, *presTol, *verbose, stats, nPermDims,
                                          nTmpDims );
-            MPI_Bcast( &lmNum, 1, MPI_INT, 0, MPI_COMM_WORLD ) ;
+            MPI_Bcast( &lmNum, 1, MPI_INT, 0, iNewComm_C ) ;
         } else {
-            MPI_Bcast( &lmNum, 1, MPI_INT, 0, MPI_COMM_WORLD ) ;
+            MPI_Bcast( &lmNum, 1, MPI_INT, 0, iNewComm_C ) ;
             lesArray[ *lesId ] = lesNew( lmhost, *lmport, &lmNum, *eqnType,
                                          *nDofs, *minIters, *maxIters, *nKvecs, 
                                          *prjFlag, *nPrjs, *presPrjFlag, *nPresPrjs,
@@ -397,7 +366,7 @@ double __vlog_(double fg)  { fflush(stdout); printf(" vlog got called \n"); fflu
 /* #endif*/
 
 void    myflesnew_(	     Integer*	lesId,
-                         Integer*	lmport,                             
+		MPI_Bcast   Integer*	lmport,
                          Integer*	eqnType,
                          Integer*	nDofs,
                          Integer*	minIters,
@@ -416,7 +385,8 @@ void    myflesnew_(	     Integer*	lesId,
                          char*      lmhost          ) {
     int procId;
     int ppePreCond=0; /* =1 will invoke precondition, =0 will be as v1.4 */
-    MPI_Comm_rank( MPI_COMM_WORLD, &procId ) ;
+    MPI_Comm iNewComm_C = MPI_Comm_f2c(newcom.iNewComm);
+    MPI_Comm_rank( iNewComm_C, &procId ) ;
     if(lmNum==0){
         if(procId==0){
             lesArray[ *lesId ] = lesNew( lmhost, *lmport, &lmNum, *eqnType,
@@ -424,9 +394,9 @@ void    myflesnew_(	     Integer*	lesId,
                                          *prjFlag, *nPrjs, *presPrjFlag, *nPresPrjs, ppePreCond,
                                          *tol, *presTol, *verbose, stats, nPermDims,
                                          nTmpDims );
-            MPI_Bcast( &lmNum, 1, MPI_INT, 0, MPI_COMM_WORLD ) ;
+            MPI_Bcast( &lmNum, 1, MPI_INT, 0, iNewComm_C ) ;
         } else {
-            MPI_Bcast( &lmNum, 1, MPI_INT, 0, MPI_COMM_WORLD ) ;
+            MPI_Bcast( &lmNum, 1, MPI_INT, 0, iNewComm_C ) ;
             lesArray[ *lesId ] = lesNew( lmhost, *lmport, &lmNum, *eqnType,
                                          *nDofs, *minIters, *maxIters, *nKvecs, 
                                          *prjFlag, *nPrjs, *presPrjFlag, *nPresPrjs, ppePreCond,
@@ -487,10 +457,10 @@ savelesrestart_( Integer* lesId,
     size = (*nshg)*nPrjs;
 
     writeheader_( &fileHandle, "projection vectors ", (void*)iarray, 
-                  &nitems, &size, "double", phasta_iotype );
+                  &nitems, &size, "double", outpar.iotype );
     nitems = size;
     writedatablock_( &fileHandle, "projection vectors ", (void*)projVec, 
-                     &nitems, "double", phasta_iotype );
+                     &nitems, "double", outpar.iotype );
     free(projVec);
 
     /*************************************************************************/
@@ -514,11 +484,11 @@ savelesrestart_( Integer* lesId,
     size = (*nshg)*nPresPrjs;
 
     writeheader_( &fileHandle, "pressure projection vectors ", (void*)iarray, 
-                  &nitems, &size, "double", phasta_iotype );
+                  &nitems, &size, "double", outpar.iotype );
     nitems = size;
 
     writedatablock_( &fileHandle, "pressure projection vectors ", 
-                     (void*)projVec, &nitems, "double", phasta_iotype );
+                     (void*)projVec, &nitems, "double", outpar.iotype );
     free( projVec);
 
     closefile_( &fileHandle, "append" );
@@ -549,7 +519,7 @@ readlesrestart_( Integer* lesId,
     if ( fileHandle == 0 ) return;
 
     readheader_( &fileHandle, "projection vectors", (void*)iarray, 
-                 &itwo, "integer", phasta_iotype );
+                 &itwo, "integer", outpar.iotype );
 
     if ( iarray[0] != *nshg ) {
         closefile_( &fileHandle, "read" );
@@ -564,7 +534,7 @@ readlesrestart_( Integer* lesId,
     projVec = (double*)malloc( size * sizeof( double ));
 
     readdatablock_( &fileHandle, "projection vectors", (void*)projVec, 
-                    &size, "double", phasta_iotype );
+                    &size, "double", outpar.iotype );
     
     lesSetPar( lesArray[ *lesId ], LES_ACT_PRJS, (Real) nPrjs );
     PrjSrcId = (Integer) lesGetPar( lesArray[ *lesId ], LES_PRJ_VEC_ID );
@@ -583,7 +553,7 @@ readlesrestart_( Integer* lesId,
 
 
     readheader_( &fileHandle, "pressure projection vectors", (void*)iarray, 
-                 &itwo, "integer", phasta_iotype );
+                 &itwo, "integer", outpar.iotype );
 
     lnshg = iarray[ 0 ] ;
     nPresPrjs = iarray[ 1 ] ;
@@ -598,7 +568,7 @@ readlesrestart_( Integer* lesId,
     projVec = (double*)malloc( size * sizeof( double ));
     
     readdatablock_( &fileHandle, "pressure projection vectors", (void*)projVec, 
-                    &size, "double", phasta_iotype );
+                    &size, "double", outpar.iotype );
     
     lesSetPar( lesArray[ *lesId ], LES_ACT_PRES_PRJS, (Real) nPresPrjs );
     PresPrjSrcId=(Integer)lesGetPar( lesArray[ *lesId ], LES_PRES_PRJ_VEC_ID );
@@ -621,6 +591,14 @@ void  myflessolve_( Integer* lesId,
     lesSolve( lesArray[ *lesId ], usrHd );
 }
 
+void getSol ( UsrHd usrHd,
+              double* Dy  )
+{
+
+     Dy = usrHd->solinc;
+
+}
+
 
 int solverlicenseserver_(char key[]){
     char* env_server_name;
@@ -629,8 +607,8 @@ int solverlicenseserver_(char key[]){
     else { 
         fprintf(stderr,
 				"environment variable LES_LICENSE_SERVER not defined \n");
-        fprintf(stderr,"using server1 as default \n");
-        strcpy(key, "server1.scorec.rpi.edu");
+        //fprintf(stderr,"using server1 as default \n");
+        //strcpy(key, "server1.scorec.rpi.edu");
     }
     return 1;
 }

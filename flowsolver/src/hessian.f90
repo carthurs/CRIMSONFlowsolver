@@ -1,62 +1,63 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-        subroutine hessian ( y,         x,     
-     &                       shp,       shgl,      iBC,
-     &                       shpb,      shglb,     iper,      
-     &                       ilwork,    uhess,     gradu  )
+!
+!  Copyright (c) 2000-2007, Stanford University, 
+!     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
+!     Charles A. Taylor (see SimVascular Acknowledgements file 
+!     for additional contributors to the source code).
+!
+!  All rights reserved.
+!
+!  Redistribution and use in source and binary forms, with or without 
+!  modification, are permitted provided that the following conditions 
+!  are met:
+!
+!  Redistributions of source code must retain the above copyright notice,
+!  this list of conditions and the following disclaimer. 
+!  Redistributions in binary form must reproduce the above copyright 
+!  notice, this list of conditions and the following disclaimer in the 
+!  documentation and/or other materials provided with the distribution. 
+!  Neither the name of the Stanford University or Rensselaer Polytechnic
+!  Institute nor the names of its contributors may be used to endorse or
+!  promote products derived from this software without specific prior 
+!  written permission.
+!
+!  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+!  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+!  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+!  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+!  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+!  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+!  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+!  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+!  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+!  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+!  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+!  DAMAGE.
+!
+!
+        subroutine hessian ( y,         x,      &
+                             shp,       shgl,      iBC, &
+                             shpb,      shglb,     iper,       &
+                             ilwork,    uhess,     gradu  )
         use pointer_data  ! brings in the pointers for the blocked arrays
 
-        include "common.h"
-c
-        dimension y(nshg,ndof),      
-     &            x(numnp,nsd),         iBC(nshg),           
-     &            iper(nshg)
-c
-        dimension shp(MAXTOP,maxsh,MAXQPT),  
-     &            shgl(MAXTOP,nsd,maxsh,MAXQPT), 
-     &            shpb(MAXTOP,maxsh,MAXQPT),
-     &            shglb(MAXTOP,nsd,maxsh,MAXQPT) 
-c
-        dimension gradu(nshg,9),     rmass(nshg),
-     &            uhess(nshg,27)
-c
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+        dimension y(nshg,ndof),       &
+                  x(numnp,nsd),         iBC(nshg),            &
+                  iper(nshg)
+!
+        dimension shp(MAXTOP,maxsh,MAXQPT),   &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
+                  shpb(MAXTOP,maxsh,MAXQPT), &
+                  shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+!
+        dimension gradu(nshg,9),     rmass(nshg), &
+                  uhess(nshg,27)
+!
         dimension ilwork(nlwork)
 
-c
+!
            gradu = zero
            rmass = zero
         
@@ -72,18 +73,18 @@ c
               nsymdl = lcblk(9,iblk)
               npro   = lcblk(1,iblk+1) - iel 
               ngauss = nint(lcsyst)
-c     
-              call velocity_gradient ( y,                
-     &                                 x,                       
-     &                                 shp(lcsyst,1:nshl,:), 
-     &                                 shgl(lcsyst,:,1:nshl,:),
-     &                                 mien(iblk)%p,     
-     &                                 gradu, 
-     &                                 rmass )
+!     
+              call velocity_gradient ( y,                 &
+                                       x,                        &
+                                       shp(lcsyst,1:nshl,:),  &
+                                       shgl(lcsyst,:,1:nshl,:), &
+                                       mien(iblk)%p,      &
+                                       gradu,  &
+                                       rmass )
 
            end do
 
-c
+!
            call reconstruct( rmass, gradu, iBC, iper, ilwork, 9 )       
 
            uhess = zero
@@ -101,46 +102,47 @@ c
               nsymdl = lcblk(9,iblk)
               npro   = lcblk(1,iblk+1) - iel 
               ngauss = nint(lcsyst)
-c     
+!     
 
-              call velocity_hessian (  gradu,                
-     &                                 x,                       
-     &                                 shp(lcsyst,1:nshl,:), 
-     &                                 shgl(lcsyst,:,1:nshl,:),
-     &                                 mien(iblk)%p,     
-     &                                 uhess,
-     &				       rmass  )    
+              call velocity_hessian (  gradu,                 &
+                                       x,                        &
+                                       shp(lcsyst,1:nshl,:),  &
+                                       shgl(lcsyst,:,1:nshl,:), &
+                                       mien(iblk)%p,      &
+                                       uhess, &
+      				       rmass  )    
            end do
        
 
            call reconstruct( rmass, uhess, iBC, iper, ilwork, 27 )       
-c
+!
       return
       end
 
-c-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 
-        subroutine velocity_gradient ( y,       x,       shp,     shgl, 
-     &                                 ien,     gradu,   rmass    )
+        subroutine velocity_gradient ( y,       x,       shp,     shgl,  &
+                                       ien,     gradu,   rmass    )
 
-        include "common.h"
-c
-        dimension y(nshg,ndof),               x(numnp,nsd),            
-     &            shp(nshl,ngauss),           shgl(nsd,nshl,ngauss),
-     &            ien(npro,nshl),             gradu(nshg,9), 
-     &            shdrv(npro,nsd,nshl),       shape( npro, nshl ),      
-     &            gradul(npro,9) ,            rmass( nshg ) 
-c
-        dimension yl(npro,nshl,ndof),          xl(npro,nenl,nsd),
-     &            ql(npro,nshl,9),             dxidx(npro,nsd,nsd),
-     &            WdetJ(npro),		       rmassl(npro,nshl)
-c
-c
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+        dimension y(nshg,ndof),               x(numnp,nsd),             &
+                  shp(nshl,ngauss),           shgl(nsd,nshl,ngauss), &
+                  ien(npro,nshl),             gradu(nshg,9),  &
+                  shdrv(npro,nsd,nshl),       shapeVar( npro, nshl ),       &
+                  gradul(npro,9) ,            rmass( nshg ) 
+!
+        dimension yl(npro,nshl,ndof),          xl(npro,nenl,nsd), &
+                  ql(npro,nshl,9),             dxidx(npro,nsd,nsd), &
+                  WdetJ(npro),		       rmassl(npro,nshl)
+!
+!
         dimension sgn(npro,nshl)
-c
-c.... create the matrix of mode signs for the hierarchic basis 
-c     functions. 
-c
+!
+!.... create the matrix of mode signs for the hierarchic basis 
+!     functions. 
+!
         do i=1,nshl
            where ( ien(:,i) < 0 )
               sgn(:,i) = -one
@@ -149,15 +151,15 @@ c
            endwhere
         enddo
 
-c
-c.... gather the variables
-c
+!
+!.... gather the variables
+!
 
         call localy (y,    yl,     ien,    ndof,   'gather  ')
         call localx (x,    xl,     ien,    nsd,    'gather  ')
-c
-c.... get the element residuals 
-c
+!
+!.... get the element residuals 
+!
         ql     = zero
         rmassl = zero
 
@@ -166,56 +168,57 @@ c
             if ( Qwt( lcsyst, intp ) .eq. zero ) cycle
 
             gradul = zero
-            call getshp( shp, shgl, sgn, shape, shdrv )
-            call local_gradient( yl(:,:,2:4), 3,  shdrv, xl, 
-     &                           gradul , dxidx, WdetJ )
+            call getshp( shp, shgl, sgn, shapeVar, shdrv )
+            call local_gradient( yl(:,:,2:4), 3,  shdrv, xl,  &
+                                 gradul , dxidx, WdetJ )
 
-c.... assemble contribution of gradu to each element node
-c     
+!.... assemble contribution of gradu to each element node
+!     
             do i=1,nshl
                 do j = 1, 9
-                    ql(:,i,j) = ql(:,i,j)+shape(:,i)*WdetJ*gradul(:,j)
+                    ql(:,i,j) = ql(:,i,j)+shapeVar(:,i)*WdetJ*gradul(:,j)
                 end do
                 
-                rmassl(:,i) = rmassl(:,i) + shape(:,i)*WdetJ
+                rmassl(:,i) = rmassl(:,i) + shapeVar(:,i)*WdetJ
 
              end do
 
         end do
-c
-c
+!
+!
         call local (gradu,  ql,     ien,  9,  'scatter ')
         call local (rmass,  rmassl, ien,  1,  'scatter ')
-c
-c.... end
-c
+!
+!.... end
+!
         return
         end
 
 
-c-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 
-        subroutine velocity_hessian ( gradu,   x,     shp,   shgl, 
-     &                                ien,     uhess, rmass  )
+        subroutine velocity_hessian ( gradu,   x,     shp,   shgl,  &
+                                      ien,     uhess, rmass  )
 
-        include "common.h"
-c
-        dimension gradu(nshg,9),              x(numnp,nsd),            
-     &            shp(nshl,ngauss),           shgl(nsd,nshl,ngauss),
-     &            ien(npro,nshl),             uhess(nshg,27), 
-     &            shdrv(npro,nsd,nshl),       shape( npro, nshl ),
-     &            uhessl(npro,27),            rmass( nshg ) 
-c
-        dimension gradul(npro,nshl,9),          xl(npro,nenl,nsd),         
-     &            ql(npro,nshl,27),             dxidx(npro,nsd,nsd),    
-     &            WdetJ(npro),                  rmassl(npro, nshl)
-c
-c
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+        dimension gradu(nshg,9),              x(numnp,nsd),             &
+                  shp(nshl,ngauss),           shgl(nsd,nshl,ngauss), &
+                  ien(npro,nshl),             uhess(nshg,27),  &
+                  shdrv(npro,nsd,nshl),       shapeVar( npro, nshl ), &
+                  uhessl(npro,27),            rmass( nshg ) 
+!
+        dimension gradul(npro,nshl,9),          xl(npro,nenl,nsd),          &
+                  ql(npro,nshl,27),             dxidx(npro,nsd,nsd),     &
+                  WdetJ(npro),                  rmassl(npro, nshl)
+!
+!
         dimension sgn(npro,nshl)
-c
-c.... create the matrix of mode signs for the hierarchic basis 
-c     functions. 
-c
+!
+!.... create the matrix of mode signs for the hierarchic basis 
+!     functions. 
+!
         do i=1,nshl
            where ( ien(:,i) < 0 )
               sgn(:,i) = -one
@@ -224,15 +227,15 @@ c
            endwhere
         enddo
 
-c
-c.... gather the variables
-c
+!
+!.... gather the variables
+!
 
         call local  (gradu,  gradul, ien,    9 ,   'gather  ')
         call localx (x,      xl,     ien,    nsd,  'gather  ')
-c
-c.... get the element residuals 
-c
+!
+!.... get the element residuals 
+!
         ql     = zero
 	rmassl = zero
 
@@ -241,51 +244,52 @@ c
             if ( Qwt( lcsyst, intp ) .eq. zero ) cycle
 
             uhessl = zero
-            call getshp( shp, shgl, sgn, shape, shdrv )
-            call local_gradient( gradul, 9,  shdrv, xl, 
-     &                           uhessl , dxidx, WdetJ )
+            call getshp( shp, shgl, sgn, shapeVar, shdrv )
+            call local_gradient( gradul, 9,  shdrv, xl,  &
+                                 uhessl , dxidx, WdetJ )
 
-c.... assemble contribution of gradu .,
-c     
+!.... assemble contribution of gradu .,
+!     
             do i=1,nshl
                 do j = 1,27 
-                    ql(:,i,j)=ql(:,i,j)+shape(:,i)*WdetJ*uhessl(:,j )
+                    ql(:,i,j)=ql(:,i,j)+shapeVar(:,i)*WdetJ*uhessl(:,j )
                 end do
 
-                rmassl(:,i) = rmassl(:,i) + shape(:,i)*WdetJ
+                rmassl(:,i) = rmassl(:,i) + shapeVar(:,i)*WdetJ
              end do
 
         end do
-c
-c
+!
+!
         call local (uhess,  ql,     ien,  27,     'scatter ')
         call local (rmass,  rmassl, ien,   1,     'scatter ')
-c
-c.... end
-c
+!
+!.... end
+!
         return
         end
 
 
-c--------------------------------------------------------------------
+!--------------------------------------------------------------------
       subroutine reconstruct( rmass, qres, iBC, iper, ilwork, vsize )
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       integer vsize
-      dimension rmass(nshg), qres( nshg, vsize),
-     &          iBC(nshg), iper(nshg)
-c
-c
-c.... compute qi for node A, i.e., qres <-- qres/rmass
-c
+      dimension rmass(nshg), qres( nshg, vsize), &
+                iBC(nshg), iper(nshg)
+!
+!
+!.... compute qi for node A, i.e., qres <-- qres/rmass
+!
        if (numpe > 1) then
           call commu ( qres  , ilwork,  vsize  , 'in ')
           call commu ( rmass , ilwork,  1  , 'in ')
        endif
-c
-c  take care of periodic boundary conditions
-c
+!
+!  take care of periodic boundary conditions
+!
         do j= 1,nshg
           if ((btest(iBC(j),10))) then
             i = iper(j)
@@ -301,9 +305,9 @@ c
             qres(j,:) = qres(i,:)
           endif
         enddo
-c
-c.... invert the diagonal mass matrix and find q
-c
+!
+!.... invert the diagonal mass matrix and find q
+!
         rmass = one/rmass
        
        do i=1,vsize 
@@ -314,37 +318,38 @@ c
           call commu (qres, ilwork, vsize, 'out')    
        endif
 
-c.... return
-c    
+!.... return
+!    
         return
         end
 
-c-------------------------------------------------------------------------
+!-------------------------------------------------------------------------
 
-        subroutine local_gradient ( vector,   vsize, shgl,   xl, 
-     &                              gradient, dxidx,   WdetJ )
-c
-c
-        include "common.h"
-c
-c  passed arrays
+        subroutine local_gradient ( vector,   vsize, shgl,   xl,  &
+                                    gradient, dxidx,   WdetJ )
+!
+!
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+!  passed arrays
 
         integer vsize
-c
-        dimension vector(npro,nshl,vsize), 
-     &            shgl(npro,nsd,nshl),        xl(npro,nenl,nsd),
-     &            gradient(npro,vsize*3),     shg(npro,nshl,nsd), 
-     &            dxidx(npro,nsd,nsd),        WdetJ(npro)
-c
-c  local arrays
-c
+!
+        dimension vector(npro,nshl,vsize),  &
+                  shgl(npro,nsd,nshl),        xl(npro,nenl,nsd), &
+                  gradient(npro,vsize*3),     shg(npro,nshl,nsd),  &
+                  dxidx(npro,nsd,nsd),        WdetJ(npro)
+!
+!  local arrays
+!
         dimension tmp(npro),           dxdxi(npro,nsd,nsd)
 
-c
-c.... compute the deformation gradient
-c
+!
+!.... compute the deformation gradient
+!
         dxdxi = zero
-c
+!
           do n = 1, nenl
             dxdxi(:,1,1) = dxdxi(:,1,1) + xl(:,n,1) * shgl(:,1,n)
             dxdxi(:,1,2) = dxdxi(:,1,2) + xl(:,n,1) * shgl(:,2,n)
@@ -356,61 +361,61 @@ c
             dxdxi(:,3,2) = dxdxi(:,3,2) + xl(:,n,3) * shgl(:,2,n)
             dxdxi(:,3,3) = dxdxi(:,3,3) + xl(:,n,3) * shgl(:,3,n)
           enddo
-c
-c.... compute the inverse of deformation gradient
-c
-        dxidx(:,1,1) =   dxdxi(:,2,2) * dxdxi(:,3,3) 
-     &                 - dxdxi(:,3,2) * dxdxi(:,2,3)
-        dxidx(:,1,2) =   dxdxi(:,3,2) * dxdxi(:,1,3) 
-     &                 - dxdxi(:,1,2) * dxdxi(:,3,3)
-        dxidx(:,1,3) =   dxdxi(:,1,2) * dxdxi(:,2,3) 
-     &                 - dxdxi(:,1,3) * dxdxi(:,2,2)
-        tmp          = one / ( dxidx(:,1,1) * dxdxi(:,1,1) 
-     &                       + dxidx(:,1,2) * dxdxi(:,2,1)  
-     &                       + dxidx(:,1,3) * dxdxi(:,3,1) )
+!
+!.... compute the inverse of deformation gradient
+!
+        dxidx(:,1,1) =   dxdxi(:,2,2) * dxdxi(:,3,3)  &
+                       - dxdxi(:,3,2) * dxdxi(:,2,3)
+        dxidx(:,1,2) =   dxdxi(:,3,2) * dxdxi(:,1,3)  &
+                       - dxdxi(:,1,2) * dxdxi(:,3,3)
+        dxidx(:,1,3) =   dxdxi(:,1,2) * dxdxi(:,2,3)  &
+                       - dxdxi(:,1,3) * dxdxi(:,2,2)
+        tmp          = one / ( dxidx(:,1,1) * dxdxi(:,1,1)  &
+                             + dxidx(:,1,2) * dxdxi(:,2,1)   &
+                             + dxidx(:,1,3) * dxdxi(:,3,1) )
         dxidx(:,1,1) = dxidx(:,1,1) * tmp
         dxidx(:,1,2) = dxidx(:,1,2) * tmp
         dxidx(:,1,3) = dxidx(:,1,3) * tmp
-        dxidx(:,2,1) = (dxdxi(:,2,3) * dxdxi(:,3,1) 
-     &                - dxdxi(:,2,1) * dxdxi(:,3,3)) * tmp
-        dxidx(:,2,2) = (dxdxi(:,1,1) * dxdxi(:,3,3) 
-     &                - dxdxi(:,3,1) * dxdxi(:,1,3)) * tmp
-        dxidx(:,2,3) = (dxdxi(:,2,1) * dxdxi(:,1,3) 
-     &                - dxdxi(:,1,1) * dxdxi(:,2,3)) * tmp
-        dxidx(:,3,1) = (dxdxi(:,2,1) * dxdxi(:,3,2) 
-     &                - dxdxi(:,2,2) * dxdxi(:,3,1)) * tmp
-        dxidx(:,3,2) = (dxdxi(:,3,1) * dxdxi(:,1,2) 
-     &                - dxdxi(:,1,1) * dxdxi(:,3,2)) * tmp
-        dxidx(:,3,3) = (dxdxi(:,1,1) * dxdxi(:,2,2) 
-     &                - dxdxi(:,1,2) * dxdxi(:,2,1)) * tmp
-c
+        dxidx(:,2,1) = (dxdxi(:,2,3) * dxdxi(:,3,1)  &
+                      - dxdxi(:,2,1) * dxdxi(:,3,3)) * tmp
+        dxidx(:,2,2) = (dxdxi(:,1,1) * dxdxi(:,3,3)  &
+                      - dxdxi(:,3,1) * dxdxi(:,1,3)) * tmp
+        dxidx(:,2,3) = (dxdxi(:,2,1) * dxdxi(:,1,3)  &
+                      - dxdxi(:,1,1) * dxdxi(:,2,3)) * tmp
+        dxidx(:,3,1) = (dxdxi(:,2,1) * dxdxi(:,3,2)  &
+                      - dxdxi(:,2,2) * dxdxi(:,3,1)) * tmp
+        dxidx(:,3,2) = (dxdxi(:,3,1) * dxdxi(:,1,2)  &
+                      - dxdxi(:,1,1) * dxdxi(:,3,2)) * tmp
+        dxidx(:,3,3) = (dxdxi(:,1,1) * dxdxi(:,2,2)  &
+                      - dxdxi(:,1,2) * dxdxi(:,2,1)) * tmp
+!
         WdetJ = Qwt(lcsyst,intp)/ tmp
 
-c
-c.... --------------------->  Global Gradients  <-----------------------
-c
+!
+!.... --------------------->  Global Gradients  <-----------------------
+!
         gradient = zero
-c
-c
+!
+!
         do n = 1, nshl
-c
-c.... compute the global gradient of shape-function
-c
-c            ! N_{a,x_i}= N_{a,xi_i} xi_{i,x_j}
-c
-          shg(:,n,1) = shgl(:,1,n) * dxidx(:,1,1) + 
-     &                 shgl(:,2,n) * dxidx(:,2,1) +
-     &                 shgl(:,3,n) * dxidx(:,3,1)
-          shg(:,n,2) = shgl(:,1,n) * dxidx(:,1,2) + 
-     &                 shgl(:,2,n) * dxidx(:,2,2) +
-     &                 shgl(:,3,n) * dxidx(:,3,2) 
-          shg(:,n,3) = shgl(:,1,n) * dxidx(:,1,3) + 
-     &                 shgl(:,2,n) * dxidx(:,2,3) +
-     &                 shgl(:,3,n) * dxidx(:,3,3) 
-c
-c
-c  Y_{,x_i}=SUM_{a=1}^nenl (N_{a,x_i}(int) Ya)
-c
+!
+!.... compute the global gradient of shape-function
+!
+!            ! N_{a,x_i}= N_{a,xi_i} xi_{i,x_j}
+!
+          shg(:,n,1) = shgl(:,1,n) * dxidx(:,1,1) +  &
+                       shgl(:,2,n) * dxidx(:,2,1) + &
+                       shgl(:,3,n) * dxidx(:,3,1)
+          shg(:,n,2) = shgl(:,1,n) * dxidx(:,1,2) +  &
+                       shgl(:,2,n) * dxidx(:,2,2) + &
+                       shgl(:,3,n) * dxidx(:,3,2) 
+          shg(:,n,3) = shgl(:,1,n) * dxidx(:,1,3) +  &
+                       shgl(:,2,n) * dxidx(:,2,3) + &
+                       shgl(:,3,n) * dxidx(:,3,3) 
+!
+!
+!  Y_{,x_i}=SUM_{a=1}^nenl (N_{a,x_i}(int) Ya)
+!
           do i = 1, 3
             do j = 1, vsize
                k = (i-1)*vsize+j
@@ -420,8 +425,8 @@ c
 
        end do
 
-c
-c.... return
-c
+!
+!.... return
+!
        return
        end

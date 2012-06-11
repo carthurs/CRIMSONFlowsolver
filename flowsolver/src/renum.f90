@@ -1,67 +1,35 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
       subroutine renum_cyl(x)
-c
-c----------------------------------------------------------------------
-c This subroutine finds all nodes that are on the inlet plane and all
-c nodes that are on the recycle plane; it also blocks elements that 
-c are on recycle plane; all nodes are also stored with cylindrical 
-c coordinates; find all father nodes for recycle plane (i.e. for
-c theta = -theta given)
-c
-c input:
-c  x      (numnp,nsd)           : node coordinates
-c
-c output:
-c  xcyl   (numnp,nsd)           : node cylindrical coordinates 
-c  ien2D  (npro, nshl)		: connectivity array for recycle plane
-c				  assuming tethraheadral elements, i.e.
-c				  triangular elements on face
-c
-c----------------------------------------------------------------------
-c
+!
+!----------------------------------------------------------------------
+! This subroutine finds all nodes that are on the inlet plane and all
+! nodes that are on the recycle plane; it also blocks elements that 
+! are on recycle plane; all nodes are also stored with cylindrical 
+! coordinates; find all father nodes for recycle plane (i.e. for
+! theta = -theta given)
+!
+! input:
+!  x      (numnp,nsd)           : node coordinates
+!
+! output:
+!  xcyl   (numnp,nsd)           : node cylindrical coordinates 
+!  ien2D  (npro, nshl)		: connectivity array for recycle plane
+!				  assuming tethraheadral elements, i.e.
+!				  triangular elements on face
+!
+!
+!  Elaine Bohr
+!  June 2002
+!----------------------------------------------------------------------
+!
        use spebc
-c       use pointer_data
-       include "common.h"
+!       use pointer_data
+       use phcommonvars
+       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
        include "mpif.h"
-       include "auxmpi.h"
-c
-        dimension x(numnp,nsd), nrin(numnp), nula(numnp),
-     &		  erreur(nshl), xtmp(nsd)
+       !include "auxmpi.h"
+!
+        dimension x(numnp,nsd), nrin(numnp), nula(numnp), &
+      		  erreur(nshl), xtmp(nsd)
 
         integer  temp, etmp, s
 
@@ -69,12 +37,12 @@ c
 	real*8,  allocatable :: xrtmp(:)
 	        
 
-c	thetag = thetag/180.0*pi
+!	thetag = thetag/180.0*pi
 
 
-c
-c .... changing to cylindrical coordinate system for nodal point
-c       
+!
+! .... changing to cylindrical coordinate system for nodal point
+!       
 	
 	xcyl(:,1) = sqrt(x(:,1)*x(:,1) + x(:,2)*x(:,2))
 	
@@ -90,9 +58,9 @@ c
         xcyl(:,3) = x(:,3)
 	
 
-c
-c .... finding the minimum and maximum angles
-c
+!
+! .... finding the minimum and maximum angles
+!
 
 	thmin = xcyl(nen1(1),2)
         thmax = xcyl(nen1(1),2)
@@ -111,9 +79,9 @@ c
 	enddo
 	
 
-c
-c .... Finding nodes from inlet plane with same theta given
-c
+!
+! .... Finding nodes from inlet plane with same theta given
+!
        
        j = 0
        do i=1,npin
@@ -129,9 +97,9 @@ c
 	 xrtmp(i) = xcyl(nrin(i),1)
        enddo	
        
-c
-c .... Ordering nrin by decreasing radius
-c
+!
+! .... Ordering nrin by decreasing radius
+!
 	j = 0
 	allocate (nrint(nfin))
 	
@@ -156,25 +124,25 @@ c
 	
 	deallocate(xrtmp)
 
-c
-c .... off wall coordinate for the inlet plane
-c
+!
+! .... off wall coordinate for the inlet plane
+!
 	do i=1,npin
 	  xynin(i) = (radinl - xcyl(nen1(i),1))/sang
      	enddo
 
-c
-c .... off wall coordinate for the virtual points on recycle plane
-c
+!
+! .... off wall coordinate for the virtual points on recycle plane
+!
 	
 	do i=1,nfint
 	  xyn(i) = (radcyl - xcyl(nrint(i),1))/sang
      	enddo
 
-c
-c .... Finding corresponding elements and local coordinates
-c      on recycle plane for every arc with radius from nrint
-c
+!
+! .... Finding corresponding elements and local coordinates
+!      on recycle plane for every arc with radius from nrint
+!
        s = (thmax-thmin)*radcyl/ds
        allocate (xsinfin(nfint,s+1,nsd))
        allocate (elcnfin(nfint,s+1))
@@ -185,27 +153,27 @@ c
           xts1 = x(nrint(jj),1) !*cos(xcyl(nrint(jj),2)+tolerence)
           xts2 = x(nrint(jj),2) !*sin(xcyl(nrint(jj),2)+tolerence)
           xts3 = x(nrint(jj),3) + plandist
-	  call elem_search(xintl, xts1, xts2, xts3,
-     &		           xtmp(:), etmp, 1)
+	  call elem_search(xintl, xts1, xts2, xts3, &
+      		           xtmp(:), etmp, 1)
      	  xsinfin(jj,1,:) = xtmp(:)
 	  elcnfin(jj,1) = etmp
 	  imax(jj) = (thmax-thmin)*xcyl(nrint(jj),1)/ds
      	  do i=1,imax(jj)
 	    if ( xcyl(nrint(jj),1) .eq. radcyl) then
-	      xts1 = (xcyl(nrint(jj),1)-tolerence) 
-     &		*cos(1.0*i/imax(jj)*(thmax-thmin)+thmin)
-	      xts2 = (xcyl(nrint(jj),1)-tolerence) 
-     &		*sin(1.0*i/imax(jj)*(thmax-thmin)+thmin)
+	      xts1 = (xcyl(nrint(jj),1)-tolerence)  &
+      		*cos(1.0*i/imax(jj)*(thmax-thmin)+thmin)
+	      xts2 = (xcyl(nrint(jj),1)-tolerence)  &
+      		*sin(1.0*i/imax(jj)*(thmax-thmin)+thmin)
 	    else
-c	      reel=i*ds/xcyl(nrint(jj),1)
-	      xts1 = xcyl(nrint(jj),1)
-     &		*cos(1.0*i/imax(jj)*(thmax-thmin)+thmin)
-	      xts2 = xcyl(nrint(jj),1)
-     & 		*sin(1.0*i/imax(jj)*(thmax-thmin)+thmin)
+!	      reel=i*ds/xcyl(nrint(jj),1)
+	      xts1 = xcyl(nrint(jj),1) &
+      		*cos(1.0*i/imax(jj)*(thmax-thmin)+thmin)
+	      xts2 = xcyl(nrint(jj),1) &
+       		*sin(1.0*i/imax(jj)*(thmax-thmin)+thmin)
 	    endif
 	    xts3 = x(nrint(jj),3) + plandist
-	    call elem_search(xintl, xts1, xts2, xts3,
-     &		             xtmp(:), etmp, 1)
+	    call elem_search(xintl, xts1, xts2, xts3, &
+      		             xtmp(:), etmp, 1)
      	    xsinfin(jj,1+i,:) = xtmp(:)
 	    elcnfin(jj,1+i) = etmp
           enddo
@@ -216,39 +184,43 @@ c	      reel=i*ds/xcyl(nrint(jj),1)
 
 
       subroutine renum_cart(x)
-c
-c----------------------------------------------------------------------
-c This subroutine finds all nodes that are on the inlet plane and all
-c nodes that are on the recycle plane; it also blocks elements that 
-c are on recycle plane; all nodes are also stored with cylindrical 
-c coordinates; find all father nodes for recycle plane (i.e. for
-c theta = -theta given)
-c
-c input:
-c  x      (numnp,nsd)           : node coordinates
-c
-c output:
-c  xcyl   (numnp,nsd)           : node cylindrical coordinates 
-c  ien2D  (npro, nshl)		: connectivity array for recycle plane
-c				  assuming tethraheadral elements, i.e.
-c				  triangular elements on face
-c
-c----------------------------------------------------------------------
-c
+!
+!----------------------------------------------------------------------
+! This subroutine finds all nodes that are on the inlet plane and all
+! nodes that are on the recycle plane; it also blocks elements that 
+! are on recycle plane; all nodes are also stored with cylindrical 
+! coordinates; find all father nodes for recycle plane (i.e. for
+! theta = -theta given)
+!
+! input:
+!  x      (numnp,nsd)           : node coordinates
+!
+! output:
+!  xcyl   (numnp,nsd)           : node cylindrical coordinates 
+!  ien2D  (npro, nshl)		: connectivity array for recycle plane
+!				  assuming tethraheadral elements, i.e.
+!				  triangular elements on face
+!
+!
+!  Elaine Bohr
+!  July 2002
+!----------------------------------------------------------------------
+!
        use spebc
-c       use pointer_data
-       include "common.h"
+!       use pointer_data
+       use phcommonvars
+       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
        include "mpif.h"
-       include "auxmpi.h"
-c
-        dimension x(numnp,nsd), nyin(numnp),
-     &		  erreur(nshl), xtmp(nsd), yrtmp(numnp)
+       !include "auxmpi.h"
+!
+        dimension x(numnp,nsd), nyin(numnp), &
+      		  erreur(nshl), xtmp(nsd), yrtmp(numnp)
 
         integer  temp, etmp, s
 
-c
-c .... Finding nodes from inlet plane with minimal z value
-c
+!
+! .... Finding nodes from inlet plane with minimal z value
+!
        j = 0
        zmin = x(nen1(1),3)
        zmax = x(nen1(1),3)
@@ -268,9 +240,9 @@ c
 	 yrtmp(i) = x(nyin(i),2)
        enddo	
        
-c
-c .... Ordering nyin by increasing y
-c
+!
+! .... Ordering nyin by increasing y
+!
 	j = 0
 	allocate (nrint(nfin))
 	
@@ -289,25 +261,25 @@ c
 	enddo
 	nfint = j
 
-c
-c .... y coordinate for the inlet plane
-c
+!
+! .... y coordinate for the inlet plane
+!
 	do i=1,npin
 	  xynin(i) = x(nen1(i),2)
      	enddo
 
-c
-c .... y coordinate for the virtual points on recycle plane
-c
+!
+! .... y coordinate for the virtual points on recycle plane
+!
 	
 	do i=1,nfint
 	  xyn(i) = x(nrint(i),2)
      	enddo
 
-c
-c .... Finding corresponding elements and local coordinates
-c      on recycle plane for every arc with radius from nrint
-c
+!
+! .... Finding corresponding elements and local coordinates
+!      on recycle plane for every arc with radius from nrint
+!
        s = (zmax - zmin) / ds
        allocate (xsinfin(nfint,s+1,nsd))
        allocate (elcnfin(nfint,s+1))
@@ -318,8 +290,8 @@ c
           xts1 = x(nrint(jj),1) + plandist
           xts2 = x(nrint(jj),2) 
           xts3 = x(nrint(jj),3) 
-	  call elem_search(xintl, xts1, xts2, xts3,
-     &		           xtmp(:), etmp, 1)
+	  call elem_search(xintl, xts1, xts2, xts3, &
+      		           xtmp(:), etmp, 1)
      	  xsinfin(jj,1,:) = xtmp(:)
 	  elcnfin(jj,1) = etmp
 	  imax(jj) = s
@@ -327,8 +299,8 @@ c
 	    xts1 = x(nrint(jj),1) + plandist
 	    xts2 = x(nrint(jj),2) 
 	    xts3 = x(nrint(jj),3) + i*ds
-	    call elem_search(xintl, xts1, xts2, xts3,
-     &		             xtmp(:), etmp, 1)
+	    call elem_search(xintl, xts1, xts2, xts3, &
+      		             xtmp(:), etmp, 1)
      	    xsinfin(jj,1+i,:) = xtmp(:)
 	    elcnfin(jj,1+i) = etmp
           enddo

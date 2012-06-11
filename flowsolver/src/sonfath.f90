@@ -1,51 +1,15 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-      subroutine sonfath (ncorp, vnumnpl, ifath, nsons, tfath, 
-     &                    numpe, numnp,   maxnode)
+      subroutine sonfath (ncorp, vnumnpl, ifath, nsons, tfath,  &
+                          numpe, numnp,   maxnode)
 
-c     This program writes to geom.dat.<1..numpe> the number sons and
-c     fathers required for averaging in the z-direction (Turbulent 
-c     Boundary Layer), (x,y)-space (Turbulent Channel Flow), 
-c     or (x,y,z)-space (Isotropic Turbulence)
+!     This program writes to geom.dat.<1..numpe> the number sons and
+!     fathers required for averaging in the z-direction (Turbulent 
+!     Boundary Layer), (x,y)-space (Turbulent Channel Flow), 
+!     or (x,y,z)-space (Isotropic Turbulence)
 
-      integer inform,n1m,n2m,n3m,numpe,numpe1,numnp,maxnode, tfath,
-     &     counter,nc8,nc4,node,ifil,itmp
-      integer gfath(0:numnp),ifath(numpe,maxnode),ncorp(numpe,maxnode),
-     &     nsons(tfath),dummy(numnp),iper(numnp), vnumnpl(numpe)
+      integer inform,n1m,n2m,n3m,numpe,numpe1,numnp,maxnode, tfath, &
+           counter,nc8,nc4,node,ifil,itmp
+      integer gfath(0:numnp),ifath(numpe,maxnode),ncorp(numpe,maxnode), &
+           nsons(tfath),dummy(numnp),iper(numnp), vnumnpl(numpe)
       integer, allocatable :: imap(:),invmap(:)
       allocate (imap(numnp))
       allocate (invmap(numnp))
@@ -58,9 +22,9 @@ c     or (x,y,z)-space (Isotropic Turbulence)
       write(*,*)'fully local model 5'
       read(*,*)inform
 
-c
-c.... read and generate map
-c      
+!
+!.... read and generate map
+!      
       kmap = 15
 
       open(kmap,file='geom.kmap',status='old',err=183)
@@ -152,8 +116,8 @@ c
 
       if( inform.eq.3 )then !For averaging over X-Y-Z   
 
-         open (unit=96,FILE='geom.iper',form='unformatted',
-     &        status='old')
+         open (unit=96,FILE='geom.iper',form='unformatted', &
+              status='old')
          read(96) (iper(l),l=1,numnp)
          close(96)
 

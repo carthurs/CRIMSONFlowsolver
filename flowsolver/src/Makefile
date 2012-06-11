@@ -2,9 +2,9 @@ TOP = ../..
 
 include $(TOP)/buildoptions.mk
 
-CFLAGS = $(GLOBAL_CFLAGS) $(MPI_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(SOLVERIO_INCDIR)
-CXXFLAGS  = $(GLOBAL_CXXFLAGS) $(MPI_INCDIR) $(METIS_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(SOLVERIO_INCDIR)
-FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR)
+CFLAGS = $(GLOBAL_CFLAGS) $(MPI_INCDIR) $(METIS_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(SOLVERIO_INCDIR)
+CXXFLAGS  = $(GLOBAL_CXXFLAGS) $(MPI_INCDIR) $(METIS_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(SOLVERIO_INCDIR) $(VTK_INCDIR)
+FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR) $(METIS_INCDIR)
 
 # required link flag because of leslib 1.4
 #CXXFLAGS += /MT
@@ -12,77 +12,72 @@ FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR)
 #FFLAGS += /MT
 #CXX_LIBS = libcmt.lib libcpmt.lib
 
-HDRS  =   Input.h ValType.h auxmpi.h common.h \
-          common_c.h topo_shapedefs.h usr.h \
-          vec_func.h \
-          shapeFuncInternals.h \
+HDRS  =   CInput.h \
+          common_c.h input.h itrdrv.h \
+          partition.h phSolver.h proces.h SCField.h \
+          shapeFuncInternals.h solverFields.h topo_shapedefs.h\
+          usr.h ValType.h
 
-CXXSRCS = Cinput.cxx ValType.cxx input_fform.cxx \
-          newshape.cxx partition.cxx phasta.cxx \
-          TriShapeAndDrv.cxx \
+CXXSRCS = Cinput.cxx \
+          newshape.cxx partition.cxx \
+          phSolver.cxx SCField.cxx ValType.cxx
 
-CSRCS   = GaussLegendre1D.c GaussLegendreSimplex.c \
-          flush.c getIntPnts.c getSol.c gltri.c \
-          lestools.c main.c missing_win32.c new_interface.c \
-          shp6w.c shphex.c shppyr.c shptet.c symhex.c \
-          sympyr.c symquad.c symquadw.c symtet.c symtri.c \
-          symtripyr.c symwdg.c tmrc.c usr.c write_hessian.c \
-          Bn.c BnDrv.c En.c EnDrv.c Fn.c \
-          FnDrv.c Lagrange.c blend.c \
-          blendDrv.c modeShape.c \
-          modeShapeDrv.c parDrv.c \
-          uniformP.c \
-          rand.c
+CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
+          Fn.c FnDrv.c getIntPnts.c lestools.c modeShape.c \
+          modeShapeDrv.c new_interface.c parDrv.c shp6w.c shphex.c shppyr.c \
+          shptet.c shptri.c symhex.c symline.c sympyr.c symquad.c symquadw.c \
+          symtet.c symtri.c symtripyr.c symwdg.c tmrc.c uniformP.c usr.c write_hessian.c
 
-FSRCS   = spebc.f pointer.f \
-          turbsa.f \
-          perprep.f local_mass.f \
-          filtprep.f  pvsqbi.f \
-          dtn.f bardmc.f \
-          timedata.f \
-          turbke.f \
-          bctint.f readnblk.f \
-          distmeas.f \
-          vlmwsttri.f \
-          asadj.f asbnabi.f asbwmod.f asithf.f aveprep.f \
-          blkdta.f clear.f cmass.f cname.f commu.f ctypes.f \
-          e3metric.f elem-search.f elm3keps.f eqn_plane.f error.f \
-          f3lhs.f fillsparse.f genadj.f genbc.f genbc1.f \
-          genbkb.f genblk.f gendat.f genibc.f genini.f genint.f \
-          gensav.f genscale.f genshp.f genshpb.f gensvb.f gensvbDef.f \
-          get_a_not_hex.f \
-          get_coeff.f getdmc.f getstrl.f gettab.f getvel.f gtnods.f \
-          hierarchic.f input.f local.f localy.f lubksb.f \
-          ludcmp.f mpiset.f mpitools.f mpoint.f \
-          proces.f qpbc.f renum.f rerun_check.f \
-          restar.f rotabc.f rwvelb.f scatnu.f settauw.f shp10t.f \
-          shp4t.f solvecon.f sonfath.f timeseries.f \
-          stats.f \
-          advLES.f asbflx.f asbmfg.f asigmr.f asiq.f bc3diag.f \
-          bc3global.f bc3lhs.f bc3per.f bc3res.f bflux.f \
-          e3.f e3b.f e3bvar.f e3dc.f e3ivar.f e3lhs.f e3q.f e3ql.f \
-          e3qvar.f e3res.f e3source.f e3stab.f e3sts.f elmStats.f \
-          elmgmr.f errsmooth.f filters.f forces.f ftools.f genlmass.f \
-          getdiff.f getfld.f hessian.f iclear.f itrPC.f itrbc.f \
-          itrdrv.f lesSparse.f rstatic.f soldir.f solfar.f \
-          ramg_driver.f \
-          elmdist.f 
+FSRCS   = common.f90 spebc.f90 pointer.f90 globalArrays.f90 shapeTable.f90\
+          turbsa.f90 \
+          perprep.f90 local_mass.f90 \
+          filtprep.f90  pvsqbi.f90 \
+          dtn.f90 bardmc.f90 \
+          timedata.f90 \
+          turbke.f90 \
+          bctint.f90 readnblk.f90 \
+          distmeas.f90 \
+          vlmwsttri.f90 \
+          stats.f90 \
+          cmass.f90 \
+          itrdrv.f90 \
+          advLES.f90 asadj.f90 asbflx.f90 asbmfg.f90 asbnabi.f90 asbwmod.f90 asigmr.f90 \
+          asiq.f90 asithf.f90 aveprep.f90 bc3diag.f90 bc3global.f90 bc3lhs.f90 bc3per.f90 \
+          bc3res.f90 bctcardio.f90 bflux.f90 clear.f90 cname.f90 commu.f90 ctypes.f90 \
+          e3.f90 e3b.f90 e3bvar.f90 e3dc.f90 e3ivar.f90 e3lhs.f90 e3metric.f90 e3q.f90 e3ql.f90 \
+          e3qvar.f90 e3res.f90 e3source.f90 e3stab.f90 e3sts.f90 elem-search.f90 elm3keps.f90 \
+          elmdist.f90 elmgmr.f90 elmStats.f90 eqn_plane.f90 error.f90 errsmooth.f90 f3lhs.f90 \
+          fillsparse.f90 filters.f90 forces.f90 ftools.f90 genadj.f90 genbc.f90 genbc1.f90 genbkb.f90 \
+          genblk.f90 gendat.f90 genibc.f90 genini.f90 genint.f90 genlmass.f90 gensav.f90 genscale.f90 genshp.f90 \
+          genshpb.f90 gensvb.f90 gensvbDef.f90 get_a_not_hex.f90 get_coeff.f90 getdiff.f90 getdmc.f90 \
+          getfld.f90 getstrl.f90 gettab.f90 getvel.f90 gtnods.f90 hessian.f90 hierarchic.f90 iclear.f90 \
+          input.f90 itrbc.f90 itrPC.f90 lesSparse.f90 local.f90 localy.f90 lubksb.f90 ludcmp.f90 \
+          mpiset.f90 mpitools.f90 mpoint.f90 proces.f90 qpbc.f90 ramg_driver.f90 renum.f90 restar.f90 \
+          rotabc.f90 rstatic.f90 rwvelb.f90 scatnu.f90 settauw.f90 shp10t.f90 shp4t.f90 solfar.f90 \
+          solvecon.f90 sonfath.f90 timeseries.f90 \
+          estimation_helpers.f90
 
 SRCS  = $(FSRCS) $(CSRCS) $(CXXSRCS)
 
-OBJS  = $(FSRCS:.f=.$(OBJECTEXT)) $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
+OBJS  = $(FSRCS:.f90=.$(OBJECTEXT)) $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
 
-$(TARGET_FLOWSOLVER): $(OBJS)
-	$(LINK_EXE)$(TARGET_FLOWSOLVER) $(GLOBAL_LFLAGS) \
-						 $(OBJS) $(METIS_LIBS) \
-						 $(LESLIB_LIBS) \
-						 $(MPI_LIBS) \
-						 $(F90_LIBS) \
-						 $(CXX_LIBS) \
-						 $(TOP)/lib/lib_simvascular_solverio.$(STATICEXT)
-	mv $(TARGET_FLOWSOLVER) $(TOP)/bin
+#$(TARGET_FLOWSOLVER): $(OBJS)
+#	$(LINK_EXE)$(TARGET_FLOWSOLVER) $(GLOBAL_LFLAGS) \
+#						 $(OBJS) $(METIS_LIBS) \
+#						 $(LESLIB_LIBS) \
+#						 $(MPI_LIBS) \
+#						 $(F90_LIBS) \
+#						 $(CXX_LIBS) \
+#						 $(TOP)/lib/lib_simvascular_solverio.$(STATICEXT)
+#	mv $(TARGET_FLOWSOLVER) $(TOP)/bin
+	
+TARGET_FLOWSOLVERLIB = libsimvascular_flowsolver.$(STATICEXT)
+	
+$(TOP)/lib/$(TARGET_FLOWSOLVERLIB) : $(OBJS)
+	$(AR)$(TARGET_FLOWSOLVERLIB) $(OBJS)
+	mv $(TARGET_FLOWSOLVERLIB) $(TOP)/lib	
 
 .PHONY : clean
 clean : 
-	-$(RM) $(OBJS) $(TARGET_FLOWSOLVER) *.mod *.exe *.pdb *.manifest
-	-$(RM) $(TOP)/bin/$(TARGET_FLOWSOLVER) $(TOP)/bin/$(TARGET_FLOWSOLVER).manifest
+	-$(RM) $(OBJS) $(TARGET_FLOWSOLVERLIB) *.mod *.exe *.pdb *.manifest
+	-$(RM) $(TOP)/lib/$(TARGET_FLOWSOLVERLIB) 

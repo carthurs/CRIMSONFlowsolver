@@ -2,104 +2,104 @@
       
       implicit none
      
-c     AABB tree child   
+!     AABB tree child   
       type AABB
-c       bounding box xyz coordinates      
+!       bounding box xyz coordinates      
         real*8, dimension(3) :: bmin,bmax
         
-c       maximum radius in this AABB
+!       maximum radius in this AABB
         real*8 maxr
         
-c       number of triangles in this AABB
+!       number of triangles in this AABB
         integer nTris
         
-c       number of children in subtree of this AABB
+!       number of children in subtree of this AABB
         integer nChild
 
-c       array of triangle indices        
+!       array of triangle indices        
         integer, dimension(:), allocatable :: tris
         
-c       array of child indices        
+!       array of child indices        
         integer, dimension(:), allocatable :: child
       end type AABB
       
-c     one level of the octree      
+!     one level of the octree      
       type AABBlevel
         type(AABB), dimension(:), allocatable :: bb
       end type AABBlevel
 
-c     define structure for a single data frame      
+!     define structure for a single data frame      
       type dataframe
       
         integer :: nPoints,nTris,nEdges
         
-c       xyz coordinates of triangle vertices        
+!       xyz coordinates of triangle vertices        
         real*8, dimension(:,:), allocatable :: coords
         
-c       pseudonormals for points (see Baerentzen et al)        
+!       pseudonormals for points (see Baerentzen et al)        
         real*8, dimension(:,:), allocatable :: pntNrmls
         
-c       face normals        
+!       face normals        
         real*8, dimension(:,:), allocatable :: faceNrmls
         
-c       pseudonormals for edges        
+!       pseudonormals for edges        
         real*8, dimension(:,:,:), allocatable :: edgeNrmls
         
-c       array of triangle connectivity        
+!       array of triangle connectivity        
         integer, dimension(:,:), allocatable :: tris
         
-c       triangle bounding spheres center and radius        
+!       triangle bounding spheres center and radius        
         real*8, dimension(:,:), allocatable :: sphc
         real*8, dimension(:), allocatable :: sphr
         
-c       arrays to represent queue of AABB or triangles
-c       key array
+!       arrays to represent queue of AABB or triangles
+!       key array
         real*8, dimension(:), allocatable :: qA
-c       index, array       
+!       index, array       
         integer, dimension(:), allocatable :: qI
          
-c       array of AABBs to check
+!       array of AABBs to check
         integer, dimension(:), allocatable :: toChBB
         
-c       array of triangles to check        
+!       array of triangles to check        
         integer, dimension(:), allocatable :: toChTri
                 
-c       AABBs        
+!       AABBs        
         type(AABBlevel), dimension(:), allocatable :: octree
                 
-c       number of AABBs per level of the tree                
+!       number of AABBs per level of the tree                
         integer, dimension(:), allocatable :: nPerLev
         integer, dimension(:), allocatable :: nPerLevG
         
-c       how many levels in octree
+!       how many levels in octree
         integer nLev       
         
-c       size of queues
+!       size of queues
         integer qSize         
                 
       end type dataframe
       
-c     data structure for multiple data frames      
+!     data structure for multiple data frames      
       type(dataframe), dimension(:), allocatable, target :: dtfrs
       
-c     the total number of data frames      
+!     the total number of data frames      
       integer numDataFrames
       
-c     length of the cardiac cycle      
+!     length of the cardiac cycle      
       real*8 cycleLength
       
       contains
       
-C /////////////////////////////////////////////////////////////////////////
-C  initialization function
-C /////////////////////////////////////////////////////////////////////////             
+! /////////////////////////////////////////////////////////////////////////
+!  initialization function
+! /////////////////////////////////////////////////////////////////////////             
 
-C -------------------------------------------      
-C -------------------------------------------
-C subroutine dm_initialize
-C load data and make octrees 
-C -------------------------------------------
-C -------------------------------------------     
+! -------------------------------------------      
+! -------------------------------------------
+! subroutine dm_initialize
+! load data and make octrees 
+! -------------------------------------------
+! -------------------------------------------     
 
       subroutine dm_initialize()
       
@@ -115,23 +115,23 @@ C -------------------------------------------
       end subroutine
 
       
-C /////////////////////////////////////////////////////////////////////////
-C  functions dealing with one vector in R-3 and a triangular mesh
-C /////////////////////////////////////////////////////////////////////////       
+! /////////////////////////////////////////////////////////////////////////
+!  functions dealing with one vector in R-3 and a triangular mesh
+! /////////////////////////////////////////////////////////////////////////       
       
-C -------------------------------------------      
-C -------------------------------------------
-C subroutine dm_cpmeshp3
-C Find a closest point on the triangular mesh
-C to the specified closestpnt.  
-C Compute the signed distance from 
-C the specified point to a closest point on mesh.
-C Only called after mesh is loaded.
-C Uses octree with bounding spheres
-C Only returns one of possibly many closest points
-C since we are only interested in distance
-C -------------------------------------------
-C -------------------------------------------     
+! -------------------------------------------      
+! -------------------------------------------
+! subroutine dm_cpmeshp3
+! Find a closest point on the triangular mesh
+! to the specified closestpnt.  
+! Compute the signed distance from 
+! the specified point to a closest point on mesh.
+! Only called after mesh is loaded.
+! Uses octree with bounding spheres
+! Only returns one of possibly many closest points
+! since we are only interested in distance
+! -------------------------------------------
+! -------------------------------------------     
 
         subroutine dm_cpmeshp3(currFr,p,closestpnt,distanceSq,nv)    
 
@@ -140,17 +140,17 @@ C -------------------------------------------
         real*8, dimension(3) :: closestpnt,nv 
         real*8 distanceSq   
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      currFr : current frame number
-C      p : the reference closestpnt
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      currFr : current frame number
+!      p : the reference closestpnt
 
-C OUTPUTS
-C      closestpnt : a closest point
-C      distanceSq: distance^2 to a closest point on mesh to p
-C      nv : normal to the surface at the closest point
-C -------------------------------------------           
+! OUTPUTS
+!      closestpnt : a closest point
+!      distanceSq: distance^2 to a closest point on mesh to p
+!      nv : normal to the surface at the closest point
+! -------------------------------------------           
 
         integer ii,jj,kk,mm ! counters 
         
@@ -166,68 +166,68 @@ C -------------------------------------------
         
         nLev=>dtfrs(currFr)%nLev ! pointers for easier syntax
         
-c       initialize the checking array of AABB indices
+!       initialize the checking array of AABB indices
         nCheck = 8
         
         do kk=1,nCheck
           dtfrs(currFr)%toChBB(kk)=kk
         end do
         
-c       start at the uppermost level of the tree
-c       compute upper and lower bounds based on distances to the AABB
+!       start at the uppermost level of the tree
+!       compute upper and lower bounds based on distances to the AABB
         do kk=2,nLev-1
 
-c         pointer to the first BB          
+!         pointer to the first BB          
           AABBcurr=>dtfrs(currFr)%octree(1)%bb(1)
         
-c         initialize the bounds
+!         initialize the bounds
           call fpaabb(p,AABBcurr,ub)
           lb = ub+AABBcurr%maxr
           ub = ub+100
           
-c         reset priority queue
+!         reset priority queue
           qBack = 0          
            
-c         insert the first BB in the priority queue           
-          call pqInsert(dtfrs(currFr)%qI,
-     &                  dtfrs(currFr)%qA,
-     &                  qBack,
-     &                  1,lb)          
+!         insert the first BB in the priority queue           
+          call pqInsert(dtfrs(currFr)%qI, &
+                        dtfrs(currFr)%qA, &
+                        qBack, &
+                        1,lb)          
           
-c         loop through all the BBs to check on this level                   
+!         loop through all the BBs to check on this level                   
           do jj=1,nCheck
           
-c           get index of next BB to check          
+!           get index of next BB to check          
             mm = dtfrs(currFr)%toChBB(jj)
             
-c           pointer to the BB            
+!           pointer to the BB            
             AABBcurr=>dtfrs(currFr)%octree(kk)%bb(mm)
 
-c           obtain the nearest and farthest possible distance to any point
-c           in the AABB
+!           obtain the nearest and farthest possible distance to any point
+!           in the AABB
             call cpaabb(p,AABBcurr,tlb)
             call fpaabb(p,AABBcurr,tub)
             
-c           add the maximum radius inside the AABB          
+!           add the maximum radius inside the AABB          
             tlb = tlb-AABBcurr%maxr
             tub = tub+AABBcurr%maxr
                         
-c           prune the AABBs that are too far away
+!           prune the AABBs that are too far away
             do while(dtfrs(currFr)%qA(1) .ge. ub)
-              call pqRemoveMax(dtfrs(currFr)%qI,
-     &                         dtfrs(currFr)%qA,
-     &                         qBack)
+              call pqRemoveMax(dtfrs(currFr)%qI, &
+                               dtfrs(currFr)%qA, &
+                               qBack)
             end do
 
             if (tlb .lt. ub) then   
 
-c             add AABB to the queue  
-              call pqInsert(dtfrs(currFr)%qI,
-     &                      dtfrs(currFr)%qA,
-     &                      qBack,
-     &                      mm,tlb)   
+!             add AABB to the queue  
+              call pqInsert(dtfrs(currFr)%qI, &
+                            dtfrs(currFr)%qA, &
+                            qBack, &
+                            mm,tlb)   
 
-c             update the bounds if they become smaller
+!             update the bounds if they become smaller
               if (tlb .lt. lb) then              
                 lb = tlb 
               end if
@@ -239,13 +239,13 @@ c             update the bounds if they become smaller
 
           end do
                     
-c         copy the BB children indices in the queue to the 
-c         array of BBs to check
+!         copy the BB children indices in the queue to the 
+!         array of BBs to check
           nCheck = 0
 
           do jj=1,qBack
-            AABBcurr=>
-     &        dtfrs(currFr)%octree(kk)%bb(dtfrs(currFr)%qI(jj))
+            AABBcurr=> &
+              dtfrs(currFr)%octree(kk)%bb(dtfrs(currFr)%qI(jj))
      
             do ii=1,AABBcurr%nChild
               nCheck = nCheck + 1
@@ -256,13 +256,13 @@ c         array of BBs to check
           
         end do
                           
-c       copy the triangle indices contained in the leftover BBs
+!       copy the triangle indices contained in the leftover BBs
         nCheckTri = 0
         
         do kk=1,nCheck
         
-          AABBcurr=>
-     &      dtfrs(currFr)%octree(nLev)%bb(dtfrs(currFr)%toChBB(kk))
+          AABBcurr=> &
+            dtfrs(currFr)%octree(nLev)%bb(dtfrs(currFr)%toChBB(kk))
      
           do jj=1,AABBcurr%nTris
             nCheckTri = nCheckTri + 1
@@ -271,27 +271,27 @@ c       copy the triangle indices contained in the leftover BBs
 
         end do
         
-c        write(*,*) dtfrs(currFr)%toCheck(1:nCheckTri)
+!        write(*,*) dtfrs(currFr)%toCheck(1:nCheckTri)
       
-        call cpmeshpSph(currFr,
-     &                  dtfrs(currFr)%toChTri(1:nCheckTri),nCheckTri,
-     &                  p,closestpnt,distanceSq,nv)
+        call cpmeshpSph(currFr, &
+                        dtfrs(currFr)%toChTri(1:nCheckTri),nCheckTri, &
+                        p,closestpnt,distanceSq,nv)
 
         end subroutine
 
-C -------------------------------------------      
-C -------------------------------------------
-C subroutine cpmeshpSph
-C Find a closest point on the triangular mesh
-C to the specified closestpnt.  
-C Compute the signed distance from 
-C the specified point to a closest point on mesh.
-C Only called after mesh is loaded.
-C Uses brute force with bounding spheres
-C Only returns one of possibly many closest points
-C since we are only interested in distance
-C -------------------------------------------
-C -------------------------------------------     
+! -------------------------------------------      
+! -------------------------------------------
+! subroutine cpmeshpSph
+! Find a closest point on the triangular mesh
+! to the specified closestpnt.  
+! Compute the signed distance from 
+! the specified point to a closest point on mesh.
+! Only called after mesh is loaded.
+! Uses brute force with bounding spheres
+! Only returns one of possibly many closest points
+! since we are only interested in distance
+! -------------------------------------------
+! -------------------------------------------     
 
         subroutine dm_cpmeshp2(currFr,p,closestpnt,distanceSq,nv) 
         
@@ -300,16 +300,16 @@ C -------------------------------------------
         real*8, dimension(3) :: closestpnt,nv
         real*8 distanceSq   
 
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      currFr : current frame number
-C      p : the reference closestpnt
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      currFr : current frame number
+!      p : the reference closestpnt
 
-C OUTPUTS
-C      closestpnt : a closest point
-C      distanceSq: distance^2 to a closest point on mesh to p
-C -------------------------------------------
+! OUTPUTS
+!      closestpnt : a closest point
+!      distanceSq: distance^2 to a closest point on mesh to p
+! -------------------------------------------
 
         integer kk
        
@@ -317,29 +317,29 @@ C -------------------------------------------
          dtfrs(currFr)%toChTri(kk)=kk
         end do
 
-        call cpmeshpSph(currFr,
-     &                  dtfrs(currFr)%toChTri,
-     &                  dtfrs(currFr)%nTris,
-     &                  p,closestpnt,distanceSq,nv)
+        call cpmeshpSph(currFr, &
+                        dtfrs(currFr)%toChTri, &
+                        dtfrs(currFr)%nTris, &
+                        p,closestpnt,distanceSq,nv)
      
         end subroutine  
 
-C -------------------------------------------      
-C -------------------------------------------
-C subroutine cpmeshpSph
-C Find a closest point on the triangular mesh
-C to the specified closestpnt.  
-C Compute the signed distance from 
-C the specified point to a closest point on mesh.
-C Only called after mesh is loaded.
-C Uses brute force with bounding spheres
-C Only returns one of possibly many closest points
-C since we are only interested in distance
-C -------------------------------------------
-C -------------------------------------------   
+! -------------------------------------------      
+! -------------------------------------------
+! subroutine cpmeshpSph
+! Find a closest point on the triangular mesh
+! to the specified closestpnt.  
+! Compute the signed distance from 
+! the specified point to a closest point on mesh.
+! Only called after mesh is loaded.
+! Uses brute force with bounding spheres
+! Only returns one of possibly many closest points
+! since we are only interested in distance
+! -------------------------------------------
+! -------------------------------------------   
 
-        subroutine cpmeshpSph(currFr,toCheck,nCheck,
-     &                        p,closestpnt,distanceSq,nv) 
+        subroutine cpmeshpSph(currFr,toCheck,nCheck, &
+                              p,closestpnt,distanceSq,nv) 
         
         integer currFr 
         real*8, dimension(3) :: p   
@@ -348,19 +348,19 @@ C -------------------------------------------
         integer nCheck  
         real*8 distanceSq   
 
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      currFr : current frame number
-C      p : the reference closestpnt
-C      toCheck : array of triangles to check
-C      nCheck : number of triangles to check
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      currFr : current frame number
+!      p : the reference closestpnt
+!      toCheck : array of triangles to check
+!      nCheck : number of triangles to check
 
-C OUTPUTS
-C      closestpnt : a closest point
-C      distanceSq: distance^2 to a closest point on mesh to p
-C      nv : normal to the surface at the closest point
-C -------------------------------------------
+! OUTPUTS
+!      closestpnt : a closest point
+!      distanceSq: distance^2 to a closest point on mesh to p
+!      nv : normal to the surface at the closest point
+! -------------------------------------------
 
         real*8 currDist ! current distance
         real*8, dimension(3) :: currCP,rayToRef
@@ -375,51 +375,51 @@ C -------------------------------------------
         
         qBack = 0
 
-c       initially the index of triangle to be checked carefully is
-c       going to be the first triangle in the sequence                
+!       initially the index of triangle to be checked carefully is
+!       going to be the first triangle in the sequence                
         jj=dtfrs(currFr)%toChTri(1)
             
-c       get the initial smallest lower and upper bounds  
-        ub = sqrt(dot_product(p-dtfrs(currFr)%sphc(:,jj),
-     &                        p-dtfrs(currFr)%sphc(:,jj)))      
-     &       +dtfrs(currFr)%sphr(jj)
+!       get the initial smallest lower and upper bounds  
+        ub = sqrt(dot_product(p-dtfrs(currFr)%sphc(:,jj), &
+                              p-dtfrs(currFr)%sphc(:,jj))) &     
+             +dtfrs(currFr)%sphr(jj)
         lb = ub-2*dtfrs(currFr)%sphr(jj)
         
-c       store the lower bound for this triangle
-c       in the priority queue
-        call pqInsert(dtfrs(currFr)%qI,
-     &                dtfrs(currFr)%qA,
-     &                qBack,
-     &                jj,lb)
+!       store the lower bound for this triangle
+!       in the priority queue
+        call pqInsert(dtfrs(currFr)%qI, &
+                      dtfrs(currFr)%qA, &
+                      qBack, &
+                      jj,lb)
         
-c       loop through the triangles
+!       loop through the triangles
         do jj=2,nCheck
         
           kk = dtfrs(currFr)%toChTri(jj)
 
-c         compute lower and upper bounds for current triangle
-          tub =sqrt(dot_product(p-dtfrs(currFr)%sphc(:,kk),
-     &                          p-dtfrs(currFr)%sphc(:,kk)))
-     &         +dtfrs(currFr)%sphr(kk)
+!         compute lower and upper bounds for current triangle
+          tub =sqrt(dot_product(p-dtfrs(currFr)%sphc(:,kk), &
+                                p-dtfrs(currFr)%sphc(:,kk))) &
+               +dtfrs(currFr)%sphr(kk)
           
           tlb = tub-2*dtfrs(currFr)%sphr(kk)
           
-c         prune triangles from queue that we know are too far away    
+!         prune triangles from queue that we know are too far away    
           do while(dtfrs(currFr)%qA(1) .ge. ub)
-            call pqRemoveMax(dtfrs(currFr)%qI,
-     &                       dtfrs(currFr)%qA,
-     &                       qBack)
+            call pqRemoveMax(dtfrs(currFr)%qI, &
+                             dtfrs(currFr)%qA, &
+                             qBack)
           end do
           
-c         if current lower bound is lower than established upper bound         
+!         if current lower bound is lower than established upper bound         
           if (tlb .lt. ub) then
   
-c           add triangle to the queue  
-            call pqInsert(dtfrs(currFr)%qI,
-     &                    dtfrs(currFr)%qA,qBack,
-     &                    kk,tlb)
+!           add triangle to the queue  
+            call pqInsert(dtfrs(currFr)%qI, &
+                          dtfrs(currFr)%qA,qBack, &
+                          kk,tlb)
          
-c           update bounds     
+!           update bounds     
             if (tlb .lt. lb) then              
               lb = tlb ! update smallest lower bound
             end if
@@ -435,25 +435,25 @@ c           update bounds
 !        write(*,*) dtfrs(currFr)%qI(1:qBack)
 !        write(*,*) dtfrs(currFr)%qA(1:qBack)
         
-c       loop through the triangles to check
-        call cpmeshp(currFr,dtfrs(currFr)%qI(1:qBack),qBack,
-     &               p,closestpnt,distanceSq,nv)
+!      loop through the triangles to check
+        call cpmeshp(currFr,dtfrs(currFr)%qI(1:qBack),qBack, &
+                     p,closestpnt,distanceSq,nv)
         
         end subroutine 
         
-C -------------------------------------------        
-C -------------------------------------------
-C subroutine cpmeshp1
-C Find a closest point on the triangular mesh
-C to the specified closestpnt.  
-C Compute the signed distance from 
-C the specified point to a closest point on mesh.
-C Only called after mesh is loaded.
-C Uses naive brute-force search.
-C Only returns one of possibly many closest points
-C since we are only interested in distance
-C -------------------------------------------
-C -------------------------------------------     
+! -------------------------------------------        
+! -------------------------------------------
+! subroutine cpmeshp1
+! Find a closest point on the triangular mesh
+! to the specified closestpnt.  
+! Compute the signed distance from 
+! the specified point to a closest point on mesh.
+! Only called after mesh is loaded.
+! Uses naive brute-force search.
+! Only returns one of possibly many closest points
+! since we are only interested in distance
+! -------------------------------------------
+! -------------------------------------------     
 
         subroutine dm_cpmeshp1(currFr,p,closestpnt,distanceSq,nv) 
         
@@ -462,17 +462,17 @@ C -------------------------------------------
         real*8, dimension(3) :: closestpnt,nv
         real*8 distanceSq 
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      currFr : current frame number
-C      p : the reference closestpnt
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      currFr : current frame number
+!      p : the reference closestpnt
 
-C OUTPUTS
-C      closestpnt : a closest point
-C      distanceSq: distance^2 to a closest point on mesh to p
-C      nv : normal to the surface at the closest point
-C -------------------------------------------   
+! OUTPUTS
+!      closestpnt : a closest point
+!      distanceSq: distance^2 to a closest point on mesh to p
+!      nv : normal to the surface at the closest point
+! -------------------------------------------   
 
        integer kk
        
@@ -480,30 +480,30 @@ C -------------------------------------------
          dtfrs(currFr)%toChTri(kk)=kk
        end do
 
-       call cpmeshp(currFr,
-     &              dtfrs(currFr)%toChTri,
-     &              dtfrs(currFr)%nTris,
-     &              p,closestpnt,distanceSq,nv)
+       call cpmeshp(currFr, &
+                    dtfrs(currFr)%toChTri, &
+                    dtfrs(currFr)%nTris, &
+                    p,closestpnt,distanceSq,nv)
           
        end subroutine
         
-C -------------------------------------------        
-C -------------------------------------------
-C subroutine cpmeshp
-C Find a closest point on the triangular mesh
-C to the specified closestpnt.  
-C Compute the signed distance from 
-C the specified point to a closest point on mesh.
-C Only called after mesh is loaded.
-C Uses naive brute-force search.
-C Specify the triangles to check.
-C Only returns one of possibly many closest points
-C since we are only interested in distance
-C -------------------------------------------
-C -------------------------------------------     
+! -------------------------------------------        
+! -------------------------------------------
+! subroutine cpmeshp
+! Find a closest point on the triangular mesh
+! to the specified closestpnt.  
+! Compute the signed distance from 
+! the specified point to a closest point on mesh.
+! Only called after mesh is loaded.
+! Uses naive brute-force search.
+! Specify the triangles to check.
+! Only returns one of possibly many closest points
+! since we are only interested in distance
+! -------------------------------------------
+! -------------------------------------------     
 
-        subroutine cpmeshp(currFr,toCheck,nCheck,
-     &                     p,closestpnt,distanceSq,nv) 
+        subroutine cpmeshp(currFr,toCheck,nCheck, &
+                           p,closestpnt,distanceSq,nv) 
         
         integer currFr 
         real*8, dimension(3) :: p   
@@ -512,19 +512,19 @@ C -------------------------------------------
         integer nCheck 
         real*8 distanceSq 
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      currFr : current frame number
-C      p : the reference closestpnt
-C      toCheck : array of triangles to check
-C      nCheck : number of triangles to check
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      currFr : current frame number
+!      p : the reference closestpnt
+!      toCheck : array of triangles to check
+!      nCheck : number of triangles to check
 
-C OUTPUTS
-C      closestpnt : a closest point
-C      distanceSq: distance^2 to a closest point on mesh to p
-C      nv : normal to the surface at the closest point
-C -------------------------------------------
+! OUTPUTS
+!      closestpnt : a closest point
+!      distanceSq: distance^2 to a closest point on mesh to p
+!      nv : normal to the surface at the closest point
+! -------------------------------------------
 
         real*8 currDist ! current distance
         real*8, dimension(3) :: currCP,rayToRef
@@ -532,23 +532,23 @@ C -------------------------------------------
           
         integer jj,kk ! counters
           
-c       loop through the triangles
+!       loop through the triangles
         do jj=1,nCheck        
            
           kk = toCheck(jj)
         
-          call cptrip(p,
-     &           dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(1,kk)),
-     &           dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(2,kk)),
-     &           dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(3,kk)),
-     &           currCP,loc)
+          call cptrip(p, &
+                 dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(1,kk)), &
+                 dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(2,kk)), &
+                 dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(3,kk)), &
+                 currCP,loc)
      
           rayToRef = p-currCP;
     
-c         compute distance
+!         compute distance
           currDist = sum(rayToRef**2,1)
             
-c         determine which normal vector to use
+!         determine which normal vector to use
           select case(loc)     
           case(1)
             nv = dtfrs(currFr)%pntNrmls(:,dtfrs(currFr)%tris(1,kk))
@@ -567,43 +567,43 @@ c         determine which normal vector to use
           case default
           end select
             
-c         determine the sign of the distance
+!         determine the sign of the distance
           currDist = sign(currDist,dot_product(rayToRef,nv))
      
-c         update distance and closest point     
+!         update distance and closest point     
           if (abs(currDist) .lt. abs(distanceSq) .or. jj .eq. 1) then
             distanceSq = currDist
             closestpnt = currCP
-c            write(*,*) kk
+!            write(*,*) kk
           end if
         end do             
         
         end subroutine
         
-C /////////////////////////////////////////////////////////////////////////
-C  functions dealing with building spatial heirarchy
-C /////////////////////////////////////////////////////////////////////////          
+! /////////////////////////////////////////////////////////////////////////
+!  functions dealing with building spatial heirarchy
+! /////////////////////////////////////////////////////////////////////////          
         
-C -------------------------------------------
-C -------------------------------------------
-C subroutine makebb
-C Construct the AABB octree for the mesh
-C Assumes that triangle bounding volumes
-C have been constructed already
-C Assume at least one level of refinement
-C -------------------------------------------
-C -------------------------------------------
+! -------------------------------------------
+! -------------------------------------------
+! subroutine makebb
+! Construct the AABB octree for the mesh
+! Assumes that triangle bounding volumes
+! have been constructed already
+! Assume at least one level of refinement
+! -------------------------------------------
+! -------------------------------------------
 
         subroutine makebb(currFr,refine)
         
         integer currFr,refine
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      currFr : current frame number
-C      refine : desired level of refinement
-C -------------------------------------------        
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      currFr : current frame number
+!      refine : desired level of refinement
+! -------------------------------------------        
         
         integer ii,jj,kk
         integer parent
@@ -627,16 +627,16 @@ C -------------------------------------------
         
         type(AABB), pointer :: AABBcurr,AABBnew
                  
-c       allocate enough space                 
+!       allocate enough space                 
         allocate(dtfrs(currFr)%nPerLev(1+refine))
         allocate(dtfrs(currFr)%nPerLevG(1+refine))
         allocate(dtfrs(currFr)%octree(1+refine))
         
-c       set the box presence grid to all zeros        
+!       set the box presence grid to all zeros        
         allocate(boxHere(2**refine,2**refine,2**refine))
         boxHere = 0
         
-c       set initial array sizes at each level of the tree
+!       set initial array sizes at each level of the tree
         do kk=1,refine+1
         
           dtfrs(currFr)%nPerLev(kk) = 0
@@ -644,9 +644,9 @@ c       set initial array sizes at each level of the tree
           
         end do
         
-c       compute initial bounding box
-c       look for the maximum extent of x,y,z coordinates of the
-c       triangle bounding spheres
+!       compute initial bounding box
+!       look for the maximum extent of x,y,z coordinates of the
+!       triangle bounding spheres
         pmin = dtfrs(currFr)%sphc(:,1)
         pmax = pmin
                 
@@ -684,40 +684,40 @@ c       triangle bounding spheres
           
         end do
 
-c        write(*,*) "Bounds"        
-c        write(*,*) pmin
-c        write(*,*) pmax
-c        write(*,*) "Max radius"
-c        write(*,*) maxr
+!        write(*,*) "Bounds"        
+!        write(*,*) pmin
+!        write(*,*) pmax
+!        write(*,*) "Max radius"
+!        write(*,*) maxr
 
-c       these are the dimensions of the whole bounding volume        
+!       these are the dimensions of the whole bounding volume        
         boundDim = pmax-pmin
                 
-c       these are the dimensions of the smallest AABB        
+!       these are the dimensions of the smallest AABB        
         boxDim = boundDim / 2**refine
         
-c        write(*,*) "Box dim"
-c        write(*,*) boxDim
+!        write(*,*) "Box dim"
+!        write(*,*) boxDim
 
-c       pointers for easier access
+!       pointers for easier access
         nPerLev => dtfrs(currFr)%nPerLev(1+refine)
         nPerLevG => dtfrs(currFr)%nPerLevG(1+refine)
         
-c       allocate enough space for each level        
+!       allocate enough space for each level        
         allocate(tempLev(nPerLevG))
         allocate(dtfrs(currFr)%octree(1+refine)%bb(nPerLevG))
         
-c       define the number of levels in the tree to be one greater
-c       than the refine parameter         
+!       define the number of levels in the tree to be one greater
+!       than the refine parameter         
         dtfrs(currFr)%nLev = refine+1        
         
-c       we loop through each triangle and assign them to the correct
-c       AABB at the bottommost level        
+!       we loop through each triangle and assign them to the correct
+!       AABB at the bottommost level        
         do kk=1,dtfrs(currFr)%nTris
         
-c         get the "xyz index" of the sphere
-c         these are just integer values which will
-c         help us define the bounds for the AABB        
+!         get the "xyz index" of the sphere
+!         these are just integer values which will
+!         help us define the bounds for the AABB        
           xyzInd = ceiling((dtfrs(currFr)%sphc(:,kk)-pmin)/boxdim)
           
           do ii=1,3  
@@ -732,33 +732,33 @@ c         help us define the bounds for the AABB
             
           end do
           
-c         if no previous AABB has been made in this spatial location
-c         then we make one
+!         if no previous AABB has been made in this spatial location
+!         then we make one
           if (boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) .eq. 0) then
           
-c           compute the center of the box          
+!           compute the center of the box          
             tcent = xyzInd*boxDim-0.5*boxdim+pmin
-c           compute the bounds of the box            
+!           compute the bounds of the box            
             tmin = tcent-0.5*boxdim
             tmax = tcent+0.5*boxdim
                     
-c           increment the number of AABBs at his level
+!           increment the number of AABBs at his level
             nPerLev = nPerLev + 1
             
-c           we store the number of the new AABB            
-c           by doing this, we make sure that no other AABBs can
-c           be created at this spatial location            
+!           we store the number of the new AABB            
+!           by doing this, we make sure that no other AABBs can
+!           be created at this spatial location            
             boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) = nPerLev
               
-c            write(*,*) xyzInd  
+!            write(*,*) xyzInd  
               
-c           resize the AABB array at this level
-c           if necessary              
+!           resize the AABB array at this level
+!           if necessary              
             if (nPerLev .gt. nPerLevG) then       
               
               nPerLevG = nPerLevG + 8**(refine-1)
               
-c              write(*,*) nPerLevG
+!              write(*,*) nPerLevG
               
               if (allocated(tempLev)) then
                 deallocate(tempLev)
@@ -782,40 +782,40 @@ c              write(*,*) nPerLevG
             
             end if
                         
-c           pointer to the new box for easier access
+!           pointer to the new box for easier access
             AABBcurr=>dtfrs(currFr)%octree(1+refine)%bb(nPerLev)
             
-c           assign bounds            
+!           assign bounds            
             AABBcurr%bmin = tmin
             AABBcurr%bmax = tmax
             
-c           this AABB has a triangle count of 1            
+!           this AABB has a triangle count of 1            
             AABBcurr%nTris = 1
 
-c           since we are at the bottommost level,
-c           this AABB has no children  
+!           since we are at the bottommost level,
+!           this AABB has no children  
             AABBcurr%nChild = 0
             
-c           allocate space for the triangle array            
+!           allocate space for the triangle array            
             allocate(AABBcurr%tris(1))
             
-c           assign the triangle index            
+!           assign the triangle index            
             AABBcurr%tris(1) = kk
             
-c           the maximum radius in this AABB            
+!           the maximum radius in this AABB            
             AABBcurr%maxr = dtfrs(currFr)%sphr(kk)
  
           else
             
-c           there is already an AABB at this spatial location
-c           we merely have to find its index            
-            AABBcurr=>dtfrs(currFr)%octree(1+refine)%bb(
-     &        boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) )
+!           there is already an AABB at this spatial location
+!           we merely have to find its index            
+            AABBcurr=>dtfrs(currFr)%octree(1+refine)%bb( &
+              boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) )
      
-c           increment triangle count     
+!           increment triangle count     
             AABBcurr%nTris = AABBcurr%nTris+1
      
-c           resize the triangle array     
+!           resize the triangle array     
             allocate(temp(AABBcurr%nTris-1))
             
             do ii=1,AABBcurr%nTris-1
@@ -840,13 +840,13 @@ c           resize the triangle array
               deallocate(temp)
             end if
             
-c           assign the triangle index            
+!           assign the triangle index            
             AABBcurr%tris(AABBcurr%nTris) = kk
             
-c           if the sphere bounding the triangle 
-c           has a larger radius than the current
-c           maximum radius in the AABB, then it becomes the
-c           new max radius in the AABB            
+!           if the sphere bounding the triangle 
+!           has a larger radius than the current
+!           maximum radius in the AABB, then it becomes the
+!           new max radius in the AABB            
             if (dtfrs(currFr)%sphr(kk) .gt. AABBcurr%maxr) then
               AABBcurr%maxr = dtfrs(currFr)%sphr(kk)
             end if
@@ -859,7 +859,7 @@ c           new max radius in the AABB
         !  write(*,*) dtfrs(currFr)%octree(3)%bb(ii)%nTris
         !end do
         
-c       deallocate arrays        
+!       deallocate arrays        
         if (allocated(tempLev)) then
           deallocate(tempLev)
         end if
@@ -868,33 +868,33 @@ c       deallocate arrays
           deallocate(boxHere)
         end if
         
-c       we have now created the AABBs that bound the triangle volumes
-c       at the bottommost level of the tree   
-c       now we go up the levels
+!       we have now created the AABBs that bound the triangle volumes
+!       at the bottommost level of the tree   
+!       now we go up the levels
         do kk=refine,2,-1
         
-c       reallocate the box presence grid       
+!       reallocate the box presence grid       
         allocate(boxHere(2**(kk-1),2**(kk-1),2**(kk-1)))
         
-c       initialize the box presence grid to zero        
+!       initialize the box presence grid to zero        
         boxHere = 0
         
-c       compute the dimensions of the AABBs in this level        
+!       compute the dimensions of the AABBs in this level        
         boxDim = boundDim / 2**(kk-1)
         
-c       pointers for easier access        
+!       pointers for easier access        
         nPerLev=>dtfrs(currFr)%nPerLev(kk)
         nPerLevG=>dtfrs(currFr)%nPerLevG(kk)
         
-c       allocate enough space for the level        
+!       allocate enough space for the level        
         allocate(tempLev(nPerLevG))
         allocate(dtfrs(currFr)%octree(kk)%bb(nPerLevG))
         
-c       loop through the AABBs at this level      
+!       loop through the AABBs at this level      
         do jj=1,dtfrs(currFr)%nPerLev(1+kk)
 
-c         get the "xyz index" of the AABB
-c         just like we did for the triangle volumes
+!         get the "xyz index" of the AABB
+!         just like we did for the triangle volumes
           AABBcurr=>dtfrs(currFr)%octree(1+kk)%bb(jj)  
           tcent = 0.5*(AABBcurr%bmin+AABBcurr%bmax)
           xyzInd = ceiling((tcent-pmin)/boxdim)
@@ -910,23 +910,23 @@ c         just like we did for the triangle volumes
             
           end do  
           
-c         if no AABB exists here, then create one          
+!         if no AABB exists here, then create one          
           if (boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) .eq. 0) then
             
-c           compute center of AABB            
+!           compute center of AABB            
             tcent = xyzInd*boxDim-0.5*boxdim+pmin
             
-c           compute bounds of the AABB            
+!           compute bounds of the AABB            
             tmin = tcent-0.5*boxdim
             tmax = tcent+0.5*boxdim
                     
-c           increment the AABB array at this level by one          
+!           increment the AABB array at this level by one          
             nPerLev = nPerLev + 1
             
-c           store AABB index            
+!           store AABB index            
             boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) = nPerLev
             
-c           resize AABB array at this level            
+!           resize AABB array at this level            
             if (nPerLev .gt. nPerLevG) then
             
               nPerLevG = nPerLevG + 8**(kk-2)
@@ -953,50 +953,50 @@ c           resize AABB array at this level
             
             end if
             
-c           pointer to the new AABB
+!           pointer to the new AABB
             AABBnew=>dtfrs(currFr)%octree(kk)%bb(nPerLev)
             
-c           assign bounds            
+!           assign bounds            
             AABBnew%bmin = tmin
             AABBnew%bmax = tmax
             
-c           assign number of triangles
-c           inherit this value from the AABB encompassed 
-c           in the lower level            
+!           assign number of triangles
+!           inherit this value from the AABB encompassed 
+!           in the lower level            
             AABBnew%nTris = AABBcurr%nTris            
 
-c           same for the max radius         
+!           same for the max radius         
             AABBnew%maxr = AABBcurr%maxr    
             
-c           set number of children to 1            
+!           set number of children to 1            
             AABBnew%nChild = 1
             
-c           allocate space for the child array            
+!           allocate space for the child array            
             allocate(AABBnew%child(1))
             
-c           assign index of the AABB in the lower level            
+!           assign index of the AABB in the lower level            
             AABBnew%child(1) = jj
             
           else
           
-c           get the pointer to the box already here          
-            AABBnew=>dtfrs(currFr)%octree(kk)%bb(
-     &        boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) ) 
+!           get the pointer to the box already here          
+            AABBnew=>dtfrs(currFr)%octree(kk)%bb( &
+              boxHere(xyzInd(1),xyzInd(2),xyzInd(3)) ) 
             
-c           increase triangle count 
-c           add the triangle count of the AABB in the lower level            
-c           to the triangle count of the current AABB
+!           increase triangle count 
+!           add the triangle count of the AABB in the lower level            
+!           to the triangle count of the current AABB
             AABBnew%nTris = AABBnew%nTris+AABBcurr%nTris
             
-c           update maximum radius            
+!           update maximum radius            
             if (AABBcurr%maxr .gt. AABBnew%maxr) then
               AABBnew%maxr = AABBcurr%maxr
             end if
             
-c           increment number of children            
+!           increment number of children            
             AABBnew%nChild = AABBnew%nChild + 1
             
-c           resize child array            
+!           resize child array            
             allocate(temp(AABBnew%nChild-1))
             
             do ii=1,AABBnew%nChild-1
@@ -1017,14 +1017,14 @@ c           resize child array
               deallocate(temp)
             end if
             
-c           assign index of child            
+!           assign index of child            
             AABBnew%child(AABBnew%nChild) = jj
             
           end if    
           
         end do
         
-c       deallocate arrays             
+!       deallocate arrays             
         if (allocated(tempLev)) then
           deallocate(tempLev)
         end if
@@ -1036,11 +1036,11 @@ c       deallocate arrays
         
         end do
         
-c       write the information 
-c       for the level 1 AABB which just encompasses everything   
-c       this is for mostly debugging
-c       since we can check if the max radius and number of triangles
-c       was correctly propagated up the tree
+!       write the information 
+!       for the level 1 AABB which just encompasses everything   
+!       this is for mostly debugging
+!       since we can check if the max radius and number of triangles
+!       was correctly propagated up the tree
         allocate(dtfrs(currFr)%octree(1)%bb(1))        
         dtfrs(currFr)%nPerLev(1) = 1
              
@@ -1067,78 +1067,78 @@ c       was correctly propagated up the tree
           
         end do
         
-c       temporary the toCheck array AABBs
-        allocate(dtfrs(currFr)%toChBB(
-     &           dtfrs(currFr)%nPerLev(
-     &           dtfrs(currFr)%nLev)))
+!       temporary the toCheck array AABBs
+        allocate(dtfrs(currFr)%toChBB( &
+                 dtfrs(currFr)%nPerLev( &
+                 dtfrs(currFr)%nLev)))
      
-c       find the proper size for allocation of the queues
+!       find the proper size for allocation of the queues
         dtfrs(currFr)%qSize = dtfrs(currFr)%nTris
         
-        if ( dtfrs(currFr)%nPerLev(dtfrs(currFr)%nLev) .gt. 
-     &    dtfrs(currFr)%qSize ) then
+        if ( dtfrs(currFr)%nPerLev(dtfrs(currFr)%nLev) .gt. &
+          dtfrs(currFr)%qSize ) then
      
-          dtfrs(currFr)%qSize = 
-     &      dtfrs(currFr)%nPerLev(dtfrs(currFr)%nLev)
+          dtfrs(currFr)%qSize = &
+            dtfrs(currFr)%nPerLev(dtfrs(currFr)%nLev)
      
         end if
         
-c       allocate space for priority queue
+!       allocate space for priority queue
         allocate(dtfrs(currFr)%qA(dtfrs(currFr)%qSize))
         allocate(dtfrs(currFr)%qI(dtfrs(currFr)%qSize))
                 
-c       for debugging purposes                
+!       for debugging purposes                
         
-c        write(*,*) AABBnew%nTris
-c        write(*,*) AABBnew%maxr
+!        write(*,*) AABBnew%nTris
+!        write(*,*) AABBnew%maxr
         
-c        do kk=1,refine+1
-c        write(*,*) "Level",kk
-c        do jj=1,dtfrs(currFr)%nPerLev(kk)
-c          AABBcurr=>dtfrs(currFr)%octree(kk)%bb(jj)  
-c          write(*,*) jj,AABBcurr%nChild,AABBcurr%nTris
-c        end do
-c        end do
+!        do kk=1,refine+1
+!        write(*,*) "Level",kk
+!        do jj=1,dtfrs(currFr)%nPerLev(kk)
+!          AABBcurr=>dtfrs(currFr)%octree(kk)%bb(jj)  
+!          write(*,*) jj,AABBcurr%nChild,AABBcurr%nTris
+!        end do
+!        end do
 
         end subroutine
         
-C -------------------------------------------        
-C -------------------------------------------
-C subroutine sphbmesh
-C Compute bounding spheres for triangular mesh
-C -------------------------------------------
-C -------------------------------------------      
+! -------------------------------------------        
+! -------------------------------------------
+! subroutine sphbmesh
+! Compute bounding spheres for triangular mesh
+! -------------------------------------------
+! -------------------------------------------      
 
         subroutine sphbmesh(currFr)
         
         integer currFr
         integer kk
         
-        allocate( dtfrs(currFr)%sphc
-     &            (3,dtfrs(currFr)%nTris) )
-        allocate( dtfrs(currFr)%sphr
-     &            (dtfrs(currFr)%nTris) )
+        allocate( dtfrs(currFr)%sphc &
+                  (3,dtfrs(currFr)%nTris) )
+        allocate( dtfrs(currFr)%sphr &
+                  (dtfrs(currFr)%nTris) )
      
-c       loop through the triangles
+!       loop through the triangles
         do kk=1,dtfrs(currFr)%nTris
-          call sphbt1(dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(1,kk)),
-     &                dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(2,kk)),
-     &                dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(3,kk)),
-     &                dtfrs(currFr)%sphc(:,kk),dtfrs(currFr)%sphr(kk) )
+          call sphbt1(dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(1,kk)), &
+                      dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(2,kk)), &
+                      dtfrs(currFr)%coords(:,dtfrs(currFr)%tris(3,kk)), &
+                      dtfrs(currFr)%sphc(:,kk),dtfrs(currFr)%sphr(kk) )
         end do
         
         end subroutine
       	  
-C /////////////////////////////////////////////////////////////////////////
-C  functions dealing with AABB
-C /////////////////////////////////////////////////////////////////////////  	  
+! /////////////////////////////////////////////////////////////////////////
+!  functions dealing with AABB
+! /////////////////////////////////////////////////////////////////////////  	  
 	  
-C -------------------------------------------
-C -------------------------------------------
-C subroutine cpaabb
-C Compute distance to AABB
-C -------------------------------------------
-C -------------------------------------------      	  
+! -------------------------------------------
+! -------------------------------------------
+! subroutine cpaabb
+! Compute distance to AABB
+! -------------------------------------------
+! -------------------------------------------      	  
 
         subroutine cpaabb(p,box,distance)
         
@@ -1146,15 +1146,15 @@ C -------------------------------------------
         type(AABB) box
         real*8 distance,v
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      p : point p
-C      box : AABB
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      p : point p
+!      box : AABB
 
-C OUTPUTS
-C      distanceSq  : distance squared
-C -------------------------------------------          
+! OUTPUTS
+!      distanceSq  : distance squared
+! -------------------------------------------          
         
         integer ii
         
@@ -1176,12 +1176,12 @@ C -------------------------------------------
         
         end subroutine
         
-C -------------------------------------------
-C -------------------------------------------
-C subroutine fpaabb
-C Compute farthest distance to AABB
-C -------------------------------------------
-C -------------------------------------------      	  
+! -------------------------------------------
+! -------------------------------------------
+! subroutine fpaabb
+! Compute farthest distance to AABB
+! -------------------------------------------
+! -------------------------------------------      	  
 
         subroutine fpaabb(p,box,distance)
         
@@ -1190,15 +1190,15 @@ C -------------------------------------------
         real*8 distance
         integer, dimension(3) :: side
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      p : point p
-C      box : AABB
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      p : point p
+!      box : AABB
 
-C OUTPUTS
-C      distanceSq  : distance squared
-C ------------------------------------------- 
+! OUTPUTS
+!      distanceSq  : distance squared
+! ------------------------------------------- 
 
         distance = 0.0
         side = 1
@@ -1225,17 +1225,17 @@ C -------------------------------------------
         
         end subroutine
         
-C /////////////////////////////////////////////////////////////////////////
-C  functions dealing with triangles
-C /////////////////////////////////////////////////////////////////////////  
+! /////////////////////////////////////////////////////////////////////////
+!  functions dealing with triangles
+! /////////////////////////////////////////////////////////////////////////  
 
-C -------------------------------------------      
-C -------------------------------------------
-C subroutine cptrip
-C Find the closest point on a triangle to
-C specified point   
-C -------------------------------------------
-C -------------------------------------------
+! -------------------------------------------      
+! -------------------------------------------
+! subroutine cptrip
+! Find the closest point on a triangle to
+! specified point   
+! -------------------------------------------
+! -------------------------------------------
         subroutine cptrip(p,a,b,c,closestpnt,loc)
        
         real*8, dimension(3) :: a 
@@ -1245,55 +1245,55 @@ C -------------------------------------------
         real*8, dimension(3) :: closestpnt 
         integer loc 
 
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
 
-C      p : the reference closestpnt
-C      a : point a of triangle
-C      b : point b of triangle
-C      c : point c of triangle
+!      p : the reference closestpnt
+!      a : point a of triangle
+!      b : point b of triangle
+!      c : point c of triangle
 
-C OUTPUTS
-C      point: closest point on triangle to p
-C      loc: 1 denotes closest point is on triangle vertex a
-C            2 denotes closest point is on triangle vertex b
-C            3 denotes closest point is on triangle vertex c
-C            4 denotes closest point is on loc ab
-C            5 denotes closest point is on loc ac
-C            6 denotes closest point is on loc bc
-C            7 denotes closest point is on the face
-C -------------------------------------------
+! OUTPUTS
+!      point: closest point on triangle to p
+!      loc: 1 denotes closest point is on triangle vertex a
+!            2 denotes closest point is on triangle vertex b
+!            3 denotes closest point is on triangle vertex c
+!            4 denotes closest point is on loc ab
+!            5 denotes closest point is on loc ac
+!            6 denotes closest point is on loc bc
+!            7 denotes closest point is on the face
+! -------------------------------------------
          
         real*8, dimension(3) :: ab,ac,ap,bp,cp
          
         real*8 d1,d2,d3,d4,d5,d6,v,w,va,vb,vc,denom
          
-C       Check if p in vertex region outside A	   
+!       Check if p in vertex region outside A	   
 	  ab = b - a
 	  ac = c - a
 	  ap = p - a
 	  d1 = dot_product(ab,ap)
 	  d2 = dot_product(ac,ap)	   
 	  if (d1 .le. 0.0 .and. d2 .le. 0) then
-C         Barycentric coordinates (1,0,0)	   
+!         Barycentric coordinates (1,0,0)	   
 	    closestpnt = a 
 	    loc = 1
 	    return
 	  end if
 	   
-C       Check if p in vertex region outside B
+!       Check if p in vertex region outside B
         bp = p - b
         d3 = dot_product(ab,bp)   
         d4 = dot_product(ac,bp)
         if (d3 .ge. 0.0 .and. d4 .le. d3) then
-C         Barycentric coordinates (0,1,0)	            
+!         Barycentric coordinates (0,1,0)	            
           closestpnt = b
           loc = 2
           return
         end if
          
-C       Check if p in loc region of AB, if so return projection of P onto AB
+!       Check if p in loc region of AB, if so return projection of P onto AB
         vc = d1*d4 - d3*D2
         if (vc .le. 0.0 .and. d1 .ge. 0.0 .and. d3 .le. 0.0) then
           v = d1 / (d1 - d3)
@@ -1302,18 +1302,18 @@ C       Check if p in loc region of AB, if so return projection of P onto AB
           return
         end if
          
-C       Check if p in vertex region outside C
+!       Check if p in vertex region outside C
         cp = p - c
         d5 = dot_product(ab,cp)
         d6 = dot_product(ac,cp)
         if (d6 .ge. 0.0 .and. d5 .le. d6) then
-C          Barycentric coordinates (0,0,1)           
+!          Barycentric coordinates (0,0,1)           
           closestpnt = c
           loc = 3
           return
         end if
          
-C       Check if p in loc region of AC, if so return projection of P onto AC
+!       Check if p in loc region of AC, if so return projection of P onto AC
         vb = d5*d2 - d1*d6
         if (vb .le. 0.0 .and. d2 .ge. 0.0 .and. d6 .le. 0.0) then
           w = d2 / (d2 - d6)
@@ -1322,17 +1322,17 @@ C       Check if p in loc region of AC, if so return projection of P onto AC
           return
         end if
          
-C       Check if p in loc region of BC, if so return projection of P onto BC         
+!       Check if p in loc region of BC, if so return projection of P onto B!         
         va = d3*d6 - d5*d4
-        if (va .le. 0.0 .and. (d4 - d3) .ge. 0.0 .and. 
-     &      (d5 - d6) .ge. 0.0) then
+        if (va .le. 0.0 .and. (d4 - d3) .ge. 0.0 .and. &
+            (d5 - d6) .ge. 0.0) then
           w = (d4 - d3) / ( (d4 - d3) + (d5 - d6) )
           closestpnt = b + w*(c - b)
           loc = 6
           return
         end if
          
-C       p inside face region. compute closestpnt using barycentric coordinates
+!       p inside face region. compute closestpnt using barycentric coordinates
         denom = 1.0 / (va+vb+vc)
         v = vb*denom
         w = vc*denom
@@ -1341,32 +1341,32 @@ C       p inside face region. compute closestpnt using barycentric coordinates
          
 	  end subroutine  
                  
-C -------------------------------------------
-C -------------------------------------------
-C subroutine sphbt2
-C Compute bounding sphere for triangle
-C Version 2
-C -------------------------------------------
-C -------------------------------------------      
+! -------------------------------------------
+! -------------------------------------------
+! subroutine sphbt2
+! Compute bounding sphere for triangle
+! Version 2
+! -------------------------------------------
+! -------------------------------------------      
 
         subroutine sphbt2(a,b,c,gcent,radius)
         
         real*8, dimension(3) :: a,b,c,gcent
         real*8 radius,tr
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      a : point a
-C      b : point b
-C      c : point c
-C OUTPUTS
-C      gcent  : center of the bounding sphere
-C      radius : radius of the bounding sphere        
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      a : point a
+!      b : point b
+!      c : point c
+! OUTPUTS
+!      gcent  : center of the bounding sphere
+!      radius : radius of the bounding sphere        
 	  
-C -------------------------------------------
+! -------------------------------------------
 
-c      compute the centroid of the triangle
+!      compute the centroid of the triangle
        gcent = (a+b+c)/3
        
        radius = 0.0
@@ -1391,27 +1391,27 @@ c      compute the centroid of the triangle
 
        end subroutine
        
-C -------------------------------------------
-C subroutine sphbt1
-C Compute bounding sphere for triangle
-C -------------------------------------------
-C -------------------------------------------      
+! -------------------------------------------
+! subroutine sphbt1
+! Compute bounding sphere for triangle
+! -------------------------------------------
+! -------------------------------------------      
 
         subroutine sphbt1(a,b,c,gcent,radius)
         
         real*8, dimension(3) :: a,b,c,gcent
         real*8 radius
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      a : point a
-C      b : point b
-C      c : point c
-C OUTPUTS
-C      gcent  : center of the bounding sphere
-C      radius : radius of the bounding sphere
-C -------------------------------------------           
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      a : point a
+!      b : point b
+!      c : point c
+! OUTPUTS
+!      gcent  : center of the bounding sphere
+!      radius : radius of the bounding sphere
+! -------------------------------------------           
         
         real*8, dimension(3) :: al,bl,cl,cent,tr
         real*8, dimension(3,3) :: T
@@ -1421,64 +1421,64 @@ C -------------------------------------------
         lb = sqrt(dot_product(c-a,c-a))
         lc = sqrt(dot_product(b-c,b-c))
         
-        radius = la*lb*lc / 
-     &           sqrt((la+lb+lc)*(-la+lb+lc)*(la-lb+lc)*(la+lb-lc))
+        radius = la*lb*lc / &
+                 sqrt((la+lb+lc)*(-la+lb+lc)*(la-lb+lc)*(la+lb-lc))
         
         call rottriloc(a,b,c,al,bl,cl,T)
         
-c       ignore the z coordinate
-c       translate local point a to the origin
+!       ignore the z coordinate
+!       translate local point a to the origin
         tr = al
         al(1:2) = 0
         bl(1:2) = bl(1:2) - tr(1:2)
         cl(1:2) = cl(1:2) - tr(1:2)
         
-c       compute center of circumscribed circle
+!       compute center of circumscribed circle
         D = 2*(bl(1)*cl(2)-bl(2)*cl(1))
-        cent(1) = ( cl(2)*(bl(1)**2+bl(2)**2)-
-     &              bl(2)*(cl(1)**2+cl(2)**2) ) / D
-        cent(2) = ( bl(1)*(cl(1)**2+cl(2)**2)-
-     &              cl(1)*(bl(1)**2+bl(2)**2) ) / D
+        cent(1) = ( cl(2)*(bl(1)**2+bl(2)**2)- &
+                    bl(2)*(cl(1)**2+cl(2)**2) ) / D
+        cent(2) = ( bl(1)*(cl(1)**2+cl(2)**2)- &
+                    cl(1)*(bl(1)**2+bl(2)**2) ) / D
         cent(3) = al(3)
         
-c       translate back
+!       translate back
         cent(1:2) = cent(1:2) + tr(1:2)
               
-c       rotate back to global coordinate system
+!       rotate back to global coordinate system
         gcent(1) = sum(T(:,1)*cent,1)
         gcent(2) = sum(T(:,2)*cent,1)
         gcent(3) = sum(T(:,3)*cent,1)    
         
         end subroutine
 
-C -------------------------------------------
-C -------------------------------------------
-C subroutine rottriloc
-C Rotate triangle to local 2D cartesian system
-C -------------------------------------------
-C -------------------------------------------           
+! -------------------------------------------
+! -------------------------------------------
+! subroutine rottriloc
+! Rotate triangle to local 2D cartesian system
+! -------------------------------------------
+! -------------------------------------------           
       
         subroutine rottriloc(a,b,c,al,bl,cl,T)
         
         real*8, dimension(3) :: a,b,c,al,bl,cl
         real*8, dimension(3,3) :: T
         
-C -------------------------------------------	   
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C      a : point a
-C      b : point b
-C      c : point c
-C OUTPUTS
-C      al : local point al
-C      bl : local point bl
-C      cl : local point cl
-C      T  : 3x3 transformation matrix
-C -------------------------------------------
+! -------------------------------------------	   
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!      a : point a
+!      b : point b
+!      c : point c
+! OUTPUTS
+!      al : local point al
+!      bl : local point bl
+!      cl : local point cl
+!      T  : 3x3 transformation matrix
+! -------------------------------------------
 
         real*8, dimension(3) :: v1,v2,v3
 
-c       compute local basis vectors
+!       compute local basis vectors
         v1 = b - a
         v1 = v1/sqrt(dot_product(v1,v1))
         v2 = c - a
@@ -1486,12 +1486,12 @@ c       compute local basis vectors
         v3 = v3/sqrt(dot_product(v3,v3))
         v2 = cross_product(v3, v1)
         
-c       compute transformation matrix       
+!       compute transformation matrix       
         T(1,:) = v1
         T(2,:) = v2
         T(3,:) = v3
         
-c       rotate to local cartesian coordinates        
+!       rotate to local cartesian coordinates        
         al(1) = sum(T(1,:)*a,1)
         al(2) = sum(T(2,:)*a,1)
         al(3) = sum(T(3,:)*a,1)
@@ -1506,27 +1506,27 @@ c       rotate to local cartesian coordinates
                 
         end subroutine	  
 	  
-C -------------------------------------------
-C -------------------------------------------
-C subroutine dataread
-C Read in the mesh data 
-C Call this first before cpmeshp
-C -------------------------------------------
-C -------------------------------------------
+! -------------------------------------------
+! -------------------------------------------
+! subroutine dataread
+! Read in the mesh data 
+! Call this first before cpmeshp
+! -------------------------------------------
+! -------------------------------------------
 
         subroutine dm_dataread(filename)
 
         character(*) :: filename
         
-C -------------------------------------------
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+! -------------------------------------------
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
 
-C      filename : the name of the file to be read
+!      filename : the name of the file to be read
 
-C OUTPUTS
-C      no outputs
-C -------------------------------------------        
+! OUTPUTS
+!      no outputs
+! -------------------------------------------        
 
         character dummy
         integer dummyint
@@ -1537,151 +1537,151 @@ C -------------------------------------------
         
         open(unit=2,file=filename)
 
-c       Skip the first identifier line and 
-c       read the number of data frames
+!       Skip the first identifier line and 
+!       read the number of data frames
         read(unit=2,fmt='(A1)') dummy
         read(2,*) numDataFrames
         
-c       Skip the first identifier line and 
-c       read the length of the cycle
+!       Skip the first identifier line and 
+!       read the length of the cycle
         read(unit=2,fmt='(A1)') dummy
         read(2,*) cycleLength
         
-c       Allocate space for the data frames
+!       Allocate space for the data frames
         allocate(dtfrs(numDataFrames))     
         
         do kk=1,numDataFrames
-c         Skip the next identifier line and
-c         read the data frame number        
+!         Skip the next identifier line and
+!         read the data frame number        
           read(unit=2,fmt='(A1)') dummy
           read(2,*) currFr
         
-c         Skip the next identifier line and
-c         read the number of points        
+!         Skip the next identifier line and
+!         read the number of points        
           read(unit=2,fmt='(A1)') dummy
           read(2,*) dtfrs(currFr)%nPoints
 
-c         Skip the next identifier line and
-c         read the number of triangles 
+!         Skip the next identifier line and
+!         read the number of triangles 
           read(unit=2,fmt='(A1)') dummy
           read(2,*) dtfrs(currFr)%nTris
 
-c         Skip the next identifier line and
-c         read the number of edges
+!         Skip the next identifier line and
+!         read the number of edges
           read(unit=2,fmt='(A1)') dummy
           read(2,*) dtfrs(currFr)%nEdges
 
-c         Now allocate memory 
-          allocate( dtfrs(currFr)%coords
-     &            (3,dtfrs(currFr)%nPoints) )
+!         Now allocate memory 
+          allocate( dtfrs(currFr)%coords &
+                  (3,dtfrs(currFr)%nPoints) )
      
-          allocate( dtfrs(currFr)%tris
-     &              (3,dtfrs(currFr)%nTris) )
+          allocate( dtfrs(currFr)%tris &
+                    (3,dtfrs(currFr)%nTris) )
      
-          allocate( dtfrs(currFr)%pntNrmls
-     &              (3,dtfrs(currFr)%nPoints) )
+          allocate( dtfrs(currFr)%pntNrmls &
+                    (3,dtfrs(currFr)%nPoints) )
      
-          allocate( dtfrs(currFr)%edgeNrmls
-     &              (3,3,dtfrs(currFr)%nTris) ) ! index by dof, edge, then tri
+          allocate( dtfrs(currFr)%edgeNrmls &
+                    (3,3,dtfrs(currFr)%nTris) ) ! index by dof, edge, then tri
         
-          allocate( dtfrs(currFr)%faceNrmls
-     &              (3,dtfrs(currFr)%nTris) )
+          allocate( dtfrs(currFr)%faceNrmls &
+                    (3,dtfrs(currFr)%nTris) )
              
-c         Skip the next identifier line and
-c         read the coordinates        
+!         Skip the next identifier line and
+!         read the coordinates        
           read(unit=2,fmt='(A1)') dummy
           do ii=1,dtfrs(currFr)%nPoints
-            read(2,*) dtfrs(currFr)%coords(1,ii),
-     &                dtfrs(currFr)%coords(2,ii),
-     &                dtfrs(currFr)%coords(3,ii)
+            read(2,*) dtfrs(currFr)%coords(1,ii), &
+                      dtfrs(currFr)%coords(2,ii), &
+                      dtfrs(currFr)%coords(3,ii)
           end do
         
-c         Skip the next identifier line and
-c         read the surface triangle connectivity
+!         Skip the next identifier line and
+!         read the surface triangle connectivity
           read(unit=2,fmt='(A1)') dummy
           do ii=1,dtfrs(currFr)%nTris
-            read(2,*) dtfrs(currFr)%tris(1,ii),
-     &                dtfrs(currFr)%tris(2,ii),
-     &                dtfrs(currFr)%tris(3,ii)
+            read(2,*) dtfrs(currFr)%tris(1,ii), &
+                      dtfrs(currFr)%tris(2,ii), &
+                      dtfrs(currFr)%tris(3,ii)
           end do        
         
-c         Skip the next identifier line and
-c         read the face normals      
+!         Skip the next identifier line and
+!         read the face normals      
           read(unit=2,fmt='(A1)') dummy
           do ii=1,dtfrs(currFr)%nTris
-            read(2,*) dtfrs(currFr)%faceNrmls(1,ii),
-     &                dtfrs(currFr)%faceNrmls(2,ii),
-     &                dtfrs(currFr)%faceNrmls(3,ii)
+            read(2,*) dtfrs(currFr)%faceNrmls(1,ii), &
+                      dtfrs(currFr)%faceNrmls(2,ii), &
+                      dtfrs(currFr)%faceNrmls(3,ii)
           end do        
         
-c         Skip the next identifier line and
-c         read the edge normals    
+!         Skip the next identifier line and
+!         read the edge normals    
           read(unit=2,fmt='(A1)') dummy
           do ii=1,dtfrs(currFr)%nTris
             do jj=1,3
-              read(2,*) dummyint,
-     &                  dtfrs(currFr)%edgeNrmls(1,jj,ii),
-     &                  dtfrs(currFr)%edgeNrmls(2,jj,ii),
-     &                  dtfrs(currFr)%edgeNrmls(3,jj,ii)
+              read(2,*) dummyint, &
+                        dtfrs(currFr)%edgeNrmls(1,jj,ii), &
+                        dtfrs(currFr)%edgeNrmls(2,jj,ii), &
+                        dtfrs(currFr)%edgeNrmls(3,jj,ii)
             end do
           end do               
         
-c         Skip the next identifier line and
-c         read the closestpnt normals   
+!         Skip the next identifier line and
+!         read the closestpnt normals   
           read(unit=2,fmt='(A1)') dummy
           do ii=1,dtfrs(currFr)%nPoints
-            read(2,*) dtfrs(currFr)%pntNrmls(1,ii),
-     &                dtfrs(currFr)%pntNrmls(2,ii),
-     &                dtfrs(currFr)%pntNrmls(3,ii)
+            read(2,*) dtfrs(currFr)%pntNrmls(1,ii), &
+                      dtfrs(currFr)%pntNrmls(2,ii), &
+                      dtfrs(currFr)%pntNrmls(3,ii)
           end do               
           
-c         allocate enough space for toCheck
-c         for safety, we will allocate the with the number of triangles  
+!         allocate enough space for toCheck
+!         for safety, we will allocate the with the number of triangles  
           
-c         array of triangles to check          
+!         array of triangles to check          
           allocate(dtfrs(currFr)%toChTri(dtfrs(currFr)%nTris))
           
         end do
 
-c        write(*,*) dummy
-c        write(*,*) numDataFrames
-c        write(*,*) dtfrs(2)%nPoints
-c        write(*,*) dtfrs(2)%nTris
-c        write(*,*) dtfrs(2)%nEdges
+!        write(*,*) dummy
+!        write(*,*) numDataFrames
+!        write(*,*) dtfrs(2)%nPoints
+!        write(*,*) dtfrs(2)%nTris
+!        write(*,*) dtfrs(2)%nEdges
         
-c        do ii=1,dtfrs(currFr)%nTris
-c          write(*,*) dtfrs(currFr)%tris(1,ii),
-c     &               dtfrs(currFr)%tris(2,ii),
-c     &               dtfrs(currFr)%tris(3,ii)
-c        end do
+!        do ii=1,dtfrs(currFr)%nTris
+!          write(*,*) dtfrs(currFr)%tris(1,ii),
+!     &               dtfrs(currFr)%tris(2,ii),
+!     &               dtfrs(currFr)%tris(3,ii)
+!        end do
       
         end subroutine
         
-C /////////////////////////////////////////////////////////////////////////
-C  functions dealing with vectors in R-3
-C /////////////////////////////////////////////////////////////////////////        
+! /////////////////////////////////////////////////////////////////////////
+!  functions dealing with vectors in R-3
+! /////////////////////////////////////////////////////////////////////////        
 
-C -------------------------------------------        
-C -------------------------------------------
-C function cross_product
-C computes cross product of two vectors
-C -------------------------------------------        
-C -------------------------------------------
+! -------------------------------------------        
+! -------------------------------------------
+! function cross_product
+! computes cross product of two vectors
+! -------------------------------------------        
+! -------------------------------------------
 
         function cross_product(a, b) 
         
         real*8, dimension(3) :: a, b, cross_product
 
-C -------------------------------------------
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+! -------------------------------------------
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
 
-C      a : 3x1
-C      b : 3x1
+!      a : 3x1
+!      b : 3x1
 
-C OUTPUTS
-C      cross_product
-C -------------------------------------------          
+! OUTPUTS
+!      cross_product
+! -------------------------------------------          
 
         cross_product(1) = a(2) * b(3) - a(3) * b(2)
         cross_product(2) = a(3) * b(1) - a(1) * b(3)
@@ -1689,16 +1689,16 @@ C -------------------------------------------
             
         end function cross_product
         
-C /////////////////////////////////////////////////////////////////////////
-C  Functions that deal with priority queue insertion, removal
-C /////////////////////////////////////////////////////////////////////////
+! /////////////////////////////////////////////////////////////////////////
+!  Functions that deal with priority queue insertion, removal
+! /////////////////////////////////////////////////////////////////////////
         
-C -------------------------------------------        
-C -------------------------------------------
-C subroutine pqInsert
-C insert a new item in the priority queue
-C -------------------------------------------        
-C -------------------------------------------                
+! -------------------------------------------        
+! -------------------------------------------
+! subroutine pqInsert
+! insert a new item in the priority queue
+! -------------------------------------------        
+! -------------------------------------------                
 
         subroutine pqInsert(qI,qA,qBack,ival,pval)
         
@@ -1707,52 +1707,52 @@ C -------------------------------------------
         integer qBack,ival
         real*8 pval
         
-C -------------------------------------------
-C INPUT PARAMETERS
-C NONE OF THESE ARE CHANGED BY THE SUBROUTINE
-C
-C      ival : index value
-C      pval : key value
-C
-C THESE ARE CHANGED
-C      
-C      qI : queue of indices
-C      qA : queue of keys
-C      qBack : index of the back of the queue
-C
-C -------------------------------------------  
+! -------------------------------------------
+! INPUT PARAMETERS
+! NONE OF THESE ARE CHANGED BY THE SUBROUTINE
+!
+!      ival : index value
+!      pval : key value
+!
+! THESE ARE CHANGED
+!      
+!      qI : queue of indices
+!      qA : queue of keys
+!      qBack : index of the back of the queue
+!
+! -------------------------------------------  
 
         integer index,parInd    
         real*8 tmpSwpR
         integer tmpSwpI    
         
-c       add to last level        
+!       add to last level        
 
-c       add key
+!       add key
         qBack = qBack + 1
         qA(qBack) = pval
         
-c       add index value
+!       add index value
         qI(qBack) = ival        
         
         index = qBack
 
         do while (index .gt. 1)
         
-c         compare with parent
-c         if necessary swap       
+!         compare with parent
+!         if necessary swap       
           parInd = index/2   
           
           if (qA(index) .le. qA(parInd)) then  
             exit
           end if
           
-c         swap values of keys          
+!         swap values of keys          
           tmpSwpR = qA(parInd)
           qA(parInd) = qA(index)
           qA(index) = tmpSwpR
           
-c         swap values of indices          
+!         swap values of indices          
           tmpSwpI = qI(parInd)
           qI(parInd) = qI(index)
           qI(index) = tmpSwpI
@@ -1763,13 +1763,13 @@ c         swap values of indices
                  
         end subroutine
         
-C -------------------------------------------        
-C -------------------------------------------
-C subroutine pqRemoveMax
-C removes the index in the priority queue associated
-C with the largest key
-C -------------------------------------------        
-C -------------------------------------------            
+! -------------------------------------------        
+! -------------------------------------------
+! subroutine pqRemoveMax
+! removes the index in the priority queue associated
+! with the largest key
+! -------------------------------------------        
+! -------------------------------------------            
       
         subroutine pqRemoveMax(qI,qA,qBack)
           
@@ -1777,27 +1777,27 @@ C -------------------------------------------
         real*8, dimension(:) :: qA
         integer qBack
         
-C -------------------------------------------
-C INPUT PARAMETERS
-C
-C THESE ARE CHANGED
-C      
-C      qI : queue of indices
-C      qA : queue of keys
-C      qBack : index of the back of the queue
-C
-C -------------------------------------------    
+! -------------------------------------------
+! INPUT PARAMETERS
+!
+! THESE ARE CHANGED
+!      
+!      qI : queue of indices
+!      qA : queue of keys
+!      qBack : index of the back of the queue
+!
+! -------------------------------------------    
 
         integer c1Ind,c2Ind,lcInd,index      
         real*8 tmpSwpR
         integer tmpSwpI
         
-c       do not remove max if only one element left        
+!       do not remove max if only one element left        
         if (qBack .gt. 1) then
-c         assign the value of the last child to the root        
+!         assign the value of the last child to the root        
           qA(1) = qA(qBack)
           qI(1) = qI(qBack)
-c         decrease size of queue    
+!         decrease size of queue    
           qBack = qBack - 1
         end if
         
@@ -1806,31 +1806,31 @@ c         decrease size of queue
         c2Ind = index*2 + 1
         
         do while(c1Ind .le. qBack)
-c         find the largest child        
+!         find the largest child        
           lcInd = c1Ind
           if (qA(c2Ind) .gt. qA(lcInd)) then
             lcInd = c2Ind
           end if
           
-c         compare with child
-c         if necessary swap          
+!         compare with child
+!         if necessary swap          
           if ( qA(index) .ge. qA(lcInd) ) then
             exit
           end if
           
-c         swap keys          
+!         swap keys          
           tmpSwpR = qA(lcInd)
           qA(lcInd) = qA(index)
           qA(index) = tmpSwpR
           
-c         swap indices
+!         swap indices
           tmpSwpI = qI(lcInd)
           qI(lcInd) = qI(index)
           qI(index) = tmpSwpI                    
           
           index = lcInd
           
-c         compute child indices
+!         compute child indices
           c1Ind = index*2
           c2Ind = index*2 + 1
           
@@ -1839,3 +1839,50 @@ c         compute child indices
         end subroutine
       
       end module measureWallDistance
+      
+! -------------------------------------------        
+! -------------------------------------------
+! subroutine DmeasureWallDistance
+! deallocate memory for this module
+! only call this after calling dataread and makebb
+! -------------------------------------------        
+! -------------------------------------------         
+      
+      subroutine DmeasureWallDistance
+      
+      use measureWallDistance
+      use phcommonvars
+      implicit none
+      
+      integer ii,jj,kk,mm
+      
+      if(imeasdist.ne.0) then
+         do kk=1,numDataFrames
+            deallocate(dtfrs(kk)%coords)
+            deallocate(dtfrs(kk)%tris)     
+            deallocate(dtfrs(kk)%pntNrmls)     
+            deallocate(dtfrs(kk)%edgeNrmls)
+            deallocate(dtfrs(kk)%faceNrmls)
+            deallocate(dtfrs(kk)%sphc)
+            deallocate(dtfrs(kk)%sphr)
+            deallocate(dtfrs(kk)%qA)
+            deallocate(dtfrs(kk)%qI)
+            deallocate(dtfrs(kk)%toChBB)
+            deallocate(dtfrs(kk)%toChTri)
+                
+            do ii=1,dtfrs(kk)%nLev    
+               do jj=1,dtfrs(kk)%nPerLevG(ii)
+                  deallocate(dtfrs(kk)%octree(ii)%bb(jj)%tris)
+                  deallocate(dtfrs(kk)%octree(ii)%bb(jj)%child)
+               end do
+               deallocate(dtfrs(kk)%octree(ii)%bb)
+            end do
+            deallocate(dtfrs(kk)%octree)    
+                
+            deallocate(dtfrs(kk)%nPerLev)
+            deallocate(dtfrs(kk)%nPerLevG)
+         end do
+         deallocate(dtfrs)
+      end if
+      
+      end      

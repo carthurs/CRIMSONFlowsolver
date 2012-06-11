@@ -39,10 +39,13 @@ DAMAGE.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <ctype.h>
 
 #include "cvSolverIO.h"
 
-#include <ctype.h>
 
 #define INT 1
 #define FLOAT 2
@@ -623,9 +626,6 @@ void writestring_( int* fileDescriptor,
     phastaIOfp[(*fileDescriptor)]->writeString(string);
 }
 
-#include <vector>
-#include <string>
-#include <iostream>
 void Gather_Headers( int* fileDescriptor, std::vector< std::string >& headers ) {
 
     char Line[1024];
@@ -657,7 +657,9 @@ int main (int argc, char **agrv) {
 }
 */
 
-
-
-
-
+void bzero_old(void* ptr, size_t sz) {
+   char *cptr = (char*) ptr;
+   for (int i=0; i < sz; i++) {
+      cptr[i]=0;
+   }
+}

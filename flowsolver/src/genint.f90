@@ -1,63 +1,28 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
       subroutine genint
-c
-c----------------------------------------------------------------------
-c
-c This subroutine inputs the integration information.
-c
-c----------------------------------------------------------------------
-c
-      include "common.h"
+!
+!----------------------------------------------------------------------
+!
+! This subroutine inputs the integration information.
+!
+!----------------------------------------------------------------------
+!
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-      real*8, allocatable :: tmpQpt (:,:), tmpQwt (:) 
+      real*8, allocatable, target :: tmpQpt (:,:), tmpQwt (:) 
       real*8, allocatable :: tmpQptb(:,:), tmpQwtb(:) 
 
-c
-c.... compute the shape function parameters
-c
+!
+!.... compute the shape function parameters
+!
         
 
-c 
-c.... get quadrature data for interior and boundary elements
-c
-c
-c  Tets
-c             
+! 
+!.... get quadrature data for interior and boundary elements
+!
+!
+!  Tets
+!             
       if (nen.eq.4) then 
          nshape  = (ipord+1)*(ipord+2)*(ipord+3)/6
          nshapeb = (ipord+1)*(ipord+2)/2
@@ -87,7 +52,8 @@ c
       allocate (tmpQpt (4,nint(1)))           
       allocate (tmpQwt (nint(1)))           
       allocate (tmpQptb(4,nintb(1)))           
-      allocate (tmpQwtb(nintb(1)))           
+      allocate (tmpQwtb(nintb(1)))
+             
       
       call symtet(nint(1),tmpQpt,tmpQwt,nerr) ! interior elements
       Qpt(1,1:4,1:nint(1)) = tmpQpt(1:4,1:nint(1))
@@ -98,20 +64,21 @@ c
       Qptb(1,1:4,1:nintb(1)) = tmpQptb(1:4,1:nintb(1))
       Qwtb(1,1:nintb(1))     = tmpQwtb(1:nintb(1))
       
+      
       deallocate (tmpQpt)
       deallocate (tmpQwt)
       deallocate (tmpQptb)
       deallocate (tmpQwtb)
         
-c
-c.... adjust quadrature weights to be consistent with the
-c     design of tau. 
-c
+!
+!.... adjust quadrature weights to be consistent with the
+!     design of tau. 
+!
       Qwt(1,:) = (four/three)*Qwt(1,:)
       Qwtb(1,:) = two*Qwtb(1,:)
-c     
-c     Hexes now
-c     
+!     
+!     Hexes now
+!     
       if (nen.eq.8) then
          nshape = nen
          if ( ipord .gt. 1 ) then 
@@ -283,9 +250,9 @@ c
       deallocate (tmpQwtb)
       
       if (nen.eq.6) then
-c     
-c     later for hierarchic basis nshape formulas will be inserted
-c     
+!     
+!     later for hierarchic basis nshape formulas will be inserted
+!     
          nshape = nen
          
          if ( ipord .gt. 1 ) then 
@@ -305,7 +272,7 @@ c
          endif
          
          nshapeb = nenb
-c     
+!     
          if (nenb .eq. 3) then   
             if ( ipord .gt. 1 ) then
                nshapeb = nshapeb + 3*(ipord - 1)
@@ -314,7 +281,7 @@ c
                nshape = nshape +(ipord - 1)*(ipord - 2)/2
             endif 
          endif
-c     
+!     
          if (nenb .eq. 4) then
             if ( ipord .gt. 1 ) then
                nshapeb = nshapeb + 4*(ipord - 1)
@@ -361,12 +328,12 @@ c
       call symtri(nintb(3),tmpQptb,tmpQwtb,nerr) ! boundary elements
       Qptb(3,1:2,2:nintb(3)) = tmpQptb(1:2,1:nintb(3)-1)
       Qptb(3,1:2,1) = tmpQptb(1:2,nintb(3))
-c     
-c     wedges want the third entry to be zeta=-1 (not t=1-r-s)
-c     4th entry not used
-c     
+!     
+!     wedges want the third entry to be zeta=-1 (not t=1-r-s)
+!     4th entry not used
+!     
       Qptb(3,3:4,1:nintb(3)) = -1
-c$$$  Qptb(3,1:4,1:nintb(3)) = tmpQptb(1:4,1:nintb(3))
+!$$$  Qptb(3,1:4,1:nintb(3)) = tmpQptb(1:4,1:nintb(3))
       Qwtb(3,1:nintb(3)) = tmpQwtb(1:nintb(3))
       
       deallocate (tmpQptb)
@@ -382,8 +349,8 @@ c$$$  Qptb(3,1:4,1:nintb(3)) = tmpQptb(1:4,1:nintb(3))
       deallocate (tmpQptb)
       deallocate (tmpQwtb)
       
-c     
-c.... return
-c     
+!     
+!.... return
+!     
       return
       end

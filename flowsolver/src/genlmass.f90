@@ -1,63 +1,28 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
         subroutine genlmass (x, shp,shgl)
-c
+!
         use pointer_data
-c
-        include "common.h"
+!
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
-c
+!
         real*8 x(numnp,nsd)
-c
-        real*8 shp(MAXTOP,maxsh,MAXQPT),   
-     &            shgl(MAXTOP,nsd,maxsh,MAXQPT) 
-c
+!
+        real*8 shp(MAXTOP,maxsh,MAXQPT),    &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT) 
+!
         real*8, allocatable :: tmpshp(:,:), tmpshgl(:,:,:)
         
-c
-c gmass came in via pointer_data and will 
-c be available wherever it is included  (allocate it now).
-c
+!
+! gmass came in via pointer_data and will 
+! be available wherever it is included  (allocate it now).
+!
 
         allocate (gmass(nshg))  
         gmass=zero
-c
-c.... loop over the element-blocks
-c
+!
+!.... loop over the element-blocks
+!
         do iblk = 1, nelblk
           iel    = lcblk(1,iblk)
           lelCat = lcblk(2,iblk)
@@ -69,74 +34,75 @@ c
           npro   = lcblk(1,iblk+1) - iel 
           inum   = iel + npro - 1
           ngauss = nint(lcsyst)
-c
-c
-c.... compute and assemble the residual and tangent matrix
-c
+!
+!
+!.... compute and assemble the residual and tangent matrix
+!
           allocate (tmpshp(nshl,MAXQPT))
           allocate (tmpshgl(nsd,nshl,MAXQPT))
           tmpshp(1:nshl,:) = shp(lcsyst,1:nshl,:)
           tmpshgl(:,1:nshl,:) = shgl(lcsyst,:,1:nshl,:)
          
 
-          call AsImass (x,       tmpshp,     
-     &                  tmpshgl, mien(iblk)%p,
-     &                  gmass)
+          call AsImass (x,       tmpshp,      &
+                        tmpshgl, mien(iblk)%p, &
+                        gmass)
 
           deallocate ( tmpshp )
           deallocate ( tmpshgl )
-c
-c.... end of interior element loop
-c
+!
+!.... end of interior element loop
+!
        enddo
 
       return
       end
 
-        subroutine AsImass (x,      shp,
-     &                     shgl,    ien,     
-     &                     gmass)
-c
-c----------------------------------------------------------------------
-c
-c This routine computes and assembles the mass corresponding to the
-c each node.
-c
-c Ken Jansen, Winter 2000.  (Fortran 90)
-c----------------------------------------------------------------------
-c
-      include "common.h"
-c
-        real*8 x(numnp,nsd),              
-     &         shp(nshl,maxsh),       shgl(nsd,nshl,ngauss),
-     &         gmass(nshg)
+        subroutine AsImass (x,      shp, &
+                           shgl,    ien,      &
+                           gmass)
+!
+!----------------------------------------------------------------------
+!
+! This routine computes and assembles the mass corresponding to the
+! each node.
+!
+! Ken Jansen, Winter 2000.  (Fortran 90)
+!----------------------------------------------------------------------
+!
+       use phcommonvars
+       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+        real*8 x(numnp,nsd),               &
+               shp(nshl,maxsh),       shgl(nsd,nshl,ngauss), &
+               gmass(nshg)
 
         integer ien(npro,nshl)
 
-c
-        real*8    xl(npro,nenl,nsd),    WdetJ(npro), 
-     &            sgn(npro,nshl),       shape(npro,nshl),          
-     &            locmass(npro,nshl),   shg(npro,nshl,nsd),
-     &            fmstot(npro),         temp(npro),
-     &            dxidx(npro,nsd,nsd),  shdrv(npro,nsd,nshl)
+!
+        real*8    xl(npro,nenl,nsd),    WdetJ(npro),  &
+                  sgn(npro,nshl),       shapeVar(npro,nshl),           &
+                  locmass(npro,nshl),   shg(npro,nshl,nsd), &
+                  fmstot(npro),         temp(npro), &
+                  dxidx(npro,nsd,nsd),  shdrv(npro,nsd,nshl)
 
         integer aa
-c        
-c
-c
-c.... gather the variables
-c
-c
-c.... get the matrix of mode signs for the hierarchic basis functions. 
-c
+!        
+!
+!
+!.... gather the variables
+!
+!
+!.... get the matrix of mode signs for the hierarchic basis functions. 
+!
         if (ipord .gt. 1) then
            call getsgn(ien,sgn)
         endif
         
         call localx(x,      xl,     ien,    nsd,    'gather  ')
-c
-c.... zero the matrices if they are being recalculated
-c
+!
+!.... zero the matrices if they are being recalculated
+!
 
         locmass=zero
         fmstot=zero
@@ -144,90 +110,91 @@ c
         do intp = 1, ngauss
 
            if (Qwt(lcsyst,intp) .eq. zero) cycle ! precaution
-c
-c.... get the hierarchic shape functions at this int point
-c
-           call getshp(shp,          shgl,      sgn, 
-     &                 shape,        shdrv)
+!
+!.... get the hierarchic shape functions at this int point
+!
+           call getshp(shp,          shgl,      sgn,  &
+                       shapeVar,        shdrv)
 
-c
-c.... --------------------->  Element Metrics  <-----------------------
-c
-           call e3metric( xl,         shdrv,       dxidx,  
-     &                    shg,        WdetJ)
+!
+!.... --------------------->  Element Metrics  <-----------------------
+!
+           call e3metric( xl,         shdrv,       dxidx,   &
+                          shg,        WdetJ)
 
-c
-c  get this quad points contribution to the integral of the square of  the 
-c  shape function
-c
+!
+!  get this quad points contribution to the integral of the square of  the 
+!  shape function
+!
            do aa = 1,nshl
-              locmass(:,aa)= locmass(:,aa) 
-     &             + shape(:,aa)*shape(:,aa)*WdetJ
+              locmass(:,aa)= locmass(:,aa)  &
+                   + shapeVar(:,aa)*shapeVar(:,aa)*WdetJ
            enddo
-c
-c also accumulate this quad points contribution to the integral of the element
-c volume (integral Na^2 d Omega)
-c 
+!
+! also accumulate this quad points contribution to the integral of the element
+! volume (integral Na^2 d Omega)
+! 
            fmstot= fmstot + WdetJ ! intregral  d Omega
-c
-c.... end of integration loop
-c
+!
+!.... end of integration loop
+!
         enddo
-c
-c.... lumped mass if needed   Note that the locmass factors accumulated
-c     over integration points and weighted with WdetJ already.
-c
+!
+!.... lumped mass if needed   Note that the locmass factors accumulated
+!     over integration points and weighted with WdetJ already.
+!
 
-c.... scale the LHS matrix contribution with special lumping weighting
-c
-c  The first term we collect is the trace of integral Na^2 d Omega
-c
+!.... scale the LHS matrix contribution with special lumping weighting
+!
+!  The first term we collect is the trace of integral Na^2 d Omega
+!
         temp = zero
         do aa = 1, nshl
            temp = temp + locmass(:,aa) !reusing temp to save memory
         enddo
 
-c
-c scale the diagonal so that the trace will still yield Omega^e (the volume
-c of the element)
-c
+!
+! scale the diagonal so that the trace will still yield Omega^e (the volume
+! of the element)
+!
         do aa = 1, nshl
            locmass(:,aa) = locmass(:,aa) * fmstot / temp
         enddo
-c
-c.... assemble the residual
-c
+!
+!.... assemble the residual
+!
         call local (gmass,    locmass,     ien,    1,  'scatter ')
 
-c
-c.... end
-c
+!
+!.... end
+!
         return
         end
 
-      subroutine lmassadd ( ac,       res,
-     &                      rowp,     colm,    
-     &                      lhsK,     gmass)
-c     
-      include "common.h"
-c     
+      subroutine lmassadd ( ac,       res, &
+                            rowp,     colm,     &
+                            lhsK,     gmass)
+!     
+       use phcommonvars
+       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     
       real*8 ac(nshg,ndof), res(nshg,4), tmp,tmp1
       real*8 lhsK(9,nnz_tot), gmass(nshg), rho(nshg)
       integer rowp(nnz*nshg),  colm(nshg+1)
       integer	n,	k
-c
+!
       integer sparseloc
-c
-c
+!
+!
       rho=datmat(1,1,1)  ! needs to be generalized for VOF or level set
       tmp1=flmpl*almi
       if((flmpl.ne.0).and.(lhs.eq.1)) then
-c
-c.... Add lmass to diag of lhsK
-c
+!
+!.... Add lmass to diag of lhsK
+!
          do n = 1, nshg
-	    k = sparseloc( rowp(colm(n)), colm(n+1)-colm(n), n )
-     &       + colm(n)-1
+	    k = sparseloc( rowp(colm(n)), colm(n+1)-colm(n), n ) &
+             + colm(n)-1
             tmp=gmass(n)*tmp1*rho(n)
 	    lhsK(1,k) = lhsK(1,k) + tmp
 	    lhsK(5,k) = lhsK(5,k) + tmp
@@ -247,29 +214,30 @@ c
       return
       end
 
-      subroutine lmassaddSclr ( ac,       res,
-     &                          rowp,     colm,    
-     &                          lhsS,     gmass)
-c     
-      include "common.h"
-c     
+      subroutine lmassaddSclr ( ac,       res, &
+                                rowp,     colm,     &
+                                lhsS,     gmass)
+!     
+       use phcommonvars
+       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     
       real*8 ac(nshg),       res(nshg), tmp, tmp1
       real*8 lhsS(nnz_tot), gmass(nshg), rho(nshg)
       integer rowp(nnz*nshg),  colm(nshg+1)
       integer	n,	k
-c
+!
       integer sparseloc
-c
-c
+!
+!
       rho=datmat(1,1,1)  ! needs to be generalized for VOF or level set
       tmp1=flmpl*almi
       if((flmpl.ne.0).and.(lhs.eq.1)) then
-c
-c.... Add lmass to diag of lhsK
-c
+!
+!.... Add lmass to diag of lhsK
+!
          do n = 1, nshg
-	    k = sparseloc( rowp(colm(n)), colm(n+1)-colm(n), n )
-     &       + colm(n)-1
+	    k = sparseloc( rowp(colm(n)), colm(n+1)-colm(n), n ) &
+             + colm(n)-1
             tmp=gmass(n)*tmp1*rho(n)
 	    lhsS(k) = lhsS(k) + tmp
          enddo

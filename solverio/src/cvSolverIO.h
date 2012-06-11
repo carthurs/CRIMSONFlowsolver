@@ -36,6 +36,9 @@ DAMAGE.
 
 **********************************************************************/
 
+#ifndef CVSOLVERIO_H
+#define CVSOLVERIO_H
+
 #include <stdio.h>
 
 #ifdef WIN32
@@ -169,10 +172,13 @@ void
 writestring_( int* fileDescriptor,
               const char* string );
 
+void bzero_old(void* ptr, size_t sz);
+
 #ifdef __cplusplus
 }
 #endif
 
+#endif
 
 
 

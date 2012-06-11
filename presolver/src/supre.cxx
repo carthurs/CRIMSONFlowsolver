@@ -38,11 +38,11 @@ DAMAGE.
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifndef WIN32
-#include "sys/param.h"
-#else
-#define MAXPATHLEN 1024
-#endif
+//#ifndef WIN32
+//#include "sys/param.h"
+//#else
+//#define MAXPATHLENGTH 1024
+//#endif
 #include <string.h>
 
 #include "cmd.h"
@@ -75,10 +75,16 @@ double  init_p_ = 0.0;
 double  init_v_[3];
 double* soln_ = NULL;
 double* dispsoln_ = NULL;
+double* acc_ = NULL;
 double* SWBtp_ = NULL;
 double* TWBtp_ = NULL;
 double* EWBtp_ = NULL;
-double* acc_ = NULL;
+int* linobs_soln_ = NULL;
+int* linobs_acc_ = NULL;
+int* linobs_disp_ = NULL;
+
+int numObs_ = 0;
+int numParams_ = 0;
 
 int     DisplacementNumElements_ = 0;
 int*    DisplacementConn_[3];
@@ -100,9 +106,9 @@ int main(int argc, char *argv[]) {
   // default initial pressure
   init_p_ = 0.0;
 
-  char logname[MAXPATHLEN];
-  char mname[MAXPATHLEN];
-  char debug_file[MAXPATHLEN];
+  char logname[MAXPATHLENGTH];
+  char mname[MAXPATHLENGTH];
+  char debug_file[MAXPATHLENGTH];
   char s[MAXCMDLINELENGTH];
   int stat = 0;
 

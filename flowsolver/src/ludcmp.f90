@@ -1,45 +1,68 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
       subroutine ludcmp(aa,n,np,indx,d)
-c
-      include "common.h"
-c
-c     code removed due to licensing concerns
-c
-      stop 1
+!---------------------------------------------------------------------
+!
+!  find the LU decomposition of a matrix. 
+!
+!  Numerical Recipes: p. 38
+!
+!---------------------------------------------------------------------
+      use phcommonvars  
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      
+      dimension aa(np,np), indx(n), vv(500)
+      
+      d=1.0
+      do i=1,n
+         aamax=0.0
+         do j=1,n
+            if (abs(aa(i,j)).gt.aamax) aamax=abs(aa(i,j))
+         enddo
+         vv(i)=1.0/aamax
+      enddo
+      
+      do j=1,n
+         do i=1,j-1
+            sum=aa(i,j)
+            do k=1,i-1
+               sum=sum-aa(i,k)*aa(k,j)
+            enddo
+            aa(i,j)=sum
+         enddo
+         aamax = 0.0
+         do i=j,n
+            sum=aa(i,j)
+            do k=1,j-1
+               sum=sum-aa(i,k)*aa(k,j)
+            enddo
+            aa(i,j)=sum
+            dum=vv(i)*abs(sum)
+            if (dum.ge.aamax) then
+               imax=i
+               aamax=dum
+            endif
+         enddo
+         if (j.ne.imax) then
+            do k=1,n
+               dum=aa(imax,k)
+               aa(imax,k)=aa(j,k)
+               aa(j,k)=dum
+            enddo
+            d=-d
+            vv(imax)=vv(j)
+         endif
+         indx(j)=imax
+         if(j.ne.n)then
+            dum=1.0/aa(j,j)
+            do i=j+1,n
+               aa(i,j)=aa(i,j)*dum
+            enddo
+         endif
+      enddo
+
+      return
       end
- 
+      
+      
+         
+      
+      

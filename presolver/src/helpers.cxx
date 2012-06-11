@@ -210,7 +210,7 @@ int parseNum2(char *cmd, int *num) {
     char ignored[MAXSTRINGLENGTH];
     ignored[0]='\0';
     cmd_token_get (&n, cmd, ignored, &end);
-    char infile[MAXPATHLEN];
+    char infile[MAXPATHLENGTH];
     infile[0]='\0';
     cmd_token_get (&n, cmd, infile, &end);
     char surfidstr[MAXSTRINGLENGTH];
@@ -289,7 +289,7 @@ int parseDouble3(char *cmd, double *v1, double *v2, double *v3) {
     char ignored[MAXSTRINGLENGTH];
     ignored[0]='\0';
     cmd_token_get (&n, cmd, ignored, &end);
-    char str1[MAXPATHLEN];
+    char str1[MAXPATHLENGTH];
     str1[0]='\0';
     cmd_token_get (&n, cmd, str1, &end);
     char str2[MAXSTRINGLENGTH];
@@ -324,7 +324,7 @@ int parseDouble3(char *cmd, double *v1, double *v2, double *v3) {
 int parseFile(char *cmd) {
 
     // parse command string
-    char infile[MAXPATHLEN];
+    char infile[MAXPATHLENGTH];
     parseCmdStr(cmd,infile);
 
     // do work

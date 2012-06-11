@@ -1,50 +1,13 @@
-/*********************************************************************
-
-Copyright (c) 2000-2007, Stanford University, 
-    Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-    Charles A. Taylor (see SimVascular Acknowledgements file 
-    for additional contributors to the source code).
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions 
-are met:
-
-Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer. 
-Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
-documentation and/or other materials provided with the distribution. 
-Neither the name of the Stanford University or Rensselaer Polytechnic
-Institute nor the names of its contributors may be used to endorse or
-promote products derived from this software without specific prior 
-written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-**********************************************************************/
 #include <cstdlib>
 #include <fstream>
-#include "Input.h"
+#include "CInput.h"
 #include "ValType.h"
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
 
 // return a given key value (if it's in the map)
-ValType Input::GetValue(const string &str) const
+ValType CInput::GetValue(const string &str) const
 {
   if (input_map->find(str) != input_map->end()) {
     if ( (*input_map)[str] == "NODEFAULT" ) {
@@ -62,7 +25,7 @@ ValType Input::GetValue(const string &str) const
 }
 
 
-Input::Input(const string &fname, const string &default_fname)
+CInput::CInput(const string &fname, const string &default_fname)
 {
   // open the input file
   ifstream infile( fname.c_str(), ios::in);
@@ -114,7 +77,7 @@ Input::Input(const string &fname, const string &default_fname)
   
 }
   
-Input::~Input()
+CInput::~CInput()
 {
   delete input_text;
   delete input_map;
@@ -122,13 +85,13 @@ Input::~Input()
 
 
 // return the input map
-map<string,string> Input::InputMap() const
+map<string,string> CInput::InputMap() const
 {
   return *input_map;
 }
 
 // echo the entire map
-void Input::EchoInputMap(const ostream &ofile)
+void CInput::EchoInputMap(const ostream &ofile)
 {
   map<string,string>::const_iterator iter = input_map->begin();
   for ( ; iter != input_map->end(); ++iter ) {
@@ -138,7 +101,7 @@ void Input::EchoInputMap(const ostream &ofile)
 }
 
 // read the input text from the given stream
-void Input::get_input_lines(vector<string> *text, ifstream &infile)
+void CInput::get_input_lines(vector<string> *text, ifstream &infile)
 {
   string textline;
   while ( getline( infile, textline, '\n' ) ) {
@@ -151,7 +114,7 @@ void Input::get_input_lines(vector<string> *text, ifstream &infile)
 
 
 // 
-void Input::build_map(map<string,string> *inmap,
+void CInput::build_map(map<string,string> *inmap,
 		      vector<string>     *intext)
 {
   // iterate through input_text of text and separate at :'s
@@ -187,7 +150,7 @@ void Input::build_map(map<string,string> *inmap,
 }
 
 // remove leading and trailing spaces (or tabs)
-void Input::trim_string(string *str)
+void CInput::trim_string(string *str)
 {
   // check for empty string
   int length = str->length();

@@ -41,7 +41,7 @@ DAMAGE.
 
 #define MAXSTRINGLENGTH 1024
 #define MAXCMDLINELENGTH 1024
-#define MAXPATHLEN 1024
+#define MAXPATHLENGTH 1024
 #define DATA_MAX_SIZE 100
 #define CV_OK 1
 #define CV_ERROR 0
@@ -129,5 +129,11 @@ int CALLTYPE cmd_read_TWB(char*);
 int CALLTYPE cmd_read_EWB(char*);
 int CALLTYPE cmd_write_displacements(char*);
 int CALLTYPE cmd_write_pressures(char*);
+int CALLTYPE cmd_number_of_observations(char*);
+int CALLTYPE cmd_number_of_parameters(char*);
+int CALLTYPE cmd_deformable_observe_displacements_on(char*);
+int CALLTYPE cmd_deformable_observe_velocities_on(char*);
+int CALLTYPE cmd_deformable_observe_pressures_on(char*);
+int CALLTYPE cmd_write_linear_observation_operator(char*);
 
 #endif // CMD_H

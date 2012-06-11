@@ -1,43 +1,7 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
       module quadfilt
 
-      real*8, allocatable :: shpf(:,:,:)
-      real*8, allocatable :: shglf(:,:,:,:)
+      real*8, allocatable, target :: shpf(:,:,:)
+      real*8, allocatable, target :: shglf(:,:,:,:)
       real*8, allocatable :: Qptf(:,:,:)
       real*8, allocatable :: Qwtf(:,:)
 
@@ -54,13 +18,14 @@ c
 
       end module
 
-c------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 
       subroutine setfilt
 
       use quadfilt
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       ifiltrl = mod(iLES,10)
 
@@ -94,9 +59,9 @@ c------------------------------------------------------------------------------
 
 
       allocate ( numNden(nshg,2) )
-C
-C In development
-C
+!
+! In development
+!
       allocate ( xnd(70,2) )
       allocate ( xmodcomp(70,5) )
       allocate ( xmcomp(70,6) )
@@ -105,24 +70,25 @@ C
       allocate ( xl2comp(70,6) )
       allocate ( ucomp(70,3) )
       allocate ( scomp(70) )
-C
-C In development
-C
+!
+! In development
+!
 
       numNden = zero
 
-c.... return
+!.... return
 
       return
       end
 
-c------------------------------------------------------------------------------
+!------------------------------------------------------------------------------
 
       subroutine filtprep
 
       use quadfilt
 
-      include "common.h"
+       use phcommonvars
+ IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
  
       real*8, allocatable :: tmpQptf (:,:), tmpQwtf (:)
 
@@ -131,10 +97,10 @@ c------------------------------------------------------------------------------
       call symtet(nintf(1),tmpQptf,tmpQwtf,nerr)
       Qptf(1,1:4,1:nintf(1)) = tmpQptf(1:4,1:nintf(1))
       Qwtf(1,1:nintf(1))     = tmpQwtf(1:nintf(1))
-c
-c.... adjust quadrature weights to be consistent with the
-c     design of tau. 
-c
+!
+!.... adjust quadrature weights to be consistent with the
+!     design of tau. 
+!
       do i = 1, nintf(1)
          Qwtf(1,i) = (four/three)*Qwtf(1,i)
       enddo
@@ -167,71 +133,71 @@ c
       deallocate (tmpQptf)
       deallocate (tmpQwtf)
 
-c
-c.... loop through element blocks
-c
+!
+!.... loop through element blocks
+!
       do iblk = 1, nelblk
-c
-c.... get coord. system and element type 
-c
+!
+!.... get coord. system and element type 
+!
          lcsyst = lcblk(3,iblk)
          nshl   = lcblk(10,iblk)
-c
-c.... generate the shape-functions in local coordinates
-c
+!
+!.... generate the shape-functions in local coordinates
+!
          if (lcsyst .eq. 1) then ! tets
            
             do i=1,nintf(1)  
-               call shpTet(ipord,Qptf(1,1:3,i),shpf(1,:,i),
-     &              shglf(1,:,:,i))
+               call shpTet(ipord,Qptf(1,1:3,i),shpf(1,:,i), &
+                    shglf(1,:,:,i))
             enddo
-c
-c.... permute to positive volume element
-c
-            shglf(1,:,1:nshl,1:nintf(1)) = 
-     &           shglf(1,:,1:nshl,1:nintf(1))/two
+!
+!.... permute to positive volume element
+!
+            shglf(1,:,1:nshl,1:nintf(1)) =  &
+                 shglf(1,:,1:nshl,1:nintf(1))/two
 
-c     
+!     
          else if (lcsyst .eq. 2) then ! hexes
-c     
+!     
 
 
             do i=1,nintf(2)
-               call shphex  (ipord, Qptf(2,1:3,i),shpf(2,:,i),
-     &              shglf(2,:,:,i))
+               call shphex  (ipord, Qptf(2,1:3,i),shpf(2,:,i), &
+                    shglf(2,:,:,i))
              
             enddo
-c
+!
          else if (lcsyst .eq. 3) then ! wedges
-c
+!
             do i=1,nintf(3)
-               call shp6W  (ipord,Qptf(3,1:3,i),shpf(3,:,i),
-     &              shglf(3,:,:,i))
+               call shp6W  (ipord,Qptf(3,1:3,i),shpf(3,:,i), &
+                    shglf(3,:,:,i))
             enddo
-c     
+!     
          else if (lcsyst .eq. 5) then ! pyramids
-c     
+!     
             do i=1,nintf(5)
-               call shppyr  (ipord,Qptf(5,1:3,i),shpf(5,:,i),
-     &              shglf(5,:,:,i))
+               call shppyr  (ipord,Qptf(5,1:3,i),shpf(5,:,i), &
+                    shglf(5,:,:,i))
             enddo
 
-c
-c.... nonexistent element
-c
+!
+!.... nonexistent element
+!
          else
-c
+!
             call error ('filtprep  ', 'elem Cat', lelCat)
-c
+!
          endif
-c
-c.... end of generation
-c
+!
+!.... end of generation
+!
       enddo      
 
-c     
-c.... return
-c     
+!     
+!.... return
+!     
       return
       end
 

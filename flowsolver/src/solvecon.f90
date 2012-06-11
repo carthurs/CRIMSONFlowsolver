@@ -1,86 +1,51 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-      subroutine solvecon(y,       x,      iBC,  BC, 
-     &                     iper,    ilwork, shp,  shgl)
+      subroutine solvecon(y,       x,      iBC,  BC,  &
+                           iper,    ilwork, shp,  shgl)
 
-c---------------------------------------------------------------------
-c This subroutine is to calculate the constarint for the redistancing 
-c scalar of the level set method. This is to prevent interface from 
-c moving by applying the condition that the volume must stay constant 
-c in each element when the redisatnce step is applied.
-c--------------------------------------------------------------------
-c
-c
+!---------------------------------------------------------------------
+! This subroutine is to calculate the constraint for the redistancing 
+! scalar of the level set method. This is to prevent interface from 
+! moving by applying the condition that the volume must stay constant 
+! in each element when the redistance step is applied.
+!--------------------------------------------------------------------
+!
+!
       use pointer_data
-c     
-      include "common.h"
+!     
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"      
-c      
-      dimension y(nshg,ndof),                    
-     &          x(numnp,nsd),            iBC(nshg),
-     &          BC(nshg,ndofBC),         ilwork(nlwork),
-     &          iper(nshg)
-c
-c     
-      dimension shp(MAXTOP,maxsh,MAXQPT),  
-     &           shgl(MAXTOP,nsd,maxsh,MAXQPT), 
-     &           v_lambda(nshg),   hprime(nshg),
-     &           v_lambda1(nshg), v_lambda2(nshg),
-     &           rmass(nshg) 
-c
+      !include "auxmpi.h"      
+!      
+      dimension y(nshg,ndof),                     &
+                x(numnp,nsd),            iBC(nshg), &
+                BC(nshg,ndofBC),         ilwork(nlwork), &
+                iper(nshg)
+!
+!     
+      dimension shp(MAXTOP,maxsh,MAXQPT),   &
+                 shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
+                 v_lambda(nshg),   hprime(nshg), &
+                 v_lambda1(nshg), v_lambda2(nshg), &
+                 rmass(nshg) 
+!
         real*8, allocatable :: tmpshp(:,:),  tmpshgl(:,:,:)
         real*8, allocatable :: tmpshpb(:,:), tmpshglb(:,:,:)
 
-c
-c ... intialize
-c       
+!
+! ... intialize
+!       
       rmass  = zero
       v_lambda = zero
       v_lambda1 = zero
       v_lambda2 = zero
       hprime = zero
-c
-c ... loop over element blocks
-c
+!
+! ... loop over element blocks
+!
       do iblk = 1, nelblk
-c
-c.... set up the parameters
-c
+!
+!.... set up the parameters
+!
          nenl   = lcblk(5,iblk) ! no. of vertices per element
          iel    = lcblk(1,iblk)
          lelCat = lcblk(2,iblk)
@@ -93,36 +58,36 @@ c
          nsymdl = lcblk(9,iblk)
          npro   = lcblk(1,iblk+1) - iel
          ngauss = nint(lcsyst)
-c
-c.... compute and assemble the constarint factor, and mass matrix
-c     
+!
+!.... compute and assemble the constarint factor, and mass matrix
+!     
 
          allocate (tmpshp(nshl,MAXQPT))
          allocate (tmpshgl(nsd,nshl,MAXQPT))
 
          tmpshp(1:nshl,:) = shp(lcsyst,1:nshl,:)
          tmpshgl(:,1:nshl,:) = shgl(lcsyst,:,1:nshl,:)
-c   
-         call volcon (y,          x,             tmpshp,              
-     &                tmpshgl,    mien(iblk)%p,  rmass,     
-     &                v_lambda1,  hprime,        v_lambda2)
+!   
+         call volcon (y,          x,             tmpshp,               &
+                      tmpshgl,    mien(iblk)%p,  rmass,      &
+                      v_lambda1,  hprime,        v_lambda2)
 
          deallocate ( tmpshp )
          deallocate ( tmpshgl ) 
       enddo
 
-c
-c ... multiple processor communication
-c
+!
+! ... multiple processor communication
+!
       if (numpe > 1) then
          call commu (v_lambda1  , ilwork, 1  , 'in ')
          call commu (v_lambda2  , ilwork, 1  , 'in ')
          call commu (hprime     , ilwork, 1  , 'in ')
          call commu (rmass      , ilwork, 1  , 'in ')
       endif
-c
-c.... take care of periodic boundary conditions
-c
+!
+!.... take care of periodic boundary conditions
+!
       do j= 1,nshg
          if (btest(iBC(j),10)) then
             i = iper(j)
@@ -132,7 +97,7 @@ c
             hprime(i)   =  hprime(i) + hprime(j)
          endif
       enddo
-c
+!
       do j= 1,nshg
          if (btest(iBC(j),10)) then
             i = iper(j)
@@ -142,126 +107,127 @@ c
             hprime(j) = hprime(i)
          endif
       enddo
-c
-c ... calculation of constraint factor
-c
+!
+! ... calculation of constraint factor
+!
       rmass  = one/rmass
       v_lambda1 = v_lambda1*rmass ! numerator of lambda
       v_lambda2 = v_lambda2*rmass ! denominator of lambda
       v_lambda  = v_lambda1/(v_lambda2+epsM**2)
       hprime    = hprime*rmass
       v_lambda  = v_lambda*hprime  
-c
-c ... commu out for the multiple processor
-c
+!
+! ... commu out for the multiple processor
+!
       if(numpe > 1) then
          call commu (v_lambda, ilwork, 1, 'out')    
       endif
-c          
-c ... the following commented lines are for the different way of getting 
-c     the denominator of constraint (lambda) calculation 
-c$$$                hprime=zero
-c$$$                do kk=1, nshg
-c$$$                   if (abs (y(kk,6)) .le. epsilon_ls) then
-c$$$                      hprime(kk) = (0.5/epsilon_ls) * (1 
-c$$$     &                   + cos(pi*y(kk,6)/epsilon_ls))
-c$$$                   endif
-c$$$                enddo
-c$$$                y(:,7) = y(:,7)+v_lambda*hprime/dtgl
-c
-c ... the vlome constraint applied on the second scalar
-c
+!          
+! ... the following commented lines are for the different way of getting 
+!     the denominator of constraint (lambda) calculation 
+!$$$                hprime=zero
+!$$$                do kk=1, nshg
+!$$$                   if (abs (y(kk,6)) .le. epsilon_ls) then
+!$$$                      hprime(kk) = (0.5/epsilon_ls) * (1 
+!$$$     &                   + cos(pi*y(kk,6)/epsilon_ls))
+!$$$                   endif
+!$$$                enddo
+!$$$                y(:,7) = y(:,7)+v_lambda*hprime/dtgl
+!
+! ... the vlome constraint applied on the second scalar
+!
       y(:,7) = y(:,7)+v_lambda/dtgl   
-c  
+!  
       return
       end
-c
-c
-c
+!
+!
+!
 
-      subroutine volcon (y,         x,      shp,      
-     &                   shgl,      ien,    rmass, 
-     &                   v_lambda1, hprime, v_lambda2)
+      subroutine volcon (y,         x,      shp,       &
+                         shgl,      ien,    rmass,  &
+                         v_lambda1, hprime, v_lambda2)
 
-c---------------------------------------------------------------------
-c
-c This subroutine is to calculate the element contribution to the 
-c constraint factor and mass matrix.
-c
-c---------------------------------------------------------------------
-      include "common.h"
-c     
-      dimension y(nshg,ndof),               x(numnp,nsd),              
-     &            shp(nshl,maxsh),  
-     &            shgl(nsd,nshl,maxsh),
-     &            ien(npro,nshl),
-     &            qres(nshg,idflx),         rmass(nshg)
-c
-c.... element level declarations
-c
-      dimension ycl(npro,nshl,ndof),      xl(npro,nenl,nsd),         
-     &          rmassl(npro,nshl)     
-      dimension sgn(npro,nshape),         v_lambdal1(npro,nshl),
-     &          v_lambda1(nshg),          hprimel(npro,nshl),
-     &          hprime(nshg),             v_lambdal2(npro,nshl),
-     &          v_lambda2(nshg)
-c
-c local arrays
-c
-      dimension shg(npro,nshl,nsd),
-     &          dxidx(npro,nsd,nsd),      WdetJ(npro)
-c
-      dimension shape(npro,nshl),
-     &          shdrv(npro,nsd,nshl)
-c
-c
-c.... for volume constraint calculation of redistancing step
-c
-      dimension Sclr(npro),              Sclrtmp(npro),
-     &          h_prime(npro),           tmp1(npro), 
-     &          tmp2(npro),
-     &          v_lambdatmp(npro),       v_lambdal(npro,nshl)
-c$$$     &          ,hprimel(npro,nshl),      v_lambdal1(npro,nshl),
-c$$$     &          v_lambdal2(npro,nshl)
-c above arrays must be uncommented for alternate method included below (commented)
+!---------------------------------------------------------------------
+!
+! This subroutine is to calculate the element contribution to the 
+! constraint factor and mass matrix.
+!
+!---------------------------------------------------------------------
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     
+      dimension y(nshg,ndof),               x(numnp,nsd),               &
+                  shp(nshl,maxsh),   &
+                  shgl(nsd,nshl,maxsh), &
+                  ien(npro,nshl), &
+                  qres(nshg,idflx),         rmass(nshg)
+!
+!.... element level declarations
+!
+      dimension ycl(npro,nshl,ndof),      xl(npro,nenl,nsd),          &
+                rmassl(npro,nshl)     
+      dimension sgn(npro,nshape),         v_lambdal1(npro,nshl), &
+                v_lambda1(nshg),          hprimel(npro,nshl), &
+                hprime(nshg),             v_lambdal2(npro,nshl), &
+                v_lambda2(nshg)
+!
+! local arrays
+!
+      dimension shg(npro,nshl,nsd), &
+                dxidx(npro,nsd,nsd),      WdetJ(npro)
+!
+      dimension shapeVar(npro,nshl), &
+                shdrv(npro,nsd,nshl)
+!
+!
+!.... for volume constraint calculation of redistancing step
+!
+      dimension Sclr(npro),              Sclrtmp(npro), &
+                h_prime(npro),           tmp1(npro),  &
+                tmp2(npro), &
+                v_lambdatmp(npro),       v_lambdal(npro,nshl)
+!$$$     &          ,hprimel(npro,nshl),      v_lambdal1(npro,nshl),
+!$$$     &          v_lambdal2(npro,nshl)
+! above arrays must be uncommented for alternate method included below (commented)
       real epsilon_tmp
 
-c
-c.... create the matrix of mode signs for the hierarchic basis 
-c     functions. 
-c
+!
+!.... create the matrix of mode signs for the hierarchic basis 
+!     functions. 
+!
       if (ipord .gt. 1) then
          call getsgn(ien,sgn)
       endif
-c
-c.... gather the variables
-c
+!
+!.... gather the variables
+!
 
       call localy(y,      ycl,     ien,    ndof,   'gather  ')
       call localx(x,      xl,      ien,    nsd,    'gather  ')
-c
-c.... get the element contributions of the numerator and denominator 
-c     of lambda 
-c
+!
+!.... get the element contributions of the numerator and denominator 
+!     of lambda 
+!
       rmassl = zero
       v_lambdal1= zero
       v_lambdal2= zero
       hprimel = zero
-c
-c.... loop through the integration points
-c
+!
+!.... loop through the integration points
+!
       do intp = 1, ngauss
          if (Qwt(lcsyst,intp) .eq. zero) cycle ! precaution
-c
-c.... create a matrix of shape functions (and derivatives) for each
-c     element at this quadrature point. These arrays will contain 
-c     the correct signs for the hierarchic basis
-c
-         call getshp(shp,          shgl,      sgn, 
-     &               shape,        shdrv)
-c
-c.... initialize
-c     
+!
+!.... create a matrix of shape functions (and derivatives) for each
+!     element at this quadrature point. These arrays will contain 
+!     the correct signs for the hierarchic basis
+!
+         call getshp(shp,          shgl,      sgn,  &
+                     shapeVar,        shdrv)
+!
+!.... initialize
+!     
          h_prime   = zero        
 	 sclr      = zero
 	 sclrtmp   = zero
@@ -269,19 +235,19 @@ c
          tmp1       =zero
          tmp2       =zero
 
-c
-c.... --------------------->  Element Metrics  <-----------------------
-c
-         call e3metric( xl,         shdrv,        dxidx,  
-     &                  shg,        WdetJ)
+!
+!.... --------------------->  Element Metrics  <-----------------------
+!
+         call e3metric( xl,         shdrv,        dxidx,   &
+                        shg,        WdetJ)
 
-c
+!
          do i = 1, nshl 
-c
-c  y(intp)=SUM_{a=1}^nshl (N_a(intp) Ya)
-c     
-            Sclr    = Sclr    + shape(:,i) * ycl(:,i,7) !d^kbar
-            sclrtmp = sclrtmp + shape(:,i) * ycl(:,i,6) !d^0
+!
+!  y(intp)=SUM_{a=1}^nshl (N_a(intp) Ya)
+!     
+            Sclr    = Sclr    + shapeVar(:,i) * ycl(:,i,7) !d^kbar
+            sclrtmp = sclrtmp + shapeVar(:,i) * ycl(:,i,6) !d^0
          enddo
 
          if (isclr .eq. 2) then
@@ -292,31 +258,31 @@ c
 
          do i=1,npro
             if (abs (Sclrtmp(i)) .le. epsilon_tmp) then
-               h_prime(i) = (0.5/epsilon_tmp) * (1 
-     &                    + cos(pi*Sclrtmp(i)/epsilon_tmp))
+               h_prime(i) = (0.5/epsilon_tmp) * (1  &
+                          + cos(pi*Sclrtmp(i)/epsilon_tmp))
                tmp1(i)=-h_prime(i)*(sclr(i)-sclrtmp(i))*dtgl
                tmp2(i)=h_prime(i)**2
-c              v_lambdatmp(i)=tmp1(i)/(tmp2(i)+ epsM)
+!              v_lambdatmp(i)=tmp1(i)/(tmp2(i)+ epsM)
             endif
          enddo
-c
+!
          do i=1,nshl
-            v_lambdal1(:,i)=v_lambdal1(:,i)+ shape(:,i)*WdetJ*tmp1
-            v_lambdal2(:,i)=v_lambdal2(:,i)+ shape(:,i)*WdetJ*tmp2
-c           v_lambdal(:,i)=v_lambdal(:,i)+ shape(:,i)*WdetJ*v_lambdatmp
-            hprimel(:,i) = hprimel(:,i) + shape(:,i)*WdetJ*h_prime
-            rmassl(:,i)  =rmassl(:,i) + shape(:,i)*WdetJ
+            v_lambdal1(:,i)=v_lambdal1(:,i)+ shapeVar(:,i)*WdetJ*tmp1
+            v_lambdal2(:,i)=v_lambdal2(:,i)+ shapeVar(:,i)*WdetJ*tmp2
+!           v_lambdal(:,i)=v_lambdal(:,i)+ shapeVar(:,i)*WdetJ*v_lambdatmp
+            hprimel(:,i) = hprimel(:,i) + shapeVar(:,i)*WdetJ*h_prime
+            rmassl(:,i)  =rmassl(:,i) + shapeVar(:,i)*WdetJ
          enddo
-c
-c.... end of the loop over integration points
-c
+!
+!.... end of the loop over integration points
+!
       enddo
-c
+!
       call local (v_lambda1,  v_lambdal1, ien,  1,  'scatter ')
       call local (v_lambda2,  v_lambdal2, ien,  1,  'scatter ')
       call local (hprime,     hprimel,    ien,  1,  'scatter ')
       call local (rmass,      rmassl,     ien,  1,  'scatter ') 
-c
+!
       return
       end
 

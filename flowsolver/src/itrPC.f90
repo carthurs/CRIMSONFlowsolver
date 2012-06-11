@@ -1,55 +1,22 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-c-----------------------------------------------------------------------
-c
-c    Initialize the predictor multicorrector (set up parameters)
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!    Initialize the predictor multicorrector (set up parameters)
+!
+!    Modified by Alberto Figueroa.  Winter 2004
+!-----------------------------------------------------------------------
       subroutine itrSetup ( y,  acold ) 
       
       use deformableWall
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8     y(nshg,ndof),     acold(nshg,ndof)
       
-c
-c  Define the Hulbert parameters
-c  second order if between (and including) 0 and 1 otherwise backward Euler
-c
+!
+!  Define the Hulbert parameters
+!  second order if between (and including) 0 and 1 otherwise backward Euler
+!
       if( rhoinf(itseq).lt.0.or.rhoinf(itseq).gt.1) then ! backward Euler
          almi   = one
          alfi   = one
@@ -65,26 +32,26 @@ c
             betai=0.0
          end if
       end if
-c     
-c.... set the jacobian type
-c     
+!     
+!.... set the jacobian type
+!     
       Jactyp=0
       if (impl(itseq) .eq. 3) then
          Jactyp = 1
          impl(itseq) = 2
       end if
-c     
-c.... same_Dy predictor special case
-c     
+!     
+!.... same_Dy predictor special case
+!     
       if (ipred.eq.4 .and. itseq .eq. 1 ) then
          y=y-(one-alfi)*Delt(1)*acold
          if ( rhoinf(itseq) .eq. 0.0 ) then
             ipred = 3
          end if
       end if
-c
-c.... set the global time increment and the CFL data
-c
+!
+!.... set the global time increment and the CFL data
+!
       Dtgl   = one / Delt(itseq)  ! caution: inverse of time step
       CFLfld = CFLfl(itseq)
       CFLsld = CFLsl(itseq)
@@ -93,22 +60,23 @@ c
       end
 
 
-c-----------------------------------------------------------------------
-c
-c    Predict solution at time n+1
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!    Predict solution at time n+1
+!
+!-----------------------------------------------------------------------
       subroutine itrPredict (yold,  y,  acold,   ac,   uold,   u)
       
       use pointer_data
       use LagrangeMultipliers 
       use deformableWall
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      real*8        y(nshg,ndof),               ac(nshg,ndof),
-     &              u(nshg,nsd),                yold(nshg,ndof),
-     &              acold(nshg,ndof),           uold(nshg,nsd)
+      real*8        y(nshg,ndof),               ac(nshg,ndof), &
+                    u(nshg,nsd),                yold(nshg,ndof), &
+                    acold(nshg,ndof),           uold(nshg,nsd)
 
       
       if ( ipred.eq.1) then     ! yn+1_pred=yn
@@ -117,24 +85,24 @@ c-----------------------------------------------------------------------
          ac = acold * fct
          
          if ( ideformwall.eq.1) then
-            u(mWNodes%p,1:3) = uold(mWNodes%p,1:3) + 
-     &         Delt(itseq)*yold(mWNodes%p,1:3) + 
-     &         pt5*((gami-two*betai)/gami)*
-     &         Delt(itseq)*Delt(itseq)*acold(mWNodes%p,1:3)
+            u(mWNodes%p,1:3) = uold(mWNodes%p,1:3) +  &
+               Delt(itseq)*yold(mWNodes%p,1:3) +  &
+               pt5*((gami-two*betai)/gami)* &
+               Delt(itseq)*Delt(itseq)*acold(mWNodes%p,1:3)
          end if
          
       end if
-c     
+!     
       if ( ipred.eq.2) then     ! an+1_pred=0
          y  = yold + (one - gami)/Dtgl * acold
          ac = 0.0
       end if
-c     
+!     
       if(ipred.eq.3 ) then      ! an+1_pred=an
          y  = yold+alfi*Delt(itseq)*acold
          ac = acold
       end if
-c     
+!     
       if ( ipred.eq.4 ) then    ! protect from DC=4 rho=0, same dV
          fct1 = alfi/(one-alfi)
          fct2 = one-almi/gami
@@ -142,7 +110,7 @@ c
          y    = yold+fct1*(yold-y)
          ac   = acold*fct2+(y-yold)*fct3
       end if
-c     
+!     
       if (Lagrange .gt. 0) then
          Lag = Lagold
       end if
@@ -150,21 +118,22 @@ c
       return
       end
 
-c-----------------------------------------------------------------------
-c
-c    Correct solution at time n+1
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!    Correct solution at time n+1
+!
+!-----------------------------------------------------------------------
       subroutine itrCorrect ( y,     ac,   u,   solinc )
       
       use pointer_data
       use LagrangeMultipliers 
       use deformableWall
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      real*8      y(nshg,ndof),               ac(nshg,ndof),  
-     &            u(nshg,nsd),                solinc(nshg,4)
+      real*8      y(nshg,ndof),               ac(nshg,ndof),   &
+                  u(nshg,nsd),                solinc(nshg,4)
       
       fct1 = gami*Delt(itseq)
       fct2 = gami*alfi*Delt(itseq)
@@ -174,47 +143,49 @@ c-----------------------------------------------------------------------
       ac(:,1:3) = ac(:,1:3) + solinc(:,1:3)
       
       if ( ideformwall.eq.1 ) then 
-         u(mWNodes%p,1:3)  = u(mWNodes%p,1:3) + 
-     &      Delt(itseq)*Delt(itseq)*betai*solinc(mWNodes%p,1:3)
+         u(mWNodes%p,1:3)  = u(mWNodes%p,1:3) +  &
+            Delt(itseq)*Delt(itseq)*betai*solinc(mWNodes%p,1:3)
       end if
-c     
+!     
       if (Lagrange .gt. 0) then
          Lag(:,1:3) = Lag(:,1:3) + fct2 * Lagincr(:,1:3) 
       end if
       return
       end
 
-c-----------------------------------------------------------------------
-c
-c    Correct solution at time n+1
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!    Correct solution at time n+1
+!
+!-----------------------------------------------------------------------
       subroutine itrCorrectSclr ( y,     ac,   solinc )
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      real*8      y(nshg,ndof),               ac(nshg,ndof),  
-     &            solinc(nshg)
+      real*8      y(nshg,ndof),               ac(nshg,ndof),   &
+                  solinc(nshg)
       
       fct1 = gami*Delt(itseq)
       is=5+isclr
       y(:,is)  = y(:,is)  + fct1 * solinc(:)
       ac(:,is) = ac(:,is) + solinc(:)
-c     
+!     
       return
       end
 
-c-----------------------------------------------------------------------
-c
-c    Correct solution at time n+1, protecting against negative values
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!    Correct solution at time n+1, protecting against negative values
+!
+!-----------------------------------------------------------------------
       subroutine itrCorrectSclrPos ( y,     ac,   solinc )
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      real*8      y(nshg,ndof),               ac(nshg,ndof),  
-     &            solinc(nshg),               posinc(nshg)
+      real*8      y(nshg,ndof),               ac(nshg,ndof),   &
+                  solinc(nshg),               posinc(nshg)
       
       fct1 = gami*Delt(itseq)
       if(fct1.eq.0) then
@@ -223,75 +194,76 @@ c-----------------------------------------------------------------------
          turbUpdFct = 1.0
          updFct = turbUpdFct
          updFct2 = 1.0
-c         if(topHdTscFlag.and.PRM_TCS_PARTIAL_UPDATE)then
-c            updFct2 = max(MTH_SQRT_EPS,min(topHdUpdFct,1.0))
-c         end if
+!         if(topHdTscFlag.and.PRM_TCS_PARTIAL_UPDATE)then
+!            updFct2 = max(MTH_SQRT_EPS,min(topHdUpdFct,1.0))
+!         end if
          fctCr = fct1*updFct*updFct2
          c0 = 0.01
          c1 = -(1.0-c0)/fctCr
          is=5+isclr
-c         if(any(updFct*updFct2*solinc(:).lt.c1*y(:,is))) then
-c            write(*,*) 'INSTEAD OF GETTING NEGATIVE FIELD'
-c            write(*,*) 'BROUGHT FIELD DOWN TO 1 PERCENT'
-c            write(*,*) 'FOR SCALAR NUMBER ',isclr
-c            write(*,*) '(SEE itrCorrectSclr in itrPC.f)'
-c         end if
+!         if(any(updFct*updFct2*solinc(:).lt.c1*y(:,is))) then
+!            write(*,*) 'INSTEAD OF GETTING NEGATIVE FIELD'
+!            write(*,*) 'BROUGHT FIELD DOWN TO 1 PERCENT'
+!            write(*,*) 'FOR SCALAR NUMBER ',isclr
+!            write(*,*) '(SEE itrCorrectSclr in itrPC.f)'
+!         end if
          posinc = max(updFct*updFct2*solinc,c1*y(:,is))
          y(:,is)  = y(:,is)  + fct1 * posinc(:)
          ac(:,is) = ac(:,is) + posinc(:)
       end if
-c     
+!     
       return
       end
 
 
-c-----------------------------------------------------------------------
-c
-c    Compute solution and acceleration at n+alpha
-c
-c-----------------------------------------------------------------------
-      subroutine itrYAlpha ( uold,        yold,        acold,        
-     &                       u,           y,           ac,
-     &                       uAlpha,      yAlpha,      acAlpha )
+!-----------------------------------------------------------------------
+!
+!    Compute solution and acceleration at n+alpha
+!
+!-----------------------------------------------------------------------
+      subroutine itrYAlpha ( uold,        yold,        acold,         &
+                             u,           y,           ac, &
+                             uAlpha,      yAlpha,      acAlpha )
 
-c      use readarrays       !reads in uold and acold  
+!      use readarrays       !reads in uold and acold  
       use pointer_data   
       use LagrangeMultipliers 
       use deformableWall
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      real*8        yold(nshg,ndof),            acold(nshg,ndof),
-     &              y(nshg,ndof),               ac(nshg,ndof),
-     &              yAlpha(nshg,ndof),          acAlpha(nshg,ndof),
-     &              u(nshg,nsd),                uold(nshg,nsd),
-     &              uAlpha(nshg,nsd)
+      real*8        yold(nshg,ndof),            acold(nshg,ndof), &
+                    y(nshg,ndof),               ac(nshg,ndof), &
+                    yAlpha(nshg,ndof),          acAlpha(nshg,ndof), &
+                    u(nshg,nsd),                uold(nshg,nsd), &
+                    uAlpha(nshg,nsd)
 
       acAlpha(:,4) = zero  !pressure acceleration is never used but....
 
-      yAlpha (:,1:3) = yold(:,1:3) 
-     &                  + alfi * (y(:,1:3) - yold(:,1:3))
+      yAlpha (:,1:3) = yold(:,1:3)  &
+                        + alfi * (y(:,1:3) - yold(:,1:3))
 
-      acAlpha(:,1:3) = acold(:,1:3)
-     &                  + almi * (ac(:,1:3) - acold(:,1:3))
+      acAlpha(:,1:3) = acold(:,1:3) &
+                        + almi * (ac(:,1:3) - acold(:,1:3))
 
       yAlpha (:,4  ) = y(:,4)
 
       if (ideformwall.eq.1) then 
-         uAlpha (mWNodes%p,1:3) = uold(mWNodes%p,1:3) 
-     &      + alfi * (u(mWNodes%p,1:3) - uold(mWNodes%p,1:3))
+         uAlpha (mWNodes%p,1:3) = uold(mWNodes%p,1:3)  &
+            + alfi * (u(mWNodes%p,1:3) - uold(mWNodes%p,1:3))
       end if
       
       if(ndof.ge.5) then
-c
-c  Now take care of temperature, turbulence, what have you
-c
+!
+!  Now take care of temperature, turbulence, what have you
+!
       
 
-         yAlpha (:,5:ndof  ) = yold(:,5:ndof) 
-     &                       + alfi * (y(:,5:ndof) - yold(:,5:ndof))
-         acAlpha(:,5:ndof  ) = acold(:,5:ndof) 
-     &                       + almi * (ac(:,5:ndof) - acold(:,5:ndof))
+         yAlpha (:,5:ndof  ) = yold(:,5:ndof)  &
+                             + alfi * (y(:,5:ndof) - yold(:,5:ndof))
+         acAlpha(:,5:ndof  ) = acold(:,5:ndof)  &
+                             + almi * (ac(:,5:ndof) - acold(:,5:ndof))
 
       end if
 
@@ -301,24 +273,25 @@ c
       return
       end
 
-c-----------------------------------------------------------------------
-c
-c    Update solution at end of time step
-c
-c-----------------------------------------------------------------------
-      subroutine itrUpdate( yold,          acold,        uold,
-     &                      y,             ac,           u )
+!-----------------------------------------------------------------------
+!
+!    Update solution at end of time step
+!
+!-----------------------------------------------------------------------
+      subroutine itrUpdate( yold,          acold,        uold, &
+                            y,             ac,           u )
 
-c      use readarrays            !reads in uold and acold
+!      use readarrays            !reads in uold and acold
       use pointer_data
       use LagrangeMultipliers 
       use deformableWall
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      real*8        yold(nshg,ndof),            acold(nshg,ndof),
-     &              y(nshg,ndof),               ac(nshg,ndof),
-     &              u(nshg,nsd),                uold(nshg,nsd)
+      real*8        yold(nshg,ndof),            acold(nshg,ndof), &
+                    y(nshg,ndof),               ac(nshg,ndof), &
+                    u(nshg,nsd),                uold(nshg,nsd)
 
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!            

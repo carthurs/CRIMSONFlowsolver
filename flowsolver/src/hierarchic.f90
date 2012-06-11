@@ -1,53 +1,19 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-c------------------------------------------------------------------------
-c
-c This file contains functions for dealing with higher order shape 
-c functions at the element level.
-c
-c------------------------------------------------------------------------
+!------------------------------------------------------------------------
+!
+! This file contains functions for dealing with higher order shape
+! functions at the element level.
+!
+! Christian Whiting, Winter 1999
+!------------------------------------------------------------------------
 
       subroutine getsgn(ien, sgn)
-c------------------------------------------------------------------------
-c     returns the matrix of mode signs used for negating higher order
-c     basis functions. Connectivity array is assumed to have negative
-c     signs on all modes to be negated.
-c------------------------------------------------------------------------
-      include "common.h"
+!------------------------------------------------------------------------
+!     returns the matrix of mode signs used for negating higher order
+!     basis functions. Connectivity array is assumed to have negative
+!     signs on all modes to be negated.
+!------------------------------------------------------------------------
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       dimension ien(npro,nshl),  sgn(npro,nshl)
       
@@ -62,27 +28,28 @@ c------------------------------------------------------------------------
       return 
       end
       
-      subroutine getshp(shp, shgl, sgn, shape, shdrv)
-c------------------------------------------------------------------------
-c     returns the matrix of element shape functions with the higher
-c     order modes correctly negated at the current quadrature point.
-c------------------------------------------------------------------------
-      include "common.h"
+      subroutine getshp(shp, shgl, sgn, shapeVar, shdrv)
+!------------------------------------------------------------------------
+!     returns the matrix of element shape functions with the higher
+!     order modes correctly negated at the current quadrature point.
+!------------------------------------------------------------------------
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
-      dimension shp(nshl,ngauss),   shgl(nsd,nshl,ngauss),
-     &          sgn(npro,nshl),     shape(npro,nshl),
-     &          shdrv(npro,nsd,nshl)
+      dimension shp(nshl,ngauss),   shgl(nsd,nshl,ngauss), &
+                sgn(npro,nshl),     shapeVar(npro,nshl), &
+                shdrv(npro,nsd,nshl)
       
       
       do i=1,nenl
-         shape(:,i) = shp(i,intp)
+         shapeVar(:,i) = shp(i,intp)
          do j=1,3
             shdrv(:,j,i) = shgl(j,i,intp)
          enddo
       enddo
       if ( ipord > 1 ) then
          do i=nenl+1,nshl
-            shape(:,i) = sgn(:,i) * shp(i,intp)
+            shapeVar(:,i) = sgn(:,i) * shp(i,intp)
             do j=1,3
                shdrv(:,j,i) = shgl(j,i,intp)*sgn(:,i) 
             enddo
@@ -92,27 +59,28 @@ c------------------------------------------------------------------------
       return 
       end
       
-      subroutine getshpb(shp, shgl, sgn, shape, shdrv)
-c------------------------------------------------------------------------
-c     returns the matrix of element shape functions with the higher
-c     order modes correctly negated at the current quadrature point.
-c------------------------------------------------------------------------
-      include "common.h"
+      subroutine getshpb(shp, shgl, sgn, shapeVar, shdrv)
+!------------------------------------------------------------------------
+!     returns the matrix of element shape functions with the higher
+!     order modes correctly negated at the current quadrature point.
+!------------------------------------------------------------------------
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-      dimension shp(nshl,ngaussb),  shgl(nsd,nshl,ngaussb),
-     &          sgn(npro,nshl),     shape(npro,nshl),
-     &          shdrv(npro,nsd,nshl)
+      dimension shp(nshl,ngaussb),  shgl(nsd,nshl,ngaussb), &
+                sgn(npro,nshl),     shapeVar(npro,nshl), &
+                shdrv(npro,nsd,nshl)
       
       
       do i=1,nenl
-         shape(:,i) = shp(i,intp)
+         shapeVar(:,i) = shp(i,intp)
          do j=1,3
             shdrv(:,j,i) = shgl(j,i,intp)
          enddo
       enddo
       if ( ipord > 1 ) then
          do i=nenl+1,nshl
-            shape(:,i) = sgn(:,i) * shp(i,intp)
+            shapeVar(:,i) = sgn(:,i) * shp(i,intp)
             do j=1,3
                shdrv(:,j,i) = shgl(j,i,intp)*sgn(:,i) 
             enddo
@@ -123,17 +91,18 @@ c------------------------------------------------------------------------
       end
       
       subroutine getbnodes(lnode)
-c------------------------------------------------------------------------
-c     compute the higher order modes that lie on the boundary of the 
-c     element.
-c------------------------------------------------------------------------
-      include "common.h"
+!------------------------------------------------------------------------
+!     compute the higher order modes that lie on the boundary of the 
+!     element.
+!------------------------------------------------------------------------
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       dimension lnode(27)
 
-c
-c.... boundary triangle of tet element
-c
+!
+!.... boundary triangle of tet element
+!
       if (lcsyst .eq. 1) then
          do n = 1, nenbl
             lnode(n) = n
@@ -150,9 +119,9 @@ c
                lnode(3+3*nem+n) = 4+6*nem+n
             enddo
          endif
-c
-c.....boundary quadrilateral for a hex element
-c
+!
+!.....boundary quadrilateral for a hex element
+!
       else if(lcsyst .eq. 2) then
          do n = 1, nenbl
             lnode(n) = n
@@ -170,114 +139,115 @@ c
                lnode(4+4*nem+n) = 8+12*nem+n
             enddo
          endif         
-c
-c
-c.... This renumbers the boundary nodes for a wedge element when the
-c     boundary element is a quad face.  From lnode = [1 2 3 4]
-c                                        to   lnode = [1 4 5 2]
-c
+!
+!
+!.... This renumbers the boundary nodes for a wedge element when the
+!     boundary element is a quad face.  From lnode = [1 2 3 4]
+!                                        to   lnode = [1 4 5 2]
+!
       else if(lcsyst .eq. 3) then
          do n = 1, nenbl
             lnode(n) = n
          enddo
-c
-c     Need to implement for cubic, this valid only for ipord=2
-c 
+!
+!     Need to implement for cubic, this valid only for ipord=2
+! 
          if( ipord>1 ) then
             nem = ipord-1
             do n=1,3*nem
                lnode(nenbl+n) = 6+n
             enddo
          endif
-c
-c     Boundary quad of wedge element
-c
+!
+!     Boundary quad of wedge element
+!
       else if(lcsyst .eq. 4) then
          lnode(1) = 1
          lnode(2) = 4
          lnode(3) = 5
          lnode(4) = 2
-c$$$c     
-c$$$c     Need to implement for cubic, this valid only for ipord=2
-c$$$c     
-c$$$         if( ipord > 1) then
-c$$$            lnode(5) = 9
-c$$$            lnode(6) = 15
-c$$$            lnode(7) = 12
-c$$$            lnode(8) = 13
-c$$$               nem = ipord -1
-c$$$               do n=1,4*nem
-c$$$                  lnode(nenbl+n) = 6+n
-c$$$               enddo
-c$$$         endif         
-c     
-c     Boundary quad of pyramid element
-c
+!$$$c     
+!$$$c     Need to implement for cubic, this valid only for ipord=2
+!$$$c     
+!$$$         if( ipord > 1) then
+!$$$            lnode(5) = 9
+!$$$            lnode(6) = 15
+!$$$            lnode(7) = 12
+!$$$            lnode(8) = 13
+!$$$               nem = ipord -1
+!$$$               do n=1,4*nem
+!$$$                  lnode(nenbl+n) = 6+n
+!$$$               enddo
+!$$$         endif         
+!     
+!     Boundary quad of pyramid element
+!
       else if(lcsyst .eq. 5) then
          lnode(1) = 1
          lnode(2) = 2
          lnode(3) = 3
          lnode(4) = 4
-c$$$  c
-c$$$  c     Need to implement for cubic, this valid only for ipord=2
-c$$$  c          
-c$$$            if( ipord > 1) then
-c$$$               lnode(5) = 9
-c$$$               lnode(6) = 15
-c$$$               lnode(7) = 12
-c$$$               lnode(8) = 13
-c$$$               nem = ipord -1
-c$$$               do n=1,4*nem
-c$$$                  lnode(nenbl+n) = 6+n
-c$$$               enddo
-c$$$            endif         
-c     
-c     Boundary triangle of pyramid element
-c
+!$$$  c
+!$$$  c     Need to implement for cubic, this valid only for ipord=2
+!$$$  c          
+!$$$            if( ipord > 1) then
+!$$$               lnode(5) = 9
+!$$$               lnode(6) = 15
+!$$$               lnode(7) = 12
+!$$$               lnode(8) = 13
+!$$$               nem = ipord -1
+!$$$               do n=1,4*nem
+!$$$                  lnode(nenbl+n) = 6+n
+!$$$               enddo
+!$$$            endif         
+!     
+!     Boundary triangle of pyramid element
+!
       else if(lcsyst .eq. 6) then
          lnode(1) = 1
          lnode(2) = 5
          lnode(3) = 2
-c$$$c
-c$$$c     Need to implement for cubic, this valid only for ipord=2
-c$$$c          
-c$$$            if( ipord > 1) then
-c$$$               lnode(5) = 9
-c$$$               lnode(6) = 15
-c$$$               lnode(7) = 12
-c$$$               lnode(8) = 13
-c$$$               nem = ipord -1
-c$$$               do n=1,4*nem
-c$$$                  lnode(nenbl+n) = 6+n
-c$$$               enddo
-c$$$            endif         
-c     
-c.... other element types need to be implemented
-c
+!$$$c
+!$$$c     Need to implement for cubic, this valid only for ipord=2
+!$$$c          
+!$$$            if( ipord > 1) then
+!$$$               lnode(5) = 9
+!$$$               lnode(6) = 15
+!$$$               lnode(7) = 12
+!$$$               lnode(8) = 13
+!$$$               nem = ipord -1
+!$$$               do n=1,4*nem
+!$$$                  lnode(nenbl+n) = 6+n
+!$$$               enddo
+!$$$            endif         
+!     
+!.... other element types need to be implemented
+!
       else
-         write (*,*) 'Boundary element not implemented for lcyst='
-     &        ,lcsyst
+         write (*,*) 'Boundary element not implemented for lcyst=' &
+              ,lcsyst
          stop
       endif
       
       return 
       end
       
-c-----------------------------------------------------------------------
-c
-c  Evaluate coefficient vector at its interpolation points
-c
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!
+!  Evaluate coefficient vector at its interpolation points
+!
+!-----------------------------------------------------------------------
       subroutine evalAtInterp( ycoeff,  yvals,  x,   nvars, npts )
 
       use     pointer_data
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       integer nvars, npts, nHits(nshg)
       
-      real*8  ycoeff(nshg,ndof),   yvals(nshg,nvars),
-     &        shp(nshl,npts),      shgl(nsd,nshl,npts),
-     &        intpnt(3,npts),      x(numnp,nsd)
+      real*8  ycoeff(nshg,ndof),   yvals(nshg,nvars), &
+              shp(nshl,npts),      shgl(nsd,nshl,npts), &
+              intpnt(3,npts),      x(numnp,nsd)
       
       real*8, allocatable :: ycl(:,:,:)
       real*8, allocatable :: xl(:,:,:)
@@ -285,16 +255,16 @@ c-----------------------------------------------------------------------
       real*8, allocatable :: sgn(:,:)
 
       yvals = zero
-c
-c.... generate the shape functions at the interpolation points
-c
+!
+!.... generate the shape functions at the interpolation points
+!
       call getIntPnts(intpnt,npts)
       do i=1,npts
          call shpTet(ipord,intpnt(:,i),shp(:,i),shgl(:,:,i))
       enddo
-c
-c.... loop over element blocks
-c
+!
+!.... loop over element blocks
+!
       nHits = 0
       do iblk = 1, nelblk
          iel    = lcblk(1,iblk)
@@ -314,27 +284,27 @@ c
          call localy( ycoeff, ycl, mien(iblk)%p, ndof,  'gather  ')
          call localx( x,      xl,  mien(iblk)%p, nsd,   'gather  ')
 
-         call eval  ( xl,       ycl,      yvl,      
-     &                shp,      shgl,     sgn,      
-     &                nvars,    npts    )
+         call eval  ( xl,       ycl,      yvl,       &
+                      shp,      shgl,     sgn,       &
+                      nvars,    npts    )
 
-c
-c.... average coefficients since stresses may be discontinuous
-c         
-         call localSum( yvals,    yvl,    mien(iblk)%p,  
-     &                  nHits,    nVars)  
+!
+!.... average coefficients since stresses may be discontinuous
+!         
+         call localSum( yvals,    yvl,    mien(iblk)%p,   &
+                        nHits,    nVars)  
          
          
          deallocate ( ycl )
          deallocate ( yvl )
          deallocate ( sgn )
          deallocate ( xl  )
-c
+!
       enddo
 
-c
-c.... average the global values
-c
+!
+!.... average the global values
+!
       do i = 1, nshg
          do j = 1, nvars
             yvals(i,j) = yvals(i,j)/nHits(i) !(real(nHits(i),8))
@@ -344,58 +314,59 @@ c
       return
       end
 
-c-----------------------------------------------------------------------
-c
-c  evaluate in element coordinate system
-c
-c-----------------------------------------------------------------------
-      subroutine eval( xl,      ycl,     yvl,     
-     &                 shp,     shgl,    sgn,
-     &                 nvars,   npts ) 
+!-----------------------------------------------------------------------
+!
+!  evaluate in element coordinate system
+!
+!-----------------------------------------------------------------------
+      subroutine eval( xl,      ycl,     yvl,      &
+                       shp,     shgl,    sgn, &
+                       nvars,   npts ) 
       
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       integer nvars
-c
-      real*8  ycl(npro,nshl,ndof),   yvl(npro,nshl,nvars),
-     &        sgn(npro,nshl),        shape(npro,nshl),
-     &        shdrv(npro,nsd,nshl),  shp(nshl,npts),
-     &        shgl(nsd,nshl,npts),   xl(npro,nenl,nsd),
-     &        shg(npro,nshl,nsd),    gradV(npro,nsd,nsd),
-     &        dxidx(npro,nsd,nsd),   tmp(npro), wtmp
+!
+      real*8  ycl(npro,nshl,ndof),   yvl(npro,nshl,nvars), &
+              sgn(npro,nshl),        shapeVar(npro,nshl), &
+              shdrv(npro,nsd,nshl),  shp(nshl,npts), &
+              shgl(nsd,nshl,npts),   xl(npro,nenl,nsd), &
+              shg(npro,nshl,nsd),    gradV(npro,nsd,nsd), &
+              dxidx(npro,nsd,nsd),   tmp(npro), wtmp
       
       yvl = zero
-c
-c.... loop over interpolation points
-c
+!
+!.... loop over interpolation points
+!
       do intp = 1, npts
-         call getshp(shp,          shgl,      sgn, 
-     &               shape,        shdrv)
+         call getshp(shp,          shgl,      sgn,  &
+                     shapeVar,     shdrv)
       
-c
-c.... pressure and velocity
-c
+!
+!.... pressure and velocity
+!
          do i = 1, nshl
             do j = 1, 4
-               yvl(:,intp,j) = yvl(:,intp,j) + shape(:,i) * ycl(:,i,j)
+               yvl(:,intp,j) = yvl(:,intp,j) + shapeVar(:,i) * ycl(:,i,j)
             enddo
          enddo
-c
-c.... viscous stress
-c
-         call e3metric( xl,         shdrv,      dxidx,  
-     &                  shg,        tmp)
+!
+!.... viscous stress
+!
+         call e3metric( xl,         shdrv,      dxidx,   &
+                        shg,        tmp)
 
          gradV = zero
          do n = 1, nshl
             gradV(:,1,1) = gradV(:,1,1) + shg(:,n,1) * ycl(:,n,2)
             gradV(:,2,1) = gradV(:,2,1) + shg(:,n,1) * ycl(:,n,3)
             gradV(:,3,1) = gradV(:,3,1) + shg(:,n,1) * ycl(:,n,4)
-c     
+!     
             gradV(:,1,2) = gradV(:,1,2) + shg(:,n,2) * ycl(:,n,2)
             gradV(:,2,2) = gradV(:,2,2) + shg(:,n,2) * ycl(:,n,3)
             gradV(:,3,2) = gradV(:,3,2) + shg(:,n,2) * ycl(:,n,4)
-c     
+!     
             gradV(:,1,3) = gradV(:,1,3) + shg(:,n,3) * ycl(:,n,2)
             gradV(:,2,3) = gradV(:,2,3) + shg(:,n,3) * ycl(:,n,3)
             gradV(:,3,3) = gradV(:,3,3) + shg(:,n,3) * ycl(:,n,4)
@@ -411,9 +382,9 @@ c
          yvl(:,intp,10) = rmu * ( gradV(:,1,3) + gradV(:,3,1) )
          yvl(:,intp,11) = rmu * ( gradV(:,2,3) + gradV(:,3,2) )
 
-c
-c.... loop over interpolation points
-c         
+!
+!.... loop over interpolation points
+!         
       enddo
       
       return

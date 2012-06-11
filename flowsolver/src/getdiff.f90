@@ -1,70 +1,36 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-      subroutine getDiff( dwl,yl, shape, xmudmi, xl, rmu,  rho)
-c-----------------------------------------------------------------------
-c  compute and add the contribution of the turbulent
-c  eddy viscosity to the molecular viscosity.
-c-----------------------------------------------------------------------
-      use     turbSA
-      include "common.h"
+      subroutine getDiff( dwl,yl, shapeVar, xmudmi, xl, rmu,  rho)
+!-----------------------------------------------------------------------
+!  compute and add the contribution of the turbulent
+!  eddy viscosity to the molecular viscosity.
+!-----------------------------------------------------------------------
+      use turbSA
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-      real*8  yl(npro,nshl,ndof), rmu(npro), xmudmi(npro,ngauss),
-     &        shape(npro,nshl),   rho(npro),
-     &        dwl(npro,nshl),     sclr(npro),
-     &        xl(npro,nenl,nsd)
+      real*8  yl(npro,nshl,ndof), rmu(npro), xmudmi(npro,ngauss), &
+              shapeVar(npro,nshl),   rho(npro), &
+              dwl(npro,nshl),     sclr(npro), &
+              xl(npro,nenl,nsd)
       integer n, e
 
-      real*8  epsilon_ls, kay, epsilon
-     &        h_param, prop_blend(npro),test_it(npro)
-c
-c    
-c.... get the material properties (2 fluid models will need to determine
-c     the "interpolated in phase space" properties....constant for now.
-c     two options exist in the interpolation 1) smooth (recommended) 
-c     interpolation of nodal data, 2) discontinuous "sampling" phase at 
-c     quadrature points.
-c
-CAD
-CAD    prop_blend is a smoothing function to avoid possible large density 
-CAD   gradients, e.g., water and air flows where density ratios can approach
-CAD   1000.
-CAD
-CAD    epsilon_ls is an adjustment to control the width of the band over which
-CAD    the properties are blended. 
+      !real*8  epsilon_ls, kay, epsilon, &
+      real*8  kay, epsilon, &
+              h_param, prop_blend(npro),test_it(npro)
+!
+!    
+!.... get the material properties (2 fluid models will need to determine
+!     the "interpolated in phase space" properties....constant for now.
+!     two options exist in the interpolation 1) smooth (recommended) 
+!     interpolation of nodal data, 2) discontinuous "sampling" phase at 
+!     quadrature points.
+!
+!AD
+!AD    prop_blend is a smoothing function to avoid possible large density 
+!AD   gradients, e.g., water and air flows where density ratios can approach
+!AD   1000.
+!AD
+!AD    epsilon_ls is an adjustment to control the width of the band over which
+!AD    the properties are blended. 
 
 
 
@@ -84,48 +50,48 @@ CAD    the properties are blended.
          Sclr = zero
          isc=abs(iRANS)+6
          do n = 1, nshl
-            Sclr = Sclr + shape(:,n) * yl(:,n,isc)
+            Sclr = Sclr + shapeVar(:,n) * yl(:,n,isc)
          enddo
          do i= 1, npro
             if (sclr(i) .lt. - epsilon_ls)then
                prop_blend(i) = zero
             elseif  (abs(sclr(i)) .le. epsilon_ls)then
-               prop_blend(i) = 0.5*(one + Sclr(i)/epsilon_ls +
-     &              (sin(pi*Sclr(i)/epsilon_ls))/pi )
+               prop_blend(i) = 0.5*(one + Sclr(i)/epsilon_ls + &
+                    (sin(pi*Sclr(i)/epsilon_ls))/pi )
             elseif (sclr(i) .gt. epsilon_ls) then
                prop_blend(i) = one
             endif
          enddo
-c
+!
         rho = datmat(1,1,2) + (datmat(1,1,1)-datmat(1,1,2))*prop_blend
         rmu = datmat(1,2,2) + (datmat(1,2,1)-datmat(1,2,2))*prop_blend
 
       endif
 
-CAD	At this point we have a rho that is bounded by the two values for
-CAD 	density 1, datmat(1,1,1), the fluid,  and density 2, datmat(1,1,2)
-CAD     the gas
+!AD	At this point we have a rho that is bounded by the two values for
+!AD 	density 1, datmat(1,1,1), the fluid,  and density 2, datmat(1,1,2)
+!AD     the gas
 
-c
-c  The above approach evaluates all intermediate quantities at the 
-c  quadrature point, then combines them to form the needed quantities there.
-c  1 alternative is calculating all quanties (only rho here) at the nodes and 
-c  then interpolating the result to the quadrature points.  If this is done,
-c  do not forget to do the same thing for rou in e3b!!!
-c  ^^^^^^^^^^
-c  ||||||||||
-c  WARNING
-c
-c.... dynamic model
-c      
+!
+!  The above approach evaluates all intermediate quantities at the 
+!  quadrature point, then combines them to form the needed quantities there.
+!  1 alternative is calculating all quanties (only rho here) at the nodes and 
+!  then interpolating the result to the quadrature points.  If this is done,
+!  do not forget to do the same thing for rou in e3b!!!
+!  ^^^^^^^^^^
+!  ||||||||||
+!  WARNING
+!
+!.... dynamic model
+!      
       if (iLES .gt. 0 .and. iRANS.eq.0) then   ! simple LES
          rmu = rmu + xmudmi(:,intp)
       else if (iRANS.lt.0) then 
          if (iRANS .eq. -1) then ! RANS (Spalart-Allmaras)
-            call AddEddyViscSA(yl, shape, rmu)
+            call AddEddyViscSA(yl, shapeVar, rmu)
          else if(iRANS.eq.-2) then ! RANS-KE
             sigmaInv=1.0        ! use full eddy viscosity for flow equations
-            call AddEddyViscKE(yl, dwl, shape, rho, sigmaInv, rmu)
+            call AddEddyViscKE(yl, dwl, shapeVar, rho, sigmaInv, rmu)
          endif
          if (iLES.gt.0) then    ! this is DES so we have to blend in
                                 ! xmudmi based on max edge length of
@@ -133,13 +99,14 @@ c
             call EviscDESIC (xl,rmu,xmudmi)
          endif
       endif                     ! check for LES or RANS
-c
+!
       return
       end
 
       subroutine EviscDESIC(xl,xmut,xmudmi)
      
-      include "common.h"
+       use phcommonvars
+ IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       real*8 xmut(npro),xl(npro,nenl,nsd),xmudmi(npro,ngauss)
 
 
@@ -162,21 +129,22 @@ c
       return
       end
        
-      subroutine getdiffsclr(shape, dwl, yl, diffus)
+      subroutine getdiffsclr(shapeVar, dwl, yl, diffus)
 
       use turbSA
       use turbKE ! access to KE model constants
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8   diffus(npro), rho(npro)
-      real*8   yl(npro,nshl,ndof), dwl(npro,nshl), shape(npro,nshl)
+      real*8   yl(npro,nshl,ndof), dwl(npro,nshl), shapeVar(npro,nshl)
       integer n, e
       rho(:)  = datmat(1,1,1)	! single fluid model, i.e., only 1 density
       if(isclr.eq.0) then  ! solving the temperature equation
          diffus(:) = datmat(1,4,1)
       else if(iRANS.eq.-1) then ! solving SA model
          diffus(:) = datmat(1,2,1)
-         call AddSAVar(yl, shape, diffus)
+         call AddSAVar(yl, shapeVar, diffus)
       else if(iRANS.eq.-2)then ! solving KE model
          diffus(:) = datmat(1,2,1)
          if(isclr.eq.2) then
@@ -184,11 +152,11 @@ c
          else
             sigmaInv=1.0 ! full eddy viscosity for solving kay equation
          endif
-         call AddEddyViscKE(yl, dwl, shape, rho, sigmaInv, diffus)
+         call AddEddyViscKE(yl, dwl, shapeVar, rho, sigmaInv, diffus)
       else                      ! solving scalar advection diffusion equations
          diffus = scdiff(isclr)
       endif
-c
+!
       return
       end
 
@@ -201,7 +169,7 @@ c
       err=1.0d-6
       ev2sa=rm*cv1*1.2599       ! inflection point chi=cv1*cuberoot(2)
       kappa=0.4
-c$$$        B=5.5
+!$$$        B=5.5
       efac=0.1108               ! exp(-kappa*B)
       do iter=1,50
          chi3=ev2sa/rm
@@ -221,49 +189,50 @@ c$$$        B=5.5
  20   continue
       return
       end  
-c     
+!     
       
 
-      subroutine AddEddyViscSA(yl,shape,rmu)
+      subroutine AddEddyViscSA(yl,shapeVar,rmu)
       use turbSA
-      include "common.h"
-c     INPUTS
-      double precision, intent(in), dimension(npro,nshl,ndof) ::
-     &     yl
-      double precision, intent(in), dimension(npro,nshl) ::
-     &     shape
-c     INPUT-OUTPUTS
-      double precision, intent(inout), dimension(npro) ::
-     &     rmu
-c     LOCALS
-      logical, dimension(nshl) ::
-     &     wallnode
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     INPUTS
+      double precision, intent(in), dimension(npro,nshl,ndof) :: &
+           yl
+      double precision, intent(in), dimension(npro,nshl) :: &
+           shapeVar
+!     INPUT-OUTPUTS
+      double precision, intent(inout), dimension(npro) :: &
+           rmu
+!     LOCALS
+      logical, dimension(nshl) :: &
+           wallnode
       integer e, n
       double precision xki, xki3, fv1, evisc
-c
-c     Loop over elements in this block
+!
+!     Loop over elements in this block
       do e = 1, npro
-c        assume no wall nodes on this element
+!        assume no wall nodes on this element
          wallnode(:) = .false.
          if(itwmod.eq.-2) then  ! effective viscosity
-c           mark the wall nodes for this element, if there are any
+!           mark the wall nodes for this element, if there are any
             do n = 1, nshl
                u1=yl(e,n,2)
                u2=yl(e,n,3)
                u3=yl(e,n,4)
-               if((u1.eq.zero).and.(u2.eq.zero).and.(u3.eq.zero))
-     &              then
+               if((u1.eq.zero).and.(u2.eq.zero).and.(u3.eq.zero)) &
+                    then
                   wallnode(n)=.true.
                endif
             enddo
          endif
-c
+!
          if( any(wallnode(:)) ) then
-c if there are wall nodes for this elt, then we are using effective-
-c viscosity near-wall modeling, and eddy viscosity has been stored
-c at the wall nodes in place of the spalart-allmaras variable; the
-c eddy viscosity for the whole element is taken to be the avg of the
-c wall values
+! if there are wall nodes for this elt, then we are using effective-
+! viscosity near-wall modeling, and eddy viscosity has been stored
+! at the wall nodes in place of the spalart-allmaras variable; the
+! eddy viscosity for the whole element is taken to be the avg of the
+! wall values
             evisc = zero
             nwnode=0
             do n = 1, nshl
@@ -274,31 +243,31 @@ c wall values
             enddo
             evisc = evisc/nwnode
             rmu(e) = rmu(e) + abs(evisc)
-c this is what we would use instead of the above if we were allowing
-c the eddy viscosity to vary through the element based on non-wall nodes
-c$$$               evisc = zero
-c$$$               Turb = zero
-c$$$               do n = 1, nshl
-c$$$                  if(wallmask(n).eq.1) then
-c$$$                     evisc = evisc + shape(e,n) * yl(e,n,6)
-c$$$                  else
-c$$$                     Turb = Turb + shape(e,n) * yl(e,n,6)
-c$$$                  endif
-c$$$               enddo
-c$$$               xki    = abs(Turb)/rmu(e)
-c$$$               xki3   = xki * xki * xki
-c$$$               fv1    = xki3 / (xki3 + saCv1P3)
-c$$$               rmu(e) = rmu(e) + fv1*abs(Turb)               
-c$$$               rmu(e) = rmu(e) + abs(evisc)
+! this is what we would use instead of the above if we were allowing
+! the eddy viscosity to vary through the element based on non-wall nodes
+!$$$               evisc = zero
+!$$$               Turb = zero
+!$$$               do n = 1, nshl
+!$$$                  if(wallmask(n).eq.1) then
+!$$$                     evisc = evisc + shape(e,n) * yl(e,n,6)
+!$$$                  else
+!$$$                     Turb = Turb + shape(e,n) * yl(e,n,6)
+!$$$                  endif
+!$$$               enddo
+!$$$               xki    = abs(Turb)/rmu(e)
+!$$$               xki3   = xki * xki * xki
+!$$$               fv1    = xki3 / (xki3 + saCv1P3)
+!$$$               rmu(e) = rmu(e) + fv1*abs(Turb)               
+!$$$               rmu(e) = rmu(e) + abs(evisc)
          else
-c else one of the following is the case:
-c   using effective-viscosity, but no wall nodes on this elt
-c   using slip-velocity
-c   using no model; walls are resolved 
-c in all of these cases, eddy viscosity is calculated normally
+! else one of the following is the case:
+!   using effective-viscosity, but no wall nodes on this elt
+!   using slip-velocity
+!   using no model; walls are resolved 
+! in all of these cases, eddy viscosity is calculated normally
             Turb = zero
             do n = 1, nshl
-               Turb = Turb + shape(e,n) * yl(e,n,6)
+               Turb = Turb + shapeVar(e,n) * yl(e,n,6)
             enddo
             xki    = abs(Turb)/rmu(e)
             xki3   = xki * xki * xki
@@ -311,54 +280,55 @@ c in all of these cases, eddy viscosity is calculated normally
 
 
 
-      subroutine AddSAVar(yl,shape,rmu)
+      subroutine AddSAVar(yl,shapeVar,rmu)
       use turbSA
-      include "common.h"
-c     INPUTS
-      double precision, intent(in), dimension(npro,nshl,ndof) ::
-     &     yl
-      double precision, intent(in), dimension(npro,nshl) ::
-     &     shape
-c     INPUT-OUTPUTS
-      double precision, intent(inout), dimension(npro) ::
-     &     rmu
-c     LOCALS
-      logical, dimension(nshl) ::
-     &     wallnode
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     INPUTS
+      double precision, intent(in), dimension(npro,nshl,ndof) :: &
+           yl
+      double precision, intent(in), dimension(npro,nshl) :: &
+           shapeVar
+!     INPUT-OUTPUTS
+      double precision, intent(inout), dimension(npro) :: &
+           rmu
+!     LOCALS
+      logical, dimension(nshl) :: &
+           wallnode
       integer e, n
       double precision savar, savarw
-c     Loop over elements in this block
+!     Loop over elements in this block
       do e = 1, npro
-c        assume no wall nodes on this element
+!        assume no wall nodes on this element
          wallnode(:) = .false.
          if(itwmod.eq.-2) then  ! effective viscosity
-c           mark the wall nodes for this element, if there are any
+!           mark the wall nodes for this element, if there are any
             do n = 1, nshl
                u1=yl(e,n,2)
                u2=yl(e,n,3)
                u3=yl(e,n,4)
-               if((u1.eq.zero).and.(u2.eq.zero).and.(u3.eq.zero))
-     &              then
+               if((u1.eq.zero).and.(u2.eq.zero).and.(u3.eq.zero)) &
+                    then
                   wallnode(n)=.true.
                endif
             enddo
          endif
-c
+!
          savar=zero
          do n = 1, nshl
             if( wallnode(n) ) then
-c if wallmask was set, we're using effective-viscosity wall-model and
-c this node is on a wall.  Eddy viscosity has been stored at the wall 
-c nodes in place of the S-A variable, so we must convert it
+! if wallmask was set, we're using effective-viscosity wall-model and
+! this node is on a wall.  Eddy viscosity has been stored at the wall 
+! nodes in place of the S-A variable, so we must convert it
                savarw = ev2sa(yl(e,n,6),datmat(1,2,1),saCv1)
-               savar  = savar + shape(e,n) * savarw
+               savar  = savar + shapeVar(e,n) * savarw
             else
-c if wallmask wasn't set, then one of the following is the case:
-c   using effective-viscosity, but this isn't a wall node
-c   using slip-velocity
-c   using no wall model; wall is resolved
-c in all these cases, the S-A variable is calculated normally
-               savar  = savar + shape(e,n) * yl(e,n,6)
+! if wallmask wasn't set, then one of the following is the case:
+!   using effective-viscosity, but this isn't a wall node
+!   using slip-velocity
+!   using no wall model; wall is resolved
+! in all these cases, the S-A variable is calculated normally
+               savar  = savar + shapeVar(e,n) * yl(e,n,6)
             endif   
          enddo
          rmu(e)=datmat(1,2,1)
@@ -369,33 +339,34 @@ c in all these cases, the S-A variable is calculated normally
 
 
 
-      subroutine AddEddyViscKE(yl, dwl, shape, rho, sigmaInv, rmu)
+      subroutine AddEddyViscKE(yl, dwl, shapeVar, rho, sigmaInv, rmu)
       use turbKE ! access to KE model constants
-      include "common.h"
-c     INPUTS
-      double precision, intent(in), dimension(npro,nshl,ndof) ::
-     &     yl
-      double precision, intent(in), dimension(npro,nshl) ::
-     &     shape, dwl
-      double precision, intent(in), dimension(npro) ::
-     &     rho
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     INPUTS
+      double precision, intent(in), dimension(npro,nshl,ndof) :: &
+           yl
+      double precision, intent(in), dimension(npro,nshl) :: &
+           shapeVar, dwl
+      double precision, intent(in), dimension(npro) :: &
+           rho
       double precision sigmaInv
-c     INPUT-OUTPUTS
-      double precision, intent(inout), dimension(npro) ::
-     &     rmu
-c     LOCALS
+!     INPUT-OUTPUTS
+      double precision, intent(inout), dimension(npro) :: &
+           rmu
+!     LOCALS
       double precision eviscKE, kay, epsilon, dw, CmuKE
       double precision epsInv, Rey, Ret, RetInv, tmp1, fmuKE
       integer e,n
-c
+!
       do e = 1, npro
          kay = 0.0
          epsilon = 0.0
          dw = 0.0
          do n = 1, nshl
-            kay = kay + shape(e,n)*yl(e,n,6)
-            epsilon = epsilon + shape(e,n)*yl(e,n,7)
-            dw = dw + shape(e,n)*dwl(e,n)
+            kay = kay + shapeVar(e,n)*yl(e,n,6)
+            epsilon = epsilon + shapeVar(e,n)*yl(e,n,7)
+            dw = dw + shapeVar(e,n)*dwl(e,n)
          enddo
          kay = abs(kay)
          if(kay.lt.1.0e-32) kay=0.0

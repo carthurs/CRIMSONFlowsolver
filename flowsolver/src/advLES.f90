@@ -1,94 +1,210 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
+      subroutine lesmodels(y,     ac,        shgl,      shp,  &
+                           iper,  ilwork,    rowp,      colm,     &
+                           nsons, ifath,     x,    &
+                           iBC,   BC)
+      
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-c---------------------------------------------------------------------------
+      real*8    y(nshg,ndof),              ac(nshg,ndof),            &
+                  x(numnp,nsd), &
+                  BC(nshg,ndofBC)
+      real*8    shp(MAXTOP,maxsh,MAXQPT),   &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT)
 
-      subroutine SUPGstress (y, ac, x, qres, ien, xmudmi,
-     &     cdelsq, shgl, shp, Qwtf, shglo, shpo, stress, diss, vol)
+!
+      integer   rowp(nshg,nnz),         colm(nshg+1), &
+                  iBC(nshg), &
+                  ilwork(nlwork), &
+                  iper(nshg)
+      dimension ifath(numnp),    nsons(nfath)
+
+      real*8, allocatable, dimension(:) :: fwr2,fwr3,fwr4
+      real*8, allocatable, dimension(:) :: stabdis,cdelsq1
+      real*8, allocatable, dimension(:,:) :: xavegt, xavegt2,xavegt3
+
+      if( (iLES.gt.1) )   then ! Allocate Stuff for advanced LES models
+         allocate (fwr2(nshg))
+         allocate (fwr3(nshg))
+         allocate (fwr4(nshg))
+         allocate (xavegt(nfath,12))
+         allocate (xavegt2(nfath,12))
+         allocate (xavegt3(nfath,12))
+         allocate (stabdis(nfath))
+      endif
+
+!.... get dynamic model coefficient
+!
+      ilesmod=iLES/10  
+!
+! digit bit set filter rule, 10 bit set model
+!
+      if (ilesmod.eq.0) then    ! 0 < iLES< 10 => dyn. model calculated
+                                ! at nodes based on discrete filtering
+
+
+         if(isubmod.eq.2) then
+            call SUPGdis(y,      ac,        shgl,      shp,  &
+                         iper,   ilwork,     &
+                         nsons,  ifath,     x,    &
+                         iBC,    BC, stabdis, xavegt3)
+         endif
+
+         if( ((isubmod.eq.0).or.(isubmod.eq.2)))then ! If no
+                                                     ! sub-model
+                                                     ! or SUPG
+                                                     ! model wanted
+
+            if(i2filt.eq.0)then ! If simple filter
+              
+               if(modlstats .eq. 0) then ! If no model stats wanted
+                  call getdmc (y,       shgl,      shp,  &
+                               iper,       ilwork,    nsons, &
+                               ifath,      x)
+               else             ! else get model stats 
+                  call stdfdmc (y,       shgl,      shp,  &
+                                iper,       ilwork,    nsons, &
+                                ifath,      x)
+               endif            ! end of stats if statement  
+
+            else                ! else if twice filtering
+
+               call widefdmc(y,       shgl,      shp,  &
+                             iper,       ilwork,    nsons, &
+                             ifath,      x)
+
+               
+            endif               ! end of simple filter if statement
+
+         endif                  ! end of SUPG or no sub-model if statement
+
+
+         if( (isubmod.eq.1) ) then ! If DFWR sub-model wanted
+            call cdelBHsq (y,       shgl,      shp,  &
+                           iper,       ilwork,    nsons, &
+                           ifath,      x,         cdelsq1)
+            call FiltRat (y,       shgl,      shp,  &
+                          iper,       ilwork,    nsons, &
+                          ifath,      x,         cdelsq1, &
+                          fwr4,       fwr3)
+
+            
+            if (i2filt.eq.0) then ! If simple filter wanted
+               call DFWRsfdmc(y,       shgl,      shp,  &
+                              iper,       ilwork,    nsons, &
+                              ifath,      x,         fwr2, fwr3) 
+            else                ! else if twice filtering wanted 
+               call DFWRwfdmc(y,       shgl,      shp,  &
+                              iper,       ilwork,    nsons, &
+                              ifath,      x,         fwr4, fwr4) 
+            endif               ! end of simple filter if statement
+             
+         endif                  ! end of DFWR sub-model if statement
+
+         if( (isubmod.eq.2) )then ! If SUPG sub-model wanted
+            call dmcSUPG (y,           ac,         shgl,       &
+                          shp,         iper,       ilwork,     &
+                          nsons,       ifath,      x, &
+                          iBC,    BC,  rowp,       colm, &
+                          xavegt2,    stabdis)
+         endif
+
+         if(idis.eq.1)then      ! If SUPG/Model dissipation wanted
+            call ediss (y,        ac,      shgl,       &
+                        shp,      iper,       ilwork,     &
+                        nsons,    ifath,      x, &
+                        iBC,      BC,  xavegt)
+         endif
+
+      endif                     ! end of ilesmod
+      
+      if (ilesmod .eq. 1) then  ! 10 < iLES < 20 => dynamic-mixed
+                                ! at nodes based on discrete filtering
+         call bardmc (y,       shgl,      shp,  &
+                      iper,    ilwork,     &
+                      nsons,   ifath,     x) 
+      endif
+      
+      if (ilesmod .eq. 2) then  ! 20 < iLES < 30 => dynamic at quad
+                                ! pts based on lumped projection filt. 
+
+         if(isubmod.eq.0)then
+            call projdmc (y,       shgl,      shp,  &
+                          iper,       ilwork,    x) 
+         else
+            call cpjdmcnoi (y,      shgl,      shp,  &
+                            iper,   ilwork,       x, &
+                            rowp,   colm,  &
+                            iBC,    BC)
+         endif
+
+      endif
+
+      if( (iLES.gt.1) )   then ! Deallocate Stuff for advanced LES models
+         deallocate (fwr2)
+         deallocate (fwr3)
+         deallocate (fwr4)
+         deallocate (xavegt)
+         deallocate (xavegt2)
+         deallocate (xavegt3)
+         deallocate (stabdis)
+      endif
+      return
+      end
+      
+      subroutine SUPGstress (y, ac, x, qres, ien, xmudmi, &
+           cdelsq, shgl, shp, Qwtf, shglo, shpo, stress, diss, vol)
 
       use stats
       use rlssave   ! Use the resolved Leonard stresses at the nodes.
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-      dimension y(nshg,5),                  ac(nshg,5),
-     &          x(numnp,nsd),               ien(npro,nshl),
-     &          shp(nshl,ngauss),            shpfun(npro,nshl),
-     &          shgl(nsd,nshl,ngauss),       shg(npro,nshl,nsd),
-     &          shglo(nsd,nshl,ngauss),      shpo(nshl,ngauss),
-     &          Qwtf(ngaussf),              acl(npro,nshl,ndof), 
-     &          yl(npro,nshl,ndof),         xl(npro,nenl,nsd)
-      dimension stress(nshg,9),             stressl(npro,9),
-     &          stressli(npro,9),
-     &          dxdxi(npro,nsd,nsd),        dxidx(npro,nsd,nsd),
-     &          WdetJ(npro),                rho(npro),
-     &          tmp(npro),                  aci(npro,nsd),
-     &          pres(npro),                 u1(npro),
-     &          u2(npro),                   u3(npro)
-      dimension qres(nshg,nsd*nsd),         ql(npro,nshl,nsd*nsd),
-     &          g1yi(npro,ndof),            g2yi(npro,ndof),
-     &          g3yi(npro,ndof),            divqi(npro,3),
-     &          src(npro,nsd),             Temp(npro),
-     &          xx(npro,nsd),
-     &          rlsl(npro,nshl,6),         rlsli(npro,6),
-     &          rLui(npro,3),
-     &          tauC(npro),                tauM(npro),
-     &          tauBar(npro),              uBar(npro,nsd)
-      dimension Sij(npro,6),               Snorm(npro),
-     &          Snorm2(npro),              cdelsq(nshg),              
-     &          xmudmi(npro,ngauss),        xmudmif(npro,ngauss),
-     &          dissi(npro,3),             dissl(npro,3),
-     &          voli(npro),                voll(npro),
-     &          vol(nshg),                 diss(nshg,3),
-     &          rmu(npro)
+      dimension y(nshg,5),                  ac(nshg,5), &
+                x(numnp,nsd),               ien(npro,nshl), &
+                shp(nshl,ngauss),            shpfun(npro,nshl), &
+                shgl(nsd,nshl,ngauss),       shg(npro,nshl,nsd), &
+                shglo(nsd,nshl,ngauss),      shpo(nshl,ngauss), &
+                Qwtf(ngaussf),              acl(npro,nshl,ndof),  &
+                yl(npro,nshl,ndof),         xl(npro,nenl,nsd)
+      dimension stress(nshg,9),             stressl(npro,9), &
+                stressli(npro,9), &
+                dxdxi(npro,nsd,nsd),        dxidx(npro,nsd,nsd), &
+                WdetJ(npro),                rho(npro), &
+                tmp(npro),                  aci(npro,nsd), &
+                pres(npro),                 u1(npro), &
+                u2(npro),                   u3(npro)
+      dimension qres(nshg,nsd*nsd),         ql(npro,nshl,nsd*nsd), &
+                g1yi(npro,ndof),            g2yi(npro,ndof), &
+                g3yi(npro,ndof),            divqi(npro,3), &
+                src(npro,nsd),             Temp(npro), &
+                xx(npro,nsd), &
+                rlsl(npro,nshl,6),         rlsli(npro,6), &
+                rLui(npro,3), &
+                tauC(npro),                tauM(npro), &
+                tauBar(npro),              uBar(npro,nsd)
+      dimension Sij(npro,6),               Snorm(npro), &
+                Snorm2(npro),              cdelsq(nshg),               &
+                xmudmi(npro,ngauss),        xmudmif(npro,ngauss), &
+                dissi(npro,3),             dissl(npro,3), &
+                voli(npro),                voll(npro), &
+                vol(nshg),                 diss(nshg,3), &
+                rmu(npro)
 
       real*8    omega(3), divu(npro)
 
-c.... Note that the xmudmi passed in here is 
-c.... evaluated at quadrature points of the flow. xmudmif will
-c...  be evaluated at the ngaussf quad. pts.
+!.... Note that the xmudmi passed in here is 
+!.... evaluated at quadrature points of the flow. xmudmif will
+!...  be evaluated at the ngaussf quad. pts.
 
       xmudmif = zero
 
-c.... Debuggin
+!.... Debuggin
 
-c      xmudmi = zero
+!      xmudmi = zero
 
-c.... Localization
+!.... Localization
       
       call localy(y,      yl,     ien,    ndofl,  'gather  ')
       call localy(ac,    acl,     ien,    ndofl,  'gather  ')
@@ -99,9 +215,9 @@ c.... Localization
       endif
 
       if ( idiff==2 .and. ires .eq. 1 ) then
-         call e3ql (yl,        shpo,       shglo, 
-     &              xl,        ql,        xmudmi, 
-     &              sgn)
+         call e3ql (yl,        shpo,       shglo,  &
+                    xl,        ql,        xmudmi,  &
+                    sgn)
       endif
 
       if( (iLES.gt.10).and.(iLES.lt.20)) then ! bardina 
@@ -110,7 +226,7 @@ c.... Localization
          rlsl = zero
       endif      
 
-c... Now that everything is localized, begin loop over ngaussf quad. pts.
+!... Now that everything is localized, begin loop over ngaussf quad. pts.
 
 
       stressl = zero
@@ -119,14 +235,14 @@ c... Now that everything is localized, begin loop over ngaussf quad. pts.
 
       do intp = 1, ngaussf
 
-c
-c.... ------------->  Primitive variables at int. point  <--------------
-c
+!
+!.... ------------->  Primitive variables at int. point  <--------------
+!
        pres = zero
        u1   = zero
        u2   = zero
        u3   = zero
-c
+!
        do n = 1, nshl 
           pres(:) = pres(:) + shp(n,intp) * yl(:,n,1)
           u1(:)   = u1(:)   + shp(n,intp) * yl(:,n,2)
@@ -134,9 +250,9 @@ c
           u3(:)   = u3(:)   + shp(n,intp) * yl(:,n,4)
        enddo
 
-c
-c.... ----------------------->  accel. at int. point  <----------------------
-c
+!
+!.... ----------------------->  accel. at int. point  <----------------------
+!
        aci = zero
        do n = 1, nshl
           aci(:,1) = aci(:,1) + shp(n,intp) * acl(:,n,2)
@@ -145,13 +261,13 @@ c
        enddo
 
 
-c
-c.... --------------->  Element Metrics at int. point <-------------
-c
-c.... compute the deformation gradient
-c
+!
+!.... --------------->  Element Metrics at int. point <-------------
+!
+!.... compute the deformation gradient
+!
         dxdxi = zero
-c
+!
           do n = 1, nenl
             dxdxi(:,1,1) = dxdxi(:,1,1) + xl(:,n,1) * shgl(1,n,intp)
             dxdxi(:,1,2) = dxdxi(:,1,2) + xl(:,n,1) * shgl(2,n,intp)
@@ -163,56 +279,56 @@ c
             dxdxi(:,3,2) = dxdxi(:,3,2) + xl(:,n,3) * shgl(2,n,intp)
             dxdxi(:,3,3) = dxdxi(:,3,3) + xl(:,n,3) * shgl(3,n,intp)
           enddo
-c
-c.... compute the inverse of deformation gradient
-c
-        dxidx(:,1,1) =   dxdxi(:,2,2) * dxdxi(:,3,3)
-     &                 - dxdxi(:,3,2) * dxdxi(:,2,3)
-        dxidx(:,1,2) =   dxdxi(:,3,2) * dxdxi(:,1,3)
-     &                 - dxdxi(:,1,2) * dxdxi(:,3,3)
-        dxidx(:,1,3) =   dxdxi(:,1,2) * dxdxi(:,2,3)
-     &                 - dxdxi(:,1,3) * dxdxi(:,2,2)
-        tmp          = one / ( dxidx(:,1,1) * dxdxi(:,1,1)
-     &                       + dxidx(:,1,2) * dxdxi(:,2,1)
-     &                       + dxidx(:,1,3) * dxdxi(:,3,1) )
+!
+!.... compute the inverse of deformation gradient
+!
+        dxidx(:,1,1) =   dxdxi(:,2,2) * dxdxi(:,3,3) &
+                       - dxdxi(:,3,2) * dxdxi(:,2,3)
+        dxidx(:,1,2) =   dxdxi(:,3,2) * dxdxi(:,1,3) &
+                       - dxdxi(:,1,2) * dxdxi(:,3,3)
+        dxidx(:,1,3) =   dxdxi(:,1,2) * dxdxi(:,2,3) &
+                       - dxdxi(:,1,3) * dxdxi(:,2,2)
+        tmp          = one / ( dxidx(:,1,1) * dxdxi(:,1,1) &
+                             + dxidx(:,1,2) * dxdxi(:,2,1) &
+                             + dxidx(:,1,3) * dxdxi(:,3,1) )
         dxidx(:,1,1) = dxidx(:,1,1) * tmp
         dxidx(:,1,2) = dxidx(:,1,2) * tmp
         dxidx(:,1,3) = dxidx(:,1,3) * tmp
-        dxidx(:,2,1) = (dxdxi(:,2,3) * dxdxi(:,3,1)
-     &                - dxdxi(:,2,1) * dxdxi(:,3,3)) * tmp
-        dxidx(:,2,2) = (dxdxi(:,1,1) * dxdxi(:,3,3)
-     &                - dxdxi(:,3,1) * dxdxi(:,1,3)) * tmp
-        dxidx(:,2,3) = (dxdxi(:,2,1) * dxdxi(:,1,3)
-     &                - dxdxi(:,1,1) * dxdxi(:,2,3)) * tmp
-        dxidx(:,3,1) = (dxdxi(:,2,1) * dxdxi(:,3,2)
-     &                - dxdxi(:,2,2) * dxdxi(:,3,1)) * tmp
-        dxidx(:,3,2) = (dxdxi(:,3,1) * dxdxi(:,1,2)
-     &                - dxdxi(:,1,1) * dxdxi(:,3,2)) * tmp
-        dxidx(:,3,3) = (dxdxi(:,1,1) * dxdxi(:,2,2)
-     &                - dxdxi(:,1,2) * dxdxi(:,2,1)) * tmp
-c
+        dxidx(:,2,1) = (dxdxi(:,2,3) * dxdxi(:,3,1) &
+                      - dxdxi(:,2,1) * dxdxi(:,3,3)) * tmp
+        dxidx(:,2,2) = (dxdxi(:,1,1) * dxdxi(:,3,3) &
+                      - dxdxi(:,3,1) * dxdxi(:,1,3)) * tmp
+        dxidx(:,2,3) = (dxdxi(:,2,1) * dxdxi(:,1,3) &
+                      - dxdxi(:,1,1) * dxdxi(:,2,3)) * tmp
+        dxidx(:,3,1) = (dxdxi(:,2,1) * dxdxi(:,3,2) &
+                      - dxdxi(:,2,2) * dxdxi(:,3,1)) * tmp
+        dxidx(:,3,2) = (dxdxi(:,3,1) * dxdxi(:,1,2) &
+                      - dxdxi(:,1,1) * dxdxi(:,3,2)) * tmp
+        dxidx(:,3,3) = (dxdxi(:,1,1) * dxdxi(:,2,2) &
+                      - dxdxi(:,1,2) * dxdxi(:,2,1)) * tmp
+!
 
         wght=Qwtf(intp)
         WdetJ = wght / tmp
 
-c    Obtain the global gradient of the shape functions at current qpt.
+!    Obtain the global gradient of the shape functions at current qpt.
 
       do n = 1,nshl
-        shg(:,n,1) = (shgl(1,n,intp) * dxidx(:,1,1)
-     &              + shgl(2,n,intp) * dxidx(:,2,1)
-     &              + shgl(3,n,intp) * dxidx(:,3,1))
-        shg(:,n,2) = (shgl(1,n,intp) * dxidx(:,1,2)
-     &              + shgl(2,n,intp) * dxidx(:,2,2)
-     &              + shgl(3,n,intp) * dxidx(:,3,2))
-        shg(:,n,3) = (shgl(1,n,intp) * dxidx(:,1,3)
-     &              + shgl(2,n,intp) * dxidx(:,2,3)
-     &              + shgl(3,n,intp) * dxidx(:,3,3))
+        shg(:,n,1) = (shgl(1,n,intp) * dxidx(:,1,1) &
+                    + shgl(2,n,intp) * dxidx(:,2,1) &
+                    + shgl(3,n,intp) * dxidx(:,3,1))
+        shg(:,n,2) = (shgl(1,n,intp) * dxidx(:,1,2) &
+                    + shgl(2,n,intp) * dxidx(:,2,2) &
+                    + shgl(3,n,intp) * dxidx(:,3,2))
+        shg(:,n,3) = (shgl(1,n,intp) * dxidx(:,1,3) &
+                    + shgl(2,n,intp) * dxidx(:,2,3) &
+                    + shgl(3,n,intp) * dxidx(:,3,3))
       enddo
 
-c
-c.... compute the global gradient of u and P
-c
-c
+!
+!.... compute the global gradient of u and P
+!
+!
        g1yi = zero
        g2yi = zero
        g3yi = zero
@@ -221,19 +337,19 @@ c
           g1yi(:,2) = g1yi(:,2) + shg(:,n,1) * yl(:,n,2)
           g1yi(:,3) = g1yi(:,3) + shg(:,n,1) * yl(:,n,3)
           g1yi(:,4) = g1yi(:,4) + shg(:,n,1) * yl(:,n,4)
-c
+!
           g2yi(:,1) = g2yi(:,1) + shg(:,n,2) * yl(:,n,1)
           g2yi(:,2) = g2yi(:,2) + shg(:,n,2) * yl(:,n,2)
           g2yi(:,3) = g2yi(:,3) + shg(:,n,2) * yl(:,n,3)
           g2yi(:,4) = g2yi(:,4) + shg(:,n,2) * yl(:,n,4)
-c
+!
           g3yi(:,1) = g3yi(:,1) + shg(:,n,3) * yl(:,n,1)
           g3yi(:,2) = g3yi(:,2) + shg(:,n,3) * yl(:,n,2)
           g3yi(:,3) = g3yi(:,3) + shg(:,n,3) * yl(:,n,3)
           g3yi(:,4) = g3yi(:,4) + shg(:,n,3) * yl(:,n,4)        
        enddo
 
-c.... Let us build the Sij tensor and its norms
+!.... Let us build the Sij tensor and its norms
 
        Sij(:,1) = g1yi(:,2)
        Sij(:,2) = g2yi(:,3)
@@ -242,32 +358,32 @@ c.... Let us build the Sij tensor and its norms
        Sij(:,5) = (g3yi(:,2)+g1yi(:,4))*pt5
        Sij(:,6) = (g3yi(:,3)+g2yi(:,4))*pt5
 
-       Snorm(:) = Sij(:,1)**2 + Sij(:,2)**2 + Sij(:,3)**2 
-     &      + two*(Sij(:,4)**2 + Sij(:,5)**2 + Sij(:,6)**2)
+       Snorm(:) = Sij(:,1)**2 + Sij(:,2)**2 + Sij(:,3)**2  &
+            + two*(Sij(:,4)**2 + Sij(:,5)**2 + Sij(:,6)**2)
 
-       Snorm2(:) = sqrt( two*(Sij(:,1)**2 + Sij(:,2)**2 + Sij(:,3)**2) 
-     &      + four*(Sij(:,4)**2 + Sij(:,5)**2 + Sij(:,6)**2) )
+       Snorm2(:) = sqrt( two*(Sij(:,1)**2 + Sij(:,2)**2 + Sij(:,3)**2)  &
+            + four*(Sij(:,4)**2 + Sij(:,5)**2 + Sij(:,6)**2) )
 
-c... Let us build xmudmif at current quad pt. a la scatnu.f
+!... Let us build xmudmif at current quad pt. a la scatnu.f
 
        do n = 1,nshl
-          xmudmif(:,intp) = xmudmif(:,intp) + 
-     &         cdelsq(ien(:,n)) * Snorm2(:)*shp(n,intp)
+          xmudmif(:,intp) = xmudmif(:,intp) +  &
+               cdelsq(ien(:,n)) * Snorm2(:)*shp(n,intp)
        enddo          
 
       rmu=datmat(1,2,1)
       xmudmif(:,intp)=min(xmudmif(:,intp),1000.0*rmu(:)) !
-c                                don't let it get larger than 1000 mu
+!                                don't let it get larger than 1000 mu
       xmudmif(:,intp)=max(xmudmif(:,intp), zero) ! don't let (xmudmi) < 0
 
-c.... Debugging
+!.... Debugging
 
-c      xmudmif(:,intp) = rmu(:)
+!      xmudmif(:,intp) = rmu(:)
 
 
-c
-c.... get necessary fluid properties (including the updated viscosity)
-c
+!
+!.... get necessary fluid properties (including the updated viscosity)
+!
        do i = 1, npro
           do n = 1, nshl
              shpfun(i,n) = shp(n,intp)
@@ -279,32 +395,32 @@ c
 
        divqi = zero
        if ( idiff >= 1 ) then
-c
-c.... compute divergence of diffusive flux vector, qi,i
-c
+!
+!.... compute divergence of diffusive flux vector, qi,i
+!
           do n=1, nshl
-             divqi(:,1) = divqi(:,1) + shg(:,n,1)*ql(:,n,1 ) 
-     &                               + shg(:,n,2)*ql(:,n,4 )
-     &                               + shg(:,n,3)*ql(:,n,7 )
+             divqi(:,1) = divqi(:,1) + shg(:,n,1)*ql(:,n,1 )  &
+                                     + shg(:,n,2)*ql(:,n,4 ) &
+                                     + shg(:,n,3)*ql(:,n,7 )
 
-             divqi(:,2) = divqi(:,2) + shg(:,n,1)*ql(:,n,2 ) 
-     &                               + shg(:,n,2)*ql(:,n,5 )
-     &                               + shg(:,n,3)*ql(:,n,8)
+             divqi(:,2) = divqi(:,2) + shg(:,n,1)*ql(:,n,2 )  &
+                                     + shg(:,n,2)*ql(:,n,5 ) &
+                                     + shg(:,n,3)*ql(:,n,8)
 
-             divqi(:,3) = divqi(:,3) + shg(:,n,1)*ql(:,n,3 ) 
-     &                               + shg(:,n,2)*ql(:,n,6 )
-     &                               + shg(:,n,3)*ql(:,n,9 )
+             divqi(:,3) = divqi(:,3) + shg(:,n,1)*ql(:,n,3 )  &
+                                     + shg(:,n,2)*ql(:,n,6 ) &
+                                     + shg(:,n,3)*ql(:,n,9 )
 
           enddo
 
        endif                    ! diffusive flux computation
 
-c
-c.... take care of the body force term here
-c
+!
+!.... take care of the body force term here
+!
        src = zero
        if(matflg(5,1) .ge. 1) then
-c
+!
          bfx      = datmat(1,5,1) ! Boussinesq, g*alfap
          bfy      = datmat(2,5,1)
          bfz      = datmat(3,5,1)
@@ -335,14 +451,14 @@ c
           end select
             
        endif
-c
-c.... -------------------> Coriolis force  <-----------------
-c
+!
+!.... -------------------> Coriolis force  <-----------------
+!
       omag=datmat(3,5,1)  ! frame rotation rate
        if(omag.ne.0) then
-c
-c.... unit vector of axis of rotation currently selecting the i,j,k
-c
+!
+!.... unit vector of axis of rotation currently selecting the i,j,k
+!
           e1 = one/sqrt(3.0d0)
           e2 = e1
           e3 = e1
@@ -360,52 +476,52 @@ c
              enddo
 
           endif
-c
-c  note that we calculate f as if it contains the usual source
-c  plus the Coriolis and the centrifugal forces taken to the rhs (sign change)
-c  as long as we are doing SUPG with no accounting for these terms in the
-c  LHS this is the only change (which will find its way to the RHS momentum
-c  equation (both Galerkin and SUPG parts)).
-c
-c  uncomment later if you want rotation always about z axis
-c                 orig_src - om x om x r       - two om x u
-c
-c$$$          src(:,1)=src(:,1)+omega(3)*omega(3)*xx(:,1)+two*omega(3)*u2
-c$$$          src(:,2)=src(:,2)+omega(3)*omega(3)*xx(:,2)-two*omega(3)*u1
-c
-c more general for testing
-c
-          src(:,1)=src(:,1)
-     &            -(omega(2)*(omega(1)*xx(:,2)-omega(2)*xx(:,1))
-     &             -omega(3)*(omega(3)*xx(:,1)-omega(1)*xx(:,3)))
-     &            -two*(omega(2)*u3-omega(3)*u2)
-          src(:,2)=src(:,2)
-     &            -(omega(3)*(omega(2)*xx(:,3)-omega(3)*xx(:,2))
-     &             -omega(1)*(omega(1)*xx(:,2)-omega(2)*xx(:,1)))
-     &            -two*(omega(3)*u1-omega(1)*u3)
-          src(:,3)=src(:,3)
-     &            -(omega(1)*(omega(3)*xx(:,1)-omega(1)*xx(:,3))
-     &             -omega(2)*(omega(2)*xx(:,3)-omega(3)*xx(:,2)))
-     &            -two*(omega(1)*u2-omega(2)*u1)
+!
+!  note that we calculate f as if it contains the usual source
+!  plus the Coriolis and the centrifugal forces taken to the rhs (sign change)
+!  as long as we are doing SUPG with no accounting for these terms in the
+!  LHS this is the only change (which will find its way to the RHS momentum
+!  equation (both Galerkin and SUPG parts)).
+!
+!  uncomment later if you want rotation always about z axis
+!                 orig_src - om x om x r       - two om x u
+!
+!$$$          src(:,1)=src(:,1)+omega(3)*omega(3)*xx(:,1)+two*omega(3)*u2
+!$$$          src(:,2)=src(:,2)+omega(3)*omega(3)*xx(:,2)-two*omega(3)*u1
+!
+! more general for testing
+!
+          src(:,1)=src(:,1) &
+                  -(omega(2)*(omega(1)*xx(:,2)-omega(2)*xx(:,1)) &
+                   -omega(3)*(omega(3)*xx(:,1)-omega(1)*xx(:,3))) &
+                  -two*(omega(2)*u3-omega(3)*u2)
+          src(:,2)=src(:,2) &
+                  -(omega(3)*(omega(2)*xx(:,3)-omega(3)*xx(:,2)) &
+                   -omega(1)*(omega(1)*xx(:,2)-omega(2)*xx(:,1))) &
+                  -two*(omega(3)*u1-omega(1)*u3)
+          src(:,3)=src(:,3) &
+                  -(omega(1)*(omega(3)*xx(:,1)-omega(1)*xx(:,3)) &
+                   -omega(2)*(omega(2)*xx(:,3)-omega(3)*xx(:,2))) &
+                  -two*(omega(1)*u2-omega(2)*u1)
        endif
-c
-c.... -------------------> momentum residual  <-----------------
-c
-       rLui(:,1) =(aci(:,1) + u1 * g1yi(:,2)
-     &                      + u2 * g2yi(:,2)
-     &                      + u3 * g3yi(:,2) - src(:,1) ) * rho
-     &           + g1yi(:,1)
-     &           - divqi(:,1)
-       rLui(:,2) =(aci(:,2) + u1 * g1yi(:,3)
-     &                      + u2 * g2yi(:,3)
-     &                      + u3 * g3yi(:,3) - src(:,2) ) * rho
-     &           + g2yi(:,1)
-     &           - divqi(:,2)
-       rLui(:,3) =(aci(:,3) + u1 * g1yi(:,4)
-     &                      + u2 * g2yi(:,4)
-     &                      + u3 * g3yi(:,4) - src(:,3) ) * rho
-     &           + g3yi(:,1)
-     &           - divqi(:,3)
+!
+!.... -------------------> momentum residual  <-----------------
+!
+       rLui(:,1) =(aci(:,1) + u1 * g1yi(:,2) &
+                            + u2 * g2yi(:,2) &
+                            + u3 * g3yi(:,2) - src(:,1) ) * rho &
+                 + g1yi(:,1) &
+                 - divqi(:,1)
+       rLui(:,2) =(aci(:,2) + u1 * g1yi(:,3) &
+                            + u2 * g2yi(:,3) &
+                            + u3 * g3yi(:,3) - src(:,2) ) * rho &
+                 + g2yi(:,1) &
+                 - divqi(:,2)
+       rLui(:,3) =(aci(:,3) + u1 * g1yi(:,4) &
+                            + u2 * g2yi(:,4) &
+                            + u3 * g3yi(:,4) - src(:,3) ) * rho &
+                 + g3yi(:,1) &
+                 - divqi(:,3)
        if(iconvflow.eq.1) then
           divu(:)  = (g1yi(:,2) + g2yi(:,3) + g3yi(:,4))*rho
           rLui(:,1)=rlui(:,1)+u1*divu
@@ -413,17 +529,17 @@ c
           rLui(:,3)=rlui(:,3)+u3*divu
        endif
 
-c
-c.... compute the stabilization terms
-c
-        call e3stab (rho,          u1,       u2,
-     &               u3,           dxidx,    rLui,   
-     &               rmu,          tauC,     tauM,   
-     &               tauBar,       uBar )         
-c
-c... Compute the SUPG stress at the current quad point multiplied
-c... by the quadrature point weight.
-c
+!
+!.... compute the stabilization terms
+!
+        call e3stab (rho,          u1,       u2, &
+                     u3,           dxidx,    rLui,    &
+                     rmu,          tauC,     tauM,    &
+                     tauBar,       uBar )         
+!
+!... Compute the SUPG stress at the current quad point multiplied
+!... by the quadrature point weight.
+!
         stressli(:,1) = u1(:)*rLui(:,1) 
         stressli(:,2) = u1(:)*rLui(:,2) 
         stressli(:,3) = u1(:)*rLui(:,3)
@@ -446,12 +562,12 @@ c
            stressli(:,9) = stressli(:,9) + u3(:)*rLui(:,3)           
         endif
 
-c.... Debugging
+!.... Debugging
 
-c        stressli = two
-c        tauM     = one
+!        stressli = two
+!        tauM     = one
 
-c.... Multiply  ui*Luj times tauM and times WdetJ       
+!.... Multiply  ui*Luj times tauM and times WdetJ       
 
         do l = 1, 9
            do k = 1, npro
@@ -459,38 +575,38 @@ c.... Multiply  ui*Luj times tauM and times WdetJ
            enddo
         enddo
 
-c.... Obtain the SUPG energy dissipation (tau_{ij} S_{ij}) at the
-c.... current qpt.
+!.... Obtain the SUPG energy dissipation (tau_{ij} S_{ij}) at the
+!.... current qpt.
 
-        dissi(:,1) = stressli(:,1)*Sij(:,1) + stressli(:,5)*Sij(:,2)
-     &       + stressli(:,9)*Sij(:,3) + stressli(:,4)*Sij(:,4)
-     &       + stressli(:,7)*Sij(:,5) + stressli(:,8)*Sij(:,6)
-     &       + stressli(:,2)*Sij(:,4) + stressli(:,3)*Sij(:,5)
-     &       + stressli(:,6)*Sij(:,6)
+        dissi(:,1) = stressli(:,1)*Sij(:,1) + stressli(:,5)*Sij(:,2) &
+             + stressli(:,9)*Sij(:,3) + stressli(:,4)*Sij(:,4) &
+             + stressli(:,7)*Sij(:,5) + stressli(:,8)*Sij(:,6) &
+             + stressli(:,2)*Sij(:,4) + stressli(:,3)*Sij(:,5) &
+             + stressli(:,6)*Sij(:,6)
 
-c.... Obtain the eddy viscosity dissipation multiplied by WdetJ
+!.... Obtain the eddy viscosity dissipation multiplied by WdetJ
 
         dissi(:,2) = xmudmif(:,intp)*Snorm(:)*rho(:)*WdetJ(:)
         dissi(:,3) = rmu(:)*Snorm(:)*rho(:)*WdetJ(:) ! Total dissipation 
-c                                             from molec. and eddy
+!                                             from molec. and eddy
 
-c.... Debugging
+!.... Debugging
 
-c        dissi(:,1) = two*WdetJ(:)
-c        dissi(:,2) = two*WdetJ(:)
-c        dissi(:,3) = two*WdetJ(:)        
+!        dissi(:,1) = two*WdetJ(:)
+!        dissi(:,2) = two*WdetJ(:)
+!        dissi(:,3) = two*WdetJ(:)        
 
-c..... Volume of element
+!..... Volume of element
 
         voli = WdetJ  ! Volume of element patch
-c
-c.... For debugging purposes let us keep track of rLui
+!
+!.... For debugging purposes let us keep track of rLui
 
-c        rLui(:,1) = rLui(:,1)*WdetJ(:)
-c        rLui(:,1) = rLui(:,2)*WdetJ(:)
-c        rLui(:,1) = rLui(:,3)*WdetJ(:)
+!        rLui(:,1) = rLui(:,1)*WdetJ(:)
+!        rLui(:,1) = rLui(:,2)*WdetJ(:)
+!        rLui(:,1) = rLui(:,3)*WdetJ(:)
 
-c.... Acumulate integration point contributions for each each element
+!.... Acumulate integration point contributions for each each element
 
         do l = 1, 9
            stressl(:,l) = stressl(:,l) + stressli(:,l)
@@ -524,42 +640,43 @@ c.... Acumulate integration point contributions for each each element
 
       return
       end
-      subroutine cpjdmcnoi (y,      shgl,      shp, 
-     &                   iper,   ilwork,       x,
-     &                   rowp,   colm, 
-     &                   iBC,    BC)
+      subroutine cpjdmcnoi (y,      shgl,      shp,  &
+                         iper,   ilwork,       x, &
+                         rowp,   colm,  &
+                         iBC,    BC)
 
       use pointer_data
 
       use lhsGkeep ! This module stores the mass (Gram) matrix.
 
       use quadfilt   ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwt contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwt contains the weights of the 
+!                    quad. points.  
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
-c
-      dimension fres(nshg,24),         fwr(nshg),
-     &          strnrm(nshg),         cdelsq(nshg),
-     &          xnum(nshg),           xden(nshg),
-     &          xmij(nshg,6),         xlij(nshg,6),
-     &          xnude(nfath,2),        xnuder(nfath,2),
-     &          strl(numel,ngauss),           
-     &          y(nshg,5),            yold(nshg,5),
-     &          iper(nshg),
-     &          ilwork(nlwork),
-     &          x(numnp,3),
-     &          shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),    
-     &          pfres(nshg,22),                ifath(nshg),
-     &          nsons(nshg),                   iBC(nshg),
-     &          BC(nshg,ndofBC),               xnutf(nfath),
-     &          xnut(nshg)
+!
+      dimension fres(nshg,24),         fwr(nshg), &
+                strnrm(nshg),         cdelsq(nshg), &
+                xnum(nshg),           xden(nshg), &
+                xmij(nshg,6),         xlij(nshg,6), &
+                xnude(nfath,2),        xnuder(nfath,2), &
+                strl(numel,ngauss),            &
+                y(nshg,5),            yold(nshg,5), &
+                iper(nshg), &
+                ilwork(nlwork), &
+                x(numnp,3), &
+                shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),     &
+                pfres(nshg,22),                ifath(nshg), &
+                nsons(nshg),                   iBC(nshg), &
+                BC(nshg,ndofBC),               xnutf(nfath), &
+                xnut(nshg)
 
         integer   rowp(nshg*nnz),         colm(nshg+1)
 
@@ -581,19 +698,19 @@ c
       fres = zero
       yold(:,1)=y(:,4)
       yold(:,2:4)=y(:,1:3)
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      do i = 1, nshg  ! No periodicity for testing
-c      iper(i) = i
-c      enddo
-c      yold(:,5) = 1.0
-c      yold(:,2) = 3.0d0
-c      yold(:,2) = 2.0*x(:,1) - 3*x(:,2) 
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      do i = 1, nshg  ! No periodicity for testing
+!      iper(i) = i
+!      enddo
+!      yold(:,5) = 1.0
+!      yold(:,2) = 3.0d0
+!      yold(:,2) = 2.0*x(:,1) - 3*x(:,2) 
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
 
       intrul=intg(1,itseq)
@@ -611,23 +728,23 @@ c                               suitable for the
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-        call hfilterBB (yold, x, mien(iblk)%p, fres, 
-     &               shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call hfilterBB (yold, x, mien(iblk)%p, fres,  &
+                     shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
 
         if ( istep.eq.0 ) then
 
            allocate ( em(npro,nshl,nshl) )
 
-           call getgram2 (x, mien(iblk)%p, 
-     &          shgl(lcsyst,:,1:nshl,:),  shp(lcsyst,1:nshl,:),     
-     &          shglf(lcsyst,:,1:nshl,:), shpf(lcsyst,1:nshl,:), em, 
-     &          Qwtf(lcsyst,1:ngaussf))
+           call getgram2 (x, mien(iblk)%p,  &
+                shgl(lcsyst,:,1:nshl,:),  shp(lcsyst,1:nshl,:),      &
+                shglf(lcsyst,:,1:nshl,:), shpf(lcsyst,1:nshl,:), em,  &
+                Qwtf(lcsyst,1:ngaussf))
 
-           call fillsparseSclr (mien(iblk)%p, 
-     &                          em,            lhsG,
-     &                          rowp,          colm)
+           call fillsparseSclr (mien(iblk)%p,  &
+                                em,            lhsG, &
+                                rowp,          colm)
 
 
            deallocate ( em )
@@ -635,14 +752,14 @@ c                               suitable for the
         endif
 
       enddo   ! End loop over element blocks
-c
+!
 
-c      write(*,*)'Im here'
+!      write(*,*)'Im here'
  
       if(numpe>1) call commu (fres, ilwork, 24, 'in ')
-c 
-c account for periodicity in filtered variables
-c
+! 
+! account for periodicity in filtered variables
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -657,14 +774,14 @@ c
         endif
       enddo
 
-c     Need to zero off-processor slaves as well.
+!     Need to zero off-processor slaves as well.
 
       if (numpe.gt.1) then
 
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
 
          do itask = 1, numtask
             
@@ -686,16 +803,16 @@ c zero the nodes that are "solved" on the other processors
          
       endif
 
-c... At this point fres has the right hand side vector (b) and lhsG has
-c... the Gram matrix (M_{AB}) (in sparse storage). Now we need to solve
-c... Ax = b using the conjugate gradient method to finish off the 
-c... L2-projection.
+!... At this point fres has the right hand side vector (b) and lhsG has
+!... the Gram matrix (M_{AB}) (in sparse storage). Now we need to solve
+!... Ax = b using the conjugate gradient method to finish off the 
+!... L2-projection.
 
 
       do i = 1, 21
-         call sparseCG (fres(:,i), pfres(:,i), lhsG, 
-     &        rowp, colm, iper, ilwork,
-     &        iBC,  BC)
+         call sparseCG (fres(:,i), pfres(:,i), lhsG,  &
+              rowp, colm, iper, ilwork, &
+              iBC,  BC)
       enddo
 
 
@@ -718,25 +835,25 @@ c... L2-projection.
         
         ngauss = nint(lcsyst)
  
-        call getstrl (yold, x,      mien(iblk)%p,  
-     &               strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:))
+        call getstrl (yold, x,      mien(iblk)%p,   &
+                     strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:))
 
       enddo
 
 
-      strnrm = sqrt( 
-     &  two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2)
-     &  + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      strnrm = sqrt(  &
+        two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2) &
+        + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
 
       fwr = fwr1 * fres(:,22) * strnrm
 
-      xmij(:,1) = -fwr
-     &             * fres(:,10) + fres(:,16)
-      xmij(:,2) = -fwr
-     &             * fres(:,11) + fres(:,17) 
-      xmij(:,3) = -fwr
-     &             * fres(:,12) + fres(:,18) 
+      xmij(:,1) = -fwr &
+                   * fres(:,10) + fres(:,16)
+      xmij(:,2) = -fwr &
+                   * fres(:,11) + fres(:,17) 
+      xmij(:,3) = -fwr &
+                   * fres(:,12) + fres(:,18) 
 
       xmij(:,4) = -fwr * fres(:,13) + fres(:,19)
       xmij(:,5) = -fwr * fres(:,14) + fres(:,20)
@@ -751,19 +868,19 @@ c... L2-projection.
       xlij(:,5) = fres(:,8) - fres(:,1) * fres(:,3) * fres(:,22)
       xlij(:,6) = fres(:,9) - fres(:,2) * fres(:,3) * fres(:,22)
 
-      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2) 
-     &                                    + xlij(:,3) * xmij(:,3)
-     &     + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5)
-     &                                    + xlij(:,6) * xmij(:,6))
-      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2) 
-     &                                    + xmij(:,3) * xmij(:,3)
-     &     + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5)
-     &                                    + xmij(:,6) * xmij(:,6))
+      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2)  &
+                                          + xlij(:,3) * xmij(:,3) &
+           + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5) &
+                                          + xlij(:,6) * xmij(:,6))
+      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2)  &
+                                          + xmij(:,3) * xmij(:,3) &
+           + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5) &
+                                          + xmij(:,6) * xmij(:,6))
       xden = two * xden
 
-c 
-c don't account for periodic nodes twice
-c
+! 
+! don't account for periodic nodes twice
+!
       do j = 1,numnp
         i = iper(j)
         if (i .ne. j) then
@@ -773,9 +890,9 @@ c
       enddo
 
          if(numpe.gt.1) then
-c
-c.... nodes treated on another processor are eliminated
-c     
+!
+!.... nodes treated on another processor are eliminated
+!     
             numtask = ilwork(1)
             itkbeg = 1
          
@@ -798,19 +915,19 @@ c
                
             enddo
 
-c            if (myrank.eq.0)then
-c               do i = 1, numnp
-c                  write(253,*)xnum(i),xden(i),myrank
-c               enddo
-c            endif
-c            if (myrank.eq.1)then
-c               do i = 1, numnp
-c                  write(254,*)xnum(i),xden(i),myrank
-c               enddo
-c            endif
+!            if (myrank.eq.0)then
+!               do i = 1, numnp
+!                  write(253,*)xnum(i),xden(i),myrank
+!               enddo
+!            endif
+!            if (myrank.eq.1)then
+!               do i = 1, numnp
+!                  write(254,*)xnum(i),xden(i),myrank
+!               enddo
+!            endif
 
-c            xnuml = sum(xnum)
-c            xdenl = sum(xden)
+!            xnuml = sum(xnum)
+!            xdenl = sum(xden)
 
             xnuml = zero
             xdenl = zero
@@ -819,15 +936,15 @@ c            xdenl = sum(xden)
                xdenl = xdenl + xden(i)
             enddo
 
-c            write(*,*)xnuml,xdenl,myrank
+!            write(*,*)xnuml,xdenl,myrank
             
             call drvAllreducesclr ( xnuml, xnumt )
             call drvAllreducesclr ( xdenl, xdent )
-cd 
+!d 
          else
 
-c            xnumt = sum(xnum)
-c            xdent = sum(xden)
+!            xnumt = sum(xnum)
+!            xdent = sum(xden)
             xnumt = zero
             xdent = zero
             do i = 1, numnp
@@ -845,10 +962,10 @@ c            xdent = sum(xden)
       if (myrank .eq. 0)then
          write(*,*) 'xnut=', xnut(100)
       endif
-c      do i = 1, numnp
-c         write(*,*)xnumt/xdent,myrank
-c      enddo
-c
+!      do i = 1, numnp
+!         write(*,*)xnumt/xdent,myrank
+!      enddo
+!
       do iblk = 1,nelblk
          lcsyst = lcblk(3,iblk)
          iel  = lcblk(1,iblk)
@@ -858,29 +975,29 @@ c
          
          ngauss = nint(lcsyst)
 
-         call scatnu (mien(iblk)%p, strl(iel:inum,:), 
-     &        mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
+         call scatnu (mien(iblk)%p, strl(iel:inum,:),  &
+              mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
       enddo
-c     $$$$$$$$$$$$$$$$$$$$$$$$$$$
-c$$$  tmp1 =  MINVAL(xmudmi)
-c$$$  tmp2 =  MAXVAL(xmudmi)
-c$$$  if(numpe>1) then
-c$$$  call MPI_REDUCE (tmp1, tmp3, 1, MPI_DOUBLE_PRECISION,
-c$$$  &                 MPI_MIN, master, MPI_COMM_WORLD, ierr)
-c$$$  call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
-c$$$  &                 MPI_MAX, master, MPI_COMM_WORLD, ierr)
-c$$$      tmp1=tmp3
-c$$$  tmp2=tmp4
-c$$$  endif
-c$$$  if (myrank .EQ. master) then
-c$$$  write(35,*) lstep,tmp1,tmp2
-c$$$  call flush(35)
-c$$$  endif
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+!     $$$$$$$$$$$$$$$$$$$$$$$$$$$
+!$$$  tmp1 =  MINVAL(xmudmi)
+!$$$  tmp2 =  MAXVAL(xmudmi)
+!$$$  if(numpe>1) then
+!$$$  call MPI_REDUCE (tmp1, tmp3, 1, MPI_DOUBLE_PRECISION,
+!$$$  &                 MPI_MIN, master, INEWCOMM, ierr)
+!$$$  call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
+!$$$  &                 MPI_MAX, master, INEWCOMM, ierr)
+!$$$      tmp1=tmp3
+!$$$  tmp2=tmp4
+!$$$  endif
+!$$$  if (myrank .EQ. master) then
+!$$$  write(35,*) lstep,tmp1,tmp2
+!$$$  call flush(35)
+!$$$  endif
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-c
-c  if flag set, write a restart file with info (reuse xmij's memory)
-c
+!
+!  if flag set, write a restart file with info (reuse xmij's memory)
+!
       if(irs.eq.11) then
          lstep=999
          xmij(:,1)=xnum(:)
@@ -890,35 +1007,36 @@ c
          call restar('out ',xmij,xlij) !also dump all of L_{ij} in ac
          stop
       endif
-c
-c  local clipping moved to scatnu with the creation of mxmudmi pointers
-c
-c$$$      rmu=datmat(1,2,1)
-c$$$      xmudmi=min(xmudmi,1000.0*rmu) !don't let it get larger than 1000 mu
-c$$$      xmudmi=max(xmudmi, -rmu) ! don't let (xmudmi + mu) < 0
-c      stop !uncomment to test dmod
-c
+!
+!  local clipping moved to scatnu with the creation of mxmudmi pointers
+!
+!$$$      rmu=datmat(1,2,1)
+!$$$      xmudmi=min(xmudmi,1000.0*rmu) !don't let it get larger than 1000 mu
+!$$$      xmudmi=max(xmudmi, -rmu) ! don't let (xmudmi + mu) < 0
+!      stop !uncomment to test dmod
+!
 
 
-c  write out the nodal values of xnut (estimate since we don't calc strain
-c  there and must use the filtered strain).
-c
+!  write out the nodal values of xnut (estimate since we don't calc strain
+!  there and must use the filtered strain).
+!
 
 
 
       return
       end
       
-c-----------------------------------------------------
+!-----------------------------------------------------
 
       subroutine getgram (x, ien, shgl, shp, em, Qwtf)
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       dimension x(numnp,nsd),            xl(npro,nenl,nsd)      
-      dimension ien(npro,nshl),
-     &          shgl(nsd,nshl,ngauss),    shp(nshl,ngauss),
-     &          em(npro,nshl,nshl),      Qwtf(ngaussf)
+      dimension ien(npro,nshl), &
+                shgl(nsd,nshl,ngauss),    shp(nshl,ngauss), &
+                em(npro,nshl,nshl),      Qwtf(ngaussf)
       
       call localx(x,      xl,     ien,    nsd,    'gather  ')
 
@@ -929,18 +1047,19 @@ c-----------------------------------------------------
 
       end
 
-c----------------------------------------------------------------------
+!----------------------------------------------------------------------
 
 
       subroutine getgram2 (x, ien, shgl, shp, shglf, shpf, em, Qwtf)
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       dimension x(numnp,nsd),            xl(npro,nenl,nsd)      
-      dimension ien(npro,nshl),
-     &          shgl(nsd,nshl,ngauss),    shp(nshl,ngauss),
-     &          shglf(nsd,nshl,ngauss),   shpf(nshl,ngauss),
-     &          em(npro,nshl,nshl),      Qwtf(ngaussf) 
+      dimension ien(npro,nshl), &
+                shgl(nsd,nshl,ngauss),    shp(nshl,ngauss), &
+                shglf(nsd,nshl,ngauss),   shpf(nshl,ngauss), &
+                em(npro,nshl,nshl),      Qwtf(ngaussf) 
 
       
       call localx(x,      xl,     ien,    nsd,    'gather  ')
@@ -952,17 +1071,18 @@ c----------------------------------------------------------------------
 
       end
 
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
       subroutine getgram3 (x, ien, shgl, shp, shglf, shpf, em, Qwtf)
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       dimension x(numnp,nsd),            xl(npro,nenl,nsd)      
-      dimension ien(npro,nshl),
-     &          shgl(nsd,nshl,ngauss),    shp(nshl,ngauss),
-     &          shglf(nsd,nshl,ngauss),   shpf(nshl,ngauss),
-     &          em(npro,nshl,nshl),      Qwtf(ngaussf) 
+      dimension ien(npro,nshl), &
+                shgl(nsd,nshl,ngauss),    shp(nshl,ngauss), &
+                shglf(nsd,nshl,ngauss),   shpf(nshl,ngauss), &
+                em(npro,nshl,nshl),      Qwtf(ngaussf) 
 
       
       call localx(x,      xl,     ien,    nsd,    'gather  ')
@@ -973,40 +1093,41 @@ c-----------------------------------------------------------------------
       return
 
       end
-      subroutine cdelBHsq (y,      shgl,      shp, 
-     &                   iper,   ilwork,    
-     &                   nsons,  ifath,     x, cdelsq1)
+      subroutine cdelBHsq (y,      shgl,      shp,  &
+                         iper,   ilwork,     &
+                         nsons,  ifath,     x, cdelsq1)
 
       use pointer_data
 
       use quadfilt   ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwtf contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwtf contains the weights of the 
+!                    quad. points.  
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
-c
-      dimension fres(nshg,33),         fwr(nshg),
-     &          strnrm(nshg),         cdelsq1(nfath),
-     &          xnum(nshg),           xden(nshg),
-     &          xmij(nshg,6),         xlij(nshg,6),
-     &          xnude(nfath,2),        xnuder(nfath,2),
-     &          nsons(nshg),
-     &          strl(numel,ngauss),           
-     &          y(nshg,5),            yold(nshg,5),
-     &          ifath(nshg),          iper(nshg),
-     &          ilwork(nlwork),
-     &          x(numnp,3),
-     &          shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),    
-     &          xnutf(nfath),
-     &          hfres(nshg,16)      
+!
+      dimension fres(nshg,33),         fwr(nshg), &
+                strnrm(nshg),         cdelsq1(nfath), &
+                xnum(nshg),           xden(nshg), &
+                xmij(nshg,6),         xlij(nshg,6), &
+                xnude(nfath,2),        xnuder(nfath,2), &
+                nsons(nshg), &
+                strl(numel,ngauss),            &
+                y(nshg,5),            yold(nshg,5), &
+                ifath(nshg),          iper(nshg), &
+                ilwork(nlwork), &
+                x(numnp,3), &
+                shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),     &
+                xnutf(nfath), &
+                hfres(nshg,16)      
 
-c
+!
      
       fres = zero
       hfres = zero
@@ -1014,15 +1135,15 @@ c
       yold(:,1)=y(:,4)
       yold(:,2:4)=y(:,1:3)
 
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      yold(:,5) = 1.0  ! Debugging
-c      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      yold(:,5) = 1.0  ! Debugging
+!      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
       do iblk = 1,nelblk
         lcsyst = lcblk(3,iblk) 
@@ -1036,20 +1157,20 @@ c                               suitable for the
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-c        call hfilterB (yold, x, mien(iblk)%p, hfres, 
-c     &               shglf(lcsyst,:,1:nshl,:),
-c     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+!        call hfilterB (yold, x, mien(iblk)%p, hfres, 
+!     &               shglf(lcsyst,:,1:nshl,:),
+!     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
-        call hfilterC (yold, x, mien(iblk)%p, hfres, 
-     &               shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call hfilterC (yold, x, mien(iblk)%p, hfres,  &
+                     shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
       enddo
 
       if(numpe>1) call commu (hfres, ilwork, 16, 'in ')
-c 
-c... account for periodicity in filtered variables
-c
+! 
+!... account for periodicity in filtered variables
+!
       do j = 1,nshg  !    Add on-processor slave contribution to masters
         i = iper(j)
         if (i .ne. j) then
@@ -1063,7 +1184,7 @@ c
         endif
       enddo
 
-c... Set off-processor slaves to be the same as their masters
+!... Set off-processor slaves to be the same as their masters
 
       if(numpe>1)   call commu (hfres, ilwork, 16, 'out')
 
@@ -1071,16 +1192,16 @@ c... Set off-processor slaves to be the same as their masters
       hfres(:,16) = one / hfres(:,16) ! one/(volume of hat filter kernel)
 
       do j = 1, 15
-	hfres(:,j) = hfres(:,j) * hfres(:,16)
+        hfres(:,j) = hfres(:,j) * hfres(:,16)
       enddo	    		
 
-c... For debugging
+!... For debugging
 
-c      hfres(:,1) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      hfres(:,2) = 3.0*x(:,1) + 4.0*x(:,2)
-c      hfres(:,3) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      hfres(:,1) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      hfres(:,2) = 3.0*x(:,1) + 4.0*x(:,2)
+!      hfres(:,3) = 4.0*x(:,1) + x(:,2) + x(:,3)
 
-c... Done w/ h-filtering. Begin 2h-filtering.
+!... Done w/ h-filtering. Begin 2h-filtering.
 
       do iblk = 1,nelblk
         lcsyst = lcblk(3,iblk) 
@@ -1094,18 +1215,18 @@ c... Done w/ h-filtering. Begin 2h-filtering.
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-        call twohfilterB (yold, x, strl(iel:inum,:), mien(iblk)%p, 
-     &               fres, hfres, shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call twohfilterB (yold, x, strl(iel:inum,:), mien(iblk)%p,  &
+                     fres, hfres, shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
       enddo
-c
+!
  
 
       if(numpe>1) call commu (fres, ilwork, 33, 'in ')
-c 
-c account for periodicity in filtered variables
-c
+! 
+! account for periodicity in filtered variables
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -1144,28 +1265,28 @@ c
         
         ngauss = nint(lcsyst)
  
-        call getstrl (yold, x,      mien(iblk)%p,  
-     &               strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:))
+        call getstrl (yold, x,      mien(iblk)%p,   &
+                     strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:))
 
       enddo
 
-c
-c... Obtain the hat-tilde strain rate norm at the nodes 
-c
+!
+!... Obtain the hat-tilde strain rate norm at the nodes 
+!
 
-      strnrm = sqrt( 
-     &  two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2)
-     &  + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      strnrm = sqrt(  &
+        two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2) &
+        + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
 
       fwr = fwr1 * strnrm
 
-      xmij(:,1) = -fwr
-     &             * fres(:,10) + fres(:,16)
-      xmij(:,2) = -fwr
-     &             * fres(:,11) + fres(:,17) 
-      xmij(:,3) = -fwr
-     &             * fres(:,12) + fres(:,18) 
+      xmij(:,1) = -fwr &
+                   * fres(:,10) + fres(:,16)
+      xmij(:,2) = -fwr &
+                   * fres(:,11) + fres(:,17) 
+      xmij(:,3) = -fwr &
+                   * fres(:,12) + fres(:,18) 
 
       xmij(:,4) = -fwr * fres(:,13) + fres(:,19)
       xmij(:,5) = -fwr * fres(:,14) + fres(:,20)
@@ -1179,17 +1300,17 @@ c
       xlij(:,5) = fres(:,8) - fres(:,1) * fres(:,3) 
       xlij(:,6) = fres(:,9) - fres(:,2) * fres(:,3) 
 
-      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2) 
-     &                                    + xlij(:,3) * xmij(:,3)
-     &     + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5)
-     &                                    + xlij(:,6) * xmij(:,6))
-      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2) 
-     &                                    + xmij(:,3) * xmij(:,3)
-     &     + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5)
-     &                                    + xmij(:,6) * xmij(:,6))
+      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2)  &
+                                          + xlij(:,3) * xmij(:,3) &
+           + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5) &
+                                          + xlij(:,6) * xmij(:,6))
+      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2)  &
+                                          + xmij(:,3) * xmij(:,3) &
+           + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5) &
+                                          + xmij(:,6) * xmij(:,6))
       xden = two * xden
 
-c  zero on processor periodic nodes so that they will not be added twice
+!  zero on processor periodic nodes so that they will not be added twice
         do j = 1,numnp
           i = iper(j)
           if (i .ne. j) then
@@ -1203,7 +1324,7 @@ c  zero on processor periodic nodes so that they will not be added twice
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
          do itask = 1, numtask
 
             iacc   = ilwork (itkbeg + 2)
@@ -1224,58 +1345,58 @@ c zero the nodes that are "solved" on the other processors
          enddo
          
       endif
-c
-c Description of arrays.   Each processor has an array of length equal
-c to the total number of fathers times 2 xnude(nfathers,2). One to collect 
-c the numerator and one to collect the denominator.  There is also an array
-c of length nshg on each processor which tells the father number of each
-c on processor node, ifath(nnshg).  Finally, there is an arry of length
-c nfathers to tell the total (on all processors combined) number of sons
-c for each father. 
-c
-c  Now loop over nodes and accumlate the numerator and the denominator
-c  to the father nodes.  Only on processor addition at this point.
-c  Note that serrogate fathers are collect some for the case where some
-c  sons are on another processor
-c
+!
+! Description of arrays.   Each processor has an array of length equal
+! to the total number of fathers times 2 xnude(nfathers,2). One to collect 
+! the numerator and one to collect the denominator.  There is also an array
+! of length nshg on each processor which tells the father number of each
+! on processor node, ifath(nnshg).  Finally, there is an arry of length
+! nfathers to tell the total (on all processors combined) number of sons
+! for each father. 
+!
+!  Now loop over nodes and accumlate the numerator and the denominator
+!  to the father nodes.  Only on processor addition at this point.
+!  Note that serrogate fathers are collect some for the case where some
+!  sons are on another processor
+!
       xnude = zero
       do i = 1,nshg
          xnude(ifath(i),1) = xnude(ifath(i),1) + xnum(i)
          xnude(ifath(i),2) = xnude(ifath(i),2) + xden(i)
       enddo
 
-c
-c Now  the true fathers and serrogates combine results and update
-c each other.
-c       
+!
+! Now  the true fathers and serrogates combine results and update
+! each other.
+!       
       if(numpe .gt. 1)then
          call drvAllreduce(xnude, xnuder,2*nfath)
-c
-c  xnude is the sum of the sons for each father on this processor
-c
-c  xnuder is the sum of the sons for each father on all processor combined
-c  (the same as if we had not partitioned the mesh for each processor)
-c
-c   For each father we have precomputed the number of sons (including
-c   the sons off processor). 
-c
-c   Now divide by number of sons to get the average (not really necessary
-c   for dynamic model since ratio will cancel nsons at each father)
-c
-c         xnuder(:,1) = xnuder(:,1) ! / nsons(:)
-c         xnuder(:,2) = xnuder(:,2) ! / nsons(:)
-c
-c  the next line is c \Delta^2
-c
+!
+!  xnude is the sum of the sons for each father on this processor
+!
+!  xnuder is the sum of the sons for each father on all processor combined
+!  (the same as if we had not partitioned the mesh for each processor)
+!
+!   For each father we have precomputed the number of sons (including
+!   the sons off processor). 
+!
+!   Now divide by number of sons to get the average (not really necessary
+!   for dynamic model since ratio will cancel nsons at each father)
+!
+!         xnuder(:,1) = xnuder(:,1) ! / nsons(:)
+!         xnuder(:,2) = xnuder(:,2) ! / nsons(:)
+!
+!  the next line is c \Delta^2
+!
          xnuder(:,1) = xnuder(:,1) / (xnuder(:,2) + 1.d-09)
          do i = 1,nfath
             cdelsq1(i) = xnuder(i,1)
          enddo
       else
-c     
-c     the next line is c \Delta^2, not nu_T but we want to save the
-c     memory
-c     
+!     
+!     the next line is c \Delta^2, not nu_T but we want to save the
+!     memory
+!     
          xnude(:,1) = xnude(:,1) / (xnude(:,2) + 1.d-09)
          do i = 1,nfath
             cdelsq1(i) = xnude(i,1)
@@ -1303,10 +1424,10 @@ c
 
       return
       end
-      subroutine SUPGdis (y,           ac,         shgl,      
-     &                  shp,         iper,       ilwork,    
-     &                  nsons,       ifath,      x,
-     &                  iBC,    BC,  stabdis,    xavegt)
+      subroutine SUPGdis (y,           ac,         shgl,       &
+                        shp,         iper,       ilwork,     &
+                        nsons,       ifath,      x, &
+                        iBC,    BC,  stabdis,    xavegt)
 
 
       use stats            !  
@@ -1314,33 +1435,34 @@ c
       use local_mass
       use rlssave  ! Use the resolved Leonard stresses at the nodes.      
       use quadfilt ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwt contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwt contains the weights of the 
+!                    quad. points.  
 
 
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
 
-      dimension y(nshg,ndof),                  ac(nshg,ndof), 
-     &          yold(nshg,ndof),
-     &          ifath(nshg),                   nsons(nshg),
-     &          iper(nshg),                    ilwork(nlwork),        
-     &          shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),
-     &          x(numnp,3),           
-     &          qres(nshg,nsd*nsd),             rmass(nshg),  
-     &          iBC(nshg),                      BC(nshg,ndofBC),
-     &          cdelsq(nshg),                   vol(nshg),
-     &          stress(nshg,9),                 diss(nshg,3),
-     &          xave(nshg,12),                  xaveg(nfath,12),
-     &          xavegr(nfath,12),               stabdis(nfath),
-     &          dmodc(nfath),                   strl(numel,ngauss),
-     &          xavegt(nfath,12)
+      dimension y(nshg,ndof),                  ac(nshg,ndof),  &
+                yold(nshg,ndof), &
+                ifath(nshg),                   nsons(nshg), &
+                iper(nshg),                    ilwork(nlwork),         &
+                shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT), &
+                x(numnp,3),            &
+                qres(nshg,nsd*nsd),             rmass(nshg),   &
+                iBC(nshg),                      BC(nshg,ndofBC), &
+                cdelsq(nshg),                   vol(nshg), &
+                stress(nshg,9),                 diss(nshg,3), &
+                xave(nshg,12),                  xaveg(nfath,12), &
+                xavegr(nfath,12),               stabdis(nfath), &
+                dmodc(nfath),                   strl(numel,ngauss), &
+                xavegt(nfath,12)
  
       character*5  cname
       character*30 fname 
@@ -1348,21 +1470,21 @@ c                    quad. points.
       yold(:,1)=y(:,4)
       yold(:,2:4)=y(:,1:3)     
 
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      yold(:,5) = 1.0  ! Debugging
-c      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      yold(:,2) = 2.0
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,3) = 3.0
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,4) = 4.0
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      yold(:,5) = 1.0  ! Debugging
+!      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      yold(:,2) = 2.0
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,3) = 3.0
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,4) = 4.0
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
-c.... First let us obtain cdelsq at each node in the domain.
-c.... We use numNden which lives in the quadfilt module.
+!.... First let us obtain cdelsq at each node in the domain.
+!.... We use numNden which lives in the quadfilt module.
 
       if ( (istep .eq. 0) ) then
          fname =  'dmodc.dat' // cname (myrank+1)
@@ -1374,11 +1496,11 @@ c.... We use numNden which lives in the quadfilt module.
          cdelsq(:) = numNden(:,1) / (numNden(:,2) + 1.d-09)       
       endif
 
-c      if (myrank .eq. master) then
-c         do i = 1, nfath
-c            write(*,*)'dmod=', dmodc(i)
-c         enddo
-c      endif
+!      if (myrank .eq. master) then
+!         do i = 1, nfath
+!            write(*,*)'dmod=', dmodc(i)
+!         enddo
+!      endif
 
       if ( istep .eq. (nstep(1)-1) ) then
          dmodc(ifath(:)) = cdelsq(:)
@@ -1386,15 +1508,15 @@ c      endif
          open (99,file=fname,form='unformatted', status='replace')
          write(99) dmodc         
          close(99)
-c         if (myrank .eq. master) then
-c            do i = 1, nfath
-c               write(*,*)'dmod=', dmodc(i)
-c            enddo
-c         endif
+!         if (myrank .eq. master) then
+!            do i = 1, nfath
+!               write(*,*)'dmod=', dmodc(i)
+!            enddo
+!         endif
 
       endif
 
-c      if (istep .eq. 0)
+!      if (istep .eq. 0)
       do iblk = 1,nelblk
         lcsyst = lcblk(3,iblk) 
         iel  = lcblk(1,iblk) !Element number where this block begins
@@ -1406,9 +1528,9 @@ c      if (istep .eq. 0)
         
         ngauss = nint(lcsyst)
  
-        call getstrl (yold, x,      mien(iblk)%p,  
-     &               strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:))
+        call getstrl (yold, x,      mien(iblk)%p,   &
+                     strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:))
 
       enddo
 
@@ -1421,18 +1543,18 @@ c      if (istep .eq. 0)
          
          ngauss = nint(lcsyst)
 
-         call scatnu (mien(iblk)%p, strl(iel:inum,:), 
-     &        mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
+         call scatnu (mien(iblk)%p, strl(iel:inum,:),  &
+              mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
       enddo
-c      endif
+!      endif
 
 
 
         if (idiff==1 .or. idiff==3) then ! global reconstruction of qdiff
-c
-c loop over element blocks for the global reconstruction
-c of the diffusive flux vector, q, and lumped mass matrix, rmass
-c
+!
+! loop over element blocks for the global reconstruction
+! of the diffusive flux vector, q, and lumped mass matrix, rmass
+!
            qres = zero
            rmass = zero
         
@@ -1448,27 +1570,27 @@ c
               nsymdl = lcblk(9,iblk)
               npro   = lcblk(1,iblk+1) - iel 
               ngauss = nint(lcsyst)
-c     
-c.... compute and assemble diffusive flux vector residual, qres,
-c     and lumped mass matrix, rmass
+!     
+!.... compute and assemble diffusive flux vector residual, qres,
+!     and lumped mass matrix, rmass
 
-              call AsIq (y,                x,                       
-     &                   shp(lcsyst,1:nshl,:), 
-     &                   shgl(lcsyst,:,1:nshl,:),
-     &                   mien(iblk)%p,     mxmudmi(iblk)%p,  
-     &                   qres,             rmass )
+              call AsIq (y,                x,                        &
+                         shp(lcsyst,1:nshl,:),  &
+                         shgl(lcsyst,:,1:nshl,:), &
+                         mien(iblk)%p,     mxmudmi(iblk)%p,   &
+                         qres,             rmass )
            enddo
        
-c
-c.... form the diffusive flux approximation
-c
+!
+!.... form the diffusive flux approximation
+!
            call qpbc( rmass, qres, iBC, BC, iper, ilwork )       
-c
+!
         endif 
 
 
-c.... form the SUPG stresses well as dissipation due to eddy viscosity,
-c...  and SUPG stabilization.
+!.... form the SUPG stresses well as dissipation due to eddy viscosity,
+!...  and SUPG stabilization.
 
 
         stress = zero
@@ -1487,11 +1609,11 @@ c...  and SUPG stabilization.
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-        call SUPGstress (y, ac, x, qres, mien(iblk)%p, mxmudmi(iblk)%p, 
-     &                   cdelsq, shglf(lcsyst,:,1:nshl,:),
-     &                   shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf),
-     &                   shgl(lcsyst,:,1:nshl,:), shp(lcsyst,1:nshl,:),
-     &                   stress, diss, vol)
+        call SUPGstress (y, ac, x, qres, mien(iblk)%p, mxmudmi(iblk)%p,  &
+                         cdelsq, shglf(lcsyst,:,1:nshl,:), &
+                         shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf), &
+                         shgl(lcsyst,:,1:nshl,:), shp(lcsyst,1:nshl,:), &
+                         stress, diss, vol)
 
       enddo
 
@@ -1499,9 +1621,9 @@ c...  and SUPG stabilization.
       if(numpe>1) call commu (diss, ilwork, 3, 'in ')       
       if(numpe>1) call commu (vol, ilwork, 1, 'in ')      
 
-c 
-c account for periodicity 
-c
+! 
+! account for periodicity 
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -1532,7 +1654,7 @@ c
          diss(:,i) = diss(:,i)*vol(:)
       enddo
 
-c---------- > Begin averaging dissipations and SUPG stress <--------------
+!---------- > Begin averaging dissipations and SUPG stress <--------------
 
       do i = 1, 9
          xave(:,i) = stress(:,i)
@@ -1541,7 +1663,7 @@ c---------- > Begin averaging dissipations and SUPG stress <--------------
       xave(:,11) = diss(:,2)
       xave(:,12) = diss(:,3)
 
-c  zero on processor periodic nodes so that they will not be added twice
+!  zero on processor periodic nodes so that they will not be added twice
         do j = 1,numnp
           i = iper(j)
           if (i .ne. j) then
@@ -1554,7 +1676,7 @@ c  zero on processor periodic nodes so that they will not be added twice
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
          do itask = 1, numtask
 
             iacc   = ilwork (itkbeg + 2)
@@ -1574,7 +1696,7 @@ c zero the nodes that are "solved" on the other processors
          enddo
          
       endif
-c
+!
 
       xaveg = zero
       do i = 1,nshg      
@@ -1588,9 +1710,9 @@ c
             xavegr(:,m) = xavegr(:,m)/nsons(:)
          enddo
 
-c         if (myrank .eq. master) then
-c            write(*,*)'diss=', xavegt(14,11), xavegr(14,11)
-c         endif
+!         if (myrank .eq. master) then
+!            write(*,*)'diss=', xavegt(14,11), xavegr(14,11)
+!         endif
 
          do m = 1, 12
             xavegt(:,m) = xavegt(:,m) + xavegr(:,m)
@@ -1612,23 +1734,23 @@ c         endif
 
       endif
 
-c      if (myrank .eq. master) then
-c         write(*,*)'diss=', xavegt(14,11), xavegr(14,11)
-c      endif
+!      if (myrank .eq. master) then
+!         write(*,*)'diss=', xavegt(14,11), xavegr(14,11)
+!      endif
 
        if ( istep .eq. (nstep(1)-1) ) then
           if ( myrank .eq. master) then
 
              do i = 1, nfath
-c               write(376,*)xavegt(i,1),xavegt(i,2),xavegt(i,3)
-c               write(377,*)xavegt(i,4),xavegt(i,5),xavegt(i,6)
-c               write(378,*)xavegt(i,7),xavegt(i,8),xavegt(i,9)
+!               write(376,*)xavegt(i,1),xavegt(i,2),xavegt(i,3)
+!               write(377,*)xavegt(i,4),xavegt(i,5),xavegt(i,6)
+!               write(378,*)xavegt(i,7),xavegt(i,8),xavegt(i,9)
                 write(380,*)xavegt(i,10),xavegt(i,11),xavegt(i,12)
             enddo
 
-c            call flush(376)
-c            call flush(377)
-c            call flush(378)
+!            call flush(376)
+!            call flush(377)
+!            call flush(378)
             call flush(380)
             
          endif
@@ -1638,11 +1760,11 @@ c            call flush(378)
       return
 
       end
-      subroutine dmcSUPG(y,           ac,         shgl,      
-     &                  shp,         iper,       ilwork,    
-     &                  nsons,       ifath,      x,
-     &                  iBC,    BC,  rowp,       colm,
-     &                  xavegt, stabdis) 
+      subroutine dmcSUPG(y,           ac,         shgl,       &
+                        shp,         iper,       ilwork,     &
+                        nsons,       ifath,      x, &
+                        iBC,    BC,  rowp,       colm, &
+                        xavegt, stabdis) 
 
       use lhsGkeep ! This module stores the mass (Gram) matrix.
       use stats            !  
@@ -1650,35 +1772,36 @@ c            call flush(378)
       use local_mass
       use rlssave  ! Use the resolved Leonard stresses at the nodes.      
       use quadfilt ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwt contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwt contains the weights of the 
+!                    quad. points.  
 
 
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
 
-      dimension y(nshg,ndof),                  ac(nshg,ndof), 
-     &          ifath(nshg),                   nsons(nshg),
-     &          iper(nshg),                    ilwork(nlwork),        
-     &          shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),
-     &          x(numnp,3),           
-     &          qres(nshg,nsd*nsd),             rmass(nshg),  
-     &          iBC(nshg),                      BC(nshg,ndofBC),
-     &          cdelsq(nshg),                   vol(nshg),
-     &          stress(nshg,9),                 diss(nshg,3),
-     &          xave(nshg,12),                  xaveg(nfath,12),
-     &          xavegr(nfath,12),               stabdis(nfath),
-     &          yold(nshg,ndof),                xavegt(nfath,12),
-     &          fres(nshg,24),                  pfres(nshg,24),
-     &          cdel(nfath),                    xnume(nfath),
-     &          xdeno(nfath),                    strl(numel,ngauss),
-     &          rden(nshg),                     rnum(nshg)
+      dimension y(nshg,ndof),                  ac(nshg,ndof),  &
+                ifath(nshg),                   nsons(nshg), &
+                iper(nshg),                    ilwork(nlwork),         &
+                shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT), &
+                x(numnp,3),            &
+                qres(nshg,nsd*nsd),             rmass(nshg),   &
+                iBC(nshg),                      BC(nshg,ndofBC), &
+                cdelsq(nshg),                   vol(nshg), &
+                stress(nshg,9),                 diss(nshg,3), &
+                xave(nshg,12),                  xaveg(nfath,12), &
+                xavegr(nfath,12),               stabdis(nfath), &
+                yold(nshg,ndof),                xavegt(nfath,12), &
+                fres(nshg,24),                  pfres(nshg,24), &
+                cdel(nfath),                    xnume(nfath), &
+                xdeno(nfath),                    strl(numel,ngauss), &
+                rden(nshg),                     rnum(nshg)
 
 
       integer   rowp(nshg*nnz),         colm(nshg+1)
@@ -1692,18 +1815,18 @@ c                    quad. points.
       yold(:,2:4)=y(:,1:3)
       fres = zero
 
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      yold(:,5) = 1.0  ! Debugging
-c      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      yold(:,2) = 2.0
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,3) = 3.0
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,4) = 4.0
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      yold(:,5) = 1.0  ! Debugging
+!      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      yold(:,2) = 2.0
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,3) = 3.0
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,4) = 4.0
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
 
       intrul=intg(1,itseq)
@@ -1721,26 +1844,26 @@ c                               suitable for the
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-        call resSij (yold, x, mien(iblk)%p, fres, 
-     &               shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call resSij (yold, x, mien(iblk)%p, fres,  &
+                     shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
         if ( istep.eq.0 ) then
 
            allocate ( em(npro,nshl,nshl) )
 
-           call getgram2 (x, mien(iblk)%p, 
-     &          shgl(lcsyst,:,1:nshl,:),  shp(lcsyst,1:nshl,:),     
-     &          shglf(lcsyst,:,1:nshl,:), shpf(lcsyst,1:nshl,:), em, 
-     &          Qwtf(lcsyst,1:ngaussf))
+           call getgram2 (x, mien(iblk)%p,  &
+                shgl(lcsyst,:,1:nshl,:),  shp(lcsyst,1:nshl,:),      &
+                shglf(lcsyst,:,1:nshl,:), shpf(lcsyst,1:nshl,:), em,  &
+                Qwtf(lcsyst,1:ngaussf))
 
-c           call getgram (x, mien(iblk)%p, 
-c     &          shgl(lcsyst,:,1:nshl,:),  shp(lcsyst,1:nshl,:),     
-c     &          em, Qwtf(lcsyst,1:ngaussf))
+!           call getgram (x, mien(iblk)%p, 
+!     &          shgl(lcsyst,:,1:nshl,:),  shp(lcsyst,1:nshl,:),     
+!     &          em, Qwtf(lcsyst,1:ngaussf))
 
-           call fillsparseSclr (mien(iblk)%p, 
-     &                          em,            lhsG,
-     &                          rowp,          colm)
+           call fillsparseSclr (mien(iblk)%p,  &
+                                em,            lhsG, &
+                                rowp,          colm)
 
 
            deallocate ( em )
@@ -1748,12 +1871,12 @@ c     &          em, Qwtf(lcsyst,1:ngaussf))
         endif
 
       enddo   ! End loop over element blocks
-c
+!
 
       if(numpe>1) call commu (fres, ilwork, 24, 'in ')
-c 
-c account for periodicity in filtered variables
-c
+! 
+! account for periodicity in filtered variables
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -1775,90 +1898,90 @@ c
       enddo
       pfres = fres
 
-c---- Needed for consistent projection
+!---- Needed for consistent projection
  
-c      if(numpe>1) call commu (fres, ilwork, 24, 'in ')
-c 
-c account for periodicity in filtered variables
-c
-c      do j = 1,nshg
-c        i = iper(j)
-c        if (i .ne. j) then
-c           fres(i,:) = fres(i,:) + fres(j,:)
-c        endif
-c      enddo
+!      if(numpe>1) call commu (fres, ilwork, 24, 'in ')
+! 
+! account for periodicity in filtered variables
+!
+!      do j = 1,nshg
+!        i = iper(j)
+!        if (i .ne. j) then
+!           fres(i,:) = fres(i,:) + fres(j,:)
+!        endif
+!      enddo
 
-c      do j = 1,nshg
-c        i = iper(j)
-c        if (i .ne. j) then
-c           fres(j,:) = zero
-c        endif
-c      enddo
+!      do j = 1,nshg
+!        i = iper(j)
+!        if (i .ne. j) then
+!           fres(j,:) = zero
+!        endif
+!      enddo
 
-c     Need to zero off-processor slaves as well.
+!     Need to zero off-processor slaves as well.
 
-c      if (numpe.gt.1 .and. nsons(1).gt.1) then
+!      if (numpe.gt.1 .and. nsons(1).gt.1) then
 
-c         numtask = ilwork(1)
-c         itkbeg = 1
+!         numtask = ilwork(1)
+!         itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
 
-c         do itask = 1, numtask
+!         do itask = 1, numtask
             
-c            iacc   = ilwork (itkbeg + 2)
-c            numseg = ilwork (itkbeg + 4)
+!            iacc   = ilwork (itkbeg + 2)
+!            numseg = ilwork (itkbeg + 4)
 
-c            if (iacc .eq. 0) then
-c               do is = 1,numseg
-c                  isgbeg = ilwork (itkbeg + 3 + 2*is)
-c                  lenseg = ilwork (itkbeg + 4 + 2*is)
-c                  isgend = isgbeg + lenseg - 1
-c                  fres(isgbeg:isgend,:) = zero
-c               enddo
-c            endif
+!            if (iacc .eq. 0) then
+!               do is = 1,numseg
+!                  isgbeg = ilwork (itkbeg + 3 + 2*is)
+!                  lenseg = ilwork (itkbeg + 4 + 2*is)
+!                  isgend = isgbeg + lenseg - 1
+!                  fres(isgbeg:isgend,:) = zero
+!               enddo
+!            endif
             
-c            itkbeg = itkbeg + 4 + 2*numseg
+!            itkbeg = itkbeg + 4 + 2*numseg
             
-c         enddo
+!         enddo
          
-c      endif
+!      endif
 
-c... At this point fres has the right hand side vector (b) and lhsG has
-c... the Gram matrix (M_{AB}) (in sparse storage). Now we need to solve
-c... Ax = b using the conjugate gradient method to finish off the 
-c... L2-projection.
-
-
-c      do i = 16, 16
-c         call sparseCG (fres(:,i), pfres(:,i), lhsG, 
-c     &        rowp, colm, iper, ilwork, 
-c     &        iBC,  BC)
-c         write(*,*) 'i=', i
-c      enddo
+!... At this point fres has the right hand side vector (b) and lhsG has
+!... the Gram matrix (M_{AB}) (in sparse storage). Now we need to solve
+!... Ax = b using the conjugate gradient method to finish off the 
+!... L2-projection.
 
 
-c      write(*,*)'Done with least-squares projection'
+!      do i = 16, 16
+!         call sparseCG (fres(:,i), pfres(:,i), lhsG, 
+!     &        rowp, colm, iper, ilwork, 
+!     &        iBC,  BC)
+!         write(*,*) 'i=', i
+!      enddo
+
+
+!      write(*,*)'Done with least-squares projection'
       
 
 
 
 
-c.... First let us obtain cdelsq at each node in the domain.
-c.... We use numNden which lives in the quadfilt module.
+!.... First let us obtain cdelsq at each node in the domain.
+!.... We use numNden which lives in the quadfilt module.
 
       cdelsq(:) = numNden(:,1) / (numNden(:,2) + 1.d-09)       
-c      cdelsq(:) = zero ! Debugging
+!      cdelsq(:) = zero ! Debugging
 
       if (istep .eq. 0) then
          xavegt = zero  ! For averaging dissipations and SUPG stresses
       endif
 
         if (idiff==1 .or. idiff==3) then ! global reconstruction of qdiff
-c
-c loop over element blocks for the global reconstruction
-c of the diffusive flux vector, q, and lumped mass matrix, rmass
-c
+!
+! loop over element blocks for the global reconstruction
+! of the diffusive flux vector, q, and lumped mass matrix, rmass
+!
            qres = zero
            rmass = zero
         
@@ -1878,29 +2001,29 @@ c
               allocate ( fakexmu(npro,ngauss) )              
               fakexmu = zero
 
-c     
-c.... compute and assemble diffusive flux vector residual, qres,
-c     and lumped mass matrix, rmass
+!     
+!.... compute and assemble diffusive flux vector residual, qres,
+!     and lumped mass matrix, rmass
 
-              call AsIq (y,                x,                       
-     &                   shp(lcsyst,1:nshl,:), 
-     &                   shgl(lcsyst,:,1:nshl,:),
-     &                   mien(iblk)%p,     mxmudmi(iblk)%p,
-     &                   qres,             rmass )
+              call AsIq (y,                x,                        &
+                         shp(lcsyst,1:nshl,:),  &
+                         shgl(lcsyst,:,1:nshl,:), &
+                         mien(iblk)%p,     mxmudmi(iblk)%p, &
+                         qres,             rmass )
 
               deallocate ( fakexmu )
            enddo
        
-c
-c.... form the diffusive flux approximation
-c
+!
+!.... form the diffusive flux approximation
+!
            call qpbc( rmass, qres, iBC, BC, iper, ilwork )       
-c
+!
         endif 
 
 
-c.... form the SUPG stresses well as dissipation due to eddy viscosity,
-c...  and SUPG stabilization.
+!.... form the SUPG stresses well as dissipation due to eddy viscosity,
+!...  and SUPG stabilization.
 
 
         stress = zero
@@ -1922,11 +2045,11 @@ c...  and SUPG stabilization.
         allocate ( fakexmu(npro,ngauss) )              
         fakexmu = zero
 
-        call SUPGstress (y, ac, x, qres, mien(iblk)%p, fakexmu, 
-     &                   cdelsq, shglf(lcsyst,:,1:nshl,:),
-     &                   shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf),
-     &                   shgl(lcsyst,:,1:nshl,:), shp(lcsyst,1:nshl,:),
-     &                   stress, diss, vol)
+        call SUPGstress (y, ac, x, qres, mien(iblk)%p, fakexmu,  &
+                         cdelsq, shglf(lcsyst,:,1:nshl,:), &
+                         shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf), &
+                         shgl(lcsyst,:,1:nshl,:), shp(lcsyst,1:nshl,:), &
+                         stress, diss, vol)
         
         deallocate ( fakexmu )
       enddo
@@ -1935,9 +2058,9 @@ c...  and SUPG stabilization.
       if(numpe>1) call commu (diss, ilwork, 3, 'in ')       
       if(numpe>1) call commu (vol, ilwork, 1, 'in ')      
 
-c 
-c account for periodicity 
-c
+! 
+! account for periodicity 
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -1968,7 +2091,7 @@ c
          diss(:,i) = diss(:,i)*vol(:)
       enddo
 
-c---------- > Begin averaging dissipations and SUPG stress <--------------
+!---------- > Begin averaging dissipations and SUPG stress <--------------
 
       do i = 1, 9
          xave(:,i) = stress(:,i)
@@ -1977,7 +2100,7 @@ c---------- > Begin averaging dissipations and SUPG stress <--------------
       xave(:,11) = diss(:,2)
       xave(:,12) = pfres(:,16)
 
-c  zero on processor periodic nodes so that they will not be added twice
+!  zero on processor periodic nodes so that they will not be added twice
         do j = 1,numnp
           i = iper(j)
           if (i .ne. j) then
@@ -1990,7 +2113,7 @@ c  zero on processor periodic nodes so that they will not be added twice
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
          do itask = 1, numtask
 
             iacc   = ilwork (itkbeg + 2)
@@ -2010,7 +2133,7 @@ c zero the nodes that are "solved" on the other processors
          enddo
          
       endif
-c
+!
 
       xaveg = zero
       do i = 1,nshg      
@@ -2024,9 +2147,9 @@ c
             xavegr(:,m) = xavegr(:,m)/nsons(:)
          enddo
 
-c         if (myrank .eq. master) then
-c            write(*,*)'diss=', xavegt(14,11), xavegr(14,11)
-c         endif
+!         if (myrank .eq. master) then
+!            write(*,*)'diss=', xavegt(14,11), xavegr(14,11)
+!         endif
 
          do m = 1, 12
             xavegt(:,m) = xavegt(:,m) + xavegr(:,m)
@@ -2052,16 +2175,16 @@ c         endif
          if ( myrank .eq. master) then
 
             do i = 1, nfath
-c               write(376,*)xavegt(i,1),xavegt(i,2),xavegt(i,3)
-c               write(377,*)xavegt(i,4),xavegt(i,5),xavegt(i,6)
-c               write(378,*)xavegt(i,7),xavegt(i,8),xavegt(i,9)
+!               write(376,*)xavegt(i,1),xavegt(i,2),xavegt(i,3)
+!               write(377,*)xavegt(i,4),xavegt(i,5),xavegt(i,6)
+!               write(378,*)xavegt(i,7),xavegt(i,8),xavegt(i,9)
                write(381,*)xavegt(i,10),xavegt(i,11),xavegt(i,12)
             enddo
 
-c            call flush(376)
-c            call flush(377)
-c            call flush(378)
-c            call flush(379)
+!            call flush(376)
+!            call flush(377)
+!            call flush(378)
+!            call flush(379)
             call flush(381)
          endif
       endif      
@@ -2118,9 +2241,9 @@ c            call flush(379)
         
         ngauss = nint(lcsyst)
  
-        call getstrl (yold, x,      mien(iblk)%p,  
-     &               strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:))
+        call getstrl (yold, x,      mien(iblk)%p,   &
+                     strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:))
 
       enddo
 
@@ -2134,63 +2257,64 @@ c            call flush(379)
          
          ngauss = nint(lcsyst)
 
-         call scatnu (mien(iblk)%p, strl(iel:inum,:), 
-     &        mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
+         call scatnu (mien(iblk)%p, strl(iel:inum,:),  &
+              mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
       enddo
 
       return
 
       end
-      subroutine FiltRat (y,      shgl,      shp, 
-     &                   iper,   ilwork,    
-     &                   nsons,  ifath,     x,   cdelsq1, fwr4, 
-     &                   fwr3)
+      subroutine FiltRat (y,      shgl,      shp,  &
+                         iper,   ilwork,     &
+                         nsons,  ifath,     x,   cdelsq1, fwr4,  &
+                         fwr3)
 
       use pointer_data
 
       use quadfilt   ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwt contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwt contains the weights of the 
+!                    quad. points.  
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
-c
-      dimension fres(nshg,24),         fwr(nshg),
-     &          strnrm(nshg),         cdelsq1(nfath),
-     &          xnum(nshg),           xden(nshg),
-     &          xmij(nshg,6),         xlij(nshg,6),
-     &          xnude(nfath,5),        xnuder(nfath,5),
-     &          nsons(nshg),           xfac(nshg,5),
-     &          strl(numel,ngauss),     xa(nfath,3),      
-     &          y(nshg,5),            yold(nshg,5),
-     &          ifath(nshg),          iper(nshg),
-     &          ilwork(nlwork),!        xmudmi(numel,ngauss),
-     &          x(numnp,3),
-     &          shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),    
-     &          xnutf(nfath),          xkap(nfath),
-     &          fwr2(nshg),            fwr3(nshg),
-     &          xlamb1(nfath),         xlamb2(nfath),
-     &          fwr4(nshg)
-c
+!
+      dimension fres(nshg,24),         fwr(nshg), &
+                strnrm(nshg),         cdelsq1(nfath), &
+                xnum(nshg),           xden(nshg), &
+                xmij(nshg,6),         xlij(nshg,6), &
+                xnude(nfath,5),        xnuder(nfath,5), &
+                nsons(nshg),           xfac(nshg,5), &
+                strl(numel,ngauss),     xa(nfath,3),       &
+                y(nshg,5),            yold(nshg,5), &
+                ifath(nshg),          iper(nshg), &
+                ilwork(nlwork), &!        xmudmi(numel,ngauss), 
+                x(numnp,3), &
+                shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),     &
+                xnutf(nfath),          xkap(nfath), &
+                fwr2(nshg),            fwr3(nshg), &
+                xlamb1(nfath),         xlamb2(nfath), &
+                fwr4(nshg)
+!
      
       fres = zero
       yold(:,1)=y(:,4)
       yold(:,2:4)=y(:,1:3)
-c
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      yold(:,5) = 1.0  ! Debugging
-c      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      yold(:,5) = 1.0  ! Debugging
+!      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
 
       intrul=intg(1,itseq)
@@ -2208,17 +2332,17 @@ c                               suitable for the
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
 
-        call asithf (yold, x, strl(iel:inum,:), mien(iblk)%p, fres, 
-     &               shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call asithf (yold, x, strl(iel:inum,:), mien(iblk)%p, fres,  &
+                     shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
       enddo
-c
+!
  
       if(numpe>1) call commu (fres, ilwork, 24, 'in ')
-c 
-c account for periodicity in filtered variables
-c
+! 
+! account for periodicity in filtered variables
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -2238,10 +2362,10 @@ c
       do j = 1,22
         fres(:,j) = fres(:,j) * fres(:,23)
       enddo
-c
-c.....at this point fres is really all of our filtered quantities
-c     at the nodes
-c
+!
+!.....at this point fres is really all of our filtered quantities
+!     at the nodes
+!
 
       xlij(:,1) = fres(:,4) - fres(:,1)*fres(:,1)
       xlij(:,2) = fres(:,5) - fres(:,2)*fres(:,2)
@@ -2250,42 +2374,42 @@ c
       xlij(:,5) = fres(:,8) - fres(:,1)*fres(:,3)
       xlij(:,6) = fres(:,9) - fres(:,2)*fres(:,3)
 
-      strnrm = sqrt( 
-     &  two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2)
-     &  + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      strnrm = sqrt(  &
+        two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2) &
+        + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
 
-      xfac(:,1) = strnrm*strnrm*( fres(:,10)**2 + fres(:,11)**2 + 
-     &     fres(:,12)**2
-     &     + two*( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      xfac(:,1) = strnrm*strnrm*( fres(:,10)**2 + fres(:,11)**2 +  &
+           fres(:,12)**2 &
+           + two*( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
       
-      xfac(:,2) = strnrm*( xlij(:,1)*fres(:,10) + xlij(:,2)*fres(:,11) 
-     &     + xlij(:,3)*fres(:,12) + 
-     &     two*(xlij(:,4)*fres(:,13) + xlij(:,5)*fres(:,14) +
-     &     xlij(:,6)*fres(:,15)) )
+      xfac(:,2) = strnrm*( xlij(:,1)*fres(:,10) + xlij(:,2)*fres(:,11)  &
+           + xlij(:,3)*fres(:,12) +  &
+           two*(xlij(:,4)*fres(:,13) + xlij(:,5)*fres(:,14) + &
+           xlij(:,6)*fres(:,15)) )
 
-      xfac(:,3) = strnrm*( fres(:,10)*fres(:,16) + fres(:,11)*fres(:,17)
-     &     + fres(:,12)*fres(:,18) + 
-     &     two*(fres(:,13)*fres(:,19) + fres(:,14)*fres(:,20) +
-     &     fres(:,15)*fres(:,21)) )
+      xfac(:,3) = strnrm*( fres(:,10)*fres(:,16) + fres(:,11)*fres(:,17) &
+           + fres(:,12)*fres(:,18) +  &
+           two*(fres(:,13)*fres(:,19) + fres(:,14)*fres(:,20) + &
+           fres(:,15)*fres(:,21)) )
 
-      xfac(:,4) = xlij(:,1)*fres(:,16) + xlij(:,2)*fres(:,17)
-     &     + xlij(:,3)*fres(:,18) + 
-     &     two*(xlij(:,4)*fres(:,19) + xlij(:,5)*fres(:,20) +
-     &     xlij(:,6)*fres(:,21))
+      xfac(:,4) = xlij(:,1)*fres(:,16) + xlij(:,2)*fres(:,17) &
+           + xlij(:,3)*fres(:,18) +  &
+           two*(xlij(:,4)*fres(:,19) + xlij(:,5)*fres(:,20) + &
+           xlij(:,6)*fres(:,21))
 
-      xfac(:,5) = fres(:,16)*fres(:,16) + fres(:,17)*fres(:,17)
-     &     + fres(:,18)*fres(:,18) + 
-     &     two*(fres(:,19)*fres(:,19) + fres(:,20)*fres(:,20) +
-     &     fres(:,21)*fres(:,21))
+      xfac(:,5) = fres(:,16)*fres(:,16) + fres(:,17)*fres(:,17) &
+           + fres(:,18)*fres(:,18) +  &
+           two*(fres(:,19)*fres(:,19) + fres(:,20)*fres(:,20) + &
+           fres(:,21)*fres(:,21))
 
 
-c      xfac(:,1) = one ! Debugging
-c      xfac(:,2) = one 
-c      xfac(:,3) = two
-c      xfac(:,4) = one 
-c      xfac(:,5) = one       
+!      xfac(:,1) = one ! Debugging
+!      xfac(:,2) = one 
+!      xfac(:,3) = two
+!      xfac(:,4) = one 
+!      xfac(:,5) = one       
 
-c  zero on processor periodic nodes so that they will not be added twice
+!  zero on processor periodic nodes so that they will not be added twice
       
       do j = 1, nshg
           i = iper(j)
@@ -2303,7 +2427,7 @@ c  zero on processor periodic nodes so that they will not be added twice
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
          do itask = 1, numtask
 
             iacc   = ilwork (itkbeg + 2)
@@ -2324,7 +2448,7 @@ c zero the nodes that are "solved" on the other processors
          
       endif
 
-c... Debugging
+!... Debugging
 
       xatm1 = sum(xfac(:,1))
       xatm2 = sum(xfac(:,2))
@@ -2333,20 +2457,20 @@ c... Debugging
       xatm5 = sum(xfac(:,5))
 
 
-c
-c Description of arrays.   Each processor has an array of length equal
-c to the total number of fathers times 2 xnude(nfathers,2). One to collect 
-c the numerator and one to collect the denominator.  There is also an array
-c of length nshg on each processor which tells the father number of each
-c on processor node, ifath(nnshg).  Finally, there is an arry of length
-c nfathers to tell the total (on all processors combined) number of sons
-c for each father. 
-c
-c  Now loop over nodes and accumlate the numerator and the denominator
-c  to the father nodes.  Only on processor addition at this point.
-c  Note that serrogate fathers are collect some for the case where some
-c  sons are on another processor
-c
+!
+! Description of arrays.   Each processor has an array of length equal
+! to the total number of fathers times 2 xnude(nfathers,2). One to collect 
+! the numerator and one to collect the denominator.  There is also an array
+! of length nshg on each processor which tells the father number of each
+! on processor node, ifath(nnshg).  Finally, there is an arry of length
+! nfathers to tell the total (on all processors combined) number of sons
+! for each father. 
+!
+!  Now loop over nodes and accumlate the numerator and the denominator
+!  to the father nodes.  Only on processor addition at this point.
+!  Note that serrogate fathers are collect some for the case where some
+!  sons are on another processor
+!
       xnude = zero
       do i = 1,nshg
          xnude(ifath(i),1) = xnude(ifath(i),1) + xfac(i,1)
@@ -2356,73 +2480,73 @@ c
          xnude(ifath(i),5) = xnude(ifath(i),5) + xfac(i,5)
       enddo
 
-c
-c Now  the true fathers and serrogates combine results and update
-c each other.
-c       
+!
+! Now  the true fathers and serrogates combine results and update
+! each other.
+!       
       if(numpe .gt. 1)then
          call drvAllreduce(xnude, xnuder,5*nfath)
-c
-c  xnude is the sum of the sons for each father on this processor
-c
-c  xnuder is the sum of the sons for each father on all processor combined
-c  (the same as if we had not partitioned the mesh for each processor)
-c
-c   For each father we have precomputed the number of sons (including
-c   the sons off processor). 
-c
-c   Now divide by number of sons to get the average (not really necessary
-c   for dynamic model since ratio will cancel nsons at each father)
-c
-c         xnuder(:,1) = xnuder(:,1)  / nsons(:)
-c         xnuder(:,2) = xnuder(:,2)  / nsons(:)
-c         xnuder(:,3) = xnuder(:,3)  / nsons(:)
-c         xnuder(:,4) = xnuder(:,4)  / nsons(:)
-c         xnuder(:,5) = xnuder(:,5)  / nsons(:)
-c
-c  the next line are the  a, b, c coefficients in the quadratic eq.
-c
+!
+!  xnude is the sum of the sons for each father on this processor
+!
+!  xnuder is the sum of the sons for each father on all processor combined
+!  (the same as if we had not partitioned the mesh for each processor)
+!
+!   For each father we have precomputed the number of sons (including
+!   the sons off processor). 
+!
+!   Now divide by number of sons to get the average (not really necessary
+!   for dynamic model since ratio will cancel nsons at each father)
+!
+!         xnuder(:,1) = xnuder(:,1)  / nsons(:)
+!         xnuder(:,2) = xnuder(:,2)  / nsons(:)
+!         xnuder(:,3) = xnuder(:,3)  / nsons(:)
+!         xnuder(:,4) = xnuder(:,4)  / nsons(:)
+!         xnuder(:,5) = xnuder(:,5)  / nsons(:)
+!
+!  the next line are the  a, b, c coefficients in the quadratic eq.
+!
 
          do i = 1,nfath
-            xa(i,1) = two*cdelsq1(i)*xnuder(i,1) + 
-     &           xnuder(i,2)  
-            xa(i,2) = four*cdelsq1(i)*xnuder(i,3) +
-     &           xnuder(i,4)
+            xa(i,1) = two*cdelsq1(i)*xnuder(i,1) +  &
+                 xnuder(i,2)  
+            xa(i,2) = four*cdelsq1(i)*xnuder(i,3) + &
+                 xnuder(i,4)
             xa(i,3) = two*cdelsq1(i)*xnuder(i,5)
 
-c            xa(i,1) = xnuder(ifath(i),1) + ! Debugging
-c     &           xnuder(ifath(i),2)  
-c            xa(i,2) = xnuder(ifath(i),3) +
-c     &           xnuder(ifath(i),4)
-c            xa(i,3) = xnuder(ifath(i),5)
+!            xa(i,1) = xnuder(ifath(i),1) + ! Debugging
+!     &           xnuder(ifath(i),2)  
+!            xa(i,2) = xnuder(ifath(i),3) +
+!     &           xnuder(ifath(i),4)
+!            xa(i,3) = xnuder(ifath(i),5)
 
 
          enddo
       else
 
-c         xnude(:,1) = xnude(:,1)  / nsons(:)
-c         xnude(:,2) = xnude(:,2)  / nsons(:)
-c         xnude(:,3) = xnude(:,3)  / nsons(:)
-c         xnude(:,4) = xnude(:,4)  / nsons(:)
-c         xnude(:,5) = xnude(:,5)  / nsons(:)
+!         xnude(:,1) = xnude(:,1)  / nsons(:)
+!         xnude(:,2) = xnude(:,2)  / nsons(:)
+!         xnude(:,3) = xnude(:,3)  / nsons(:)
+!         xnude(:,4) = xnude(:,4)  / nsons(:)
+!         xnude(:,5) = xnude(:,5)  / nsons(:)
          
          do i = 1,nfath
-            xa(i,1) = two*cdelsq1(i)*xnude(i,1) + 
-     &           xnude(i,2)  
-            xa(i,2) = four*cdelsq1(i)*xnude(i,3) + 
-     &           xnude(i,4)
+            xa(i,1) = two*cdelsq1(i)*xnude(i,1) +  &
+                 xnude(i,2)  
+            xa(i,2) = four*cdelsq1(i)*xnude(i,3) +  &
+                 xnude(i,4)
             xa(i,3) = two*cdelsq1(i)*xnude(i,5)       
 
-c            xa(i,1) = xnude(ifath(i),1) + ! Debugging
-c     &           xnude(ifath(i),2)  
-c            xa(i,2) = xnude(ifath(i),3) + 
-c     &           xnude(ifath(i),4)
-c            xa(i,3) = xnude(ifath(i),5)       
+!            xa(i,1) = xnude(ifath(i),1) + ! Debugging
+!     &           xnude(ifath(i),2)  
+!            xa(i,2) = xnude(ifath(i),3) + 
+!     &           xnude(ifath(i),4)
+!            xa(i,3) = xnude(ifath(i),5)       
 
          enddo
       endif
 
-c... Solve a*x*x - b*x + c
+!... Solve a*x*x - b*x + c
 
 
       do i = 1, nfath
@@ -2444,10 +2568,10 @@ c... Solve a*x*x - b*x + c
       endif
 
       if (xdisc .gt. zero) then
-      xlamb1(i)= ( xa(i,2) + sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3) ) )
-     &     / (two*xa(i,1))
-      xlamb2(i)= ( xa(i,2) - sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3) ) )
-     &     / (two*xa(i,1))
+      xlamb1(i)= ( xa(i,2) + sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3) ) ) &
+           / (two*xa(i,1))
+      xlamb2(i)= ( xa(i,2) - sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3) ) ) &
+           / (two*xa(i,1))
       endif
 
       enddo
@@ -2472,10 +2596,10 @@ c... Solve a*x*x - b*x + c
          xa(i,2) = four*xkap(i)*xnuder(i,3) - xnuder(i,2)
          xa(i,3) = two*xkap(i)*xnuder(i,5) - xnuder(i,4)
 
-         xlamb1(i)= ( xa(i,2) + sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3)
-     &        ) )/ (two*xa(i,1))
-         xlamb2(i)= ( xa(i,2) - sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3)
-     &        ) )/ (two*xa(i,1))         
+         xlamb1(i)= ( xa(i,2) + sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3) &
+              ) )/ (two*xa(i,1))
+         xlamb2(i)= ( xa(i,2) - sqrt( xa(i,2)**2 - four*xa(i,1)*xa(i,3) &
+              ) )/ (two*xa(i,1))         
 
       enddo
 
@@ -2491,56 +2615,57 @@ c... Solve a*x*x - b*x + c
 
       return
       end
-      subroutine DFWRsfdmc (y,      shgl,      shp, 
-     &                   iper,   ilwork,    
-     &                   nsons,  ifath,     x, fwr2, fwr3)
+      subroutine DFWRsfdmc (y,      shgl,      shp,  &
+                         iper,   ilwork,     &
+                         nsons,  ifath,     x, fwr2, fwr3)
 
       use pointer_data
 
       use quadfilt   ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwt contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwt contains the weights of the 
+!                    quad. points.  
 
 
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
-c
-      dimension fres(nshg,24),         fwr(nshg),
-     &          strnrm(nshg),         cdelsq(nshg),
-     &          cdelsq2(nshg),
-     &          xnum(nshg),           xden(nshg),
-     &          xmij(nshg,6),         xlij(nshg,6),
-     &          xnude(nfath,2),        xnuder(nfath,2),
-     &          ynude(nfath,6),        ynuder(nfath,6),
-     &          ui(nfath,3),           snorm(nfath),
-     &          uir(nfath,3),          snormr(nfath),
-     &          xm(nfath,6),           xl(nfath,6)
-      dimension xl1(nfath,6),          xl2(nfath,6),
-     &          xl1r(nfath,6),         xl2r(nfath,6),
-     &          xmr(nfath,6),          xlr(nfath,6),
-     &          nsons(nshg),
-     &          strl(numel,ngauss),           
-     &          y(nshg,5),            yold(nshg,5),
-     &          ifath(nshg),          iper(nshg),
-     &          ilwork(nlwork),!        xmudmi(numel,ngauss),
-     &          x(numnp,3)
-      dimension shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),    
-     &          xnutf(nfath),         xfac(nshg,5),
-     &          fwr2(nshg),           fwr3(nshg)
+!
+      dimension fres(nshg,24),         fwr(nshg), &
+                strnrm(nshg),         cdelsq(nshg), &
+                cdelsq2(nshg), &
+                xnum(nshg),           xden(nshg), &
+                xmij(nshg,6),         xlij(nshg,6), &
+                xnude(nfath,2),        xnuder(nfath,2), &
+                ynude(nfath,6),        ynuder(nfath,6), &
+                ui(nfath,3),           snorm(nfath), &
+                uir(nfath,3),          snormr(nfath), &
+                xm(nfath,6),           xl(nfath,6)
+      dimension xl1(nfath,6),          xl2(nfath,6), &
+                xl1r(nfath,6),         xl2r(nfath,6), &
+                xmr(nfath,6),          xlr(nfath,6), &
+                nsons(nshg), &
+                strl(numel,ngauss),            &
+                y(nshg,5),            yold(nshg,5), &
+                ifath(nshg),          iper(nshg), &
+                ilwork(nlwork), &!        xmudmi(numel,ngauss), &
+                x(numnp,3)
+      dimension shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),     &
+                xnutf(nfath),         xfac(nshg,5), &
+                fwr2(nshg),           fwr3(nshg)
 
       character*10 cname
-      character*30 fname1, fname2, fname3, fname4, fname5, fname6,
-     &             fname0
-c
-c
-c   setup the weights for time averaging of cdelsq (now in quadfilt module)
-c
+      character*30 fname1, fname2, fname3, fname4, fname5, fname6, &
+                   fname0
+!
+!
+!   setup the weights for time averaging of cdelsq (now in quadfilt module)
+!
       denom=max(1.0d0*(lstep),one)
       if(dtavei.lt.0) then
          wcur=one/denom
@@ -2564,20 +2689,20 @@ c
       fres = zero
       yold(:,1)=y(:,4)
       yold(:,2:4)=y(:,1:3)
-c
+!
 
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      yold(:,5) = 1.0  ! Debugging
-c      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      yold(:,2) = 2.0
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,3) = 3.0
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,4) = 4.0
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      yold(:,5) = 1.0  ! Debugging
+!      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      yold(:,2) = 2.0
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,3) = 3.0
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,4) = 4.0
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
 
 
@@ -2595,12 +2720,12 @@ c                               suitable for the
 
         ngauss = nint(lcsyst)
         
-        call asithf (yold, x, strl(iel:inum,:), mien(iblk)%p, fres, 
-     &               shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call asithf (yold, x, strl(iel:inum,:), mien(iblk)%p, fres,  &
+                     shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
       enddo
-c
+!
  
       if (ngaussf .ne. ngauss) then
       do iblk = 1,nelblk
@@ -2614,22 +2739,22 @@ c
         
         ngauss = nint(lcsyst)
  
-        call getstrl (yold, x,      mien(iblk)%p,  
-     &               strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:))
+        call getstrl (yold, x,      mien(iblk)%p,   &
+                     strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:))
 
       enddo
       endif
-c
-c
-C must fix for abc and dynamic model
-c      if(iabc==1)   !are there any axisym bc's
-c     &      call rotabc(res, iBC, BC,nflow, 'in ')
-c
+!
+!
+! must fix for abc and dynamic model
+!      if(iabc==1)   !are there any axisym bc's
+!     &      call rotabc(res, iBC, BC,nflow, 'in ')
+!
       if(numpe>1) call commu (fres, ilwork, 24, 'in ')
-c 
-c account for periodicity in filtered variables
-c
+! 
+! account for periodicity in filtered variables
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -2649,25 +2774,25 @@ c
       do j = 1,22
         fres(:,j) = fres(:,j) * fres(:,23)
       enddo
-c     fres(:,24) = fres(:,24) * fres(:,23)
-c
-c.....at this point fres is really all of our filtered quantities
-c     at the nodes
-c
+!     fres(:,24) = fres(:,24) * fres(:,23)
+!
+!.....at this point fres is really all of our filtered quantities
+!     at the nodes
+!
 
-      strnrm = sqrt( 
-     &  two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2)
-     &  + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      strnrm = sqrt(  &
+        two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2) &
+        + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
 
-c      fwr = fwr1 * fres(:,22) * strnrm
+!      fwr = fwr1 * fres(:,22) * strnrm
       fwr = fwr3 * fres(:,22) * strnrm
 
-      xmij(:,1) = -fwr
-     &             * fres(:,10) + fres(:,16)
-      xmij(:,2) = -fwr
-     &             * fres(:,11) + fres(:,17) 
-      xmij(:,3) = -fwr
-     &             * fres(:,12) + fres(:,18) 
+      xmij(:,1) = -fwr &
+                   * fres(:,10) + fres(:,16)
+      xmij(:,2) = -fwr &
+                   * fres(:,11) + fres(:,17) 
+      xmij(:,3) = -fwr &
+                   * fres(:,12) + fres(:,18) 
 
       xmij(:,4) = -fwr * fres(:,13) + fres(:,19)
       xmij(:,5) = -fwr * fres(:,14) + fres(:,20)
@@ -2682,43 +2807,43 @@ c      fwr = fwr1 * fres(:,22) * strnrm
       xlij(:,5) = fres(:,8) - fres(:,1) * fres(:,3) * fres(:,22)
       xlij(:,6) = fres(:,9) - fres(:,2) * fres(:,3) * fres(:,22)
 
-      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2) 
-     &                                    + xlij(:,3) * xmij(:,3)
-     &     + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5)
-     &                                    + xlij(:,6) * xmij(:,6))
-      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2) 
-     &                                    + xmij(:,3) * xmij(:,3)
-     &     + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5)
-     &                                    + xmij(:,6) * xmij(:,6))
+      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2)  &
+                                          + xlij(:,3) * xmij(:,3) &
+           + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5) &
+                                          + xlij(:,6) * xmij(:,6))
+      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2)  &
+                                          + xmij(:,3) * xmij(:,3) &
+           + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5) &
+                                          + xmij(:,6) * xmij(:,6))
       xden = two * xden
 
-c... For collectection of statistics on dyn. model components 
+!... For collectection of statistics on dyn. model components 
 
-      xfac(:,1) = strnrm*strnrm*( fres(:,10)**2 + fres(:,11)**2 + 
-     &     fres(:,12)**2
-     &     + two*( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      xfac(:,1) = strnrm*strnrm*( fres(:,10)**2 + fres(:,11)**2 +  &
+           fres(:,12)**2 &
+           + two*( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
       
-      xfac(:,2) = strnrm*( xlij(:,1)*fres(:,10) + xlij(:,2)*fres(:,11) 
-     &     + xlij(:,3)*fres(:,12) + 
-     &     two*(xlij(:,4)*fres(:,13) + xlij(:,5)*fres(:,14) +
-     &     xlij(:,6)*fres(:,15)) )
+      xfac(:,2) = strnrm*( xlij(:,1)*fres(:,10) + xlij(:,2)*fres(:,11)  &
+           + xlij(:,3)*fres(:,12) +  &
+           two*(xlij(:,4)*fres(:,13) + xlij(:,5)*fres(:,14) + &
+           xlij(:,6)*fres(:,15)) )
 
-      xfac(:,3) = strnrm*( fres(:,10)*fres(:,16) + fres(:,11)*fres(:,17)
-     &     + fres(:,12)*fres(:,18) + 
-     &     two*(fres(:,13)*fres(:,19) + fres(:,14)*fres(:,20) +
-     &     fres(:,15)*fres(:,21)) )
+      xfac(:,3) = strnrm*( fres(:,10)*fres(:,16) + fres(:,11)*fres(:,17) &
+           + fres(:,12)*fres(:,18) +  &
+           two*(fres(:,13)*fres(:,19) + fres(:,14)*fres(:,20) + &
+           fres(:,15)*fres(:,21)) )
 
-      xfac(:,4) = xlij(:,1)*fres(:,16) + xlij(:,2)*fres(:,17)
-     &     + xlij(:,3)*fres(:,18) + 
-     &     two*(xlij(:,4)*fres(:,19) + xlij(:,5)*fres(:,20) +
-     &     xlij(:,6)*fres(:,21))
+      xfac(:,4) = xlij(:,1)*fres(:,16) + xlij(:,2)*fres(:,17) &
+           + xlij(:,3)*fres(:,18) +  &
+           two*(xlij(:,4)*fres(:,19) + xlij(:,5)*fres(:,20) + &
+           xlij(:,6)*fres(:,21))
 
-      xfac(:,5) = fres(:,16)*fres(:,16) + fres(:,17)*fres(:,17)
-     &     + fres(:,18)*fres(:,18) + 
-     &     two*(fres(:,19)*fres(:,19) + fres(:,20)*fres(:,20) +
-     &     fres(:,21)*fres(:,21))
+      xfac(:,5) = fres(:,16)*fres(:,16) + fres(:,17)*fres(:,17) &
+           + fres(:,18)*fres(:,18) +  &
+           two*(fres(:,19)*fres(:,19) + fres(:,20)*fres(:,20) + &
+           fres(:,21)*fres(:,21))
 
-c  zero on processor periodic nodes so that they will not be added twice
+!  zero on processor periodic nodes so that they will not be added twice
         do j = 1,numnp
           i = iper(j)
           if (i .ne. j) then
@@ -2737,7 +2862,7 @@ c  zero on processor periodic nodes so that they will not be added twice
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
          do itask = 1, numtask
 
             iacc   = ilwork (itkbeg + 2)
@@ -2763,20 +2888,20 @@ c zero the nodes that are "solved" on the other processors
          enddo
          
       endif
-c
-c Description of arrays.   Each processor has an array of length equal
-c to the total number of fathers times 2 xnude(nfathers,2). One to collect 
-c the numerator and one to collect the denominator.  There is also an array
-c of length nshg on each processor which tells the father number of each
-c on processor node, ifath(nnshg).  Finally, there is an arry of length
-c nfathers to tell the total (on all processors combined) number of sons
-c for each father. 
-c
-c  Now loop over nodes and accumlate the numerator and the denominator
-c  to the father nodes.  Only on processor addition at this point.
-c  Note that serrogate fathers are collect some for the case where some
-c  sons are on another processor
-c
+!
+! Description of arrays.   Each processor has an array of length equal
+! to the total number of fathers times 2 xnude(nfathers,2). One to collect 
+! the numerator and one to collect the denominator.  There is also an array
+! of length nshg on each processor which tells the father number of each
+! on processor node, ifath(nnshg).  Finally, there is an arry of length
+! nfathers to tell the total (on all processors combined) number of sons
+! for each father. 
+!
+!  Now loop over nodes and accumlate the numerator and the denominator
+!  to the father nodes.  Only on processor addition at this point.
+!  Note that serrogate fathers are collect some for the case where some
+!  sons are on another processor
+!
       xnude = zero
       ynude = zero
       xm    = zero
@@ -2832,10 +2957,10 @@ c
 
       enddo
 
-c
-c Now  the true fathers and serrogates combine results and update
-c each other.
-c       
+!
+! Now  the true fathers and serrogates combine results and update
+! each other.
+!       
       if(numpe .gt. 1)then
          call drvAllreduce(xnude, xnuder,2*nfath)
          call drvAllreduce(ynude, ynuder,6*nfath)
@@ -2847,24 +2972,24 @@ c
          call drvAllreduce(snorm, snormr,nfath)
 
          do i = 1, nfath
-            ynuder(i,6) = ( ynuder(i,4) - fwr1*ynuder(i,2) ) /
-     &           ( two*ynuder(i,5) - four*fwr1*ynuder(i,3)
-     &           + two*fwr1*fwr1*ynuder(i,1) )
+            ynuder(i,6) = ( ynuder(i,4) - fwr1*ynuder(i,2) ) / &
+                 ( two*ynuder(i,5) - four*fwr1*ynuder(i,3) &
+                 + two*fwr1*fwr1*ynuder(i,1) )
          enddo
 
          cdelsq2(:) = ynuder(ifath(:),6)  ! For comparison w/ cdelsq
-c
-c  xnude is the sum of the sons for each father on this processor
-c
-c  xnuder is the sum of the sons for each father on all processor combined
-c  (the same as if we had not partitioned the mesh for each processor)
-c
-c   For each father we have precomputed the number of sons (including
-c   the sons off processor). 
-c
-c   Now divide by number of sons to get the average (not really necessary
-c   for dynamic model since ratio will cancel nsons at each father)
-c
+!
+!  xnude is the sum of the sons for each father on this processor
+!
+!  xnuder is the sum of the sons for each father on all processor combined
+!  (the same as if we had not partitioned the mesh for each processor)
+!
+!   For each father we have precomputed the number of sons (including
+!   the sons off processor). 
+!
+!   Now divide by number of sons to get the average (not really necessary
+!   for dynamic model since ratio will cancel nsons at each father)
+!
          xnuder(:,1) = xnuder(:,1) / nsons(:)
          xnuder(:,2) = xnuder(:,2) / nsons(:)
 
@@ -2883,19 +3008,19 @@ c
          uir(:,3) = uir(:,3)/nsons(:)
 
          snormr(:) = snormr(:)/nsons(:)
-c
-cc  the next line is c \Delta^2
-cc
-cc         xnuder(:,1) = xnuder(:,1) / (xnuder(:,2) + 1.d-09)
-cc         do i = 1,nshg
-cc            cdelsq(i) = xnuder(ifath(i),1)
-cc         enddo
+!
+!c  the next line is c \Delta^2
+!c
+!c         xnuder(:,1) = xnuder(:,1) / (xnuder(:,2) + 1.d-09)
+!c         do i = 1,nshg
+!c            cdelsq(i) = xnuder(ifath(i),1)
+!c         enddo
 
             numNden(:,1) = whist*numNden(:,1)+wcur*xnuder(ifath(:),1)
             numNden(:,2) = whist*numNden(:,2)+wcur*xnuder(ifath(:),2)
             cdelsq(:) = numNden(:,1) / (numNden(:,2) + 1.d-09)
             
-c            cdelsq(:) = xnuder(ifath(:),1)/(xnuder(ifath(:),2)+1.d-09)
+!            cdelsq(:) = xnuder(ifath(:),1)/(xnuder(ifath(:),2)+1.d-09)
 
             xnd(:,1) = xnd(:,1) + xnuder(:,1)
             xnd(:,2) = xnd(:,2) + xnuder(:,2)
@@ -2937,21 +3062,21 @@ c            cdelsq(:) = xnuder(ifath(:),1)/(xnuder(ifath(:),2)+1.d-09)
 
          snorm(:) = snorm(:)/nsons(:)
 
-c     
-c     the next line is c \Delta^2, not nu_T but we want to save the
-c     memory
-c     
+!     
+!     the next line is c \Delta^2, not nu_T but we want to save the
+!     memory
+!     
 
-cc         xnude(:,1) = xnude(:,1) / (xnude(:,2) + 1.d-09)
-cc        do i = 1,nshg
-cc            cdelsq(i) = xnude(ifath(i),1)
-cc         enddo
-cc      endif
+!c         xnude(:,1) = xnude(:,1) / (xnude(:,2) + 1.d-09)
+!c        do i = 1,nshg
+!c            cdelsq(i) = xnude(ifath(i),1)
+!c         enddo
+!c      endif
 
          do i = 1, nfath
-            ynude(i,6) = ( ynude(i,4) - fwr1*ynude(i,2) ) /
-     &           ( two*ynude(i,5) - four*fwr1*ynude(i,3)
-     &           + fwr1*fwr1*ynude(i,1) )
+            ynude(i,6) = ( ynude(i,4) - fwr1*ynude(i,2) ) / &
+                 ( two*ynude(i,5) - four*fwr1*ynude(i,3) &
+                 + fwr1*fwr1*ynude(i,1) )
          enddo
 
             numNden(:,1) = whist*numNden(:,1)+wcur*xnude(ifath(:),1)
@@ -2962,7 +3087,7 @@ cc      endif
 
             cdelsq(:) = numNden(:,1) / (numNden(:,2) + 1.d-09)
 
-c            cdelsq(:) = xnude(ifath(:),1)/(xnude(ifath(:),2))!+1.d-09)
+!            cdelsq(:) = xnude(ifath(:),1)/(xnude(ifath(:),2))!+1.d-09)
             
 
           cdelsq2(:) = ynude(ifath(:),6)  ! For comparison w/ cdelsq
@@ -2984,16 +3109,16 @@ c            cdelsq(:) = xnude(ifath(:),1)/(xnude(ifath(:),2))!+1.d-09)
 
          endif
 
-c         do i = 1, nfath
-c            xmodcomp(i,:) = xmodcomp(i,:)/nsons(i)
-c            xmcomp(i,:) = xmcomp(i,:)/nsons(i)         
-c            xlcomp(i,:) = xlcomp(i,:)/nsons(i)
-c            xl2comp(i,:) = xl2comp(i,:)/nsons(i)         
-c            xl1comp(i,:) = xl1comp(i,:)/nsons(i)
-c            xnd(i,:) = xnd(i,:)/nsons(i)
-c            scomp(i) = scomp(i)/nsons(i)
-c            ucomp(i,:) = ucomp(i,:)/nsons(i)
-c         enddo
+!         do i = 1, nfath
+!            xmodcomp(i,:) = xmodcomp(i,:)/nsons(i)
+!            xmcomp(i,:) = xmcomp(i,:)/nsons(i)         
+!            xlcomp(i,:) = xlcomp(i,:)/nsons(i)
+!            xl2comp(i,:) = xl2comp(i,:)/nsons(i)         
+!            xl1comp(i,:) = xl1comp(i,:)/nsons(i)
+!            xnd(i,:) = xnd(i,:)/nsons(i)
+!            scomp(i) = scomp(i)/nsons(i)
+!            ucomp(i,:) = ucomp(i,:)/nsons(i)
+!         enddo
 
          if (myrank .eq. master) then
             write(*,*)'istep, nstep=', istep, nstep(1)
@@ -3003,8 +3128,8 @@ c         enddo
          if ( myrank .eq. master) then
 
             do i = 1, nfath
-            write(365,*)xmodcomp(i,1),xmodcomp(i,2),xmodcomp(i,3),
-     &              xmodcomp(i,4),xmodcomp(i,5)
+            write(365,*)xmodcomp(i,1),xmodcomp(i,2),xmodcomp(i,3), &
+                    xmodcomp(i,4),xmodcomp(i,5)
 
             write(366,*)xmcomp(i,1),xmcomp(i,2),xmcomp(i,3)
             write(367,*)xmcomp(i,4),xmcomp(i,5),xmcomp(i,6)            
@@ -3034,9 +3159,9 @@ c         enddo
             call flush(374)
             call flush(375)
 
-c            close(852)
-c            close(853)
-c            close(854)
+!            close(852)
+!            close(853)
+!            close(854)
 
          endif
          endif
@@ -3051,14 +3176,14 @@ c            close(854)
          
 
 
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
       tmp1 =  MINVAL(cdelsq)
       tmp2 =  MAXVAL(cdelsq)
       if(numpe>1) then
-         call MPI_REDUCE (tmp1, tmp3, 1,MPI_DOUBLE_PRECISION,
-     &        MPI_MIN, master, MPI_COMM_WORLD, ierr)
-         call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
-     &        MPI_MAX, master, MPI_COMM_WORLD, ierr)
+         call MPI_REDUCE (tmp1, tmp3, 1,MPI_DOUBLE_PRECISION, &
+              MPI_MIN, master, INEWCOMM, ierr)
+         call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION, &
+              MPI_MAX, master, INEWCOMM, ierr)
          tmp1=tmp3
          tmp2=tmp4
       endif
@@ -3066,7 +3191,7 @@ c $$$$$$$$$$$$$$$$$$$$$$$$$$$
          write(34,*)lstep,tmp1,tmp2
          call flush(34)
       endif
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
       
       if (myrank .eq. master) then
          write(*,*) 'cdelsq=', cdelsq(1),cdelsq(2)
@@ -3084,29 +3209,29 @@ c $$$$$$$$$$$$$$$$$$$$$$$$$$$
          
          ngauss = nint(lcsyst)
 
-         call scatnu (mien(iblk)%p, strl(iel:inum,:), 
-     &        mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
+         call scatnu (mien(iblk)%p, strl(iel:inum,:),  &
+              mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
       enddo
-c     $$$$$$$$$$$$$$$$$$$$$$$$$$$
-c$$$  tmp1 =  MINVAL(xmudmi)
-c$$$  tmp2 =  MAXVAL(xmudmi)
-c$$$  if(numpe>1) then
-c$$$  call MPI_REDUCE (tmp1, tmp3, 1, MPI_DOUBLE_PRECISION,
-c$$$  &                 MPI_MIN, master, MPI_COMM_WORLD, ierr)
-c$$$  call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
-c$$$  &                 MPI_MAX, master, MPI_COMM_WORLD, ierr)
-c$$$      tmp1=tmp3
-c$$$  tmp2=tmp4
-c$$$  endif
-c$$$  if (myrank .EQ. master) then
-c$$$  write(35,*) lstep,tmp1,tmp2
-c$$$  call flush(35)
-c$$$  endif
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+!     $$$$$$$$$$$$$$$$$$$$$$$$$$$
+!$$$  tmp1 =  MINVAL(xmudmi)
+!$$$  tmp2 =  MAXVAL(xmudmi)
+!$$$  if(numpe>1) then
+!$$$  call MPI_REDUCE (tmp1, tmp3, 1, MPI_DOUBLE_PRECISION,
+!$$$  &                 MPI_MIN, master, INEWCOMM, ierr)
+!$$$  call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
+!$$$  &                 MPI_MAX, master, INEWCOMM, ierr)
+!$$$      tmp1=tmp3
+!$$$  tmp2=tmp4
+!$$$  endif
+!$$$  if (myrank .EQ. master) then
+!$$$  write(35,*) lstep,tmp1,tmp2
+!$$$  call flush(35)
+!$$$  endif
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-c
-c  if flag set, write a restart file with info (reuse xmij's memory)
-c
+!
+!  if flag set, write a restart file with info (reuse xmij's memory)
+!
       if(irs.eq.11) then
          lstep=999
          xmij(:,1)=xnum(:)
@@ -3116,24 +3241,24 @@ c
          call restar('out ',xmij,xlij) !also dump all of L_{ij} in ac
          stop
       endif
-c
-c  local clipping moved to scatnu with the creation of mxmudmi pointers
-c
-c$$$      rmu=datmat(1,2,1)
-c$$$      xmudmi=min(xmudmi,1000.0*rmu) !don't let it get larger than 1000 mu
-c$$$      xmudmi=max(xmudmi, -rmu) ! don't let (xmudmi + mu) < 0
-c      stop !uncomment to test dmod
-c
+!
+!  local clipping moved to scatnu with the creation of mxmudmi pointers
+!
+!$$$      rmu=datmat(1,2,1)
+!$$$      xmudmi=min(xmudmi,1000.0*rmu) !don't let it get larger than 1000 mu
+!$$$      xmudmi=max(xmudmi, -rmu) ! don't let (xmudmi + mu) < 0
+!      stop !uncomment to test dmod
+!
 
 
-c  write out the nodal values of xnut (estimate since we don't calc strain
-c  there and must use the filtered strain).
-c
+!  write out the nodal values of xnut (estimate since we don't calc strain
+!  there and must use the filtered strain).
+!
 
       if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
-c
-c  collect the average strain into xnude(2)
-c
+!
+!  collect the average strain into xnude(2)
+!
          xnude(:,2) = zero
          do i = 1,numnp
             xnude(ifath(i),2) = xnude(ifath(i),2) + strnrm(i)
@@ -3144,26 +3269,26 @@ c
           else
              xnuder=xnude
           endif
-c     
-c          nut= cdelsq    * |S|
-c 
+!     
+!          nut= cdelsq    * |S|
+! 
          xnutf=xnuder(:,1)*xnuder(:,2)/nsons(:)
-c
-c  collect the x and y coords into xnude
-c
+!
+!  collect the x and y coords into xnude
+!
          xnude = zero
          do i = 1,numnp
             xnude(ifath(i),1) = xnude(ifath(i),1) + x(i,1)
             xnude(ifath(i),2) = xnude(ifath(i),2) + x(i,2)
          enddo
 
-         if(numpe .gt. 1) 
-     &        call drvAllreduce(xnude, xnuder,2*nfath)
+         if(numpe .gt. 1)  &
+              call drvAllreduce(xnude, xnuder,2*nfath)
          xnuder(:,1)=xnuder(:,1)/nsons(:)
          xnuder(:,2)=xnuder(:,2)/nsons(:)
-c
-c  xnude is the sum of the sons for each father on this processor
-c
+!
+!  xnude is the sum of the sons for each father on this processor
+!
          if((myrank.eq.master)) then
             do i=1,nfath      ! cdelsq   * |S|
                write(444,*) xnuder(i,1),xnuder(i,2),xnutf(i)
@@ -3174,59 +3299,60 @@ c
 
       return
       end
-      subroutine DFWRwfdmc (y,      shgl,      shp, 
-     &                   iper,   ilwork,    
-     &                   nsons,  ifath,     x,    fwr2, fwr3)
+      subroutine DFWRwfdmc (y,      shgl,      shp,  &
+                         iper,   ilwork,     &
+                         nsons,  ifath,     x,    fwr2, fwr3)
 
       use pointer_data
 
       use quadfilt   ! This module gives us shglf(maxtp,nsd,maxsh,ngaussf),
-c                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
-c                    Shpf and shglf are the shape funciotns and their 
-c                    gradient evaluated using the quadrature rule desired 
-c                    for computing the dmod. Qwtf contains the weights of the 
-c                    quad. points.  
+!                    shpf(maxtp,maxsh,ngaussf), and Qwtf(maxtp,ngaussf). 
+!                    Shpf and shglf are the shape funciotns and their 
+!                    gradient evaluated using the quadrature rule desired 
+!                    for computing the dmod. Qwtf contains the weights of the 
+!                    quad. points.  
 
-      include "common.h"
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-      include "auxmpi.h"
+      !include "auxmpi.h"
 
-c
-      dimension fres(nshg,33),         fwr(nshg),
-     &          strnrm(nshg),         cdelsq(nshg),
-     &          cdelsq2(nshg),
-     &          xnum(nshg),           xden(nshg),
-     &          xmij(nshg,6),         xlij(nshg,6),
-     &          xnude(nfath,2),        xnuder(nfath,2),
-     &          ynude(nfath,6),        ynuder(nfath,6),
-     &          ui(nfath,3),           snorm(nfath),
-     &          uir(nfath,3),          snormr(nfath)
-      dimension xm(nfath,6),           xl(nfath,6),
-     &          xl1(nfath,6),          xl2(nfath,6),
-     &          xl1r(nfath,6),         xl2r(nfath,6),
-     &          xmr(nfath,6),          xlr(nfath,6),
-     &          nsons(nshg),
-     &          strl(numel,ngauss),           
-     &          y(nshg,5),            yold(nshg,5),
-     &          ifath(nshg),          iper(nshg),
-     &          ilwork(nlwork),
-     &          x(numnp,3),
-     &          shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),    
-     &          xnutf(nfath),
-     &          hfres(nshg,22),
-     &          xfac(nshg,5),         fwr2(nshg),
-     &          fwr3(nshg)
+!
+      dimension fres(nshg,33),         fwr(nshg), &
+                strnrm(nshg),         cdelsq(nshg), &
+                cdelsq2(nshg), &
+                xnum(nshg),           xden(nshg), &
+                xmij(nshg,6),         xlij(nshg,6), &
+                xnude(nfath,2),        xnuder(nfath,2), &
+                ynude(nfath,6),        ynuder(nfath,6), &
+                ui(nfath,3),           snorm(nfath), &
+                uir(nfath,3),          snormr(nfath)
+      dimension xm(nfath,6),           xl(nfath,6), &
+                xl1(nfath,6),          xl2(nfath,6), &
+                xl1r(nfath,6),         xl2r(nfath,6), &
+                xmr(nfath,6),          xlr(nfath,6), &
+                nsons(nshg), &
+                strl(numel,ngauss),            &
+                y(nshg,5),            yold(nshg,5), &
+                ifath(nshg),          iper(nshg), &
+                ilwork(nlwork), &
+                x(numnp,3), &
+                shgl(MAXTOP,nsd,maxsh,MAXQPT), shp(MAXTOP,maxsh,MAXQPT),     &
+                xnutf(nfath), &
+                hfres(nshg,22), &
+                xfac(nshg,5),         fwr2(nshg), &
+                fwr3(nshg)
 
       real*8 u1
 
       character*10 cname
       character*30 fname1, fname2, fname3, fname4, fname5, fname6
-c
+!
      
-c
-c
-c   setup the weights for time averaging of cdelsq (now in quadfilt module)
-c
+!
+!
+!   setup the weights for time averaging of cdelsq (now in quadfilt module)
+!
 
       denom=max(1.0d0*(lstep),one)
       if(dtavei.lt.0) then
@@ -3258,15 +3384,15 @@ c
       yold(:,1)=y(:,4)
       yold(:,2:4)=y(:,1:3)
 
-c
-c  hack in an interesting velocity field (uncomment to test dmod)
-c
-c      yold(:,5) = 1.0  ! Debugging
-c      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
-c      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
-c      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
-c                               suitable for the
+!
+!  hack in an interesting velocity field (uncomment to test dmod)
+!
+!      yold(:,5) = 1.0  ! Debugging
+!      yold(:,2) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      yold(:,3) = 3.0*x(:,1) + 4.0*x(:,2)
+!      yold(:,4) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      yold(:,1) = Rgas * yold(:,5) ! Necessary to make model suitable
+!                               suitable for the
 
       do iblk = 1,nelblk
         lcsyst = lcblk(3,iblk) 
@@ -3280,20 +3406,20 @@ c                               suitable for the
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-c        call hfilterBB (yold, x, mien(iblk)%p, hfres, 
-c     &               shglf(lcsyst,:,1:nshl,:),
-c     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+!        call hfilterBB (yold, x, mien(iblk)%p, hfres, 
+!     &               shglf(lcsyst,:,1:nshl,:),
+!     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
-        call hfilterCC (yold, x, mien(iblk)%p, hfres, 
-     &               shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call hfilterCC (yold, x, mien(iblk)%p, hfres,  &
+                     shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
       enddo
 
       if(numpe>1) call commu (hfres, ilwork, 22, 'in ')
-c 
-c... account for periodicity in filtered variables
-c
+! 
+!... account for periodicity in filtered variables
+!
       do j = 1,nshg  !    Add on-processor slave contribution to masters
         i = iper(j)
         if (i .ne. j) then
@@ -3307,7 +3433,7 @@ c
         endif
       enddo
 
-c... Set off-processor slaves to be the same as their masters
+!... Set off-processor slaves to be the same as their masters
 
       if(numpe>1)   call commu (hfres, ilwork, 22, 'out')
 
@@ -3315,19 +3441,19 @@ c... Set off-processor slaves to be the same as their masters
       hfres(:,16) = one / hfres(:,16) ! one/(volume filter kernel)
 
       do j = 1, 15
-	hfres(:,j) = hfres(:,j) * hfres(:,16)
+        hfres(:,j) = hfres(:,j) * hfres(:,16)
       enddo	    		
       do j = 17, 22
-	hfres(:,j) = hfres(:,j) * hfres(:,16)
+        hfres(:,j) = hfres(:,j) * hfres(:,16)
       enddo	
 
-c... For debugging
+!... For debugging
 
-c      hfres(:,1) = 2.0*x(:,1) - 3.0*x(:,2) 
-c      hfres(:,2) = 3.0*x(:,1) + 4.0*x(:,2)
-c      hfres(:,3) = 4.0*x(:,1) + x(:,2) + x(:,3)
+!      hfres(:,1) = 2.0*x(:,1) - 3.0*x(:,2) 
+!      hfres(:,2) = 3.0*x(:,1) + 4.0*x(:,2)
+!      hfres(:,3) = 4.0*x(:,1) + x(:,2) + x(:,3)
 
-c... Done w/ h-filtering. Begin 2h-filtering.
+!... Done w/ h-filtering. Begin 2h-filtering.
 
       do iblk = 1,nelblk
         lcsyst = lcblk(3,iblk) 
@@ -3341,18 +3467,18 @@ c... Done w/ h-filtering. Begin 2h-filtering.
         ngauss = nint(lcsyst)
         ngaussf = nintf(lcsyst)
         
-        call twohfilterBB (yold, x, strl(iel:inum,:), mien(iblk)%p, 
-     &               fres, hfres, shglf(lcsyst,:,1:nshl,:),
-     &               shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
+        call twohfilterBB (yold, x, strl(iel:inum,:), mien(iblk)%p,  &
+                     fres, hfres, shglf(lcsyst,:,1:nshl,:), &
+                     shpf(lcsyst,1:nshl,:),Qwtf(lcsyst,1:ngaussf))
 
       enddo
-c
+!
  
 
       if(numpe>1) call commu (fres, ilwork, 33, 'in ')
-c 
-c account for periodicity in filtered variables
-c
+! 
+! account for periodicity in filtered variables
+!
       do j = 1,nshg
         i = iper(j)
         if (i .ne. j) then
@@ -3391,30 +3517,30 @@ c
         
         ngauss = nint(lcsyst)
  
-        call getstrl (yold, x,      mien(iblk)%p,  
-     &               strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:),
-     &               shp(lcsyst,1:nshl,:))
+        call getstrl (yold, x,      mien(iblk)%p,   &
+                     strl(iel:inum,:), shgl(lcsyst,:,1:nshl,:), &
+                     shp(lcsyst,1:nshl,:))
 
       enddo
 
-c
-c... Obtain the hat-tilde strain rate norm at the nodes 
-c
+!
+!... Obtain the hat-tilde strain rate norm at the nodes 
+!
 
-      strnrm = sqrt( 
-     &  two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2)
-     &  + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      strnrm = sqrt(  &
+        two * (fres(:,10)**2 + fres(:,11)**2 + fres(:,12)**2) &
+        + four * ( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
 
-c      fwr = fwr1 * strnrm
+!      fwr = fwr1 * strnrm
 
       fwr = fwr1 * fwr3 * strnrm
 
-      xmij(:,1) = -fwr
-     &             * fres(:,10) + fres(:,16)
-      xmij(:,2) = -fwr
-     &             * fres(:,11) + fres(:,17) 
-      xmij(:,3) = -fwr
-     &             * fres(:,12) + fres(:,18) 
+      xmij(:,1) = -fwr &
+                   * fres(:,10) + fres(:,16)
+      xmij(:,2) = -fwr &
+                   * fres(:,11) + fres(:,17) 
+      xmij(:,3) = -fwr &
+                   * fres(:,12) + fres(:,18) 
 
       xmij(:,4) = -fwr * fres(:,13) + fres(:,19)
       xmij(:,5) = -fwr * fres(:,14) + fres(:,20)
@@ -3428,43 +3554,43 @@ c      fwr = fwr1 * strnrm
       xlij(:,5) = fres(:,8) - fres(:,1) * fres(:,3) 
       xlij(:,6) = fres(:,9) - fres(:,2) * fres(:,3) 
 
-      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2) 
-     &                                    + xlij(:,3) * xmij(:,3)
-     &     + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5)
-     &                                    + xlij(:,6) * xmij(:,6))
-      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2) 
-     &                                    + xmij(:,3) * xmij(:,3)
-     &     + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5)
-     &                                    + xmij(:,6) * xmij(:,6))
+      xnum =        xlij(:,1) * xmij(:,1) + xlij(:,2) * xmij(:,2)  &
+                                          + xlij(:,3) * xmij(:,3) &
+           + two * (xlij(:,4) * xmij(:,4) + xlij(:,5) * xmij(:,5) &
+                                          + xlij(:,6) * xmij(:,6))
+      xden =        xmij(:,1) * xmij(:,1) + xmij(:,2) * xmij(:,2)  &
+                                          + xmij(:,3) * xmij(:,3) &
+           + two * (xmij(:,4) * xmij(:,4) + xmij(:,5) * xmij(:,5) &
+                                          + xmij(:,6) * xmij(:,6))
       xden = two * xden
 
-c... For collectection of statistics on dyn. model components 
+!... For collectection of statistics on dyn. model components 
 
-      xfac(:,1) = strnrm*strnrm*( fres(:,10)**2 + fres(:,11)**2 + 
-     &     fres(:,12)**2
-     &     + two*( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
+      xfac(:,1) = strnrm*strnrm*( fres(:,10)**2 + fres(:,11)**2 +  &
+           fres(:,12)**2 &
+           + two*( fres(:,13)**2 + fres(:,14)**2 + fres(:,15)**2 ) )
       
-      xfac(:,2) = strnrm*( xlij(:,1)*fres(:,10) + xlij(:,2)*fres(:,11) 
-     &     + xlij(:,3)*fres(:,12) + 
-     &     two*(xlij(:,4)*fres(:,13) + xlij(:,5)*fres(:,14) +
-     &     xlij(:,6)*fres(:,15)) )
+      xfac(:,2) = strnrm*( xlij(:,1)*fres(:,10) + xlij(:,2)*fres(:,11)  &
+           + xlij(:,3)*fres(:,12) +  &
+           two*(xlij(:,4)*fres(:,13) + xlij(:,5)*fres(:,14) + &
+           xlij(:,6)*fres(:,15)) )
 
-      xfac(:,3) = strnrm*( fres(:,10)*fres(:,16) + fres(:,11)*fres(:,17)
-     &     + fres(:,12)*fres(:,18) + 
-     &     two*(fres(:,13)*fres(:,19) + fres(:,14)*fres(:,20) +
-     &     fres(:,15)*fres(:,21)) )
+      xfac(:,3) = strnrm*( fres(:,10)*fres(:,16) + fres(:,11)*fres(:,17) &
+           + fres(:,12)*fres(:,18) +  &
+           two*(fres(:,13)*fres(:,19) + fres(:,14)*fres(:,20) + &
+           fres(:,15)*fres(:,21)) )
 
-      xfac(:,4) = xlij(:,1)*fres(:,16) + xlij(:,2)*fres(:,17)
-     &     + xlij(:,3)*fres(:,18) + 
-     &     two*(xlij(:,4)*fres(:,19) + xlij(:,5)*fres(:,20) +
-     &     xlij(:,6)*fres(:,21))
+      xfac(:,4) = xlij(:,1)*fres(:,16) + xlij(:,2)*fres(:,17) &
+           + xlij(:,3)*fres(:,18) +  &
+           two*(xlij(:,4)*fres(:,19) + xlij(:,5)*fres(:,20) + &
+           xlij(:,6)*fres(:,21))
 
-      xfac(:,5) = fres(:,16)*fres(:,16) + fres(:,17)*fres(:,17)
-     &     + fres(:,18)*fres(:,18) + 
-     &     two*(fres(:,19)*fres(:,19) + fres(:,20)*fres(:,20) +
-     &     fres(:,21)*fres(:,21))
+      xfac(:,5) = fres(:,16)*fres(:,16) + fres(:,17)*fres(:,17) &
+           + fres(:,18)*fres(:,18) +  &
+           two*(fres(:,19)*fres(:,19) + fres(:,20)*fres(:,20) + &
+           fres(:,21)*fres(:,21))
 
-c  zero on processor periodic nodes so that they will not be added twice
+!  zero on processor periodic nodes so that they will not be added twice
         do j = 1,numnp
           i = iper(j)
           if (i .ne. j) then
@@ -3483,7 +3609,7 @@ c  zero on processor periodic nodes so that they will not be added twice
          numtask = ilwork(1)
          itkbeg = 1
        
-c zero the nodes that are "solved" on the other processors  
+! zero the nodes that are "solved" on the other processors  
          do itask = 1, numtask
 
             iacc   = ilwork (itkbeg + 2)
@@ -3509,20 +3635,20 @@ c zero the nodes that are "solved" on the other processors
          enddo
          
       endif
-c
-c Description of arrays.   Each processor has an array of length equal
-c to the total number of fathers times 2 xnude(nfathers,2). One to collect 
-c the numerator and one to collect the denominator.  There is also an array
-c of length nshg on each processor which tells the father number of each
-c on processor node, ifath(nnshg).  Finally, there is an arry of length
-c nfathers to tell the total (on all processors combined) number of sons
-c for each father. 
-c
-c  Now loop over nodes and accumlate the numerator and the denominator
-c  to the father nodes.  Only on processor addition at this point.
-c  Note that serrogate fathers are collect some for the case where some
-c  sons are on another processor
-c
+!
+! Description of arrays.   Each processor has an array of length equal
+! to the total number of fathers times 2 xnude(nfathers,2). One to collect 
+! the numerator and one to collect the denominator.  There is also an array
+! of length nshg on each processor which tells the father number of each
+! on processor node, ifath(nnshg).  Finally, there is an arry of length
+! nfathers to tell the total (on all processors combined) number of sons
+! for each father. 
+!
+!  Now loop over nodes and accumlate the numerator and the denominator
+!  to the father nodes.  Only on processor addition at this point.
+!  Note that serrogate fathers are collect some for the case where some
+!  sons are on another processor
+!
       xnude = zero
       ynude = zero
       xm    = zero
@@ -3578,10 +3704,10 @@ c
 
       enddo
 
-c
-c Now  the true fathers and serrogates combine results and update
-c each other.
-c       
+!
+! Now  the true fathers and serrogates combine results and update
+! each other.
+!       
       if(numpe .gt. 1)then
          call drvAllreduce(xnude, xnuder,2*nfath)
          call drvAllreduce(ynude, ynuder,6*nfath)
@@ -3593,24 +3719,24 @@ c
          call drvAllreduce(snorm, snormr,nfath)
 
          do i = 1, nfath
-            ynuder(i,6) = ( ynuder(i,4) - fwr1*ynuder(i,2) ) /
-     &           ( two*ynuder(i,5) - four*fwr1*ynuder(i,3)
-     &           + two*fwr1*fwr1*ynuder(i,1) )
+            ynuder(i,6) = ( ynuder(i,4) - fwr1*ynuder(i,2) ) / &
+                 ( two*ynuder(i,5) - four*fwr1*ynuder(i,3) &
+                 + two*fwr1*fwr1*ynuder(i,1) )
          enddo
 
          cdelsq2(:) = ynuder(ifath(:),6)  ! For comparison w/ cdelsq
-c
-c  xnude is the sum of the sons for each father on this processor
-c
-c  xnuder is the sum of the sons for each father on all processor combined
-c  (the same as if we had not partitioned the mesh for each processor)
-c
-c   For each father we have precomputed the number of sons (including
-c   the sons off processor). 
-c
-c   Now divide by number of sons to get the average (not really necessary
-c   for dynamic model since ratio will cancel nsons at each father)
-c
+!
+!  xnude is the sum of the sons for each father on this processor
+!
+!  xnuder is the sum of the sons for each father on all processor combined
+!  (the same as if we had not partitioned the mesh for each processor)
+!
+!   For each father we have precomputed the number of sons (including
+!   the sons off processor). 
+!
+!   Now divide by number of sons to get the average (not really necessary
+!   for dynamic model since ratio will cancel nsons at each father)
+!
          xnuder(:,1) = xnuder(:,1) / nsons(:)
          xnuder(:,2) = xnuder(:,2) / nsons(:)
 
@@ -3630,19 +3756,19 @@ c
 
          snormr(:) = snormr(:)/nsons(:)
 
-c
-cc  the next line is c \Delta^2
-cc
-cc         xnuder(:,1) = xnuder(:,1) / (xnuder(:,2) + 1.d-09)
-cc         do i = 1,nshg
-cc            cdelsq(i) = xnuder(ifath(i),1)
-cc         enddo
+!
+!c  the next line is c \Delta^2
+!c
+!c         xnuder(:,1) = xnuder(:,1) / (xnuder(:,2) + 1.d-09)
+!c         do i = 1,nshg
+!c            cdelsq(i) = xnuder(ifath(i),1)
+!c         enddo
 
             numNden(:,1) = whist*numNden(:,1)+wcur*xnuder(ifath(:),1)
             numNden(:,2) = whist*numNden(:,2)+wcur*xnuder(ifath(:),2)
             cdelsq(:) = numNden(:,1) / (numNden(:,2) + 1.d-09)
             
-c            cdelsq(:) = xnuder(ifath(:),1)/(xnuder(ifath(:),2)+1.d-09)
+!            cdelsq(:) = xnuder(ifath(:),1)/(xnuder(ifath(:),2)+1.d-09)
 
             xnd(:,1) = xnd(:,1) + xnuder(:,1)
             xnd(:,2) = xnd(:,2) + xnuder(:,2)
@@ -3683,21 +3809,21 @@ c            cdelsq(:) = xnuder(ifath(:),1)/(xnuder(ifath(:),2)+1.d-09)
          ui(:,3) = ui(:,3)/nsons(:)
 
          snorm(:) = snorm(:)/nsons(:)
-c     
-c     the next line is c \Delta^2, not nu_T but we want to save the
-c     memory
-c     
+!     
+!     the next line is c \Delta^2, not nu_T but we want to save the
+!     memory
+!     
 
-cc         xnude(:,1) = xnude(:,1) / (xnude(:,2) + 1.d-09)
-cc        do i = 1,nshg
-cc            cdelsq(i) = xnude(ifath(i),1)
-cc         enddo
-cc      endif
+!c         xnude(:,1) = xnude(:,1) / (xnude(:,2) + 1.d-09)
+!c        do i = 1,nshg
+!c            cdelsq(i) = xnude(ifath(i),1)
+!c         enddo
+!c      endif
 
          do i = 1, nfath
-            ynude(i,6) = ( ynude(i,4) - fwr1*ynude(i,2) ) /
-     &           ( two*ynude(i,5) - four*fwr1*ynude(i,3)
-     &           + fwr1*fwr1*ynude(i,1) )
+            ynude(i,6) = ( ynude(i,4) - fwr1*ynude(i,2) ) / &
+                 ( two*ynude(i,5) - four*fwr1*ynude(i,3) &
+                 + fwr1*fwr1*ynude(i,1) )
          enddo
 
             numNden(:,1) = whist*numNden(:,1)+wcur*xnude(ifath(:),1)
@@ -3708,7 +3834,7 @@ cc      endif
 
             cdelsq(:) = numNden(:,1) / (numNden(:,2)) ! + 1.d-09)
 
-c            cdelsq(:) = xnude(ifath(:),1)/(xnude(ifath(:),2))!+1.d-09)
+!            cdelsq(:) = xnude(ifath(:),1)/(xnude(ifath(:),2))!+1.d-09)
             
 
           cdelsq2(:) = ynude(ifath(:),6)  ! For comparison w/ cdelsq
@@ -3732,23 +3858,23 @@ c            cdelsq(:) = xnude(ifath(:),1)/(xnude(ifath(:),2))!+1.d-09)
          endif
 
 
-c         do i = 1, nfath
-c            xmodcomp(i,:) = xmodcomp(i,:)/nsons(i)
-c            xmcomp(i,:) = xmcomp(i,:)/nsons(i)         
-c            xlcomp(i,:) = xlcomp(i,:)/nsons(i)
-c            xl2comp(i,:) = xl2comp(i,:)/nsons(i)         
-c            xl1comp(i,:) = xl1comp(i,:)/nsons(i)
-c            xnd(i,:) = xnd(i,:)/nsons(i)
-c            scomp(i) = scomp(i)/nsons(i)
-c            ucomp(i,:) = ucomp(i,:)/nsons(i)
-c         enddo
+!         do i = 1, nfath
+!            xmodcomp(i,:) = xmodcomp(i,:)/nsons(i)
+!            xmcomp(i,:) = xmcomp(i,:)/nsons(i)         
+!            xlcomp(i,:) = xlcomp(i,:)/nsons(i)
+!            xl2comp(i,:) = xl2comp(i,:)/nsons(i)         
+!            xl1comp(i,:) = xl1comp(i,:)/nsons(i)
+!            xnd(i,:) = xnd(i,:)/nsons(i)
+!            scomp(i) = scomp(i)/nsons(i)
+!            ucomp(i,:) = ucomp(i,:)/nsons(i)
+!         enddo
 
          if ( istep .eq. (nstep(1)-1) ) then
          if ( myrank .eq. master) then
 
             do i = 1, nfath
-            write(365,*)xmodcomp(i,1),xmodcomp(i,2),xmodcomp(i,3),
-     &              xmodcomp(i,4),xmodcomp(i,5)
+            write(365,*)xmodcomp(i,1),xmodcomp(i,2),xmodcomp(i,3), &
+                    xmodcomp(i,4),xmodcomp(i,5)
 
             write(366,*)xmcomp(i,1),xmcomp(i,2),xmcomp(i,3)
             write(367,*)xmcomp(i,4),xmcomp(i,5),xmcomp(i,6)            
@@ -3765,7 +3891,7 @@ c         enddo
             write(374,*)xnd(i,1),xnd(i,2),scomp(i)
             write(375,*)ucomp(i,1),ucomp(i,2),ucomp(i,3) 
 
-c            write(*,*)'uit uic=', ucomp(32,1),u1
+!            write(*,*)'uit uic=', ucomp(32,1),u1
             enddo
 
 
@@ -3781,14 +3907,14 @@ c            write(*,*)'uit uic=', ucomp(32,1),u1
             call flush(374)
             call flush(375)
 
-c            if (myrank .eq. master) then
-c               write(*,*)'uit uic=', ucomp(32,1),u1
-c            endif
+!            if (myrank .eq. master) then
+!               write(*,*)'uit uic=', ucomp(32,1),u1
+!            endif
 
 
-c            close(852)
-c            close(853)
-c            close(854)
+!            close(852)
+!            close(853)
+!            close(854)
 
          endif
          endif
@@ -3801,21 +3927,21 @@ c            close(854)
  555     format(e14.7,4(2x,e14.7))
  556     format(e14.7,5(2x,e14.7))
 
-c         close(849)
-c         close(850)         
-c         close(851)
-c         close(852)  
-c         close(853)
-c         close(854)          
+!         close(849)
+!         close(850)         
+!         close(851)
+!         close(852)  
+!         close(853)
+!         close(854)          
 
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
       tmp1 =  MINVAL(cdelsq)
       tmp2 =  MAXVAL(cdelsq)
       if(numpe>1) then
-         call MPI_REDUCE (tmp1, tmp3, 1,MPI_DOUBLE_PRECISION,
-     &        MPI_MIN, master, MPI_COMM_WORLD, ierr)
-         call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
-     &        MPI_MAX, master, MPI_COMM_WORLD, ierr)
+         call MPI_REDUCE (tmp1, tmp3, 1,MPI_DOUBLE_PRECISION, &
+              MPI_MIN, master, INEWCOMM, ierr)
+         call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION, &
+              MPI_MAX, master, INEWCOMM, ierr)
          tmp1=tmp3
          tmp2=tmp4
       endif
@@ -3823,7 +3949,7 @@ c $$$$$$$$$$$$$$$$$$$$$$$$$$$
          write(34,*)lstep,tmp1,tmp2
          call flush(34)
       endif
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
       
       if (myrank .eq. master) then
          write(*,*) 'cdelsq=', cdelsq(1),cdelsq(2)
@@ -3841,29 +3967,29 @@ c $$$$$$$$$$$$$$$$$$$$$$$$$$$
          
          ngauss = nint(lcsyst)
 
-         call scatnu (mien(iblk)%p, strl(iel:inum,:), 
-     &        mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
+         call scatnu (mien(iblk)%p, strl(iel:inum,:),  &
+              mxmudmi(iblk)%p,cdelsq,shp(lcsyst,1:nshl,:))
       enddo
-c     $$$$$$$$$$$$$$$$$$$$$$$$$$$
-c$$$  tmp1 =  MINVAL(xmudmi)
-c$$$  tmp2 =  MAXVAL(xmudmi)
-c$$$  if(numpe>1) then
-c$$$  call MPI_REDUCE (tmp1, tmp3, 1, MPI_DOUBLE_PRECISION,
-c$$$  &                 MPI_MIN, master, MPI_COMM_WORLD, ierr)
-c$$$  call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
-c$$$  &                 MPI_MAX, master, MPI_COMM_WORLD, ierr)
-c$$$      tmp1=tmp3
-c$$$  tmp2=tmp4
-c$$$  endif
-c$$$  if (myrank .EQ. master) then
-c$$$  write(35,*) lstep,tmp1,tmp2
-c$$$  call flush(35)
-c$$$  endif
-c $$$$$$$$$$$$$$$$$$$$$$$$$$$
+!     $$$$$$$$$$$$$$$$$$$$$$$$$$$
+!$$$  tmp1 =  MINVAL(xmudmi)
+!$$$  tmp2 =  MAXVAL(xmudmi)
+!$$$  if(numpe>1) then
+!$$$  call MPI_REDUCE (tmp1, tmp3, 1, MPI_DOUBLE_PRECISION,
+!$$$  &                 MPI_MIN, master, INEWCOMM, ierr)
+!$$$  call MPI_REDUCE (tmp2, tmp4, 1, MPI_DOUBLE_PRECISION,
+!$$$  &                 MPI_MAX, master, INEWCOMM, ierr)
+!$$$      tmp1=tmp3
+!$$$  tmp2=tmp4
+!$$$  endif
+!$$$  if (myrank .EQ. master) then
+!$$$  write(35,*) lstep,tmp1,tmp2
+!$$$  call flush(35)
+!$$$  endif
+! $$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-c
-c  if flag set, write a restart file with info (reuse xmij's memory)
-c
+!
+!  if flag set, write a restart file with info (reuse xmij's memory)
+!
       if(irs.eq.11) then
          lstep=999
          xmij(:,1)=xnum(:)
@@ -3873,24 +3999,24 @@ c
          call restar('out ',xmij,xlij) !also dump all of L_{ij} in ac
          stop
       endif
-c
-c  local clipping moved to scatnu with the creation of mxmudmi pointers
-c
-c$$$      rmu=datmat(1,2,1)
-c$$$      xmudmi=min(xmudmi,1000.0*rmu) !don't let it get larger than 1000 mu
-c$$$      xmudmi=max(xmudmi, -rmu) ! don't let (xmudmi + mu) < 0
-c      stop !uncomment to test dmod
-c
+!
+!  local clipping moved to scatnu with the creation of mxmudmi pointers
+!
+!$$$      rmu=datmat(1,2,1)
+!$$$      xmudmi=min(xmudmi,1000.0*rmu) !don't let it get larger than 1000 mu
+!$$$      xmudmi=max(xmudmi, -rmu) ! don't let (xmudmi + mu) < 0
+!      stop !uncomment to test dmod
+!
 
 
-c  write out the nodal values of xnut (estimate since we don't calc strain
-c  there and must use the filtered strain).
-c
+!  write out the nodal values of xnut (estimate since we don't calc strain
+!  there and must use the filtered strain).
+!
 
       if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
-c
-c  collect the average strain into xnude(2)
-c
+!
+!  collect the average strain into xnude(2)
+!
          xnude(:,2) = zero
          do i = 1,numnp
             xnude(ifath(i),2) = xnude(ifath(i),2) + strnrm(i)
@@ -3901,26 +4027,26 @@ c
           else
              xnuder=xnude
           endif
-c     
-c          nut= cdelsq    * |S|
-c 
+!     
+!          nut= cdelsq    * |S|
+! 
          xnutf=xnuder(:,1)*xnuder(:,2)/nsons(:)
-c
-c  collect the x and y coords into xnude
-c
+!
+!  collect the x and y coords into xnude
+!
          xnude = zero
          do i = 1,numnp
             xnude(ifath(i),1) = xnude(ifath(i),1) + x(i,1)
             xnude(ifath(i),2) = xnude(ifath(i),2) + x(i,2)
          enddo
 
-         if(numpe .gt. 1) 
-     &        call drvAllreduce(xnude, xnuder,2*nfath)
+         if(numpe .gt. 1)  &
+              call drvAllreduce(xnude, xnuder,2*nfath)
          xnuder(:,1)=xnuder(:,1)/nsons(:)
          xnuder(:,2)=xnuder(:,2)/nsons(:)
-c
-c  xnude is the sum of the sons for each father on this processor
-c
+!
+!  xnude is the sum of the sons for each father on this processor
+!
          if((myrank.eq.master)) then
             do i=1,nfath      ! cdelsq   * |S|
                write(444,*) xnuder(i,1),xnuder(i,2),xnutf(i)

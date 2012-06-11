@@ -1,81 +1,50 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-        subroutine ElmGMR (u,         y,         ac,        
-     &                     x,         xdist,     xdnv,     
-     &                     shp,       shgl,      iBC,
-     &                     BC,        shpb,      shglb,
-     &                     res,       iper,      ilwork,
-     &                     rowp,      colm,      lhsK,      
-     &                     lhsP,      rerr)
-c
-c----------------------------------------------------------------------
-c
-c This routine computes the LHS mass matrix, the RHS residual 
-c vector, and the preconditioning matrix, for use with the GMRES
-c solver.
-c
-c----------------------------------------------------------------------
-c
+        subroutine ElmGMR (u,         y,         ac,         &
+                           x,         xdist,     xdnv,      &
+                           shp,       shgl,      iBC, &
+                           BC,        shpb,      shglb, &
+                           res,       iper,      ilwork, &
+                           rowp,      colm,      lhsK,       &
+                           lhsP,      rerr)
+!
+!----------------------------------------------------------------------
+!
+! This routine computes the LHS mass matrix, the RHS residual 
+! vector, and the preconditioning matrix, for use with the GMRES
+! solver.
+!
+! Zdenek Johan, Winter 1991.      (Fortran 90)
+! Chris Whiting, Winter 1998.     (Matrix EBE-GMRES)
+! Alberto Figueroa, Winter 2004.  CMM-FSI
+! Irene Vignon, Spring 2004.
+!----------------------------------------------------------------------
+!
         use pvsQbi  ! brings in NABI
         use stats   !  
         use pointer_data  ! brings in the pointers for the blocked arrays
         use local_mass
         use LagrangeMultipliers 
         use deformableWall
-c
-        include "common.h"
-c
-        dimension y(nshg,ndof),         ac(nshg,ndof),
-     &            u(nshg,nsd),
-     &            x(numnp,nsd),               
-     &            xdist(numnp),
-     &            xdnv(numnp,nsd),
-     &            iBC(nshg),           
-     &            BC(nshg,ndofBC),  
-     &            res(nshg,nflow),
-     &            iper(nshg)
-c
-        dimension shp(MAXTOP,maxsh,MAXQPT),  
-     &            shgl(MAXTOP,nsd,maxsh,MAXQPT), 
-     &            shpb(MAXTOP,maxsh,MAXQPT),
-     &            shglb(MAXTOP,nsd,maxsh,MAXQPT) 
-c
+!
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+        dimension y(nshg,ndof),         ac(nshg,ndof), &
+                  u(nshg,nsd), &
+                  x(numnp,nsd),                &
+                  xdist(numnp), &
+                  xdnv(numnp,nsd), &
+                  iBC(nshg),            &
+                  BC(nshg,ndofBC),   &
+                  res(nshg,nflow), &
+                  iper(nshg)
+!
+        dimension shp(MAXTOP,maxsh,MAXQPT),   &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
+                  shpb(MAXTOP,maxsh,MAXQPT), &
+                  shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+!
         dimension qres(nshg,idflx),     rmass(nshg)
-c
+!
         dimension ilwork(nlwork)
 
         integer rowp(nshg*nnz),         colm(nshg+1)
@@ -90,24 +59,24 @@ c
         real*8, allocatable :: tmpshpb(:,:), tmpshglb(:,:,:)
 
         real*8 spmasstot(20),  ebres(nshg)
-c
-c.... set up the timer
-c
+!
+!.... set up the timer
+!
 
-CAD        call timer ('Elm_Form')
-c
-c.... -------------------->   diffusive flux   <--------------------
-c
-c.... set up parameters
-c
+!AD        call timer ('Elm_Form')
+!
+!.... -------------------->   diffusive flux   <--------------------
+!
+!.... set up parameters
+!
         ires   = 1
 
         if (idiff==1 .or. idiff==3 .or. isurf==1) then ! global reconstruction
                                                        ! of qdiff
-c
-c loop over element blocks for the global reconstruction
-c of the diffusive flux vector, q, and lumped mass matrix, rmass
-c
+!
+! loop over element blocks for the global reconstruction
+! of the diffusive flux vector, q, and lumped mass matrix, rmass
+!
            qres = zero
            rmass = zero
         
@@ -123,26 +92,26 @@ c
               nsymdl = lcblk(9,iblk)
               npro   = lcblk(1,iblk+1) - iel 
               ngauss = nint(lcsyst)
-c     
-c.... compute and assemble diffusive flux vector residual, qres,
-c     and lumped mass matrix, rmass
+!     
+!.... compute and assemble diffusive flux vector residual, qres,
+!     and lumped mass matrix, rmass
 
-              call AsIq (y,                x,                       
-     &                   shp(lcsyst,1:nshl,:), 
-     &                   shgl(lcsyst,:,1:nshl,:),
-     &                   mien(iblk)%p,     mxmudmi(iblk)%p,  
-     &                   qres,             rmass )
+              call AsIq (y,                x,                        &
+                         shp(lcsyst,1:nshl,:),  &
+                         shgl(lcsyst,:,1:nshl,:), &
+                         mien(iblk)%p,     mxmudmi(iblk)%p,   &
+                         qres,             rmass )
            enddo
        
-c
-c.... form the diffusive flux approximation
-c
+!
+!.... form the diffusive flux approximation
+!
            call qpbc( rmass, qres, iBC, iper, ilwork )       
-c
+!
         endif 
-c
-c.... -------------------->   interior elements   <--------------------
-c
+!
+!.... -------------------->   interior elements   <--------------------
+!
         res    = zero
         if (stsResFlg .ne. 1) then
            flxID = zero
@@ -152,9 +121,9 @@ c
            lhsp   = zero
            lhsk   = zero
         endif
-c
-c.... loop over the element-blocks
-c
+!
+!.... loop over the element-blocks
+!
         do iblk = 1, nelblk
           iblock = iblk         ! used in local mass inverse (p>2)
           iel    = lcblk(1,iblk)
@@ -169,86 +138,86 @@ c
           npro   = lcblk(1,iblk+1) - iel 
           inum   = iel + npro - 1
           ngauss = nint(lcsyst)
-c
-c.... allocate the element matrices
-c
+!
+!.... allocate the element matrices
+!
           allocate ( xKebe(npro,9,nshl,nshl) )
           allocate ( xGoC (npro,4,nshl,nshl) )
-c
-c..... to calculate inner product for Lagrange Multipliers
-c
+!
+!..... to calculate inner product for Lagrange Multipliers
+!
           if(Lagrange.gt.zero) then
              allocate(loclhsLag(npro,9,nshl,nshl,3))
           endif 
-c
-c.... compute and assemble the residual and tangent matrix
-c
+!
+!.... compute and assemble the residual and tangent matrix
+!
           allocate (tmpshp(nshl,MAXQPT))
           allocate (tmpshgl(nsd,nshl,MAXQPT))
 
           tmpshp(1:nshl,:) = shp(lcsyst,1:nshl,:)
           tmpshgl(:,1:nshl,:) = shgl(lcsyst,:,1:nshl,:)
 
-          call AsIGMR (y,                   ac,
-     &                 x,                   mxmudmi(iblk)%p,      
-     &                 tmpshp, 
-     &                 tmpshgl,
-     &                 mien(iblk)%p,
-     &                 res,
-     &                 qres,                xKebe,
-     &                 xGoC,                rerr)
-c
-c.... satisfy the BC's on the implicit LHS
-c     
+          call AsIGMR (y,                   ac, &
+                       x,                   mxmudmi(iblk)%p,       &
+                       tmpshp,  &
+                       tmpshgl, &
+                       mien(iblk)%p, &
+                       res, &
+                       qres,                xKebe, &
+                       xGoC,                rerr)
+!
+!.... satisfy the BC's on the implicit LHS
+!     
           if (impl(1) .ne. 9 .and. lhs .eq. 1) then
-             if(ipord.eq.1) 
-     &         call bc3lhs (iBC, BC,mien(iblk)%p, xKebe)  
-             call fillsparseI (mien(iblk)%p, 
-     &                 xKebe,            lhsK,
-     &                 xGoC,             lhsP,
-     &                 rowp,                      colm)
+             if(ipord.eq.1)  &
+               call bc3lhs (iBC, BC,mien(iblk)%p, xKebe)  
+             call fillsparseI (mien(iblk)%p,  &
+                       xKebe,            lhsK, &
+                       xGoC,             lhsP, &
+                       rowp,                      colm)
           endif
 
           deallocate ( xKebe )
           deallocate ( xGoC  )
           deallocate ( tmpshp )
           deallocate ( tmpshgl )
-c
-c..... to calculate inner product for Lagrange Multipliers
-c
+!
+!..... to calculate inner product for Lagrange Multipliers
+!
        if(Lagrange.gt.zero) then
           deallocate(loclhsLag)
        endif 
-c
-c.... end of interior element loop
-c
+!
+!.... end of interior element loop
+!
        enddo
-c$$$       if(ibksiz.eq.20 .and. iwrote.ne.789) then
-c$$$          do i=1,nshg
-c$$$             write(789,*) 'eqn block ',i 
-c$$$             do j=colm(i),colm(i+1)-1
-c$$$                write(789,*) 'var block',rowp(j)
-c$$$
-c$$$                do ii=1,3
-c$$$                   write(789,111) (lhsK((ii-1)*3+jj,j),jj=1,3)
-c$$$                enddo
-c$$$             enddo
-c$$$          enddo
-c$$$          close(789)
-c$$$          iwrote=789
-c$$$       endif
-c$$$ 111   format(3(e14.7,2x))
-c$$$c
-c.... add in lumped mass contributions if needed
-c
+!$$$       if(ibksiz.eq.20 .and. iwrote.ne.789) then
+!$$$          do i=1,nshg
+!$$$             write(789,*) 'eqn block ',i 
+!$$$             do j=colm(i),colm(i+1)-1
+!$$$                write(789,*) 'var block',rowp(j)
+!$$$
+!$$$                do ii=1,3
+!$$$                   write(789,111) (lhsK((ii-1)*3+jj,j),jj=1,3)
+!$$$                enddo
+!$$$             enddo
+!$$$          enddo
+!$$$          close(789)
+!$$$          iwrote=789
+!$$$       endif
+!$$$ 111   format(3(e14.7,2x))
+!$$$c
+!.... add in lumped mass contributions if needed
+!
        if((flmpr.ne.0).or.(flmpl.ne.0)) then
           call lmassadd(ac,res,rowp,colm,lhsK,gmass)
        endif
 
        have_local_mass = 1
-c
-c.... time average statistics
-c       
+!
+!.... time average statistics
+!       
        if ( stsResFlg .eq. 1 ) then
 
           if (numpe > 1) then
@@ -260,7 +229,7 @@ c
                 stsVec(i,:) = stsVec(i,:) + stsVec(j,:)
              endif
           enddo
-c     
+!     
           do i = 1,nshg
              stsVec(i,:) = stsVec(iper(i),:)
           enddo
@@ -271,22 +240,22 @@ c
           return
           
        endif
-c
-c.... zero lhsLagL before adding contributions from the boundary elements
-c
+!
+!.... zero lhsLagL before adding contributions from the boundary elements
+!
        if(Lagrange.gt.zero) then
           lhsLagL = zero
        endif 
 
-c
-c.... -------------------->   boundary elements   <--------------------
-c
-c.... loop over the boundary elements
-c
+!
+!.... -------------------->   boundary elements   <--------------------
+!
+!.... loop over the boundary elements
+!
         do iblk = 1, nelblb
-c
-c.... set up the parameters
-c
+!
+!.... set up the parameters
+!
           iel    = lcblkb(1,iblk)
           lelCat = lcblkb(2,iblk)
           lcsyst = lcblkb(3,iblk)
@@ -301,66 +270,66 @@ c
 
 
           if(lcsyst.eq.3) lcsyst=nenbl
-c
+!
           if(lcsyst.eq.3 .or. lcsyst.eq.4) then
              ngaussb = nintb(lcsyst)
           else
              ngaussb = nintb(lcsyst)
           endif
-c
-c.... allocate the element matrices
-c
+!
+!.... allocate the element matrices
+!
           allocate ( xKebe(npro,9,nshl,nshl) )
           allocate ( xGoC (npro,4,nshl,nshl) )
-c
-c..... to calculate inner product for Lagrange Multipliers
-c
+!
+!..... to calculate inner product for Lagrange Multipliers
+!
           if(Lagrange.gt.zero) then
              allocate(loclhsLag(npro,9,nshlb,nshlb,3))
           endif 
-c
-c.... compute and assemble the residuals corresponding to the 
-c     boundary integral
-c
+!
+!.... compute and assemble the residuals corresponding to the 
+!     boundary integral
+!
           allocate (tmpshpb(nshl,MAXQPT))
           allocate (tmpshglb(nsd,nshl,MAXQPT))
           
           tmpshpb(1:nshl,:) = shpb(lcsyst,1:nshl,:)
           tmpshglb(:,1:nshl,:) = shglb(lcsyst,:,1:nshl,:)
 
-          call AsBMFG (u,                       y,
-     &                 ac,                      
-     &                 x,
-     &                 xdist,
-     &                 xdnv,
-     &                 tmpshpb,
-     &                 tmpshglb,
-     &                 mienb(iblk)%p,           mmatb(iblk)%p,
-     &                 miBCB(iblk)%p,           mBCB(iblk)%p,
-     &                 res,                     xKebe,
-     &                 mSWB(iblk)%p,            mTWB(iblk)%p,
-     &                 mEWB(iblk)%p,
-     &                 mPS_global(iblk)%p,
-     &                 mKwall_xKebe(iblk)%p)
+          call AsBMFG (u,                       y, &
+                       ac,                       &
+                       x, &
+                       xdist, &
+                       xdnv, &
+                       tmpshpb, &
+                       tmpshglb, &
+                       mienb(iblk)%p,           mmatb(iblk)%p, &
+                       miBCB(iblk)%p,           mBCB(iblk)%p, &
+                       res,                     xKebe, &
+                       mSWB(iblk)%p,            mTWB(iblk)%p, &
+                       mEWB(iblk)%p, &
+                       mPS_global(iblk)%p, &
+                       mKwall_xKebe(iblk)%p)
 
-c
-c.... satisfy (again, for the vessel wall contributions) the BC's on the implicit LHS
-c
-c.... first, we need to make xGoC zero, since it doesn't have contributions from the 
-c.... vessel wall elements
+!
+!.... satisfy (again, for the vessel wall contributions) the BC's on the implicit LHS
+!
+!.... first, we need to make xGoC zero, since it doesn't have contributions from the 
+!.... vessel wall elements
 
           xGoC = zero
 
           if (impl(1) .ne. 9 .and. lhs .eq. 1) then
-             if(ipord.eq.1)
-     &          call bc3lhs (iBC, BC,mienb(iblk)%p, xKebe)
-             call fillsparseI (mienb(iblk)%p,
-     &                 xKebe,           lhsK,
-     &                 xGoC,            lhsP,
-     &                 rowp,            colm)
+             if(ipord.eq.1) &
+                call bc3lhs (iBC, BC,mienb(iblk)%p, xKebe)
+             call fillsparseI (mienb(iblk)%p, &
+                       xKebe,           lhsK, &
+                       xGoC,            lhsP, &
+                       rowp,            colm)
           endif
-c
-c       
+!
+!       
           deallocate ( xKebe )
           deallocate ( xGoC )
           deallocate (tmpshpb)
@@ -368,52 +337,52 @@ c
           if(Lagrange.gt.zero) then
              deallocate(loclhsLag)
           endif
-c
-c.... end of boundary element loop
-c
+!
+!.... end of boundary element loop
+!
        enddo
-c
+!
        if(Lagrange.gt.zero) then
           LagSwitch = 0 
           call CalcNANBLagrange(colm, rowp, y(:,1:3))
        endif
-c       
+!       
        if(ipvsq.ge.1) then
-c
-c....  pressure vs. resistance boundary condition sets pressure at
-c      outflow to linearly increase as flow through that face increases
-c      (routine is at bottom of this file)
-c
+!
+!....  pressure vs. resistance boundary condition sets pressure at
+!      outflow to linearly increase as flow through that face increases
+!      (routine is at bottom of this file)
+!
           call ElmpvsQ (res,y,-1.0d0)     
        endif
            
-c
-c before the commu we need to rotate the residual vector for axisymmetric
-c boundary conditions (so that off processor periodicity is a dof add instead
-c of a dof combination).  Take care of all nodes now so periodicity, like
-c commu is a simple dof add.
-c
-       if(iabc==1)              !are there any axisym bc's
-     &       call rotabc(res, iBC,  'in ')
-c
-c
-c.... -------------------->   communications <-------------------------
-c
+!
+! before the commu we need to rotate the residual vector for axisymmetric
+! boundary conditions (so that off processor periodicity is a dof add instead
+! of a dof combination).  Take care of all nodes now so periodicity, like
+! commu is a simple dof add.
+!
+       if(iabc==1) &             !are there any axisym bc's
+             call rotabc(res, iBC,  'in ')
+!
+!
+!.... -------------------->   communications <-------------------------
+!
 
        if (numpe > 1) then
           call commu (res  , ilwork, nflow  , 'in ')
        endif
 
-c
-c.... ---------------------->   post processing  <----------------------
-c
-c.... satisfy the BCs on the residual
-c
+!
+!.... ---------------------->   post processing  <----------------------
+!
+!.... satisfy the BCs on the residual
+!
       call bc3Res (iBC,  BC,  res,  iper, ilwork)
-c
-c.... return
-c
-c      call timer ('Back    ')
+!
+!.... return
+!
+!      call timer ('Back    ')
       return
       end
 
@@ -422,58 +391,59 @@ c      call timer ('Back    ')
 !********************************************************************
 !--------------------------------------------------------------------
 
-      subroutine ElmGMRSclr (y,         ac,        x,     
-     &                       shp,       shgl,      iBC,
-     &                       BC,        shpb,      shglb,
-     &                       res,       iper,      ilwork,
-     &                       rowp,      colm,      lhsS    )
-c
-c----------------------------------------------------------------------
-c
-c This routine computes the LHS mass matrix, the RHS residual 
-c vector, and the preconditioning matrix, for use with the GMRES
-c solver.
-c
-c----------------------------------------------------------------------
-c
+      subroutine ElmGMRSclr (y,         ac,        x,      &
+                             shp,       shgl,      iBC, &
+                             BC,        shpb,      shglb, &
+                             res,       iper,      ilwork, &
+                             rowp,      colm,      lhsS    )
+!
+!----------------------------------------------------------------------
+!
+! This routine computes the LHS mass matrix, the RHS residual 
+! vector, and the preconditioning matrix, for use with the GMRES
+! solver.
+!
+!----------------------------------------------------------------------
+!
         use pointer_data
         use local_mass
-c
-        include "common.h"
+!
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
-c
-        dimension y(nshg,ndof),         ac(nshg,ndof),
-     &            x(numnp,nsd),         iBC(nshg),           
-     &            BC(nshg,ndofBC),      res(nshg),
-     &            iper(nshg)
-c
-        dimension shp(MAXTOP,maxsh,MAXQPT),  
-     &            shgl(MAXTOP,nsd,maxsh,MAXQPT), 
-     &            shpb(MAXTOP,maxsh,MAXQPT),
-     &            shglb(MAXTOP,nsd,maxsh,MAXQPT) 
-c
+!
+        dimension y(nshg,ndof),         ac(nshg,ndof), &
+                  x(numnp,nsd),         iBC(nshg),            &
+                  BC(nshg,ndofBC),      res(nshg), &
+                  iper(nshg)
+!
+        dimension shp(MAXTOP,maxsh,MAXQPT),   &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
+                  shpb(MAXTOP,maxsh,MAXQPT), &
+                  shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+!
         dimension qres(nshg,nsd),     rmass(nshg)
-c
+!
         integer ilwork(nlwork), rowp(nshg*nnz),   colm(nshg+1)
 
 	real*8	lhsS(nnz_tot)
 
         real*8, allocatable, dimension(:,:,:) :: xSebe
-c
-c.... set up the timer
-c
+!
+!.... set up the timer
+!
 
-CAD        call timer ('Elm_Form')
-c
-c.... -------------------->   diffusive flux   <--------------------
-c
+!AD        call timer ('Elm_Form')
+!
+!.... -------------------->   diffusive flux   <--------------------
+!
         ires   = 1
 
         if (idiff==1 .or. idiff==3) then ! global reconstruction of qdiff
-c
-c loop over element blocks for the global reconstruction
-c of the diffusive flux vector, q, and lumped mass matrix, rmass
-c
+!
+! loop over element blocks for the global reconstruction
+! of the diffusive flux vector, q, and lumped mass matrix, rmass
+!
            qres = zero
            rmass = zero
         
@@ -487,27 +457,27 @@ c
               npro   = lcblk(1,iblk+1) - iel 
               
               ngauss = nint(lcsyst)
-c     
-c.... compute and assemble diffusive flux vector residual, qres,
-c     and lumped mass matrix, rmass
+!     
+!.... compute and assemble diffusive flux vector residual, qres,
+!     and lumped mass matrix, rmass
 
-              call AsIqSclr (y,                   x,                    
-     &                       shp(lcsyst,1:nshl,:), 
-     &                       shgl(lcsyst,:,1:nshl,:),
-     &                       mien(iblk)%p,     qres,                   
-     &                       rmass )
+              call AsIqSclr (y,                   x,                     &
+                             shp(lcsyst,1:nshl,:),  &
+                             shgl(lcsyst,:,1:nshl,:), &
+                             mien(iblk)%p,     qres,                    &
+                             rmass )
        
            enddo
        
-c
-c.... form the diffusive flux approximation
-c
+!
+!.... form the diffusive flux approximation
+!
            call qpbcSclr ( rmass, qres, iBC, iper, ilwork )       
-c
+!
         endif 
-c
-c.... -------------------->   interior elements   <--------------------
-c
+!
+!.... -------------------->   interior elements   <--------------------
+!
         res    = zero
         spmass = zero
 
@@ -518,9 +488,9 @@ c
         if ((impl(1)/10) .eq. 0) then   ! no flow solve so flxID was not zeroed
            flxID = zero
         endif
-c
-c.... loop over the element-blocks
-c
+!
+!.... loop over the element-blocks
+!
         do iblk = 1, nelblk
           iblock = iblk         ! used in local mass inverse (p>2)
           iel    = lcblk(1,iblk)
@@ -531,61 +501,61 @@ c
           npro   = lcblk(1,iblk+1) - iel
 
           ngauss = nint(lcsyst)
-c
-c.... allocate the element matrices
-c
+!
+!.... allocate the element matrices
+!
           allocate ( xSebe(npro,nshl,nshl) )
-c
-c.... compute and assemble the residual and tangent matrix
-c
-          call AsIGMRSclr(y,                   ac,
-     &                 x,
-     &                 shp(lcsyst,1:nshl,:), 
-     &                 shgl(lcsyst,:,1:nshl,:),
-     &                 mien(iblk)%p,        res,
-     &                 qres,                xSebe, mxmudmi(iblk)%p )
-c
-c.... satisfy the BC's on the implicit LHS
-c     
+!
+!.... compute and assemble the residual and tangent matrix
+!
+          call AsIGMRSclr(y,                   ac, &
+                       x, &
+                       shp(lcsyst,1:nshl,:),  &
+                       shgl(lcsyst,:,1:nshl,:), &
+                       mien(iblk)%p,        res, &
+                       qres,                xSebe, mxmudmi(iblk)%p )
+!
+!.... satisfy the BC's on the implicit LHS
+!     
           if (impl(1) .ne. 9 .and. lhs .eq. 1) then
-             call fillsparseSclr (mien(iblk)%p, 
-     &                 xSebe,             lhsS,
-     &                 rowp,              colm)
+             call fillsparseSclr (mien(iblk)%p,  &
+                       xSebe,             lhsS, &
+                       rowp,              colm)
           endif
 
           deallocate ( xSebe )
-c
-c.... end of interior element loop
-c
+!
+!.... end of interior element loop
+!
        enddo
 
-c
-c.... add in lumped mass contributions if needed
-c
+!
+!.... add in lumped mass contributions if needed
+!
        if((flmpr.ne.0).or.(flmpl.ne.0)) then
           call lmassaddSclr(ac(:,isclr), res,rowp,colm,lhsS,gmass)
        endif
 
        have_local_mass = 1
-c
-c
-c  call DtN routine which updates the flux to be consistent with the
-c  current solution values.  We will put the result in the last slot of
-c  BC (we added a space in input.f).  That way we can localize this
-c  value to the boundary elements.  This is important to keep from calling
-c  the DtN evaluator more than once per node (it can be very expensive).
-c
+!
+!
+!  call DtN routine which updates the flux to be consistent with the
+!  current solution values.  We will put the result in the last slot of
+!  BC (we added a space in input.f).  That way we can localize this
+!  value to the boundary elements.  This is important to keep from calling
+!  the DtN evaluator more than once per node (it can be very expensive).
+!
          if(idtn.eq.1)  call DtN(iBC,BC,y)
-c
-c.... -------------------->   boundary elements   <--------------------
-c
-c
-c.... loop over the boundary elements
-c
+!
+!.... -------------------->   boundary elements   <--------------------
+!
+!
+!.... loop over the boundary elements
+!
         do iblk = 1, nelblb
-c
-c.... set up the parameters
-c
+!
+!.... set up the parameters
+!
           iel    = lcblkb(1,iblk)
           lcsyst = lcblkb(3,iblk)
           nenl   = lcblkb(5,iblk)  ! no. of vertices per element
@@ -601,67 +571,68 @@ c
           else
              ngaussb = nintb(lcsyst)
           endif
-c
-c localize the dtn boundary condition
-c
+!
+! localize the dtn boundary condition
+!
 
-          if(idtn.eq.1)   call dtnl(   iBC, BC, mienb(iblk)%p,
-     &              miBCB(iblk)%p,  mBCB(iblk)%p)
+          if(idtn.eq.1)   call dtnl(   iBC, BC, mienb(iblk)%p, &
+                    miBCB(iblk)%p,  mBCB(iblk)%p)
 
-c
-c.... compute and assemble the residuals corresponding to the 
-c     boundary integral
-c
-          call AsBSclr (y,                       x,
-     &                  shpb(lcsyst,1:nshl,:),
-     &                  shglb(lcsyst,:,1:nshl,:),
-     &                  mienb(iblk)%p,           mmatb(iblk)%p,
-     &                  miBCB(iblk)%p,           mBCB(iblk)%p,
-     &                  res)
-c
-c.... end of boundary element loop
-c
+!
+!.... compute and assemble the residuals corresponding to the 
+!     boundary integral
+!
+          call AsBSclr (y,                       x, &
+                        shpb(lcsyst,1:nshl,:), &
+                        shglb(lcsyst,:,1:nshl,:), &
+                        mienb(iblk)%p,           mmatb(iblk)%p, &
+                        miBCB(iblk)%p,           mBCB(iblk)%p, &
+                        res)
+!
+!.... end of boundary element loop
+!
         enddo
-c
-c
-c.... -------------------->   communications <-------------------------
-c
+!
+!
+!.... -------------------->   communications <-------------------------
+!
 
       if (numpe > 1) then
         call commu (res  , ilwork, 1  , 'in ')
       endif
 
-c
-c.... ---------------------->   post processing  <----------------------
-c
-c.... satisfy the BCs on the residual
-c
+!
+!.... ---------------------->   post processing  <----------------------
+!
+!.... satisfy the BCs on the residual
+!
       call bc3ResSclr (iBC,  res,  iper, ilwork)
-c
-c.... return
-c
-CAD      call timer ('Back    ')
+!
+!.... return
+!
+!AD      call timer ('Back    ')
       return
       end
-c
-c
-c....routine to compute and return the flow rates for coupled surfaces of a given type
-c        
+!
+!
+!....routine to compute and return the flow rates for coupled surfaces of a given type
+!        
       subroutine GetFlowQ (qsurf, y, srfIdList, numSrfs)
         
       use pvsQbi  ! brings in NABI
-c
-      include "common.h"
+!
+       use phcommonvars
+ IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-c
+!
       real*8  y(nshg,3)
       real*8  qsurf(0:MAXSURF), qsurfProc(0:MAXSURF)
       integer numSrfs, irankCoupled, srfIdList(0:MAXSURF)
-c
-c note we only need the first three entries (u) from y
+!
+! note we only need the first three entries (u) from y
 
       qsurfProc=zero
-c      
+!      
       do i = 1, nshg
          if(numSrfs .gt. zero) then
           do k = 1, numSrfs
@@ -669,46 +640,47 @@ c
             if (srfIdList(k) .eq. ndsurf(i)) then
                irankCoupled = k
                do j = 1, 3              
-                  qsurfProc(irankCoupled) = qsurfProc(irankCoupled)
-     &                            + NABI(i,j)*y(i,j)
+                  qsurfProc(irankCoupled) = qsurfProc(irankCoupled) &
+                                  + NABI(i,j)*y(i,j)
                enddo
             endif      
           enddo       
          endif
       enddo
-c      
-c     at this point, each qsurf has its "nodes" contributions to Q
-c     accumulated into qsurf. Note, because NABI is on processor this
-c     will NOT be Q for the surface yet
-c
-c.... reduce integrated Q for each surface, push on qsurf
-c
+!      
+!     at this point, each qsurf has its "nodes" contributions to Q
+!     accumulated into qsurf. Note, because NABI is on processor this
+!     will NOT be Q for the surface yet
+!
+!.... reduce integrated Q for each surface, push on qsurf
+!
       npars=MAXSURF+1
-      call MPI_ALLREDUCE (qsurfProc, qsurf(:), npars,
-     &        MPI_DOUBLE_PRECISION,MPI_SUM, MPI_COMM_WORLD,ierr) 
-c
-c.... return
-c
+      call MPI_ALLREDUCE (qsurfProc, qsurf(:), npars, &
+              MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr) 
+!
+!.... return
+!
       return
       end 
-c
-c.... routine to compute and return the flow rates multiplied by a profile function
-c.... for constrained surfaces
-c        
+!
+!.... routine to compute and return the flow rates multiplied by a profile function
+!.... for constrained surfaces
+!        
       subroutine GetProfileFlowQ (qsurf, y, srfIdList, numSrfs)
         
       use pvsQbi  ! brings in PNABI, ndsurf
-c
-      include "common.h"
+!
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
 
       real*8  y(nshg,3)
       real*8  qsurf(0:MAXSURF), qsurfProc(0:MAXSURF)
       integer numSrfs, irankCoupled, srfIdList(0:MAXSURF)
       integer i, j, k
-c
-c.... clear the vectors 
-c
+!
+!.... clear the vectors 
+!
       qsurfProc = zero
       do i = 1,nshg      
          if(numSrfs .gt. zero) then
@@ -717,57 +689,58 @@ c
                if (srfIdList(k) .eq. ndsurf(i)) then
                   irankCoupled=k
                   do j = 1, 3              
-                     qsurfProc(irankCoupled) = qsurfProc(irankCoupled)
-     &                  +PNABI(i,j)*y(i,j)
+                     qsurfProc(irankCoupled) = qsurfProc(irankCoupled) &
+                        +PNABI(i,j)*y(i,j)
                   enddo
                endif      
             enddo       
          endif      
       enddo
-c      
-c     at this point, each qsurf has its "nodes" contributions to Q
-c     accumulated into qsurf. Note, because PNABI is on processor this
-c     will NOT be Q for the surface yet
-c
-c.... reduce integrated Q for each surface, push on qsurf
-c
+!      
+!     at this point, each qsurf has its "nodes" contributions to Q
+!     accumulated into qsurf. Note, because PNABI is on processor this
+!     will NOT be Q for the surface yet
+!
+!.... reduce integrated Q for each surface, push on qsurf
+!
       npars=MAXSURF+1
-      call MPI_ALLREDUCE (qsurfProc, qsurf, npars,
-     &        MPI_DOUBLE_PRECISION,MPI_SUM, MPI_COMM_WORLD,ierr)
-c
-c.... return
-c
+      call MPI_ALLREDUCE (qsurfProc, qsurf, npars, &
+              MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr)
+!
+!.... return
+!
       return
       end     
-c
-c....routine for computing inner products of velocity components for constrained surfaces.
-c    Inner product is computed by calling GetInnerProduct after this routine.
-c
+!
+!....routine for computing inner products of velocity components for constrained surfaces.
+!    Inner product is computed by calling GetInnerProduct after this routine.
+!
 	subroutine CalcNANBLagrange(col, row, y)
-c
-c.... Data declaration
-c
+!
+!.... Data declaration
+!
       use LagrangeMultipliers
       use pvsQbi
  
-      include "common.h"
-c
-	integer	col(nshg+1),	    row(nnz_tot)
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+      integer	col(nshg+1),	    row(nnz_tot)
       real*8    y(nshg,3)
-c
-	real*8	tmp1,	tmp2,	tmp3
-	integer	p,  i,	j,	k,  n,  m
-c
-c.... clear the vector
-c
+!
+      real*8	tmp1,	tmp2,	tmp3
+      integer	p,  i,	j,	k,  n,  m
+!
+!.... clear the vector
+!
 	if (LagSwitch .gt. 0) then 
          NANBLagrange(4:6,:,:) = zero
 	else
 	   NANBLagrange = zero
 	endif
-c
-c....calculate NANBLagrange
-c	
+!
+!....calculate NANBLagrange
+!	
 	do i = 1, nshg
 	   do n=1, 3
    	      do p = 1, numLagrangeSrfs
@@ -777,20 +750,20 @@ c
                  if (nsrflistLagrange(p).eq.ndsurf(i)) then 
 	            do k = col(i), col(i+1)-1
 		          j = row(k)
-c
-		          tmp1 = tmp1
-     1		         +lhsLagL(1,k,n)*y(j,1)
-     2		         +lhsLagL(4,k,n)*y(j,2)
-     3		         +lhsLagL(7,k,n)*y(j,3)
-		          tmp2 = tmp2
-     1		         +lhsLagL(2,k,n)*y(j,1)
-     2		         +lhsLagL(5,k,n)*y(j,2)
-     3		         +lhsLagL(8,k,n)*y(j,3)
-		          tmp3 = tmp3
-     1		         +lhsLagL(3,k,n)*y(j,1)
-     2		         +lhsLagL(6,k,n)*y(j,2)
-     3		         +lhsLagL(9,k,n)*y(j,3)
-c
+!
+		          tmp1 = tmp1 &
+      		         +lhsLagL(1,k,n)*y(j,1) &
+      		         +lhsLagL(4,k,n)*y(j,2) &
+      		         +lhsLagL(7,k,n)*y(j,3)
+		          tmp2 = tmp2 &
+      		         +lhsLagL(2,k,n)*y(j,1) &
+      		         +lhsLagL(5,k,n)*y(j,2) &
+      		         +lhsLagL(8,k,n)*y(j,3)
+		          tmp3 = tmp3 &
+      		         +lhsLagL(3,k,n)*y(j,1) &
+      		         +lhsLagL(6,k,n)*y(j,2) &
+      		         +lhsLagL(9,k,n)*y(j,3)
+!
 	            enddo
 	            if (LagSwitch .gt. 0) then 
 	               m = n+3
@@ -807,29 +780,30 @@ c
  	      enddo
  	   enddo
  	enddo
-c
+!
       return 
       end	      
                         
-c
-c....routine to compute inner products for constrained surfaces.
-c    CalcNANBLagrange should be called first
-c        
+!
+!....routine to compute inner products for constrained surfaces.
+!    CalcNANBLagrange should be called first
+!        
       subroutine GetInnerProduct (qsurf, y, srfIdList, numSrfs)
-c        
+!        
       use LagrangeMultipliers ! brings in NANBLagrange
       use pvsQbi  ! brings in ndsurf
-c
-      include "common.h"
+!
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-c
+!
       real*8  y(nshg,3)
       real*8  qsurf(0:MAXSURF,3), qsurfProc(0:MAXSURF,3)
       integer numSrfs, irankCoupled, srfIdList(0:MAXSURF)
       integer i, j, k, n
-c
-c.... clear the vector 
-c
+!
+!.... clear the vector 
+!
       qsurfProc = zero
       if(numSrfs.gt.zero) then
          do i = 1, nshg
@@ -837,42 +811,43 @@ c
                do k = 1, numSrfs      
                   if (srfIdList(k) .eq. ndsurf(i)) then
                      do j=1, 3
-                        qsurfProc(k,n)=qsurfProc(k,n)
-     &                     +NANBLagrange(n,i,j)*y(i,j)
+                        qsurfProc(k,n)=qsurfProc(k,n) &
+                           +NANBLagrange(n,i,j)*y(i,j)
                      enddo
                   endif
                enddo      
             enddo       
          enddo      
       endif
-c      
-c     at this point, each qsurf has its "nodes" contributions to Q
-c     accumulated into qsurf. Note, because NABI is on processor this
-c     will NOT be Q for the surface yet
-c
-c.... reduce integrated Q for each surface, push on qsurf
-c
+!      
+!     at this point, each qsurf has its "nodes" contributions to Q
+!     accumulated into qsurf. Note, because NABI is on processor this
+!     will NOT be Q for the surface yet
+!
+!.... reduce integrated Q for each surface, push on qsurf
+!
       do n=1, 3
          npars=MAXSURF+1
-         call MPI_ALLREDUCE (qsurfProc(:,n), qsurf(:,n), npars,
-     &        MPI_DOUBLE_PRECISION,MPI_SUM, MPI_COMM_WORLD,ierr)
+         call MPI_ALLREDUCE (qsurfProc(:,n), qsurf(:,n), npars, &
+              MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr)
       enddo  
-c
-c.... return
-c
+!
+!.... return
+!
       return
       end      
-c
-c... routine to multiply 1/mu * L transpose matrix for Lagrange Multipliers
-c
+!
+!... routine to multiply 1/mu * L transpose matrix for Lagrange Multipliers
+!
       subroutine LagMultiplyMatrixTranspose(srfIDList, numSrfs)     
 
       use pvsQbi  ! brings in NABI
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
-c
-      include "common.h"
+!
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-c
+!
       real*8  DiagonalDelta,          DiagonalDeltaSurf
       integer  srfIDList(0:MAXSURF),  numSrfs 
      
@@ -884,12 +859,12 @@ c
             DiagonalDeltaSurf = zero
             DiagonalDeltaSurf = DiagonalDelta*LagMeanFlow(k)
             if (srfIDList(k).eq.ndsurf(i)) then 
-               LagAPproduct(i,1:3)=LagAPproduct(i,1:3)+DiagonalDeltaSurf
-     &            *((NANBLagrange(1,i,1:3)-PQLagrange(k,1)*NABI(i,1:3)
-     &            -QLagrange(k,1)*PNABI(i,1:3)/LagProfileArea(k)
-     &            +QLagrange(k,1)*NABI(i,1:3)*ProfileDelta(k))
-     &            *AddLag(k,1)+NANBLagrange(2,i,1:3)*AddLag(k,2)
-     &            +NANBLagrange(3,i,1:3)*AddLag(k,3) )
+               LagAPproduct(i,1:3)=LagAPproduct(i,1:3)+DiagonalDeltaSurf &
+                  *((NANBLagrange(1,i,1:3)-PQLagrange(k,1)*NABI(i,1:3) &
+                  -QLagrange(k,1)*PNABI(i,1:3)/LagProfileArea(k) &
+                  +QLagrange(k,1)*NABI(i,1:3)*ProfileDelta(k)) &
+                  *AddLag(k,1)+NANBLagrange(2,i,1:3)*AddLag(k,2) &
+                  +NANBLagrange(3,i,1:3)*AddLag(k,3) )
             endif
          enddo
       enddo  
@@ -897,17 +872,18 @@ c
       return
       end
 
-c
-c... routine to multiply L matrix for Lagrange Multipliers
-c
+!
+!... routine to multiply L matrix for Lagrange Multipliers
+!
       subroutine LagMultiplyMatrix (Dy, CaseNumber, srfIDList, numSrfs) 
 
       use pvsQbi  ! brings in NABI
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
-c
-      include "common.h"
+!
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-c
+!
       real*8  Dy(nshg,3),    DiagonalDeltaSurf
       real*8  DiagonalDelta, ProcAddLag(0:MAXSURF,3)
       integer CaseNumber, srfIDList(0:MAXSURF), numSrfs 
@@ -918,10 +894,10 @@ c
          call GetFlowQ(ProcAddLag(:,1), Dy(:,1:3), srfIDList, numSrfs)  
          QLagrange(1:numSrfs,2)=ProcAddLag(1:numSrfs,1)
          ProcAddLag = zero
-         call GetProfileFlowQ(ProcAddLag(:,1), Dy(:,1:3), srfIDList,
-     &      numSrfs)    
-         PQLagrange(1:numSrfs,2)=ProcAddLag(1:numSrfs,1)
-     &      /LagProfileArea(1:numSrfs) 
+         call GetProfileFlowQ(ProcAddLag(:,1), Dy(:,1:3), srfIDList, &
+            numSrfs)    
+         PQLagrange(1:numSrfs,2)=ProcAddLag(1:numSrfs,1) &
+            /LagProfileArea(1:numSrfs) 
          ProcAddLag = zero
          call GetInnerProduct(ProcAddLag, Dy(:,1:3), srfIDList, numSrfs)
          IPLagrange(1:numSrfs,4:6)=ProcAddLag(1:numSrfs,1:3)  
@@ -930,10 +906,10 @@ c
       do k = 1, numSrfs
          DiagonalDeltaSurf = zero
          DiagonalDeltaSurf = DiagonalDelta * LagMeanFlow(k)
-         AddLag(k,1)=DiagonalDeltaSurf*
-     &      (IPLagrange(k,4)-PQLagrange(k,1)*QLagrange(k,2)
-     &      -QLagrange(k,1)*PQLagrange(k,2)
-     &      +QLagrange(k,1)*QLagrange(k,2)*ProfileDelta(k))
+         AddLag(k,1)=DiagonalDeltaSurf* &
+            (IPLagrange(k,4)-PQLagrange(k,1)*QLagrange(k,2) &
+            -QLagrange(k,1)*PQLagrange(k,2) &
+            +QLagrange(k,1)*QLagrange(k,2)*ProfileDelta(k))
          AddLag(k,2)=DiagonalDeltaSurf*IPLagrange(k,5)
          AddLag(k,3)=DiagonalDeltaSurf*IPLagrange(k,6)
       enddo  
@@ -942,9 +918,9 @@ c
       end
 
         
-c
-c... routine to couple pressure with flow rate for each coupled surface
-c
+!
+!... routine to couple pressure with flow rate for each coupled surface
+!
       subroutine ElmpvsQ (res,y,sign)     
 
       use pvsQbi  ! brings in NABI
@@ -953,25 +929,26 @@ c
       use convolCORFlow !brings in the current park of convol coef for Cor BC
       use incpBC        !brings in the current part of coef for INCP BC
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
-c
-      include "common.h"
+!
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
-c
+!
       real*8  res(nshg,ndof), y(nshg,3)
       real*8  p(0:MAXSURF),   q(0:MAXSURF,3)
       integer irankCoupled, i, j, k
-c
-c... get p for the resistance BC
-c           
+!
+!... get p for the resistance BC
+!           
       if(numResistSrfs.gt.zero) then
         call GetFlowQ(p,y,nsrflistResist,numResistSrfs)  !Q pushed into p but at this point 
                           ! p is just the full Q for each surface
         p(:)=sign*p(:)*ValueListResist(:) ! p=QR  now we have the true pressure on each
                                         ! outflow surface.  Note sign is -1
                                         ! for RHS, +1 for LHS
-c
-c....  multiply it by integral NA n_i
-c     
+!
+!....  multiply it by integral NA n_i
+!     
        do i = 1,nshg
           do k = 1,numResistSrfs
               irankCoupled = 0
@@ -983,9 +960,9 @@ c
        enddo
        
       endif !end of coupling for Resistance BC     
-c
-c... get p for the impedance BC
-c     
+!
+!... get p for the impedance BC
+!     
       if(numImpSrfs.gt.zero) then
         call GetFlowQ(p,y,nsrflistImp,numImpSrfs)  !Q pushed into p but at this point 
                           ! p is just the full Q for each surface
@@ -996,9 +973,9 @@ c
                p(j)= sign*p(j)*ImpConvCoef(ntimeptpT+2,j)
             endif
         enddo             
-c
-c....  multiply it by integral NA n_i
-c     
+!
+!....  multiply it by integral NA n_i
+!     
        do i = 1,nshg
           do k = 1,numImpSrfs
               irankCoupled = 0
@@ -1010,9 +987,9 @@ c
        enddo
        
       endif !end of coupling for Impedance BC
-c
-c... get p for the RCR BC
-c     
+!
+!... get p for the RCR BC
+!     
       if(numRCRSrfs.gt.zero) then
         call GetFlowQ(p,y,nsrflistRCR,numRCRSrfs)  !Q pushed into p but at this point 
                           ! p is just the full Q for each surface
@@ -1025,9 +1002,9 @@ c
             endif
         enddo
              
-c
-c....  multiply it by integral NA n_i
-c     
+!
+!....  multiply it by integral NA n_i
+!     
        do i = 1,nshg
           do k = 1,numRCRSrfs
               irankCoupled = 0
@@ -1038,25 +1015,25 @@ c
           enddo   
        enddo       
       endif !end of coupling for RCR BC
-c
-c... get p for the Coronary BC
-c    
+!
+!... get p for the Coronary BC
+!    
       if(numCORSrfs.gt.zero) then
         call GetFlowQ(p,y,nsrflistCOR,numCORSrfs)  !Q pushed into p but at this point 
                           ! p is just the full Q for each surface
         do j = 1,numCORSrfs
             if(sign.lt.zero) then ! RHS so -1
-                p(j)= sign*(poldCOR(j) + 
-     &             p(j)*CORConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
+                p(j)= sign*(poldCOR(j) +  &
+                   p(j)*CORConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
                                 !check lstep - need it to be integer and value n not n+1
                 p(j)= p(j) +sign* HopCOR(j) ! H operator contribution 
             elseif(sign.gt.zero) then ! LHS so sign is positive
                 p(j)= sign*p(j)*CORConvCoef(lstep+2,j)
             endif
         enddo
-c
-c....  multiply it by integral NA n_i
-c     
+!
+!....  multiply it by integral NA n_i
+!     
        do i = 1,nshg
           do k = 1,numCORSrfs
               irankCoupled = 0
@@ -1068,9 +1045,9 @@ c
        enddo
 
       endif !end of coupling for Coronary BC
-c
-c.... get p for the coupled inflow BC
-c  
+!
+!.... get p for the coupled inflow BC
+!  
       if (numINCPSrfs .gt. zero) then
          call GetFlowQ(p, y, nsrflistINCP, numINCPSrfs)
          do j=1, numINCPSrfs
@@ -1080,9 +1057,9 @@ c
                p(j)=sign*p(j)*INCPCoef(1,j)
             endif
          enddo
-c
-c.... multiply p by integral NA*n_i
-c
+!
+!.... multiply p by integral NA*n_i
+!
          do i=1, nshg
             do k=1, numINCPSrfs
                irankCoupled = 0
@@ -1095,28 +1072,28 @@ c
             enddo
          enddo
       endif  !end of coupling for INCP BC 
-c
-c... get p for the Lagrange multipliers
-c           
+!
+!... get p for the Lagrange multipliers
+!           
       if(numLagrangeSrfs .gt. zero) then
          if(sign .lt. zero) then ! RHS so -1
             p = zero
-            call GetFlowQ(p, y, nsrflistLagrange,
-     &         numLagrangeSrfs)  
+            call GetFlowQ(p, y, nsrflistLagrange, &
+               numLagrangeSrfs)  
             QLagrange(1:numLagrangeSrfs,1)=p(1:numLagrangeSrfs)
             p = zero
-            call GetProfileFlowQ(p, y, nsrflistLagrange,
-     &         numLagrangeSrfs)    !flow rate multiplied by a profile function 
-            PQLagrange(1:numLagrangeSrfs,1)=p(1:numLagrangeSrfs)
-     &         /LagProfileArea(1:numLagrangeSrfs) 
+            call GetProfileFlowQ(p, y, nsrflistLagrange, &
+               numLagrangeSrfs)    !flow rate multiplied by a profile function 
+            PQLagrange(1:numLagrangeSrfs,1)=p(1:numLagrangeSrfs) &
+               /LagProfileArea(1:numLagrangeSrfs) 
             q = zero
-            call GetInnerProduct(q, y, nsrflistLagrange,
-     &            numLagrangeSrfs)
+            call GetInnerProduct(q, y, nsrflistLagrange, &
+                  numLagrangeSrfs)
             IPLagrange(1:numLagrangeSrfs,1:3)=q(1:numLagrangeSrfs,1:3)
             do k = 1,numLagrangeSrfs
-               Penalty(k,1)= 
-     &           abs( IPLagrange(k,1)-two*QLagrange(k,1)*PQLagrange(k,1)
-     &            +QLagrange(k,1)**2*ProfileDelta(k) )*LagMeanFlow(k)
+               Penalty(k,1)=  &
+                 abs( IPLagrange(k,1)-two*QLagrange(k,1)*PQLagrange(k,1) &
+                  +QLagrange(k,1)**2*ProfileDelta(k) )*LagMeanFlow(k)
                Penalty(k,2)= abs(IPLagrange(k,2))*LagMeanFlow(k)
                Penalty(k,3)= abs(IPLagrange(k,3))*LagMeanFlow(k)
                resL(k,1)=two*ScaleFactor(k,1)*Lagalpha(k,1)-Penalty(k,1)
@@ -1133,58 +1110,58 @@ c
                   else
                      do i = 1,nshg
                         if (nsrflistLagrange(k).eq.ndsurf(i)) then 
-                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k)
-     &                        *(-Lagalpha(k,1)+PenaltyCoeff(k,1)
-     &                        *Penalty(k,1))*(NANBLagrange(1,i,1:3)-
-     &                        PQLagrange(k,1)*NABI(i,1:3)-QLagrange(k,1)
-     &                        *PNABI(i,1:3)/LagProfileArea(k)+
-     &                        QLagrange(k,1)*NABI(i,1:3)
-     &                        *ProfileDelta(k))+sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,2)+PenaltyCoeff(k,2)
-     &                        *Penalty(k,2))*NANBLagrange(2,i,1:3)
-     &                        +sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,3)+PenaltyCoeff(k,3)
-     &                        *Penalty(k,3))*NANBLagrange(3,i,1:3)   
+                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k) &
+                              *(-Lagalpha(k,1)+PenaltyCoeff(k,1) &
+                              *Penalty(k,1))*(NANBLagrange(1,i,1:3)- &
+                              PQLagrange(k,1)*NABI(i,1:3)-QLagrange(k,1) &
+                              *PNABI(i,1:3)/LagProfileArea(k)+ &
+                              QLagrange(k,1)*NABI(i,1:3) &
+                              *ProfileDelta(k))+sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,2)+PenaltyCoeff(k,2) &
+                              *Penalty(k,2))*NANBLagrange(2,i,1:3) &
+                              +sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,3)+PenaltyCoeff(k,3) &
+                              *Penalty(k,3))*NANBLagrange(3,i,1:3)   
                         endif
                      enddo
                   endif
                else    
                   do i = 1,nshg
                      if (nsrflistLagrange(k).eq.ndsurf(i)) then 
-                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k)
-     &                        *(-Lagalpha(k,1)+PenaltyCoeff(k,1)
-     &                        *Penalty(k,1))*(NANBLagrange(1,i,1:3)-
-     &                        PQLagrange(k,1)*NABI(i,1:3)-QLagrange(k,1)
-     &                        *PNABI(i,1:3)/LagProfileArea(k)+
-     &                        QLagrange(k,1)*NABI(i,1:3)
-     &                        *ProfileDelta(k))+sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,2)+PenaltyCoeff(k,2)
-     &                        *Penalty(k,2))*NANBLagrange(2,i,1:3)
-     &                        +sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,3)+PenaltyCoeff(k,3)
-     &                        *Penalty(k,3))*NANBLagrange(3,i,1:3)   
+                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k) &
+                              *(-Lagalpha(k,1)+PenaltyCoeff(k,1) &
+                              *Penalty(k,1))*(NANBLagrange(1,i,1:3)- &
+                              PQLagrange(k,1)*NABI(i,1:3)-QLagrange(k,1) &
+                              *PNABI(i,1:3)/LagProfileArea(k)+ &
+                              QLagrange(k,1)*NABI(i,1:3) &
+                              *ProfileDelta(k))+sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,2)+PenaltyCoeff(k,2) &
+                              *Penalty(k,2))*NANBLagrange(2,i,1:3) &
+                              +sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,3)+PenaltyCoeff(k,3) &
+                              *Penalty(k,3))*NANBLagrange(3,i,1:3)   
                      endif
                   enddo
                endif
             enddo
             AddLag(:,1:3) = resL(:,1:3)
-            call LagMultiplyMatrixTranspose(nsrflistLagrange,
-     &         numLagrangeSrfs)
-            res(:,1:3) = res(:,1:3) + LagAPproduct(:,1:3)
-     &         /ScaleFactor(1,1)/alfi/gami/two
+            call LagMultiplyMatrixTranspose(nsrflistLagrange, &
+               numLagrangeSrfs)
+            res(:,1:3) = res(:,1:3) + LagAPproduct(:,1:3) &
+               /ScaleFactor(1,1)/alfi/gami/two
          elseif(sign .gt. zero) then ! LHS 
             p = zero
-            call GetFlowQ(p, y, nsrflistLagrange,
-     &         numLagrangeSrfs)  
+            call GetFlowQ(p, y, nsrflistLagrange, &
+               numLagrangeSrfs)  
             QLagrange(1:numLagrangeSrfs,2)=p(1:numLagrangeSrfs)
             p = zero
-            call GetProfileFlowQ(p, y, nsrflistLagrange,
-     &         numLagrangeSrfs)    !flow rate multiplied by a profile function 
-            PQLagrange(1:numLagrangeSrfs,2)=p(1:numLagrangeSrfs)
-     &         /LagProfileArea(1:numLagrangeSrfs) 
+            call GetProfileFlowQ(p, y, nsrflistLagrange, &
+               numLagrangeSrfs)    !flow rate multiplied by a profile function 
+            PQLagrange(1:numLagrangeSrfs,2)=p(1:numLagrangeSrfs) &
+               /LagProfileArea(1:numLagrangeSrfs) 
             q = zero
-            call GetInnerProduct(q, y, nsrflistLagrange,
-     &         numLagrangeSrfs)
+            call GetInnerProduct(q, y, nsrflistLagrange, &
+               numLagrangeSrfs)
             IPLagrange(1:numLagrangeSrfs,4:6)=q(1:numLagrangeSrfs,1:3)  
             do k = 1, numLagrangeSrfs
                if (numINCPSrfs .gt. zero) then
@@ -1192,71 +1169,71 @@ c
                   else
                      do i = 1,nshg
                         if (nsrflistLagrange(k).eq.ndsurf(i)) then 
-                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,1)+PenaltyCoeff(k,1)
-     &                        *Penalty(k,1))*(NANBLagrange(4,i,1:3)-
-     &                        NABI(i,1:3)*PQLagrange(k,2)-QLagrange(k,2)
-     &                        *PNABI(i,1:3)/LagProfileArea(k)+
-     &                        QLagrange(k,2)*NABI(i,1:3)*
-     &                        ProfileDelta(k))  
-     &                        +sign*LagMeanFlow(k)*LagMeanFlow(k)
-     &                        *PenaltyCoeff(k,1)*(NANBLagrange(1,i,1:3)-
-     &                        NABI(i,1:3)*PQLagrange(k,1)-QLagrange(k,1)
-     &                        *PNABI(i,1:3)/LagProfileArea(k)+
-     &                        QLagrange(k,1)*NABI(i,1:3)*
-     &                        ProfileDelta(k))*(IPLagrange(k,4)
-     &                        -PQLagrange(k,1)*QLagrange(k,2)
-     &                        -QLagrange(k,1)*PQLagrange(k,2)
-     &                        +QLagrange(k,1)*QLagrange(k,2)
-     &                        *ProfileDelta(k))+sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,2)+PenaltyCoeff(k,2)
-     &                        *Penalty(k,2))*NANBLagrange(5,i,1:3)
-     &                        +sign*LagMeanFlow(k)*(-Lagalpha(k,3)+
-     &                        PenaltyCoeff(k,3)*Penalty(k,3))
-     &                        *NANBLagrange(6,i,1:3)+sign*LagMeanFlow(k)
-     &                        *LagMeanFlow(k)*PenaltyCoeff(k,2)*
-     &                        NANBLagrange(2,i,1:3)*IPLagrange(k,5)+sign
-     &                        *LagMeanFlow(k)**2*PenaltyCoeff(k,3)
-     &                        *NANBLagrange(3,i,1:3)*IPLagrange(k,6)  
+                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,1)+PenaltyCoeff(k,1) &
+                              *Penalty(k,1))*(NANBLagrange(4,i,1:3)- &
+                              NABI(i,1:3)*PQLagrange(k,2)-QLagrange(k,2) &
+                              *PNABI(i,1:3)/LagProfileArea(k)+ &
+                              QLagrange(k,2)*NABI(i,1:3)* &
+                              ProfileDelta(k))   &
+                              +sign*LagMeanFlow(k)*LagMeanFlow(k) &
+                              *PenaltyCoeff(k,1)*(NANBLagrange(1,i,1:3)- &
+                              NABI(i,1:3)*PQLagrange(k,1)-QLagrange(k,1) &
+                              *PNABI(i,1:3)/LagProfileArea(k)+ &
+                              QLagrange(k,1)*NABI(i,1:3)* &
+                              ProfileDelta(k))*(IPLagrange(k,4) &
+                              -PQLagrange(k,1)*QLagrange(k,2) &
+                              -QLagrange(k,1)*PQLagrange(k,2) &
+                              +QLagrange(k,1)*QLagrange(k,2) &
+                              *ProfileDelta(k))+sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,2)+PenaltyCoeff(k,2) &
+                              *Penalty(k,2))*NANBLagrange(5,i,1:3) &
+                              +sign*LagMeanFlow(k)*(-Lagalpha(k,3)+ &
+                              PenaltyCoeff(k,3)*Penalty(k,3)) &
+                              *NANBLagrange(6,i,1:3)+sign*LagMeanFlow(k) &
+                              *LagMeanFlow(k)*PenaltyCoeff(k,2)* &
+                              NANBLagrange(2,i,1:3)*IPLagrange(k,5)+sign &
+                              *LagMeanFlow(k)**2*PenaltyCoeff(k,3) &
+                              *NANBLagrange(3,i,1:3)*IPLagrange(k,6)  
                         endif    
                      enddo
                   endif
                else      
                   do i = 1,nshg
                      if (nsrflistLagrange(k).eq.ndsurf(i)) then 
-                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,1)+PenaltyCoeff(k,1)
-     &                        *Penalty(k,1))*(NANBLagrange(4,i,1:3)-
-     &                        NABI(i,1:3)*PQLagrange(k,2)-QLagrange(k,2)
-     &                        *PNABI(i,1:3)/LagProfileArea(k)+
-     &                        QLagrange(k,2)*NABI(i,1:3)*
-     &                        ProfileDelta(k))  
-     &                        +sign*LagMeanFlow(k)*LagMeanFlow(k)
-     &                        *PenaltyCoeff(k,1)*(NANBLagrange(1,i,1:3)-
-     &                        NABI(i,1:3)*PQLagrange(k,1)-QLagrange(k,1)
-     &                        *PNABI(i,1:3)/LagProfileArea(k)+
-     &                        QLagrange(k,1)*NABI(i,1:3)*
-     &                        ProfileDelta(k))*(IPLagrange(k,4)
-     &                        -PQLagrange(k,1)*QLagrange(k,2)
-     &                        -QLagrange(k,1)*PQLagrange(k,2)
-     &                        +QLagrange(k,1)*QLagrange(k,2)
-     &                        *ProfileDelta(k))+sign*LagMeanFlow(k)*
-     &                        (-Lagalpha(k,2)+PenaltyCoeff(k,2)
-     &                        *Penalty(k,2))*NANBLagrange(5,i,1:3)
-     &                        +sign*LagMeanFlow(k)*(-Lagalpha(k,3)+
-     &                        PenaltyCoeff(k,3)*Penalty(k,3))
-     &                        *NANBLagrange(6,i,1:3)+sign*LagMeanFlow(k)
-     &                        *LagMeanFlow(k)*PenaltyCoeff(k,2)*
-     &                        NANBLagrange(2,i,1:3)*IPLagrange(k,5)+sign
-     &                        *LagMeanFlow(k)**2*PenaltyCoeff(k,3)
-     &                        *NANBLagrange(3,i,1:3)*IPLagrange(k,6)  
+                          res(i,1:3)=res(i,1:3)+sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,1)+PenaltyCoeff(k,1) &
+                              *Penalty(k,1))*(NANBLagrange(4,i,1:3)- &
+                              NABI(i,1:3)*PQLagrange(k,2)-QLagrange(k,2) &
+                              *PNABI(i,1:3)/LagProfileArea(k)+ &
+                              QLagrange(k,2)*NABI(i,1:3)* &
+                              ProfileDelta(k))   &
+                              +sign*LagMeanFlow(k)*LagMeanFlow(k) &
+                              *PenaltyCoeff(k,1)*(NANBLagrange(1,i,1:3)- &
+                              NABI(i,1:3)*PQLagrange(k,1)-QLagrange(k,1) &
+                              *PNABI(i,1:3)/LagProfileArea(k)+ &
+                              QLagrange(k,1)*NABI(i,1:3)* &
+                              ProfileDelta(k))*(IPLagrange(k,4) &
+                              -PQLagrange(k,1)*QLagrange(k,2) &
+                              -QLagrange(k,1)*PQLagrange(k,2) &
+                              +QLagrange(k,1)*QLagrange(k,2) &
+                              *ProfileDelta(k))+sign*LagMeanFlow(k)* &
+                              (-Lagalpha(k,2)+PenaltyCoeff(k,2) &
+                              *Penalty(k,2))*NANBLagrange(5,i,1:3) &
+                              +sign*LagMeanFlow(k)*(-Lagalpha(k,3)+ &
+                              PenaltyCoeff(k,3)*Penalty(k,3)) &
+                              *NANBLagrange(6,i,1:3)+sign*LagMeanFlow(k) &
+                              *LagMeanFlow(k)*PenaltyCoeff(k,2)* &
+                              NANBLagrange(2,i,1:3)*IPLagrange(k,5)+sign &
+                              *LagMeanFlow(k)**2*PenaltyCoeff(k,3) &
+                              *NANBLagrange(3,i,1:3)*IPLagrange(k,6)  
                      endif    
                   enddo
                endif
             enddo
 
-            call LagMultiplyMatrix(y, 1, nsrflistLagrange,
-     &         numLagrangeSrfs)  
+            call LagMultiplyMatrix(y, 1, nsrflistLagrange, &
+               numLagrangeSrfs)  
             do k = 1, numLagrangeSrfs
                if (numINCPSrfs .gt. zero) then
                   if (nsrflistLagrange(k).eq.inactive(k)) then !order of INCP should be the same with the order of Lag
@@ -1264,10 +1241,10 @@ c
                   endif
                endif
             enddo  
-            call LagMultiplyMatrixTranspose(nsrflistLagrange,
-     &         numLagrangeSrfs)  
-            res(:,1:3) = res(:,1:3) - LagAPproduct(:,1:3)        
-     &         /ScaleFactor(1,1)/alfi/gami/two               
+            call LagMultiplyMatrixTranspose(nsrflistLagrange, &
+               numLagrangeSrfs)  
+            res(:,1:3) = res(:,1:3) - LagAPproduct(:,1:3)         &
+               /ScaleFactor(1,1)/alfi/gami/two               
          endif
       endif !end of coupling for Lagrange multipliers
          

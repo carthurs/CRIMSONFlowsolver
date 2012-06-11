@@ -1,157 +1,197 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-c  readnblk.f (pronounce "Reed and Block Dot Eff") contains:
-c
-c    module readarrays ("Red Arrays") -- contains the arrays that
-c     are read in from binary files but not immediately blocked 
-c     through pointers.
-c
-c    subroutine readnblk ("Reed and Block") -- allocates space for
-c     and reads data to be contained in module readarrays.  Reads
-c     all remaining data and blocks them with pointers.
-c
+!  readnblk.f (pronounce "Reed and Block Dot Eff") contains:
+!
+!    module readarrays ("Red Arrays") -- contains the arrays that
+!     are read in from binary files but not immediately blocked 
+!     through pointers.
+!
+!    subroutine readnblk ("Reed and Block") -- allocates space for
+!     and reads data to be contained in module readarrays.  Reads
+!     all remaining data and blocks them with pointers.
+!
 
 
       module readarrays
       
-      real*8, allocatable :: point2x(:,:)
-      real*8, allocatable :: qold(:,:)
-      real*8, allocatable :: uold(:,:)
-      real*8, allocatable :: acold(:,:)
+      use, intrinsic :: iso_c_binding
+      !real*8, allocatable :: x(:,:)
+      !real*8, allocatable :: qold(:,:)
+      !real*8, allocatable :: uold(:,:)
+      !real*8, allocatable :: acold(:,:)
       integer, allocatable :: iBCtmp(:)
-      real*8, allocatable :: BCinp(:,:)
+      real*8, allocatable, target :: BCinp(:,:)
 
-      integer, allocatable :: point2ilwork(:)
-      integer, allocatable :: nBC(:)
-      integer, allocatable :: point2iper(:)
-      integer, allocatable :: point2ifath(:)
-      integer, allocatable :: point2nsons(:)
+      !integer, allocatable :: ilwork(:)
+      integer, allocatable, target :: nBC(:)
+      !integer, allocatable :: iper(:)
+      !integer, allocatable :: ifath(:)
+      !integer, allocatable :: nsons(:)
       
       end module
 
 
 
       subroutine readnblk
-c
+!     
+      use, intrinsic :: iso_c_binding
+      
       use readarrays
-      include "common.h"
-c
-      real*8, allocatable :: xread(:,:), qread(:,:), acread(:,:)
-      real*8, allocatable :: uread(:,:)
-      real*8, allocatable :: BCinpread(:,:)
+      use globalArrays
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+      real (c_double), allocatable :: xread(:,:), qread(:,:), acread(:,:)
+      real (c_double), allocatable :: uread(:,:)
+      real (c_double), allocatable :: BCinpread(:,:)
       integer, allocatable :: iperread(:), iBCtmpread(:)
       integer, allocatable :: ilworkread(:), nBCread(:)
-      character*5 cname
-      character*8 mach2
-      character*20 fmt1
-      character*255 fname1,fnamer,fnamelr
+      character(c_char) :: cname*5
+      character(c_char) :: fmt1r1*20
+      character(c_char) :: fname1*255,fnameg*255,fnamer*255,fnamelr*255,actname*255
       character*255 warning
-      integer igeom, ibndc, irstin, ierr
+      !integer igeom, ibndc, irstin, 
+      integer ierr, ixsiz
       integer intfromfile(50) ! integers read from headers
-c
-c
-c.... determine the step number to start with
-c
+       
+!
+!
+!.... determine the step number to start with
+!
       open(unit=72,file='numstart.dat',status='old')
       read(72,*) irstart
       close(72)
-c
-      fname1='geombc.dat'
-      fname1= trim(fname1)  // cname(myrank+1)
-      fnamelr='restart.latest'
+!
+      fnameg='geombc.dat'
+      fnameg= trim(fnameg)  // cname(myrank+1)
 
       itmp=1
       if (irstart .gt. 0) itmp = int(log10(float(irstart)))+1
-      write (fmt1,"('(''restart.'',i',i1,',1x)')") itmp
-      write (fnamer,fmt1) irstart
+      write (fmt1r1,"('(''restart.'',i',i1,',1x)')") itmp
+      write (fnamer,fmt1r1) irstart
       fnamer = trim(fnamer) // cname(myrank+1)
-      fnamelr = trim(fnamelr) // cname(myrank+1)
+      
+      !fnamelr='restart.latest'
+      !fnamelr = trim(fnamelr) // cname(myrank+1)
 
-c
-c.... open input files
-c
-      call openfile(  fname1,  'read?', igeom );
-c
-c.... try opening restart.latest.proc before trying restart.stepno.proc
-c
-      call openfile(  fnamelr,  'read?', irstin );
-      if ( irstin .eq. 0 ) call openfile( fnamer, 'read?', irstin );
+!
+!.... open input files
+!
+      call openfile( fnameg//c_null_char, c_char_"read?"//c_null_char, igeom );
+!
+!.... try opening restart.latest.proc before trying restart.stepno.proc
+!
+      !call openfile(  fnamelr,  'read?', irstin );
+      !if ( irstin .eq. 0 ) call openfile( fnamer, 'read?', irstin );
+      call openfile( fnamer//c_null_char, c_char_"read?"//c_null_char, irstin );
 ! either one will work
-c
-c.... input the geometry parameters
-c
+!
+!.... input the geometry parameters
+!
 
       ieleven=11
       ione=1
+      !fname1='number of spatial dimensions?'
+      !call readheader(igeom,fname1,nsd,ione,c_char_"integer", iotype)
+      !if(nsd.ne.2) nsd=3        ! in case it is an old geombc file 
+      !                          ! that does not have nsd in it
+                                
       fname1='number of nodes?'
-      call readheader(igeom,fname1,numnp,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,numnp,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of nodes"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(numnp))
+                              
       fname1='number of modes?'
-      call readheader(igeom,fname1,nshg,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,nshg,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of modes"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(nshg))
+                              
       fname1='number of interior elements?'
-      call readheader(igeom,fname1,numel,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,numel,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of interior elements"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(numel))
+                              
       fname1='number of boundary elements?'
-      call readheader(igeom,fname1,numelb,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,numelb,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of boundary elements"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(numelb))
+                              
       fname1='maximum number of element nodes?'
-      call readheader(igeom,fname1,nen,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,nen,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"maximum number of element nodes"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(nen))
+                              
       fname1='number of interior tpblocks?'
-      call readheader(igeom,fname1,nelblk,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,nelblk,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of interior tpblocks"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(nelblk))
+                              
       fname1='number of boundary tpblocks?'
-      call readheader(igeom,fname1,nelblb,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,nelblb,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of boundary tpblocks"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(nelblb))
+                              
       fname1='number of nodes with Dirichlet BCs?'
-      call readheader(igeom,fname1,numpbc,ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,numpbc,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of nodes with Dirichlet BCs"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(numpbc))
+           
       fname1='number of shape functions?'
-      call readheader(igeom,fname1,ntopsh,ione,'integer', iotype)
-c
-c.... calculate the maximum number of boundary element nodes
-c     
+      call readheader(igeom,fname1//c_null_char,ntopsh,ione,c_char_"integer"//c_null_char, iotype)
+      call phSolverUpdateField(c_char_"number of shape functions solved on processor"//c_null_char, &
+                               c_char_"Scalar"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               1, 1, c_null_ptr, c_loc(ntopsh))
+                               
+! if the number of boundary blocks equals zero then there will be no boundary 
+!  connectivity, or boundary condition data --- delete those fields from the 
+!  list of required fields
+      if ( 0.eq.nelblb ) then
+         call phSolverRemoveField(c_char_"connectivity boundary linear tetrahedron"//c_null_char, &
+                                  c_char_"Surface"//c_null_char, &
+                                  c_char_"Integer"//c_null_char )
+         call phSolverRemoveField(c_char_"nbc codes linear tetrahedron"//c_null_char, &
+                                  c_char_"Surface"//c_null_char, &
+                                  c_char_"Integer"//c_null_char )
+         call phSolverRemoveField(c_char_"nbc values linear tetrahedron"//c_null_char, &
+                                  c_char_"Surface"//c_null_char, &
+                                  c_char_"Double"//c_null_char )
+         call phSolverRemoveField(c_char_"boundary condition array"//c_null_char, &
+                                  c_char_"Volume"//c_null_char, &
+                                  c_char_"Integer"//c_null_char )
+      endif
+                               
+!
+!.... calculate the maximum number of boundary element nodes
+!     
       nenb = 0
       do i = 1, melCat
          if (nen .eq. nenCat(i,nsd)) nenb = max(nenCat(i,nsd-1), nenb)
       enddo
-c     
+!     
       if (myrank == master) then
          if (nenb .eq. 0) call error ('input   ','nen     ',nen)
       endif
-c
-c.... setup some useful constants
-c
+!
+!.... setup some useful constants
+!
       I3nsd  = nsd / 3          ! nsd=3 integer flag
       E3nsd  = float(I3nsd)     ! nsd=3 real    flag
-c    
+!    
       if(matflg(1,1).lt.0) then
          nflow = nsd + 1
       else
@@ -164,84 +204,114 @@ c
       ndofBC = ndof + I3nsd     ! dimension of BC array
       ndiBCB = 2                ! dimension of iBCB array
       ndBCB  = ndof + 1         ! dimension of BCB array
-c     
+!     
       nsymdf = (ndof*(ndof + 1)) / 2 ! symm. d.o.f.'s
-c
-c.... ----------------------> Communication tasks <--------------------
-c
+      
+!
+! now that we have all of the constants set, initialize all of the
+! arrays
+      call initGlobalArrays
+      
+!
+!.... ----------------------> Communication tasks <--------------------
+!
       if(numpe > 1) then
 
          fname1='size of ilwork array?'
-         call readheader(igeom,fname1,nlwork,ione,'integer', iotype)
+         call readheader(igeom,fname1//c_null_char,nlwork,ione,c_char_"integer"//c_null_char, iotype)
+         call phSolverUpdateField(c_char_"size of ilwork array"//c_null_char, &
+                                  c_char_"Scalar"//c_null_char, &
+                                  c_char_"Integer"//c_null_char, &
+                                  1, 1, c_null_ptr, c_loc(nlwork))
 
          ione=1
          fname1='ilwork?'
-         call readheader(igeom,fname1,nlwork,ione,'integer', iotype)
+         call readheader(igeom,fname1//c_null_char,nlwork,ione,c_char_"integer"//c_null_char, iotype)
 
-         allocate( point2ilwork(nlwork) )
+         allocate( ilwork(nlwork) )
          allocate( ilworkread(nlwork) )
-         call readdatablock(igeom,fname1,ilworkread,
-     &                      nlwork,'integer', iotype)
-         point2ilwork = ilworkread
-         call ctypes (point2ilwork)
+         call readdatablock(igeom,fname1//c_null_char,ilworkread, &
+                            nlwork,c_char_"integer"//c_null_char, iotype)
+         ilwork = ilworkread
+         call ctypes (ilwork)
       else
            nlwork=1
-           allocate( point2ilwork(1))
+           allocate( ilwork(1))
       endif
-c     
-c.... read the node coordinates
-c
+      call phSolverUpdateField(c_char_"ilwork"//c_null_char, &
+                               c_char_"Volume"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               nlwork, 1, c_null_ptr, c_loc(ilwork))
+!     
+!.... read the node coordinates
+!
       itwo=2
       fname1='co-ordinates?'
-      call readheader(igeom,fname1,intfromfile,itwo, 'double', iotype)
+      call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"double"//c_null_char, iotype)
       numnp=intfromfile(1)
-c      nsd=intfromfile(2)
-      allocate( point2x(numnp,nsd) )
+!      nsd=intfromfile(2)
+!      allocate( x(numnp,nsd) )
       allocate( xread(numnp,nsd) )
       ixsiz=numnp*nsd
-      call readdatablock(igeom,fname1,xread,ixsiz, 'double',iotype)
-      point2x = xread
-c
-c.... read in and block out the connectivity
-c
-      call genblk (IBKSIZ)
-c
-c.... read the boundary condition mapping array
-c
+      call readdatablock(igeom,fname1//c_null_char,xread,ixsiz, c_char_"double"//c_null_char,iotype)
+      x = xread
+      call phSolverUpdateField(c_char_"co-ordinates"//c_null_char, &
+                               c_char_"Volume"//c_null_char, &
+                               c_char_"Double"//c_null_char, &
+                               numnp, nsd, c_loc(x), c_null_ptr)
+!
+!.... read in and block out the connectivity
+!  
+      call genblk (IBKSIZ)      
+!
+!.... read the boundary condition mapping array
+!
       ione=1
       fname1='bc mapping array?'
-      call readheader(igeom,fname1,nshg,
-     &     ione,'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,nshg, &
+           ione,c_char_"integer"//c_null_char, iotype)
       allocate( nBC(nshg) )
 
       allocate( nBCread(nshg) )
-      call readdatablock(igeom,fname1,nBCread,nshg,'integer',iotype)
+      call readdatablock(igeom,fname1//c_null_char,nBCread,nshg,c_char_"integer"//c_null_char,iotype)
       nBC=nBCread
-c
-c.... read the temporary iBC array
-c
+      call phSolverUpdateField(c_char_"bc mapping array"//c_null_char, &
+                               c_char_"Volume"//c_null_char, &
+                               c_char_"Integer"//c_null_char, &
+                               nshg, 1, c_null_ptr, c_loc(nBC))
+!
+!.... read the temporary iBC array
+!
       ione = 1
       fname1='bc codes array?'
-      call readheader(igeom,fname1,numpbc,
-     &     ione, 'integer', iotype)
+      call readheader(igeom,fname1//c_null_char,numpbc, &
+           ione, c_char_"integer"//c_null_char, iotype)
       if ( numpbc > 0 ) then
          allocate( iBCtmp(numpbc) )
          allocate( iBCtmpread(numpbc) )
-         call readdatablock(igeom,fname1,iBCtmpread,numpbc,
-     &                      'integer',iotype)
+         call readdatablock(igeom,fname1//c_null_char,iBCtmpread,numpbc, &
+                            c_char_"integer"//c_null_char,iotype)
          iBCtmp=iBCtmpread
+         call phSolverUpdateField(c_char_"bc codes array"//c_null_char, &
+                                  c_char_"Volume"//c_null_char, &
+                                  c_char_"Integer"//c_null_char, &
+                                  numpbc, 1, c_null_ptr, c_loc(iBC))
       else  ! sometimes a partition has no BC's
          allocate( iBCtmp(1) )
          iBCtmp=0
+         call phSolverUpdateField(c_char_"bc codes array"//c_null_char, &
+                                  c_char_"Volume"//c_null_char, &
+                                  c_char_"Integer"//c_null_char, &
+                                  1, 1, c_null_ptr, c_loc(iBC))
       endif
-c
-c.... read boundary condition data
-c
+!
+!.... read boundary condition data
+!
       ione=1
       fname1='boundary condition array?'
-      call readheader(igeom,fname1,intfromfile,
-     &     ione, 'integer', iotype)
-c here intfromfile(1) contains (ndof+7)*numpbc
+      call readheader(igeom,fname1//c_null_char,intfromfile, &
+           ione, c_char_"integer"//c_null_char, iotype)
+! here intfromfile(1) contains (ndof+7)*numpbc
       if ( numpbc > 0 ) then
          if(intfromfile(1).ne.(ndof+7)*numpbc) then
            warning='WARNING more data in BCinp than needed: keeping 1st'
@@ -251,123 +321,220 @@ c here intfromfile(1) contains (ndof+7)*numpbc
          nsecondrank=intfromfile(1)/numpbc
          allocate( BCinpread(numpbc,nsecondrank) )
          iBCinpsiz=intfromfile(1)
-         call readdatablock(igeom,fname1,BCinpread,iBCinpsiz,
-     &                      'double',iotype)
+         call readdatablock(igeom,fname1//c_null_char,BCinpread,iBCinpsiz, &
+                            c_char_"double"//c_null_char,iotype)
          BCinp(:,1:(ndof+7))=BCinpread(:,1:(ndof+7))
+         call phSolverUpdateField(c_char_"boundary condition array"//c_null_char, &
+                                  c_char_"Volume"//c_null_char, &
+                                  c_char_"Integer"//c_null_char, &
+                                  numpbc, ndof+7, c_null_ptr, c_loc(BCinp))
       else  ! sometimes a partition has no BC's
          allocate( BCinp(1,ndof+7) )
          BCinp=0
+         call phSolverUpdateField(c_char_"boundary condition array"//c_null_char, &
+                                  c_char_"Volume"//c_null_char, &
+                                  c_char_"Integer"//c_null_char, &
+                                  1, ndof+7, c_null_ptr, c_loc(BCinp))
       endif
-c
-c.... read periodic boundary conditions
-c
+!
+!.... read periodic boundary conditions
+!
       fname1='periodic masters array?'
-      call readheader(igeom,fname1,nshg,
-     &     ione, 'integer', iotype)
-      allocate( point2iper(nshg) )
+      call readheader(igeom,fname1//c_null_char,nshg, &
+           ione, c_char_"integer"//c_null_char, iotype)
+      !allocate( iper(nshg) )
       allocate( iperread(nshg) )
-      call readdatablock(igeom,fname1,iperread,nshg,
-     &                      'integer',iotype)
-      point2iper=iperread
-c
-c.... generate the boundary element blocks
-c
+      call readdatablock(igeom,fname1//c_null_char,iperread,nshg, &
+                            c_char_"integer"//c_null_char,iotype)
+      iper=iperread
+      
+      !call phSolverUpdateField(c_char_"periodic masters array"//c_null_char, &
+      !                         c_char_"Volume"//c_null_char, &
+      !                         c_char_"Integer"//c_null_char, &
+      !                         nshg, 0, c_null_ptr, c_loc(iper))
+
+
+      !
+      !.... read in the local index of unique nodes
+      !
+      if(numpe > 1) then
+          fname1='local index of unique nodes?'
+          call readheader(igeom,fname1//c_null_char,nshguniq, &
+          ione, c_char_"integer"//c_null_char, iotype)
+          allocate( inodesuniq(nshguniq) )
+          call readdatablock(igeom,fname1//c_null_char,inodesuniq,nshguniq, &
+          c_char_"integer"//c_null_char,iotype)
+
+      else
+          allocate( inodesuniq(nshg) )
+
+          nshguniq = nshg
+
+          do ii=1,nshg
+              inodesuniq(ii) = ii
+          end do
+
+      endif
+
+      call phSolverUpdateField(c_char_"local index of unique nodes"//c_null_char, &
+      c_char_"Volume"//c_null_char, &
+      c_char_"Integer"//c_null_char, &
+      nshguniq, 1, c_null_ptr, c_loc(inodesuniq))
+
+      !
+      !.... read in the simple observation function arrays
+      !
+
+      itwo=2
+      fname1='observation function solution?'
+      call readheader(igeom,fname1//c_null_char,intfromfile, &
+      itwo,c_char_"integer"//c_null_char, iotype)
+      nshg2=intfromfile(1)
+      ndof2=intfromfile(2)
+      iisiz=nshg2*ndof2
+      allocate( ilinobsfunc_sol(nshg2,ndof2) )
+      call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_sol,iisiz, &
+      c_char_"integer"//c_null_char,iotype)
+
+      call phSolverUpdateField(c_char_"observation function solution"//c_null_char, &
+      c_char_"Volume"//c_null_char, &
+      c_char_"Integer"//c_null_char, &
+      nshg2, ndof2, c_null_ptr, c_loc(ilinobsfunc_sol))
+
+      fname1='observation function time derivative of solution?'
+      call readheader(igeom,fname1//c_null_char,intfromfile, &
+      itwo,c_char_"integer"//c_null_char, iotype)
+      nshg2=intfromfile(1)
+      ndof2=intfromfile(2)
+      iisiz=nshg2*ndof2
+      allocate( ilinobsfunc_acc(nshg2,ndof2) )
+      call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_acc,iisiz, &
+      c_char_"integer"//c_null_char,iotype)
+
+      call phSolverUpdateField(c_char_"observation function time derivative of solution"//c_null_char, &
+      c_char_"Volume"//c_null_char, &
+      c_char_"Integer"//c_null_char, &
+      nshg2, ndof2, c_null_ptr, c_loc(ilinobsfunc_acc))
+
+
+      if (ideformwall.eq.1) then
+          fname1='observation function displacement?'
+          call readheader(igeom,fname1//c_null_char,intfromfile, &
+          itwo,c_char_"integer"//c_null_char, iotype)
+          nshg2=intfromfile(1)
+          nsd2=intfromfile(2)
+          iisiz=nshg2*nsd2
+          allocate( ilinobsfunc_disp(nshg2,nsd2) )
+          call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_disp,iisiz, &
+          c_char_"integer"//c_null_char,iotype)
+
+          call phSolverUpdateField(c_char_"observation function displacement"//c_null_char, &
+          c_char_"Volume"//c_null_char, &
+          c_char_"Integer"//c_null_char, &
+          nshg2, nsd2, c_null_ptr, c_loc(ilinobsfunc_disp))
+      endif
+
+
+!
+!.... generate the boundary element blocks
+!
       call genbkb (ibksiz)
 
-c
-c  Read in the nsons and ifath arrays if needed
-c
-c  There is a fundamental shift in the meaning of ifath based on whether
-c  there exist homogenous directions in the flow.  
-c
-c  HOMOGENOUS DIRECTIONS EXIST:  Here nfath is the number of inhomogenous
-c  points in the TOTAL mesh.  That is to say that each partition keeps a 
-c  link to  ALL inhomogenous points.  This link is furthermore not to the
-c  sms numbering but to the original structured grid numbering.  These 
-c  inhomogenous points are thought of as fathers, with their sons being all
-c  the points in the homogenous directions that have this father's 
-c  inhomogeneity.  The array ifath takes as an arguement the sms numbering
-c  and returns as a result the father.
-c
-c  In this case nsons is the number of sons that each father has and ifath
-c  is an array which tells the 
-c
-c  NO HOMOGENOUS DIRECTIONS.  In this case the mesh would grow to rapidly
-c  if we followed the above strategy since every partition would index its
-c  points to the ENTIRE mesh.  Furthermore, there would never be a need
-c  to average to a node off processor since there is no spatial averaging.
-c  Therefore, to properly account for this case we must recognize it and
-c  inerrupt certain actions (i.e. assembly of the average across partitions).
-c  This case is easily identified by noting that maxval(nsons) =1 (i.e. no
-c  father has any sons).  Reiterating to be clear, in this case ifath does
-c  not point to a global numbering but instead just points to itself.
-c
+!
+!  Read in the nsons and ifath arrays if needed
+!
+!  There is a fundamental shift in the meaning of ifath based on whether
+!  there exist homogenous directions in the flow.  
+!
+!  HOMOGENOUS DIRECTIONS EXIST:  Here nfath is the number of inhomogenous
+!  points in the TOTAL mesh.  That is to say that each partition keeps a 
+!  link to  ALL inhomogenous points.  This link is furthermore not to the
+!  sms numbering but to the original structured grid numbering.  These 
+!  inhomogenous points are thought of as fathers, with their sons being all
+!  the points in the homogenous directions that have this father's 
+!  inhomogeneity.  The array ifath takes as an arguement the sms numbering
+!  and returns as a result the father.
+!
+!  In this case nsons is the number of sons that each father has and ifath
+!  is an array which tells the 
+!
+!  NO HOMOGENOUS DIRECTIONS.  In this case the mesh would grow to rapidly
+!  if we followed the above strategy since every partition would index its
+!  points to the ENTIRE mesh.  Furthermore, there would never be a need
+!  to average to a node off processor since there is no spatial averaging.
+!  Therefore, to properly account for this case we must recognize it and
+!  inerrupt certain actions (i.e. assembly of the average across partitions).
+!  This case is easily identified by noting that maxval(nsons) =1 (i.e. no
+!  father has any sons).  Reiterating to be clear, in this case ifath does
+!  not point to a global numbering but instead just points to itself.
+!
       nfath=1  ! some architectures choke on a zero or undeclared
                  ! dimension variable.  This sets it to a safe, small value.
-      if(((iLES .lt. 20) .and. (iLES.gt.0))
-     &                   .or. (itwmod.gt.0)  ) then ! don't forget same
+      if(((iLES .lt. 20) .and. (iLES.gt.0)) &
+                         .or. (itwmod.gt.0)  ) then ! don't forget same
                                                     ! conditional in proces.f
 
-c           read (igeom) nfath  ! nfath already read in input.f,
+!           read (igeom) nfath  ! nfath already read in input.f,
                                      ! needed for alloc
          ione=1
-c         call creadlist(igeom,ione,nfath)
-c         fname1='keyword sonfath?'
+!         call creadlist(igeom,ione,nfath)
+!         fname1='keyword sonfath?'
          if(nohomog.gt.0) then
             fname1='number of father-nodes?'
-            call readheader(igeom,fname1,nfath,ione,'integer', iotype)
-c
-c     fname1='keyword nsons?'
+            call readheader(igeom,fname1//c_null_char,nfath,ione,c_char_"integer"//c_null_char, iotype)
+!
+!     fname1='keyword nsons?'
             fname1='number of son-nodes for each father?'
-            call readheader(igeom,fname1,nfath,ione,'integer', iotype)
-            allocate (point2nsons(nfath))
-            call readdatablock(igeom,fname1,point2nsons,nfath,
-     &                      'integer',iotype)
-c
+            call readheader(igeom,fname1//c_null_char,nfath,ione,c_char_"integer"//c_null_char, iotype)
+            allocate (nsons(nfath))
+            call readdatablock(igeom,fname1//c_null_char,nsons,nfath, &
+                            c_char_"integer"//c_null_char,iotype)
+!
             fname1='keyword ifath?'
-            call readheader(igeom,fname1,nshg,ione,'integer', iotype)
-            allocate (point2ifath(nshg))
-            call readdatablock(igeom,fname1,point2ifath,nshg,
-     &                      'integer',iotype)
-c     
-            nsonmax=maxval(point2nsons)
-c
+            call readheader(igeom,fname1//c_null_char,nshg,ione,c_char_"integer"//c_null_char, iotype)
+            allocate (ifath(nshg))
+            call readdatablock(igeom,fname1//c_null_char,ifath,nshg, &
+                            c_char_"integer"//c_null_char,iotype)
+!     
+            nsonmax=maxval(nsons)
+!
          else  ! this is the case where there is no homogeneity
                ! therefore ever node is a father (too itself).  sonfath
                ! (a routine in NSpre) will set this up but this gives
                ! you an option to avoid that.
             nfath=nshg
-            allocate (point2nsons(nfath))
-            point2nsons=1
-            allocate (point2ifath(nshg))
+            allocate (nsons(nfath))
+            nsons=1
+            allocate (ifath(nshg))
             do i=1,nshg
-               point2ifath(i)=i
+               ifath(i)=i
             enddo
             nsonmax=1
-c
+!
          endif
       else
-         allocate (point2nsons(1))
-         allocate (point2ifath(1))
+         allocate (nsons(1))
+         allocate (ifath(1))
       endif
-c
-c  renumber the master partition for SPEBC
-c
-c      if((myrank.eq.master).and.(irscale.ge.0)) then
-c         call setSPEBC(numnp, nfath, nsonmax)
-c         call renum(point2x,point2ifath,point2nsons)
-c      endif
-c
-c.... Read restart files
-c
-c.... read the header and check it against the run data
-c
+      allocate (velbar(nfath,ndof))
+!
+!  renumber the master partition for SPEBC
+!
+!      if((myrank.eq.master).and.(irscale.ge.0)) then
+!         call setSPEBC(numnp, nfath, nsonmax)
+!         call renum(x,ifath,nsons)
+!      endif
+!
+!.... Read restart files
+!
+!.... read the header and check it against the run data
+!
 
       ithree=3
-c      call creadlist(irstin,ithree,nshg2,ndof2,lstep)
+!      call creadlist(irstin,ithree,nshg2,ndof2,lstep)
       fname1='solution?'
-      call readheader(irstin,fname1,intfromfile,
-     &     ithree,'integer', iotype)
+      call readheader(irstin,fname1//c_null_char,intfromfile, &
+           ithree,c_char_"integer"//c_null_char, iotype)
       nshg2=intfromfile(1)
       ndof2=intfromfile(2)
       lstep=intfromfile(3)
@@ -375,52 +542,69 @@ c      call creadlist(irstin,ithree,nshg2,ndof2,lstep)
         warning='WARNING more data in restart than needed: keeping 1st '
         write(*,*) warning , ndof
       endif
-c
-      if (nshg2 .ne. nshg) 
-     &     call error ('restar  ', 'nshg   ', nshg)
-c
-c.... read the values of primitive variables into q
-c
-      allocate( qold(nshg,ndof) )
+!
+      if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
+      
+      call phSolverUpdateField(c_char_"solution"//c_null_char, &
+                               c_char_"Volume"//c_null_char, &
+                               c_char_"Double"//c_null_char, &
+                               nshg2, ndof2, c_loc(yold), c_null_ptr)
+
+!
+!.... read the values of primitive variables into q
+!
+      !allocate( qold(nshg,ndof) )
       allocate( qread(nshg,ndof2) )
 
       iqsiz=nshg*ndof2
-      call readdatablock(irstin,fname1,qread,iqsiz,
-     &                      'double',iotype)
-      qold(:,1:ndof)=qread(:,1:ndof)
-c 
+      call readdatablock(irstin,fname1//c_null_char,qread,iqsiz, &
+                            c_char_"double"//c_null_char,iotype)
+      yold(:,1:3)=qread(:,2:4)
+      yold(:,4)=qread(:,1)
+      y = yold ! initialization of y moved here from genini
+      if(ndof.gt.4) yold(:,5:ndof)=qread(:,5:ndof)
+! 
       fname1='time derivative of solution?'
       intfromfile=0
-      call readheader(irstin,fname1,intfromfile,
-     &     ithree,'integer', iotype)
-      allocate( acold(nshg,ndof) )
+      call readheader(irstin,fname1//c_null_char,intfromfile, &
+           ithree,c_char_"integer"//c_null_char, iotype)
+      !allocate( acold(nshg,ndof) )
+
+      call phSolverUpdateField(c_char_"time derivative of solution"//c_null_char, &
+                               c_char_"Volume"//c_null_char, &
+                               c_char_"Double"//c_null_char, &
+                               nshg2, ndof2, c_loc(acold), c_null_ptr)
+
       if(intfromfile(1).ne.0) then 
          nshg2=intfromfile(1)
          ndof2=intfromfile(2)
          lstep=intfromfile(3)
          
-         if (nshg2 .ne. nshg) 
-     &        call error ('restar  ', 'nshg   ', nshg)
-c     
+         if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
+!     
          allocate( acread(nshg,ndof2) )
          acread=zero
 
          iacsiz=nshg*ndof2
-         call readdatablock(irstin,fname1,acread,iacsiz,
-     &                   'double',iotype)
-         acold(:,1:ndof)=acread(:,1:ndof)
+         call readdatablock(irstin,fname1//c_null_char,acread,iacsiz, &
+                         c_char_"double"//c_null_char,iotype)
+         acold(:,1:3)=acread(:,2:4)
+         acold(:,4)=acread(:,1)
+         ac = acold ! initialization of ac moved here from genini
+         if(ndof.gt.4)  acold(:,5:ndof)=acread(:,5:ndof)
          deallocate(acread)
       else
          warning='Time derivative of solution is set to zero (SAFE)'
          write(*,*) warning
          acold=zero
+         ac=zero
       endif
 
-c      call creadlist(irstin,ithree,nshg2,ndisp,lstep)
+!      call creadlist(irstin,ithree,nshg2,ndisp,lstep)
       if (ideformwall.eq.1) then
          fname1='displacement?'
-         call readheader(irstin,fname1,intfromfile,
-     &        ithree,'integer', iotype)
+         call readheader(irstin,fname1//c_null_char,intfromfile, &
+              ithree,c_char_"integer"//c_null_char, iotype)
          nshg2=intfromfile(1)
          ndisp=intfromfile(2)
          lstep=intfromfile(3)
@@ -428,31 +612,41 @@ c      call creadlist(irstin,ithree,nshg2,ndisp,lstep)
             warning='WARNING ndisp not equal nsd'
             write(*,*) warning , ndisp
          endif
-c
-         if (nshg2 .ne. nshg) 
-     &        call error ('restar  ', 'nshg   ', nshg)
-c
-c.... read the values of primitive variables into uold
-c
-         allocate( uold(nshg,nsd) )
+!
+         if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
+         
+         call phSolverUpdateField(c_char_"displacement"//c_null_char, &
+                                  c_char_"Volume"//c_null_char, &
+                                  c_char_"Double"//c_null_char, &
+                                  nshg2, ndisp, c_loc(uold), c_null_ptr)
+
+         call phSolverUpdateField(c_char_"elastic modulus scalar"//c_null_char, &
+                                  c_char_"Scalar"//c_null_char, &
+                                  c_char_"Double"//c_null_char, &
+                                  1, 1, c_null_ptr, c_loc(evw)) ! defined in common.h for now -- need to fix
+!
+!.... read the values of primitive variables into uold
+!
+         !allocate( uold(nshg,nsd) )
          allocate( uread(nshg,nsd) )
          
          iusiz=nshg*nsd
-         call readdatablock(irstin,fname1,uread,iusiz,
-     &        'double',iotype)
+         
+         call readdatablock(irstin,fname1//c_null_char,uread,iusiz, &
+              c_char_"double"//c_null_char,iotype)
          uold(:,1:nsd)=uread(:,1:nsd)
        else
-         allocate( uold(nshg,nsd) )
+         !allocate( uold(nshg,nsd) )
          uold(:,1:nsd) = zero
        endif
 
-c 
-c
-c.... close c-binary files
-c
-      call closefile( irstin, "read" )
-      call closefile( igeom,  "read" )
-c
+! 
+!
+!.... close c-binary files
+!
+      call closefile( irstin, c_char_"read" )
+      call closefile( igeom,  c_char_"read" )
+!
       deallocate(xread)
       deallocate(qread)
       if ( numpbc > 0 )  then
@@ -460,56 +654,57 @@ c
          deallocate(ibctmpread)
       endif
       deallocate(iperread)
-      if(numpe.gt.1)
-     &     deallocate(ilworkread)
+      if(numpe.gt.1) &
+           deallocate(ilworkread)
       deallocate(nbcread)
 
       return
-c
+!
  994  call error ('input   ','opening ', igeom)
  995  call error ('input   ','opening ', igeom)
  997  call error ('input   ','end file', igeom)
  998  call error ('input   ','end file', igeom)
-c
+!
       end
 
-c
-c No longer called but kept around in case....
-c
+!
+! No longer called but kept around in case....
+!
       subroutine genpzero(iBC)
 
       use pointer_data
-c
-      include "common.h"
+!
+       use phcommonvars
+ IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       integer iBC(nshg)
-c
-c....  check to see if any of the nodes have a dirichlet pressure
-c
+!
+!....  check to see if any of the nodes have a dirichlet pressure
+!
       pzero=1
       if (any(btest(iBC,2))) pzero=0  
-c
+!
       do iblk = 1, nelblb
          npro = lcblkb(1,iblk+1)-lcblkb(1,iblk)
          do i=1, npro
             iBCB1=miBCB(iblk)%p(i,1)
-c     
-c.... check to see if any of the nodes have a Neumann pressure 
-c     but not periodic (note that 
-c     
+!     
+!.... check to see if any of the nodes have a Neumann pressure 
+!     but not periodic (note that 
+!     
             if(btest(iBCB1,1)) pzero=0
          enddo
-c     
-c.... share results with other processors
-c     
+!     
+!.... share results with other processors
+!     
          pzl=pzero
-         if (numpe .gt. 1)
-     &        call MPI_ALLREDUCE (pzl, pzero, 1,
-     &        MPI_DOUBLE_PRECISION,MPI_MIN, MPI_COMM_WORLD,ierr)
+         if (numpe .gt. 1) &
+              call MPI_ALLREDUCE (pzl, pzero, 1, &
+              MPI_DOUBLE_PRECISION,MPI_MIN, INEWCOMM,ierr)
            
       enddo
-c
-c.... return
-c
+!
+!.... return
+!
       return
-c
+!
       end

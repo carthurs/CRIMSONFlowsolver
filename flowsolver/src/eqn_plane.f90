@@ -1,67 +1,36 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
       subroutine eqn_plane(x, iBC)
-c
-c----------------------------------------------------------------------
-c This subroutine finds all nodes that are on the inlet plane and all
-c nodes that are on the recycle plane; it also blocks elements that 
-c are on recycle plane; all nodes are also stored with cylindrical 
-c coordinates; find all father nodes for recycle plane (i.e. for
-c theta = -theta given)
-c
-c input:
-c  x      (numnp,nsd)           : node coordinates
-c
-c output:
-c  xcyl   (numnp,nsd)           : node cylindrical coordinates 
-c  ien2D  (npro, nshl)		: connectivity array for recycle plane
-c				  assuming tethraheadral elements, i.e.
-c				  triangular elements on face
-c----------------------------------------------------------------------
-c
+!
+!----------------------------------------------------------------------
+! This subroutine finds all nodes that are on the inlet plane and all
+! nodes that are on the recycle plane; it also blocks elements that 
+! are on recycle plane; all nodes are also stored with cylindrical 
+! coordinates; find all father nodes for recycle plane (i.e. for
+! theta = -theta given)
+!
+! input:
+!  x      (numnp,nsd)           : node coordinates
+!
+! output:
+!  xcyl   (numnp,nsd)           : node cylindrical coordinates 
+!  ien2D  (npro, nshl)		: connectivity array for recycle plane
+!				  assuming tethraheadral elements, i.e.
+!				  triangular elements on face
+!
+!
+!  Elaine Bohr
+!  June 2002
+!----------------------------------------------------------------------
+!
        use spebc
        use pointer_data
-       include "common.h"
+       use phcommonvars
+       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
        include "mpif.h"
-       include "auxmpi.h"
-c
-        dimension x(numnp,nsd),       nrin(numnp),
-     &  	  xA(nsd),  xB(nsd),  xC(nsd), xD(nsd), fourth(nsd),
-     &		  erreur(nshl), iBC(numnp), xtmp(nsd)
+       !include "auxmpi.h"
+!
+        dimension x(numnp,nsd),       nrin(numnp), &
+        	  xA(nsd),  xB(nsd),  xC(nsd), xD(nsd), fourth(nsd), &
+      		  erreur(nshl), iBC(numnp), xtmp(nsd)
 
         integer  temp, tempb, etmp
 
@@ -69,9 +38,9 @@ c
         integer, allocatable :: ienb(:,:)
 		
        
-c
-c .... find all nodes on inlet plane
-c
+!
+! .... find all nodes on inlet plane
+!
         j = 0
         do i=1,numnp
 	  if(btest(iBC(i),11)) then
@@ -81,9 +50,9 @@ c
 	enddo
 	npin = j
 	
-c
-c .... find one element and its vertices on inlet plane
-c
+!
+! .... find one element and its vertices on inlet plane
+!
         do iblk=1,nelblb
           iel=lcblkb(1,iblk)
 	  nenl=lcblkb(5,iblk)
@@ -119,17 +88,17 @@ c
         enddo
  92     continue
        
-c
-c .... find normal to inlet plane
-c
-	xnrml = (xB(2) - xA(2)) * (xC(3) - xA(3))
-     &        - (xB(3) - xA(3)) * (xC(2) - xA(2))
+!
+! .... find normal to inlet plane
+!
+	xnrml = (xB(2) - xA(2)) * (xC(3) - xA(3)) &
+              - (xB(3) - xA(3)) * (xC(2) - xA(2))
      
-     	ynrml = (xB(3) - xA(3)) * (xC(1) - xA(1))
-     &        - (xB(1) - xA(1)) * (xC(3) - xA(3))
+     	ynrml = (xB(3) - xA(3)) * (xC(1) - xA(1)) &
+              - (xB(1) - xA(1)) * (xC(3) - xA(3))
      
-     	znrml = (xB(1) - xA(1)) * (xC(2) - xA(2))
-     &        - (xB(2) - xA(2)) * (xC(1) - xA(1))
+     	znrml = (xB(1) - xA(1)) * (xC(2) - xA(2)) &
+              - (xB(2) - xA(2)) * (xC(1) - xA(1))
      
      	tmp = xnrml*xnrml + ynrml*ynrml + znrml*znrml
 	tmp = sqrt(tmp)
@@ -147,13 +116,13 @@ c
 	  znrml = -1.0*znrml
 	endif
 
-c	
-c .... find the equation of internal plane
-c      equation of plane given by:
-c      (xn)x + (yn)y + (zn)z = a
-c       
+!	
+! .... find the equation of internal plane
+!      equation of plane given by:
+!      (xn)x + (yn)y + (zn)z = a
+!       
         aI = xnrml*xA(1)+ynrml*xA(2)+znrml*xA(3)
-c	aR = xnrml*xA(1)+ynrml*xA(2)+znrml*(xA(3)+rcydist) 
+!	aR = xnrml*xA(1)+ynrml*xA(2)+znrml*(xA(3)+rcydist) 
 	aR = aI + plandist
 	if (thetag.eq.0.0) then 
 	  sang = 1.0
@@ -162,9 +131,9 @@ c	aR = xnrml*xA(1)+ynrml*xA(2)+znrml*(xA(3)+rcydist)
 	  sang = sin(angle)
 	endif
 
-c
-c .... blocking elements cutting the recycle plane
-c
+!
+! .... blocking elements cutting the recycle plane
+!
 	itmp = lcblk(1,nelblk+1)
 	allocate (ien2D(itmp,4))
        	nelint=0
@@ -183,8 +152,8 @@ c
 
 	    temp=0	   
 	    do k=1,nshl
-	      erreur(k) = aR - xnrml*x(ien(i,k),1) 
-     &		- ynrml*x(ien(i,k),2) - znrml*x(ien(i,k),3) 
+	      erreur(k) = aR - xnrml*x(ien(i,k),1)  &
+      		- ynrml*x(ien(i,k),2) - znrml*x(ien(i,k),3) 
      	    enddo
 	 
 	    do j=1,nshl
@@ -203,10 +172,10 @@ c
         enddo
 
 
-c 
-c .... For each node of inlet plane find the corresponding element
-c      and local coordinates on recycle plane
-c
+! 
+! .... For each node of inlet plane find the corresponding element
+!      and local coordinates on recycle plane
+!
 	allocate (xintl(nelint,nshl,nsd))
 	do i = 1, nelint
               xintl(i,:,1) = x(ien2D(i,:),1)

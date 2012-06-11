@@ -43,16 +43,22 @@ DAMAGE.
 
 #include <iostream>
 
+#include "partition.h"
+#include "input.h"
+#include "proces.h"
+#include "itrdrv.h"
+#include "input_fform.h"
+
 #ifdef intel
 #include <direct.h>
-#define input INPUT
-#define proces PROCES
+//#define input INPUT
+//#define proces PROCES
 #define chdir _chdir
 #else
 #include <unistd.h>
 #ifndef ibm6000
-#define input input_
-#define proces proces_
+//#define input input_
+//#define proces proces_
 #define timer timer_
 #endif
 #endif
@@ -61,10 +67,11 @@ extern "C" char phasta_iotype[80];
 char phasta_iotype[80];
 
 extern int SONFATH;
-extern void Partition_Problem( int, char[], char[], int );
-extern "C" void proces();
-extern "C" void input(int* size,int* myrank);
-extern int input_fform(char inpfname[]);
+
+//extern "C" void proces();
+//extern "C" void itrdrv();
+//extern "C" void input(int* size,int* myrank);
+//extern int input_fform();
 
 int myrank; /* made file global for ease in debugging */
 
@@ -142,12 +149,12 @@ phasta( int argc,
 #endif
 
     /* Input data  */
-    if(argc > 1 ){
-        strcpy(inpfilename,argv[1]);
-    } else {
-        strcpy(inpfilename,"solver.inp");
-    }
-    ierr = input_fform(inpfilename);
+    //if(argc > 1 ){
+    //    strcpy(inpfilename,argv[1]);
+    //} else {
+    //    strcpy(inpfilename,"solver.inp");
+    //}
+    ierr = input_fform();
     if(!ierr){
 
         /* Preprocess data and run the problem  */
@@ -174,6 +181,7 @@ phasta( int argc,
         input(&size,&myrank);
         /* now we can start the solver */
         proces();
+		itrdrv();
     }
     else{
         printf("error during reading ascii input \n");

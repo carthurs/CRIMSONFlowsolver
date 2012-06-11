@@ -1,75 +1,40 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-        subroutine gendat (y,       ac,       x,      iBC,     BC,
-     &                     iper,    ilwork,
-     &                     shp,     shgl,    shpb,    shglb,
-     &                     ifath,   velbar,   nsons ) 
-c
-c----------------------------------------------------------------------
-c
-c This routine inputs the geometry and the boundary conditions.
-c
-c----------------------------------------------------------------------
-c
+        subroutine gendat (y,       ac,       x,      iBC,     BC, &
+                           iper,    ilwork, &
+                           shp,     shgl,    shpb,    shglb, &
+                           ifath,   velbar,   nsons ) 
+!
+!----------------------------------------------------------------------
+!
+! This routine inputs the geometry and the boundary conditions.
+!
+!
+! Zdenek Johan, Winter 1991.  (Fortran 90)
+!----------------------------------------------------------------------
+!
       
-        use readarrays          ! used to acess nBC
         use dtnmod
         use pointer_data
         use deformableWall
-        include "common.h"
-c
-c arrays in the following line are now dimensioned in readnblk
-c        dimension nBC(nshg)
-c
-        dimension y(nshg,ndof),      ac(nshg,ndof),
-     &            x(numnp,nsd),      iBC(nshg),
-     &            BC(nshg,ndofBC),
-     &            nodflx(numflx),    ilwork(nlwork),
-     &            iper(nshg)
-c
-c.... shape function declarations
-c     
-        dimension shp(MAXTOP,maxsh,MAXQPT),  
-     &            shgl(MAXTOP,nsd,maxsh,MAXQPT), 
-     &            shpb(MAXTOP,maxsh,MAXQPT),
-     &            shglb(MAXTOP,nsd,maxsh,MAXQPT) 
-c
-c  stuff for dynamic model s.w.avg and wall model
-c
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+! arrays in the following line are now dimensioned in readnblk
+!
+        dimension y(nshg,ndof),      ac(nshg,ndof), &
+                  x(numnp,nsd),      iBC(nshg), &
+                  BC(nshg,ndofBC), &
+                  nodflx(numflx),    ilwork(nlwork), &
+                  iper(nshg)
+!
+!.... shape function declarations
+!     
+        dimension shp(MAXTOP,maxsh,MAXQPT),   &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
+                  shpb(MAXTOP,maxsh,MAXQPT), &
+                  shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+!
+!  stuff for dynamic model s.w.avg and wall model
+!
         dimension ifath(numnp),    velbar(nfath,nflow), nsons(nfath)
         
         dimension lnode(27) 
@@ -78,29 +43,29 @@ c
         integer wnodesgtlmap(nshg)
         integer wnodefnd
         
-c
-c.... start the timer
-c
+!
+!.... start the timer
+!
         
-CAD        call timer ('PrProces')
-c
-c.... ---------------------------->  Nodes  <--------------------------
-c
-c.... compute length scales
-c
+!AD        call timer ('PrProces')
+!
+!.... ---------------------------->  Nodes  <--------------------------
+!
+!.... compute length scales
+!
         call xyzbound(x)
-c
-c.... echo the coordinates
-c
+!
+!.... echo the coordinates
+!
         if ((necho .lt. 2).and.(myrank.eq.master)) then
           do n = 1, numnp
             if (mod(n,50) .eq. 1) write (iecho,1000) ititle,(i,i=1,nsd)
             write (iecho,1100) n, (x(n,i),i=1,nsd)
           enddo
         endif
-c
-c.... prepare periodic boundary conditions
-c
+!
+!.... prepare periodic boundary conditions
+!
         do i = 1,nshg
           if (iper(i) .ne. 0) then
             nshg0 = nshg0 - 1
@@ -108,35 +73,34 @@ c
             iper(i) = i
           endif
         enddo
-c
-c.... ---------------------->  Interior Elements  <--------------------
-c
+!
+!.... ---------------------->  Interior Elements  <--------------------
+!
         ibound = 0
-c
-c.... generate the interior nodal mapping
-c
+!
+!.... generate the interior nodal mapping
+!
         call genshp ( shp, shgl, nshape, nelblk)
-c
-c.... --------------------->  Boundary Conditions  <-------------------
-c
-c.... read and generate the boundary condition codes (iBC array)
-c
+!
+!.... --------------------->  Boundary Conditions  <-------------------
+!
+!.... read and generate the boundary condition codes (iBC array)
+!
         call geniBC (iBC)
-c
-c.... read and generate the essential boundary conditions (BC array)
-c
-        call genBC  (iBC,   BC,   point2x,
-     &               point2ilwork, point2iper)
-        deallocate(nBC)
-c
-c.... ---------------------->  Boundary Elements  <--------------------
-c
+!
+!.... read and generate the essential boundary conditions (BC array)
+!
+        call genBC  (iBC,   BC,   x, &
+                     ilwork, iper)
+!
+!.... ---------------------->  Boundary Elements  <--------------------
+!
         ibound = 1
         call gtnods
-c
-c  We now take care of Direchlet to Neumann BC's.  It had to move here
-c  so that the IBC array was of size nshg and ready to be marked.
-c
+!
+!  We now take care of Direchlet to Neumann BC's.  It had to move here
+!  so that the IBC array was of size nshg and ready to be marked.
+!
 
         if(nsclr.gt.0) then 
            call initDtN         ! Dirichlet to Neumann module: 
@@ -144,13 +108,13 @@ c
            do iblk = 1, nelblb  ! number of blocks
               iel    = lcblkb(1,iblk)
               npro   = lcblkb(1,iblk+1) - iel
-c
-c  for the DtN BC we need to mark all of the nodes that are involved.
-c
+!
+!  for the DtN BC we need to mark all of the nodes that are involved.
+!
               do i=1,npro
-c
-c if this element has the BCB AND it has not been found yet then mark it
-c
+!
+! if this element has the BCB AND it has not been found yet then mark it
+!
                  if(miBCB(iblk)%p(i,2).lt.0) then  
                     idtn = 1    !set the flag for dtn bc's
                     do j=1,nshapeb
@@ -159,24 +123,24 @@ c
                              ifeature(ignd) = abs(miBCB(iblk)%p(i,2))       
                              iBC(ignd)=ior(iBC(ignd),2**13)
                                 ! must mark this as a Neumann BC now
-                             miBCB(iblk)%p(i,1)=
-     &                       ior(miBCB(iblk)%p(i,1),2**(4+isclr))
+                             miBCB(iblk)%p(i,1)= &
+                             ior(miBCB(iblk)%p(i,1),2**(4+isclr))
                        end do
                     end do
                  endif
               end do
            end do
         endif
-c
-c.... generate the boundary element shape functions
-c
+!
+!.... generate the boundary element shape functions
+!
         call genshpb ( shpb, shglb, nshapeb, nelblb)
-c.... Evaluate the shape funcs. and their gradients at the desired quadrature
-c.... for filtering. Save these evaluations using a module
-c
-c KEJ moved them to this point because cdelsq now passed with module
-c     and it is read in with velb.<stepnum>.<proc#> now
-c
+!.... Evaluate the shape funcs. and their gradients at the desired quadrature
+!.... for filtering. Save these evaluations using a module
+!
+! KEJ moved them to this point because cdelsq now passed with module
+!     and it is read in with velb.<stepnum>.<proc#> now
+!
         if (iLES .gt. 0) then
 
            call setfilt         ! For setting quad. rule to use for integrating
@@ -186,19 +150,19 @@ c
               call aveprep(shp,x)
            endif
         endif
-c
-c User sets request pzero in solver.inp now
-c
-c        call genpzero(iBC,iper)
-c
+!
+! User sets request pzero in solver.inp now
+!
+!        call genpzero(iBC,iper)
+!
       if((myrank.eq.master).and.(irscale.ge.0)) then
          call setSPEBC(numnp,nsd) 	 
-	 call eqn_plane(point2x, iBC)
+	 call eqn_plane(x, iBC)
       endif
       
-c
-c Here we find the nodes on the deformable wall
-c      
+!
+! Here we find the nodes on the deformable wall
+!      
       nwnp = 0
       wnodestp = 0
       
@@ -208,7 +172,7 @@ c
          iel = lcblkb(1,iblk)
          npro = lcblkb(1,iblk+1) - iel
          do i=1,npro
-c            write(*,*) btest(miBCB(iblk)%p(i,1),4)
+!            write(*,*) btest(miBCB(iblk)%p(i,1),4)
             if (btest(miBCB(iblk)%p(i,1),4)) then ! check element deformable
                do j=1,nshlb
                
@@ -226,10 +190,10 @@ c            write(*,*) btest(miBCB(iblk)%p(i,1),4)
                   if (wnodefnd.eq.0) then
                      nwnp = nwnp+1
                      wnodestp(nwnp) = mienb(iblk)%p(i,n)
-c
-c this mapping takes a global node number and returns a wall node number
-c from 1 to the nwnp (the number of nodes on the wall)
-c                     
+!
+! this mapping takes a global node number and returns a wall node number
+! from 1 to the nwnp (the number of nodes on the wall)
+!                     
                      wnodesgtlmap(mienb(iblk)%p(i,n)) = nwnp
                   end if
                
@@ -238,9 +202,9 @@ c
          end do
       end do     
       
-c    
-c Copy to the global array
-c          
+!    
+! Copy to the global array
+!          
       allocate(mWNodes%p(nwnp))
       allocate(mWNodes_gtlmap%p(nshg))
       
@@ -252,49 +216,50 @@ c
          mWNodes_gtlmap%p(i) = wnodesgtlmap(i)
       end do
       
-c
-c.... --------------------->  Initial Conditions  <--------------------
-c
-c.... generate the initial conditions and initialize time varying BC
-c
-        call genini (iBC,      BC,         y, 
-     &               ac,       iper, 
-     &               ilwork,   ifath,      velbar,  
-     &               nsons,    x,
-     &               shp,     shgl,    shpb,    shglb) 
-c
-c.... close the geometry, boundary condition and material files
-c
+!
+!.... --------------------->  Initial Conditions  <--------------------
+!
+!.... generate the initial conditions and initialize time varying BC
+!
+        call genini (iBC,      BC,         y,  &
+                     ac,       iper,  &
+                     ilwork,   ifath,      velbar,   &
+                     nsons,    x, &
+                     shp,     shgl,    shpb,    shglb) 
+!
+!.... close the geometry, boundary condition and material files
+!
         close (igeom)
         close (ibndc)
-        if (mexist) close (imat)
-c
-c.... return
-c
-CAD        call timer ('Back    ')
+        if (mexist.eq.1) close (imat)
+!
+!.... return
+!
+!AD        call timer ('Back    ')
         return
-c
-c.... end of file error handling
-c
+!
+!.... end of file error handling
+!
 999     call error ('gendat  ','end file',igeom)
-c
-1000    format(a80,//,
-     &  ' N o d a l   C o o r d i n a t e s                  ',//,
-     &  '    Node     ',12x,3('x',i1,:,17x))
+!
+1000    format(a80,//, &
+        ' N o d a l   C o o r d i n a t e s                  ',//, &
+        '    Node     ',12x,3('x',i1,:,17x))
 1100    format(1p,2x,i5,13x,3(1e12.5,7x))
-2000    format(a80,//,
-     &  ' B o u n d a r y   F l u x   N o d e s              '//,
-     &  '   index          Node          ')
+2000    format(a80,//, &
+        ' B o u n d a r y   F l u x   N o d e s              '//, &
+        '   index          Node          ')
 2100    format(1x,i5,5x,i10)
-c
+!
         end
 
 
         subroutine xyzbound(x)
 
-        include "common.h"
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
-        include "auxmpi.h"
+        !include "auxmpi.h"
 
         dimension x(numnp,3)
 
@@ -303,10 +268,10 @@ c
         xlngth=maxval(x(:,1))
         ylngth=maxval(x(:,2))
         zlngth=maxval(x(:,3))
-        if(numpe. gt. 1) then
+        if(numpe .gt. 1) then
            Forin=(/xlngth,ylngth,zlngth/)
-           call MPI_ALLREDUCE (Forin, Forout, 3,
-     &       MPI_DOUBLE_PRECISION,MPI_MAX, MPI_COMM_WORLD,ierr)
+           call MPI_ALLREDUCE (Forin, Forout, 3, &
+             MPI_DOUBLE_PRECISION,MPI_MAX, INEWCOMM,ierr)
            xmax = Forout(1)
            ymax = Forout(2)
            zmax = Forout(3)
@@ -320,8 +285,8 @@ c
         zlngth=minval(x(:,3))
         if(numpe .gt. 1) then
            Forin=(/xlngth,ylngth,zlngth/)
-           call MPI_ALLREDUCE (Forin, Forout, 3,
-     &       MPI_DOUBLE_PRECISION,MPI_MIN, MPI_COMM_WORLD,ierr)
+           call MPI_ALLREDUCE (Forin, Forout, 3, &
+             MPI_DOUBLE_PRECISION,MPI_MIN, INEWCOMM,ierr)
         else
            Forout(1) = xlngth
            Forout(2) = ylngth

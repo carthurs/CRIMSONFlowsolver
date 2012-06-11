@@ -1,63 +1,29 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-        subroutine settauw (y,  x,  BC, 
-     &                      ifath,   velbar)
-c
-c----------------------------------------------------------------------
-c
-c This routine computes the time varying viscous flux for turbulence wall
-c  boundary elements.
-c
-c----------------------------------------------------------------------
-c
+        subroutine settauw (y,  x,  BC,  &
+                            ifath,   velbar)
+!
+!----------------------------------------------------------------------
+!
+! This routine computes the time varying viscous flux for turbulence wall
+!  boundary elements.
+!
+! Zdenek Johan, Winter 1991.  (Fortran 90)
+!----------------------------------------------------------------------
+!
       use pointer_data
       use turbSA
-      include "common.h"
-c
-      dimension y(nshg,ndofl),            x(numnp,nsd), 
-     &          BC(nshg,ndofBC),
-     &          ifath(numnp),             velbar(nfath,nflow),
-     &          ull(nsd),                 trx(numnp,nsd),
-     &          ullb(nsd),                dull(nsd),
-     &          evisc(numnp)
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+      dimension y(nshg,ndofl),            x(numnp,nsd),  &
+                BC(nshg,ndofBC), &
+                ifath(numnp),             velbar(nfath,nflow), &
+                ull(nsd),                 trx(numnp,nsd), &
+                ullb(nsd),                dull(nsd), &
+                evisc(numnp)
       real*8 outvec(nshg,nsd+nsd+nsd)
-c
-c calculate the traction magnitude for all nodes on the wall
-c
+!
+! calculate the traction magnitude for all nodes on the wall
+!
       trx=zero
       evisc=zero
       rm=datmat(1,2,1)
@@ -69,19 +35,19 @@ c
          if (iRANS.lt.0) then
             ull(:)=y(otwn(nodw),1:3)
          endif
-         ub=ull(1)*wnrm(nodw,1) !
-     &     +ull(2)*wnrm(nodw,2) ! store u.n here for now
-     &     +ull(3)*wnrm(nodw,3) !
-c     u_parallel_to_boundary=u-(u.n)n  :
+         ub=ull(1)*wnrm(nodw,1) & ! 
+           +ull(2)*wnrm(nodw,2) & ! store u.n here for now
+           +ull(3)*wnrm(nodw,3)   !
+!     u_parallel_to_boundary=u-(u.n)n  :
          ull(:)=ull(:)-ub*wnrm(nodw,:) ! ull in flow
-c     u_b is || u_ll ||
+!     u_b is || u_ll ||
          ub=sqrt(ull(1)**2+ull(2)**2+ull(3)**2)
-c     perp d2wall is (x2-x1).n   :
-         dw=abs(
-     &         (x(otwn(nodw),1)-x(nodw,1))*wnrm(nodw,1)
-     &        +(x(otwn(nodw),2)-x(nodw,2))*wnrm(nodw,2)
-     &        +(x(otwn(nodw),3)-x(nodw,3))*wnrm(nodw,3)
-     &         )
+!     perp d2wall is (x2-x1).n   :
+         dw=abs( &
+               (x(otwn(nodw),1)-x(nodw,1))*wnrm(nodw,1) &
+              +(x(otwn(nodw),2)-x(nodw,2))*wnrm(nodw,2) &
+              +(x(otwn(nodw),3)-x(nodw,3))*wnrm(nodw,3) &
+               )
          if(ub.eq.0) then
             ut=zero
             twoub=zero
@@ -89,33 +55,33 @@ c     perp d2wall is (x2-x1).n   :
             ut=utau(ub,dw,rm,nodw,x(nodw,:))   ! find utau
             twoub=-ut*ut/ub     ! find -tau_w/ub
          endif 
-c
-c for LES ull has the mean-parallel velocity vector.  We want the 
-c instantaneous-parallel velocity vector
-c
+!
+! for LES ull has the mean-parallel velocity vector.  We want the 
+! instantaneous-parallel velocity vector
+!
          if (iLES.gt.0) then
             ullb=ull
             ull(:)=y(otwn(nodw),1:3)
-            ubn=ull(1)*wnrm(nodw,1) !
-     &        +ull(2)*wnrm(nodw,2) ! store u.n here for now
-     &        +ull(3)*wnrm(nodw,3) !
-c
-c     u_parallel_to_boundary=u-(u.n)n  :
-c
+            ubn=ull(1)*wnrm(nodw,1) & ! 
+              +ull(2)*wnrm(nodw,2) &  ! store u.n here for now
+              +ull(3)*wnrm(nodw,3)    !
+!
+!     u_parallel_to_boundary=u-(u.n)n  :
+!
             ull(:)=ull(:)-ubn*wnrm(nodw,:) ! ull in flow
-c
-c hack a limiter into this fluctuating vector. Early transients have
-c huge differences from mean values
-c
+!
+! hack a limiter into this fluctuating vector. Early transients have
+! huge differences from mean values
+!
             dull=ull-ullb ! the current vector difference
-            dullm=sqrt(dull(1)*dull(1)+dull(2)*dull(2)+dull(3)*dull(3))
-     &           + 1.0e-9
+            dullm=sqrt(dull(1)*dull(1)+dull(2)*dull(2)+dull(3)*dull(3)) &
+                 + 1.0e-9
             ullbm=ub ! mag of ullb still there
-c
-c limit the magnitude of the difference to a 40% change from the mean.
-c if less than that already we will take the whole difference, otherwise
-c only take a 40% change.
-c
+!
+! limit the magnitude of the difference to a 40% change from the mean.
+! if less than that already we will take the whole difference, otherwise
+! only take a 40% change.
+!
 
             dullmod=min(one,0.4*ullbm/dullm)
             ull=ullb+dullmod*dull
@@ -127,45 +93,45 @@ c
             BC(nodw,7)=tauw*dw/ub-rm
          endif
          if(itwmod.eq.2) then ! effective-viscosity
-c
-c  mag of u instantaneous
-c
+!
+!  mag of u instantaneous
+!
             ullm=sqrt(ull(1)*ull(1)+ull(2)*ull(2)+ull(3)*ull(3))
             tauw=ut*ut*ullm/ub
             evisc(nodw)=tauw*dw/ub-rm
          endif
          if((itwmod.eq.-1)) then ! slip-velocity RANS
-            up=sqrt(
-     &           y(nodw,1)**2   !
-     &           +y(nodw,2)**2  ! flow is auto-|| at boundary
-     &           +y(nodw,3)**2  !
-     &           )/ut
+            up=sqrt( &
+                 y(nodw,1)**2  & ! 
+                 +y(nodw,2)**2 & ! flow is auto-|| at boundary
+                 +y(nodw,3)**2 & !
+                 )/ut
             BC(nodw,7)=savarw(up,rm,saCv1,nodw,x(nodw,:))
          endif
       endif ! wallnode check
       enddo ! loop over nodes
-c
-c Write the traction vectors to a file restart.4077.n
-c
-c$$$      ilstep=4077
-c$$$      outvec(:,1:3)=trx(:,1:3)
-c$$$      outvec(:,4:6)=0
-c$$$      do i=1,numnp
-c$$$         if(otwn(i).ne. i ) outvec(i,4:6)=y(otwn(i),1:3)
-c$$$      enddo
-c$$$      outvec(:,7:9)=wnrm(:,1:3)
-c$$$      call write_restart(myrank,ilstep,numnp,nsd*3,outvec,outvec)
-c$$$      write(*,*) 'Traction dumped to restart.4077.*'
-c
-c Put traction calculations into BCB
-c
+!
+! Write the traction vectors to a file restart.4077.n
+!
+!$$$      ilstep=4077
+!$$$      outvec(:,1:3)=trx(:,1:3)
+!$$$      outvec(:,4:6)=0
+!$$$      do i=1,numnp
+!$$$         if(otwn(i).ne. i ) outvec(i,4:6)=y(otwn(i),1:3)
+!$$$      enddo
+!$$$      outvec(:,7:9)=wnrm(:,1:3)
+!$$$      call write_restart(myrank,ilstep,numnp,nsd*3,outvec,outvec)
+!$$$      write(*,*) 'Traction dumped to restart.4077.*'
+!
+! Put traction calculations into BCB
+!
       do iblk = 1, nelblb
          iel    = lcblkb(1,iblk)
          nenl   = lcblkb(5,iblk) ! no. of vertices per element
          nenbl  = lcblkb(6,iblk) ! no. of vertices per bdry. face
          ndofl  = lcblkb(8,iblk)
          npro   = lcblkb(1,iblk+1) - iel 
-c For all elements in this block that lie on a wall, assign the traction
+! For all elements in this block that lie on a wall, assign the traction
          do i=1,npro
             if(btest(miBCB(iblk)%p(i,1),4)) then ! wall elt
                do j = 1, nenbl
@@ -182,11 +148,11 @@ c For all elements in this block that lie on a wall, assign the traction
 
 
       if(itwmod.eq.2) then   !effective viscosity
-c
-c For the elements which touch a modeled wall,
-c modify the eddy viscosity at all quadrature points to be the average
-c of the "optimal" nodal values.  This is an element-wise constant.
-c
+!
+! For the elements which touch a modeled wall,
+! modify the eddy viscosity at all quadrature points to be the average
+! of the "optimal" nodal values.  This is an element-wise constant.
+!
          do iblk = 1,nelblk
             nenl   = lcblk(5,iblk) ! no. of vertices per element
             iel    = lcblk(1,iblk)
@@ -205,9 +171,9 @@ c
             enddo
          enddo
       endif
-c
-c.... end
-c
+!
+!.... end
+!
         return
         end
 
@@ -230,7 +196,7 @@ c
         utau=0.04
         yrmi=y/rm
         kappa=0.4
-c$$$        B=5.5
+!$$$        B=5.5
         efac=0.1108 ! exp(-kappa*B)
         do iter=1,500
            yp=yrmi*utau
@@ -249,40 +215,40 @@ c$$$        B=5.5
         write(*,*) u, y, rm
         write(*,*) 'dfds,         rat,         utau'
         write(*,*) dfds,rat,utau
-c        stop
-c        utau=0.0
-c
-c  if the above fails then try a simple no-slip traction
-c
+!        stop
+!        utau=0.0
+!
+!  if the above fails then try a simple no-slip traction
+!
         utau=sqrt(u/y*rm)
 
  20     continue
         return
         end  
 
-c$$$        function utau_log_layer_only(u,y,rm)
-c$$$        real*8 u,err,utau,yrmi,y,rm,lnyp,f,dfds,rat
-c$$$        err=1.0d-6
-c$$$        utau=0.04
-c$$$        yrmi=y/rm
-c$$$        do iter=1,50
-c$$$           lnyp=log(yrmi*utau)
-c$$$           f=u-utau*(2.5*lnyp+5.2)
-c$$$           dfds=-2.5*(lnyp+6.2)
-c$$$           rat=-f/dfds
-c$$$           utau=utau+rat
-c$$$           if(utau.gt.0.5) then !flow is laminar for now give the parabolic
-c$$$              utau=sqrt(2.0*rm*u)/y
-c$$$              goto 20
-c$$$           endif
-c$$$              
-c$$$           if(abs(rat).le.err) goto 20
-c$$$        enddo
-c$$$        write(*,*)'utau failed to converge',r,dfds,rat,utau,y,u,rm
-c$$$        stop
-c$$$ 20     continue
-c$$$        return
-c$$$        end  
+!$$$        function utau_log_layer_only(u,y,rm)
+!$$$        real*8 u,err,utau,yrmi,y,rm,lnyp,f,dfds,rat
+!$$$        err=1.0d-6
+!$$$        utau=0.04
+!$$$        yrmi=y/rm
+!$$$        do iter=1,50
+!$$$           lnyp=log(yrmi*utau)
+!$$$           f=u-utau*(2.5*lnyp+5.2)
+!$$$           dfds=-2.5*(lnyp+6.2)
+!$$$           rat=-f/dfds
+!$$$           utau=utau+rat
+!$$$           if(utau.gt.0.5) then !flow is laminar for now give the parabolic
+!$$$              utau=sqrt(2.0*rm*u)/y
+!$$$              goto 20
+!$$$           endif
+!$$$              
+!$$$           if(abs(rat).le.err) goto 20
+!$$$        enddo
+!$$$        write(*,*)'utau failed to converge',r,dfds,rat,utau,y,u,rm
+!$$$        stop
+!$$$ 20     continue
+!$$$        return
+!$$$        end  
 
         function savarw(up,rm,cv1,nodw,x)
         implicit none
@@ -295,10 +261,10 @@ c$$$        end
         err=1.0d-6
         savarw=rm*cv1*1.2599 ! inflection point chi=cv1*cuberoot(2)
         kappa=0.4
-c$$$        B=5.5
+!$$$        B=5.5
         efac=0.1108 ! exp(-kappa*B)
-        xmut=rm*kappa*efac*(exp(kappa*up)-1.0-kappa*up
-     &       -pt5*(kappa**2)*(up**2))
+        xmut=rm*kappa*efac*(exp(kappa*up)-1.0-kappa*up &
+             -pt5*(kappa**2)*(up**2))
         do iter=1,50
            chi3=savarw/rm
            chi3=chi3*chi3*chi3

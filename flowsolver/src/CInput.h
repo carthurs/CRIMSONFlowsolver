@@ -36,8 +36,8 @@ DAMAGE.
 
 **********************************************************************/
 
-#ifndef H_Input
-#define H_Input
+#ifndef _CInput_H_
+#define _CInput_H_
 #include <vector>
 #include <string>
 #include <map>
@@ -46,11 +46,11 @@ DAMAGE.
 
 using namespace std;
 
-class Input {
+class CInput {
 public:
-  Input(const string &, const string &default_fname = "");
-  Input(const char*, const char* = "");
-  ~Input();
+  CInput(const string &, const string &default_fname = "");
+  CInput(const char*, const char* = "");
+  ~CInput();
 
   // return the entire input map
   map<string,string> InputMap() const;

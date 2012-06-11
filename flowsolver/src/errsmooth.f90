@@ -1,70 +1,35 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
-      subroutine errsmooth(rerr,   x,     iper,   ilwork, 
-     &                     shp,    shgl,  iBC)
-c
+      subroutine errsmooth(rerr,   x,     iper,   ilwork,  &
+                           shp,    shgl,  iBC)
+!
         use pointer_data
-c
-        include "common.h"
+!
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
-c
-        dimension shp(MAXTOP,maxsh,MAXQPT),  
-     &            shgl(MAXTOP,nsd,maxsh,MAXQPT), 
-     &            shpb(MAXTOP,maxsh,MAXQPT),
-     &            shglb(MAXTOP,nsd,maxsh,MAXQPT) 
-c
+!
+        dimension shp(MAXTOP,maxsh,MAXQPT),   &
+                  shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
+                  shpb(MAXTOP,maxsh,MAXQPT), &
+                  shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+!
         dimension rerrsm(nshg, 10), rerr(nshg,10), rmass(nshg)
-c
+!
         dimension ilwork(nlwork), iBC(nshg), iper(nshg)
 
         real*8, allocatable :: tmpshp(:,:), tmpshgl(:,:,:)
         real*8, allocatable :: tmpshpb(:,:), tmpshglb(:,:,:)
 
-c
-c loop over element blocks for the global reconstruction
-c of the smoothed error and lumped mass matrix, rmass
-c
+!
+! loop over element blocks for the global reconstruction
+! of the smoothed error and lumped mass matrix, rmass
+!
         rerrsm = zero
         rmass = zero
         
         do iblk = 1, nelblk
-c
-c.... set up the parameters
-c
+!
+!.... set up the parameters
+!
           nenl   = lcblk(5,iblk)   ! no. of vertices per element
           iel    = lcblk(1,iblk)
           lelCat = lcblk(2,iblk)
@@ -77,9 +42,9 @@ c
           nsymdl = lcblk(9,iblk)
           npro   = lcblk(1,iblk+1) - iel
           ngauss = nint(lcsyst)
-c
-c.... compute and assemble diffusive flux vector residual, qres,
-c     and lumped mass matrix, rmass
+!
+!.... compute and assemble diffusive flux vector residual, qres,
+!     and lumped mass matrix, rmass
 
           allocate (tmpshp(nshl,MAXQPT))
           allocate (tmpshgl(nsd,nshl,MAXQPT))
@@ -87,24 +52,24 @@ c     and lumped mass matrix, rmass
           tmpshp(1:nshl,:) = shp(lcsyst,1:nshl,:)
           tmpshgl(:,1:nshl,:) = shgl(lcsyst,:,1:nshl,:)
 
-          call smooth (rerr,                x,                       
-     &               tmpshp,              
-     &               tmpshgl,
-     &               mien(iblk)%p,
-     &               rerrsm,                   
-     &               rmass)
+          call smooth (rerr,                x,                        &
+                     tmpshp,               &
+                     tmpshgl, &
+                     mien(iblk)%p, &
+                     rerrsm,                    &
+                     rmass)
 
           deallocate ( tmpshp )
           deallocate ( tmpshgl ) 
        enddo
-c
+!
        if (numpe > 1) then
           call commu (rerrsm , ilwork,  10   , 'in ')
           call commu (rmass  , ilwork,  1    , 'in ')
        endif       
-c
-c.... take care of periodic boundary conditions
-c
+!
+!.... take care of periodic boundary conditions
+!
         do j= 1,nshg
           if ((btest(iBC(j),10))) then
             i = iper(j)
@@ -120,9 +85,9 @@ c
             rerrsm(j,:) = rerrsm(i,:)
           endif
         enddo
-c
-c.... invert the diagonal mass matrix and find q
-c
+!
+!.... invert the diagonal mass matrix and find q
+!
         rmass = one/rmass
        
        do i=1, 10
@@ -131,116 +96,117 @@ c
        if(numpe > 1) then
           call commu (rerrsm, ilwork, 10, 'out')    
        endif
-c
-c      copy the smoothed error overwriting the original error.
-c
+!
+!      copy the smoothed error overwriting the original error.
+!
 
        rerr = rerrsm 
 
        return
        end
 
-        subroutine smooth (rerr,       x,       shp,
-     &                     shgl,       ien,          
-     &                     rerrsm,     rmass    )
-c
-c----------------------------------------------------------------------
-c
-c This routine computes and assembles the data corresponding to the
-c interior elements for the global reconstruction of the diffusive
-c flux vector.
-c
-c input:
-c     y     (nshg,ndof)        : Y variables
-c     x     (numnp,nsd)         : nodal coordinates
-c     shp   (nshape,ngauss)     : element shape-functions
-c     shgl  (nsd,nshape,ngauss) : element local shape-function gradients
-c     ien   (npro)              : nodal connectivity array
-c
-c output:
-c     qres  (nshg,nflow-1,nsd)  : residual vector for diffusive flux
-c     rmass  (nshg)            : lumped mass matrix
-c
-c----------------------------------------------------------------------
-c
-        include "common.h"
-c
-        dimension rerr(nshg,10),               x(numnp,nsd),     
-     &            shp(nshl,maxsh),  
-     &            shgl(nsd,nshl,maxsh),
-     &            ien(npro,nshl),
-     &            rerrsm(nshg,10),    rmass(nshg)
-c
-c.... element level declarations
-c
-        dimension rerrl(npro,nshl,10),        xl(npro,nenl,nsd),         
-     &            rerrsml(npro,nshl,10),       rmassl(npro,nshl)
-c
-        dimension sgn(npro,nshl),          shape(npro,nshl),
-     &            shdrv(npro,nsd,nshl),    WdetJ(npro),
-     &            dxidx(npro,nsd,nsd),     shg(npro,nshl,nsd)
-c
+        subroutine smooth (rerr,       x,       shp, &
+                           shgl,       ien,           &
+                           rerrsm,     rmass    )
+!
+!----------------------------------------------------------------------
+!
+! This routine computes and assembles the data corresponding to the
+! interior elements for the global reconstruction of the diffusive
+! flux vector.
+!
+! input:
+!     y     (nshg,ndof)        : Y variables
+!     x     (numnp,nsd)         : nodal coordinates
+!     shp   (nshape,ngauss)     : element shape-functions
+!     shgl  (nsd,nshape,ngauss) : element local shape-function gradients
+!     ien   (npro)              : nodal connectivity array
+!
+! output:
+!     qres  (nshg,nflow-1,nsd)  : residual vector for diffusive flux
+!     rmass  (nshg)            : lumped mass matrix
+!
+!----------------------------------------------------------------------
+!
+        use phcommonvars
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+        dimension rerr(nshg,10),               x(numnp,nsd),      &
+                  shp(nshl,maxsh),   &
+                  shgl(nsd,nshl,maxsh), &
+                  ien(npro,nshl), &
+                  rerrsm(nshg,10),    rmass(nshg)
+!
+!.... element level declarations
+!
+        dimension rerrl(npro,nshl,10),        xl(npro,nenl,nsd),          &
+                  rerrsml(npro,nshl,10),       rmassl(npro,nshl)
+!
+        dimension sgn(npro,nshl),          shapeVar(npro,nshl), &
+                  shdrv(npro,nsd,nshl),    WdetJ(npro), &
+                  dxidx(npro,nsd,nsd),     shg(npro,nshl,nsd)
+!
         dimension error(npro,10)
-c
-c.... create the matrix of mode signs for the hierarchic basis 
-c     functions. 
-c
+!
+!.... create the matrix of mode signs for the hierarchic basis 
+!     functions. 
+!
         if (ipord .gt. 1) then
            call getsgn(ien,sgn)
         endif
-c
-c.... gather the variables
-c
+!
+!.... gather the variables
+!
 
         call local(rerr,   rerrl,  ien,    10,   'gather  ')
         call localx(x,      xl,     ien,    nsd,    'gather  ')
-c
-c.... get the element residuals 
-c
+!
+!.... get the element residuals 
+!
         rerrsml     = zero
         rmassl      = zero
 
-c
-c.... loop through the integration points
-c
+!
+!.... loop through the integration points
+!
         
                 
         do intp = 1, ngauss
         if (Qwt(lcsyst,intp) .eq. zero) cycle          ! precaution
-c
-c.... create a matrix of shape functions (and derivatives) for each
-c     element at this quadrature point. These arrays will contain 
-c     the correct signs for the hierarchic basis
-c
-        call getshp(shp,          shgl,      sgn, 
-     &              shape,        shdrv)
-c
-        call e3metric( xl,         shdrv,        dxidx,  
-     &                 shg,        WdetJ)
+!
+!.... create a matrix of shape functions (and derivatives) for each
+!     element at this quadrature point. These arrays will contain 
+!     the correct signs for the hierarchic basis
+!
+        call getshp(shp,          shgl,      sgn,  &
+                    shapeVar,     shdrv)
+!
+        call e3metric( xl,         shdrv,        dxidx,   &
+                       shg,        WdetJ)
         error=zero
         do n = 1, nshl
            do i=1,10
-              error(:,i)=error(:,i) + shape(:,n) * rerrl(:,n,i)
+              error(:,i)=error(:,i) + shapeVar(:,n) * rerrl(:,n,i)
            enddo
         enddo
         do i=1,nshl
            do j=1,10
-              rerrsml(:,i,j)  = rerrsml(:,i,j)  
-     &                       + shape(:,i)*WdetJ*error(:,j)
+              rerrsml(:,i,j)  = rerrsml(:,i,j)   &
+                              + shapeVar(:,i)*WdetJ*error(:,j)
            enddo
 
-           rmassl(:,i) = rmassl(:,i) + shape(:,i)*WdetJ
+           rmassl(:,i) = rmassl(:,i) + shapeVar(:,i)*WdetJ
         enddo
  
-c.... end of the loop over integration points
-c
+!.... end of the loop over integration points
+!
       enddo
-c
-c.... assemble the diffusive flux residual 
-c
+!
+!.... assemble the diffusive flux residual 
+!
         call local (rerrsm,   rerrsml,  ien,  10,'scatter ')
         call local (rmass,   rmassl,  ien,  1,  'scatter ')
-c
+!
 
       return
       end

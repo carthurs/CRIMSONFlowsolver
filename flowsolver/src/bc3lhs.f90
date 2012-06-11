@@ -1,92 +1,60 @@
-c
-c  Copyright (c) 2000-2007, Stanford University, 
-c     Rensselaer Polytechnic Institute, Kenneth E. Jansen, 
-c     Charles A. Taylor (see SimVascular Acknowledgements file 
-c     for additional contributors to the source code).
-c
-c  All rights reserved.
-c
-c  Redistribution and use in source and binary forms, with or without 
-c  modification, are permitted provided that the following conditions 
-c  are met:
-c
-c  Redistributions of source code must retain the above copyright notice,
-c  this list of conditions and the following disclaimer. 
-c  Redistributions in binary form must reproduce the above copyright 
-c  notice, this list of conditions and the following disclaimer in the 
-c  documentation and/or other materials provided with the distribution. 
-c  Neither the name of the Stanford University or Rensselaer Polytechnic
-c  Institute nor the names of its contributors may be used to endorse or
-c  promote products derived from this software without specific prior 
-c  written permission.
-c
-c  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-c  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-c  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-c  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-c  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-c  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-c  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-c  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-c  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-c  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-c  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-c  DAMAGE.
-c
-c
       subroutine bc3LHS (iBC,  BC,  iens,  xKebe )
-c
-c----------------------------------------------------------------------
-c
-c This routine satisfies the BC of LHS mass matrix for all  
-c elements in this block.
-c
-c input:
-c  iBC   (nshg) 	    : boundary condition code
-c  BC    (nshg,ndofBC)      : Dirichlet BC constraint parameters
-c  ien   (npro,nshape)	    : ien array for this element
-c  xKebe (npro,9,nshl,nshl) : element consistent mass matrix before BC
-c
-c output:
-c  xKebe (npro,9,nshl,nshl) : LHS mass matrix after BC is satisfied
-c
-c
-c----------------------------------------------------------------------
-c
-        include "common.h"
-c
-	dimension iBC(nshg),      ien(npro,nshape),
-     &		  BC(nshg,ndofBC), xKebe(npro,9,nshl,nshl)
+!
+!----------------------------------------------------------------------
+!
+! This routine satisfies the BC of LHS mass matrix for all  
+! elements in this block.
+!
+! input:
+!  iBC   (nshg) 	    : boundary condition code
+!  BC    (nshg,ndofBC)      : Dirichlet BC constraint parameters
+!  ien   (npro,nshape)	    : ien array for this element
+!  xKebe (npro,9,nshl,nshl) : element consistent mass matrix before BC
+!
+! output:
+!  xKebe (npro,9,nshl,nshl) : LHS mass matrix after BC is satisfied
+!
+!
+! Farzin Shakib, Winter 1987.
+! Zdenek Johan,  Spring 1990. (Modified for general divariant gas)
+! Ken Jansen, Summer 2000. Incompressible (only needed on xKebe)
+!----------------------------------------------------------------------
+!
+        use phcommonvars  
+        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+	dimension iBC(nshg),      ien(npro,nshape), &
+      		  BC(nshg,ndofBC), xKebe(npro,9,nshl,nshl)
 	integer iens(npro,nshl)
-c
-c prefer to show explicit absolute value needed for cubic modes and
-c higher rather than inline abs on pointer as in past versions
-c iens is the signed ien array ien is unsigned
-c
+!
+! prefer to show explicit absolute value needed for cubic modes and
+! higher rather than inline abs on pointer as in past versions
+! iens is the signed ien array ien is unsigned
+!
 	ien=abs(iens)
-c
-c.... loop over elements
-c
-c        return
+!
+!.... loop over elements
+!
+!        return
         do iel = 1, npro
-c
-c.... loop over number of shape functions for this element
-c
+!
+!.... loop over number of shape functions for this element
+!
            do inod = 1, nshl
-c
-c.... set up parameters
-c
+!
+!.... set up parameters
+!
               in  = abs(ien(iel,inod))
               if (ibits(iBC(in),3,3) .eq. 0) goto 5000 ! NO velocity BC's
               if (ibits(iBC(in),3,3) .eq. 7) goto 5000 ! 3 components ok
 
-c.... 1 or 2 component velocities
-c
-c
-c.... x1-velocity
-c
+!.... 1 or 2 component velocities
+!
+!
+!.... x1-velocity
+!
               if ( ibits(iBC(in),3,3) .eq. 1) then
-c
+!
  ! we want to project out the x1 component of the velocity from the tangent  
  ! matix which is, mathematically, M^e = S^T M^e S. We will do the M^e S
  ! product first. It has the effect of
@@ -102,10 +70,10 @@ c
  !  4 5 6
  !  7 8 9
 
-c
-c  adjusting the second column for the eventual removal of the first
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the second column for the eventual removal of the first
+!  column of the block-9 submatrix
+!
                  irem1=1
                  irem2=irem1+3
                  irem3=irem2+3
@@ -114,41 +82,41 @@ c
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem1,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem2,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem3,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem1,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem2,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem3,i,inod) 
 
                  enddo
  ! block status ' denotes colunn 1 projected off.
  !  1 2' 3
  !  4 5' 6
  !  7 8' 9
-c
-c  adjusting the third column for the eventual removal of the first
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the third column for the eventual removal of the first
+!  column of the block-9 submatrix
+!
                  iadj1=3
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem1,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem2,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem3,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem1,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem2,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem3,i,inod) 
  ! block status
  !  1 2' 3'
  !  4 5' 6'
  !  7 8' 9'
                  enddo
                  do i=1,nshl
-c
-c done with the first  columns_block-9 for columns AND rows of nshl
-c
+!
+! done with the first  columns_block-9 for columns AND rows of nshl
+!
                     xKebe(iel,irem1,i,inod) = zero 
                     xKebe(iel,irem2,i,inod) = zero 
                     xKebe(iel,irem3,i,inod) = zero 
@@ -160,9 +128,9 @@ c
  !  0 8' 9'
 
                  enddo
-c
-c  now adjust the second row_block-9 for EACH row nshl for EACH element 
-c
+!
+!  now adjust the second row_block-9 for EACH row nshl for EACH element 
+!
 
                  iadj1=4
                  iadj2=iadj1+1
@@ -171,12 +139,12 @@ c
                  irem2=irem1+1
                  irem3=irem2+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem3,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem3,inod,i) 
 
                  enddo
  ! block status
@@ -189,12 +157,12 @@ c
                  iadj2=iadj1+1
                  iadj3=iadj2+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem3,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem3,inod,i) 
 
  ! block status
  !  0 2' 3'
@@ -203,9 +171,9 @@ c
                  enddo
                  do i=1,nshl
 
-c
-c eliminate the first row of block-9 for all rows
-c 
+!
+! eliminate the first row of block-9 for all rows
+! 
                     xKebe(iel,irem1,inod,i) = zero 
                     xKebe(iel,irem2,inod,i) = zero 
                     xKebe(iel,irem3,inod,i) = zero 
@@ -228,20 +196,20 @@ c
  !  0 5'' 6''
  !  0 8'' 9''
               endif
-c
-c.... x2-velocity
-c
+!
+!.... x2-velocity
+!
               if ( ibits(iBC(in),3,3) .eq. 2) then
-c
+!
 ! See comment above. Now we are eliminating the 2nd column then row of
  ! the block-9 matrix
  !  1 2 3
  !  4 5 6
  !  7 8 9
-c
-c  adjusting the first column for the eventual removal of the second
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the first column for the eventual removal of the second
+!  column of the block-9 submatrix
+!
                  irem1=2
                  irem2=irem1+3
                  irem3=irem2+3
@@ -250,43 +218,43 @@ c
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem1,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem2,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem3,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem1,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem2,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem3,i,inod) 
 
                  enddo
-c
-c  adjusting the third column for the eventual removal of the second
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the third column for the eventual removal of the second
+!  column of the block-9 submatrix
+!
                  iadj1=3
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem1,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem2,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem3,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem1,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem2,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem3,i,inod) 
 
                  enddo
                  do i=1,nshl
-c
-c done with the second  columns_block-9 for columns
-c
+!
+! done with the second  columns_block-9 for columns
+!
 
                     xKebe(iel,irem1,i,inod) = zero 
                     xKebe(iel,irem2,i,inod) = zero 
                     xKebe(iel,irem3,i,inod) = zero 
 
                  enddo
-c
-c  now adjust the 1st row_block-9 for EACH row nshl for EACH element 
-c
+!
+!  now adjust the 1st row_block-9 for EACH row nshl for EACH element 
+!
 
                  iadj1=1
                  iadj2=iadj1+1
@@ -295,50 +263,50 @@ c
                  irem2=irem1+1
                  irem3=irem2+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem3,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem3,inod,i) 
 
                  enddo
                  iadj1=7
                  iadj2=iadj1+1
                  iadj3=iadj2+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem3,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem3,inod,i) 
                  enddo
                  do i=1,nshl
 
-c
-c eliminate the second row of block-9 for all rows 
-c 
+!
+! eliminate the second row of block-9 for all rows 
+! 
                     xKebe(iel,irem1,inod,i) = zero 
                     xKebe(iel,irem2,inod,i) = zero 
                     xKebe(iel,irem3,inod,i) = zero 
                  enddo
                  xKebe(iel,5,inod,inod)=one
               endif
-c
-c.... x3-velocity
-c
+!
+!.... x3-velocity
+!
               if ( ibits(iBC(in),3,3) .eq. 4) then
-c
+!
 ! See comment above. Now we are eliminating the 3rd column then row of
  ! the block-9 matrix
  !  1 2 3
  !  4 5 6
  !  7 8 9
-c
-c  adjusting the 1st column for the eventual removal of the 3rd
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the 1st column for the eventual removal of the 3rd
+!  column of the block-9 submatrix
+!
                  irem1=3
                  irem2=irem1+3
                  irem3=irem2+3
@@ -347,43 +315,43 @@ c
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem1,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem2,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem3,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem1,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem2,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem3,i,inod) 
 
                  enddo
-c
-c  adjusting the second column for the eventual removal of the 3rd
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the second column for the eventual removal of the 3rd
+!  column of the block-9 submatrix
+!
                  iadj1=2
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem1,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem2,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,5) * xKebe(iel,irem3,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem1,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem2,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,5) * xKebe(iel,irem3,i,inod) 
                  enddo
                  do i=1,nshl
 
-c
-c done with the 3rd columns_block-9 for columns 
-c
+!
+! done with the 3rd columns_block-9 for columns 
+!
 
                     xKebe(iel,irem1,i,inod) = zero 
                     xKebe(iel,irem2,i,inod) = zero 
                     xKebe(iel,irem3,i,inod) = zero 
 
                  enddo
-c
-c  now adjust the 1st row_block-9 for EACH row nshl for EACH element 
-c
+!
+!  now adjust the 1st row_block-9 for EACH row nshl for EACH element 
+!
 
                  iadj1=1
                  iadj2=iadj1+1
@@ -392,24 +360,24 @@ c
                  irem2=irem1+1
                  irem3=irem2+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem3,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem3,inod,i) 
 
                  enddo
                  iadj1=4
                  iadj2=iadj1+1
                  iadj3=iadj2+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,5) * xKebe(iel,irem3,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,5) * xKebe(iel,irem3,inod,i) 
 
                  enddo
                  do i=1,nshl
@@ -420,21 +388,21 @@ c
                  enddo
                  xKebe(iel,9,inod,inod)=one
               endif
-c     
-c.... x1-velocity and x2-velocity
-c
+!     
+!.... x1-velocity and x2-velocity
+!
               if ( ibits(iBC(in),3,3) .eq. 3 ) then
-c
+!
 ! See comment above. Now we are eliminating the 2nd and 1st column then
  ! same rows of
  ! the block-9 matrix
  !  1 2 3
  !  4 5 6
  !  7 8 9
-c
-c  adjusting the 3rd column for the eventual removal of the first and second
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the 3rd column for the eventual removal of the first and second
+!  column of the block-9 submatrix
+!
                  irem1=1
                  irem2=irem1+3
                  irem3=irem2+3
@@ -447,15 +415,15 @@ c
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem1,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire21,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem2,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire22,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem3,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire23,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem1,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire21,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem2,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire22,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem3,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire23,i,inod) 
 
  ! Status of the block-9 matrix
  !  1 2 3'
@@ -463,9 +431,9 @@ c
  !  7 8 9'
                  enddo
                  do i=1,nshl
-c
-c done with the first and second columns_block-9 for columns AND rows of nshl
-c
+!
+! done with the first and second columns_block-9 for columns AND rows of nshl
+!
 
                     xKebe(iel,irem1,i,inod) = zero 
                     xKebe(iel,irem2,i,inod) = zero 
@@ -481,9 +449,9 @@ c
  !  0 0 9'
 
                  enddo
-c
-c  now adjust the 3rd row_block-9 for EACH row nshl for EACH element 
-c
+!
+!  now adjust the 3rd row_block-9 for EACH row nshl for EACH element 
+!
 
                  iadj1=7
                  iadj2=iadj1+1
@@ -495,15 +463,15 @@ c
                  ire22=ire21+1
                  ire23=ire22+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem1,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire21,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem2,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire22,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem3,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire23,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem1,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire21,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem2,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire22,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem3,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire23,inod,i) 
 
 
  ! Status of the block-9 matrix
@@ -529,21 +497,21 @@ c
                  xKebe(iel,1,inod,inod)=one
                  xKebe(iel,5,inod,inod)=one
               endif
-c     
-c.... x1-velocity and x3-velocity
-c
+!     
+!.... x1-velocity and x3-velocity
+!
               if ( ibits(iBC(in),3,3) .eq. 5 ) then
-c
+!
 ! See comment above. Now we are eliminating the 1 and 3 column then
  ! same rows of
  ! the block-9 matrix
  !  1 2 3
  !  4 5 6
  !  7 8 9
-c
-c  adjusting the 3rd column for the eventual removal of the first and second
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the 3rd column for the eventual removal of the first and second
+!  column of the block-9 submatrix
+!
                  irem1=1
                  irem2=irem1+3
                  irem3=irem2+3
@@ -556,21 +524,21 @@ c
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem1,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire21,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem2,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire22,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem3,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire23,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem1,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire21,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem2,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire22,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem3,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire23,i,inod) 
 
                  enddo
                  do i=1,nshl
-c
-c done with the first and third columns_block-9 for columns AND rows of nshl
-c
+!
+! done with the first and third columns_block-9 for columns AND rows of nshl
+!
                     xKebe(iel,irem1,i,inod) = zero 
                     xKebe(iel,irem2,i,inod) = zero 
                     xKebe(iel,irem3,i,inod) = zero 
@@ -579,9 +547,9 @@ c
                     xKebe(iel,ire22,i,inod) = zero 
                     xKebe(iel,ire23,i,inod) = zero 
                  enddo
-c
-c  now adjust the 2nd row_block-9 for EACH row nshl for EACH element 
-c
+!
+!  now adjust the 2nd row_block-9 for EACH row nshl for EACH element 
+!
 
                  iadj1=4
                  iadj2=iadj1+1
@@ -593,15 +561,15 @@ c
                  ire22=ire21+1
                  ire23=ire22+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem1,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire21,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem2,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire22,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem3,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire23,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem1,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire21,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem2,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire22,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem3,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire23,inod,i) 
 
                  enddo
                  do i=1,nshl
@@ -617,21 +585,21 @@ c
                  xKebe(iel,1,inod,inod)=one
                  xKebe(iel,9,inod,inod)=one
               endif
-c     
-c.... x2-velocity and x3-velocity
-c
+!     
+!.... x2-velocity and x3-velocity
+!
               if ( ibits(iBC(in),3,3) .eq. 6 ) then
-c
+!
 ! See comment above. Now we are eliminating the 2nd and 3rd column then
  ! same rows of
  ! the block-9 matrix
  !  1 2 3
  !  4 5 6
  !  7 8 9
-c
-c  adjusting the 3rd column for the eventual removal of the first and second
-c  column of the block-9 submatrix
-c
+!
+!  adjusting the 3rd column for the eventual removal of the first and second
+!  column of the block-9 submatrix
+!
                  irem1=2
                  irem2=irem1+3
                  irem3=irem2+3
@@ -644,21 +612,21 @@ c
                  iadj2=iadj1+3
                  iadj3=iadj2+3
                  do i = 1, nshl
-                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem1,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire21,i,inod) 
-                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem2,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire22,i,inod) 
-                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) 
-     &                           - BC(in,4) * xKebe(iel,irem3,i,inod) 
-     &                           - BC(in,6) * xKebe(iel,ire23,i,inod) 
+                    xKebe(iel,iadj1,i,inod) = xKebe(iel,iadj1,i,inod) & 
+                                 - BC(in,4) * xKebe(iel,irem1,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire21,i,inod) 
+                    xKebe(iel,iadj2,i,inod) = xKebe(iel,iadj2,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem2,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire22,i,inod) 
+                    xKebe(iel,iadj3,i,inod) = xKebe(iel,iadj3,i,inod) &
+                                 - BC(in,4) * xKebe(iel,irem3,i,inod) &
+                                 - BC(in,6) * xKebe(iel,ire23,i,inod) 
                  enddo
                  do i=1,nshl
 
-c
-c done with the first and second columns_block-9 for columns AND rows of nshl
-c
+!
+! done with the first and second columns_block-9 for columns AND rows of nshl
+!
                     xKebe(iel,irem1,i,inod) = zero 
                     xKebe(iel,irem2,i,inod) = zero 
                     xKebe(iel,irem3,i,inod) = zero 
@@ -668,9 +636,9 @@ c
                     xKebe(iel,ire23,i,inod) = zero 
 
                  enddo
-c
-c  now adjust the 3rd row_block-9 for EACH row nshl for EACH element 
-c
+!
+!  now adjust the 3rd row_block-9 for EACH row nshl for EACH element 
+!
 
                  iadj1=7
                  iadj2=iadj1+1
@@ -682,13 +650,13 @@ c
                  ire22=ire21+1
                  ire23=ire22+1
                  do i = 1, nshl
-                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem1,inod,i) 
-                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem2,inod,i) 
-                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) 
-     &                           - BC(in,4) * xKebe(iel,irem3,inod,i) 
-     &                           - BC(in,6) * xKebe(iel,ire23,inod,i) 
+                    xKebe(iel,iadj1,inod,i) = xKebe(iel,iadj1,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem1,inod,i) 
+                    xKebe(iel,iadj2,inod,i) = xKebe(iel,iadj2,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem2,inod,i) 
+                    xKebe(iel,iadj3,inod,i) = xKebe(iel,iadj3,inod,i) &
+                                 - BC(in,4) * xKebe(iel,irem3,inod,i) &
+                                 - BC(in,6) * xKebe(iel,ire23,inod,i) 
 
                  enddo
                  do i=1,nshl
@@ -696,7 +664,7 @@ c
                     xKebe(iel,irem2,inod,i) = zero 
                     xKebe(iel,irem3,inod,i) = zero 
 
-c 
+! 
                     xKebe(iel,ire21,inod,i) = zero 
                     xKebe(iel,ire22,inod,i) = zero 
                     xKebe(iel,ire23,inod,i) = zero 
@@ -708,20 +676,20 @@ c
       
  5000         continue
         
-c        
-c.... end loop over shape functions (nodes)
-c        
+!        
+!.... end loop over shape functions (nodes)
+!        
            enddo
-c
-c.... end loop over elements
-c     
+!
+!.... end loop over elements
+!     
         enddo
-c
-c These elements should assemble to a matrix with the rows and columns 
-c associated with the Dirichlet nodes zeroed out.  Note that BC3 Diag
-c
-c     
-c.... return
-c
+!
+! These elements should assemble to a matrix with the rows and columns 
+! associated with the Dirichlet nodes zeroed out.  Note that BC3 Diag
+!
+!     
+!.... return
+!
         return
         end

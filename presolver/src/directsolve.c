@@ -57,7 +57,7 @@ void deleteKentries(Kentry *Kentries);
 
 #define SPARSE_OFFSET 1
 
-int StanfordSolveSparseMatrix(Kentry* Kentries, double b[],
+void StanfordSolveSparseMatrix(Kentry* Kentries, double b[],
                      int numUniqueEntries, int size, double soln[]) {
     
    int i;

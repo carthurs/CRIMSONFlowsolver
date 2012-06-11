@@ -19,4 +19,4 @@ $(TOP)/Bin/$(TARGET_POSTSOLVER): $(OBJS)
 	mv $(TARGET_POSTSOLVER)* $(TOP)/bin
 
 clean:
-	-$(RM) $(OBJS) $(TOP)/bin/$(TARGET_POSTSOLVER) *.pdb $(TOP)/bin/$(TARGET_POSTSOLVER).manifest
+	-$(RM) $(OBJS) $(TOP)/bin/$(TARGET_POSTSOLVER)*

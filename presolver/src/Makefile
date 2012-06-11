@@ -26,10 +26,10 @@ OBJS	= $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT)) $(FSRCS:.f=.$(OBJ
 
 $(TOP)/Bin/$(TARGET_PRESOLVER): $(OBJS)
 	$(LINK_EXE)$(TARGET_PRESOLVER) $(GLOBAL_LFLAGS) \
-             $(OBJS) $(F90_LIBS) $(CXX_LIBS) \
-             $(SPARSE_LIBS) $(NSPCG_LIBS) $(ZLIB_LIBS) \
-             $(TOP)/lib/libsimvascular_solverio.$(STATICEXT)
+	$(OBJS) $(F90_LIBS) $(CXX_LIBS) \
+	$(SPARSE_LIBS) $(NSPCG_LIBS) $(ZLIB_LIBS) \
+	$(TOP)/lib/libsimvascular_solverio.$(STATICEXT)
 	mv $(TARGET_PRESOLVER)* $(TOP)/bin
 
 clean:
-	-$(RM) $(OBJS) $(TOP)/bin/$(TARGET_PRESOLVER) *.pdb $(TOP)/bin/$(TARGET_PRESOLVER).manifest
+	-$(RM) $(OBJS) $(TOP)/bin/$(TARGET_PRESOLVER)*

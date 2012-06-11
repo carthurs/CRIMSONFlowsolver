@@ -36,4 +36,4 @@ $(TARGET_FLOWSOLVER): $(OBJS)
 .PHONY : clean
 clean : 
 	-$(RM) $(OBJS) $(TARGET_FLOWSOLVER) *.mod *.exe *.pdb *.manifest
-	-$(RM) $(TOP)/bin/$(TARGET_FLOWSOLVER) $(TOP)/bin/$(TARGET_FLOWSOLVER).manifest
+	-$(RM) $(TOP)/bin/$(TARGET_FLOWSOLVER)*

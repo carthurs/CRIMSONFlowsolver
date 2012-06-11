@@ -3,7 +3,10 @@ syntax: glob
 
 *.o
 *.obj
+*.mod
 *.lib
 *.a
+*.manifest
+*.exe
 .project
 .cproject

@@ -7,4 +7,4 @@ export LD_LIBRARY_PATH="/usr/local/OpenMPI-intel/lib:/opt/intel/mkl/lib/intel64:
 
 mkdir result
 
-mpirun -np $1 /home/nxiao/dev/simvascular2012/bin/estimator $2 $3 $4
+mpirun -np $1 /home/nxiao/dev/simvascular_flowsolver_estimator/bin/estimator $2 $3 $4

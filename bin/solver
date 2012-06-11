@@ -5,4 +5,4 @@ export LES_LICENSE_SERVER="ubuntu-blackbook113"
 export PHASTA_CONFIG="$HOME/dev/simvascular2012/configs"
 export LD_LIBRARY_PATH="/opt/intel/lib/intel64;/opt/x86_open64-4.2.5.2/lib/gcc-lib/x86_64-open64-linux/4.2.5.2"
 
-mpirun.mpich2 -n $1 -env PHASTA_CONFIG $PHASTA_CONFIG /home/nxiao/dev/simvascular2012/bin/flowsolver $2 $3
+mpirun.mpich2 -n $1 -env PHASTA_CONFIG $PHASTA_CONFIG /home/nxiao/dev/simvascular_flowsolver_estimator/bin/flowsolver $2 $3

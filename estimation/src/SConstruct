@@ -1,0 +1,20 @@
+import os
+
+# Put the path to Verdandi.
+# Also editable from command line with option "verdandi".
+verdandi_path = "../../../verdandi-1.2.1"
+
+include_path = ["../../flowsolver/src","../../solverio/src",
+                "/usr/local/OpenMPI-intel/include",
+                "../../../petsc-3.2-p7/include",
+                "../../../petsc-3.2-p7/arch-linux2-c-opt/include",
+                "../../../CGAL-install/include",
+                "../../../boost_1_40_0"]
+library_path = ["/opt/intel/mkl/lib/intel64",
+                "../../external/x64-linux/leslib-1.4",
+                "../../external/x64-linux/metis-4.0","../../lib",
+                "../../../petsc-3.2-p7/arch-linux2-c-opt/lib",
+                "../../../CGAL-install/lib",
+                "../../../boost_1_40_0/stage/lib"]
+
+execfile(os.path.join(verdandi_path, "share/SConstruct"))

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+scons main -c line=yes
+scons forward -c line=yes
+scons reduced_order_unscented_kalman_filter -c line=yes
+scons ROUKF_simvasc -c line=yes

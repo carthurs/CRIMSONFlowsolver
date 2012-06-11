@@ -1,0 +1,10 @@
+#!/bin/bash
+ulimit -s unlimited
+
+export LES_LICENSE_SERVER="blackbook2v2"
+export PHASTA_CONFIG="$HOME/dev/simvascular2012/configs"
+export LD_LIBRARY_PATH="/usr/local/OpenMPI-intel/lib:/opt/intel/mkl/lib/intel64:/home/nxiao/dev/boost_1_40_0/stage/lib"
+
+mkdir result
+
+mpirun -np $1 /home/nxiao/dev/simvascular2012/bin/estimator $2 $3 $4

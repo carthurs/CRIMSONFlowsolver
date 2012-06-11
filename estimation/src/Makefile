@@ -30,5 +30,5 @@ $(TARGET_ESTIMATOR): $(OBJS)
 
 .PHONY : clean
 clean : 
-	-$(RM) $(OBJS) $(TARGET_ESTIMATOR) *.mod *.exe *.pdb *.manifestmake 
+	-$(RM) $(OBJS) $(TARGET_ESTIMATOR) *.mod *.exe *.pdb *.manifest
 	-$(RM) $(TOP)/bin/$(TARGET_ESTIMATOR)*

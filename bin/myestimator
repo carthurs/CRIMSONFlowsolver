@@ -2,7 +2,7 @@
 ulimit -s unlimited
 
 export LES_LICENSE_SERVER="blackbook2v2"
-export PHASTA_CONFIG="$HOME/dev/simvascular2012/configs"
+export PHASTA_CONFIG="$HOME/dev/simvascular_flowsolver_estimator/configs"
 export LD_LIBRARY_PATH="/usr/local/OpenMPI-intel/lib:/opt/intel/mkl/lib/intel64:/home/nxiao/dev/boost_1_40_0/stage/lib"
 
 mkdir result

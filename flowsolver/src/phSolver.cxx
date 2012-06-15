@@ -284,8 +284,8 @@ int phSolver::initRequiredFieldsList_() {
 	Vec_RequiredFields_.insert( pair<string,SCField>("observation function time derivative of solution",
 			SCField("observation function time derivative of solution", SCField::Volume, -1, 7, SCField::Integer)) );
 
-	//	Vec_RequiredFields_.push_back(
-	//			SCField("aperm", SCField::Volume, -1, 7, SCField::Double)); // rnb
+	Vec_RequiredFields_.insert( pair<string,SCField>("temporary_array",
+				SCField("temporary_array", SCField::Volume, -1, 7, SCField::Double)) ); //
 
 	// from geombc.dat.*
 	Vec_RequiredFields_.insert( pair<string,SCField>("number of nodes",
@@ -387,8 +387,6 @@ int phSolver::SolverInit() {
 //		return 1;
 //	}
 
-	this->SetupProbe();
-
 	return 0;
 }
 
@@ -401,13 +399,11 @@ void phSolver::SolverForwardStep() {
 void phSolver::SolverForwardFinalize() {
 	itrdrv_iter_finalize(); // calls the fortran routine
 
-	this->UpdateFlowProbe();
 }
 
 void phSolver::SolverFinalize() {
 	itrdrv_finalize(); // calls the fortran routine
 
-	flow_out_.close();
 }
 
 int phSolver::SetValue(SCField field, int unitIndex, int varIndex,
@@ -509,201 +505,6 @@ int phSolver::getSize() {
 
 bool phSolver::hasFinished() {
 	return timdat.istep >= this->getNumTimeSteps();
-}
-
-void phSolver::SetupProbe() {
-
-	geom_points_ = vtkSmartPointer<vtkPoints>::New();
-	geom_ids_ = vtkSmartPointer<vtkIdList>::New();
-	geom_UGrid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
-	geom_vel_array_ = vtkSmartPointer<vtkDoubleArray>::New();
-
-	const SCField *coord_field_ = this->GetRequiredField("co-ordinates");
-	const SCField *soln_field_ = this->GetRequiredField("solution");
-
-	geom_vel_array_->SetNumberOfComponents(3);
-
-	double coordVal1,coordVal2,coordVal3;
-	double solVal1,solVal2,solVal3;
-	int nodeIndex;
-
-	for (int kk = 0; kk < coord_field_->GetNumUnits(); kk++)
-	{
-		this->GetValue(*coord_field_,kk,0,coordVal1);
-		this->GetValue(*coord_field_,kk,1,coordVal2);
-		this->GetValue(*coord_field_,kk,2,coordVal3);
-
-		this->GetValue(*soln_field_,kk,0,solVal1);
-		this->GetValue(*soln_field_,kk,1,solVal2);
-		this->GetValue(*soln_field_,kk,2,solVal3);
-
-		geom_points_->InsertPoint(kk,coordVal1,coordVal2,coordVal3);
-
-		geom_vel_array_->InsertNextTuple3(solVal1,solVal2,solVal3);
-	}
-
-	geom_UGrid_->SetPoints(geom_points_);
-
-	for (int kk = 0; kk < this->GetNumBlocks(); kk++)
-		for (int jj = 0; jj < this->GetBlockSize(kk); jj++) {
-
-			this->GetValueBlock(kk,jj,0,nodeIndex);
-			geom_ids_->InsertNextId(--nodeIndex);
-
-			this->GetValueBlock(kk,jj,1,nodeIndex);
-			geom_ids_->InsertNextId(--nodeIndex);
-
-			this->GetValueBlock(kk,jj,2,nodeIndex);
-			geom_ids_->InsertNextId(--nodeIndex);
-
-			this->GetValueBlock(kk,jj,3,nodeIndex);
-			geom_ids_->InsertNextId(--nodeIndex);
-
-			geom_UGrid_->InsertNextCell(VTK_TETRA,geom_ids_);
-
-			geom_ids_->Reset();
-		}
-
-    geom_UGrid_->GetPointData()->AddArray(geom_vel_array_);
-    geom_UGrid_->GetPointData()->GetArray(0)->SetName("velocity");
-
-	geom_UGrid_->Update();
-
-//	set up VTKcutter
-
-	// set the location of the cutting plane
-	geom_plane_ = vtkSmartPointer<vtkPlane>::New();
-	geom_plane_->SetOrigin(0,0,0);
-	geom_plane_->SetNormal(0,0,1);
-
-	geom_cutter_ = vtkSmartPointer<vtkCutter>::New();
-	geom_cutter_->SetCutFunction(geom_plane_);
-	geom_cutter_->SetInput(geom_UGrid_);
-	geom_cutter_->Update();
-
-	geom_connectivity_ = vtkSmartPointer<vtkConnectivityFilter>::New();
-	geom_connectivity_->SetInputConnection(geom_cutter_->GetOutputPort());
-	geom_connectivity_->SetExtractionModeToClosestPointRegion();
-	geom_connectivity_->SetClosestPoint(geom_plane_->GetOrigin());
-	geom_connectivity_->Update();
-
-	flow_out_.open ("cross_section_mean_flow.dat");
-
-//	cout << "number of intersections " << geom_connectivity_->GetOutput()->GetNumberOfPoints() << endl;
-
-//	vtkSmartPointer<vtkUnstructuredGridWriter> writer_ugrid = vtkUnstructuredGridWriter::New();
-//	vtkSmartPointer<vtkPolyDataWriter> writer = vtkPolyDataWriter::New();
-//	vtkSmartPointer<vtkUnstructuredGridWriter> writer_u = vtkUnstructuredGridWriter::New();
-//	ostream *vtkout;
-//
-//	writer_u->SetFileName("fromconnectivity.vtk");
-//	writer_u->SetInput(geom_connectivity_->GetOutput());
-//	vtkout = writer_u->OpenVTKFile();
-//	writer_u->Write();
-//	writer_u->CloseVTKFile(vtkout);
-}
-
-
-void phSolver::UpdateFlowProbe() {
-
-	double solVal1,solVal2,solVal3;
-	double vel1[3],vel2[3],vel3[3];
-
-	double *tempcoord,*tempvel;
-	double coord1[3],coord2[3],coord3[3];
-	double A[3], B[3], C[3], triArea, avgFlow;
-
-	const SCField *soln_field_ = this->GetRequiredField("solution");
-
-	for (int kk = 0; kk < soln_field_->GetNumUnits(); kk++)
-	{
-        this->GetValue(*soln_field_,kk,0,solVal1);
-		this->GetValue(*soln_field_,kk,1,solVal2);
-		this->GetValue(*soln_field_,kk,2,solVal3);
-
-		geom_UGrid_->GetPointData()->GetArray("velocity")->SetTuple3(kk,solVal1,solVal2,solVal3);
-	}
-
-	geom_cutter_->Modified();
-	geom_connectivity_->Update();
-
-//	for (int kk = 0; kk < geom_connectivity_->GetOutput()->GetNumberOfPoints(); kk++) {
-//		coord1 = geom_connectivity_->GetOutput()->GetPoint(kk);
-//		cout << kk << " " << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
-//	}
-
-	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
-
-	// loop through cells
-	avgFlow = 0;
-	for (int kk = 0; kk < geom_connectivity_->GetOutput()->GetNumberOfCells(); kk++) {
-		geom_connectivity_->GetOutput()->GetCellPoints(kk,ptIds);
-		//for (int jj = 0; jj < ptIds->GetNumberOfIds(); jj++) {
-		tempvel = geom_connectivity_->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(0));
-		vel1[0] = tempvel[0]; vel1[1] = tempvel[1]; vel1[2] = tempvel[2];
-
-		tempvel = geom_connectivity_->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(1));
-		vel2[0] = tempvel[0]; vel2[1] = tempvel[1]; vel2[2] = tempvel[2];
-
-		tempvel = geom_connectivity_->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(2));
-		vel3[0] = tempvel[0]; vel3[1] = tempvel[1]; vel3[2] = tempvel[2];
-
-		tempcoord = geom_connectivity_->GetOutput()->GetPoint(ptIds->GetId(0));
-		coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
-
-		tempcoord = geom_connectivity_->GetOutput()->GetPoint(ptIds->GetId(1));
-		coord2[0] = tempcoord[0]; coord2[1] = tempcoord[1]; coord2[2] = tempcoord[2];
-
-		tempcoord = geom_connectivity_->GetOutput()->GetPoint(ptIds->GetId(2));
-		coord3[0] = tempcoord[0]; coord3[1] = tempcoord[1]; coord3[2] = tempcoord[2];
-
-
-		//}
-
-//		cout << "cell " << kk << endl;
-//		cout << ptIds->GetId(0) << " " << ptIds->GetId(1) << " " << ptIds->GetId(2) << endl;
-//		cout << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
-//		cout << coord2[0] << " " << coord2[1] << " " << coord2[2] << endl;
-//		cout << coord3[0] << " " << coord3[1] << " " << coord3[2] << endl;
-
-		A[0] = coord2[0]-coord1[0];
-		A[1] = coord2[1]-coord1[1];
-		A[2] = coord2[2]-coord1[2];
-
-		B[0] = coord3[0]-coord1[0];
-		B[1] = coord3[1]-coord1[1];
-		B[2] = coord3[2]-coord1[2];
-
-		C[0] = (A[1]*B[2])-(B[1]*A[2]);
-		C[1] = -(A[0]*B[2])+(B[0]*A[2]);
-		C[2] = (A[0]*B[1])-(A[1]*B[0]);
-
-		triArea = 0.5*sqrt(C[0]*C[0]+C[1]*C[1]+C[2]*C[2]);
-
-		avgFlow += (double(1.0)/3.0)*(vel1[0]*C[0]+vel1[1]*C[1]+vel1[2]*C[2]+
-				                      vel2[0]*C[0]+vel2[1]*C[1]+vel2[2]*C[2]+
-				                      vel3[0]*C[0]+vel3[1]*C[1]+vel3[2]*C[2])*triArea;
-
-
-
-	}
-
-	//cout << avgFlow << endl;
-
-	if (rank_ == numProcs_ -1) {
-
-		flow_out_ << avgFlow << endl;
-
-
-	}
-
-
-}
-
-void phSolver::ComputeFlowProbe() {
-
-
-
 }
 
 int phSolver::input_fform() {

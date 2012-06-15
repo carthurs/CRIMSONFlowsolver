@@ -635,10 +635,16 @@
          call readdatablock(irstin,fname1//c_null_char,uread,iusiz, &
               c_char_"double"//c_null_char,iotype)
          uold(:,1:nsd)=uread(:,1:nsd)
-       else
+      else
          !allocate( uold(nshg,nsd) )
          uold(:,1:nsd) = zero
-       endif
+      endif
+
+      temporary_array = zero
+      call phSolverUpdateField(c_char_"temporary_array"//c_null_char, &
+                               c_char_"Volume"//c_null_char, &
+                               c_char_"Double"//c_null_char, &
+                               nshg, ndof, c_loc(temporary_array), c_null_ptr)
 
 ! 
 !

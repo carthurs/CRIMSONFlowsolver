@@ -75,11 +75,15 @@ int main(int argc, char** argv)
     {
         driver.InitializeStep();
 
-        driver.Forward();
+        driver.GetModel().Forward();
 
-        driver.Analyze();
+        driver.GetModel().GetState();
 
-        driver.GetModel().ForwardFinalize();
+        //driver.Forward();
+
+        //driver.Analyze();
+
+        //driver.GetModel().ForwardFinalize();
     }
 
     END;

@@ -15,6 +15,23 @@ subroutine setstate_comm() bind(C, name="setstate_comm")
 
 end subroutine
 
+subroutine temp_comm() bind(C, name="temp_comm")
+
+    use iso_c_binding
+    use shapeTable
+    use globalArrays
+    use phcommonvars
+
+    implicit none
+
+    if (numpe > 1) then
+        call commu ( yold, ilwork, nflow, 'out')
+        call commu ( acold, ilwork, nflow, 'out')
+        call commu ( uold, ilwork, nsd, 'out')
+    endif
+
+end subroutine
+
 !
 ! this code is based off of the timeseries code
 !

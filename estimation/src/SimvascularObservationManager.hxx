@@ -1,6 +1,8 @@
 #ifndef SIMVASCULAROBSERVATIONMANAGER_HXX
 
 #include <limits>
+#include <iostream>
+#include <fstream>
 
 #include "common_c.h"
 #include "cvSolverIO.h"
@@ -70,6 +72,9 @@ protected:
 	//! Final time at which observations are available.
 	double final_time_;
 
+	//! Do we have simulation results as synthetic data?
+	int synthetic_data_;
+
 	/*** Observation times ***/
 
 	//! Requested time.
@@ -114,11 +119,25 @@ protected:
 
     int* nodes_uniq_;
 
+
     Vector<int> StateObsIndex_;
     Vector<int> DataArraysObsIndex_;
 
 	int rank_;
 	int numProcs_;
+
+	/*** Cross-sectional flow observation ***/
+	vtkSmartPointer<vtkPoints> geom_points_;
+	vtkSmartPointer<vtkIdList> geom_ids_;
+	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
+
+	vtkSmartPointer<vtkPlane> geom_plane_;
+	vtkSmartPointer<vtkCutter> geom_cutter_;
+	vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
+
+	vtkSmartPointer<vtkDoubleArray> geom_vel_array_;
+
+	ofstream flow_out_;
 
 public:
 	// Constructors and destructor.
@@ -139,6 +158,8 @@ public:
 	/////////////////
 
 	void GetObservation(observation& observation);
+
+	void GetObservationFlow(observation& observation);
 
 	////////////////
 	// INNOVATION //
@@ -161,6 +182,9 @@ public:
 
 	template<class state>
 	void ApplyOperator(const state& x, observation& y) const;
+
+	template<class state>
+	void ApplyOperatorFlow(const state& x) ;
 
 	template<class state>
 	void ObserveFlow(const state& x, observation& y) const;

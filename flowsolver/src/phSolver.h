@@ -28,7 +28,6 @@ of the SCOREC Non-Commercial License this program is distributed under.
 #include <fstream>
 #include <algorithm>
 #include <string>
-#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
@@ -137,10 +136,6 @@ public:
 
 	const SCField GetField(SCField field, int* err) const;
 
-	void SetupProbe();
-	void UpdateFlowProbe();
-	void ComputeFlowProbe();
-
     int input_fform();
 
 	~phSolver();
@@ -179,18 +174,6 @@ private:
 
 	int rank_;
 	int numProcs_;
-
-	vtkSmartPointer<vtkPoints> geom_points_;
-	vtkSmartPointer<vtkIdList> geom_ids_;
-	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
-
-	vtkSmartPointer<vtkPlane> geom_plane_;
-	vtkSmartPointer<vtkCutter> geom_cutter_;
-	vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
-
-	vtkSmartPointer<vtkDoubleArray> geom_vel_array_;
-
-	ofstream flow_out_;
 
 }; //end class phSolver
 

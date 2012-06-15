@@ -14,6 +14,8 @@
       real*8, allocatable :: acold(:,:)
       real*8, allocatable :: uold(:,:)
 
+      real*8, allocatable :: temporary_array(:,:)
+
       integer (c_int), target, allocatable :: iBC(:)
       real*8, allocatable :: BC(:,:)
       real*8, allocatable :: solinc(:,:)
@@ -80,6 +82,9 @@
       if (.not. allocated(ac)) allocate (ac(nshg,ndof))
       if (.not. allocated(yold)) allocate (yold(nshg,ndof))
       if (.not. allocated(acold)) allocate (acold(nshg,ndof))
+
+      if (.not. allocated(temporary_array)) allocate(temporary_array(nshg,ndof))
+
       if (.not. allocated(ibc)) allocate (ibc(nshg))
       if (.not. allocated(BC)) allocate (BC(nshg,ndofBC))
       if (.not. allocated(solinc)) allocate (solinc(nshg,ndof))

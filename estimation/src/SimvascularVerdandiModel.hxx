@@ -1,15 +1,27 @@
 #ifndef VERDANDI_FILE_MODEL_SimvascularVerdandiModel_HXX
 
+#include "common_c.h"yy
+
 #include "partition.h"
-#include "phSolver.h"
-#include "SCField.h"
+#include "input_fform.h"
+#include "input.h"
+#include "proces.h"
+#include "itrdrv.h"
 #include "estimation_helpers.h"
-#include "common_c.h"
+#include "GlobalArrayTransfer.h"
+
+#include "mpi.h"
+
+#ifdef intel
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 
 #include <iostream>
 #include <fstream>
 
-phSolver* phS;
+GlobalArrayTransfer *gat;
 
 namespace Verdandi
 {
@@ -41,11 +53,11 @@ protected:
 	int rank_;
 	int numProcs_;
 
+	MPI_Comm iNewComm_C_;
+
 	state duplicated_state_;
 
-	int solveReturn;
-
-	const SCField *node_field_,*soln_field_,*acc_field_,*disp_field_;
+	int solveReturn_;
 
 	//! Background error variance.
 	double state_error_variance_value_;

@@ -96,85 +96,31 @@
                                 
       fname1='number of nodes?'
       call readheader(igeom,fname1//c_null_char,numnp,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of nodes"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(numnp))
                               
       fname1='number of modes?'
       call readheader(igeom,fname1//c_null_char,nshg,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of modes"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(nshg))
                               
       fname1='number of interior elements?'
       call readheader(igeom,fname1//c_null_char,numel,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of interior elements"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(numel))
                               
       fname1='number of boundary elements?'
       call readheader(igeom,fname1//c_null_char,numelb,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of boundary elements"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(numelb))
                               
       fname1='maximum number of element nodes?'
       call readheader(igeom,fname1//c_null_char,nen,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"maximum number of element nodes"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(nen))
                               
       fname1='number of interior tpblocks?'
       call readheader(igeom,fname1//c_null_char,nelblk,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of interior tpblocks"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(nelblk))
                               
       fname1='number of boundary tpblocks?'
       call readheader(igeom,fname1//c_null_char,nelblb,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of boundary tpblocks"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(nelblb))
                               
       fname1='number of nodes with Dirichlet BCs?'
       call readheader(igeom,fname1//c_null_char,numpbc,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of nodes with Dirichlet BCs"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(numpbc))
            
       fname1='number of shape functions?'
       call readheader(igeom,fname1//c_null_char,ntopsh,ione,c_char_"integer"//c_null_char, iotype)
-      call phSolverUpdateField(c_char_"number of shape functions solved on processor"//c_null_char, &
-                               c_char_"Scalar"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               1, 1, c_null_ptr, c_loc(ntopsh))
-                               
-! if the number of boundary blocks equals zero then there will be no boundary 
-!  connectivity, or boundary condition data --- delete those fields from the 
-!  list of required fields
-      if ( 0.eq.nelblb ) then
-         call phSolverRemoveField(c_char_"connectivity boundary linear tetrahedron"//c_null_char, &
-                                  c_char_"Surface"//c_null_char, &
-                                  c_char_"Integer"//c_null_char )
-         call phSolverRemoveField(c_char_"nbc codes linear tetrahedron"//c_null_char, &
-                                  c_char_"Surface"//c_null_char, &
-                                  c_char_"Integer"//c_null_char )
-         call phSolverRemoveField(c_char_"nbc values linear tetrahedron"//c_null_char, &
-                                  c_char_"Surface"//c_null_char, &
-                                  c_char_"Double"//c_null_char )
-         call phSolverRemoveField(c_char_"boundary condition array"//c_null_char, &
-                                  c_char_"Volume"//c_null_char, &
-                                  c_char_"Integer"//c_null_char )
-      endif
-                               
+
 !
 !.... calculate the maximum number of boundary element nodes
 !     
@@ -219,10 +165,6 @@
 
          fname1='size of ilwork array?'
          call readheader(igeom,fname1//c_null_char,nlwork,ione,c_char_"integer"//c_null_char, iotype)
-         call phSolverUpdateField(c_char_"size of ilwork array"//c_null_char, &
-                                  c_char_"Scalar"//c_null_char, &
-                                  c_char_"Integer"//c_null_char, &
-                                  1, 1, c_null_ptr, c_loc(nlwork))
 
          ione=1
          fname1='ilwork?'
@@ -238,10 +180,7 @@
            nlwork=1
            allocate( ilwork(1))
       endif
-      call phSolverUpdateField(c_char_"ilwork"//c_null_char, &
-                               c_char_"Volume"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               nlwork, 1, c_null_ptr, c_loc(ilwork))
+
 !     
 !.... read the node coordinates
 !
@@ -255,10 +194,7 @@
       ixsiz=numnp*nsd
       call readdatablock(igeom,fname1//c_null_char,xread,ixsiz, c_char_"double"//c_null_char,iotype)
       x = xread
-      call phSolverUpdateField(c_char_"co-ordinates"//c_null_char, &
-                               c_char_"Volume"//c_null_char, &
-                               c_char_"Double"//c_null_char, &
-                               numnp, nsd, c_loc(x), c_null_ptr)
+
 !
 !.... read in and block out the connectivity
 !  
@@ -275,10 +211,7 @@
       allocate( nBCread(nshg) )
       call readdatablock(igeom,fname1//c_null_char,nBCread,nshg,c_char_"integer"//c_null_char,iotype)
       nBC=nBCread
-      call phSolverUpdateField(c_char_"bc mapping array"//c_null_char, &
-                               c_char_"Volume"//c_null_char, &
-                               c_char_"Integer"//c_null_char, &
-                               nshg, 1, c_null_ptr, c_loc(nBC))
+
 !
 !.... read the temporary iBC array
 !
@@ -292,17 +225,11 @@
          call readdatablock(igeom,fname1//c_null_char,iBCtmpread,numpbc, &
                             c_char_"integer"//c_null_char,iotype)
          iBCtmp=iBCtmpread
-         call phSolverUpdateField(c_char_"bc codes array"//c_null_char, &
-                                  c_char_"Volume"//c_null_char, &
-                                  c_char_"Integer"//c_null_char, &
-                                  numpbc, 1, c_null_ptr, c_loc(iBC))
+
       else  ! sometimes a partition has no BC's
          allocate( iBCtmp(1) )
          iBCtmp=0
-         call phSolverUpdateField(c_char_"bc codes array"//c_null_char, &
-                                  c_char_"Volume"//c_null_char, &
-                                  c_char_"Integer"//c_null_char, &
-                                  1, 1, c_null_ptr, c_loc(iBC))
+
       endif
 !
 !.... read boundary condition data
@@ -324,17 +251,11 @@
          call readdatablock(igeom,fname1//c_null_char,BCinpread,iBCinpsiz, &
                             c_char_"double"//c_null_char,iotype)
          BCinp(:,1:(ndof+7))=BCinpread(:,1:(ndof+7))
-         call phSolverUpdateField(c_char_"boundary condition array"//c_null_char, &
-                                  c_char_"Volume"//c_null_char, &
-                                  c_char_"Integer"//c_null_char, &
-                                  numpbc, ndof+7, c_null_ptr, c_loc(BCinp))
+
       else  ! sometimes a partition has no BC's
          allocate( BCinp(1,ndof+7) )
          BCinp=0
-         call phSolverUpdateField(c_char_"boundary condition array"//c_null_char, &
-                                  c_char_"Volume"//c_null_char, &
-                                  c_char_"Integer"//c_null_char, &
-                                  1, ndof+7, c_null_ptr, c_loc(BCinp))
+
       endif
 !
 !.... read periodic boundary conditions
@@ -347,12 +268,6 @@
       call readdatablock(igeom,fname1//c_null_char,iperread,nshg, &
                             c_char_"integer"//c_null_char,iotype)
       iper=iperread
-      
-      !call phSolverUpdateField(c_char_"periodic masters array"//c_null_char, &
-      !                         c_char_"Volume"//c_null_char, &
-      !                         c_char_"Integer"//c_null_char, &
-      !                         nshg, 0, c_null_ptr, c_loc(iper))
-
 
       !
       !.... read in the local index of unique nodes
@@ -376,11 +291,6 @@
 
       endif
 
-      call phSolverUpdateField(c_char_"local index of unique nodes"//c_null_char, &
-      c_char_"Volume"//c_null_char, &
-      c_char_"Integer"//c_null_char, &
-      nshguniq, 1, c_null_ptr, c_loc(inodesuniq))
-
       !
       !.... read in the simple observation function arrays
       !
@@ -396,11 +306,6 @@
       call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_sol,iisiz, &
       c_char_"integer"//c_null_char,iotype)
 
-      call phSolverUpdateField(c_char_"observation function solution"//c_null_char, &
-      c_char_"Volume"//c_null_char, &
-      c_char_"Integer"//c_null_char, &
-      nshg2, ndof2, c_null_ptr, c_loc(ilinobsfunc_sol))
-
       fname1='observation function time derivative of solution?'
       call readheader(igeom,fname1//c_null_char,intfromfile, &
       itwo,c_char_"integer"//c_null_char, iotype)
@@ -410,12 +315,6 @@
       allocate( ilinobsfunc_acc(nshg2,ndof2) )
       call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_acc,iisiz, &
       c_char_"integer"//c_null_char,iotype)
-
-      call phSolverUpdateField(c_char_"observation function time derivative of solution"//c_null_char, &
-      c_char_"Volume"//c_null_char, &
-      c_char_"Integer"//c_null_char, &
-      nshg2, ndof2, c_null_ptr, c_loc(ilinobsfunc_acc))
-
 
       if (ideformwall.eq.1) then
           fname1='observation function displacement?'
@@ -428,10 +327,6 @@
           call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_disp,iisiz, &
           c_char_"integer"//c_null_char,iotype)
 
-          call phSolverUpdateField(c_char_"observation function displacement"//c_null_char, &
-          c_char_"Volume"//c_null_char, &
-          c_char_"Integer"//c_null_char, &
-          nshg2, nsd2, c_null_ptr, c_loc(ilinobsfunc_disp))
       endif
 
 
@@ -545,11 +440,6 @@
 !
       if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
       
-      call phSolverUpdateField(c_char_"solution"//c_null_char, &
-                               c_char_"Volume"//c_null_char, &
-                               c_char_"Double"//c_null_char, &
-                               nshg2, ndof2, c_loc(yold), c_null_ptr)
-
 !
 !.... read the values of primitive variables into q
 !
@@ -569,11 +459,6 @@
       call readheader(irstin,fname1//c_null_char,intfromfile, &
            ithree,c_char_"integer"//c_null_char, iotype)
       !allocate( acold(nshg,ndof) )
-
-      call phSolverUpdateField(c_char_"time derivative of solution"//c_null_char, &
-                               c_char_"Volume"//c_null_char, &
-                               c_char_"Double"//c_null_char, &
-                               nshg2, ndof2, c_loc(acold), c_null_ptr)
 
       if(intfromfile(1).ne.0) then 
          nshg2=intfromfile(1)
@@ -614,16 +499,7 @@
          endif
 !
          if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
-         
-         call phSolverUpdateField(c_char_"displacement"//c_null_char, &
-                                  c_char_"Volume"//c_null_char, &
-                                  c_char_"Double"//c_null_char, &
-                                  nshg2, ndisp, c_loc(uold), c_null_ptr)
 
-         call phSolverUpdateField(c_char_"elastic modulus scalar"//c_null_char, &
-                                  c_char_"Scalar"//c_null_char, &
-                                  c_char_"Double"//c_null_char, &
-                                  1, 1, c_null_ptr, c_loc(evw)) ! defined in common.h for now -- need to fix
 !
 !.... read the values of primitive variables into uold
 !
@@ -641,10 +517,10 @@
       endif
 
       temporary_array = zero
-      call phSolverUpdateField(c_char_"temporary_array"//c_null_char, &
-                               c_char_"Volume"//c_null_char, &
-                               c_char_"Double"//c_null_char, &
-                               nshg, ndof, c_loc(temporary_array), c_null_ptr)
+
+      call globalarrayassignpointer(c_loc(inodesuniq),c_loc(yold),c_loc(acold),c_loc(uold), &
+                                    c_loc(x), c_loc(temporary_array), &
+                                    c_loc(ilinobsfunc_sol), c_loc(ilinobsfunc_acc), c_loc(ilinobsfunc_disp))
 
 ! 
 !

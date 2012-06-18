@@ -69,9 +69,11 @@
 !
               allocate (mien(nelblk)%p(npro,nshl))
 
-              call phSolverUpdateBlockField( &
-              c_char_"connectivity interior linear tetrahedron"//c_null_char, &
-              npro, nshl, c_loc(mien(nelblk)%p) )
+              call globalblockedarrayassignpointer (npro, nshl, c_loc(mien(nelblk)%p))
+
+!              call phSolverUpdateBlockField( &
+!              c_char_"connectivity interior linear tetrahedron"//c_null_char, &
+!              npro, nshl, c_loc(mien(nelblk)%p) )
 
               allocate (mxmudmi(nelblk)%p(npro,maxsh))
 !

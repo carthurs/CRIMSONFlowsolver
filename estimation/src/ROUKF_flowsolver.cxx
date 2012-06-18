@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 
         driver.GetModel().Forward();
 
-        driver.GetModel().GetState();
+        driver.GetObservationManager().ApplyOperatorFlow(driver.GetModel().GetState());
 
         //driver.Forward();
 

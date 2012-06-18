@@ -20,7 +20,7 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
 //! Destructor.
 SimvascularVerdandiModel::~SimvascularVerdandiModel()
 {
-	phS->SolverFinalize();
+	itrdrv_finalize();
 
 	param_out_.close();
 
@@ -45,7 +45,7 @@ void SimvascularVerdandiModel::Initialize(string configuration_file)
 
 void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
 {
-	char inpfilename[100];
+	char pathToProcsCaseDir[100];
 
 //	MPI_Comm newcomm;
 //	int color,key;
@@ -53,8 +53,6 @@ void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
 //	int numprocs_perparticle;
 
 	//MPI_Init(&argc,&argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &numProcs_);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
 
 	// create MPI communicator for one simulation
 	// by splitting MPI_COMM_WORLD
@@ -66,13 +64,18 @@ void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
 //	MPI_Comm_split(MPI_COMM_WORLD,color,key,&newcomm);
 
 	// Initialize phSolver
-	phS = phSolver::Instance();
+	//phS = phSolver::Instance();
+	gat = GlobalArrayTransfer::Instance();
 
 	// save the communicator
-	phS->setCommunicator(MPI_COMM_WORLD);
+	iNewComm_C_ = MPI_COMM_WORLD;
+	newcom.iNewComm = MPI_Comm_c2f(iNewComm_C_); // modifies newcom in fortran common block
+
+	MPI_Comm_size(iNewComm_C_, &numProcs_);
+	MPI_Comm_rank(iNewComm_C_, &rank_);
 
 	// read configuration file
-	phS->readConfiguration();
+	input_fform();
 
 	// update numProcsTotal and rank
 //	MPI_Comm_size(newcomm, &numProcs);
@@ -89,30 +92,18 @@ void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	sprintf(inpfilename,"%d-procs-case",numProcs_);
+	sprintf(pathToProcsCaseDir,"%d-procs-case",numProcs_);
+	chdir(pathToProcsCaseDir);
 
-	cout << "changing directory to " << inpfilename << endl;
-
-	phS->readMeshAndSolution_fromFiles(inpfilename);
-
-	solveReturn = phS->SolverInit(); // initialize solver
-
-	if ( 0 ==solveReturn ) {
-		if (rank_ == 0)
-			cout << "flowsolver initiated" << endl;
-	}
-	else {
-		if (rank_ == 0)
-			fprintf(stderr, "flowsolver failed to initiate\n");
-		MPI_Finalize();
-		exit(1);
-	}
+	input(&numProcs_, &rank_);
+    proces();
+    itrdrv_init(); // initialize solver
 
 	// Initialize Nstate_, Nparameter_, state_....
 	Nparameter_ = 1;
 
 	// Compute the local state size
-	Nstate_local_ = phS->getSize();
+	Nstate_local_ = (NSD + 2 * 4) * conpar.nshguniq ;
 
 	// Add the number of parameters to the local state size of the last processor
 	if (rank_ == numProcs_ - 1)
@@ -125,12 +116,6 @@ void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
 	// of elements per processor that is given by Nstate_local_
 	//
 	duplicated_state_.Reallocate(Nstate_, Nstate_local_);
-
-	node_field_ = phS->GetRequiredField("local index of unique nodes");
-    soln_field_ = phS->GetRequiredField("solution");
-    acc_field_ = phS->GetRequiredField("time derivative of solution");
-    if (nomodule.ideformwall > 0)
-    	disp_field_ = phS->GetRequiredField("displacement");
 
 	//x_.Reallocate(Nstate_);
 
@@ -181,16 +166,16 @@ void SimvascularVerdandiModel::InitializeStep()
 /*! \f[x^f_{h+1} = \mathcal{M}_h(x^a_h, p_h)\,.\f] */
 void SimvascularVerdandiModel::Forward()
 {
-	phS->SolverForwardInit();
-	phS->SolverForwardStep();
-	phS->SolverForwardFinalize();
+	itrdrv_iter_init();
+	itrdrv_iter_step();
+	itrdrv_iter_finalize();
 }
 
 //! Finalizes the current time step
 //! meant to be called after the mean state with innovation is set
 void SimvascularVerdandiModel::ForwardFinalize()
 {
-	phS->SolverForwardFinalize(); // routines that allow moving to the next step
+	itrdrv_iter_finalize(); // routines that allow moving to the next step
 
 	//
 	// write down the parameter values in a file
@@ -214,7 +199,7 @@ void SimvascularVerdandiModel::ForwardFinalize()
  */
 bool SimvascularVerdandiModel::HasFinished() const
 {
-	return phS->hasFinished();
+	return timdat.istep >= inpdat.nstep[0];
 }
 
 
@@ -245,8 +230,8 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
 	duplicated_state_.Copy(x); // copies x into the duplicated state vector
 	StateUpdated();            // updates actual model state with duplicated state vector
 
-	phS->SolverForwardInit();  // advances the model forward
-	phS->SolverForwardStep();  // note that ForwardFinalize is not called here
+	itrdrv_iter_init();  // advances the model forward
+	itrdrv_iter_step();  // note that ForwardFinalize is not called here
 
 	x.Copy(GetState());        // copies the actual model state (via duplicated state) into x
 
@@ -321,8 +306,8 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
 double SimvascularVerdandiModel::GetTime() const
 {
 	// the time is adjusted by 1 due to the time not being
-	// incremented until the very end of the time step
-	return (double)(phS->getTime()+1);
+	// incremented until the very end of the time step in the fortran routines
+	return (double)(timdat.lstep+1);
 }
 
 
@@ -382,15 +367,17 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState()
 	// The list of unique nodes (master image) is subset of the nodes that are on the local processor
 	//
 
-	for(int unitIdx=0; unitIdx < node_field_->GetNumUnits(); unitIdx++) {
+	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
+		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
 
-		for(int varIdx=0; varIdx < soln_field_->GetNumVars()-1; varIdx++) { // ignore the 5th dof and beyond
+		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-			phS->GetValue(*soln_field_, actualIdx-1, varIdx, val);
+		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
 
-			duplicated_state_.SetBuffer(icounter++,val);
+			//phS->GetValue(*soln_field_, actualIdx-1, varIdx, val);
+
+			duplicated_state_.SetBuffer(icounter++,(gat->global_yold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
 
 		}
 
@@ -401,15 +388,17 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState()
 	// in the flowsolver this is acold
 	//
 
-	for(int unitIdx=0; unitIdx < node_field_->GetNumUnits(); unitIdx++) {
+	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
+		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
 
-		for(int varIdx=0; varIdx < acc_field_->GetNumVars()-1; varIdx++) { // ignore the 5th dof and beyond
+		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-			phS->GetValue(*acc_field_, actualIdx-1, varIdx, val);
+		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
 
-			duplicated_state_.SetBuffer(icounter++,val);
+			//phS->GetValue(*acc_field_, actualIdx-1, varIdx, val);
+
+			duplicated_state_.SetBuffer(icounter++,(gat->global_acold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
 
 		}
 
@@ -422,15 +411,17 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState()
 
 	if (nomodule.ideformwall > 0) {
 
-		for(int unitIdx=0; unitIdx < node_field_->GetNumUnits(); unitIdx++) {
+		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-			phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
+			//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
 
-			for(int varIdx=0; varIdx < disp_field_->GetNumVars(); varIdx++) { // 3 dofs
+			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-				phS->GetValue(*disp_field_, actualIdx-1, varIdx, val);
+			for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
 
-				duplicated_state_.SetBuffer(icounter++,val);
+				//phS->GetValue(*disp_field_, actualIdx-1, varIdx, val);
+
+				duplicated_state_.SetBuffer(icounter++,(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
 
 			}
 
@@ -446,7 +437,8 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState()
 	if (rank_ == numProcs_ - 1) {
 
 		if (nomodule.ideformwall > 0) {
-			phS->GetValue(*phS->GetRequiredField("elastic modulus scalar"), 0, 0, val);
+			//phS->GetValue(*phS->GetRequiredField("elastic modulus scalar"), 0, 0, val);
+			val = nomodule.evw;
 
 			duplicated_state_.SetBuffer(icounter++,log2(val));
 		}
@@ -490,15 +482,19 @@ void SimvascularVerdandiModel::StateUpdated()
 	// The list of unique nodes (master image) is subset of the nodes that are on the local processor
 	//
 
-	for(int unitIdx=0; unitIdx < node_field_->GetNumUnits(); unitIdx++) {
+	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
+		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
 
-		for(int varIdx=0; varIdx < soln_field_->GetNumVars()-1; varIdx++) { // ignore the 5th dof and beyond
+		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-			val = duplicated_state_(icounter++);
+		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
 
-			phS->SetValue(*soln_field_, actualIdx-1, varIdx, val);
+			//val = duplicated_state_(icounter++);
+
+			//phS->SetValue(*soln_field_, actualIdx-1, varIdx, val);
+
+			(gat->global_yold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
 
 		}
 
@@ -509,15 +505,19 @@ void SimvascularVerdandiModel::StateUpdated()
 	// in the flowsolver this is acold
 	//
 
-	for(int unitIdx=0; unitIdx < node_field_->GetNumUnits(); unitIdx++) {
+	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
+		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
 
-		for(int varIdx=0; varIdx < acc_field_->GetNumVars()-1; varIdx++) { // ignore the 5th dof and beyond
+		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-			val = duplicated_state_(icounter++);
+		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
 
-			phS->SetValue(*acc_field_, actualIdx-1, varIdx, val);
+			//val = duplicated_state_(icounter++);
+
+			//phS->SetValue(*acc_field_, actualIdx-1, varIdx, val);
+
+			(gat->global_acold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
 
 		}
 
@@ -528,15 +528,19 @@ void SimvascularVerdandiModel::StateUpdated()
 	// in the flowsolver this is uold
 	//
 
-	for(int unitIdx=0; unitIdx < node_field_->GetNumUnits(); unitIdx++) {
+	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
+		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
 
-		for(int varIdx=0; varIdx < disp_field_->GetNumVars(); varIdx++) { // 3 dofs
+		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-			val = duplicated_state_(icounter++);
+		for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
 
-			phS->SetValue(*disp_field_, actualIdx-1, varIdx, val);
+			//val = duplicated_state_(icounter++);
+
+			//phS->SetValue(*disp_field_, actualIdx-1, varIdx, val);
+
+			(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
 
 		}
 
@@ -559,7 +563,9 @@ void SimvascularVerdandiModel::StateUpdated()
 	if (nomodule.ideformwall > 0) {
 		MPI_Bcast(&val, 1, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
 
-		phS->SetValue(*phS->GetRequiredField("elastic modulus scalar"), 0, 0, val);
+		//phS->SetValue(*phS->GetRequiredField("elastic modulus scalar"), 0, 0, val);
+
+		nomodule.evw = val;
 	}
 
 	//

@@ -716,34 +716,48 @@ module phcommonvars
   end subroutine symwdg
 
 
-  subroutine phsolverupdatefield (fieldname, domaintype, valtype, numunits, numvars, dblptr, intptr) &
-             bind(C, name='phSolverUpdateField')
-  use iso_c_binding
-  character(kind=c_char), intent(in) :: fieldname(*) 
-  character(kind=c_char), intent(in) :: domaintype(*)
-  character(kind=c_char), intent(in) :: valtype(*)
-  integer(c_int), value :: numunits
-  integer(c_int), value :: numvars 
-  type(c_ptr), value :: dblptr
-  type(c_ptr), value :: intptr
-  end subroutine phsolverupdatefield
+!  subroutine phsolverupdatefield (fieldname, domaintype, valtype, numunits, numvars, dblptr, intptr) &
+!             bind(C, name='phSolverUpdateField')
+!  use iso_c_binding
+!  character(kind=c_char), intent(in) :: fieldname(*)
+!  character(kind=c_char), intent(in) :: domaintype(*)
+!  character(kind=c_char), intent(in) :: valtype(*)
+!  integer(c_int), value :: numunits
+!  integer(c_int), value :: numvars
+!  type(c_ptr), value :: dblptr
+!  type(c_ptr), value :: intptr
+!  end subroutine phsolverupdatefield
 
-  subroutine phsolverupdateblockfield (fieldname, numunits, numvars, intptr) &
-             bind(C, name='phSolverUpdateBlockField')
-  use iso_c_binding
-  character(kind=c_char), intent(in) :: fieldname(*)
-  integer(c_int), value :: numunits
-  integer(c_int), value :: numvars
-  type(c_ptr), value :: intptr
-  end subroutine phsolverupdateblockfield
+  subroutine globalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, coordptr, taptr, oyptr, oaptr, ouptr) &
+  bind(C, name='GlobalArrayAssignPointer')
+      use iso_c_binding
+      type(c_ptr), value :: uniqptr
+      type(c_ptr), value :: yoldptr
+      type(c_ptr), value :: acoldptr
+      type(c_ptr), value :: uoldptr
+      type(c_ptr), value :: coordptr
+      type(c_ptr), value :: taptr
+      type(c_ptr), value :: oyptr
+      type(c_ptr), value :: oaptr
+      type(c_ptr), value :: ouptr
+  end subroutine globalarrayassignpointer
 
-  subroutine phsolverremovefield (fieldname, domaintype, valtype) &
-             bind(C, name='phSolverRemoveField')
-  use iso_c_binding
-  character(kind=c_char), intent(in) :: fieldname(*) 
-  character(kind=c_char), intent(in) :: domaintype(*)
-  character(kind=c_char), intent(in) :: valtype(*)
-  end subroutine phsolverremovefield
+  subroutine globalblockedarrayassignpointer (npro_in, nshl_in, ien_in) &
+  bind(C, name='GlobalBlockedArrayAssignPointer')
+      use iso_c_binding
+      integer(c_int), value :: npro_in
+      integer(c_int), value :: nshl_in
+      type(c_ptr), value :: ien_in
+  end subroutine
+
+!  subroutine phsolverupdateblockfield (fieldname, numunits, numvars, intptr) &
+!             bind(C, name='phSolverUpdateBlockField')
+!  use iso_c_binding
+!  character(kind=c_char), intent(in) :: fieldname(*)
+!  integer(c_int), value :: numunits
+!  integer(c_int), value :: numvars
+!  type(c_ptr), value :: intptr
+!  end subroutine phsolverupdateblockfield
 
   real(c_double) function tmrc() bind(C, name="tmrc")
   use iso_c_binding, only: c_double

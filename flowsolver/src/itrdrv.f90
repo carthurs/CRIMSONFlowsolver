@@ -192,16 +192,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         allocate (lhsP(4,nnz_tot))
         allocate (lhsK(9,nnz_tot))
 
-        call phSolverUpdateField(c_char_"aperm"//c_null_char, &
-                                 c_char_"Volume"//c_null_char, &
-                                 c_char_"Double"//c_null_char, &
-                                 nshg, nPermDims, c_loc(aperm), c_null_ptr)
-
-        call phSolverUpdateField(c_char_"nPermDims"//c_null_char, &
-                                 c_char_"Scalar"//c_null_char, &
-                                 c_char_"Integer"//c_null_char, &
-                                 1, 1, c_null_ptr, c_loc(nPermDims))
-
         call readLesRestart( lesId,  aperm, nshg, myrank, lstep, &
         nPermDims )
 

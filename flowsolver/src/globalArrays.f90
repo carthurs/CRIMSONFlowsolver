@@ -8,13 +8,13 @@
       module globalArrays
       use, intrinsic :: iso_c_binding
       real (c_double), target, allocatable :: y(:,:)
-      real*8, allocatable :: ac(:,:)
+      real (c_double), target, allocatable :: ac(:,:)
       real (c_double), target, allocatable :: u(:,:)
-      real*8, allocatable :: yold(:,:)
-      real*8, allocatable :: acold(:,:)
-      real*8, allocatable :: uold(:,:)
+      real (c_double), target, allocatable :: yold(:,:)
+      real (c_double), target, allocatable :: acold(:,:)
+      real (c_double), target, allocatable :: uold(:,:)
 
-      real*8, allocatable :: temporary_array(:,:)
+      real (c_double), allocatable :: temporary_array(:,:)
 
       integer (c_int), target, allocatable :: iBC(:)
       real*8, allocatable :: BC(:,:)
@@ -52,10 +52,10 @@
 ! new arrays that are used specifically for data assimilation
 !
 
-      integer, allocatable :: inodesuniq(:) ! local unique index of nodes
-      integer, allocatable :: ilinobsfunc_sol(:,:) ! simple linear observation functions
-      integer, allocatable :: ilinobsfunc_acc(:,:)
-      integer, allocatable :: ilinobsfunc_disp(:,:)
+      integer (c_int), target, allocatable :: inodesuniq(:) ! local unique index of nodes
+      integer (c_int), target, allocatable :: ilinobsfunc_sol(:,:) ! simple linear observation functions
+      integer (c_int), target, allocatable :: ilinobsfunc_acc(:,:)
+      integer (c_int), target, allocatable :: ilinobsfunc_disp(:,:)
  
 !linear algebra matrices (actually allocated in itrdrv.f but destroyed
 !with global destructor)
@@ -127,6 +127,7 @@
       endif
 
       end
+
 
 !
 !

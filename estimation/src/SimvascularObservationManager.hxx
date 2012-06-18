@@ -3,10 +3,14 @@
 #include <limits>
 #include <iostream>
 #include <fstream>
+#include <vector>
+using namespace std;
 
 #include "common_c.h"
 #include "cvSolverIO.h"
-#include "SimvascularVerdandiModel.hxx"
+
+
+#include "mpi.h"
 
 //#include "CGAL/Simple_cartesian.h"
 //#include "CGAL/AABB_tree.h"
@@ -25,6 +29,24 @@
 //typedef CGAL::AABB_tree<Traits> Tree;
 //typedef Tree::Object_and_primitive_id Object_and_primitive_id;
 //typedef Tree::Primitive_id Primitive_id;
+
+// VTK includes
+#include "vtkIdList.h"
+#include "vtkCellArray.h"
+#include "vtkDoubleArray.h"
+#include "vtkPoints.h"
+#include "vtkPolyData.h"
+#include "vtkPolyDataNormals.h"
+#include "vtkPointData.h"
+#include "vtkCellData.h"
+#include "vtkPolyDataWriter.h"
+#include "vtkSmartPointer.h"
+#include "vtkPlane.h"
+#include "vtkCutter.h"
+#include "vtkConnectivityFilter.h"
+#include "vtkUnstructuredGrid.h"
+#include "vtkUnstructuredGridWriter.h"
+#include "vtkCellLocator.h"
 
 namespace Verdandi {
 
@@ -136,6 +158,12 @@ protected:
 	vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
 
 	vtkSmartPointer<vtkDoubleArray> geom_vel_array_;
+
+	vector <vtkSmartPointer<vtkPlane> > geom_planes_;
+	vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
+	vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connectivities_;
+
+	int Nobservation_flow_;
 
 	ofstream flow_out_;
 

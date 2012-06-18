@@ -13,14 +13,14 @@ FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR)
 #CXX_LIBS = libcmt.lib libcpmt.lib
 
 HDRS  =   CInput.h \
-          common_c.h input.h itrdrv.h \
-          partition.h phSolver.h proces.h SCField.h \
+          common_c.h globalArrays.h input.h input_fform.h itrdrv.h \
+          partition.h phSolver.h proces.h \
           shapeFuncInternals.h solverFields.h topo_shapedefs.h\
           usr.h ValType.h
 
-CXXSRCS = Cinput.cxx \
+CXXSRCS = Cinput.cxx GlobalArrayTransfer.cxx input_fform.cxx \
           newshape.cxx partition.cxx \
-          phSolver.cxx SCField.cxx ValType.cxx
+          ValType.cxx
 
 CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           Fn.c FnDrv.c getIntPnts.c lestools.c modeShape.c \

@@ -52,14 +52,14 @@ void SimvascularObservationManager::Initialize(const Model& model,
 			final_time_);
 	configuration.Set("error.variance", "v > 0", error_variance_value_);
 
-	isize_solution_ = phS->GetRequiredField("solution")->GetNumUnits() * (phS->GetRequiredField("solution")->GetNumVars() - 1); // ignore last dof
+	isize_solution_ = conpar.nshg * 4; // ignore last dof
 
 	if (nomodule.ideformwall > 0)
-		isize_displacement_ = phS->GetRequiredField("displacement")->GetNumUnits() * phS->GetRequiredField("displacement")->GetNumVars() ;
+		isize_displacement_ = conpar.nshg * NSD ;
 	else
 		isize_displacement_ = 0;
 
-	isize_nshg_ = phS->GetRequiredField("solution")->GetNumUnits();
+	isize_nshg_ = conpar.nshg;
 
     //
     // allocate space for the data (right now it is the size of the full state)
@@ -92,17 +92,19 @@ void SimvascularObservationManager::Initialize(const Model& model,
     //
     int obsCounter = 0;
     int actualIdx;
-    int actualnshg = phS->GetRequiredField("local index of unique nodes")->GetNumUnits();
+    int actualnshg = conpar.nshguniq;
     int obsFuncVal;
 
-    for(int unitIdx=0; unitIdx < phS->GetRequiredField("local index of unique nodes")->GetNumUnits(); unitIdx++) {
+    for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    	phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    	//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    	actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
     	actualIdx--;
 
     	for (int kk = 0; kk < 4; kk++) {
 
-    		phS->GetValue(*phS->GetRequiredField("observation function solution"), actualIdx, kk, obsFuncVal);
+    		//phS->GetValue(*phS->GetRequiredField("observation function solution"), actualIdx, kk, obsFuncVal);
+    		obsFuncVal = (gat->global_ilinobsfunc_sol_ptr)[kk * conpar.nshg + actualIdx];
 
     		//if (linobs_soln_[kk*isize_nshg_+actualIdx] > 0) {
     		if (obsFuncVal > 0) {
@@ -113,14 +115,16 @@ void SimvascularObservationManager::Initialize(const Model& model,
     	}
     }
 
-    for(int unitIdx=0; unitIdx < phS->GetRequiredField("local index of unique nodes")->GetNumUnits(); unitIdx++) {
+    for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    	phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    	//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    	actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
     	actualIdx--;
 
     	for (int kk = 0; kk < 4; kk++) {
 
-    		phS->GetValue(*phS->GetRequiredField("observation function time derivative of solution"), actualIdx, kk, obsFuncVal);
+    		//phS->GetValue(*phS->GetRequiredField("observation function time derivative of solution"), actualIdx, kk, obsFuncVal);
+    		obsFuncVal = (gat->global_ilinobsfunc_acc_ptr)[kk * conpar.nshg + actualIdx];
 
     		//if (linobs_acc_[kk*isize_nshg_+actualIdx] > 0) {
     		if (obsFuncVal > 0) {
@@ -133,14 +137,16 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
     if (nomodule.ideformwall > 0) {
 
-    	for(int unitIdx=0; unitIdx < phS->GetRequiredField("local index of unique nodes")->GetNumUnits(); unitIdx++) {
+    	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    		phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    		//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
     		actualIdx--;
 
     		for (int kk = 0; kk < 3; kk++) {
 
-    			phS->GetValue(*phS->GetRequiredField("observation function displacement"), actualIdx, kk, obsFuncVal);
+    			//phS->GetValue(*phS->GetRequiredField("observation function displacement"), actualIdx, kk, obsFuncVal);
+    			obsFuncVal = (gat->global_ilinobsfunc_disp_ptr)[kk * conpar.nshg + actualIdx];
 
     			//if (linobs_disp_[kk*isize_nshg_+actualIdx] > 0) {
     			if (obsFuncVal > 0) {
@@ -187,45 +193,43 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	geom_UGrid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	geom_vel_array_ = vtkSmartPointer<vtkDoubleArray>::New();
 
-	const SCField *coord_field_ = phS->GetRequiredField("co-ordinates");
-	const SCField *soln_field_ = phS->GetRequiredField("solution");
-
 	geom_vel_array_->SetNumberOfComponents(3);
 
 	double coordVal1,coordVal2,coordVal3;
 	double solVal1,solVal2,solVal3;
 	int nodeIndex;
 
-	for (int kk = 0; kk < coord_field_->GetNumUnits(); kk++)
+	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++)
 	{
-		phS->GetValue(*coord_field_,kk,0,coordVal1);
-		phS->GetValue(*coord_field_,kk,1,coordVal2);
-		phS->GetValue(*coord_field_,kk,2,coordVal3);
+		coordVal1 = (gat->global_coord_ptr)[0 * conpar.nshg + unitIdx];
+		coordVal2 = (gat->global_coord_ptr)[1 * conpar.nshg + unitIdx];
+		coordVal3 = (gat->global_coord_ptr)[2 * conpar.nshg + unitIdx];
 
-		phS->GetValue(*soln_field_,kk,0,solVal1);
-		phS->GetValue(*soln_field_,kk,1,solVal2);
-		phS->GetValue(*soln_field_,kk,2,solVal3);
+		solVal1 = (gat->global_yold_ptr)[0 * conpar.nshg + unitIdx];
+		solVal2 = (gat->global_yold_ptr)[1 * conpar.nshg + unitIdx];
+		solVal3 = (gat->global_yold_ptr)[2 * conpar.nshg + unitIdx];
 
-		geom_points_->InsertPoint(kk,coordVal1,coordVal2,coordVal3);
+		geom_points_->InsertPoint(unitIdx,coordVal1,coordVal2,coordVal3);
 
 		geom_vel_array_->InsertNextTuple3(solVal1,solVal2,solVal3);
 	}
 
 	geom_UGrid_->SetPoints(geom_points_);
 
-	for (int kk = 0; kk < phS->GetNumBlocks(); kk++)
-		for (int jj = 0; jj < phS->GetBlockSize(kk); jj++) {
+	for (int kk = 0; kk < gat->global_mien.size(); kk++)
+		for (int jj = 0; jj < gat->global_npro[kk]; jj++) {
 
-			phS->GetValueBlock(kk,jj,0,nodeIndex);
+//			phS->GetValueBlock(kk,jj,0,nodeIndex);
+			nodeIndex = gat->global_mien[kk][0 * gat->global_npro[kk] + jj];
 			geom_ids_->InsertNextId(--nodeIndex);
 
-			phS->GetValueBlock(kk,jj,1,nodeIndex);
+			nodeIndex = gat->global_mien[kk][1 * gat->global_npro[kk] + jj];
 			geom_ids_->InsertNextId(--nodeIndex);
 
-			phS->GetValueBlock(kk,jj,2,nodeIndex);
+			nodeIndex = gat->global_mien[kk][2 * gat->global_npro[kk] + jj];
 			geom_ids_->InsertNextId(--nodeIndex);
 
-			phS->GetValueBlock(kk,jj,3,nodeIndex);
+			nodeIndex = gat->global_mien[kk][3 * gat->global_npro[kk] + jj];
 			geom_ids_->InsertNextId(--nodeIndex);
 
 			geom_UGrid_->InsertNextCell(VTK_TETRA,geom_ids_);
@@ -238,23 +242,29 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	geom_UGrid_->Update();
 
-	//	set up VTKcutter
+	//	set up VTKcutters
+	Nobservation_flow_ = 1;
 
-	// set the location of the cutting plane
-	geom_plane_ = vtkSmartPointer<vtkPlane>::New();
-	geom_plane_->SetOrigin(0,0,0);
-	geom_plane_->SetNormal(0,0,1);
+	for (int kk = 0; kk < Nobservation_flow_; kk++) {
 
-	geom_cutter_ = vtkSmartPointer<vtkCutter>::New();
-	geom_cutter_->SetCutFunction(geom_plane_);
-	geom_cutter_->SetInput(geom_UGrid_);
-	geom_cutter_->Update();
+		// set the location of the cutting plane
+		geom_plane_ = vtkSmartPointer<vtkPlane>::New();
+		geom_plane_->SetOrigin(0,0,0);
+		geom_plane_->SetNormal(0,0,1);
+		geom_planes_.push_back(geom_plane_);
 
-	geom_connectivity_ = vtkSmartPointer<vtkConnectivityFilter>::New();
-	geom_connectivity_->SetInputConnection(geom_cutter_->GetOutputPort());
-	geom_connectivity_->SetExtractionModeToClosestPointRegion();
-	geom_connectivity_->SetClosestPoint(geom_plane_->GetOrigin());
-	geom_connectivity_->Update();
+		geom_cutter_ = vtkSmartPointer<vtkCutter>::New();
+		geom_cutter_->SetCutFunction(geom_plane_);
+		geom_cutter_->SetInput(geom_UGrid_);
+		geom_cutters_.push_back(geom_cutter_);
+
+		geom_connectivity_ = vtkSmartPointer<vtkConnectivityFilter>::New();
+		geom_connectivity_->SetInputConnection(geom_cutter_->GetOutputPort());
+		geom_connectivity_->SetExtractionModeToClosestPointRegion();
+		geom_connectivity_->SetClosestPoint(geom_plane_->GetOrigin());
+		geom_connectivities_.push_back(geom_connectivity_);
+
+	}
 
 	flow_out_.open ("cross_section_mean_flow.dat");
 
@@ -613,121 +623,116 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x) {
 	double coord1[3],coord2[3],coord3[3];
 	double A[3], B[3], C[3], triArea, avgFlow, tempL;
 
-	const SCField *soln_field = phS->GetRequiredField("solution");
-	const SCField *node_field = phS->GetRequiredField("local index of unique nodes");
-	const SCField *temp_field = phS->GetRequiredField("temporary_array");
-
 	int actualIdx;
 
 	double val;
 
     int icounter = 0;
 
-	for(int unitIdx=0; unitIdx < node_field->GetNumUnits(); unitIdx++) {
+	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
 
-		phS->GetValue(*node_field, unitIdx, 0, actualIdx);
+	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		for(int varIdx=0; varIdx < temp_field->GetNumVars()-1; varIdx++) { // ignore the 5th dof and beyond
+		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+
+		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
 
 			val = x(icounter++);
 
-			phS->SetValue(*temp_field, actualIdx-1, varIdx, val);
+			//phS->SetValue(*temp_field, actualIdx-1, varIdx, val);
+			(gat->global_temporary_array_ptr)[varIdx * conpar.nshg + actualIdx-1] = val;
 
 		}
 
 	}
 
+	// the values coming from the state vector need to communicated at the interprocessor boundaries
 	if (numProcs_ > 1)
 		temp_comm();
 
-	for (int kk = 0; kk < temp_field->GetNumUnits(); kk++)
+	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++)
 	{
-		phS->GetValue(*temp_field,kk,0,solVal1);
-		phS->GetValue(*temp_field,kk,1,solVal2);
-		phS->GetValue(*temp_field,kk,2,solVal3);
+		solVal1 = (gat->global_temporary_array_ptr)[0 * conpar.nshg + unitIdx];
+		solVal2 = (gat->global_temporary_array_ptr)[1 * conpar.nshg + unitIdx];
+		solVal3 = (gat->global_temporary_array_ptr)[2 * conpar.nshg + unitIdx];
 
-		geom_UGrid_->GetPointData()->GetArray("velocity")->SetTuple3(kk,solVal1,solVal2,solVal3);
+		geom_UGrid_->GetPointData()->GetArray("velocity")->SetTuple3(unitIdx,solVal1,solVal2,solVal3);
 	}
 
-//	for (int kk = 0; kk < soln_field_->GetNumUnits(); kk++)
-//	{
-//		phS->GetValue(*soln_field_,kk,0,solVal1);
-//		phS->GetValue(*soln_field_,kk,1,solVal2);
-//		phS->GetValue(*soln_field_,kk,2,solVal3);
-//
-//		geom_UGrid_->GetPointData()->GetArray("velocity")->SetTuple3(kk,solVal1,solVal2,solVal3);
-//	}
+	for (int kk = 0; kk < Nobservation_flow_ ; kk++) {
+		geom_cutters_[kk]->Modified();
+		geom_connectivities_[kk]->Update();
 
-	geom_cutter_->Modified();
-	geom_connectivity_->Update();
 
-	//	for (int kk = 0; kk < geom_connectivity_->GetOutput()->GetNumberOfPoints(); kk++) {
-	//		coord1 = geom_connectivity_->GetOutput()->GetPoint(kk);
-	//		cout << kk << " " << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
-	//	}
+		//	for (int kk = 0; kk < geom_connectivity_->GetOutput()->GetNumberOfPoints(); kk++) {
+		//		coord1 = geom_connectivity_->GetOutput()->GetPoint(kk);
+		//		cout << kk << " " << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
+		//	}
 
-	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
+		//	// loop through cells
+		avgFlow = 0;
+		for (int jj = 0; jj < geom_connectivities_[kk]->GetOutput()->GetNumberOfCells(); jj++) {
+			geom_connectivities_[kk]->GetOutput()->GetCellPoints(jj,ptIds);
 
-	// loop through cells
-	avgFlow = 0;
-	for (int kk = 0; kk < geom_connectivity_->GetOutput()->GetNumberOfCells(); kk++) {
-		geom_connectivity_->GetOutput()->GetCellPoints(kk,ptIds);
+			tempvel = geom_connectivities_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(0));
+			vel1[0] = tempvel[0]; vel1[1] = tempvel[1]; vel1[2] = tempvel[2];
 
-		tempvel = geom_connectivity_->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(0));
-		vel1[0] = tempvel[0]; vel1[1] = tempvel[1]; vel1[2] = tempvel[2];
+			tempvel = geom_connectivities_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(1));
+			vel2[0] = tempvel[0]; vel2[1] = tempvel[1]; vel2[2] = tempvel[2];
 
-		tempvel = geom_connectivity_->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(1));
-		vel2[0] = tempvel[0]; vel2[1] = tempvel[1]; vel2[2] = tempvel[2];
+			tempvel = geom_connectivities_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(2));
+			vel3[0] = tempvel[0]; vel3[1] = tempvel[1]; vel3[2] = tempvel[2];
 
-		tempvel = geom_connectivity_->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(2));
-		vel3[0] = tempvel[0]; vel3[1] = tempvel[1]; vel3[2] = tempvel[2];
+			tempcoord = geom_connectivities_[kk]->GetOutput()->GetPoint(ptIds->GetId(0));
+			coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
 
-		tempcoord = geom_connectivity_->GetOutput()->GetPoint(ptIds->GetId(0));
-		coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
+			tempcoord = geom_connectivities_[kk]->GetOutput()->GetPoint(ptIds->GetId(1));
+			coord2[0] = tempcoord[0]; coord2[1] = tempcoord[1]; coord2[2] = tempcoord[2];
 
-		tempcoord = geom_connectivity_->GetOutput()->GetPoint(ptIds->GetId(1));
-		coord2[0] = tempcoord[0]; coord2[1] = tempcoord[1]; coord2[2] = tempcoord[2];
+			tempcoord = geom_connectivities_[kk]->GetOutput()->GetPoint(ptIds->GetId(2));
+			coord3[0] = tempcoord[0]; coord3[1] = tempcoord[1]; coord3[2] = tempcoord[2];
 
-		tempcoord = geom_connectivity_->GetOutput()->GetPoint(ptIds->GetId(2));
-		coord3[0] = tempcoord[0]; coord3[1] = tempcoord[1]; coord3[2] = tempcoord[2];
+			//		cout << "cell " << kk << endl;
+			//		cout << ptIds->GetId(0) << " " << ptIds->GetId(1) << " " << ptIds->GetId(2) << endl;
+			//		cout << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
+			//		cout << coord2[0] << " " << coord2[1] << " " << coord2[2] << endl;
+			//		cout << coord3[0] << " " << coord3[1] << " " << coord3[2] << endl;
 
-		//		cout << "cell " << kk << endl;
-		//		cout << ptIds->GetId(0) << " " << ptIds->GetId(1) << " " << ptIds->GetId(2) << endl;
-		//		cout << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
-		//		cout << coord2[0] << " " << coord2[1] << " " << coord2[2] << endl;
-		//		cout << coord3[0] << " " << coord3[1] << " " << coord3[2] << endl;
+			A[0] = coord2[0]-coord1[0];
+			A[1] = coord2[1]-coord1[1];
+			A[2] = coord2[2]-coord1[2];
 
-		A[0] = coord2[0]-coord1[0];
-		A[1] = coord2[1]-coord1[1];
-		A[2] = coord2[2]-coord1[2];
+			B[0] = coord3[0]-coord1[0];
+			B[1] = coord3[1]-coord1[1];
+			B[2] = coord3[2]-coord1[2];
 
-		B[0] = coord3[0]-coord1[0];
-		B[1] = coord3[1]-coord1[1];
-		B[2] = coord3[2]-coord1[2];
+			C[0] = (A[1]*B[2])-(B[1]*A[2]);
+			C[1] = -(A[0]*B[2])+(B[0]*A[2]);
+			C[2] = (A[0]*B[1])-(A[1]*B[0]);
 
-		C[0] = (A[1]*B[2])-(B[1]*A[2]);
-		C[1] = -(A[0]*B[2])+(B[0]*A[2]);
-		C[2] = (A[0]*B[1])-(A[1]*B[0]);
+			tempL = sqrt(C[0]*C[0]+C[1]*C[1]+C[2]*C[2]);
 
-		tempL = sqrt(C[0]*C[0]+C[1]*C[1]+C[2]*C[2]);
+			triArea = 0.5*tempL;
 
-		triArea = 0.5*tempL;
+			C[0] = C[0] / tempL;
+			C[1] = C[1] / tempL;
+			C[2] = C[2] / tempL;
 
-		C[0] = C[0] / tempL;
-		C[1] = C[1] / tempL;
-		C[2] = C[2] / tempL;
+			avgFlow += (double(1.0)/3.0)*(vel1[0]*C[0]+vel1[1]*C[1]+vel1[2]*C[2]+
+					vel2[0]*C[0]+vel2[1]*C[1]+vel2[2]*C[2]+
+					vel3[0]*C[0]+vel3[1]*C[1]+vel3[2]*C[2])*triArea;
 
-		avgFlow += (double(1.0)/3.0)*(vel1[0]*C[0]+vel1[1]*C[1]+vel1[2]*C[2]+
-				vel2[0]*C[0]+vel2[1]*C[1]+vel2[2]*C[2]+
-				vel3[0]*C[0]+vel3[1]*C[1]+vel3[2]*C[2])*triArea;
+		}
+
+		if (rank_ == numProcs_ -1)
+			this->flow_out_ << avgFlow << " ";
 
 	}
 
-	if (rank_ == numProcs_ -1) {
+	if (rank_ == numProcs_ -1)
+		this->flow_out_ << endl;
 
-        this->flow_out_ << avgFlow << endl;
 
-	}
 
 }
 

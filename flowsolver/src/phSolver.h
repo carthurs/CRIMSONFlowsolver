@@ -44,25 +44,9 @@ of the SCOREC Non-Commercial License this program is distributed under.
 #include "input.h"
 #include "proces.h"
 #include "itrdrv.h"
-#include "SCField.h"
 #include "mpi.h"
 
-// VTK includes
-#include "vtkIdList.h"
-#include "vtkCellArray.h"
-#include "vtkDoubleArray.h"
-#include "vtkPoints.h"
-#include "vtkPolyData.h"
-#include "vtkPolyDataNormals.h"
-#include "vtkPointData.h"
-#include "vtkCellData.h"
-#include "vtkPolyDataWriter.h"
-#include "vtkSmartPointer.h"
-#include "vtkPlane.h"
-#include "vtkCutter.h"
-#include "vtkConnectivityFilter.h"
-#include "vtkUnstructuredGrid.h"
-#include "vtkUnstructuredGridWriter.h"
+
 
 
 using namespace std;
@@ -107,56 +91,17 @@ public:
 	int getNumTimeSteps();
 
 	int getTime();
+
 	void setTime(int timeIn);
 
 	int getSize();
 
 	bool hasFinished();
 
-	int GetValue(SCField field, int unitIndex, int varIndex, int& valueOut);
-	int GetValue(SCField field, int unitIndex, int varIndex, double& valueOut);
-
-	int SetValue(SCField field, int unitIndex, int varIndex, int value);
-	int SetValue(SCField field, int unitIndex, int varIndex, double value);
-
-	void UpdateBlockField(SCField inField, int* pi_dataArray);
-	int GetNumBlocks();
-	int GetBlockSize(int BlockId);
-
-	int GetValueBlock(int BlockId, int unitIndex, int varIndex, int &value);
-    int UpdateParameter();
-
-	int UpdateField(SCField field, void* pv_dataArray);
-	int RemoveField(SCField field);
-
-	int NumRequiredFields() const;
-
-	const SCField* GetProducedField(string fieldIdx);
-	const SCField* GetRequiredField(string fieldIdx);
-
-	const SCField GetField(SCField field, int* err) const;
-
     int input_fform();
 
 	~phSolver();
 private:
-	/// initialize the fields lists - HACK hardcoded
-	int initProducedFieldsList_();
-	int initRequiredFieldsList_();
-
-	/// map of field object to the fields location in memory
-	map <SCField, void*> UMap_FieldToPtr_;
-
-	vector <SCField> Vec_BlockField_Field_;
-	vector <int*> Vec_BlockField_Ptr_;
-
-	map<string,SCField> Vec_SatisfiedFields_;
-	map<string,SCField> Vec_RequiredFields_;
-	map<string,SCField> Vec_ProducedFields_;
-
-	/// a vector of adjustable parameters
-	vector <SCField> Vec_Parameters_Field_;
-	vector <double*> Vec_Parameters_Ptr_;
 
 	char pc_pathToProcsCaseDir_[1024];
 

@@ -8,7 +8,7 @@ using namespace std;
 
 #include "common_c.h"
 #include "cvSolverIO.h"
-
+#include "distmeas.h"
 
 #include "mpi.h"
 
@@ -31,6 +31,7 @@ using namespace std;
 //typedef Tree::Primitive_id Primitive_id;
 
 // VTK includes
+#define VTK_EXCLUDE_STRSTREAM_HEADERS
 #include "vtkIdList.h"
 #include "vtkCellArray.h"
 #include "vtkDoubleArray.h"
@@ -43,10 +44,8 @@ using namespace std;
 #include "vtkSmartPointer.h"
 #include "vtkPlane.h"
 #include "vtkCutter.h"
-#include "vtkConnectivityFilter.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridWriter.h"
-#include "vtkCellLocator.h"
 
 namespace Verdandi {
 
@@ -87,6 +86,10 @@ protected:
 	int Nobservation_;
 	//! Local number of observations at current time.
 	int Nobservation_local_;
+	//! Number of single node observations
+	int Nobservation_nodal_;
+	//! Number of flow observations
+	int Nobservation_flow_;
 	//! Period with which available observations are actually loaded.
 	int Nskip_;
 	//! First time at which observations are available.
@@ -94,8 +97,8 @@ protected:
 	//! Final time at which observations are available.
 	double final_time_;
 
-	//! Do we have simulation results as synthetic data?
-	int synthetic_data_;
+	//! Do we use the simulation restart files for data?
+	int use_restarts_;
 
 	/*** Observation times ***/
 
@@ -149,21 +152,23 @@ protected:
 	int numProcs_;
 
 	/*** Cross-sectional flow observation ***/
+	vector<Seldon::Vector<double> > flowobs_origins_;
+	vector<Seldon::Vector<double> > flowobs_normals_;
+	vector<double> flowobs_radii_;
+
 	vtkSmartPointer<vtkPoints> geom_points_;
 	vtkSmartPointer<vtkIdList> geom_ids_;
 	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
 
 	vtkSmartPointer<vtkPlane> geom_plane_;
 	vtkSmartPointer<vtkCutter> geom_cutter_;
-	vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
-
-	vtkSmartPointer<vtkDoubleArray> geom_vel_array_;
 
 	vector <vtkSmartPointer<vtkPlane> > geom_planes_;
 	vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
-	vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connectivities_;
 
-	int Nobservation_flow_;
+	vector<vector<double> > distances_fromorigin_;
+
+
 
 	ofstream flow_out_;
 
@@ -212,10 +217,10 @@ public:
 	void ApplyOperator(const state& x, observation& y) const;
 
 	template<class state>
-	void ApplyOperatorFlow(const state& x) ;
+	void ApplyOperatorLocal(const state& x, state& Hx);
 
 	template<class state>
-	void ObserveFlow(const state& x, observation& y) const;
+	void ApplyOperatorFlow(const state& x, observation& Hx);
 
 	double GetErrorVariance(int i, int j) const;
 	const error_variance& GetErrorVariance() const;

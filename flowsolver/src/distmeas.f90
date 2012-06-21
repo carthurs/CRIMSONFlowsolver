@@ -1236,7 +1236,7 @@
 ! specified point   
 ! -------------------------------------------
 ! -------------------------------------------
-        subroutine cptrip(p,a,b,c,closestpnt,loc)
+        subroutine cptrip(p,a,b,c,closestpnt,loc) bind(C, name="cptrip")
        
         real*8, dimension(3) :: a 
         real*8, dimension(3) :: b 

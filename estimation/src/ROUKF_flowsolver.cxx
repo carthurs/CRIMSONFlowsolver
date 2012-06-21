@@ -71,19 +71,21 @@ int main(int argc, char** argv)
     driver.GetModel().Initialize(argc, argv);
     driver.Initialize(argv[2], false);
 
+    SimvascularVerdandiModel::state Hx;
+
     while (!driver.HasFinished())
     {
         driver.InitializeStep();
 
-        driver.GetModel().Forward();
+        //driver.GetModel().Forward();
 
-        driver.GetObservationManager().ApplyOperatorFlow(driver.GetModel().GetState());
+        //driver.GetObservationManager().ApplyOperatorLocal(driver.GetModel().GetState() , Hx);
 
-        //driver.Forward();
+        driver.Forward();
 
-        //driver.Analyze();
+        driver.Analyze();
 
-        //driver.GetModel().ForwardFinalize();
+        driver.GetModel().ForwardFinalize();
     }
 
     END;

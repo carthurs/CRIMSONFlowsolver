@@ -42,14 +42,27 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	MPI_Comm_size(MPI_COMM_WORLD, &numProcs_);
 
 	Nstate_model_ = model.GetNstate();
+	Nobservation_local_ = 0;
 
 	configuration.SetPrefix("observation.");
-	configuration.Set("use_synthetic_data",synthetic_data_);
+	configuration.Set("use_restarts",use_restarts_);
 	configuration.Set("data_directory", data_directory_);
 	configuration.Set("Nskip", "v > 0", Nskip_);
 	configuration.Set("initial_time", "", 0., initial_time_);
 	configuration.Set("final_time", "", numeric_limits<double>::max(),
 			final_time_);
+
+	configuration.Set("Nobservation_flow",Nobservation_flow_);
+
+	if (Nobservation_flow_ > 0) {
+		flowobs_origins_.resize(Nobservation_flow_);
+		flowobs_normals_.resize(Nobservation_flow_);
+
+		configuration.Set("flowobs_origins",flowobs_origins_);
+		configuration.Set("flowobs_normals",flowobs_normals_);
+		configuration.Set("flowobs_radii",flowobs_radii_);
+	}
+
 	configuration.Set("error.variance", "v > 0", error_variance_value_);
 
 	isize_solution_ = conpar.nshg * 4; // ignore last dof
@@ -67,30 +80,34 @@ void SimvascularObservationManager::Initialize(const Model& model,
     // isize_solution_ and isize_displacement_ should be the same as the array sizes in restart,
     // or else we have had a problem
     //
-    dataarrays_lower_ = new double[2*isize_solution_ + isize_displacement_];
-    dataarrays_upper_ = new double[2*isize_solution_ + isize_displacement_];
 
-    for (int kk = 0; kk < 2*isize_solution_ + isize_displacement_; kk++) {
-    	dataarrays_lower_[kk] = 0.0;
-    	dataarrays_upper_[kk] = 0.0;
-    }
+	if (use_restarts_) {
+		dataarrays_lower_ = new double[2*isize_solution_ + isize_displacement_];
+		dataarrays_upper_ = new double[2*isize_solution_ + isize_displacement_];
 
-    soln_lower_ = &dataarrays_lower_[0];
-    soln_upper_ = &dataarrays_upper_[0];
+		for (int kk = 0; kk < 2*isize_solution_ + isize_displacement_; kk++) {
+			dataarrays_lower_[kk] = 0.0;
+			dataarrays_upper_[kk] = 0.0;
+		}
 
-    acc_lower_ = &dataarrays_lower_[isize_solution_];
-    acc_upper_ = &dataarrays_upper_[isize_solution_];
+		soln_lower_ = &dataarrays_lower_[0];
+		soln_upper_ = &dataarrays_upper_[0];
 
-    if (nomodule.ideformwall > 0) {
-    	disp_lower_ = &dataarrays_lower_[2*isize_solution_];
-    	disp_upper_ = &dataarrays_upper_[2*isize_solution_];
-    }
+		acc_lower_ = &dataarrays_lower_[isize_solution_];
+		acc_upper_ = &dataarrays_upper_[isize_solution_];
+
+		if (nomodule.ideformwall > 0) {
+			disp_lower_ = &dataarrays_lower_[2*isize_solution_];
+			disp_upper_ = &dataarrays_upper_[2*isize_solution_];
+		}
+	}
+
+    int obsCounter = 0;
 
     //
-    // do some preprocessing on the 'simple' observation operator
+    // do some preprocessing on the single node observation operator
     // tally number of observations on local processor
     //
-    int obsCounter = 0;
     int actualIdx;
     int actualnshg = conpar.nshguniq;
     int obsFuncVal;
@@ -159,41 +176,18 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
     }
 
-    //Nobservation_ = obsCounter;
-    Nobservation_local_ = obsCounter;
+    Nobservation_nodal_ = obsCounter;
+    Nobservation_local_ += Nobservation_nodal_;
 
     //
-    // compute the global number of observations
+	// set up cross-sectional flow observation
     //
-    MPI_Allreduce(&Nobservation_local_, &Nobservation_, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-    //
-    // initial observation error variance matrix
-    //
-
-#ifdef VERDANDI_OBSERVATION_ERROR_SPARSE
-    build_diagonal_sparse_matrix(Nobservation_, error_variance_value_,
-    		error_variance_);
-    build_diagonal_sparse_matrix(Nobservation_,
-    		double(double(1) / error_variance_value_),
-    		error_variance_inverse_);
-#else
-	error_variance_.Reallocate(Nobservation_, Nobservation_);
-	error_variance_.SetIdentity();
-	Mlt(error_variance_value_, error_variance_);
-	error_variance_inverse_.Reallocate(Nobservation_, Nobservation_);
-	error_variance_inverse_.SetIdentity();
-	Mlt(double(double(1)/ error_variance_value_), error_variance_inverse_);
-#endif
-
-	// set up the vtk data structures
-	// this is here only for test purposes
 	geom_points_ = vtkSmartPointer<vtkPoints>::New();
 	geom_ids_ = vtkSmartPointer<vtkIdList>::New();
 	geom_UGrid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
-	geom_vel_array_ = vtkSmartPointer<vtkDoubleArray>::New();
+	vtkSmartPointer<vtkDoubleArray> geom_vel_array = vtkSmartPointer<vtkDoubleArray>::New();
 
-	geom_vel_array_->SetNumberOfComponents(3);
+	geom_vel_array->SetNumberOfComponents(3);
 
 	double coordVal1,coordVal2,coordVal3;
 	double solVal1,solVal2,solVal3;
@@ -211,7 +205,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 		geom_points_->InsertPoint(unitIdx,coordVal1,coordVal2,coordVal3);
 
-		geom_vel_array_->InsertNextTuple3(solVal1,solVal2,solVal3);
+		geom_vel_array->InsertNextTuple3(solVal1,solVal2,solVal3);
 	}
 
 	geom_UGrid_->SetPoints(geom_points_);
@@ -237,167 +231,123 @@ void SimvascularObservationManager::Initialize(const Model& model,
 			geom_ids_->Reset();
 		}
 
-	geom_UGrid_->GetPointData()->AddArray(geom_vel_array_);
+	geom_UGrid_->GetPointData()->AddArray(geom_vel_array);
 	geom_UGrid_->GetPointData()->GetArray(0)->SetName("velocity");
 
 	geom_UGrid_->Update();
 
-	//	set up VTKcutters
-	Nobservation_flow_ = 1;
+
+	// here we specify the number of cross-sections we want to observe flow on
+	// It's important to note that a single slice plane may cut through several parts of the
+	// mesh and that only one part is the desired cut.
+	// the desired cut may not be connected and may not be on the current processor
+	// therefore, we need to reject the all cuts that are beyond a certain radius from the origin
+
+	double coord1[3],coord2[3],coord3[3],testpoint[3],closestpoint[3];
+	int locinfo;
+	double *tempcoord;
+	double closestdistsqr;
+	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
 
 	for (int kk = 0; kk < Nobservation_flow_; kk++) {
 
 		// set the location of the cutting plane
 		geom_plane_ = vtkSmartPointer<vtkPlane>::New();
-		geom_plane_->SetOrigin(0,0,0);
-		geom_plane_->SetNormal(0,0,1);
+		geom_plane_->SetOrigin(flowobs_origins_[kk](0),flowobs_origins_[kk](1),flowobs_origins_[kk](2));
+		geom_plane_->SetNormal(flowobs_normals_[kk](0),flowobs_normals_[kk](1),flowobs_normals_[kk](2));
 		geom_planes_.push_back(geom_plane_);
 
 		geom_cutter_ = vtkSmartPointer<vtkCutter>::New();
 		geom_cutter_->SetCutFunction(geom_plane_);
 		geom_cutter_->SetInput(geom_UGrid_);
-		geom_cutters_.push_back(geom_cutter_);
+		geom_cutter_->Update();
 
-		geom_connectivity_ = vtkSmartPointer<vtkConnectivityFilter>::New();
-		geom_connectivity_->SetInputConnection(geom_cutter_->GetOutputPort());
-		geom_connectivity_->SetExtractionModeToClosestPointRegion();
-		geom_connectivity_->SetClosestPoint(geom_plane_->GetOrigin());
-		geom_connectivities_.push_back(geom_connectivity_);
+		vector <double> distfromorigin;
+
+		// measure the distance from the origin to each cell of the cut
+		// if the distance is greater than a user specified threshold,
+		// ignore that cell in the flow calculation
+		testpoint[0] = flowobs_origins_[kk](0);
+		testpoint[1] = flowobs_origins_[kk](1);
+		testpoint[2] = flowobs_origins_[kk](2);
+
+		for (int jj = 0; jj < geom_cutter_->GetOutput()->GetNumberOfCells(); jj++) {
+
+			geom_cutter_->GetOutput()->GetCellPoints(jj,ptIds);
+
+			tempcoord = geom_cutter_->GetOutput()->GetPoint(ptIds->GetId(0));
+			coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
+
+			tempcoord = geom_cutter_->GetOutput()->GetPoint(ptIds->GetId(1));
+			coord2[0] = tempcoord[0]; coord2[1] = tempcoord[1]; coord2[2] = tempcoord[2];
+
+			tempcoord = geom_cutter_->GetOutput()->GetPoint(ptIds->GetId(2));
+			coord3[0] = tempcoord[0]; coord3[1] = tempcoord[1]; coord3[2] = tempcoord[2];
+
+			cptrip( &testpoint[0], &coord1[0], &coord2[0], &coord3[0], &closestpoint[0], locinfo );
+
+			closestdistsqr = (closestpoint[0]-testpoint[0])*(closestpoint[0]-testpoint[0])+
+					(closestpoint[1]-testpoint[1])*(closestpoint[1]-testpoint[1])+
+					(closestpoint[2]-testpoint[2])*(closestpoint[2]-testpoint[2]);
+
+			distfromorigin.push_back(sqrt(closestdistsqr));
+
+		}
+
+		distances_fromorigin_.push_back(distfromorigin);
+
+        geom_cutters_.push_back(geom_cutter_);
+
+//        vtkSmartPointer<vtkPolyDataWriter> writer = vtkPolyDataWriter::New();
+//        ostream *vtkout;
+//
+//        if (rank_ == 0)
+//        	writer->SetFileName("fromcutter_1.vtk");
+//        else
+//        	writer->SetFileName("fromcutter_2.vtk");
+//        writer->SetInput(geom_cutter_->GetOutput());
+//        vtkout = writer->OpenVTKFile();
+//        writer->Write();
+//        writer->CloseVTKFile(vtkout);
 
 	}
-
 	flow_out_.open ("cross_section_mean_flow.dat");
 
-//    vtkSmartPointer<vtkUnstructuredGridWriter> writer_ugrid = vtkUnstructuredGridWriter::New();
-//    vtkSmartPointer<vtkPolyDataWriter> writer = vtkPolyDataWriter::New();
-//    vtkSmartPointer<vtkUnstructuredGridWriter> writer_u = vtkUnstructuredGridWriter::New();
-//    ostream *vtkout;
-//
-//    writer_ugrid->SetFileName("fromcons.vtk");
-//    writer_ugrid->SetInput(tUGrid);
-//    vtkout = writer_ugrid->OpenVTKFile();
-//    writer_ugrid->Write();
-//    writer_ugrid->CloseVTKFile(vtkout);
-//
-//    writer->SetFileName("fromcutter.vtk");
-//    writer->SetInput(cutter->GetOutput());
-//    vtkout = writer->OpenVTKFile();
-//    writer->Write();
-//    writer->CloseVTKFile(vtkout);
-//
-//    writer_u->SetFileName("fromconnectivity.vtk");
-//    writer_u->SetInput(connectivityFilter->GetOutput());
-//    vtkout = writer_u->OpenVTKFile();
-//    writer_u->Write();
-//    writer_u->CloseVTKFile(vtkout);
 
-	// testing code for the CGAL stuff
-//	int nodeIndex1,nodeIndex2,nodeIndex3,nodeIndex4;
-//	double coordVal1,coordVal2,coordVal3;
-//	const SCField *coord_field_ = phS->GetRequiredField("co-ordinates");
-//
-//	Point coord_pt;
-//	vector<Point> coord_pts;
-//	Polyhedron temp_poly;
-//	Tree *temp_tree;
-//
-//	//cout << phS->GetNumBlocks() << endl;
-//
-//	for (int kk = 0; kk < coord_field_->GetNumUnits(); kk++) {
-//		phS->GetValueDbl(*coord_field_,kk,0,coordVal1);
-//		phS->GetValueDbl(*coord_field_,kk,1,coordVal2);
-//		phS->GetValueDbl(*coord_field_,kk,2,coordVal3);
-//		coord_pt = Point(coordVal1,coordVal2,coordVal3);
-//		coord_pts.push_back(coord_pt);
-//	}
-//
-//	for (int kk = 0; kk < phS->GetNumBlocks(); kk++) {
-//		for (int jj = 0; jj < phS->GetBlockSize(kk); jj++) {
-//
-//			phS->GetValueIntBlock(kk,jj,0,nodeIndex1);
-//			nodeIndex1--;
-//
-//            phS->GetValueIntBlock(kk,jj,1,nodeIndex2);
-//            nodeIndex2--;
-//
-//            phS->GetValueIntBlock(kk,jj,2,nodeIndex3);
-//            nodeIndex3--;
-//
-//            phS->GetValueIntBlock(kk,jj,3,nodeIndex4);
-//            nodeIndex4--;
-//
-//            // add a tetrahedron
-//            temp_poly.make_tetrahedron(coord_pts[nodeIndex1],coord_pts[nodeIndex2],coord_pts[nodeIndex3],coord_pts[nodeIndex4]);
-//		}
-//
-//	}
-//
-//	// constructs AABB tree
-//	temp_tree = new Tree(temp_poly.edges_begin(),temp_poly.edges_end());
-//
-//	// constructs plane query
-//	CGAL_Vector vec(0.0,0.0,1.0);
-//	Point a(0, 0, 0);
-//	Plane plane_query(a,vec);
-//
-//	list<Object_and_primitive_id> intersections;
-//
-//	temp_tree->all_intersections(plane_query, back_inserter(intersections));
-//
-//	// gets intersection object
-//	cout << "number of intersections " << intersections.size() << endl;
-//
-//	list<vector<double> > intersected_points;
-//	vector<double> intersected_pt;
-//	int pt_counter = 0;
-//
-//	list<Object_and_primitive_id>::iterator it;
-//
-//	for ( it=intersections.begin() ; it != intersections.end(); it++ ) {
-//
-//		CGAL::Object object = it->first;
-//		Point testpoint;
-//		if(CGAL::assign(testpoint,object)) {
-////			cout << "intersection object is a point" << endl;
-////			cout.precision(1);
-////			cout << testpoint.x() << " " << testpoint.y() << " " << testpoint.z() << endl;
-//
-//			intersected_pt.push_back(testpoint.x());
-//			intersected_pt.push_back(testpoint.y());
-//			intersected_pt.push_back(testpoint.z());
-//
-//			intersected_points.push_back(intersected_pt);
-//
-//			intersected_pt.clear();
-//
-//            pt_counter++;
-//		}
-//	}
-//
-//	intersected_points.sort(compare_firstcoord);
-//	intersected_points.unique(is_near());
-//
-//	intersected_points.sort(compare_secondcoord);
-//	intersected_points.unique(is_near());
-//
-//	intersected_points.sort(compare_thirdcoord);
-//	intersected_points.unique(is_near());
-//
-//	list<vector<double> >::iterator uniq_it;
-//
-//	for ( uniq_it=intersected_points.begin() ; uniq_it != intersected_points.end(); uniq_it++ ) {
-//
-//		intersected_pt = *uniq_it;
-//		cout.precision(15);
-//		cout << intersected_pt[0] << " " << intersected_pt[1] << " " << intersected_pt[2] << endl;
-//	}
-//
-//	cout << "number of unique intersections " << intersected_points.size() << endl;
-//
-//	delete temp_tree;
+	//
+	// number of LOCAL observations
+	//
+	if (rank_ == numProcs_ - 1)
+		Nobservation_local_ += Nobservation_flow_;
+
+	//
+	// compute the global number of observations
+	//
+	MPI_Allreduce(&Nobservation_local_, &Nobservation_, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+	//
+	// initial observation error variance matrix
+	//
+
+#ifdef VERDANDI_OBSERVATION_ERROR_SPARSE
+	build_diagonal_sparse_matrix(Nobservation_, error_variance_value_,
+			error_variance_);
+	build_diagonal_sparse_matrix(Nobservation_,
+			double(double(1) / error_variance_value_),
+			error_variance_inverse_);
+#else
+	error_variance_.Reallocate(Nobservation_, Nobservation_);
+	error_variance_.SetIdentity();
+	Mlt(error_variance_value_, error_variance_);
+	error_variance_inverse_.Reallocate(Nobservation_, Nobservation_);
+	error_variance_inverse_.SetIdentity();
+	Mlt(double(double(1)/ error_variance_value_), error_variance_inverse_);
+#endif
 
 	if (rank_ == 0)
 		cout << "Simvascular Observation Manager initiated" << endl;
+
+	cout << "At rank " << rank_ << " we have " << Nobservation_local_ << " observations" << endl;
 
 }
 
@@ -478,8 +428,10 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 		if (rank_ == 0)
 			cout << "loading data at time " << lower_bound << endl;
 
-		if (synthetic_data_) {
+		if (use_restarts_) {
 			loadrestart(lower_bound,soln_lower_,acc_lower_,disp_lower_);
+		} else {
+
 		}
 		current_lower_bound_ = lower_bound;
 	}
@@ -489,15 +441,14 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 			if (rank_ == 0)
 				cout << "loading data at time " << upper_bound << endl;
 
-			if (synthetic_data_) {
+			if (use_restarts_) {
 				loadrestart(upper_bound,soln_upper_,acc_upper_,disp_upper_);
+			} else {
+
 			}
 		}
 		current_upper_bound_ = upper_bound;
 	}
-
-	//cout << "N observations " << Nobservation_ << endl;
-	//cout << "N observations local " << Nobservation_local_ << endl;
 
 	//
     // now we need to actually compute the innovation
@@ -507,38 +458,48 @@ void SimvascularObservationManager::GetInnovation(const state& x,
     double t_alpha = (time_ - current_lower_bound_)/(current_upper_bound_-current_lower_bound_);
     t_alpha = 1 - t_alpha;
 
+
     //
-    // create petsc vector to scatter the innovation to all the processors.
-    // for now, the innovation is required to be on
+    // apply the obs operators
     //
 
     state zHx;
     int zHx_start, zHx_end;
 
+    // TODO: figure out where to put the Reallocate
     zHx.Reallocate(Nobservation_,Nobservation_local_);
     zHx.GetProcessorRange(zHx_start, zHx_end);
 
-    //cout << "zHx_start " << zHx_start << endl;
-    //cout << "zHx_end " << zHx_end << endl;
-
-    // part of the innovation is on the local processor
-
-    innovation.Reallocate(Nobservation_local_);
+    this->ApplyOperatorLocal(x,zHx);
 
     int icounter = 0;
 
     int state_start, state_end;
     x.GetProcessorRange(state_start, state_end);
 
-    for (int kk = zHx_start; kk < zHx_end; kk++) {
+//    for (int kk = zHx_start; kk < zHx_end; kk++) {
+//
+//    	zHx.SetBuffer(kk, -x(state_start+StateObsIndex_(icounter)) +
+//    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(icounter)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(icounter)] );
+//
+//
+//    	icounter++;
+//    }
 
-    	if (synthetic_data_) {
-    		zHx.SetBuffer(kk, -x(state_start+StateObsIndex_(icounter)) +
-    				t_alpha*dataarrays_lower_[DataArraysObsIndex_(icounter)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(icounter)] );
-    	}
+    for (int kk = 0; kk < Nobservation_nodal_; kk++) {
+    	zHx.SetBuffer(kk+zHx_start, -zHx(kk+zHx_start) +
+    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(icounter)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(icounter)] );
 
     	icounter++;
     }
+    // TODO: don't forget the flow observation eventually
+
+    //
+    // scatter the innovation to all the processors.
+    // TODO: for now, the innovation is required to be on all processors
+    //
+
+    innovation.Reallocate(Nobservation_local_);
 
     Vec zHx_seq;
     VecScatter ctx;
@@ -565,7 +526,6 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 
     //innovation.Print();
     //cout << "stiffness " << pow(2.0,x(47344)) << endl;
-
 
 
 }
@@ -599,6 +559,11 @@ int SimvascularObservationManager::GetNobservation() const {
 // OPERATORS //
 ///////////////
 
+template<class state>
+void SimvascularObservationManager::ApplyOperator(const state& x, observation& y) const {
+
+}
+
 //! Applies the observation operator to a given vector.
 /*! This method is called after 'SetTime' set the time at which the
  operator is defined.
@@ -607,30 +572,81 @@ int SimvascularObservationManager::GetNobservation() const {
  if needed.
  */
 template<class state>
-void SimvascularObservationManager::ApplyOperator(const state& x, observation& y) const {
-	throw ErrorUndefined("const typename"
-			"void SimvascularObservationManager::ApplyOperator(const state& x, observation& y) const");
+void SimvascularObservationManager::ApplyOperatorLocal(const state& x, state& Hx) {
+
+	int Hx_start, Hx_end;
+	observation Hx_flow;
+
+	Hx.Reallocate(Nobservation_,Nobservation_local_);
+	Hx.GetProcessorRange(Hx_start, Hx_end);
+
+	//cout << "zHx_start " << zHx_start << endl;
+	//cout << "zHx_end " << zHx_end << endl;
+
+	//y.Reallocate(Nobservation_local_);
+
+	int icounter = 0;
+	int ncounter = 0;
+
+	int state_start, state_end;
+	x.GetProcessorRange(state_start, state_end);
+
+	// simple nodal observation
+	for (int kk = 0; kk < Nobservation_nodal_; kk++) {
+
+		Hx.SetBuffer(Hx_start+kk, x(state_start+StateObsIndex_(icounter)) );
+
+		icounter++;
+		ncounter++;
+	}
+
+	// flow observation
+	// the values are located on the last processor
+	icounter = 0;
+
+	ApplyOperatorFlow(x,Hx_flow);
+
+	if (rank_ == numProcs_ - 1) {
+		for (int kk = 0; kk < Nobservation_flow_; kk++) {
+
+			Hx.SetBuffer(Hx_start+ncounter+kk, Hx_flow(kk));
+
+			icounter++;
+			ncounter++;
+		}
+	}
+
+	//
 
 }
 
 template<class state>
-void SimvascularObservationManager::ApplyOperatorFlow(const state& x) {
+void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observation& Hx) {
 
 	double solVal1,solVal2,solVal3;
 	double vel1[3],vel2[3],vel3[3];
 
 	double *tempcoord,*tempvel;
 	double coord1[3],coord2[3],coord3[3];
-	double A[3], B[3], C[3], triArea, avgFlow, tempL;
+	double A[3], B[3], C[3], triArea, avgFlow_local, avgFlow, tempL;
 
 	int actualIdx;
 
 	double val;
 
-    int icounter = 0;
+	int state_start, state_end, icounter;
+
+	Hx.Reallocate(Nobservation_flow_);
+
+    x.GetProcessorRange(state_start, state_end);
+
+    icounter = state_start;
 
 	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
 
+	// Here we look through the state vector and grab the velocity values
+    // to assign to a temporary array that will allow communication of those values to the
+	// duplicated nodes on the interprocessor boundaries
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
 		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
@@ -647,9 +663,9 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x) {
 	}
 
 	// the values coming from the state vector need to communicated at the interprocessor boundaries
-	if (numProcs_ > 1)
-		temp_comm();
+	temp_comm();
 
+	// now we reassign the velocities values to update the cross-sectional avg flow
 	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++)
 	{
 		solVal1 = (gat->global_temporary_array_ptr)[0 * conpar.nshg + unitIdx];
@@ -660,80 +676,90 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x) {
 	}
 
 	for (int kk = 0; kk < Nobservation_flow_ ; kk++) {
-		geom_cutters_[kk]->Modified();
-		geom_connectivities_[kk]->Update();
 
+		// the next two calls update the values on cross-sectional cut
+		geom_cutters_[kk]->Modified();
+		geom_cutters_[kk]->Update();
 
 		//	for (int kk = 0; kk < geom_connectivity_->GetOutput()->GetNumberOfPoints(); kk++) {
 		//		coord1 = geom_connectivity_->GetOutput()->GetPoint(kk);
 		//		cout << kk << " " << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
 		//	}
 
-		//	// loop through cells
-		avgFlow = 0;
-		for (int jj = 0; jj < geom_connectivities_[kk]->GetOutput()->GetNumberOfCells(); jj++) {
-			geom_connectivities_[kk]->GetOutput()->GetCellPoints(jj,ptIds);
+		// loop through cells of the cut to compute
+		// the cross-sectional avg flow
+		// we note that the cells of the cut are all triangles (the occasional quad is divided automatically by the filter)
+		avgFlow_local = 0;
+		for (int jj = 0; jj < geom_cutters_[kk]->GetOutput()->GetNumberOfCells(); jj++) {
 
-			tempvel = geom_connectivities_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(0));
-			vel1[0] = tempvel[0]; vel1[1] = tempvel[1]; vel1[2] = tempvel[2];
+			if (distances_fromorigin_[kk][jj] <= flowobs_radii_[kk]) {
 
-			tempvel = geom_connectivities_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(1));
-			vel2[0] = tempvel[0]; vel2[1] = tempvel[1]; vel2[2] = tempvel[2];
+				geom_cutters_[kk]->GetOutput()->GetCellPoints(jj,ptIds);
 
-			tempvel = geom_connectivities_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(2));
-			vel3[0] = tempvel[0]; vel3[1] = tempvel[1]; vel3[2] = tempvel[2];
+				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(0));
+				vel1[0] = tempvel[0]; vel1[1] = tempvel[1]; vel1[2] = tempvel[2];
 
-			tempcoord = geom_connectivities_[kk]->GetOutput()->GetPoint(ptIds->GetId(0));
-			coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
+				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(1));
+				vel2[0] = tempvel[0]; vel2[1] = tempvel[1]; vel2[2] = tempvel[2];
 
-			tempcoord = geom_connectivities_[kk]->GetOutput()->GetPoint(ptIds->GetId(1));
-			coord2[0] = tempcoord[0]; coord2[1] = tempcoord[1]; coord2[2] = tempcoord[2];
+				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(2));
+				vel3[0] = tempvel[0]; vel3[1] = tempvel[1]; vel3[2] = tempvel[2];
 
-			tempcoord = geom_connectivities_[kk]->GetOutput()->GetPoint(ptIds->GetId(2));
-			coord3[0] = tempcoord[0]; coord3[1] = tempcoord[1]; coord3[2] = tempcoord[2];
+				tempcoord = geom_cutters_[kk]->GetOutput()->GetPoint(ptIds->GetId(0));
+				coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
 
-			//		cout << "cell " << kk << endl;
-			//		cout << ptIds->GetId(0) << " " << ptIds->GetId(1) << " " << ptIds->GetId(2) << endl;
-			//		cout << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
-			//		cout << coord2[0] << " " << coord2[1] << " " << coord2[2] << endl;
-			//		cout << coord3[0] << " " << coord3[1] << " " << coord3[2] << endl;
+				tempcoord = geom_cutters_[kk]->GetOutput()->GetPoint(ptIds->GetId(1));
+				coord2[0] = tempcoord[0]; coord2[1] = tempcoord[1]; coord2[2] = tempcoord[2];
 
-			A[0] = coord2[0]-coord1[0];
-			A[1] = coord2[1]-coord1[1];
-			A[2] = coord2[2]-coord1[2];
+				tempcoord = geom_cutters_[kk]->GetOutput()->GetPoint(ptIds->GetId(2));
+				coord3[0] = tempcoord[0]; coord3[1] = tempcoord[1]; coord3[2] = tempcoord[2];
 
-			B[0] = coord3[0]-coord1[0];
-			B[1] = coord3[1]-coord1[1];
-			B[2] = coord3[2]-coord1[2];
+				//		cout << "cell " << kk << endl;
+				//		cout << ptIds->GetId(0) << " " << ptIds->GetId(1) << " " << ptIds->GetId(2) << endl;
+				//		cout << coord1[0] << " " << coord1[1] << " " << coord1[2] << endl;
+				//		cout << coord2[0] << " " << coord2[1] << " " << coord2[2] << endl;
+				//		cout << coord3[0] << " " << coord3[1] << " " << coord3[2] << endl;
 
-			C[0] = (A[1]*B[2])-(B[1]*A[2]);
-			C[1] = -(A[0]*B[2])+(B[0]*A[2]);
-			C[2] = (A[0]*B[1])-(A[1]*B[0]);
+				A[0] = coord2[0]-coord1[0];
+				A[1] = coord2[1]-coord1[1];
+				A[2] = coord2[2]-coord1[2];
 
-			tempL = sqrt(C[0]*C[0]+C[1]*C[1]+C[2]*C[2]);
+				B[0] = coord3[0]-coord1[0];
+				B[1] = coord3[1]-coord1[1];
+				B[2] = coord3[2]-coord1[2];
 
-			triArea = 0.5*tempL;
+				C[0] = (A[1]*B[2])-(B[1]*A[2]);
+				C[1] = -(A[0]*B[2])+(B[0]*A[2]);
+				C[2] = (A[0]*B[1])-(A[1]*B[0]);
 
-			C[0] = C[0] / tempL;
-			C[1] = C[1] / tempL;
-			C[2] = C[2] / tempL;
+				tempL = sqrt(C[0]*C[0]+C[1]*C[1]+C[2]*C[2]);
 
-			avgFlow += (double(1.0)/3.0)*(vel1[0]*C[0]+vel1[1]*C[1]+vel1[2]*C[2]+
-					vel2[0]*C[0]+vel2[1]*C[1]+vel2[2]*C[2]+
-					vel3[0]*C[0]+vel3[1]*C[1]+vel3[2]*C[2])*triArea;
+				triArea = 0.5*tempL;
+
+				C[0] = C[0] / tempL;
+				C[1] = C[1] / tempL;
+				C[2] = C[2] / tempL;
+
+				avgFlow_local += (double(1.0)/3.0)*(vel1[0]*C[0]+vel1[1]*C[1]+vel1[2]*C[2]+
+						vel2[0]*C[0]+vel2[1]*C[1]+vel2[2]*C[2]+
+						vel3[0]*C[0]+vel3[1]*C[1]+vel3[2]*C[2])*triArea;
+			}
 
 		}
 
+		// Compute the flow by summing across processors
+		if (numProcs_ > 1)
+			MPI_Reduce(&avgFlow_local, &avgFlow, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
+//
 		if (rank_ == numProcs_ -1)
 			this->flow_out_ << avgFlow << " ";
 
+		if (rank_ == numProcs_ -1)
+			Hx(kk) = avgFlow;
 	}
 
 	if (rank_ == numProcs_ -1)
 		this->flow_out_ << endl;
-
-
-
 }
 
 

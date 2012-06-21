@@ -25,9 +25,7 @@ subroutine temp_comm() bind(C, name="temp_comm")
     implicit none
 
     if (numpe > 1) then
-        call commu ( yold, ilwork, nflow, 'out')
-        call commu ( acold, ilwork, nflow, 'out')
-        call commu ( uold, ilwork, nsd, 'out')
+        call commu ( temporary_array, ilwork, nflow, 'out')
     endif
 
 end subroutine

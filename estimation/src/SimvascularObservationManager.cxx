@@ -18,6 +18,12 @@ SimvascularObservationManager::SimvascularObservationManager() {
 SimvascularObservationManager::~SimvascularObservationManager() {
 	// Operations to be performed when the object is destroyed.
 
+	obs_out_part_.close();
+	obs_out_single_.close();
+
+	obs_in_part_.close();
+	obs_out_single_.close();
+
 	delete [] dataarrays_lower_;
 	delete [] dataarrays_upper_;
 }
@@ -43,6 +49,8 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	Nstate_model_ = model.GetNstate();
 	Nobservation_local_ = 0;
+
+    int obsCounter = 0;
 
 	configuration.SetPrefix("observation.");
 	configuration.Set("use_restarts",use_restarts_);
@@ -75,36 +83,6 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	isize_nshg_ = conpar.nshg;
 
     //
-    // allocate space for the data (right now it is the size of the full state)
-    // these are distributed arrays
-    // isize_solution_ and isize_displacement_ should be the same as the array sizes in restart,
-    // or else we have had a problem
-    //
-
-	if (use_restarts_) {
-		dataarrays_lower_ = new double[2*isize_solution_ + isize_displacement_];
-		dataarrays_upper_ = new double[2*isize_solution_ + isize_displacement_];
-
-		for (int kk = 0; kk < 2*isize_solution_ + isize_displacement_; kk++) {
-			dataarrays_lower_[kk] = 0.0;
-			dataarrays_upper_[kk] = 0.0;
-		}
-
-		soln_lower_ = &dataarrays_lower_[0];
-		soln_upper_ = &dataarrays_upper_[0];
-
-		acc_lower_ = &dataarrays_lower_[isize_solution_];
-		acc_upper_ = &dataarrays_upper_[isize_solution_];
-
-		if (nomodule.ideformwall > 0) {
-			disp_lower_ = &dataarrays_lower_[2*isize_solution_];
-			disp_upper_ = &dataarrays_upper_[2*isize_solution_];
-		}
-	}
-
-    int obsCounter = 0;
-
-    //
     // do some preprocessing on the single node observation operator
     // tally number of observations on local processor
     //
@@ -126,7 +104,10 @@ void SimvascularObservationManager::Initialize(const Model& model,
     		//if (linobs_soln_[kk*isize_nshg_+actualIdx] > 0) {
     		if (obsFuncVal > 0) {
     			StateObsIndex_.PushBack(kk+4*unitIdx);
-    			DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx);
+    			if (use_restarts_)
+    				DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx);
+    			else
+    				DataArraysObsIndex_.PushBack(obsCounter);
     			obsCounter++;
     		}
     	}
@@ -146,7 +127,10 @@ void SimvascularObservationManager::Initialize(const Model& model,
     		//if (linobs_acc_[kk*isize_nshg_+actualIdx] > 0) {
     		if (obsFuncVal > 0) {
     			StateObsIndex_.PushBack(kk+4*unitIdx + actualnshg*4);
-    			DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_);
+    			if (use_restarts_)
+    				DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_);
+    			else
+    				DataArraysObsIndex_.PushBack(obsCounter);
     			obsCounter++;
     		}
     	}
@@ -168,7 +152,10 @@ void SimvascularObservationManager::Initialize(const Model& model,
     			//if (linobs_disp_[kk*isize_nshg_+actualIdx] > 0) {
     			if (obsFuncVal > 0) {
     				StateObsIndex_.PushBack(kk+3*unitIdx + actualnshg*4 + actualnshg*4);
-    				DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_*2);
+    				if (use_restarts_)
+    					DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_*2);
+    				else
+    					DataArraysObsIndex_.PushBack(obsCounter);
     				obsCounter++;
     			}
     		}
@@ -178,6 +165,9 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
     Nobservation_nodal_ = obsCounter;
     Nobservation_local_ += Nobservation_nodal_;
+
+    // TODO: decide whether to put flow (or mesh independent observations) together with partitions
+    // or put them in separate files
 
     //
 	// set up cross-sectional flow observation
@@ -311,8 +301,6 @@ void SimvascularObservationManager::Initialize(const Model& model,
 //        writer->CloseVTKFile(vtkout);
 
 	}
-	flow_out_.open ("cross_section_mean_flow.dat");
-
 
 	//
 	// number of LOCAL observations
@@ -324,6 +312,37 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	// compute the global number of observations
 	//
 	MPI_Allreduce(&Nobservation_local_, &Nobservation_, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+	//
+	// allocate space for the data (right now it is the size of the full state)
+	// these are distributed arrays
+	// isize_solution_ and isize_displacement_ should be the same as the array sizes in restart,
+	// or else we have had a problem
+	//
+
+	if (use_restarts_) {
+		dataarrays_lower_ = new double[2*isize_solution_ + isize_displacement_];
+		dataarrays_upper_ = new double[2*isize_solution_ + isize_displacement_];
+
+		for (int kk = 0; kk < 2*isize_solution_ + isize_displacement_; kk++) {
+			dataarrays_lower_[kk] = 0.0;
+			dataarrays_upper_[kk] = 0.0;
+		}
+
+		soln_lower_ = &dataarrays_lower_[0];
+		soln_upper_ = &dataarrays_upper_[0];
+
+		acc_lower_ = &dataarrays_lower_[isize_solution_];
+		acc_upper_ = &dataarrays_upper_[isize_solution_];
+
+		if (nomodule.ideformwall > 0) {
+			disp_lower_ = &dataarrays_lower_[2*isize_solution_];
+			disp_upper_ = &dataarrays_upper_[2*isize_solution_];
+		}
+	} else {
+		dataarrays_lower_ = new double[Nobservation_local_];
+        dataarrays_upper_ = new double[Nobservation_local_];
+	}
 
 	//
 	// initial observation error variance matrix
@@ -348,6 +367,32 @@ void SimvascularObservationManager::Initialize(const Model& model,
 		cout << "Simvascular Observation Manager initiated" << endl;
 
 	cout << "At rank " << rank_ << " we have " << Nobservation_local_ << " observations" << endl;
+
+	InitializeFiles();
+}
+
+void SimvascularObservationManager::InitializeFiles() {
+
+	//
+	// files for output (only used for generating synthetic data)
+	//
+
+	//	if (rank_ == numProcs_ - 1)
+	//		flow_out_.open ("cross_section_mean_flow.dat");
+
+	stringstream s_temp;
+	s_temp << rank_;
+	obsfilename_part_ = "saved_observations." + s_temp.str() + ".dat";
+	obsfilename_single_ = "saved_observations_single.dat";
+
+	obs_out_part_.open (obsfilename_part_.c_str(), ios::out | ios::app );
+	obs_out_single_.open (obsfilename_single_.c_str(), ios::out | ios::app );
+
+	obs_out_part_ << std::setprecision( std::numeric_limits<double>::digits10+2);
+	obs_out_single_ << std::setprecision( std::numeric_limits<double>::digits10+2);
+
+    obsfilename_part_ = data_directory_ + "/" + obsfilename_part_;
+    obsfilename_single_ = data_directory_ + "/" + obsfilename_part_;
 
 }
 
@@ -390,11 +435,49 @@ void SimvascularObservationManager::GetObservation(
 			"SimvascularObservationManager::observation& observation)");
 }
 
-void SimvascularObservationManager::GetObservationFlow(
-		SimvascularObservationManager::observation& observation) {
+//! Saves observations in file
+/*! This function isn't actually used in any data assimilator routine -- it is
+ used for */
+template<class state>
+void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 
+	state Hx;
+	int Hx_start, Hx_end;
+	int ncounter = 0;
+
+	// we assumed that the time has been set from the model time
+
+	// note the timeshift by one, which is a hack to get around the
+	// the problem of the timestep updating in the last part of the main loop
+	if (((int)time_-1) % Nskip_ == 0 || (int)time_ == 0) {
+
+		cout << "SAVING SOLUTION" << endl;
+
+		ApplyOperatorLocal(x,Hx);
+
+		Hx.GetProcessorRange(Hx_start, Hx_end);
+
+		//for (int kk = Hx_start; kk < Hx_end; kk++) {
+		for (int kk = 0; kk < Nobservation_nodal_; kk++) {
+			obs_out_part_ << Hx(kk+Hx_start) << " ";
+		    ncounter++;
+		}
+
+		obs_out_part_ << endl;
+
+		if (rank_ == numProcs_ - 1) {
+			for (int kk = 0; kk < Nobservation_flow_; kk++) {
+				obs_out_single_ << Hx(kk+Hx_start+ncounter) << " ";
+			}
+
+			obs_out_single_ << endl;
+
+		}
+
+	}
 
 }
+
 
 ////////////////
 // INNOVATION //
@@ -428,11 +511,11 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 		if (rank_ == 0)
 			cout << "loading data at time " << lower_bound << endl;
 
-		if (use_restarts_) {
+		if (use_restarts_)
 			loadrestart(lower_bound,soln_lower_,acc_lower_,disp_lower_);
-		} else {
+		else
+			LoadObservationSingleLocal(lower_bound,dataarrays_lower_);
 
-		}
 		current_lower_bound_ = lower_bound;
 	}
 
@@ -441,11 +524,10 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 			if (rank_ == 0)
 				cout << "loading data at time " << upper_bound << endl;
 
-			if (use_restarts_) {
+			if (use_restarts_)
 				loadrestart(upper_bound,soln_upper_,acc_upper_,disp_upper_);
-			} else {
-
-			}
+			else
+				LoadObservationSingleLocal(upper_bound,dataarrays_upper_);
 		}
 		current_upper_bound_ = upper_bound;
 	}
@@ -457,7 +539,6 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 
     double t_alpha = (time_ - current_lower_bound_)/(current_upper_bound_-current_lower_bound_);
     t_alpha = 1 - t_alpha;
-
 
     //
     // apply the obs operators
@@ -486,12 +567,19 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 //    	icounter++;
 //    }
 
-    for (int kk = 0; kk < Nobservation_nodal_; kk++) {
+    ofstream temp_out;
+    temp_out.open("testing.txt");
+
+    for (int kk = 0; kk < Nobservation_local_; kk++) {
     	zHx.SetBuffer(kk+zHx_start, -zHx(kk+zHx_start) +
     			t_alpha*dataarrays_lower_[DataArraysObsIndex_(icounter)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(icounter)] );
 
+    	temp_out << dataarrays_upper_[DataArraysObsIndex_(icounter)] << endl;
+
     	icounter++;
     }
+    temp_out.close();
+
     // TODO: don't forget the flow observation eventually
 
     //
@@ -559,8 +647,20 @@ int SimvascularObservationManager::GetNobservation() const {
 // OPERATORS //
 ///////////////
 
+//! Applies the observation operator to a given vector.
+/*! This method is called after 'SetTime' set the time at which the
+ operator is defined.
+ \param[in] x a vector.
+ \param[out] y the value of the operator applied to \a x. It is resized
+ if needed.
+ */
 template<class state>
 void SimvascularObservationManager::ApplyOperator(const state& x, observation& y) const {
+
+	// not implemented as of now since we will always use the getInnovation
+
+	throw ErrorUndefined(
+				"void SimvascularObservationManager::ApplyOperator(const state& x, observation& y)");
 
 }
 
@@ -597,11 +697,11 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, state& Hx
 		Hx.SetBuffer(Hx_start+kk, x(state_start+StateObsIndex_(icounter)) );
 
 		icounter++;
-		ncounter++;
 	}
 
 	// flow observation
 	// the values are located on the last processor
+	ncounter = icounter;
 	icounter = 0;
 
 	ApplyOperatorFlow(x,Hx_flow);
@@ -611,8 +711,9 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, state& Hx
 
 			Hx.SetBuffer(Hx_start+ncounter+kk, Hx_flow(kk));
 
+			//cout << Hx_start+ncounter+kk << " " << Hx_flow(kk) << endl;
+
 			icounter++;
-			ncounter++;
 		}
 	}
 
@@ -748,18 +849,21 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 		}
 
 		// Compute the flow by summing across processors
-		if (numProcs_ > 1)
-			MPI_Reduce(&avgFlow_local, &avgFlow, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
-//
-		if (rank_ == numProcs_ -1)
-			this->flow_out_ << avgFlow << " ";
 
-		if (rank_ == numProcs_ -1)
+		MPI_Reduce(&avgFlow_local, &avgFlow, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
+
+//
+//		if (rank_ == numProcs_ -1)
+//			this->flow_out_ << avgFlow << " ";
+
+		if (rank_ == numProcs_ -1) {
 			Hx(kk) = avgFlow;
+			//cout << Hx(kk) << endl;
+		}
 	}
 
-	if (rank_ == numProcs_ -1)
-		this->flow_out_ << endl;
+//	if (rank_ == numProcs_ -1)
+//		this->flow_out_ << endl;
 }
 
 
@@ -836,6 +940,62 @@ void SimvascularObservationManager::loadrestart(int timeindex, double* soln, dou
 		readdatablock_(&irestart, "displacement?", (void*) disp, &isize,
 				"double", iformat);
 	}
+}
+
+void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, double* dataarray) {
+
+	// in simvascular we assume that the time index is always an integral value
+	// we need to sequentially read the file until
+	int linetoread = timeindex / Nskip_;
+	int icounter = 0;
+	int ncounter = 0;
+	string line;
+
+    obs_in_part_.open(obsfilename_part_.c_str());
+    obs_in_single_.open(obsfilename_single_.c_str());
+
+    //cout << obsfilename_part_.c_str() << endl;
+
+    // read in simple nodal observation data
+    if (obs_in_part_.is_open()) {
+
+    	// skip to the desired line
+    	while ( icounter < linetoread) {
+    		getline (obs_in_part_,line);
+    		icounter++;
+    	}
+
+    	// read in the values
+    	for (int kk = 0; kk < Nobservation_nodal_; kk++) {
+    		obs_in_part_ >> dataarray[kk];
+    		ncounter++;
+    	}
+
+    	obs_in_part_.close();
+    }
+    else cout << "Unable to open file: " << obsfilename_part_ << endl;
+
+    // read in flow observation data
+    icounter = 0;
+    if (obs_in_single_.is_open()) {
+
+    	// skip to the desired line
+    	while ( icounter < linetoread) {
+    		getline (obs_in_single_,line);
+    		icounter++;
+    	}
+
+    	// read in the values
+    	for (int kk = 0; kk < Nobservation_flow_; kk++) {
+    		obs_in_single_ >> dataarray[ncounter+kk];
+    	}
+
+    	obs_in_single_.close();
+    }
+    else cout << "Unable to open file: " << obsfilename_single_ << endl;
+
+    obs_in_part_.close();
+    obs_in_single_.close();
 }
 
 //! Returns the name of the class.

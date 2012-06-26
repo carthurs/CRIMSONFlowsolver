@@ -71,20 +71,20 @@ int main(int argc, char** argv)
     driver.GetModel().Initialize(argc, argv);
     driver.Initialize(argv[2], false);
 
-    SimvascularVerdandiModel::state Hx;
+    //driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
 
     while (!driver.HasFinished())
     {
         driver.InitializeStep();
 
-        //driver.GetModel().Forward();
-
-        //driver.GetObservationManager().ApplyOperatorLocal(driver.GetModel().GetState() , Hx);
+//    	cout << "time " << driver.GetModel().GetTime() << endl;
+//    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
+//    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
+//
+//        driver.GetModel().Forward();
 
         driver.Forward();
-
         driver.Analyze();
-
         driver.GetModel().ForwardFinalize();
     }
 

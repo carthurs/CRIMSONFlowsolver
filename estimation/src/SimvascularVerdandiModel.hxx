@@ -75,6 +75,7 @@ public:
 
 	void InitializeFirstStep();
 	void InitializeStep();
+	void Finalize();
 
 	// Processing.
 	void Forward();

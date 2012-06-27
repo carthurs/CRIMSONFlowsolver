@@ -4,10 +4,19 @@
 #include "mpi.h"
 
 #include <iostream>
-
+#include "common_c.h"
+#include "input.h"
+#include "proces.h"
+#include "itrdrv.h"
 #include "partition.h"
-#include "phSolver.h"
 #include "SCField.h"
+#include "input_fform.h"
+
+#ifdef intel
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 
 using namespace std;
 
@@ -16,17 +25,16 @@ int main(int argc, char * argv[]) {
    int rank;
    int numProcsTotal,numProcs;
    int ierr = 0;
-   char inpfilename[100];
-
-//   MPI_Comm newcomm;
-//   int color,key;
-//   int numparticles = 1;
-//   int numprocs_perparticle;
+   char pathToProcsCaseDir[100];
 
    MPI_Init(&argc,&argv);
-   MPI_Comm_size(MPI_COMM_WORLD, &numProcsTotal);
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+   // save the communicator
+   MPI_Comm iNewComm_C = MPI_COMM_WORLD;
+   newcom.iNewComm = MPI_Comm_c2f(iNewComm_C); // modifies newcom in fortran common block
+
+   MPI_Comm_size(iNewComm_C, &numProcsTotal);
+   MPI_Comm_rank(iNewComm_C, &rank);
 
    if(argc > 2 ){
 	   static volatile int debuggerPresent =0;
@@ -40,26 +48,8 @@ int main(int argc, char * argv[]) {
       return 0;
    }
 
-   // create MPI communicator for one simulation
-   // by splitting MPI_COMM_WORLD
-//   numprocs_perparticle = numProcsTotal / numparticles;
-//   color = rank / numprocs_perparticle;
-//   key = 0;
-//   MPI_Comm_split(MPI_COMM_WORLD,color,key,&newcomm);
-
-   // Initialize phSolver 
-   phSolver* phS = phSolver::Instance();
-
-   // save the communicator
-   //phS->setCommunicator(newcomm);
-   phS->setCommunicator(MPI_COMM_WORLD);
-
    // read configuration file
-   phS->readConfiguration();
-
-   // update numProcsTotal and rank
-//   MPI_Comm_size(newcomm, &numProcs);
-//   MPI_Comm_rank(newcomm, &rank);
+   input_fform();
 
    // Preprocess data and run the problem
    // Partition the problem to the correct number of processors
@@ -72,31 +62,24 @@ int main(int argc, char * argv[]) {
 
    MPI_Barrier(MPI_COMM_WORLD);
 
-   sprintf(inpfilename,"%d-procs-case",numProcsTotal);
+   sprintf(pathToProcsCaseDir,"%d-procs-case",numProcsTotal);
+   chdir(pathToProcsCaseDir);
    //sprintf(inpfilename,"%d-procs-case",numprocs_perparticle);
 
-   cout << "changing directory to " << inpfilename << endl;
+   cout << "changing directory to " << pathToProcsCaseDir << endl;
 
-   phS->readMeshAndSolution_fromFiles(inpfilename);
+   input(&numProcsTotal, &rank);
+   proces();
+   itrdrv_init(); // initialize solver
 
-   int solveReturn = phS->SolverInit(); // initialize solver
-   if ( 0 == solveReturn ) {
-
-      for (int kk = 1; kk <= phS->getNumTimeSteps(); kk++) {
-         phS->SolverForwardInit();
-         phS->SolverForwardStep();
-         phS->SolverForwardFinalize();
-      }
-
-      phS->SolverFinalize();
-   }
-   else {
-      if (rank == 0)
-         fprintf(stderr, "Solve failed ... exiting\n");
-      ierr = 1;
+   for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
+	   itrdrv_iter_init();
+	   itrdrv_iter_step();
+	   itrdrv_iter_finalize();
    }
 
-   //MPI_Comm_free(&newcomm);
+   itrdrv_finalize();
+
    MPI_Finalize();
    return ierr;
 }

@@ -59,19 +59,14 @@ int main(int argc, char** argv)
 			; // assign debuggerPresent=1
 	}
 
-
 	PetscInitialize(&argc, &argv, (char *)0, help);
 
-    typedef double real;
-
-    Verdandi::ReducedOrderUnscentedKalmanFilter<real,
+    Verdandi::ReducedOrderUnscentedKalmanFilter<double,
         SimvascularVerdandiModel,
         SimvascularObservationManager > driver;
 
     driver.GetModel().Initialize(argc, argv);
     driver.Initialize(argv[2], false);
-
-    //driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
 
     while (!driver.HasFinished())
     {
@@ -79,13 +74,14 @@ int main(int argc, char** argv)
 
 //    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
 //    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-//
-//        driver.GetModel().Forward();
+//      driver.GetModel().Forward();
 
         driver.Forward();
         driver.Analyze();
         driver.GetModel().ForwardFinalize();
     }
+
+    driver.GetModel().Finalize();
 
     END;
 

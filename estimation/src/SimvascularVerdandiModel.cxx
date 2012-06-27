@@ -2,8 +2,7 @@
 
 #include "SimvascularVerdandiModel.hxx"
 
-namespace Verdandi
-{
+namespace Verdandi {
 
 
 ////////////////////////////////
@@ -12,18 +11,12 @@ namespace Verdandi
 
 
 //! Constructor.
-SimvascularVerdandiModel::SimvascularVerdandiModel()
-{
+SimvascularVerdandiModel::SimvascularVerdandiModel() {
 }
 
 
 //! Destructor.
-SimvascularVerdandiModel::~SimvascularVerdandiModel()
-{
-	itrdrv_finalize();
-
-	param_out_.close();
-
+SimvascularVerdandiModel::~SimvascularVerdandiModel() {
 	//MPI_Finalize();
 }
 
@@ -37,14 +30,13 @@ SimvascularVerdandiModel::~SimvascularVerdandiModel()
 /*!
       \param[in] configuration_file configuration file.
  */
-void SimvascularVerdandiModel::Initialize(string configuration_file)
-{
+void SimvascularVerdandiModel::Initialize(string configuration_file) {
 	throw ErrorUndefined("SimvascularVerdandiModel"
 			"::Initialize(string configuration_file)");
 }
 
-void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
-{
+void SimvascularVerdandiModel::Initialize(int argc, char * argv[]) {
+
 	char pathToProcsCaseDir[100];
 
 //	MPI_Comm newcomm;
@@ -117,43 +109,29 @@ void SimvascularVerdandiModel::Initialize(int argc, char * argv[])
 	//
 	duplicated_state_.Reallocate(Nstate_, Nstate_local_);
 
-	//x_.Reallocate(Nstate_);
-
-	//Matrix<double> H(Nstate_, Nobservation_);
-	//H.SetIdentity();
-
-	//H.Write("H.bin");
-
-	//Matrix<double, General, ArrayRowSparse> H(Nstate_, Nobservation_);
-	//H.AddValue(i, j, value);
-	//H.Write
-
     param_out_.open ("estimated_parameters_mean.dat");
 
     if (rank_ == 0)
     	cout << "Simvascular Model initiated" << endl;
-
-
-//    int tempcount = 0,tempval = 0;
-//    for (int kk = 0; kk < phS->GetNumBlocks(); kk++) {
-//    	tempcount += phS->GetBlockSize(kk);
-//    	cout << tempcount << endl;
-//    }
-//    cout << "Number of blocks: " << phS->GetNumBlocks() << " Number of elements total: " << tempcount << endl;
 }
 
 
 //! Initializes the first time step for the model.
-void SimvascularVerdandiModel::InitializeFirstStep()
-{
+void SimvascularVerdandiModel::InitializeFirstStep() {
 
 }
 
 
 //! Initializes the current time step for the model.
-void SimvascularVerdandiModel::InitializeStep()
-{
+void SimvascularVerdandiModel::InitializeStep() {
 
+}
+
+void SimvascularVerdandiModel::Finalize() {
+
+	itrdrv_finalize();
+
+	param_out_.close();
 }
 
 
@@ -164,8 +142,8 @@ void SimvascularVerdandiModel::InitializeStep()
 
 //! Advances one step forward in time.
 /*! \f[x^f_{h+1} = \mathcal{M}_h(x^a_h, p_h)\,.\f] */
-void SimvascularVerdandiModel::Forward()
-{
+void SimvascularVerdandiModel::Forward() {
+
 	itrdrv_iter_init();
 	itrdrv_iter_step();
 	itrdrv_iter_finalize();
@@ -173,8 +151,8 @@ void SimvascularVerdandiModel::Forward()
 
 //! Finalizes the current time step
 //! meant to be called after the mean state with innovation is set
-void SimvascularVerdandiModel::ForwardFinalize()
-{
+void SimvascularVerdandiModel::ForwardFinalize() {
+
 	itrdrv_iter_finalize(); // routines that allow moving to the next step
 
 	//
@@ -197,8 +175,8 @@ void SimvascularVerdandiModel::ForwardFinalize()
 /*!
       \return True if the simulation is done, false otherwise.
  */
-bool SimvascularVerdandiModel::HasFinished() const
-{
+bool SimvascularVerdandiModel::HasFinished() const {
+
 	return timdat.istep >= inpdat.nstep[0];
 }
 
@@ -217,8 +195,8 @@ bool SimvascularVerdandiModel::HasFinished() const
       be preserved.
  */
 void SimvascularVerdandiModel::ApplyOperator(state& x,
-		bool forward, bool preserve_state)
-{
+		bool forward, bool preserve_state) {
+
 	double saved_time = 0;
 	state saved_state;
 	//if (!forward)
@@ -303,8 +281,7 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
 /*!
       \return The current time.
  */
-double SimvascularVerdandiModel::GetTime() const
-{
+double SimvascularVerdandiModel::GetTime() const {
 	// the time is adjusted by 1 due to the time not being
 	// incremented until the very end of the time step in the fortran routines
 	return (double)(timdat.lstep+1);
@@ -315,8 +292,7 @@ double SimvascularVerdandiModel::GetTime() const
 /*!
       \param[in] time a given time.
  */
-void SimvascularVerdandiModel::SetTime(double time)
-{
+void SimvascularVerdandiModel::SetTime(double time) {
 	throw ErrorUndefined("SimvascularVerdandiModel"
 			"::SetTime(double time)");
 }
@@ -326,8 +302,7 @@ void SimvascularVerdandiModel::SetTime(double time)
 /*!
       \return The state vector size.
  */
-int SimvascularVerdandiModel::GetNstate() const
-{
+int SimvascularVerdandiModel::GetNstate() const {
 	return Nstate_;
 }
 
@@ -336,8 +311,7 @@ int SimvascularVerdandiModel::GetNstate() const
 /*!
       \return The size of the local state vector.
  */
-int SimvascularVerdandiModel::GetLocalNstate() const
-{
+int SimvascularVerdandiModel::GetLocalNstate() const {
 	return Nstate_local_; // this is used in reallocate routine for petsc matrices in ROUKF
 }
 
@@ -346,8 +320,8 @@ int SimvascularVerdandiModel::GetLocalNstate() const
 /*!
       \return: a reference to "duplicated state" vector
  */
-SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState()
-{
+SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
+
 	int err;
 	double val;
 	int state_start, state_end, icounter;
@@ -460,8 +434,8 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState()
 /*!
 
  */
-void SimvascularVerdandiModel::StateUpdated()
-{
+void SimvascularVerdandiModel::StateUpdated() {
+
 	int err;
 	double val;
 	int state_start, state_end, icounter;
@@ -596,8 +570,7 @@ void SimvascularVerdandiModel::StateUpdated()
       \param[out] U the matrix \f$U\f$.
  */
 template <class L_matrix, class U_matrix>
-void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U)
-{
+void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U) {
 
 	//
 	// L is distributed across processor (since one of its dimensions is Nstate)
@@ -632,8 +605,8 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 /*!
       \return The name of the class.
  */
-string SimvascularVerdandiModel::GetName() const
-{
+string SimvascularVerdandiModel::GetName() const {
+
 	return "SimvascularVerdandiModel";
 }
 
@@ -642,8 +615,8 @@ string SimvascularVerdandiModel::GetName() const
 /*
       \param[in] message the received message.
  */
-void SimvascularVerdandiModel::Message(string message)
-{
+void SimvascularVerdandiModel::Message(string message) {
+
 	// Put here any processing you need.
 }
 

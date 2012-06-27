@@ -60,6 +60,8 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	configuration.Set("final_time", "", numeric_limits<double>::max(),
 			final_time_);
 
+	configuration.Set("ignore_nodal_observations_",ignore_nodal_observations_);
+
 	configuration.Set("Nobservation_flow",Nobservation_flow_);
 
 	if (Nobservation_flow_ > 0) {
@@ -90,70 +92,23 @@ void SimvascularObservationManager::Initialize(const Model& model,
     int actualnshg = conpar.nshguniq;
     int obsFuncVal;
 
-    for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-    	//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
-    	actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-    	actualIdx--;
-
-    	for (int kk = 0; kk < 4; kk++) {
-
-    		//phS->GetValue(*phS->GetRequiredField("observation function solution"), actualIdx, kk, obsFuncVal);
-    		obsFuncVal = (gat->global_ilinobsfunc_sol_ptr)[kk * conpar.nshg + actualIdx];
-
-    		//if (linobs_soln_[kk*isize_nshg_+actualIdx] > 0) {
-    		if (obsFuncVal > 0) {
-    			StateObsIndex_.PushBack(kk+4*unitIdx);
-    			if (use_restarts_)
-    				DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx);
-    			else
-    				DataArraysObsIndex_.PushBack(obsCounter);
-    			obsCounter++;
-    		}
-    	}
-    }
-
-    for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-    	//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
-    	actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-    	actualIdx--;
-
-    	for (int kk = 0; kk < 4; kk++) {
-
-    		//phS->GetValue(*phS->GetRequiredField("observation function time derivative of solution"), actualIdx, kk, obsFuncVal);
-    		obsFuncVal = (gat->global_ilinobsfunc_acc_ptr)[kk * conpar.nshg + actualIdx];
-
-    		//if (linobs_acc_[kk*isize_nshg_+actualIdx] > 0) {
-    		if (obsFuncVal > 0) {
-    			StateObsIndex_.PushBack(kk+4*unitIdx + actualnshg*4);
-    			if (use_restarts_)
-    				DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_);
-    			else
-    				DataArraysObsIndex_.PushBack(obsCounter);
-    			obsCounter++;
-    		}
-    	}
-    }
-
-    if (nomodule.ideformwall > 0) {
-
+    if (!ignore_nodal_observations_) {
     	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
     		//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
     		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
     		actualIdx--;
 
-    		for (int kk = 0; kk < 3; kk++) {
+    		for (int kk = 0; kk < 4; kk++) {
 
-    			//phS->GetValue(*phS->GetRequiredField("observation function displacement"), actualIdx, kk, obsFuncVal);
-    			obsFuncVal = (gat->global_ilinobsfunc_disp_ptr)[kk * conpar.nshg + actualIdx];
+    			//phS->GetValue(*phS->GetRequiredField("observation function solution"), actualIdx, kk, obsFuncVal);
+    			obsFuncVal = (gat->global_ilinobsfunc_sol_ptr)[kk * conpar.nshg + actualIdx];
 
-    			//if (linobs_disp_[kk*isize_nshg_+actualIdx] > 0) {
+    			//if (linobs_soln_[kk*isize_nshg_+actualIdx] > 0) {
     			if (obsFuncVal > 0) {
-    				StateObsIndex_.PushBack(kk+3*unitIdx + actualnshg*4 + actualnshg*4);
+    				StateObsIndex_.PushBack(kk+4*unitIdx);
     				if (use_restarts_)
-    					DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_*2);
+    					DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx);
     				else
     					DataArraysObsIndex_.PushBack(obsCounter);
     				obsCounter++;
@@ -161,6 +116,54 @@ void SimvascularObservationManager::Initialize(const Model& model,
     		}
     	}
 
+    	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
+
+    		//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+    		actualIdx--;
+
+    		for (int kk = 0; kk < 4; kk++) {
+
+    			//phS->GetValue(*phS->GetRequiredField("observation function time derivative of solution"), actualIdx, kk, obsFuncVal);
+    			obsFuncVal = (gat->global_ilinobsfunc_acc_ptr)[kk * conpar.nshg + actualIdx];
+
+    			//if (linobs_acc_[kk*isize_nshg_+actualIdx] > 0) {
+    			if (obsFuncVal > 0) {
+    				StateObsIndex_.PushBack(kk+4*unitIdx + actualnshg*4);
+    				if (use_restarts_)
+    					DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_);
+    				else
+    					DataArraysObsIndex_.PushBack(obsCounter);
+    				obsCounter++;
+    			}
+    		}
+    	}
+
+    	if (nomodule.ideformwall > 0) {
+
+    		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
+
+    			//phS->GetValue(*phS->GetRequiredField("local index of unique nodes"), unitIdx, 0, actualIdx);
+    			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+    			actualIdx--;
+
+    			for (int kk = 0; kk < 3; kk++) {
+
+    				//phS->GetValue(*phS->GetRequiredField("observation function displacement"), actualIdx, kk, obsFuncVal);
+    				obsFuncVal = (gat->global_ilinobsfunc_disp_ptr)[kk * conpar.nshg + actualIdx];
+
+    				//if (linobs_disp_[kk*isize_nshg_+actualIdx] > 0) {
+    				if (obsFuncVal > 0) {
+    					StateObsIndex_.PushBack(kk+3*unitIdx + actualnshg*4 + actualnshg*4);
+    					if (use_restarts_)
+    						DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_*2);
+    					else
+    						DataArraysObsIndex_.PushBack(obsCounter);
+    					obsCounter++;
+    				}
+    			}
+    		}
+    	}
     }
 
     Nobservation_nodal_ = obsCounter;
@@ -300,13 +303,13 @@ void SimvascularObservationManager::Initialize(const Model& model,
 //        writer->Write();
 //        writer->CloseVTKFile(vtkout);
 
-	}
+        // number of local observations
+        if (rank_ == numProcs_ - 1) {
+        	DataArraysObsIndex_.PushBack(obsCounter++);
+        	Nobservation_local_++;
+        }
 
-	//
-	// number of LOCAL observations
-	//
-	if (rank_ == numProcs_ - 1)
-		Nobservation_local_ += Nobservation_flow_;
+	}
 
 	//
 	// compute the global number of observations
@@ -392,7 +395,7 @@ void SimvascularObservationManager::InitializeFiles() {
 	obs_out_single_ << std::setprecision( std::numeric_limits<double>::digits10+2);
 
     obsfilename_part_ = data_directory_ + "/" + obsfilename_part_;
-    obsfilename_single_ = data_directory_ + "/" + obsfilename_part_;
+    obsfilename_single_ = data_directory_ + "/" + obsfilename_single_;
 
 }
 
@@ -553,32 +556,10 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 
     this->ApplyOperatorLocal(x,zHx);
 
-    int icounter = 0;
-
-    int state_start, state_end;
-    x.GetProcessorRange(state_start, state_end);
-
-//    for (int kk = zHx_start; kk < zHx_end; kk++) {
-//
-//    	zHx.SetBuffer(kk, -x(state_start+StateObsIndex_(icounter)) +
-//    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(icounter)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(icounter)] );
-//
-//
-//    	icounter++;
-//    }
-
-    ofstream temp_out;
-    temp_out.open("testing.txt");
-
     for (int kk = 0; kk < Nobservation_local_; kk++) {
     	zHx.SetBuffer(kk+zHx_start, -zHx(kk+zHx_start) +
-    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(icounter)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(icounter)] );
-
-    	temp_out << dataarrays_upper_[DataArraysObsIndex_(icounter)] << endl;
-
-    	icounter++;
+    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(kk)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(kk)] );
     }
-    temp_out.close();
 
     // TODO: don't forget the flow observation eventually
 
@@ -952,50 +933,59 @@ void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, do
 	string line;
 
     obs_in_part_.open(obsfilename_part_.c_str());
-    obs_in_single_.open(obsfilename_single_.c_str());
+
 
     //cout << obsfilename_part_.c_str() << endl;
 
     // read in simple nodal observation data
-    if (obs_in_part_.is_open()) {
+    if (!ignore_nodal_observations_) {
+    	if (obs_in_part_.is_open()) {
 
-    	// skip to the desired line
-    	while ( icounter < linetoread) {
-    		getline (obs_in_part_,line);
-    		icounter++;
+    		// skip to the desired line
+    		while ( icounter < linetoread) {
+    			getline (obs_in_part_,line);
+    			icounter++;
+    		}
+
+    		// read in the values
+    		for (int kk = 0; kk < Nobservation_nodal_; kk++) {
+    			obs_in_part_ >> dataarray[kk];
+    			ncounter++;
+    		}
+
+    		obs_in_part_.close();
     	}
-
-    	// read in the values
-    	for (int kk = 0; kk < Nobservation_nodal_; kk++) {
-    		obs_in_part_ >> dataarray[kk];
-    		ncounter++;
-    	}
-
-    	obs_in_part_.close();
+    	else cout << "Unable to open file: " << obsfilename_part_ << endl;
     }
-    else cout << "Unable to open file: " << obsfilename_part_ << endl;
 
     // read in flow observation data
-    icounter = 0;
-    if (obs_in_single_.is_open()) {
+    if (rank_ == numProcs_ - 1) {
 
-    	// skip to the desired line
-    	while ( icounter < linetoread) {
-    		getline (obs_in_single_,line);
-    		icounter++;
+    	obs_in_single_.open(obsfilename_single_.c_str());
+    	icounter = 0;
+
+    	if (obs_in_single_.is_open()) {
+
+    		// skip to the desired line
+    		while ( icounter < linetoread) {
+    			getline (obs_in_single_,line);
+    			icounter++;
+    		}
+
+    		// read in the values
+    		for (int kk = 0; kk < Nobservation_flow_; kk++) {
+    			obs_in_single_ >> dataarray[ncounter+kk];
+    		}
+
+    		obs_in_single_.close();
     	}
 
-    	// read in the values
-    	for (int kk = 0; kk < Nobservation_flow_; kk++) {
-    		obs_in_single_ >> dataarray[ncounter+kk];
-    	}
-
+    	else cout << "Unable to open file: " << obsfilename_single_ << endl;
     	obs_in_single_.close();
     }
-    else cout << "Unable to open file: " << obsfilename_single_ << endl;
 
     obs_in_part_.close();
-    obs_in_single_.close();
+
 }
 
 //! Returns the name of the class.

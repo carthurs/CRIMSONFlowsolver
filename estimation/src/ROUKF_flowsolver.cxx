@@ -77,7 +77,6 @@ int main(int argc, char** argv)
     {
         driver.InitializeStep();
 
-//    	cout << "time " << driver.GetModel().GetTime() << endl;
 //    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
 //    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
 //

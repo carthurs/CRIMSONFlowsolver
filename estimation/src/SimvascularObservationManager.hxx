@@ -81,7 +81,7 @@ protected:
 	//! Flag that denotes whether we use simulation restarts as data
 	int use_restarts_;
 
-
+    int ignore_nodal_observations_;
 
 	/*** Observation times ***/
 

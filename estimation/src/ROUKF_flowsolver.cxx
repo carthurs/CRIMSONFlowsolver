@@ -45,15 +45,15 @@ int main(int argc, char** argv)
 
 	TRY;
 
-	if (argc < 3) {
+	if (argc < 2) {
 		string mesg = "Usage:\n";
 		mesg +=
 				string("  ") + argv[0]
-						+ "Nproc [model configuration file] [assimilation method configuration file]";
+						+ " Nproc [assimilation method configuration file]";
 		cout << mesg << endl;
 		return 1;
 	}
-	else if (argc > 3) {
+	else if (argc > 2) {
 		static volatile int debuggerPresent = 0;
 		while (!debuggerPresent)
 			; // assign debuggerPresent=1
@@ -65,8 +65,7 @@ int main(int argc, char** argv)
         SimvascularVerdandiModel,
         SimvascularObservationManager > driver;
 
-    driver.GetModel().Initialize(argc, argv);
-    driver.Initialize(argv[2], false);
+    driver.Initialize(argv[1], true);
 
     while (!driver.HasFinished())
     {

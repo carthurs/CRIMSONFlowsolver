@@ -164,6 +164,8 @@ protected:
 	int rank_;
 	int numProcs_;
 
+	int *obs_recvcount_;
+
 public:
 
 	SimvascularObservationManager();
@@ -191,7 +193,7 @@ public:
 	template<class state>
 	void ApplyOperator(const state& x, observation& y) const;
 	template<class state>
-	void ApplyOperatorLocal(const state& x, state& Hx);
+	void ApplyOperatorLocal(const state& x, observation& Hx);
 	template<class state>
 	void ApplyOperatorFlow(const state& x, observation& Hx);
 	template<class state>

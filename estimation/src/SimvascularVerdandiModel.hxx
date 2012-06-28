@@ -71,7 +71,7 @@ public:
 	~SimvascularVerdandiModel();
 	void Initialize(string configuration_file);
 
-	void Initialize(int argc, char * argv[]);
+	void Initialize();
 
 	void InitializeFirstStep();
 	void InitializeStep();

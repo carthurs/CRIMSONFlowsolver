@@ -26,6 +26,8 @@ SimvascularObservationManager::~SimvascularObservationManager() {
 
 	delete [] dataarrays_lower_;
 	delete [] dataarrays_upper_;
+
+	delete [] obs_recvcount_;
 }
 
 ////////////////////
@@ -366,6 +368,21 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	Mlt(double(double(1)/ error_variance_value_), error_variance_inverse_);
 #endif
 
+	//
+	//
+    //
+
+	obs_recvcount_ = new int[numProcs_];
+
+	MPI_Allgather(&Nobservation_local_, 1, MPI_INT,
+			      obs_recvcount_, 1, MPI_INT,
+		          MPI_COMM_WORLD);
+
+//	for (int kk = 0; kk < numProcs_ ; kk++) {
+//		cout << obs_recvcount_[kk] << " ";
+//	}
+//	cout << endl;
+
 	if (rank_ == 0)
 		cout << "Simvascular Observation Manager initiated" << endl;
 
@@ -444,8 +461,7 @@ void SimvascularObservationManager::GetObservation(
 template<class state>
 void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 
-	state Hx;
-	int Hx_start, Hx_end;
+	observation Hx;
 	int ncounter = 0;
 
 	// we assumed that the time has been set from the model time
@@ -458,11 +474,9 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 
 		ApplyOperatorLocal(x,Hx);
 
-		Hx.GetProcessorRange(Hx_start, Hx_end);
-
 		//for (int kk = Hx_start; kk < Hx_end; kk++) {
 		for (int kk = 0; kk < Nobservation_nodal_; kk++) {
-			obs_out_part_ << Hx(kk+Hx_start) << " ";
+			obs_out_part_ << Hx(kk) << " ";
 		    ncounter++;
 		}
 
@@ -470,7 +484,7 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 
 		if (rank_ == numProcs_ - 1) {
 			for (int kk = 0; kk < Nobservation_flow_; kk++) {
-				obs_out_single_ << Hx(kk+Hx_start+ncounter) << " ";
+				obs_out_single_ << Hx(kk+ncounter) << " ";
 			}
 
 			obs_out_single_ << endl;
@@ -547,55 +561,33 @@ void SimvascularObservationManager::GetInnovation(const state& x,
     // apply the obs operators
     //
 
-    state zHx;
-    int zHx_start, zHx_end;
-
     // TODO: figure out where to put the Reallocate
-    zHx.Reallocate(Nobservation_,Nobservation_local_);
-    zHx.GetProcessorRange(zHx_start, zHx_end);
+    observation zHx;
+    zHx.Reallocate(Nobservation_local_);
 
     this->ApplyOperatorLocal(x,zHx);
 
     for (int kk = 0; kk < Nobservation_local_; kk++) {
-    	zHx.SetBuffer(kk+zHx_start, -zHx(kk+zHx_start) +
-    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(kk)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(kk)] );
+    	zHx(kk) = -zHx(kk) +
+    			t_alpha*dataarrays_lower_[DataArraysObsIndex_(kk)] + (1-t_alpha)*dataarrays_upper_[DataArraysObsIndex_(kk)] ;
     }
 
-    // TODO: don't forget the flow observation eventually
-
     //
-    // scatter the innovation to all the processors.
     // TODO: for now, the innovation is required to be on all processors
     //
 
-    innovation.Reallocate(Nobservation_local_);
+    innovation.Reallocate(Nobservation_);
 
-    Vec zHx_seq;
-    VecScatter ctx;
+    int *temp_displ = new int[numProcs_];
+    for (int kk = 0; kk < numProcs_; kk++) {
+    	temp_displ[kk] = 0;
+    }
 
-    VecScatterCreateToAll(zHx.GetPetscVector(), &ctx, &zHx_seq);
-    VecScatterBegin(ctx, zHx.GetPetscVector(), zHx_seq,
-    		INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx, zHx.GetPetscVector(), zHx_seq,
-    		INSERT_VALUES, SCATTER_FORWARD);
-    VecScatterDestroy(&ctx);
+    MPI_Allgatherv(zHx.GetData(), Nobservation_local_, MPI_DOUBLE,
+                   innovation.GetData(), obs_recvcount_, temp_displ, MPI_DOUBLE,
+                   MPI_COMM_WORLD);
 
-    PetscInt ix[Nobservation_];
-    PetscScalar zHx_seq_data[Nobservation_];
-    Vector<int> ix_v;
-
-    ix_v.SetData(Nobservation_, ix);
-    ix_v.Fill();
-    ix_v.Nullify();
-    VecGetValues(zHx_seq, Nobservation_, ix, zHx_seq_data);
-    Vector<double> zHx_seq_v;
-    zHx_seq_v.SetData(Nobservation_, zHx_seq_data);
-    innovation.Copy(zHx_seq_v);
-    zHx_seq_v.Nullify();
-
-    //innovation.Print();
-    //cout << "stiffness " << pow(2.0,x(47344)) << endl;
-
+    delete [] temp_displ;
 
 }
 
@@ -653,18 +645,11 @@ void SimvascularObservationManager::ApplyOperator(const state& x, observation& y
  if needed.
  */
 template<class state>
-void SimvascularObservationManager::ApplyOperatorLocal(const state& x, state& Hx) {
+void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observation& Hx) {
 
-	int Hx_start, Hx_end;
 	observation Hx_flow;
 
-	Hx.Reallocate(Nobservation_,Nobservation_local_);
-	Hx.GetProcessorRange(Hx_start, Hx_end);
-
-	//cout << "zHx_start " << zHx_start << endl;
-	//cout << "zHx_end " << zHx_end << endl;
-
-	//y.Reallocate(Nobservation_local_);
+	Hx.Reallocate(Nobservation_local_);
 
 	int icounter = 0;
 	int ncounter = 0;
@@ -675,7 +660,7 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, state& Hx
 	// simple nodal observation
 	for (int kk = 0; kk < Nobservation_nodal_; kk++) {
 
-		Hx.SetBuffer(Hx_start+kk, x(state_start+StateObsIndex_(icounter)) );
+		Hx(kk) = x(state_start+StateObsIndex_(icounter));
 
 		icounter++;
 	}
@@ -690,7 +675,7 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, state& Hx
 	if (rank_ == numProcs_ - 1) {
 		for (int kk = 0; kk < Nobservation_flow_; kk++) {
 
-			Hx.SetBuffer(Hx_start+ncounter+kk, Hx_flow(kk));
+			Hx(ncounter+kk) = Hx_flow(kk);
 
 			//cout << Hx_start+ncounter+kk << " " << Hx_flow(kk) << endl;
 

@@ -31,11 +31,12 @@ SimvascularVerdandiModel::~SimvascularVerdandiModel() {
       \param[in] configuration_file configuration file.
  */
 void SimvascularVerdandiModel::Initialize(string configuration_file) {
-	throw ErrorUndefined("SimvascularVerdandiModel"
-			"::Initialize(string configuration_file)");
+
+    Initialize();
+
 }
 
-void SimvascularVerdandiModel::Initialize(int argc, char * argv[]) {
+void SimvascularVerdandiModel::Initialize() {
 
 	char pathToProcsCaseDir[100];
 

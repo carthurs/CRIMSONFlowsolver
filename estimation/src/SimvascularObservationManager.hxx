@@ -70,8 +70,10 @@ protected:
 	int Nobservation_local_;
 	//! Number of single node observations
 	int Nobservation_nodal_;
-	//! Number of flow observations
+	//! Number of cross-sectional flow observations
 	int Nobservation_flow_;
+	//! Number of cross-sectional average pressure observations
+	int Nobservation_avgpressure_;
 	//! Period with which available observations are actually loaded.
 	int Nskip_;
 	//! First time at which observations are available.
@@ -133,9 +135,9 @@ protected:
     int isize_nshguniq_;
 
 	/*** Cross-sectional flow observation ***/
-	vector<Seldon::Vector<double> > flowobs_origins_;
-	vector<Seldon::Vector<double> > flowobs_normals_;
-	vector<double> flowobs_radii_;
+	vector<Seldon::Vector<double> > csobs_origins_;
+	vector<Seldon::Vector<double> > csobs_normals_;
+	vector<double> csobs_radii_;
 
 	vtkSmartPointer<vtkPoints> geom_points_;
 	vtkSmartPointer<vtkIdList> geom_ids_;

@@ -66,13 +66,15 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	configuration.Set("Nobservation_flow",Nobservation_flow_);
 
-	if (Nobservation_flow_ > 0) {
-		flowobs_origins_.resize(Nobservation_flow_);
-		flowobs_normals_.resize(Nobservation_flow_);
+	configuration.Set("Nobservation_avgpressure",Nobservation_avgpressure_);
 
-		configuration.Set("flowobs_origins",flowobs_origins_);
-		configuration.Set("flowobs_normals",flowobs_normals_);
-		configuration.Set("flowobs_radii",flowobs_radii_);
+	if (Nobservation_flow_ > 0 || Nobservation_avgpressure_ > 0) {
+		csobs_origins_.resize(Nobservation_flow_+Nobservation_avgpressure_);
+		csobs_normals_.resize(Nobservation_flow_+Nobservation_avgpressure_);
+
+		configuration.Set("csobs_origins",csobs_origins_);
+		configuration.Set("csobs_normals",csobs_normals_);
+		configuration.Set("csobs_radii",csobs_radii_);
 	}
 
 	configuration.Set("error.variance", "v > 0", error_variance_value_);
@@ -181,26 +183,29 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	geom_ids_ = vtkSmartPointer<vtkIdList>::New();
 	geom_UGrid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	vtkSmartPointer<vtkDoubleArray> geom_vel_array = vtkSmartPointer<vtkDoubleArray>::New();
+	vtkSmartPointer<vtkDoubleArray> geom_pres_array = vtkSmartPointer<vtkDoubleArray>::New();
 
 	geom_vel_array->SetNumberOfComponents(3);
 
-	double coordVal1,coordVal2,coordVal3;
-	double solVal1,solVal2,solVal3;
+	double coordVal[3];
+	double solVal[4];
 	int nodeIndex;
 
 	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++)
 	{
-		coordVal1 = (gat->global_coord_ptr)[0 * conpar.nshg + unitIdx];
-		coordVal2 = (gat->global_coord_ptr)[1 * conpar.nshg + unitIdx];
-		coordVal3 = (gat->global_coord_ptr)[2 * conpar.nshg + unitIdx];
+		coordVal[0] = (gat->global_coord_ptr)[0 * conpar.nshg + unitIdx];
+		coordVal[1] = (gat->global_coord_ptr)[1 * conpar.nshg + unitIdx];
+		coordVal[2] = (gat->global_coord_ptr)[2 * conpar.nshg + unitIdx];
 
-		solVal1 = (gat->global_yold_ptr)[0 * conpar.nshg + unitIdx];
-		solVal2 = (gat->global_yold_ptr)[1 * conpar.nshg + unitIdx];
-		solVal3 = (gat->global_yold_ptr)[2 * conpar.nshg + unitIdx];
+		solVal[0] = (gat->global_yold_ptr)[0 * conpar.nshg + unitIdx];
+		solVal[1] = (gat->global_yold_ptr)[1 * conpar.nshg + unitIdx];
+		solVal[2] = (gat->global_yold_ptr)[2 * conpar.nshg + unitIdx];
+		solVal[3] = (gat->global_yold_ptr)[3 * conpar.nshg + unitIdx];
 
-		geom_points_->InsertPoint(unitIdx,coordVal1,coordVal2,coordVal3);
+		geom_points_->InsertPoint(unitIdx,coordVal[0],coordVal[1],coordVal[2]);
 
-		geom_vel_array->InsertNextTuple3(solVal1,solVal2,solVal3);
+		geom_vel_array->InsertNextTuple3(solVal[0],solVal[1],solVal[2]);
+		geom_pres_array->InsertNextTuple1(solVal[3]);
 	}
 
 	geom_UGrid_->SetPoints(geom_points_);
@@ -228,6 +233,8 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	geom_UGrid_->GetPointData()->AddArray(geom_vel_array);
 	geom_UGrid_->GetPointData()->GetArray(0)->SetName("velocity");
+	geom_UGrid_->GetPointData()->AddArray(geom_pres_array);
+	geom_UGrid_->GetPointData()->GetArray(1)->SetName("pressure");
 
 	geom_UGrid_->Update();
 
@@ -244,12 +251,12 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	double closestdistsqr;
 	vtkSmartPointer<vtkIdList> ptIds = vtkSmartPointer<vtkIdList>::New();
 
-	for (int kk = 0; kk < Nobservation_flow_; kk++) {
+	for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
 
 		// set the location of the cutting plane
 		geom_plane_ = vtkSmartPointer<vtkPlane>::New();
-		geom_plane_->SetOrigin(flowobs_origins_[kk](0),flowobs_origins_[kk](1),flowobs_origins_[kk](2));
-		geom_plane_->SetNormal(flowobs_normals_[kk](0),flowobs_normals_[kk](1),flowobs_normals_[kk](2));
+		geom_plane_->SetOrigin(csobs_origins_[kk](0),csobs_origins_[kk](1),csobs_origins_[kk](2));
+		geom_plane_->SetNormal(csobs_normals_[kk](0),csobs_normals_[kk](1),csobs_normals_[kk](2));
 		geom_planes_.push_back(geom_plane_);
 
 		geom_cutter_ = vtkSmartPointer<vtkCutter>::New();
@@ -262,9 +269,9 @@ void SimvascularObservationManager::Initialize(const Model& model,
 		// measure the distance from the origin to each cell of the cut
 		// if the distance is greater than a user specified threshold,
 		// ignore that cell in the flow calculation
-		testpoint[0] = flowobs_origins_[kk](0);
-		testpoint[1] = flowobs_origins_[kk](1);
-		testpoint[2] = flowobs_origins_[kk](2);
+		testpoint[0] = csobs_origins_[kk](0);
+		testpoint[1] = csobs_origins_[kk](1);
+		testpoint[2] = csobs_origins_[kk](2);
 
 		for (int jj = 0; jj < geom_cutter_->GetOutput()->GetNumberOfCells(); jj++) {
 
@@ -305,7 +312,9 @@ void SimvascularObservationManager::Initialize(const Model& model,
 //        writer->Write();
 //        writer->CloseVTKFile(vtkout);
 
+        //
         // number of local observations
+        //
         if (rank_ == numProcs_ - 1) {
         	DataArraysObsIndex_.PushBack(obsCounter++);
         	Nobservation_local_++;
@@ -483,7 +492,7 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 		obs_out_part_ << endl;
 
 		if (rank_ == numProcs_ - 1) {
-			for (int kk = 0; kk < Nobservation_flow_; kk++) {
+			for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
 				obs_out_single_ << Hx(kk+ncounter) << " ";
 			}
 
@@ -647,7 +656,7 @@ void SimvascularObservationManager::ApplyOperator(const state& x, observation& y
 template<class state>
 void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observation& Hx) {
 
-	observation Hx_flow;
+	observation Hx_cs;
 
 	Hx.Reallocate(Nobservation_local_);
 
@@ -670,12 +679,12 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 	ncounter = icounter;
 	icounter = 0;
 
-	ApplyOperatorFlow(x,Hx_flow);
+	ApplyOperatorFlow(x,Hx_cs);
 
 	if (rank_ == numProcs_ - 1) {
-		for (int kk = 0; kk < Nobservation_flow_; kk++) {
+		for (int kk = 0; kk < Nobservation_flow_ + Nobservation_avgpressure_; kk++) {
 
-			Hx(ncounter+kk) = Hx_flow(kk);
+			Hx(ncounter+kk) = Hx_cs(kk);
 
 			//cout << Hx_start+ncounter+kk << " " << Hx_flow(kk) << endl;
 
@@ -690,20 +699,17 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 template<class state>
 void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observation& Hx) {
 
-	double solVal1,solVal2,solVal3;
-	double vel1[3],vel2[3],vel3[3];
+	double solVal[4];
+	double vel1[3],vel2[3],vel3[3],press123[3];
 
 	double *tempcoord,*tempvel;
+	double temppres;
 	double coord1[3],coord2[3],coord3[3];
-	double A[3], B[3], C[3], triArea, avgFlow_local, avgFlow, tempL;
+	double A[3], B[3], C[3], triArea, area_local, area, avgFlow_local, avgFlow, avgPres_local, avgPres, tempL;
 
 	int actualIdx;
-
 	double val;
-
 	int state_start, state_end, icounter;
-
-	Hx.Reallocate(Nobservation_flow_);
 
     x.GetProcessorRange(state_start, state_end);
 
@@ -735,14 +741,19 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 	// now we reassign the velocities values to update the cross-sectional avg flow
 	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++)
 	{
-		solVal1 = (gat->global_temporary_array_ptr)[0 * conpar.nshg + unitIdx];
-		solVal2 = (gat->global_temporary_array_ptr)[1 * conpar.nshg + unitIdx];
-		solVal3 = (gat->global_temporary_array_ptr)[2 * conpar.nshg + unitIdx];
+		solVal[0] = (gat->global_temporary_array_ptr)[0 * conpar.nshg + unitIdx];
+		solVal[1] = (gat->global_temporary_array_ptr)[1 * conpar.nshg + unitIdx];
+		solVal[2] = (gat->global_temporary_array_ptr)[2 * conpar.nshg + unitIdx];
+		solVal[3] = (gat->global_temporary_array_ptr)[3 * conpar.nshg + unitIdx];
 
-		geom_UGrid_->GetPointData()->GetArray("velocity")->SetTuple3(unitIdx,solVal1,solVal2,solVal3);
+		geom_UGrid_->GetPointData()->GetArray(0)->SetTuple3(unitIdx,solVal[0],solVal[1],solVal[2]);
+		geom_UGrid_->GetPointData()->GetArray(1)->SetTuple1(unitIdx,solVal[3]);
 	}
 
-	for (int kk = 0; kk < Nobservation_flow_ ; kk++) {
+	if (rank_ == numProcs_ - 1)
+		Hx.Reallocate(Nobservation_flow_+Nobservation_avgpressure_);
+
+	for (int kk = 0; kk < Nobservation_flow_ + Nobservation_avgpressure_; kk++) {
 
 		// the next two calls update the values on cross-sectional cut
 		geom_cutters_[kk]->Modified();
@@ -757,20 +768,26 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 		// the cross-sectional avg flow
 		// we note that the cells of the cut are all triangles (the occasional quad is divided automatically by the filter)
 		avgFlow_local = 0;
+		area_local = 0;
+		avgPres_local = 0;
 		for (int jj = 0; jj < geom_cutters_[kk]->GetOutput()->GetNumberOfCells(); jj++) {
 
-			if (distances_fromorigin_[kk][jj] <= flowobs_radii_[kk]) {
+			if (distances_fromorigin_[kk][jj] <= csobs_radii_[kk]) {
 
 				geom_cutters_[kk]->GetOutput()->GetCellPoints(jj,ptIds);
 
-				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(0));
+				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray(0)->GetTuple3(ptIds->GetId(0));
 				vel1[0] = tempvel[0]; vel1[1] = tempvel[1]; vel1[2] = tempvel[2];
 
-				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(1));
+				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray(0)->GetTuple3(ptIds->GetId(1));
 				vel2[0] = tempvel[0]; vel2[1] = tempvel[1]; vel2[2] = tempvel[2];
 
-				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray("velocity")->GetTuple3(ptIds->GetId(2));
+				tempvel = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray(0)->GetTuple3(ptIds->GetId(2));
 				vel3[0] = tempvel[0]; vel3[1] = tempvel[1]; vel3[2] = tempvel[2];
+
+				press123[0] = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray(1)->GetTuple1(ptIds->GetId(0));
+				press123[1] = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray(1)->GetTuple1(ptIds->GetId(1));
+				press123[2] = geom_cutters_[kk]->GetOutput()->GetPointData()->GetArray(1)->GetTuple1(ptIds->GetId(2));
 
 				tempcoord = geom_cutters_[kk]->GetOutput()->GetPoint(ptIds->GetId(0));
 				coord1[0] = tempcoord[0]; coord1[1] = tempcoord[1]; coord1[2] = tempcoord[2];
@@ -807,9 +824,13 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 				C[1] = C[1] / tempL;
 				C[2] = C[2] / tempL;
 
+				area_local += triArea;
+
 				avgFlow_local += (double(1.0)/3.0)*(vel1[0]*C[0]+vel1[1]*C[1]+vel1[2]*C[2]+
 						vel2[0]*C[0]+vel2[1]*C[1]+vel2[2]*C[2]+
 						vel3[0]*C[0]+vel3[1]*C[1]+vel3[2]*C[2])*triArea;
+
+				avgPres_local += (double(1.0)/3.0)*(press123[0]+press123[1]+press123[2])*triArea;
 			}
 
 		}
@@ -817,21 +838,27 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 		// Compute the flow by summing across processors
 
 		MPI_Reduce(&avgFlow_local, &avgFlow, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
+		MPI_Reduce(&avgPres_local, &avgPres, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
+
+		MPI_Reduce(&area_local, &area, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
 
 //
 //		if (rank_ == numProcs_ -1)
 //			this->flow_out_ << avgFlow << " ";
 
 		if (rank_ == numProcs_ -1) {
-			Hx(kk) = avgFlow;
+			(kk < Nobservation_flow_) ?
+				Hx(kk) = avgFlow : Hx(kk) = avgPres / area;
+
 			//cout << Hx(kk) << endl;
 		}
 	}
 
+
+
 //	if (rank_ == numProcs_ -1)
 //		this->flow_out_ << endl;
 }
-
 
 //! Return an observation error covariance.
 /*!
@@ -958,7 +985,7 @@ void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, do
     		}
 
     		// read in the values
-    		for (int kk = 0; kk < Nobservation_flow_; kk++) {
+    		for (int kk = 0; kk < Nobservation_flow_ + Nobservation_avgpressure_; kk++) {
     			obs_in_single_ >> dataarray[ncounter+kk];
     		}
 

@@ -69,15 +69,15 @@ int main(int argc, char** argv)
 
     while (!driver.HasFinished())
     {
-        driver.InitializeStep();
+        //driver.InitializeStep();
 
-//    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
-//    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-//      driver.GetModel().Forward();
+    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
+    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
+        driver.GetModel().Forward();
 
-        driver.Forward();
-        driver.Analyze();
-        driver.GetModel().ForwardFinalize();
+        //driver.Forward();
+        //driver.Analyze();
+        //driver.GetModel().ForwardFinalize();
     }
 
     driver.GetModel().Finalize();

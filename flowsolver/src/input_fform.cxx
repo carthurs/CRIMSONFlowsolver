@@ -797,6 +797,43 @@ int input_fform() {
 				else
 					nomodule.ircrfile = 0;
 			}
+//			if(nomodule.numTRCRSrfs=inp.GetValue("Number of Time-varying RCR Surfaces")){
+//				ivec = inp.GetValue("List of Time-varying RCR Surfaces");
+//				for(i=0;i<MAXSURF+1; i++)
+//					nomodule.nsrflistTRCR[i] = 0;
+//				for(i=0; i< nomodule.numTRCRSrfs; i++){
+//					nomodule.nsrflistTRCR[i+1] = ivec[i];
+//				}
+//				if ( (string)inp.GetValue("Time-varying RCR Values From File") == "True")
+//					nomodule.itrcrfile = 1;
+//				else
+//					nomodule.itrcrfile = 0;
+////				if ( (string)inp.GetValue("Regulation of Flow") == "True")
+////					nomodule.regflow = 1; else nomodule.regflow = 0;
+////				if(nomodule.regflow){
+////					nomodule.numRegSrfs=inp.GetValue("Number of Regulated Surfaces");
+////					ivec = inp.GetValue("List of Regulated Surfaces");
+////					for(i=0;i<MAXSURF+1; i++) nomodule.nsrflistReg[i] = 0;
+////					for(i=0; i< nomodule.numRegSrfs; i++){
+////						nomodule.nsrflistReg[i+1] = ivec[i];
+////					}
+////				}
+//			}
+			// Nan rcr ---------------------------
+			if(grcrbccom.numGRCRSrfs=inp.GetValue("Number of experimental RCR Surfaces")){
+				ivec = inp.GetValue("List of experimental RCR Surfaces");
+				for(i=0;i<MAXSURF+1; i++)
+					grcrbccom.nsrflistGRCR[i] = 0;
+				for(i=0; i< grcrbccom.numGRCRSrfs; i++){
+					grcrbccom.nsrflistGRCR[i+1] = ivec[i];
+				}
+				if ( (string)inp.GetValue("experimental RCR Values From File") == "True")
+					grcrbccom.igrcrfile = 1;
+				else
+					grcrbccom.igrcrfile = 0;
+
+			}
+			// -----------------------------------
 			if (nomodule.numCORSrfs = inp.GetValue(
 					"Number of Coronary Surfaces")) {
 				ivec = inp.GetValue("List of Coronary Surfaces");

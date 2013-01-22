@@ -29,6 +29,7 @@ CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           symtet.c symtri.c symtripyr.c symwdg.c tmrc.c uniformP.c usr.c write_hessian.c
 
 FSRCS   = common.f90 spebc.f90 pointer.f90 globalArrays.f90 shapeTable.f90\
+          general_rcrbc.f90 \
           turbsa.f90 \
           perprep.f90 local_mass.f90 \
           filtprep.f90  pvsqbi.f90 \

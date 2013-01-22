@@ -21,15 +21,18 @@ public:
 	double* global_coord_ptr;
 	double* global_temporary_array_ptr;
 
+	double* global_xdist_ptr;
+
 	int* global_ilinobsfunc_sol_ptr;
 	int* global_ilinobsfunc_acc_ptr;
 	int* global_ilinobsfunc_disp_ptr;
+	int* global_obsfunc_dist_ptr;
 
 	vector <int> global_npro;
 	vector <int> global_nshl;
 	vector <int*> global_mien;
 
-	int numblocks_;
+	//int numblocks_;
 
 private:
 	GlobalArrayTransfer();

@@ -75,6 +75,7 @@ static Cmd cmd_table[] = {
   {"number_of_observations", cmd_number_of_observations},
   {"number_of_parameters", cmd_number_of_parameters},
   {"deformable_observe_displacements_on",cmd_deformable_observe_displacements_on},
+  {"deformable_observe_distances_on",cmd_deformable_observe_distances_on},
   //{"deformable_observe_velocities_on",cmd_deformable_observe_velocities_on},
   //{"deformable_observe_pressures_on",cmd_deformable_observe_pressures_on},
   {"write_linear_observation_operator",cmd_write_linear_observation_operator},

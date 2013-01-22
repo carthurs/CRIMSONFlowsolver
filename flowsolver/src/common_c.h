@@ -10,8 +10,9 @@
 
 #include "mpi.h"
 
-#define MAXBLK   50000
-#define MAXSURF  199  
+#define MAXBLK   500000
+#define MAXSURF  199
+#define MAXREGIONS 255
 #define MAXTS   100
 #define MAXTOP   5
 #define MAXQPT   125
@@ -483,6 +484,9 @@
          int numRCRSrfs;
          int nsrflistRCR[MAXSURF+1];
          int ircrfile;
+         int numTRCRSrfs;
+         int nsrflistTRCR[MAXSURF+1];
+         int itrcrfile;
          int numCORSrfs;
          int nsrflistCOR[MAXSURF+1];
          int icorfile;
@@ -504,10 +508,18 @@
          int iUseSWB;
          int iUseTWB;
          int iUseEWB;
-         int imeasdist;
+         int numevw;
          int iwalldamp;
          int iwallsupp;
+         int imeasdist;
+         int istatefilter;
       } nomodule;
+
+      extern struct {
+    	  int numGRCRSrfs;
+    	  int nsrflistGRCR[MAXSURF+1];
+    	  int igrcrfile;
+      } grcrbccom;
 
       extern struct {
          int seqsize;

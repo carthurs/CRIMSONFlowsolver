@@ -134,6 +134,7 @@ int CALLTYPE cmd_number_of_parameters(char*);
 int CALLTYPE cmd_deformable_observe_displacements_on(char*);
 int CALLTYPE cmd_deformable_observe_velocities_on(char*);
 int CALLTYPE cmd_deformable_observe_pressures_on(char*);
+int CALLTYPE cmd_deformable_observe_distances_on(char*);
 int CALLTYPE cmd_write_linear_observation_operator(char*);
 
 #endif // CMD_H

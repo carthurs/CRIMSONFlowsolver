@@ -56,6 +56,7 @@
       integer (c_int), target, allocatable :: ilinobsfunc_sol(:,:) ! simple linear observation functions
       integer (c_int), target, allocatable :: ilinobsfunc_acc(:,:)
       integer (c_int), target, allocatable :: ilinobsfunc_disp(:,:)
+      integer (c_int), target, allocatable :: obsfunc_dist(:) ! distance observation flag
  
 !linear algebra matrices (actually allocated in itrdrv.f but destroyed
 !with global destructor)
@@ -274,6 +275,8 @@
 !      if((flmpr.ne.0) .or. (flmpl.ne.0)) 
       call Dgmass
       call DpvsQbi ! No conditional??
+
+      call Dgrcrbc ! Nan rcr
 !
 !.... determine how many scalar equations we are going to need to solve
 !

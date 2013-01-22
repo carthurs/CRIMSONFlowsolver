@@ -175,7 +175,7 @@
                  do k = 1, nshlb
                     do m = 1, nsd
                        rlKwall(:,i,j) = rlKwall(:,i,j) &
-                       +evw*Kwall_xKebe(:,3*(j-1)+m,i,k)*ul(:,k,m)
+                       +evw*Kwall_xKebe(:,3*(j-1)+m,i,k)*ul(:,k,m) ! bring in elastic modulus
                     end do
                  end do
               end do
@@ -397,7 +397,7 @@
               rNa(:,3) = rNa(:,3) + usup1(:,3)
            endif
         
-           if (imeasdist.eq.1) then
+           if (istatefilter.eq.1) then
               rNa(:,1) = rNa(:,1) + usup2(:,1)
               rNa(:,2) = rNa(:,2) + usup2(:,2)
               rNa(:,3) = rNa(:,3) + usup2(:,3)
@@ -492,7 +492,7 @@
 !.... the mass contribution already contained in xKebe
 
            xKebe = xKebe*iwallmassfactor+ &
-                   evw*Kwall_xKebe*(iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi)
+                   evw*Kwall_xKebe*(iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi) ! bring in elastic modulus
 
          endif
 !$$$        ttim(40) = ttim(40) + tmr()

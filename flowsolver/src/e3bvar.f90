@@ -401,7 +401,7 @@
             
          endif
          
-         if (imeasdist.eq.1) then
+         if (istatefilter.eq.1) then
          
             usup2 = zero
          

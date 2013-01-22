@@ -60,10 +60,10 @@
 !        loop over the deformable wall nodes
 !
 
-         do ii = 1, nwnp
+         do ii = 1, nwnp_EWB
 
-            tempPt = x(mWNodes%p(ii),:)+ &
-                     u(mWNodes%p(ii),:)
+            tempPt = x(mWNodes_EWB%p(ii),:)+ &
+                     u(mWNodes_EWB%p(ii),:)
      
             call dm_cpmeshp3(obsFr1,tempPt, &
                              closestpt1,tempDistSq1, &
@@ -76,10 +76,10 @@
      
             tempDistSq2 = sign(sqrt(abs(tempDistSq2)),tempDistSq2) 
      
-            xdist(mWNodes%p(ii)) =  &
+            xdist(mWNodes_EWB%p(ii)) =  &
                alphaObs*tempDistSq1+(1-alphaObs)*tempDistSq2
      
-            normvect(mWNodes%p(ii),:) =  &
+            normvect(mWNodes_EWB%p(ii),:) =  &
                alphaObs*tempnv1+(1-alphaObs)*tempnv2
    
          end do

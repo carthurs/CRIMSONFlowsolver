@@ -327,6 +327,15 @@
           call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_disp,iisiz, &
           c_char_"integer"//c_null_char,iotype)
 
+          fname1='observation function distance?'
+          call readheader(igeom,fname1//c_null_char,intfromfile, &
+          itwo,c_char_"integer"//c_null_char, iotype)
+          nshg2=intfromfile(1)
+          iisiz=nshg2
+          allocate( obsfunc_dist(nshg2) )
+          call readdatablock(igeom,fname1//c_null_char,obsfunc_dist,iisiz, &
+          c_char_"integer"//c_null_char,iotype)
+
       endif
 
 
@@ -520,7 +529,9 @@
 
       call globalarrayassignpointer(c_loc(inodesuniq),c_loc(yold),c_loc(acold),c_loc(uold), &
                                     c_loc(x), c_loc(temporary_array), &
-                                    c_loc(ilinobsfunc_sol), c_loc(ilinobsfunc_acc), c_loc(ilinobsfunc_disp))
+                                    c_loc(xdist), &
+                                    c_loc(ilinobsfunc_sol), c_loc(ilinobsfunc_acc), c_loc(ilinobsfunc_disp), &
+                                    c_loc(obsfunc_dist))
 
 ! 
 !

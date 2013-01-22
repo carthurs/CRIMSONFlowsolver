@@ -39,8 +39,8 @@
         
         dimension lnode(27) 
         
-        integer wnodestp(numel*nshlb)
-        integer wnodesgtlmap(nshg)
+        integer wnodestp(numel*nshlb), wnodestp_EWB(numel*nshlb)
+        integer wnodesgtlmap(nshg), wnodesgtlmap_EWB(nshg)
         integer wnodefnd
         
 !
@@ -166,6 +166,8 @@
       nwnp = 0
       wnodestp = 0
       
+      nwnp_EWB = 0
+
       call getbnodes(lnode)
 
       do iblk = 1, nelblb
@@ -195,6 +197,17 @@
 ! from 1 to the nwnp (the number of nodes on the wall)
 !                     
                      wnodesgtlmap(mienb(iblk)%p(i,n)) = nwnp
+
+                     if (mEWB(iblk)%p(i,1).gt.0) then
+                        nwnp_EWB = nwnp_EWB + 1
+
+                        wnodestp_EWB(nwnp_EWB) = mienb(iblk)%p(i,n)
+
+                        wnodesgtlmap_EWB(mienb(iblk)%p(i,n)) = nwnp_EWB
+
+                     end if
+
+
                   end if
                
                end do                  

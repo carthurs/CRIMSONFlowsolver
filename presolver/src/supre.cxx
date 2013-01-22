@@ -82,6 +82,7 @@ double* EWBtp_ = NULL;
 int* linobs_soln_ = NULL;
 int* linobs_acc_ = NULL;
 int* linobs_disp_ = NULL;
+int* obs_dist_ = NULL;
 
 int numObs_ = 0;
 int numParams_ = 0;
@@ -100,9 +101,9 @@ double  Displacement_pressure_   = 0;
 int main(int argc, char *argv[]) {
 
   // default initial velocity
-  init_v_[0] = 0.0001;
-  init_v_[1] = 0.0001;
-  init_v_[2] = 0.0001;
+  init_v_[0] = 0.0;
+  init_v_[1] = 0.0;
+  init_v_[2] = 0.0;
   // default initial pressure
   init_p_ = 0.0;
 

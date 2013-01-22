@@ -32,6 +32,11 @@ SimvascularVerdandiModel::~SimvascularVerdandiModel() {
  */
 void SimvascularVerdandiModel::Initialize(string configuration_file) {
 
+	VerdandiOps configuration(configuration_file);
+
+	configuration.SetPrefix("simvascular_model.");
+	configuration.Set("error_statistics.state_error_variance",state_error_variance_value_);
+
     Initialize();
 
 }
@@ -146,7 +151,9 @@ void SimvascularVerdandiModel::Finalize() {
 void SimvascularVerdandiModel::Forward() {
 
 	itrdrv_iter_init();
+
 	itrdrv_iter_step();
+
 	itrdrv_iter_finalize();
 }
 
@@ -198,78 +205,22 @@ bool SimvascularVerdandiModel::HasFinished() const {
 void SimvascularVerdandiModel::ApplyOperator(state& x,
 		bool forward, bool preserve_state) {
 
-	double saved_time = 0;
-	state saved_state;
+	//double saved_time = 0;
+	//state saved_state;
 	//if (!forward)
-	//	saved_time = GetTime();
-
-//	if (preserve_state)
-//		GetStateCopy(saved_state);
+	//  saved_time = GetTime();
+    //if (preserve_state)
+    //  GetStateCopy(saved_state);
 
 	duplicated_state_.Copy(x); // copies x into the duplicated state vector
 	StateUpdated();            // updates actual model state with duplicated state vector
 
 	itrdrv_iter_init();  // advances the model forward
+
 	itrdrv_iter_step();  // note that ForwardFinalize is not called here
 
 	x.Copy(GetState());        // copies the actual model state (via duplicated state) into x
 
-	// For now the "forward" functionality is partially implemented in "ForwardFinalize"
-	// which should be called in the main loop of the ROUKF driver
-
-	//if (!forward)
-	//	SetTime(saved_time);
-
-//	if (preserve_state)
-//	{
-//		state_.Copy(saved_state);
-//		StateUpdated();
-//	}
-
-	/*state x1(x), x2(x), x3(x);
-
-	this->SetStateCopy(x1);
-	phS->SolverForwardInit();
-	phS->SolverForwardStep();
-	this->GetStateCopy(x1);
-
-	this->SetStateCopy(x2);
-	phS->SolverForwardInit();
-	phS->SolverForwardStep();
-	this->GetStateCopy(x2);
-
-	this->SetStateCopy(x3);
-	phS->SolverForwardInit();
-	phS->SolverForwardStep();
-	this->GetStateCopy(x3);
-
-	for (int i = 0; i < x1.GetM(); i++)
-		if (x1(i) != x2(i))
-			throw ErrorProcessing("CheckingModel<Model>::ApplyOperator"
-					"(state& x,bool forward,"
-					" bool preserve_state)",
-					"x1 = x2 but ApplyOperator(x1) != "
-							"ApplyOperator(x2)\n"
-							"x1 = x2 = " + to_str(x1) + "\n"
-							"ApplyOperator(x1)(" + to_str(i) + ") = "
-							+ to_str(x1(i)) + "\n ApplyOperator(x2)("
-							+ to_str(i) + ") = " + to_str(x2(i)) + ".");
-	for (int i = 0; i < x1.GetM(); i++)
-		if (x1(i) != x3(i))
-			throw ErrorProcessing("CheckingModel<Model>::ApplyOperator"
-					"(state& x,bool forward,"
-					" bool preserve_state)",
-					"x1 = x3 but ApplyOperator(x1) != "
-							"ApplyOperator(x3)\n"
-							"x1 = x3 = " + to_str(x1) + "\n"
-							"ApplyOperator(x1)(" + to_str(i) + ") = "
-							+ to_str(x1(i)) + "\n ApplyOperator(x2)("
-							+ to_str(i) + ") = " + to_str(x3(i)) + ".");
-
-	this->SetStateCopy(x);
-	phS->SolverForwardInit();
-	phS->SolverForwardStep();
-	this->GetStateCopy(x);*/
 }
 
 
@@ -283,9 +234,8 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
       \return The current time.
  */
 double SimvascularVerdandiModel::GetTime() const {
-	// the time is adjusted by 1 due to the time not being
-	// incremented until the very end of the time step in the fortran routines
-	return (double)(timdat.lstep+1);
+
+	return (double)(timdat.lstep);
 }
 
 
@@ -332,6 +282,8 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	if (rank_ == 0)
 		cout << "getting state ";
 
+	MPI_Barrier(MPI_COMM_WORLD);
+
 	duplicated_state_.GetProcessorRange(state_start, state_end);
 
 	icounter = state_start;
@@ -344,13 +296,9 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
-
 		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			//phS->GetValue(*soln_field_, actualIdx-1, varIdx, val);
 
 			duplicated_state_.SetBuffer(icounter++,(gat->global_yold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
 
@@ -365,13 +313,9 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
-
 		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			//phS->GetValue(*acc_field_, actualIdx-1, varIdx, val);
 
 			duplicated_state_.SetBuffer(icounter++,(gat->global_acold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
 
@@ -388,13 +332,9 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-			//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
-
 			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
 			for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
-
-				//phS->GetValue(*disp_field_, actualIdx-1, varIdx, val);
 
 				duplicated_state_.SetBuffer(icounter++,(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
 
@@ -412,10 +352,12 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	if (rank_ == numProcs_ - 1) {
 
 		if (nomodule.ideformwall > 0) {
-			//phS->GetValue(*phS->GetRequiredField("elastic modulus scalar"), 0, 0, val);
+
 			val = nomodule.evw;
 
 			duplicated_state_.SetBuffer(icounter++,log2(val));
+
+			//cout << "[get] rank: " << rank_ << " val: " << log2(val) << endl;
 		}
 
 	}
@@ -426,6 +368,8 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 		cout << "[done]" << endl;
 
 //	duplicated_state_.Print();
+
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	return duplicated_state_;
 
@@ -446,9 +390,9 @@ void SimvascularVerdandiModel::StateUpdated() {
 	if (rank_ == 0)
 		cout << "setting state ";
 
-	duplicated_state_.GetProcessorRange(state_start, state_end);
+	MPI_Barrier(MPI_COMM_WORLD);
 
-//	duplicated_state_.Print();
+	duplicated_state_.GetProcessorRange(state_start, state_end);
 
 	icounter = state_start;
 
@@ -459,15 +403,9 @@ void SimvascularVerdandiModel::StateUpdated() {
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
-
 		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			//val = duplicated_state_(icounter++);
-
-			//phS->SetValue(*soln_field_, actualIdx-1, varIdx, val);
 
 			(gat->global_yold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
 
@@ -482,15 +420,9 @@ void SimvascularVerdandiModel::StateUpdated() {
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
-
 		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			//val = duplicated_state_(icounter++);
-
-			//phS->SetValue(*acc_field_, actualIdx-1, varIdx, val);
 
 			(gat->global_acold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
 
@@ -505,15 +437,9 @@ void SimvascularVerdandiModel::StateUpdated() {
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		//phS->GetValue(*node_field_, unitIdx, 0, actualIdx);
-
 		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
 		for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
-
-			//val = duplicated_state_(icounter++);
-
-			//phS->SetValue(*disp_field_, actualIdx-1, varIdx, val);
 
 			(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
 
@@ -530,17 +456,17 @@ void SimvascularVerdandiModel::StateUpdated() {
 	if (rank_ == numProcs_ - 1) {
 
 		if (nomodule.ideformwall > 0) {
-			val = pow(2.0,duplicated_state_(icounter++));
+			val = pow(2.0,duplicated_state_(icounter));
 		}
 
+		//cout << "[set] rank: " << rank_ << " val: " << duplicated_state_(icounter) << endl;
 	}
 
 	if (nomodule.ideformwall > 0) {
 		MPI_Bcast(&val, 1, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
 
-		//phS->SetValue(*phS->GetRequiredField("elastic modulus scalar"), 0, 0, val);
-
 		nomodule.evw = val;
+
 	}
 
 	//
@@ -550,12 +476,14 @@ void SimvascularVerdandiModel::StateUpdated() {
 
 	if (numProcs_ > 1) {
 
-		setstate_comm();
+		estim_helpers_setstate_comm();
 
 	}
 
-	if (rank_ == 0)
+    if (rank_ == 0)
 		cout << "[done]" << endl;
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
 }
 
@@ -588,7 +516,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 	U.Reallocate(Nparameter_, Nparameter_);
 	U.Fill(double(0));
 
-	state_error_variance_value_ = double(1);
+	//state_error_variance_value_ = double(1);
 
 	for (int i = 0; i < Nparameter_; i++)
 		U(i, i) = double(double(1) / state_error_variance_value_);
@@ -599,6 +527,22 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 //	for (int i = 0; i < Nparameter_; i++)
 //		L(i + Nstate_ - Nparameter_, i) = 1.;
 
+}
+
+//! Returns the number of MPI
+/*!
+      \return The name of the class.
+ */
+int SimvascularVerdandiModel::GetNumProcs() const {
+    return numProcs_;
+}
+
+//! Returns the name of the class.
+/*!
+      \return The name of the class.
+ */
+int SimvascularVerdandiModel::GetRank() const {
+	return rank_;
 }
 
 

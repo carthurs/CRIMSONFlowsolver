@@ -19,7 +19,8 @@ GlobalArrayTransfer::~GlobalArrayTransfer() {
 
 extern "C" void GlobalArrayAssignPointer(int* uniqptr, double* yoldptr, double* acoldptr, double* uoldptr,
 		                                 double* coordptr, double* taptr,
-		                                 int* oyptr, int* oaptr, int* ouptr) {
+		                                 double* distptr,
+		                                 int* oyptr, int* oaptr, int* ouptr, int* odptr) {
 
 	GlobalArrayTransfer::Instance()->global_inodesuniq_ptr = uniqptr;
 
@@ -30,9 +31,12 @@ extern "C" void GlobalArrayAssignPointer(int* uniqptr, double* yoldptr, double* 
 	GlobalArrayTransfer::Instance()->global_coord_ptr = coordptr;
 	GlobalArrayTransfer::Instance()->global_temporary_array_ptr = taptr;
 
+	GlobalArrayTransfer::Instance()->global_xdist_ptr = distptr;
+
 	GlobalArrayTransfer::Instance()->global_ilinobsfunc_sol_ptr = oyptr;
 	GlobalArrayTransfer::Instance()->global_ilinobsfunc_acc_ptr = oaptr;
 	GlobalArrayTransfer::Instance()->global_ilinobsfunc_disp_ptr = ouptr;
+	GlobalArrayTransfer::Instance()->global_obsfunc_dist_ptr = odptr;
 
 }
 

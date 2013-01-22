@@ -70,6 +70,8 @@ protected:
 	int Nobservation_local_;
 	//! Number of single node observations
 	int Nobservation_nodal_;
+	//! Number of distance observations
+	int Nobservation_dist_;
 	//! Number of cross-sectional flow observations
 	int Nobservation_flow_;
 	//! Number of cross-sectional average pressure observations
@@ -84,11 +86,14 @@ protected:
 	int use_restarts_;
 
     int ignore_nodal_observations_;
+    int ignore_distance_observations_;
 
 	/*** Observation times ***/
 
 	//! Requested time.
 	double time_;
+
+	double data_period_;
 
 	bool discard_observation_;
 
@@ -134,7 +139,7 @@ protected:
     //! Number of global shape functions only in master images
     int isize_nshguniq_;
 
-	/*** Cross-sectional flow observation ***/
+	/*** Cross-sectional flow and pressure observation ***/
 	vector<Seldon::Vector<double> > csobs_origins_;
 	vector<Seldon::Vector<double> > csobs_normals_;
 	vector<double> csobs_radii_;
@@ -150,6 +155,8 @@ protected:
 	vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
 
 	vector<vector<double> > distances_fromorigin_;
+
+	/***  ***/
 
 	/*** File handling ***/
     string obsfilename_part_;

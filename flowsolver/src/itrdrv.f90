@@ -61,6 +61,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     use timedata   !allows collection of time series
     use convolImpFlow !for Imp bc
     use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    use grcrbc ! Nan rcr
+
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
     use calcFlowPressure !to save history of flow and pressure of bc surfaces
@@ -97,9 +101,12 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !
     ! find the machine name so that we set the license key properly
 
+    call MPI_BARRIER(INEWCOMM,ierr)
+
     license_f_name='license.dat'
 
     call SolverLicenseServer(servername)
+
     !
     ! only master should be verbose
     !
@@ -339,6 +346,21 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         call calcRCRic(y,nsrflistRCR,numRCRSrfs)
     endif
     !
+    !...compute area and initial flow and pressure of TRCR boundary surfaces
+    !
+    if(numTRCRSrfs.gt.zero) then
+        call calcTRCRic(y,nsrflistTRCR,numTRCRSrfs)
+    endif
+
+
+    !---------------------------------- Nan rcr
+    if (numGRCRSrfs .gt. 0 ) then
+        call grcrbc_Initialize()
+        call grcrbc_SetInternalState(y)
+    endif
+   !---------------------------------- Nan rcr
+
+    !
     !...calculate area and initial pressure and flow for CalcSurfaces
     !
     if(numCalcSrfs.gt.zero) then
@@ -400,6 +422,10 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     use timedata   !allows collection of time series
     use convolImpFlow !for Imp bc
     use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    use grcrbc ! Nan rcr
+
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
     use calcFlowPressure !to save history of flow and pressure of bc surfaces
@@ -497,6 +523,22 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
         nstep+nptsRCR,numRCRSrfs)
     endif
     !
+    ! ... compute coefficients required for time-varying RCR BCs
+    !
+    if(numTRCRSrfs.gt.0) then
+        call CalcTRCRConvCoef(lstep,numTRCRSrfs)
+        call CalcHopTRCR (Delt(itseq), lstep, numTRCRSrfs)
+        call pHist(poldTRCR,QHistTRCR,TRCRConvCoef, &
+        nstep(1)+nptsTRCR,numTRCRSrfs)
+    endif
+
+    ! Nan rcr ----------------------------------
+    if(numGRCRSrfs.gt.0) then
+        call grcrbc_ComputeImplicitCoefficients(lstep)
+    endif
+    ! ------------------------------------------
+
+    !
     ! ... calc the pressure contribution that depends on the history for the Coronary BC
     !
     if(numCORSrfs.gt.0) then
@@ -559,6 +601,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use timedata   !allows collection of time series
     use convolImpFlow !for Imp bc
     use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    use grcrbc ! Nan rcr
+
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
     use calcFlowPressure !to save history of flow and pressure of bc surfaces
@@ -597,7 +643,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     ilss=0  ! this is a switch thrown on first solve of LS redistance
          
     !         interface to compute distances to observed wall motion
-    if (imeasdist.eq.1) then
+    if (istatefilter.eq.1) then
+        write(*,*) "computing distance to wall data surfaces for state filter"
         call ElmDist(u,x,xdist,xdnv)
     end if
 
@@ -775,6 +822,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     use timedata   !allows collection of time series
     use convolImpFlow !for Imp bc
     use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    use grcrbc ! Nan rcr
+
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
     use calcFlowPressure !to save history of flow and pressure of bc surfaces
@@ -796,6 +847,12 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     istep = istep + 1
     lstep = lstep + 1
+
+    ! interface to compute distances to observed wall motion
+    if (imeasdist.eq.1) then
+        write(*,*) "computing distance to wall data surfaces (final)"
+        call ElmDist(u,x,xdist,xdnv)
+    end if
 
     !
     ! ... write out the solution
@@ -830,6 +887,20 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call UpdHistConv(y,nsrflistRCR,numRCRSrfs) !uses lstep
         call UpdRCR(y,nsrflistRCR,numRCRSrfs)
     endif
+    !
+    ! ... update flow and pressure history of time-varying RCR BCs
+    !
+    if(numTRCRSrfs.gt.zero) then
+        call UpdHistConv(y, nsrflistTRCR, numTRCRSrfs)
+        call UpdTRCR(y, nsrflistTRCR, numTRCRSrfs)
+    endif
+
+    ! Nan rcr ----------------------------------
+    if(numGRCRSrfs.gt.0) then
+        call grcrbc_UpdateInternalState(y)
+    endif
+    ! ------------------------------------------
+
     !
     ! ... update the flow history for the Coronary convolution
     !
@@ -1002,6 +1073,10 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     use timedata   !allows collection of time series
     use convolImpFlow !for Imp bc
     use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    use grcrbc ! Nan rcr
+
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
     use calcFlowPressure !to save history of flow and pressure of bc surfaces

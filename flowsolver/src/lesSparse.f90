@@ -19,6 +19,7 @@ subroutine drvlesPrepDiag ( flowDiag, ilwork, &
     use pvsQbi
     use convolImpFlow !brings in the current part of convol coef for imp BC
     use convolRCRFlow !brings in the current part of convol coef for RCR BC
+    use convolTRCRFlow
     use convolCORFlow !brings in the current part of convol coef for Coronary BC
     use incpBC
     use LagrangeMultipliers
@@ -99,6 +100,15 @@ subroutine drvlesPrepDiag ( flowDiag, ilwork, &
                         NABI(n,:)*NABI(n,:)
                     endif
                 enddo
+            elseif(numTRCRSrfs.gt.zero) then
+                do k = 1,numTRCRSrfs
+                    if (nsrflistTRCR(k).eq.ndsurf(n)) then
+                        irankCoupled=k
+                        flowdiag(n,1:3)=flowdiag(n,1:3) &
+                        + tfact*TRCRConvCoef(lstep+2,irankCoupled)* &
+                        NABI(n,:)*NABI(n,:)
+                  endif
+               enddo
             elseif(numCORSrfs.gt.zero) then
                 do k = 1,numCORSrfs
                     if (nsrflistCOR(k).eq.ndsurf(n)) then

@@ -1,4 +1,4 @@
-subroutine setstate_comm() bind(C, name="setstate_comm")
+subroutine estim_helpers_setstate_comm() bind(C, name="estim_helpers_setstate_comm")
 
     use iso_c_binding
     use shapeTable
@@ -15,7 +15,7 @@ subroutine setstate_comm() bind(C, name="setstate_comm")
 
 end subroutine
 
-subroutine temp_comm() bind(C, name="temp_comm")
+subroutine estim_helpers_temp_comm() bind(C, name="estim_helpers_temp_comm")
 
     use iso_c_binding
     use shapeTable

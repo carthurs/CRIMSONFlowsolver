@@ -24,7 +24,7 @@ module phcommonvars
 !
 !  The two types of face topology are  1= tri, 2=quad
 !
-  parameter     ( MAXTOP = 6, MAXSURF=199 )
+  parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255 )
   
 ! the common block nomodule holds all the things which have been removed
 ! from different modules
@@ -52,6 +52,7 @@ module phcommonvars
                     numResistSrfs, nsrflistResist(0:MAXSURF), &
                     numImpSrfs, nsrflistImp(0:MAXSURF),impfile, &
                     numRCRSrfs, nsrflistRCR(0:MAXSURF),ircrfile, &
+                    numTRCRSrfs,nsrflistTRCR(0:MAXSURF),itrcrfile, &
                     numCORSrfs, nsrflistCOR(0:MAXSURF),icorfile, &
                     numVisFluxSrfs, nsrflistVisFlux(0:MAXSURF), &
                     numCalcSrfs, nsrflistCalc(0:MAXSURF), &
@@ -60,6 +61,7 @@ module phcommonvars
                     MinNumIter, &
                     ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
                     iUseSWB, iUseTWB, iUseEWB, &
+                    numevw, &
                     imeasdist, iwalldamp, iwallsupp
   common /nomodule/ bcttimescale,ValueListResist, &
                     rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
@@ -71,6 +73,7 @@ module phcommonvars
                     numResistSrfs, nsrflistResist, &
                     numImpSrfs, nsrflistImp,impfile, &
                     numRCRSrfs, nsrflistRCR,ircrfile, &
+                    numTRCRSrfs,nsrflistTRCR,itrcrfile, &
                     numCORSrfs, nsrflistCOR,icorfile, &
                     numVisFluxSrfs, nsrflistVisFlux, &
                     numCalcSrfs, nsrflistCalc, &
@@ -79,8 +82,15 @@ module phcommonvars
                     MinNumIter, &
                     ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
                     iUseSWB, iUseTWB, iUseEWB, &
-                    imeasdist, iwalldamp, iwallsupp                                        
+                    numevw, &
+                    iwalldamp, iwallsupp, imeasdist, istatefilter
   bind(C, name="nomodule") :: /nomodule/
+!----------------------------------------------------------
+
+!----------------------------------------------------------
+  integer              numGRCRSrfs,nsrflistGRCR(0:MAXSURF),igrcrfile
+  common /grcrbccom/   numGRCRSrfs,nsrflistGRCR,igrcrfile
+  bind(C, name="grcrbccom") :: /grcrbccom/
 !----------------------------------------------------------
 
 !----------------------------------------------------------
@@ -728,7 +738,7 @@ module phcommonvars
 !  type(c_ptr), value :: intptr
 !  end subroutine phsolverupdatefield
 
-  subroutine globalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, coordptr, taptr, oyptr, oaptr, ouptr) &
+  subroutine globalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, coordptr, taptr, distptr, oyptr, oaptr, ouptr, odptr) &
   bind(C, name='GlobalArrayAssignPointer')
       use iso_c_binding
       type(c_ptr), value :: uniqptr
@@ -737,9 +747,11 @@ module phcommonvars
       type(c_ptr), value :: uoldptr
       type(c_ptr), value :: coordptr
       type(c_ptr), value :: taptr
+      type(c_ptr), value :: distptr
       type(c_ptr), value :: oyptr
       type(c_ptr), value :: oaptr
       type(c_ptr), value :: ouptr
+      type(c_ptr), value :: odptr
   end subroutine globalarrayassignpointer
 
   subroutine globalblockedarrayassignpointer (npro_in, nshl_in, ien_in) &

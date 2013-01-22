@@ -65,6 +65,7 @@
       
       use convolImpFlow !brings ntimeptpT, QHistImp, QHistTry, QHistTryF, numImpSrfs
       use convolRCRFlow !brings QHistRCR, numRCRSrfs
+      use convolTRCRFlow
       use convolCORFlow 
       use incpBC
 !
@@ -118,7 +119,13 @@
 !
       if(numRCRSrfs.gt.zero .and. nsrfIdList(1).eq.nsrflistRCR(1)) then
          QHistRCR(lstep+1,1:numSrfs) = NewQ(1:numSrfs)
-      endif      
+      endif
+!
+!... for time-varying RCR bc just add the new contribution
+!
+      if(numTRCRSrfs.gt.zero.and.nsrfIdList(1).eq.nsrflistTRCR(1)) then
+         QHistTRCR(lstep+1,1:numSrfs) = NewQ(1:numSrfs)
+      endif
 !
 !... for Coronary bc just add the new contribution
 !
@@ -204,6 +211,84 @@
       end
 
 !
+!...calculate the time varying coefficients for time-varying RCR convolution
+!
+      subroutine CalcTRCRConvCoef (stepn, numSrfs)
+
+      use convolTRCRFlow !brings in ValueListRCR, dtRCR
+
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+      integer numSrfs, stepn
+
+!      if (regflow.gt.0) then
+!         call UpdRegParams(stepn)
+!      endif
+
+      call TRCRint(stepn+1)
+      TRCRConvCoef = zero
+      if (stepn .eq. 0) then
+        TRCRConvCoef(1,:) = CurrValueTRCR(1,:,1)*(one-alfi) + &
+          CurrValueTRCR(1,:,3)*(-alfi + one + 1/dtTRCR(1,:) &
+          - exp(-alfi*dtTRCR(1,:))*(1 + 1/dtTRCR(1,:)))
+        TRCRConvCoef(2,:) = CurrValueTRCR(2,:,1)*alfi &
+          + CurrValueTRCR(2,:,3) &
+          *(alfi - 1/dtTRCR(2,:) + exp(-alfi*dtTRCR(2,:))/dtTRCR(2,:))
+      endif
+      if (stepn .ge. 1) then
+        TRCRConvCoef(1,:)=-CurrValueTRCR(1,:,3) &
+          *exp(-dtTRCR(1,:)*(stepn+alfi)) &
+          *(1 + (1 - exp(dtTRCR(1,:)))/dtTRCR(1,:))
+        TRCRConvCoef(stepn+1,:) = CurrValueTRCR(stepn+1,:,1)*(1-alfi) &
+          - CurrValueTRCR(stepn+1,:,3)*(alfi - 1 - 1/dtTRCR(stepn+1,:) &
+          + exp(-alfi*dtTRCR(stepn+1,:))/dtTRCR(stepn+1,:) &
+          * (2 - exp(-dtTRCR(stepn+1,:))))
+        TRCRConvCoef(stepn+2,:) = CurrValueTRCR(stepn+2,:,1)*alfi &
+          + CurrValueTRCR(stepn+2,:,3) &
+          *(alfi - 1/dtTRCR(stepn+2,:) + exp(-alfi*dtTRCR(stepn+2,:)) &
+          /dtTRCR(stepn+2,:))
+      endif
+      if (stepn .ge. 2) then
+        do j=2,stepn
+         TRCRConvCoef(j,:) = CurrValueTRCR(j,:,3)/dtTRCR(j,:)* &
+             exp(-dtTRCR(j,:)*(stepn + alfi + 2 - j))* &
+             (1 - exp(dtTRCR(j,:)))**2
+        enddo
+      endif
+
+! compensate for yalpha passed not y in Elmgmr()
+      TRCRConvCoef(stepn+1,:)= TRCRConvCoef(stepn+1,:) &
+                       - TRCRConvCoef(stepn+2,:)*(1.0-alfi)/alfi
+      TRCRConvCoef(stepn+2,:)= TRCRConvCoef(stepn+2,:)/alfi
+
+      return
+      end
+
+!
+!...calculate the time dependent H operator for time-varying RCR convolution
+!
+      subroutine CalcHopTRCR (timestepTRCR, stepn, numSrfs)
+
+      use convolTRCRFlow !brings in HopRCR, dtRCR
+
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+      include "mpif.h" !needed?
+
+      integer numSrfs, stepn
+      real*8  PdistCur(0:MAXSURF), timestepTRCR
+
+      HopTRCR=zero
+      HopTRCR(1:numSrfs) = TRCRic(1:numSrfs) &
+        *exp(-dtTRCR(stepn+2,1:numSrfs)*(stepn+alfi)) &
+        +CurrValueTRCR(stepn+2,:,4)
+
+      return
+      end
+
+!
 !.... This subroutine writes FlowHist.dat and PressHist.dat files
 !
       subroutine UpdRCR(y, srfIDList, numSrfs)
@@ -229,6 +314,40 @@
       return
       end
       
+!
+!.... This subroutine writes FlowHist.dat and PressHist.dat files
+!
+      subroutine UpdTRCR(y, srfIDList, numSrfs)
+
+      use convolTRCRFlow
+
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!
+      real*8   y(nshg, ndof), NewP(0:MAXSURF)
+      integer  srfIDList(0:MAXSURF),  numSrfs
+
+      call integrScalar(NewP,y(:,4),srfIDList,numSrfs)
+      PHistTRCR(lstep+1,1:numSrfs)=NewP(1:numSrfs)/TRCRArea(1:numSrfs)
+      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+        (myrank .eq. zero)) then
+         call OutputDataFile(QHistTRCR(1:lstep+1,:),lstep+1,numSrfs, &
+           'QHistTRCR.dat',882)
+         call OutputDataFile(PHistTRCR(1:lstep+1,:),lstep+1,numSrfs, &
+           'PHistTRCR.dat',883)
+         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,1),lstep+1, &
+           numSrfs,'ValueTRCRRp.dat',984)
+         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,2),lstep+1, &
+           numSrfs,'ValueTRCRC.dat',985)
+         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,3),lstep+1, &
+           numSrfs,'ValueTRCRRd.dat',986)
+         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,4),lstep+1, &
+           numSrfs,'ValueTRCRPd.dat',987)
+      endif
+
+      return
+      end
+
 !
 !...calculate the time varying coefficients of pressure 
 !...for the Coronary convolution
@@ -491,6 +610,42 @@
       
       return
       end
+
+!
+! ... compute area and initial flow and pressure for the time-varying RCR BC
+!
+      subroutine calcTRCRic(y,srfIdList,numSrfs)
+
+      use convolTRCRFlow
+
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
+
+      integer   srfIdList(0:MAXSURF), numSrfs
+      real*8    y(nshg,4), VelOnly(nshg,3), POnly(nshg)
+      real*8    Qini(0:MAXSURF), Pini(0:MAXSURF)
+      real*8    CoupleArea(0:MAXSURF)
+
+      POnly(:) = one
+      call integrScalar(CoupleArea,POnly,srfIdList,numSrfs)
+      call TRCRint(zero)
+      TRCRArea(1:numSrfs) = CoupleArea(1:numSrfs)
+      if (lstep .eq. zero) then
+         VelOnly(:,1:3)=y(:,1:3)
+         call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs)
+         QHistTRCR(1,1:numSrfs)=Qini(1:numSrfs)
+         POnly(:)=y(:,4)
+         call integrScalar(Pini,POnly,srfIdList,numSrfs)
+         Pini(1:numSrfs) = Pini(1:numSrfs)/TRCRArea(1:numSrfs)
+         PHistTRCR(1,1:numSrfs)=Pini(1:numSrfs)
+      endif
+      TRCRic(1:numSrfs)=PHistTRCR(1,1:numSrfs) &
+        -CurrValueTRCR(1,1:numSrfs,1)*QHistTRCR(1,1:numSrfs) &
+        -CurrValueTRCR(1,1:numSrfs,4)
+
+      return
+      end
+
 ! 
 ! ... initialize the influence of the initial conditions for the Coronary BC
 !    

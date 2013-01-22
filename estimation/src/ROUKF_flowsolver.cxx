@@ -35,6 +35,8 @@
 #include "SimvascularObservationManager.cxx"
 #include "method/ReducedOrderUnscentedKalmanFilter.cxx"
 
+#include "ROUKFModified.cxx"
+
 using namespace Verdandi;
 using namespace std;
 
@@ -61,26 +63,54 @@ int main(int argc, char** argv)
 
 	PetscInitialize(&argc, &argv, (char *)0, help);
 
-    Verdandi::ReducedOrderUnscentedKalmanFilter<double,
-        SimvascularVerdandiModel,
-        SimvascularObservationManager > driver;
+//    Verdandi::ReducedOrderUnscentedKalmanFilter<double,
+//        SimvascularVerdandiModel,
+//        SimvascularObservationManager > driver;
+
+	ROUKFModified<double,SimvascularVerdandiModel, SimvascularObservationManager> driver;
+
+	SimvascularVerdandiModel::reduced_state_error_variance Pred;
 
     driver.Initialize(argv[1], true);
 
+    // debugging output
+
+    std::ostringstream ostr; //output string stream
+    std::string filename = "Pred_";
+    ostr << driver.GetModel().GetRank();
+    filename = filename+ostr.str();
+    ofstream outfile;
+
+    if (driver.GetModel().GetRank() == 0)
+    	outfile.open(filename.c_str());
+
+
     while (!driver.HasFinished())
     {
-        //driver.InitializeStep();
+        driver.InitializeStep();
 
-    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
-    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-        driver.GetModel().Forward();
+//    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
+//    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
+//        driver.GetModel().Forward();
 
-        //driver.Forward();
-        //driver.Analyze();
-        //driver.GetModel().ForwardFinalize();
+        driver.Forward();
+        driver.Analyze();
+        driver.GetModel().ForwardFinalize();
+
+        driver.GetReducedStateErrorVariance(Pred);
+
+        // write out the covariance matrix for the reduced state estimate
+        if (driver.GetModel().GetRank() == 0) {
+        	outfile << driver.GetModel().GetTime() << endl;
+        	Pred.WriteText(outfile);
+        }
+
     }
 
     driver.GetModel().Finalize();
+
+    if (driver.GetModel().GetRank() == 0)
+    	outfile.close();
 
     END;
 

@@ -64,7 +64,7 @@ typedef struct CommuTask CommuTask;
 // since ParallelData[x] is a sorted data structure, the lowest pid 
 // adjacency always  becomes the master.
 
-int getMaster(int x, map<int, map<int, int> > ParallelData) {
+int getMaster(int x, map<int, map<int, int> > &ParallelData) {
 	map<int, int>::iterator iter = ParallelData[x].begin();
 	return (*iter).first;
 
@@ -682,6 +682,8 @@ void Partition_Problem(int numProcs) {
 	delete[] iBC;
 	delete[] BC;
 
+
+
 	// we will calculate a maxnshg here for later use with sonfath.
 
 	int maxnshg = 0;
@@ -1278,6 +1280,7 @@ void Partition_Problem(int numProcs) {
 	int* periodic = new int[nshg];
 	readdatablock_(&igeombc, "periodic masters array?", (void*) periodic, &nshg,
 			"integer", iformat);
+
 	vector < map<int, int> > PeriodicPart(numProcs);
 
 	CommuTask*** rtask;
@@ -1293,6 +1296,7 @@ void Partition_Problem(int numProcs) {
 			stask[b][c] = NULL;
 		}
 	}
+
 	int newtag = 1;
 	bool isPERIODIC = false;
 	for (int x = 1; x < nshg + 1; x++) {
@@ -1619,6 +1623,7 @@ void Partition_Problem(int numProcs) {
 	delete[] linobs_acc;
 
 	vector < map<int, vector<int> > > linobs_disp_Part(numProcs);
+	vector < map<int, vector<int> > > obs_dist_Part(numProcs);
 
 	if (nomodule.ideformwall != 0) {
 		int* linobs_disp;
@@ -1647,6 +1652,33 @@ void Partition_Problem(int numProcs) {
 		}
 
 		delete[] linobs_disp;
+
+		int* obs_dist;
+
+		readheader_(&igeombc, "observation function distance?",
+				(void*) iarray, &itwo, "integer", iformat);
+
+		isize = nshg;
+
+		obs_dist = new int[isize];
+
+		readdatablock_(&igeombc,
+				"observation function distance?",
+				(void*) obs_dist, &isize, "integer", iformat);
+
+		for (int x = 1; x < nshg + 1; x++) {
+			for (map<int, int>::iterator pIter = ParallelData[x].begin();
+					pIter != ParallelData[x].end(); pIter++) {
+
+				obs_dist_Part[(*pIter).first][(*pIter).second].push_back(
+						obs_dist[x - 1]);
+
+			}
+		}
+
+		delete[] obs_dist;
+
+
 	}
 
 
@@ -1818,12 +1850,14 @@ void Partition_Problem(int numProcs) {
 		delete[] flinobs_acc;
 
 		//
-		isize = nshgLocal * nsd;
-		nitems = 2;
-		iarray[0] = nshgLocal;
-		iarray[1] = nsd;
 
 		if (nomodule.ideformwall != 0) {
+
+			isize = nshgLocal * nsd;
+			nitems = 2;
+			iarray[0] = nshgLocal;
+			iarray[1] = nsd;
+
 			writeheader_(&fgeom, "observation function displacement",
 					(void*) iarray, &nitems, &isize, "integer", oformat);
 
@@ -1838,6 +1872,26 @@ void Partition_Problem(int numProcs) {
 					"observation function displacement",
 					(void*) (flinobs_disp), &nitems, "integer", oformat);
 			delete[] flinobs_disp;
+
+			isize = nshgLocal;
+			nitems = 1;
+			iarray[0] = nshgLocal;
+
+			writeheader_(&fgeom, "observation function distance",
+					(void*) iarray, &nitems, &isize, "integer", oformat);
+
+			int* fobs_dist = new int[isize];
+
+			for (int y = 1; y < nshgLocal + 1; y++) {
+				fobs_dist[(y - 1)] = obs_dist_Part[a][y][0];
+			}
+
+			nitems = isize;
+			writedatablock_(&fgeom,
+					"observation function distance",
+					(void*) (fobs_dist), &nitems, "integer", oformat);
+			delete[] fobs_dist;
+
 		}
 
 

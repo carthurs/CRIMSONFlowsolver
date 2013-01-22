@@ -49,7 +49,7 @@
 
         integer rowp(nshg*nnz),         colm(nshg+1)
 
-	  real*8	lhsK(9,nnz_tot),	lhsP(4,nnz_tot)
+	    real*8  lhsK(9,nnz_tot),	lhsP(4,nnz_tot)
 
         real*8, allocatable, dimension(:,:,:,:) :: xKebe, xGoC
 
@@ -926,10 +926,13 @@
       use pvsQbi  ! brings in NABI
       use convolImpFlow !brings in the current part of convol coef for imp BC
       use convolRCRFlow !brings in the current part of convol coef for RCR BC
+      use convolTRCRFlow
       use convolCORFlow !brings in the current park of convol coef for Cor BC
       use incpBC        !brings in the current part of coef for INCP BC
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
 !
+      use grcrbc ! Nan rcr
+
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
@@ -1015,6 +1018,77 @@
           enddo   
        enddo       
       endif !end of coupling for RCR BC
+
+!
+!... get p for time-varying RCR BC
+!
+      if(numTRCRSrfs.gt.zero) then
+        call GetFlowQ(p, y, nsrflistTRCR, numTRCRSrfs)
+        do j = 1, numTRCRSrfs
+            if(sign.lt.zero) then ! RHS so -1
+                p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
+                p(j)= p(j) - HopTRCR(j) ! H operator contribution
+            elseif(sign.gt.zero) then ! LHS so sign is positive
+                p(j)= sign*p(j)*TRCRConvCoef(lstep+2,j)
+            endif
+        enddo
+
+!
+!....  multiply it by integral NA n_i
+!
+       do i = 1,nshg
+          do k = 1,numTRCRSrfs
+              irankCoupled = 0
+              if (nsrflistTRCR(k).eq.ndsurf(i)) then
+                 irankCoupled=k
+                 res(i,1:3)=res(i,1:3)+p(irankCoupled)*NABI(i,1:3)
+              endif
+          enddo
+       enddo
+      endif !end of coupling for time-varying RCR BC
+
+! Nan rcr --------------------------------------------------------
+
+      !
+      !... get p for experimental RCR BC
+      !
+      if(numGRCRSrfs.gt.zero) then
+          call GetFlowQ(p, y, nsrflistGRCR, numGRCRSrfs) ! now p is the flow rate
+          !          do j = 1, numGRCRSrfs
+          !              if(sign.lt.zero) then ! RHS so -1
+          !                  p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
+          !                  p(j)= p(j) - HopTRCR(j) ! H operator contribution
+          !              elseif(sign.gt.zero) then ! LHS so sign is positive
+          !                  p(j)= sign*p(j)*TRCRConvCoef(lstep+2,j)
+          !              endif
+          !          enddo
+
+                    !call grcrbc_UpdateResidualandTangent(p(1:numGRCRSrfs))
+
+          do j = 1, numGRCRSrfs
+              if (sign .lt. zero) then  !RHS so -1
+                  p(j)=sign*( grcrbc_coeff_1_implicit(j) * p(j) + grcrbc_coeff_2_implicit(j) )
+              elseif (sign .gt. zero) then
+                  p(j)=sign*grcrbc_coeff_1_implicit(j) * p(j)
+              endif
+          enddo
+
+          !
+          !....  multiply it by integral NA n_i
+          !
+          do i = 1,nshg
+              do k = 1,numGRCRSrfs
+                  irankCoupled = 0
+                  if (nsrflistGRCR(k).eq.ndsurf(i)) then
+                      irankCoupled=k
+                      res(i,1:3)=res(i,1:3)+p(irankCoupled)*NABI(i,1:3)
+                  endif
+              enddo
+          enddo
+      endif !end of coupling for experimental RCR BC
+
+!-----------------------------------------------------------------
+
 !
 !... get p for the Coronary BC
 !    

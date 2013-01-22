@@ -129,6 +129,7 @@ extern double* EWBtp_;
 extern int* linobs_soln_;
 extern int* linobs_acc_;
 extern int* linobs_disp_;
+extern int* obs_dist_;
 
 extern int DisplacementNumElements_;
 extern int* DisplacementConn_[3];
@@ -1750,9 +1751,9 @@ int cmd_deformable_observe_displacements_on(char *cmd) {
 		return CV_ERROR;
 	}
 
-	int i;
+//	int i;
 	int nsd = 3;
-	int numState = numNodes_*4 + numNodes_*4 + numNodes_*nsd + numParams_;
+//	int numState = numNodes_*4 + numNodes_*4 + numNodes_*nsd + numParams_;
 
 	if (linobs_disp_ == NULL) {
 
@@ -1761,7 +1762,7 @@ int cmd_deformable_observe_displacements_on(char *cmd) {
 		linobs_disp_ = new int[size_disp];
 
 		// zeros everywhere
-		for (i = 0; i < size_disp; i++) {
+		for (int i = 0; i < size_disp; i++) {
 			linobs_disp_[i] = 0.0;
 		}
 
@@ -1770,25 +1771,66 @@ int cmd_deformable_observe_displacements_on(char *cmd) {
 	int nodeId;
 	int eof = 0;
 	int obsCounter = 0;
+//
+//	Htemp.Resize(numObs_,numState);
+//
+	while (NWgetNextNonBlankLine(&eof) == CV_OK) {
+		if (sscanf(buffer_, "%i", &nodeId) != 1) {
+			fprintf(stderr, "WARNING:  line not of correct format (%s)\n",
+					buffer_);
+		} else {
+//			Htemp.AddInteraction(obsCounter,(numNodes_*4 + numNodes_*4 + nsd*(nodeId-1) + 1) - 1 , 1.0);
+			obsCounter++;
+			linobs_disp_[ numNodes_ * 0 + nodeId - 1 ] = 1.0;
 
-	Htemp.Resize(numObs_,numState);
+//			Htemp.AddInteraction(obsCounter,(numNodes_*4 + numNodes_*4 + nsd*(nodeId-1) + 2) - 1 , 1.0);
+			obsCounter++;
+			linobs_disp_[ numNodes_ * 1 + nodeId - 1 ] = 1.0;
+
+//			Htemp.AddInteraction(obsCounter,(numNodes_*4 + numNodes_*4 + nsd*(nodeId-1) + 3) - 1 , 1.0);
+			obsCounter++;
+			linobs_disp_[ numNodes_ * 2 + nodeId - 1 ] = 1.0;
+		}
+	}
+	NWcloseFile();
+
+	// cleanup
+	debugprint(stddbg, "Exiting cmd_deformable_observe_displacements_on.\n");
+	return CV_OK;
+}
+
+int cmd_deformable_observe_distances_on(char *cmd) {
+
+	// enter
+	debugprint(stddbg, "Entering cmd_deformable_observe_distances_on.\n");
+
+	// do work
+	if (parseFile(cmd) == CV_ERROR) {
+		return CV_ERROR;
+	}
+
+	if (obs_dist_ == NULL) {
+
+		int size_dist = numNodes_;
+
+		obs_dist_ = new int[size_dist];
+
+		// zeros everywhere
+		for (int i = 0; i < size_dist; i++) {
+			obs_dist_[i] = 0.0;
+		}
+
+	}
+
+	int nodeId;
+	int eof = 0;
 
 	while (NWgetNextNonBlankLine(&eof) == CV_OK) {
 		if (sscanf(buffer_, "%i", &nodeId) != 1) {
 			fprintf(stderr, "WARNING:  line not of correct format (%s)\n",
 					buffer_);
 		} else {
-			Htemp.AddInteraction(obsCounter,(numNodes_*4 + numNodes_*4 + nsd*(nodeId-1) + 1) - 1 , 1.0);
-			obsCounter++;
-			linobs_disp_[ numNodes_ * 0 + nodeId - 1 ] = 1.0;
-
-			Htemp.AddInteraction(obsCounter,(numNodes_*4 + numNodes_*4 + nsd*(nodeId-1) + 2) - 1 , 1.0);
-			obsCounter++;
-			linobs_disp_[ numNodes_ * 1 + nodeId - 1 ] = 1.0;
-
-			Htemp.AddInteraction(obsCounter,(numNodes_*4 + numNodes_*4 + nsd*(nodeId-1) + 3) - 1 , 1.0);
-			obsCounter++;
-			linobs_disp_[ numNodes_ * 2 + nodeId - 1 ] = 1.0;
+			obs_dist_[ nodeId - 1 ] = 1.0;
 		}
 	}
 	NWcloseFile();
@@ -1832,7 +1874,7 @@ int cmd_write_linear_observation_operator(char *cmd) {
 	//	fprintf(fp, "%lf ",linobs_[i]);
 	}*/
 
-	Htemp.Write(outfile);
+	//Htemp.Write(outfile);
 
 	// cleanup
 	//fclose (fp);
@@ -1983,7 +2025,7 @@ int writeRESTARTDAT(char* filename) {
 		writedatablock_(&filenum, "displacement ", (void*) (dispsoln_), &nitems,
 				"double", oformat);
 
-		delete dispsoln_;
+		delete[] dispsoln_;
 	}
 
 	closefile_(&filenum, "write");
@@ -2472,6 +2514,34 @@ int writeGEOMBCDAT(char* filename) {
 			(void*) (linobs_disp_), &nitems, "integer", oformat);
 
 	delete linobs_disp_;
+
+	//
+	// for distance observation
+	//
+	size = numNodes_;
+	nitems = 1;
+
+	iarray[0] = numNodes_;
+
+    writeheader_(&filenum, "observation function distance", (void*) iarray,
+    			&nitems, &size, "integer", oformat);
+
+	if (obs_dist_ == NULL) {
+
+		obs_dist_ = new int[size];
+
+		// zeros everywhere
+		for (i = 0; i < size; i++) {
+			obs_dist_[i] = 0.0;
+		}
+
+	}
+
+	nitems = size;
+	writedatablock_(&filenum, "observation function distance",
+			(void*) (linobs_disp_), &nitems, "integer", oformat);
+
+	delete obs_dist_;
 
 
 	//

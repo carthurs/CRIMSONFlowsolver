@@ -146,6 +146,28 @@
       
 !-----------------------------------------------------------------------
 !
+!  This module conveys the parameters for time-varying RCR outlets.
+!  Below functions read in the inputs (proximal resistance, capacitance,
+!  distal resistance and distal pressure) and store it for the
+!  current time level.
+!
+!-----------------------------------------------------------------------
+      module convolTRCRFlow
+
+      real*8, allocatable ::  ValueTRCR(:,:,:),  CurrValueTRCR(:,:,:)
+      real*8, allocatable ::  QHistTRCR(:,:),    PHistTRCR(:,:)
+      real*8, allocatable ::  TRCRConvCoef(:,:), TRCRArea(:)
+      real*8, allocatable ::  dtTRCR(:,:),       HopTRCR(:)
+      real*8, allocatable ::  TRCRic(:),         poldTRCR(:)
+      real*8, allocatable ::  QmeanReg(:,:),     CtrlParamsReg(:,:)
+      real*8, allocatable ::  CoeffReg(:,:),     RegIntCoeff(:,:)
+      integer, allocatable :: numTRCRt(:)
+      integer nptsTRCRmax,numDataTRCR, nptsTRCR
+      integer RegStartStep, RegIniPeriod, RegFlowSwitch
+      end module
+
+!-----------------------------------------------------------------------
+!
 !     Deallocate convolvRCRFlow:
 !
 !-----------------------------------------------------------------------
@@ -154,7 +176,7 @@
       use convolRCRFlow
       use phcommonvars  
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(ircrfile .gt. 0 ) then
+      if(ircrfile .gt. 0 ) then ! need to fix this! don't use ircrfile!
          if(allocated(poldRCR)) deallocate (poldRCR)
          if(allocated(HopRCR)) deallocate (HopRCR)
          if(allocated(numRCRt)) deallocate (numRCRt)  
@@ -718,6 +740,158 @@
       return
       end
       
+!-----------------------------------------------------------------------
+!   initialize the time-varying RCR boundary condition:
+!   read the data in initTRCRt
+!   interpolate the data to match the process time step in TRCRint
+!-----------------------------------------------------------------------
+      subroutine initTRCRt()
+
+      use convolTRCRFlow
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+      open(unit=881, file='timercrt.dat',status='old')
+         read (881,*) nptsTRCRmax
+         allocate (numTRCRt(numTRCRSrfs))
+         allocate (TRCRArea(numTRCRSrfs))
+         allocate (ValueTRCR(nptsTRCRmax,5,numTRCRSrfs))
+         numTRCRt = zero
+         TRCRArea = zero
+         ValueTRCR = zero
+         do k=1,numTRCRSrfs
+            read (881,*) numDataTRCR
+            numTRCRt(k) = numDataTRCR
+            do j=1,numDataTRCR
+               read(881,*) (ValueTRCR(j,n,k), n=1,5) ! n=1 time, n=2 Rp, n=3 C, n=4 Rd, n=5 Pd
+            enddo
+         enddo
+      close(881)
+
+      allocate (poldTRCR(0:MAXSURF))
+      allocate (HopTRCR(0:MAXSURF))
+      allocate (dtTRCR(lstep+nstep(1)+2,numTRCRSrfs))
+      allocate (QHistTRCR(lstep+nstep(1)+1,numTRCRSrfs))
+      allocate (PHistTRCR(lstep+nstep(1)+1,numTRCRSrfs))
+      allocate (TRCRic(0:MAXSURF))
+      allocate (TRCRConvCoef(lstep+nstep(1)+2,numTRCRSrfs)) !for convolution coeff
+      allocate (CurrValueTRCR(lstep+nstep(1)+2,numTRCRSrfs,4))
+      poldTRCR = zero
+      HopTRCR = zero
+      dtTRCR = zero
+      QHistTRCR = zero
+      PHistTRCR = zero
+      TRCRic = zero
+      TRCRConvCoef = zero
+      CurrValueTRCR = zero
+      if (lstep .eq. 0) then
+         nptsTRCR = 0
+      elseif (lstep .gt. 0) then
+         nptsTRCR = lstep
+         call ReadDataFile(QHistTRCR(1:lstep+1,:),lstep+1,numTRCRSrfs, &
+            'QHistTRCR.dat',882)
+         call ReadDataFile(PHistTRCR(1:lstep+1,:),lstep+1,numTRCRSrfs, &
+            'PHistTRCR.dat',883)
+         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,1),lstep+1, &
+            numTRCRSrfs,'ValueTRCRRp.dat',984)
+         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,2),lstep+1, &
+            numTRCRSrfs,'ValueTRCRC.dat',985)
+         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,3),lstep+1, &
+            numTRCRSrfs,'ValueTRCRRd.dat',986)
+         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,4),lstep+1, &
+            numTRCRSrfs,'ValueTRCRPd.dat',987)
+         dtTRCR(1:lstep+1,:)=Delt(1) &
+           /CurrValueTRCR(1:lstep+1,:,2)/CurrValueTRCR(1:lstep+1,:,3)
+      endif
+
+!      if (regflow.gt.0) then
+!         allocate(QmeanReg(lstep+nstep(1)+1,numRegSrfs))
+!         allocate(CtrlParamsReg(lstep+nstep(1)+1,numRegSrfs))
+!         allocate(CoeffReg(5,numRegSrfs))
+!         allocate(RegIntCoeff(lstep+nstep(1)+1,numRegSrfs))
+!         QmeanReg = zero
+!         CtrlParamsReg = zero
+!         CoeffReg = zero
+!         RegFlowSwitch = zero
+!         open(unit=981, file='regflow.dat',status='old')
+!            read(981,*)
+!            read(981,*) RegStartStep
+!            read(981,*)
+!            read(981,*) RegIniPeriod
+!            do k=1,numRegSrfs
+!               read(981,*) (CoeffReg(n,k), n=1,5) ! n=1 desired flow, n=2 scaling factor, n=3 minimum resistance
+!            enddo
+!         close(981)
+!         if (lstep .gt. 0) then
+!            call ReadDataFile(QmeanReg(1:lstep+1,:),lstep+1,numRegSrfs,
+!     &         'qmeanreg.dat',989)
+!            call ReadDataFile(CtrlParamsReg(1:lstep+1,:),lstep+1,
+!     &         numRegSrfs,'ctrlparamsreg.dat',988)
+!         endif
+!      endif
+
+      return
+      end
+
+
+      subroutine TRCRint(curstep)
+
+      use convolTRCRFlow
+!      use FeedbackSystem
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+      real*8  ctime, TotResist
+      integer nlast, k, j, i, curstep, n
+
+      ctime = curstep*Delt(1)
+      do k =1,numTRCRSrfs
+         nlast=numTRCRt(k)
+         do j=2,nlast
+            if(ValueTRCR(j,1,k) .gt. ctime) then  ! this is upper bound, j-1 is lower
+               wr=(ctime-ValueTRCR(j-1,1,k)) &
+                  / ( ValueTRCR(j,1,k)-ValueTRCR(j-1,1,k) )
+               do i=1,4
+                  CurrValueTRCR(curstep+1,k,i)=ValueTRCR(j-1,i+1,k) &
+                             *(one-wr)+ ValueTRCR(j,i+1,k)*wr
+               enddo
+               dtTRCR(curstep+1,k)=Delt(1) &
+                 /CurrValueTRCR(curstep+1,k,2) &
+                 /CurrValueTRCR(curstep+1,k,3)
+!               if (feedback .gt. zero .and. curstep .gt. WaitStep) then
+!                  do n=1, numEfferent
+!                     if (nsrflistEfferent(n) .eq. nsrflistTRCR(k)) then
+!                        CurrValueTRCR(curstep+1,k,3)=
+!     &                     CurrValueTRCR(curstep+1,k,3)
+!     &                     *ControlParameterValues(curstep,3)
+!                     endif
+!                  enddo
+!               endif
+
+!               if (regflow .gt. 0 .and. curstep .gt. RegStartStep) then
+!                  do n=1, numRegSrfs
+!                     if (nsrflistReg(n) .eq. nsrflistTRCR(k)) then
+!                        CurrValueTRCR(curstep+1,k,3)=
+!     &                     CurrValueTRCR(curstep+1,k,3)
+!     &                     *CtrlParamsReg(curstep,n)
+!                        TotResist=CurrValueTRCR(curstep+1,k,1)
+!     &                     +CurrValueTRCR(curstep+1,k,3)
+!                        if (TotResist .lt. CoeffReg(3,n)) then
+!                           CurrValueTRCR(curstep+1,k,3)=CoeffReg(3,n)
+!     &                        -CurrValueTRCR(curstep+1,k,1)
+!                        endif
+!                     endif
+!                  enddo
+!               endif
+
+               exit
+            endif
+         enddo
+      enddo
+
+      return
+      end
+
 !-----------------------------------------------------------------------
 !   initialize the Coronary boundary condition:
 !   read the data in initCORt

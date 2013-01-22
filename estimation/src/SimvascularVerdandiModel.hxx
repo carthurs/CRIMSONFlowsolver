@@ -44,6 +44,9 @@ public:
 	//! Type of the state vector.
 	typedef Vector<double, PETScPar> state;
 
+	//! Type of the reduced state error variance
+	typedef Matrix<double, General, RowMajor, MallocAlloc<double> > reduced_state_error_variance;
+
 protected:
 
 	int Nparameter_;
@@ -93,6 +96,9 @@ public:
 	int GetLocalNstate() const;
 	state& GetState();
 	void StateUpdated();
+
+	int GetNumProcs() const;
+	int GetRank() const;
 
 	// Errors.
 	template <class L_matrix, class U_matrix>

@@ -25,11 +25,12 @@
         use specialBC   ! gets itvn from here
         use convolImpFlow ! brings in ntimeptpT and other variables
         use convolRCRFlow ! brings RCR variables
+        use convolTRCRFlow ! brings time-varying RCR variables
         use convolCORFlow ! brings Coranary variables
         use incpBC        ! brings in INCP variables
         use LagrangeMultipliers ! brings in variables for Lagrange Multipliers
         use calcFlowPressure
-        
+
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
@@ -109,6 +110,9 @@
            allocate (poldRCR(0:MAXSURF)) !for pressure part that depends on the history only
            allocate (HopRCR(0:MAXSURF)) !for H operator contribution
         endif
+        if (itrcrfile .gt. 0 ) then !for time-varying RCR BC
+           call initTRCRt()      !read time-varying RCR data
+        endif
         if (icorfile .gt. 0 ) then !for Coronary BC
            call initCORt()
            allocate (CORArea(numCORSrfs))
@@ -119,7 +123,7 @@
            CORArea = zero
            poldCOR = zero
            plvoldCOR = zero
-           HopCOR = zero
+           HopCOR = zerol
         endif
         if (incpfile .gt. 0) then !for INCP BC
            call initINCPt()  !read incp.dat, Elastance.dat

@@ -28,6 +28,9 @@ public:
 	int* global_ilinobsfunc_disp_ptr;
 	int* global_obsfunc_dist_ptr;
 
+	double* global_lumped_parameter_P;
+	double* global_lumped_parameter_Q;
+
 	vector <int> global_npro;
 	vector <int> global_nshl;
 	vector <int*> global_mien;

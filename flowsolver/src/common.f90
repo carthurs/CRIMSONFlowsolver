@@ -725,18 +725,11 @@ module phcommonvars
   integer (c_int), intent(inout) :: err ! integer written out 
   end subroutine symwdg
 
+  real(c_double) function tmrc() bind(C, name="tmrc")
+  use iso_c_binding, only: c_double
+  end function
 
-!  subroutine phsolverupdatefield (fieldname, domaintype, valtype, numunits, numvars, dblptr, intptr) &
-!             bind(C, name='phSolverUpdateField')
-!  use iso_c_binding
-!  character(kind=c_char), intent(in) :: fieldname(*)
-!  character(kind=c_char), intent(in) :: domaintype(*)
-!  character(kind=c_char), intent(in) :: valtype(*)
-!  integer(c_int), value :: numunits
-!  integer(c_int), value :: numvars
-!  type(c_ptr), value :: dblptr
-!  type(c_ptr), value :: intptr
-!  end subroutine phsolverupdatefield
+  ! the following functions are implented in GlobalArrayTransfer.cxx
 
   subroutine globalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, coordptr, taptr, distptr, oyptr, oaptr, ouptr, odptr) &
   bind(C, name='GlobalArrayAssignPointer')
@@ -760,20 +753,14 @@ module phcommonvars
       integer(c_int), value :: npro_in
       integer(c_int), value :: nshl_in
       type(c_ptr), value :: ien_in
-  end subroutine
+  end subroutine globalblockedarrayassignpointer
 
-!  subroutine phsolverupdateblockfield (fieldname, numunits, numvars, intptr) &
-!             bind(C, name='phSolverUpdateBlockField')
-!  use iso_c_binding
-!  character(kind=c_char), intent(in) :: fieldname(*)
-!  integer(c_int), value :: numunits
-!  integer(c_int), value :: numvars
-!  type(c_ptr), value :: intptr
-!  end subroutine phsolverupdateblockfield
-
-  real(c_double) function tmrc() bind(C, name="tmrc")
-  use iso_c_binding, only: c_double
-  end function
+  subroutine globallumpedparameterarrayassignpointer (p_ptr, q_ptr) &
+  bind(C, name='GlobalLumpedParameterArrayAssignPointer')
+      use iso_c_binding
+      type(c_ptr), value :: p_ptr
+      type(c_ptr), value :: q_ptr
+  end subroutine globallumpedparameterarrayassignpointer
 
   end interface
 

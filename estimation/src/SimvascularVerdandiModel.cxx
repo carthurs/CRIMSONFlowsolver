@@ -101,7 +101,10 @@ void SimvascularVerdandiModel::Initialize() {
 	Nparameter_ = 1;
 
 	// Compute the local state size
-	Nstate_local_ = (NSD + 2 * 4) * conpar.nshguniq ;
+	// perhaps this can be less hard-coded
+	// NSD is 3
+	// 4 comes from the 3 vel components and 1 pressure component
+	Nstate_local_ = (NSD + 2 * 4) * conpar.nshguniq;
 
 	// Add the number of parameters to the local state size of the last processor
 	if (rank_ == numProcs_ - 1)
@@ -479,6 +482,10 @@ void SimvascularVerdandiModel::StateUpdated() {
 		estim_helpers_setstate_comm();
 
 	}
+
+	//
+	// lumped parameter model states
+	//
 
     if (rank_ == 0)
 		cout << "[done]" << endl;

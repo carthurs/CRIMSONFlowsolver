@@ -17,6 +17,9 @@ GlobalArrayTransfer::~GlobalArrayTransfer() {
 
 }
 
+/* These functions are to be called from fortran subroutines */
+/* Fortran interfaces are defined in common.f90 */
+
 extern "C" void GlobalArrayAssignPointer(int* uniqptr, double* yoldptr, double* acoldptr, double* uoldptr,
 		                                 double* coordptr, double* taptr,
 		                                 double* distptr,
@@ -44,4 +47,9 @@ extern "C" void GlobalBlockedArrayAssignPointer(int npro_in, int nshl_in, int* i
 	GlobalArrayTransfer::Instance()->global_npro.push_back(npro_in);
 	GlobalArrayTransfer::Instance()->global_nshl.push_back(nshl_in);
 	GlobalArrayTransfer::Instance()->global_mien.push_back(ien_in);
+}
+
+extern "C" void GlobalLumpedParameterArrayAssignPointer(double* p_ptr, double* q_ptr) {
+	GlobalArrayTransfer::Instance()->global_lumped_parameter_P = p_ptr;
+	GlobalArrayTransfer::Instance()->global_lumped_parameter_Q = q_ptr;
 }

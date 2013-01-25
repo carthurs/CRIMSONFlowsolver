@@ -26,8 +26,8 @@
                   ac(nshg,ndofl),          u(nshg,nsd), &
                   shpb(nshl,ngaussb), &
                   x(numnp,nsd), &
-                  xdist(numnp), &
-                  xdnv(numnp,nsd), &
+                  xdist(nshg), &
+                  xdnv(nshg,nsd), &
                   shglb(nsd,nshl,ngaussb), &
                   ienb(npro,nshl),         materb(npro), &
                   iBCB(npro,ndiBCB),       BCB(npro,nshlb,ndBCB), &

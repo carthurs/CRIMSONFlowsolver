@@ -397,7 +397,7 @@
               rNa(:,3) = rNa(:,3) + usup1(:,3)
            endif
         
-           if (istatefilter.eq.1) then
+           if (idistancenudge.eq.1) then
               rNa(:,1) = rNa(:,1) + usup2(:,1)
               rNa(:,2) = rNa(:,2) + usup2(:,2)
               rNa(:,3) = rNa(:,3) + usup2(:,3)

@@ -960,11 +960,14 @@ int input_fform() {
 
 			if ((string) inp.GetValue("Wall State Filter Term") == "True") {
 				nomodule.imeasdist = 1;
+				nomodule.idistancenudge = 1;
 				if (nomodule.iUseEWB == 0)
 					nomodule.stateFilterCoeff = inp.GetValue(
 							"Wall State Filter Coefficient");
-			} else
+			} else {
 				nomodule.imeasdist = 0;
+				nomodule.idistancenudge = 0;
+			}
 		}
 
 		// Scaling Parameters Keywords

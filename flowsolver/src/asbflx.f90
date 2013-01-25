@@ -23,8 +23,8 @@
 !
         dimension y(nshg,ndofl), &      
                   x(numnp,nsd), &
-                  xdist(numnp), &
-                  xdnv(numnp,nsd), &
+                  xdist(nshg), &
+                  xdnv(nshg,nsd), &
                   ac(nshg,ndofl),          u(nshg,nsd), &
                   shpb(nshl,ngaussb), &
                   shglb(nsd,nshl,ngaussb), &

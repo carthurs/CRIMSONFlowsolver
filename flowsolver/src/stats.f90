@@ -206,8 +206,8 @@
               BC(nshg,ndofBC),          lhsK(9,nnz_tot), &
               lhsP(4,nnz_tot),           &
               x(numnp,nsd), &
-              xdist(numnp), &
-              xdnv(numnp,nsd)
+              xdist(nshg), &
+              xdnv(nshg,nsd)
 
       integer iBC(nshg),                iper(nshg), &
               ilwork(nlwork),           rowp(nshg*nnz), &

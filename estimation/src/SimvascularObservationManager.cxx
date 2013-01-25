@@ -423,13 +423,13 @@ void SimvascularObservationManager::Initialize(const Model& model,
 			double(double(1) / error_variance_value_),
 			error_variance_inverse_);
 
-	// debugging output
-	std::ostringstream ostr;//output string stream
-	std::string dbfilename = "error_variance_inverse_";
-	ostr << rank_;
-	dbfilename = dbfilename+ostr.str();
-
-	error_variance_inverse_.WriteText(dbfilename);
+//	// debugging output
+//	std::ostringstream ostr;//output string stream
+//	std::string dbfilename = "error_variance_inverse_";
+//	ostr << rank_;
+//	dbfilename = dbfilename+ostr.str();
+//
+//	error_variance_inverse_.WriteText(dbfilename);
 
 #else
 	error_variance_.Reallocate(Nobservation_, Nobservation_);

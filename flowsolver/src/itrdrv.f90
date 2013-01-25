@@ -643,7 +643,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     ilss=0  ! this is a switch thrown on first solve of LS redistance
          
     !         interface to compute distances to observed wall motion
-    if (istatefilter.eq.1) then
+    if (idistancenudge.eq.1) then
         write(*,*) "computing distance to wall data surfaces for state filter"
         call ElmDist(u,x,xdist,xdnv)
     end if
@@ -805,6 +805,12 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
     call itrUpdate( yold,  acold,   uold,  y,    ac,   u)
 
+    ! Nan rcr ----------------------------------
+    ! update P,Q variables
+    if(numGRCRSrfs.gt.0) then
+        call grcrbc_UpdateInternalState(y)
+    endif
+    ! ------------------------------------------
 
 end subroutine
 
@@ -862,7 +868,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         if(ideformwall.eq.1) then
             call write_displ(myrank, lstep, nshg, 3, uold )
             if (imeasdist.eq.1) then
-                call write_distl(myrank, lstep, numnp, 1, xdist ) ! should use nshg or numnp?
+                call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
             end if
         end if
     endif
@@ -895,11 +901,11 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call UpdTRCR(y, nsrflistTRCR, numTRCRSrfs)
     endif
 
-    ! Nan rcr ----------------------------------
-    if(numGRCRSrfs.gt.0) then
-        call grcrbc_UpdateInternalState(y)
-    endif
-    ! ------------------------------------------
+!    ! Nan rcr ----------------------------------
+!    if(numGRCRSrfs.gt.0) then
+!        call grcrbc_UpdateInternalState(y)
+!    endif
+!    ! ------------------------------------------
 
     !
     ! ... update the flow history for the Coronary convolution
@@ -1119,7 +1125,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
             call write_displ(myrank, lstep, nshg, 3, u ) 
             if (imeasdist.eq.1) then
                 call ElmDist(u,x,xdist)
-                call write_distl(myrank, lstep, numnp,1,xdist)
+                call write_distl(myrank, lstep, nshg,1,xdist)
             end if
         end if
     endif

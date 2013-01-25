@@ -33,8 +33,8 @@
       real*8    y(nshg,ndof),             ac(nshg,ndof), &
                 u(nshg,nsd),              &
                 x(numnp,nsd), &
-                xdist(numnp), &            
-                xdnv(numnp,nsd)
+                xdist(nshg), &
+                xdnv(nshg,nsd)
       dimension iBC(nshg),           &
                 BC(nshg,ndofBC),     &
                 iper(nshg)

@@ -401,7 +401,7 @@
             
          endif
          
-         if (istatefilter.eq.1) then
+         if (idistancenudge.eq.1) then
          
             usup2 = zero
          

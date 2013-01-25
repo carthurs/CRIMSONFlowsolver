@@ -76,9 +76,9 @@ int main(int argc, char** argv)
     // debugging output
 
     std::ostringstream ostr; //output string stream
-    std::string filename = "Pred_";
+    std::string filename = "Pred_",filename_ext = ".dat";
     ostr << driver.GetModel().GetRank();
-    filename = filename+ostr.str();
+    filename = filename+ostr.str()+filename_ext;
     ofstream outfile;
 
     if (driver.GetModel().GetRank() == 0)
@@ -95,15 +95,18 @@ int main(int argc, char** argv)
 
         driver.Forward();
         driver.Analyze();
+
+
+        ///////////////////////////////////
         driver.GetModel().ForwardFinalize();
 
         driver.GetReducedStateErrorVariance(Pred);
-
         // write out the covariance matrix for the reduced state estimate
         if (driver.GetModel().GetRank() == 0) {
         	outfile << driver.GetModel().GetTime() << endl;
         	Pred.WriteText(outfile);
         }
+        /////////////////
 
     }
 

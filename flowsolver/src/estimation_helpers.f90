@@ -30,6 +30,20 @@ subroutine estim_helpers_temp_comm() bind(C, name="estim_helpers_temp_comm")
 
 end subroutine
 
+!subroutine estim_helpers_setstate_lumped_param_model() bind(C, name="estim_helpers_setstate_lumped_param_model")
+!
+!   use iso_c_binding
+!   use shapeTable
+!   use globalArrays
+!   use phcommonvars
+!   use grcrbc
+!
+!   implicit none
+!
+!   !call grcrbc_SetInternalState ( yold )
+!
+!end subroutine
+
 !
 ! this code is based off of the timeseries code
 !

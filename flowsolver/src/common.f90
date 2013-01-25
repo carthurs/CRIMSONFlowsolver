@@ -83,7 +83,7 @@ module phcommonvars
                     ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
                     iUseSWB, iUseTWB, iUseEWB, &
                     numevw, &
-                    iwalldamp, iwallsupp, imeasdist, istatefilter
+                    iwalldamp, iwallsupp, imeasdist, idistancenudge
   bind(C, name="nomodule") :: /nomodule/
 !----------------------------------------------------------
 

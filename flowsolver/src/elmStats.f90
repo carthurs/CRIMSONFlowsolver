@@ -92,8 +92,8 @@
       real*8  y(nshg,ndof),             ac(nshg,ndof),  &
               u(nshg,nsd), &
               x(numnp,nsd),            &
-              xdist(numnp), &
-              xdnv(numnp,nsd), &
+              xdist(nshg), &
+              xdnv(nshg,nsd), &
               shp(MAXTOP,maxsh,MAXQPT), shgl(MAXTOP,nsd,maxsh,MAXQPT), &
               shpb(MAXTOP,maxsh,MAXQPT), &
               shglb(MAXTOP,nsd,maxsh,MAXQPT), &

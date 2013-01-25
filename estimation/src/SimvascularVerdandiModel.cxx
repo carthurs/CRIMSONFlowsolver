@@ -106,9 +106,13 @@ void SimvascularVerdandiModel::Initialize() {
 	// 4 comes from the 3 vel components and 1 pressure component
 	Nstate_local_ = (NSD + 2 * 4) * conpar.nshguniq;
 
-	// Add the number of parameters to the local state size of the last processor
-	if (rank_ == numProcs_ - 1)
+	if (rank_ == numProcs_ - 1) {
+		// Add the number of lumped parameter surfaces (twice) to the local state size of the last process
+		Nstate_local_ += grcrbccom.numGRCRSrfs * 2;
+
+		// Add the number of parameters to the local state size of the last process
 		Nstate_local_ += Nparameter_;
+	}
 
 	// Compute the global state size
 	MPI_Allreduce(&Nstate_local_, &Nstate_, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -347,6 +351,27 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 	}
 
+
+	//
+	// get the P,Q states for the lumped parameter model
+	//
+
+	if (rank_ == numProcs_ - 1) {
+
+		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
+
+			duplicated_state_.SetBuffer(icounter++,(gat->global_lumped_parameter_P)[surfIdx]);
+
+		}
+
+		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
+
+			duplicated_state_.SetBuffer(icounter++,(gat->global_lumped_parameter_Q)[surfIdx]);
+
+		}
+
+	}
+
 	//
 	// get the parameter value
 	// note that this part of the state is only on the last processor
@@ -438,13 +463,37 @@ void SimvascularVerdandiModel::StateUpdated() {
 	// in the flowsolver this is uold
 	//
 
-	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
+	if (nomodule.ideformwall > 0) {
 
-		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
+			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
 
-			(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
+			for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
+
+				(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
+
+			}
+
+		}
+
+	}
+
+	//
+	// set the P,Q states for the lumped parameter model
+	//
+
+	if (rank_ == numProcs_ - 1) {
+
+		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
+
+			(gat->global_lumped_parameter_P)[surfIdx] = duplicated_state_(icounter++);
+
+		}
+
+		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
+
+			(gat->global_lumped_parameter_Q)[surfIdx] = duplicated_state_(icounter++);
 
 		}
 

@@ -8,7 +8,7 @@
          IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
          
          dimension x(numnp,nsd),u(nshg,nsd)
-         dimension xdist(numnp)
+         dimension xdist(nshg)
          dimension lnode(27)
          
          real*8 tempnv1(nsd)
@@ -62,6 +62,7 @@
 
          do ii = 1, nwnp_EWB
 
+            ! TODO: assumption is that numnp = nshg
             tempPt = x(mWNodes_EWB%p(ii),:)+ &
                      u(mWNodes_EWB%p(ii),:)
      

@@ -107,8 +107,8 @@
       ! memory when not used
       if (.not. allocated(u)) allocate (u(nshg,nsd))
       if (.not. allocated(uold)) allocate (uold(nshg,nsd))
-      if (.not. allocated(xdist)) allocate (xdist(numnp))
-      if (.not. allocated(xdnv)) allocate (xdnv(numnp,nsd))
+      if (.not. allocated(xdist)) allocate (xdist(nshg))
+      if (.not. allocated(xdnv)) allocate (xdnv(nshg,nsd))
       
 
       if (.not. allocated(rerr)) allocate (rerr(nshg,numerr)) ! this one was pulled out because it

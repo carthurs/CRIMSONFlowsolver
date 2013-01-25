@@ -512,7 +512,7 @@
          int iwalldamp;
          int iwallsupp;
          int imeasdist;
-         int istatefilter;
+         int idistancenudge;
       } nomodule;
 
       extern struct {

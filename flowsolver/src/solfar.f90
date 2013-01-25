@@ -67,8 +67,8 @@
                 yold(nshg,ndof),          acold(nshg,ndof), &
                 u(nshg,nsd),              uold(nshg,nsd), &
                 x(numnp,nsd),              &
-                xdist(numnp), &
-                xdnv(numnp,nsd), &
+                xdist(nshg), &
+                xdnv(nshg,nsd), &
                 BC(nshg,ndofBC), &
                 res(nshg,nflow), &
                 flowDiag(nshg,4), &

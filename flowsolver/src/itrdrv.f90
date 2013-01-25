@@ -1,6 +1,6 @@
-module itrDrvVars
+module itrDrvVars ! this needs to be cleaned up
             
-    integer npermdims !perhaps these can go in common
+    integer npermdims !perhaps these can go in global or common
     integer ntmpdims
       
     integer npermdimss

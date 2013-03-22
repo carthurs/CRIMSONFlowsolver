@@ -3,7 +3,7 @@
                      shpb,    shglb, &
                      xlb,     xdistl,  xdnvl, &
                      rl,      sgn,     dwl,     xKebe, &
-                     SWB,     TWB,     EWB, &
+                     SWB,     TWB,     &
                      PS_global, &
                      Kwall_xKebe)
 !
@@ -67,8 +67,7 @@
                   ul(npro,nshl,nsd),           acl(npro,nshl,ndof), &
                   rl(npro,nshl,nflow), &
                   xdistl(npro,nshl),           xdnvl(npro,nshl,nsd), &
-                  SWB(npro,nProps),            TWB(npro,2), &
-                  EWB(npro,1)
+                  SWB(npro,nProps),            TWB(npro,2)
 !
         dimension g1yi(npro,ndof),             g2yi(npro,ndof), &
                   g3yi(npro,ndof),             WdetJb(npro), &
@@ -146,7 +145,6 @@
                      shdrv, &         
                      xlb,             xdistl,          xdnvl, &
                      lnode,           SWB,             TWB, &
-                     EWB, &
                      WdetJb, &
                      bnorm,           pres, &
                      u1,              u2,              u3, &
@@ -155,42 +153,9 @@
                      vdot, &            
                      usup1,           usup2, &
                      velsup, &
-                     rlKwall, &        
+                     rlKwall, &
                      xKebe, &           !rKwall_glob,
                      Kwall_global,    PS_global)
-     
-
-!
-!....  a hack to only add the deformable wall contribution only once
-!....  instead of every iteration of the integration loop
-!
-        if (ideformwall.eq.1 .and. intp.eq.ngaussb)  then 
-!
-!....  Form the residual contribution
-! 
-           rlKwall = zero
-           
-           do i = 1, nshlb
-              do j = 1, nsd
-                 do k = 1, nshlb
-                    do m = 1, nsd
-                       rlKwall(:,i,j) = rlKwall(:,i,j) &
-                       +evw*Kwall_xKebe(:,3*(j-1)+m,i,k)*ul(:,k,m) ! bring in elastic modulus
-                    end do
-                 end do
-              end do
-           enddo
-!
-!....  Add the PreStress Contribution to the residual
-!           
-           do i = 1, nshlb
-              do j = 1, nsd
-                 rlKwall(:,i,j) = rlKwall(:,i,j) &
-                    +PS_global(:,3*(i-1)+j)
-              end do
-           end do
-
-        end if
         
 !        
 !.... -----------------> boundary conditions <-------------------
@@ -286,9 +251,10 @@
               tau3n(iel) = zero                              
            else
               
-              if (intp.eq.ngaussb) then
-                 rlKwall(iel,:,:) = zero                    ! this is not a deformable element
-              end if
+              !if (intp.eq.ngaussb) then
+              !   rlKwall(iel,:,:) = zero                    ! this is not a deformable element
+              !end if
+              rlKwall(iel,:,:) = zero
 
               vdot(iel,:) = zero                             
               usup1(iel,:) = zero
@@ -380,7 +346,7 @@
         rNa(:,4) = unm
         
         if (ideformwall.eq.1) then
-        
+
            rNa(:,1) = rNa(:,1) + vdot(:,1)
            rNa(:,2) = rNa(:,2) + vdot(:,2)
            rNa(:,3) = rNa(:,3) + vdot(:,3)
@@ -438,19 +404,20 @@
 
         enddo
         
-        if(ideformwall.eq.1 .and. intp.eq.ngaussb) then
+        !if(ideformwall.eq.1 .and. intp.eq.ngaussb) then
+        if(ideformwall.eq.1) then
            rl(:,1,1) = rl(:,1,1) - rlKwall(:,1,1)
            rl(:,1,2) = rl(:,1,2) - rlKwall(:,1,2)
            rl(:,1,3) = rl(:,1,3) - rlKwall(:,1,3)
-           
+
            rl(:,2,1) = rl(:,2,1) - rlKwall(:,2,1)
            rl(:,2,2) = rl(:,2,2) - rlKwall(:,2,2)
            rl(:,2,3) = rl(:,2,3) - rlKwall(:,2,3)
-        
+
            rl(:,3,1) = rl(:,3,1) - rlKwall(:,3,1)
            rl(:,3,2) = rl(:,3,2) - rlKwall(:,3,2)
            rl(:,3,3) = rl(:,3,3) - rlKwall(:,3,3)
-        endif 
+        endif
 !
 !.... -------------------->  Aerodynamic Forces  <---------------------
 !
@@ -484,17 +451,17 @@
 !
         enddo
         
-        if(ideformwall.eq.1) then
-!     
+        !if(ideformwall.eq.1) then
+!
 !.... -----> Wall Stiffness and Mass matrices for implicit LHS  <-----------
-!     
-!.... Now we simply have to add the stiffness contribution in rKwall_glob to 
+!
+!.... Now we simply have to add the stiffness contribution in rKwall_glob to
 !.... the mass contribution already contained in xKebe
 
-           xKebe = xKebe*iwallmassfactor+ &
-                   evw*Kwall_xKebe*(iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi) ! bring in elastic modulus
+!           xKebe = xKebe*iwallmassfactor+ &
+!                   evw*Kwall_xKebe*(iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi) ! bring in elastic modulus
 
-         endif
+        !endif
 !$$$        ttim(40) = ttim(40) + tmr()
 !
 !.... return

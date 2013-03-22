@@ -18,7 +18,7 @@
 
         integer, allocatable :: ientp(:,:),iBCBtp(:,:)
         real*8, allocatable :: BCBtp(:,:), SWBtp(:,:), &
-                               TWBtp(:,:), EWBtp(:,:)
+                               TWBtp(:,:)
         integer materb(ibksz)
         integer intfromfile(50) ! integers read from headers
         character*255 fname1
@@ -54,7 +54,6 @@
            if (ideformwall.eq.1) then
              allocate (SWBtp(neltp,nProps))
              allocate (TWBtp(neltp,2))
-             allocate (EWBtp(neltp,1))
            end if
            iientpsiz=neltp*nshl
            call readdatablock(igeom,fname1//c_null_char,ientp,iientpsiz, &
@@ -120,7 +119,6 @@
 
            SWBtp = zero
            TWBtp = zero
-           EWBtp = zero
            
            if(ideformwall.eq.1.and.iUseSWB.gt.0) then
               itwo=2                      
@@ -150,21 +148,6 @@
 !                                  
            endif
            
-!        read EWB array
-
-           if(ideformwall.eq.1.and.iUseEWB.gt.0) then
-              fname1='EWB array?'
-              call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"double"//c_null_char, &
-                              iotype)
-              numelb=intfromfile(1)
-              
-              call readdatablock(igeom,fname1//c_null_char,EWBtp,numelb*1, &
-                             c_char_"double"//c_null_char,iotype)
-     
-      
-!                                  
-           endif
-
            do n=1,neltp,ibksz 
               nelblb=nelblb+1
               npro= min(IBKSZ, neltp - n + 1)
@@ -198,7 +181,6 @@
               if (ideformwall.eq.1) then
                 allocate (mSWB(nelblb)%p(npro,nProps))
                 allocate (mTWB(nelblb)%p(npro,2))
-                allocate (mEWB(nelblb)%p(npro,1))
               end if
                            
 !
@@ -210,11 +192,9 @@
                 call gensvbDef (ientp(n1:n2,1:nshl), &
                                 iBCBtp(n1:n2,:),      BCBtp(n1:n2,:), &
                                 SWBtp(n1:n2,:),       TWBtp(n1:n2,:), &
-                                EWBtp(n1:n2,:), &
                                 materb,               mienb(nelblb)%p, &
                                 miBCB(nelblb)%p,      mBCB(nelblb)%p, &
                                 mSWB(nelblb)%p,       mTWB(nelblb)%p, &
-                                mEWB(nelblb)%p, &
                                 mmatb(nelblb)%p)
               
               else  
@@ -235,7 +215,6 @@
            if (ideformwall.eq.1) then
              deallocate(SWBtp)
              deallocate(TWBtp)
-             deallocate(EWBtp)
            end if
            
            

@@ -3,7 +3,7 @@
                          shpb,       shglb,                   &
                          ienb,       materb,     iBCB,        BCB, &
                          res,        xKebe,      SWB,         TWB, &
-                         EWB,        PS_global,  Kwall_xKebe)
+                         PS_global,  Kwall_xKebe)
 !
 !----------------------------------------------------------------------
 !
@@ -32,8 +32,7 @@
                   ienb(npro,nshl),         materb(npro), &
                   iBCB(npro,ndiBCB),       BCB(npro,nshlb,ndBCB), &
                   res(nshg,nflow),         dwl(npro,nenl), &
-                  SWB(npro,nProps),        TWB(npro,2), &
-                  EWB(npro,1)     
+                  SWB(npro,nProps),        TWB(npro,2)
 !
         dimension yl(npro,nshl,ndofl),     xlb(npro,nenl,nsd), &
                   rl(npro,nshl,nflow),     sgn(npro,nshl), &
@@ -91,7 +90,7 @@
                    shpb,    shglb,        &
                    xlb,     xdistl,  xdnvl, &     
                    rl,      sgn,     dwl,     xKebe, &
-                   SWB,     TWB,     EWB, &
+                   SWB,     TWB,     &
                    PS_global, &
                    Kwall_xKebe)
 !

@@ -211,7 +211,6 @@
                          flxLHS,                  flxnrm,       &
                          xKebe,                                 &
                          mSWB(iblk)%p,            mTWB(iblk)%p, &
-                         mEWB(iblk)%p,                          &
                          mPS_global(iblk)%p,                    &
                          mKwall_xKebe(iblk)%p)
 !     

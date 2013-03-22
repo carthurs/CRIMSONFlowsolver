@@ -507,12 +507,12 @@
          int nProps;
          int iUseSWB;
          int iUseTWB;
-         int iUseEWB;
          int numevw;
          int iwalldamp;
          int iwallsupp;
          int imeasdist;
          int idistancenudge;
+         int iinitialprestress;
       } nomodule;
 
       extern struct {

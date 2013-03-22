@@ -932,15 +932,19 @@ int input_fform() {
 				nomodule.thicknessvw = inp.GetValue("Thickness of Vessel Wall");
 			}
 
+
+			if ((string) inp.GetValue("Prestress from Initial Configuration") == "True") {
+                nomodule.iinitialprestress = 1;
+			}
+			else {
+				nomodule.iinitialprestress = 0;
+			}
+
+
 			if ((string) inp.GetValue("Use TWB File") == "True")
 				nomodule.iUseTWB = 1;
 			else
 				nomodule.iUseTWB = 0;
-
-			if ((string) inp.GetValue("Use EWB File") == "True")
-				nomodule.iUseEWB = 1;
-			else
-				nomodule.iUseEWB = 0;
 
 			if ((string) inp.GetValue("Wall Damping Term") == "True") {
 				nomodule.iwalldamp = 1;
@@ -961,9 +965,7 @@ int input_fform() {
 			if ((string) inp.GetValue("Wall State Filter Term") == "True") {
 				nomodule.imeasdist = 1;
 				nomodule.idistancenudge = 1;
-				if (nomodule.iUseEWB == 0)
-					nomodule.stateFilterCoeff = inp.GetValue(
-							"Wall State Filter Coefficient");
+				nomodule.stateFilterCoeff = inp.GetValue("Wall State Filter Coefficient");
 			} else {
 				nomodule.imeasdist = 0;
 				nomodule.idistancenudge = 0;

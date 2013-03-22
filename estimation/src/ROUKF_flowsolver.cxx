@@ -63,26 +63,26 @@ int main(int argc, char** argv)
 
 	PetscInitialize(&argc, &argv, (char *)0, help);
 
-//    Verdandi::ReducedOrderUnscentedKalmanFilter<double,
-//        SimvascularVerdandiModel,
-//        SimvascularObservationManager > driver;
-
-	ROUKFModified<double,SimvascularVerdandiModel, SimvascularObservationManager> driver;
-
 	SimvascularVerdandiModel::reduced_state_error_variance Pred;
+
+    std::string current_directory = getenv("PWD");
+    std::string input_filename = argv[1];
+
+    cout << input_filename.substr(input_filename.find_last_of("\\/")+1,input_filename.length()-1) << endl;
+
+    ROUKFModified<double,SimvascularVerdandiModel, SimvascularObservationManager> driver;
 
     driver.Initialize(argv[1], true);
 
     // debugging output
-
     std::ostringstream ostr; //output string stream
-    std::string filename = "Pred_",filename_ext = ".dat";
+    std::string Pfilename = "Pred_",filename_ext = ".dat";
     ostr << driver.GetModel().GetRank();
-    filename = filename+ostr.str()+filename_ext;
+    Pfilename = Pfilename+ostr.str()+filename_ext;
     ofstream outfile;
 
     if (driver.GetModel().GetRank() == 0)
-    	outfile.open(filename.c_str());
+    	outfile.open(Pfilename.c_str());
 
 
     while (!driver.HasFinished())

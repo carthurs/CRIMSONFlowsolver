@@ -14,7 +14,7 @@
         use globalArrays
         use shapeTable
         use turbsa          ! used to access d2wall
-        use measureWallDistance
+
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
@@ -53,18 +53,6 @@
 !           call setSPEBC(numnp, point2nfath, nsonmax)
 !        endif
 
-!
-!.... initialize distance evaluation
-!      
-        if(ideformwall.eq.1 .and. imeasdist.eq.1) then
-!         read "observed mesh data"
-          write(*,*) "reading observed mesh at rank ",myrank     
-          call dm_dataread("observed.dat")
-
-!         build octrees for observed meshes
-          write(*,*) "building octrees at rank ",myrank
-          call dm_initialize()
-        end if
 
 !     
 !.... generate the geometry and boundary conditions data

@@ -831,13 +831,11 @@ void Partition_Problem(int numProcs) {
 	//bcb  -- Natural Boundary Condition Values
 	//swb  -- Vessel Wall Properties array
 	//twb  -- Tissue Support Properties array
-	//ewb  -- State Estimation Properties array
 
 	vector < map<block, vector<int>, lessKey> > iBCBpart(numProcs);
 	vector < map<block, vector<double>, lessKey> > BCBpart(numProcs);
 	vector < map<block, vector<double>, lessKey> > SWBpart(numProcs);
 	vector < map<block, vector<double>, lessKey> > TWBpart(numProcs);
-	vector < map<block, vector<double>, lessKey> > EWBpart(numProcs);
 
 	for (int b = 0; b < nblock; b++) {
 
@@ -879,7 +877,6 @@ void Partition_Problem(int numProcs) {
 
 		double* SWB = NULL;
 		double* TWB = NULL;
-		double* EWB = NULL;
 
 		if (nomodule.ideformwall != 0 && nomodule.iUseSWB != 0) {
 			readheader_(&igeombc, "SWB array?", (void*) iarray, &itwo, "double",
@@ -899,17 +896,6 @@ void Partition_Problem(int numProcs) {
 			isize = iarray[0] * nPropsTS;
 			TWB = new double[isize];
 			readdatablock_(&igeombc, "TWB array?", (void*) TWB, &isize,
-					"double", iformat);
-
-		}
-		if (nomodule.ideformwall != 0 && nomodule.iUseEWB != 0) {
-			// added by Nan 06/26/09
-			readheader_(&igeombc, "EWB array?", (void*) iarray, &itwo, "double",
-					iformat);
-
-			isize = iarray[0] * nPropsEst;
-			EWB = new double[isize];
-			readdatablock_(&igeombc, "EWB array?", (void*) EWB, &isize,
 					"double", iformat);
 
 		}
@@ -950,12 +936,6 @@ void Partition_Problem(int numProcs) {
 							TWB[c + iarray[0] * o]);
 			}
 
-			if (nomodule.ideformwall != 0 && nomodule.iUseEWB != 0) {
-				for (int o = 0; o < nPropsEst; o++)
-					EWBpart[pid][CurrentBlock].push_back(
-							EWB[c + iarray[0] * o]);
-			}
-
 		}
 
 		delete[] ient;
@@ -969,10 +949,6 @@ void Partition_Problem(int numProcs) {
 
 		if (nomodule.ideformwall != 0 && nomodule.iUseTWB != 0) {
 			delete[] TWB;
-		}
-
-		if (nomodule.ideformwall != 0 && nomodule.iUseEWB != 0) {
-			delete[] EWB;
 		}
 
 	}
@@ -1207,47 +1183,6 @@ void Partition_Problem(int numProcs) {
 					writedatablock_(&fgeom, keyphrase, (void*) (TWBf), &nitems,
 							"double", oformat);
 					delete[] TWBf;
-				}
-
-				if (nomodule.iUseEWB != 0) {
-
-#if defined ( DEBUG )
-					fascii.precision( 8 );
-					fascii << "------------------------" << endl;
-					fascii << "EWB for the above block" << endl;
-					fascii << "------------------------" << endl;
-					fascii.precision( 8 );
-#endif
-					double* EWBf = new double[blockIEN.size() * nPropsEst];
-					for (int u = 0; u < blockIEN.size(); u++) {
-						for (int v = 0; v < nPropsEst; v++) {
-							EWBf[v * blockIEN.size() + u] =
-									EWBpart[p][CurrentBlock][u * nPropsEst + v];
-
-#if defined ( DEBUG )   
-							fascii << EWBf[v* blockIEN.size()+u] << " ";
-#endif
-
-						}
-
-#if defined ( DEBUG )
-						fascii << endl;
-#endif
-					}
-
-					EWBpart[p][CurrentBlock].clear();
-
-					isize = blockIEN.size() * nPropsEst;
-					xct = 2;
-					iarray[1] = nPropsEst;
-					generate_keyphrase(keyphrase, "EWB array ", CurrentBlock);
-					writeheader_(&fgeom, keyphrase, (void*) iarray, &xct,
-							&isize, "double", oformat);
-
-					nitems = blockIEN.size() * nPropsEst;
-					writedatablock_(&fgeom, keyphrase, (void*) (EWBf), &nitems,
-							"double", oformat);
-					delete[] EWBf;
 				}
 
 			} // end of ideformwall check

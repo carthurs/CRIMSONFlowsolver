@@ -1,6 +1,6 @@
         subroutine gensvbDef (ientmp, iBCBtmp, BCBtmp, SWBtmp,  TWBtmp, &
-                              EWBtmp, mattmp, ienb,    iBCB,   BCB,     &
-                              SWB,    TWB,    EWB,     materb)
+                              mattmp, ienb,    iBCB,   BCB,     &
+                              SWB,    TWB,  materb)
 !
 !----------------------------------------------------------------------
 !
@@ -12,7 +12,6 @@
 !  BCBtmp (npro,nshlb,ndBCB)    : boundary condition values
 !  SWBtmp (npro,nProps)         : Vessel Wall Properties
 !  TWBtmp (npro,2)              : Tissue Support Properties
-!  EWBtmp (npro,1)              : State Filter Properties
 !  mattmp (npro)                : material type flag
 !
 ! output:
@@ -21,7 +20,6 @@
 !  BCB    (npro,nshlb,ndBCB)    : boundary condition values
 !  SWB    (npro,nProps)         : Vessel Wall Properties
 !  TWB    (npro,2)              : Tissue Support Properties
-!  EWB    (npro,1)              : State Filter Properties
 !  materb (npro)                : material type flag
 !
 !
@@ -35,8 +33,7 @@
         dimension   ientmp(npro,nshl), &
                     iBCBtmp(npro,ndiBCB),    BCBtmp(npro,ndBCB), &
                     SWBtmp(npro,nProps),     SWB(npro,nProps), &
-                    TWBtmp(npro,2),          TWB(npro,2), &
-                    EWBtmp(npro,1),          EWB(npro,1)
+                    TWBtmp(npro,2),          TWB(npro,2)
 
         dimension   mattmp(npro),           ienb(npro,nshl), &
                     iBCB(npro,ndiBCB),      BCB(npro,nshlb,ndBCB), &
@@ -54,20 +51,22 @@
           SWB(:,i) = SWBtmp(:,i)
         enddo
         
+        ! note that due to a legacy compatibility issue,
+        ! the expected entries for prestress in SWB are not consistent with
+        ! the order of the stress components for the enchanced membrane
+        ! as given in e3bvar !!
+        ! in particular, the 3 and 4 indices need to be swapped
+
+        SWB(:,3) = SWBtmp(:,4)
+        SWB(:,4) = SWBtmp(:,3)
+
 !
 !.... save the tissue support properties array
 !        
         do i = 1, 2
           TWB(:,i) = TWBtmp(:,i)
         enddo
-        
-!
-!.... save the state filter properties array
-!        
-        do i = 1, 1
-          EWB(:,i) = EWBtmp(:,i)
-        enddo        
-
+         
 !
 !.... save the boundary element data
 !

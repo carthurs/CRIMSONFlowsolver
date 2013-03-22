@@ -60,9 +60,10 @@ module phcommonvars
                     Lagrange,numLagrangeSrfs,nsrflistLagrange(0:MAXSURF),iLagfile, &
                     MinNumIter, &
                     ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
-                    iUseSWB, iUseTWB, iUseEWB, &
+                    iUseSWB, iUseTWB, &
                     numevw, &
-                    imeasdist, iwalldamp, iwallsupp
+                    iwalldamp, iwallsupp, imeasdist, idistancenudge, &
+                    iinitialprestress
   common /nomodule/ bcttimescale,ValueListResist, &
                     rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
                     tissSuppStiffCoeff, tissSuppDampCoeff, &
@@ -81,9 +82,10 @@ module phcommonvars
                     Lagrange,numLagrangeSrfs,nsrflistLagrange,iLagfile, &
                     MinNumIter, &
                     ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
-                    iUseSWB, iUseTWB, iUseEWB, &
+                    iUseSWB, iUseTWB, &
                     numevw, &
-                    iwalldamp, iwallsupp, imeasdist, idistancenudge
+                    iwalldamp, iwallsupp, imeasdist, idistancenudge, &
+                    iinitialprestress
   bind(C, name="nomodule") :: /nomodule/
 !----------------------------------------------------------
 

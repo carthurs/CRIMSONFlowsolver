@@ -36,6 +36,7 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 
 	configuration.SetPrefix("simvascular_model.");
 	configuration.Set("error_statistics.state_error_variance",state_error_variance_value_);
+	//cout << "assimilation file: " << configuration.GetFilePath() << endl;
 
     Initialize();
 

@@ -83,14 +83,6 @@
          fct = (gami-one)/gami
          y  = yold
          ac = acold * fct
-         
-         if ( ideformwall.eq.1) then
-            u(mWNodes%p,1:3) = uold(mWNodes%p,1:3) +  &
-               Delt(itseq)*yold(mWNodes%p,1:3) +  &
-               pt5*((gami-two*betai)/gami)* &
-               Delt(itseq)*Delt(itseq)*acold(mWNodes%p,1:3)
-         end if
-         
       end if
 !     
       if ( ipred.eq.2) then     ! an+1_pred=0
@@ -109,6 +101,13 @@
          fct3 = almi/gami/alfi*Dtgl
          y    = yold+fct1*(yold-y)
          ac   = acold*fct2+(y-yold)*fct3
+      end if
+
+      if ( ideformwall.eq.1) then  ! deformable wall displacements
+          u(mWNodes%p,1:3) = uold(mWNodes%p,1:3) +  &
+          Delt(itseq)*yold(mWNodes%p,1:3) +  &
+          pt5*((gami-two*betai)/gami)* &
+          Delt(itseq)*Delt(itseq)*acold(mWNodes%p,1:3)
       end if
 !     
       if (Lagrange .gt. 0) then

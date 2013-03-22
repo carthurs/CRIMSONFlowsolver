@@ -4,7 +4,7 @@
                          ienb,          iBCB, & 
                          BCB,           invflx,      flxres, &
                          flxLHS,        flxnrm,      xKebe, &
-                         SWB,           TWB,         EWB, &
+                         SWB,           TWB,         &
                          PS_global,     Kwall_xKebe)
 !
 !----------------------------------------------------------------------
@@ -33,7 +33,6 @@
                   invflx(nshg),            flxres(nshg,nflow), &
                   flxLHS(nshg,1),          flxnrm(nshg,nsd), &
                   SWB(npro,nProps),        TWB(npro,2), &
-                  EWB(npro,1), &
                   Kwall_global(npro,9,9),  PS_global(npro,9), &
                   Kwall_xKebe(npro,9,nshl,nshl)
 !
@@ -91,7 +90,7 @@
                    shpb,    shglb, &
                    xlb,     xdistl,  xdnvl, &
                    rl,      sgn,     dwl,     xKebe, &
-                   SWB,     TWB,     EWB, &
+                   SWB,     TWB,     &
                    PS_global, &
                    Kwall_xKebe)
      

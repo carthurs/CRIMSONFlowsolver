@@ -520,9 +520,11 @@
          call readdatablock(irstin,fname1//c_null_char,uread,iusiz, &
               c_char_"double"//c_null_char,iotype)
          uold(:,1:nsd)=uread(:,1:nsd)
+         uref(:,1:nsd)=uold(:,1:nsd)
       else
          !allocate( uold(nshg,nsd) )
          uold(:,1:nsd) = zero
+         uref(:,1:nsd) = zero
       endif
 
       temporary_array = zero

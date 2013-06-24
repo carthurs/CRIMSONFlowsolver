@@ -145,7 +145,16 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !acold  = ac
 
     rerr = zero
-    ybar = y
+    ybar = yold
+
+    if (ideformwall.eq.1) then
+        ubar = uold
+    endif
+
+    xdist = zero
+    xdnv = zero
+    df_fem = zero
+
     !
     !.... ---------------> initialize LesLib Library <---------------
     !
@@ -312,10 +321,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     yold = y
     acold = ac
 
-    !     initialize distances
-    xdist = zero
-    xdnv = zero
-
     !
     !.... loop through the time sequences
     !
@@ -380,12 +385,20 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     endif
       
     !
-    !.... precompute the deformable wall stiffness matrix
+    !.... deformable wall initialization
     !
     if(ideformwall.eq.1) then
-        call vlmwStTri(x,iBC,BC)
-    !            call solveWallProb(rowp,colm,ilwork,iBC,BC,iper)
+        call vlmwStTri(uref)
+        ! call solveWallProb(rowp,colm,ilwork,iBC,BC,iper)
     end if
+
+    if (idistancenudge.eq.1) then
+        if (myrank.eq.zero) then
+            write(*,*) "computing distance to wall data surfaces (initial)"
+        end if
+        call ElmDist(uold,x,xdist,xdnv,shpb,shglb,df_fem)
+    end if
+
     !
     !  find the last solve of the flow in the step sequence so that we will
     !         know when we are at/near end of step
@@ -534,7 +547,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     ! Nan rcr ----------------------------------
     if(numGRCRSrfs.gt.0) then
-        call grcrbc_ComputeImplicitCoefficients(lstep)
+        call grcrbc_ComputeImplicitCoefficients(lstep, yold)
     endif
     ! ------------------------------------------
 
@@ -642,12 +655,6 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     iter=0
     ilss=0  ! this is a switch thrown on first solve of LS redistance
          
-    !         interface to compute distances to observed wall motion
-    if (idistancenudge.eq.1) then
-        write(*,*) "computing distance to wall data surfaces for state filter"
-        call ElmDist(u,x,xdist,xdnv)
-    end if
-
          
     do istepc=1,seqsize
         icode=stepseq(istepc)
@@ -812,6 +819,14 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     endif
     ! ------------------------------------------
 
+    ! interface to compute distances to observed wall motion
+    if (imeasdist.eq.1) then
+        if (myrank.eq.zero) then
+            write(*,*) "computing distance to wall data surfaces (end of step)"
+        end if
+        call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)
+    end if
+
 end subroutine
 
 !
@@ -854,19 +869,13 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     istep = istep + 1
     lstep = lstep + 1
 
-    ! interface to compute distances to observed wall motion
-    if (imeasdist.eq.1) then
-        write(*,*) "computing distance to wall data surfaces (final)"
-        call ElmDist(u,x,xdist,xdnv)
-    end if
-
     !
     ! ... write out the solution
     !
     if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
-            call write_displ(myrank, lstep, nshg, 3, uold )
+            call write_displ(myrank, lstep, nshg, 3, uold, uref )
             if (imeasdist.eq.1) then
                 call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
             end if
@@ -1056,6 +1065,17 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         rerr(:, 9)=rerr(:, 9)+(yold(:,3)-ybar(:,3))**2
         rerr(:,10)=rerr(:,10)+(yold(:,4)-ybar(:,4))**2
     endif
+
+    !
+    !.... update reference displacement
+    !
+
+    if (iupdateprestress.eq.1) then
+         tfact = one/istep
+
+         ubar = tfact*uold + (one-tfact)*ubar
+
+    endif
          
  !if(istop.eq.1000) exit ! stop when delta small (see rstatic)
        
@@ -1122,9 +1142,13 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         call rwvelb  ('out ',  velbar  ,ifail)
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
-            call write_displ(myrank, lstep, nshg, 3, u ) 
+            if (iupdateprestress.eq.1) then
+                uref = uref + ubar
+                u = u - ubar
+            end if
+            call write_displ(myrank, lstep, nshg, 3, u, uref )
             if (imeasdist.eq.1) then
-                call ElmDist(u,x,xdist)
+                call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)
                 call write_distl(myrank, lstep, nshg,1,xdist)
             end if
         end if

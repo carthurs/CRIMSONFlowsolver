@@ -2,8 +2,7 @@
                          x,          xdist,      xdnv,        &
                          shpb,       shglb,                   &
                          ienb,       materb,     iBCB,        BCB, &
-                         res,        xKebe,      SWB,         TWB, &
-                         PS_global,  Kwall_xKebe)
+                         res,        xKebe,      SWB)
 !
 !----------------------------------------------------------------------
 !
@@ -32,17 +31,14 @@
                   ienb(npro,nshl),         materb(npro), &
                   iBCB(npro,ndiBCB),       BCB(npro,nshlb,ndBCB), &
                   res(nshg,nflow),         dwl(npro,nenl), &
-                  SWB(npro,nProps),        TWB(npro,2)
+                  SWB(npro,nProps)
 !
         dimension yl(npro,nshl,ndofl),     xlb(npro,nenl,nsd), &
                   rl(npro,nshl,nflow),     sgn(npro,nshl), &
                   ul(npro,nshl,nsd),       acl(npro,nshl,ndofl), &
                   xdistl(npro,nshl),       xdnvl(npro,nshl,nsd)
 !
-        dimension xKebe(npro,9,nshl,nshl) 
-        
-        real*8    Kwall_global(npro,9,9),  PS_global(npro,9), &
-                  Kwall_xKebe(npro,9,nshl,nshl)
+        dimension xKebe(npro,9,nshl,nshl)
      
         integer iblk
      
@@ -60,6 +56,7 @@
         call localx(x,      xlb,    ienb,   nsd,    'gather  ')
         call localx(u,      ul,     ienb,   nsd,    'gather  ')
         
+
         call localx(xdist,     xdistl,    ienb,   1,      'gather  ')
         call localx(xdnv,      xdnvl,     ienb,   nsd,    'gather  ')
         
@@ -90,9 +87,7 @@
                    shpb,    shglb,        &
                    xlb,     xdistl,  xdnvl, &     
                    rl,      sgn,     dwl,     xKebe, &
-                   SWB,     TWB,     &
-                   PS_global, &
-                   Kwall_xKebe)
+                   SWB)
 !
 !.... assemble the residual and the modified residual
 !

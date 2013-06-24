@@ -1,11 +1,18 @@
 #define VERDANDI_DEBUG_LEVEL_4
 #define SELDON_WITH_BLAS
 #define SELDON_WITH_LAPACK
+
+#define SELDON_WITH_MKL
+
 #define VERDANDI_WITH_ABORT
 #define VERDANDI_DENSE
 #define VERDANDI_WITH_PETSC
 #define VERDANDI_TANGENT_LINEAR_OPERATOR_SPARSE
 #define VERDANDI_OBSERVATION_ERROR_SPARSE
+
+#define VERDANDI_ROUKF_PARALLEL_INNOVATION
+
+//#define VERDANDI_ROUKF_DEBUG_OUTPUT
 
 //#define VERDANDI_WITH_DIRECT_SOLVER
 //#define SELDON_WITH_MUMPS
@@ -25,6 +32,10 @@
 #include <petscmat.h>
 #include <petscvec.h>
 #include <petscksp.h>
+
+#if defined(SELDON_WITH_MKL)
+#include "mkl_service.h"
+#endif
 
 #include "Verdandi.hxx"
 #include "seldon/SeldonSolver.hxx"
@@ -61,6 +72,10 @@ int main(int argc, char** argv)
 			; // assign debuggerPresent=1
 	}
 
+#if defined(SELDON_WITH_MKL)
+	mkl_cbwr_set(MKL_CBWR_AUTO);
+#endif
+
 	PetscInitialize(&argc, &argv, (char *)0, help);
 
 	SimvascularVerdandiModel::reduced_state_error_variance Pred;
@@ -76,12 +91,12 @@ int main(int argc, char** argv)
 
     // debugging output
     std::ostringstream ostr; //output string stream
-    std::string Pfilename = "Pred_",filename_ext = ".dat";
-    ostr << driver.GetModel().GetRank();
-    Pfilename = Pfilename+ostr.str()+filename_ext;
+    std::string Pfilename = "Pred",filename_ext = ".dat";
+    //ostr << driver.GetModel().GetRank();
+    Pfilename = Pfilename+filename_ext;
     ofstream outfile;
 
-    if (driver.GetModel().GetRank() == 0)
+    if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1)
     	outfile.open(Pfilename.c_str());
 
 
@@ -96,17 +111,14 @@ int main(int argc, char** argv)
         driver.Forward();
         driver.Analyze();
 
-
-        ///////////////////////////////////
         driver.GetModel().ForwardFinalize();
 
-        driver.GetReducedStateErrorVariance(Pred);
+        driver.GetReducedStateErrorVariance(Pred, driver.GetModel().GetLocalReducedStart());
         // write out the covariance matrix for the reduced state estimate
-        if (driver.GetModel().GetRank() == 0) {
+        if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
         	outfile << driver.GetModel().GetTime() << endl;
         	Pred.WriteText(outfile);
         }
-        /////////////////
 
     }
 

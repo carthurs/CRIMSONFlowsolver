@@ -460,8 +460,12 @@
                             c_char_"double"//c_null_char,iotype)
       yold(:,1:3)=qread(:,2:4)
       yold(:,4)=qread(:,1)
+      if(ndof.gt.4) then
+          yold(:,5:ndof)=qread(:,5:ndof)
+      else
+          yold(:,5:ndof)=zero
+      endif
       y = yold ! initialization of y moved here from genini
-      if(ndof.gt.4) yold(:,5:ndof)=qread(:,5:ndof)
 ! 
       fname1='time derivative of solution?'
       intfromfile=0
@@ -494,7 +498,10 @@
          ac=zero
       endif
 
-!      call creadlist(irstin,ithree,nshg2,ndisp,lstep)
+!
+!....  read the displacement
+!
+
       if (ideformwall.eq.1) then
          fname1='displacement?'
          call readheader(irstin,fname1//c_null_char,intfromfile, &
@@ -520,7 +527,35 @@
          call readdatablock(irstin,fname1//c_null_char,uread,iusiz, &
               c_char_"double"//c_null_char,iotype)
          uold(:,1:nsd)=uread(:,1:nsd)
-         uref(:,1:nsd)=uold(:,1:nsd)
+         u = uold
+
+
+         !
+         !....  read the reference displacement
+         !
+         if (iinitialprestress.eq.1) then
+             fname1='displacement_ref?'
+             call readheader(irstin,fname1//c_null_char,intfromfile, &
+                 ithree,c_char_"integer"//c_null_char, iotype)
+             nshg2=intfromfile(1)
+             ndisp=intfromfile(2)
+             lstep=intfromfile(3)
+             if(ndisp.ne.nsd) then
+                 warning='WARNING ndisp not equal nsd'
+                 write(*,*) warning , ndisp
+             endif
+             !
+             if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
+
+             iusiz=nshg*nsd
+
+             call readdatablock(irstin,fname1//c_null_char,uread,iusiz, &
+                 c_char_"double"//c_null_char,iotype)
+             uref(:,1:nsd)=uread(:,1:nsd)
+         else
+             uref(:,1:nsd)=zero
+         endif
+
       else
          !allocate( uold(nshg,nsd) )
          uold(:,1:nsd) = zero
@@ -529,9 +564,9 @@
 
       temporary_array = zero
 
-      call globalarrayassignpointer(c_loc(inodesuniq),c_loc(yold),c_loc(acold),c_loc(uold), &
+      call phglobalarrayassignpointer(c_loc(inodesuniq),c_loc(yold),c_loc(acold),c_loc(uold), &
                                     c_loc(x), c_loc(temporary_array), &
-                                    c_loc(xdist), &
+                                    c_loc(xdist), c_loc(df_fem), &
                                     c_loc(ilinobsfunc_sol), c_loc(ilinobsfunc_acc), c_loc(ilinobsfunc_disp), &
                                     c_loc(obsfunc_dist))
 

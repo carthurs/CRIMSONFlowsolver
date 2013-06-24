@@ -4,8 +4,7 @@
                          ienb,          iBCB, & 
                          BCB,           invflx,      flxres, &
                          flxLHS,        flxnrm,      xKebe, &
-                         SWB,           TWB,         &
-                         PS_global,     Kwall_xKebe)
+                         SWB)
 !
 !----------------------------------------------------------------------
 !
@@ -32,9 +31,7 @@
                   iBCB(npro,ndiBCB),       BCB(npro,nshlb,ndBCB), &
                   invflx(nshg),            flxres(nshg,nflow), &
                   flxLHS(nshg,1),          flxnrm(nshg,nsd), &
-                  SWB(npro,nProps),        TWB(npro,2), &
-                  Kwall_global(npro,9,9),  PS_global(npro,9), &
-                  Kwall_xKebe(npro,9,nshl,nshl)
+                  SWB(npro,nProps)
 !
         dimension yl(npro,nshl,ndofl),     xlb(npro,nenl,nsd), &
                   rl(npro,nshl,nflow),     sgn(npro,nshl), &
@@ -90,9 +87,7 @@
                    shpb,    shglb, &
                    xlb,     xdistl,  xdnvl, &
                    rl,      sgn,     dwl,     xKebe, &
-                   SWB,     TWB,     &
-                   PS_global, &
-                   Kwall_xKebe)
+                   SWB)
      
         ires = 1
 !

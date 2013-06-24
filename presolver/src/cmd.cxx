@@ -68,8 +68,6 @@ static Cmd cmd_table[] = {
   {"number_of_wall_Props", cmd_number_of_wall_Props},
   {"read_SWB_ORTHO",cmd_read_SWB_ORTHO},
   {"read_SWB_ISO",cmd_read_SWB_ISO},
-  {"read_TWB",cmd_read_TWB},  // added by Nan 6/24/09
-  {"read_EWB",cmd_read_EWB}, 
   {"write_displacements",cmd_write_displacements},
   {"write_pressures",cmd_write_pressures},
   {"number_of_observations", cmd_number_of_observations},
@@ -101,6 +99,7 @@ static Cmd cmd_table[] = {
   {"deformable_pressure",cmd_deformable_pressure},
   {"deformable_kcons",cmd_deformable_kcons},
   {"append_displacements",cmd_append_displacements},
+  {"append_displacements_with_ref",cmd_append_displacements_with_ref},
   {NULL,       NULL}};
 
 int debugprint(FILE* fp,char *fmt, ...)

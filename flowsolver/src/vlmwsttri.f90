@@ -9,6 +9,10 @@ module deformableWall
     type r2d
         real*8, pointer :: p(:,:)
     end type
+
+    type r3d
+        real*8, pointer :: p(:,:,:)
+    end type
          
     type r4d
         real*8, pointer :: p(:,:,:,:)
@@ -25,7 +29,7 @@ module deformableWall
       
 
     ! currently dynamically allocated in genbkb
-    type (r2d), dimension(MAXBLK2) ::  mSWB, mTWB
+    type (r2d), dimension(MAXBLK2) ::  mSWB
       
     ! currently allocated in gendat
     type (i1d) :: mWNodes, mWNodes_gtlmap
@@ -33,24 +37,24 @@ module deformableWall
     ! these are dynamically allocated in a local routine
     type (r2d), dimension(MAXBLK2) :: mPS_global
     type (r4d), dimension(MAXBLK2) :: mKwall_xKebe
+
+
+    ! the reference element local displacements
+    type (r3d), dimension(MAXBLK2) :: mDisp_ref
       
 contains
       
       
       
-    subroutine vlmwStTri(x,     iBC,      BC)
+    subroutine vlmwStTri(u)
       
         use pointer_data
         use measureWallDistance
 
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
-        real*8 x(numnp,nsd)
-      
-        real*8  BC(nshg,ndofBC)
-        integer iBC(nshg)
 
+        real*8 u(nshg,nsd)
 
         !
         !.... initialize distance evaluation
@@ -90,29 +94,34 @@ contains
             !.... allocate space for the arrays
             !
     
-            if (.not.associated(mPS_global(iblk)%p)) then
-                allocate(mPS_global(iblk)%p(npro,9))
-            end if
-         
-            if (.not.associated(mKwall_xKebe(iblk)%p)) then
-                allocate(mKwall_xKebe(iblk)%p(npro,9,nshl,nshl))
+!            if (.not.associated(mPS_global(iblk)%p)) then
+!                allocate(mPS_global(iblk)%p(npro,9))
+!            end if
+
+!            if (.not.associated(mKwall_xKebe(iblk)%p)) then
+!                allocate(mKwall_xKebe(iblk)%p(npro,9,nshl,nshl))
+!            end if
+
+            if (.not.associated(mDisp_ref(iblk)%p)) then
+                allocate(mDisp_ref(iblk)%p(npro,nshl,nsd))
             end if
 
             !
-            !.... check if SWB, TWB files are used
+            !.... check if SWB files are used
             !.... if no, then use the entered uniform values
             !
 
-            mSWB(iblk)%p = zero
-            mTWB(iblk)%p = zero
-         
             if (iUseSWB.eq.0) then
+                mSWB(iblk)%p = zero
                 mSWB(iblk)%p(:,1) = thicknessvw
             end if
-         
-            if (iUseTWB.eq.0) then
-                mTWB(iblk)%p(:,1) = tissSuppStiffCoeff
-                mTWB(iblk)%p(:,2) = tissSuppDampCoeff
+
+            ! save the initial element local displacements
+            mDisp_ref(iblk)%p = zero
+
+            ! add a flag here to say if we are using initial prestress
+            if (iinitialprestress.gt.0) then
+                call localx(u, mDisp_ref(iblk)%p, mienb(iblk)%p, nsd, 'gather  ')
             end if
          
             !
@@ -125,7 +134,6 @@ contains
 !            mSWB(iblk)%p, &
 !            mPS_global(iblk)%p, &
 !            mKwall_xKebe(iblk)%p)
-
 
         end do
             
@@ -549,7 +557,6 @@ subroutine DdeformableWall
             if (associated(mKwall_xKebe(iblk)%p)) deallocate(mKwall_xKebe(iblk)%p)
             
             if (associated(mSWB(iblk)%p)) deallocate (mSWB(iblk)%p)
-            if (associated(mTWB(iblk)%p)) deallocate (mTWB(iblk)%p)
       
         end do
     end if

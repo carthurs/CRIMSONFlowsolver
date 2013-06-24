@@ -18,7 +18,7 @@ HDRS  =   CInput.h \
           shapeFuncInternals.h solverFields.h topo_shapedefs.h\
           usr.h ValType.h
 
-CXXSRCS = Cinput.cxx GlobalArrayTransfer.cxx input_fform.cxx \
+CXXSRCS = Cinput.cxx PhGlobalArrayTransfer.cxx input_fform.cxx \
           newshape.cxx partition.cxx \
           ValType.cxx
 

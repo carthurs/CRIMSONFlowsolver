@@ -62,7 +62,8 @@ contains
         enddo
         close(818)
 
-        call globallumpedparameterarrayassignpointer(c_loc(P_current),c_loc(Q_current))
+        call phgloballumpedparameterarrayassignpointer(c_loc(P_current), &
+            c_loc(Q_current), c_loc(parameters_RCR))
 
     end subroutine
 
@@ -92,6 +93,7 @@ contains
         call GetFlowQ(QSrf_temp,y(:,1:3),nsrflistGRCR,numGRCRsrfs) !get flow integral
         Q_current(:) = QSrf_temp(1:numGRCRSrfs)
 
+        !write(*,*) "initial distal P ", P_current
 
     end subroutine
 
@@ -139,10 +141,14 @@ contains
 
     ! will need to re examine use of global variables
 
-    subroutine ComputeImplicitCoefficients(stepn)
+    subroutine ComputeImplicitCoefficients(stepn,y)
 
         use phcommonvars
         implicit none
+
+        real*8 y(nshg,ndof)
+
+        real*8 QSrf_temp(0:MAXSURF)
 
         integer stepn
 
@@ -152,6 +158,9 @@ contains
 
         call PdistInterpolate(Delt(1)*stepn,PDist_current(:))
         call PdistInterpolate(Delt(1)*(stepn+alfi),PDist_alpha(:))
+
+        call GetFlowQ(QSrf_temp,y(:,1:3),nsrflistGRCR,numGRCRsrfs) !get flow integral
+        Q_current(:) = QSrf_temp(1:numGRCRSrfs)
 
         RCoverDt(:) = parameters_RCR(2,:)*parameters_RCR(3,:) / ( Dt )
 
@@ -177,8 +186,14 @@ contains
         call GetFlowQ(QSrf_temp,y(:,1:3),nsrflistGRCR,numGRCRsrfs) !get flow integral
         Q_current(:) = QSrf_temp(1:numGRCRSrfs)
 
+        !write(*,*) "rank ", myrank, " distal Q ", Q_current
+
         P_current(:) =  coeff_1_implicit(:) * Q_current(:) + coeff_2_implicit(:)
 
+        !if (myrank .eq. 0) then
+        !write(*,*) "rank ", myrank, " distal P ", P_current
+
+        !end if
 
     end subroutine
 

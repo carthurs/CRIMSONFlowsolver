@@ -18,6 +18,7 @@ MAKE_WITH_ESTIMATOR = 1
 
 TARGET_FLOWSOLVER = flowsolver
 TARGET_ESTIMATOR = estimator
+TARGET_FORWARDANDOBSERVE = flowsolver_and_observer
 TARGET_POSTSOLVER = postsolver
 TARGET_PRESOLVER = presolver
  
@@ -26,13 +27,13 @@ MAKE_OPTIMIZED = 1
 ifeq ($(MAKE_OPTIMIZED),1)
    DEBUG_FLAGS     =
    DEBUG_FFLAGS    =
-   OPT_FLAGS       = -O2
-   OPT_FFLAGS      = -O2
+   OPT_FLAGS       = -O2 -fp-model precise
+   OPT_FFLAGS      = -O2 -align array64byte -fp-model source
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
    #LINK_EXE        = $(CXX) -o 
 else
-   DEBUG_FLAGS     = -O0 -g
-   DEBUG_FFLAGS    = -O0 -g
+   DEBUG_FLAGS     = -O0 -g -fp-model precise
+   DEBUG_FFLAGS    = -O0 -g -align array64byte -fp-model source -traceback -fp-stack-check
    OPT_FLAGS       =
    OPT_FFLAGS      =
    #LINK_EXE        = $(CXX) -o 
@@ -101,8 +102,10 @@ SELDON_INCDIR  = -I $(SELDON_TOP)/include/seldon
 LUA_LIBS = $(VERDANDI_TOP)/include/lua/src/liblua.a
 
 PETSC_TOP    = $(HOME_DIR)/../petsc-3.2-p7
-PETSC_INCDIR = -I $(PETSC_TOP)/include -I $(PETSC_TOP)/arch-linux2-c-opt/include
-PETSC_LIBS   = -L $(PETSC_TOP)/arch-linux2-c-opt/lib -lpetsc
+#PETSC_BUILD = arch-linux-intel-refblaslapack-opt
+PETSC_BUILD = arch-linux-intel-intelMKL-opt
+PETSC_INCDIR = -I $(PETSC_TOP)/include -I $(PETSC_TOP)/$(PETSC_BUILD)/include
+PETSC_LIBS   = -L $(PETSC_TOP)/$(PETSC_BUILD)/lib -lpetsc
 
 CGAL_TOP     = $(HOME_DIR)/../CGAL-install
 CGAL_INCDIR  = -I $(CGAL_TOP)/include
@@ -116,8 +119,13 @@ VTK_TOP    = $(HOME_DIR)/../VTK-install
 VTK_INCDIR = -I $(VTK_TOP)/include/vtk-5.8
 VTK_LIBS   = -L $(VTK_TOP)/lib/vtk-5.8 -lvtkGraphics -lvtkFiltering -lvtkGenericFiltering -lvtkIO -lvtkCommon -lvtksys 
 
-MKL_TOP      = /opt/intel/mkl
-MKL_LIBS     = -L $(MKL_TOP)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+BLASLAPACK_TOP    = /opt/intel/mkl
+BLASLAPACK_INCDIR = -I $(BLASLAPACK_TOP)/include
+BLASLAPACK_LIBS   = -L $(BLASLAPACK_TOP)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
+
+#BLASLAPACK_TOP    = /home/nxiao/dev/refblaslapack
+#BLASLAPACK_INCDIR = 
+#BLASLAPACK_LIBS   = -L $(BLASLAPACK_TOP) -llapack -lcblas -lblas
 
 
 %.$(OBJECTEXT): %.cxx

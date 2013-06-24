@@ -103,12 +103,14 @@
 
       subroutine dm_initialize()
       
+      implicit none
+
       integer kk
       
       do kk=1,numDataFrames
 
         call sphbmesh(kk)
-        call makebb(kk,6)
+        call makebb(kk,5)
 
       end do
       
@@ -133,7 +135,9 @@
 ! -------------------------------------------
 ! -------------------------------------------     
 
-        subroutine dm_cpmeshp3(currFr,p,closestpnt,distanceSq,nv)    
+        subroutine dm_cpmeshp3(currFr,p,closestpnt,distanceSq,nv)
+
+        implicit none
 
         integer currFr
         real*8, dimension(3) :: p   
@@ -295,6 +299,8 @@
 
         subroutine dm_cpmeshp2(currFr,p,closestpnt,distanceSq,nv) 
         
+        implicit none
+
         integer currFr 
         real*8, dimension(3) :: p   
         real*8, dimension(3) :: closestpnt,nv
@@ -340,6 +346,8 @@
 
         subroutine cpmeshpSph(currFr,toCheck,nCheck, &
                               p,closestpnt,distanceSq,nv) 
+
+        implicit none
         
         integer currFr 
         real*8, dimension(3) :: p   
@@ -457,6 +465,8 @@
 
         subroutine dm_cpmeshp1(currFr,p,closestpnt,distanceSq,nv) 
         
+        implicit none
+
         integer currFr 
         real*8, dimension(3) :: p   
         real*8, dimension(3) :: closestpnt,nv
@@ -504,6 +514,8 @@
 
         subroutine cpmeshp(currFr,toCheck,nCheck, &
                            p,closestpnt,distanceSq,nv) 
+
+        implicit none
         
         integer currFr 
         real*8, dimension(3) :: p   
@@ -596,6 +608,8 @@
 
         subroutine makebb(currFr,refine)
         
+        implicit none
+
         integer currFr,refine
         
 ! -------------------------------------------	   
@@ -756,7 +770,7 @@
 !           if necessary              
             if (nPerLev .gt. nPerLevG) then       
               
-              nPerLevG = nPerLevG + 8**(refine-1)
+              nPerLevG = nPerLevG + 8!**(refine-1)
               
 !              write(*,*) nPerLevG
               
@@ -1111,6 +1125,8 @@
 
         subroutine sphbmesh(currFr)
         
+        implicit none
+
         integer currFr
         integer kk
         
@@ -1142,6 +1158,8 @@
 
         subroutine cpaabb(p,box,distance)
         
+        implicit none
+
         real*8, dimension(3) :: p
         type(AABB) box
         real*8 distance,v
@@ -1185,6 +1203,8 @@
 
         subroutine fpaabb(p,box,distance)
         
+        implicit none
+
         real*8, dimension(3) :: p,fp,cent
         type(AABB) box
         real*8 distance
@@ -1237,6 +1257,8 @@
 ! -------------------------------------------
 ! -------------------------------------------
         subroutine cptrip(p,a,b,c,closestpnt,loc) bind(C, name="cptrip")
+
+        implicit none
        
         real*8, dimension(3) :: a 
         real*8, dimension(3) :: b 
@@ -1351,6 +1373,8 @@
 
         subroutine sphbt2(a,b,c,gcent,radius)
         
+        implicit none
+
         real*8, dimension(3) :: a,b,c,gcent
         real*8 radius,tr
         
@@ -1399,6 +1423,8 @@
 
         subroutine sphbt1(a,b,c,gcent,radius)
         
+        implicit none
+
         real*8, dimension(3) :: a,b,c,gcent
         real*8 radius
         
@@ -1460,6 +1486,8 @@
       
         subroutine rottriloc(a,b,c,al,bl,cl,T)
         
+        implicit none
+
         real*8, dimension(3) :: a,b,c,al,bl,cl
         real*8, dimension(3,3) :: T
         
@@ -1515,6 +1543,8 @@
 ! -------------------------------------------
 
         subroutine dm_dataread(filename)
+
+        implicit none
 
         character(*) :: filename
         
@@ -1670,6 +1700,8 @@
 
         function cross_product(a, b) 
         
+        implicit none
+
         real*8, dimension(3) :: a, b, cross_product
 
 ! -------------------------------------------
@@ -1702,6 +1734,8 @@
 
         subroutine pqInsert(qI,qA,qBack,ival,pval)
         
+        implicit none
+
         integer, dimension(:) :: qI
         real*8, dimension(:) :: qA
         integer qBack,ival
@@ -1772,6 +1806,8 @@
 ! -------------------------------------------            
       
         subroutine pqRemoveMax(qI,qA,qBack)
+
+        implicit none
           
         integer, dimension(:) :: qI  
         real*8, dimension(:) :: qA
@@ -1849,7 +1885,7 @@
 ! -------------------------------------------         
       
       subroutine DmeasureWallDistance
-      
+
       use measureWallDistance
       use phcommonvars
       implicit none
@@ -1857,32 +1893,32 @@
       integer ii,jj,kk,mm
       
       if(imeasdist.ne.0) then
-         do kk=1,numDataFrames
-            deallocate(dtfrs(kk)%coords)
-            deallocate(dtfrs(kk)%tris)     
-            deallocate(dtfrs(kk)%pntNrmls)     
-            deallocate(dtfrs(kk)%edgeNrmls)
-            deallocate(dtfrs(kk)%faceNrmls)
-            deallocate(dtfrs(kk)%sphc)
-            deallocate(dtfrs(kk)%sphr)
-            deallocate(dtfrs(kk)%qA)
-            deallocate(dtfrs(kk)%qI)
-            deallocate(dtfrs(kk)%toChBB)
-            deallocate(dtfrs(kk)%toChTri)
-                
-            do ii=1,dtfrs(kk)%nLev    
-               do jj=1,dtfrs(kk)%nPerLevG(ii)
-                  deallocate(dtfrs(kk)%octree(ii)%bb(jj)%tris)
-                  deallocate(dtfrs(kk)%octree(ii)%bb(jj)%child)
-               end do
-               deallocate(dtfrs(kk)%octree(ii)%bb)
-            end do
-            deallocate(dtfrs(kk)%octree)    
-                
-            deallocate(dtfrs(kk)%nPerLev)
-            deallocate(dtfrs(kk)%nPerLevG)
-         end do
-         deallocate(dtfrs)
+!         do kk=1,numDataFrames
+!            if (allocated(dtfrs(kk)%coords)) deallocate(dtfrs(kk)%coords)
+!            if (allocated(dtfrs(kk)%tris)) deallocate(dtfrs(kk)%tris)
+!            if (allocated(dtfrs(kk)%pntNrmls)) deallocate(dtfrs(kk)%pntNrmls)
+!            if (allocated(dtfrs(kk)%edgeNrmls)) deallocate(dtfrs(kk)%edgeNrmls)
+!            if (allocated(dtfrs(kk)%faceNrmls)) deallocate(dtfrs(kk)%faceNrmls)
+!            if (allocated(dtfrs(kk)%sphc)) deallocate(dtfrs(kk)%sphc)
+!            if (allocated(dtfrs(kk)%sphr)) deallocate(dtfrs(kk)%sphr)
+!            if (allocated(dtfrs(kk)%qA)) deallocate(dtfrs(kk)%qA)
+!            if (allocated(dtfrs(kk)%qI)) deallocate(dtfrs(kk)%qI)
+!            if (allocated(dtfrs(kk)%toChBB)) deallocate(dtfrs(kk)%toChBB)
+!            if (allocated(dtfrs(kk)%toChTri)) deallocate(dtfrs(kk)%toChTri)
+!
+!            do ii=1,dtfrs(kk)%nLev
+!               !do jj=1,dtfrs(kk)%nPerLevG(ii)
+!               !   if (allocated(dtfrs(kk)%octree(ii)%bb(jj)%tris)) deallocate(dtfrs(kk)%octree(ii)%bb(jj)%tris)
+!               !   if (allocated(dtfrs(kk)%octree(ii)%bb(jj)%child)) deallocate(dtfrs(kk)%octree(ii)%bb(jj)%child)
+!               !end do
+!               if (allocated(dtfrs(kk)%octree(ii)%bb)) deallocate(dtfrs(kk)%octree(ii)%bb)
+!            end do
+!            if (allocated(dtfrs(kk)%octree)) deallocate(dtfrs(kk)%octree)
+!
+!            if (allocated(dtfrs(kk)%nPerLev)) deallocate(dtfrs(kk)%nPerLev)
+!            if (allocated(dtfrs(kk)%nPerLevG)) deallocate(dtfrs(kk)%nPerLevG)
+!         end do
+         if (allocated(dtfrs)) deallocate(dtfrs)
       end if
       
       end      

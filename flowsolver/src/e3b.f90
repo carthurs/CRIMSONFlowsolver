@@ -3,9 +3,7 @@
                      shpb,    shglb, &
                      xlb,     xdistl,  xdnvl, &
                      rl,      sgn,     dwl,     xKebe, &
-                     SWB,     TWB,     &
-                     PS_global, &
-                     Kwall_xKebe)
+                     SWB)
 !
 !----------------------------------------------------------------------
 !
@@ -67,7 +65,7 @@
                   ul(npro,nshl,nsd),           acl(npro,nshl,ndof), &
                   rl(npro,nshl,nflow), &
                   xdistl(npro,nshl),           xdnvl(npro,nshl,nsd), &
-                  SWB(npro,nProps),            TWB(npro,2)
+                  SWB(npro,nProps)
 !
         dimension g1yi(npro,ndof),             g2yi(npro,ndof), &
                   g3yi(npro,ndof),             WdetJb(npro), &
@@ -91,19 +89,12 @@
 
         real*8    xmudmi(npro,ngauss),         dwl(npro,nshl)
 !
-      	dimension xKebe(npro,9,nshl,nshl), &
-                  rKwall_glob(npro,9,nshl,nshl)
-                 
-        real*8    Kwall_global(npro,9,9),  &
-                  PS_global(npro,9), &
-                  Kwall_xKebe(npro,9,nshl,nshl), &
-                  rsumall(npro,9,nshl,nshl)
+      	dimension xKebe(npro,9,nshl,nshl)
 
 !
 !.... compute the nodes which lie on the boundary (hierarchic)
 !
         call getbnodes(lnode)
-                
 !
 !.... loop through the integration points
 !
@@ -141,10 +132,11 @@
 !.... calculate the integraton variables
 !
         call e3bvar (yl,              acl,             ul, &
+                     iBCB,             BCB, &
                      shapeVar, &
                      shdrv, &         
                      xlb,             xdistl,          xdnvl, &
-                     lnode,           SWB,             TWB, &
+                     lnode,           SWB, &
                      WdetJb, &
                      bnorm,           pres, &
                      u1,              u2,              u3, &
@@ -154,8 +146,7 @@
                      usup1,           usup2, &
                      velsup, &
                      rlKwall, &
-                     xKebe, &           !rKwall_glob,
-                     Kwall_global,    PS_global)
+                     xKebe)
         
 !        
 !.... -----------------> boundary conditions <-------------------
@@ -451,17 +442,6 @@
 !
         enddo
         
-        !if(ideformwall.eq.1) then
-!
-!.... -----> Wall Stiffness and Mass matrices for implicit LHS  <-----------
-!
-!.... Now we simply have to add the stiffness contribution in rKwall_glob to
-!.... the mass contribution already contained in xKebe
-
-!           xKebe = xKebe*iwallmassfactor+ &
-!                   evw*Kwall_xKebe*(iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi) ! bring in elastic modulus
-
-        !endif
 !$$$        ttim(40) = ttim(40) + tmr()
 !
 !.... return

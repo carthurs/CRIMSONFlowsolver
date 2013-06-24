@@ -207,129 +207,129 @@
 !..dumping common (useful for checking differences with
 !        old format input
 !
-        if(myrank.eq.master) then
-        mxats=1
-        open (unit=23,   file="dumpnew.dat",   status='unknown')
-        write (23,*)" master, numpe, myrank"
-        write (23,*) master, numpe, myrank
-        write (23,*)" maxfront, nlwork"
-        write (23,*) maxfront, nlwork
-        write (23,*)"  numper, nshgt, nshg0"
-        write (23,*)  numper, nshgt, nshg0
-        write (23,*) " birth, death, comtim"
-        write (23,*)  birth, death, comtim
-        write (23,*)"  pzero, wtavei,dtavei, dke, ierrcalc,"
-        write (23,*)  pzero, wtavei,dtavei, dke, ierrcalc, &
-                         itwmod,taucfct
-        write (23,*)"irscale, intpres,rxinlt, rxrecy,"
-        write (23,*)irscale, intpres,rxinlt, rxrecy, &
-                  rbltin,rvscal,  xlngth, ylngth, zlngth 
- 
-        write (23,*)"  scdiff(5),nsclr,isclr,nsolt"
-        write (23,*)  scdiff(5),nsclr,isclr,nsolt
-        write (23,*) " flxID(10,20), Force(3),HFlux, nsrflist(0:20)"
-        write (23,*)  flxID(10,20), Force(3),HFlux, nsrflist(0:20)
-        write (23,*) " numnp,  numel,  numelb, numpbc, nen,    nfaces,"
-        write (23,*)  numnp,  numel,  numelb, numpbc, nen,    nfaces, &
-                        numflx, ndof,   iALE,   icoord, navier, &
-                        irs,    iexec,  necho,  ichem,  iRK,    nedof, &
-                        nshg,   nnz,    istop,  nflow,  nnz_tot, idtn, &
-                        iLSet
-        write (23,*)"  epsilon_ls, epsilon_lsd, dtlset"
-        write (23,*)  epsilon_ls, epsilon_lsd, dtlset
-        write (23,*)" nshape, nshapeb, maxshb,"
-        write (23,*) nshape, nshapeb, maxshb, &
-                        nshl, nshlb,nfath,  ntopsh,  nsonmax
-        write (23,*) " mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb,"
-        write (23,*)  mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb, &
-                        mmut,   mrhot,  mxst
-        write (23,*)" mcsyst, melCat, nenCat(8,3),    nfaCat(8,3)"
-        write (23,*) mcsyst, melCat, nenCat(8,3),    nfaCat(8,3)
- 
-        write (23,*)" lelCat, lcsyst, iorder, nenb, "  
-        write (23,*) lelCat, lcsyst, iorder, nenb,    &
-                        nelblk, nelblb, ndofl,  nsymdl, nenl,   nfacel, &
-                        nenbl,  intind, mattyp 
-        write (23,*)" E3nsd,  I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB,"
-        write (23,*) E3nsd,  I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB, &
-                        Jactyp, jump,   ires,   iprec,  ibound, &
-                        idiff,  lhs,    itau,   ipord,  ipred,  lstres, &
-                        iepstm, dtsfct, ibksiz, iabc
-        write (23,*)"  epstol(mxats),  Delt(mxats),"
-        write (23,*)  epstol(mxats),  Delt(mxats),     nstep(mxats),  &
-                        impl(mxats),    rhoinf(mxats), &
-                        LHSupd(mxats),  loctim(mxats),  deltol(mxats,2)
-
-        write (23,*)" intg(2,mxats),  intpt(3),       intptb(3)"
-        write (23,*) intg(2,mxats),  intpt(3),       intptb(3)
-        write (23,*) " indQpt(3,3,4),  numQpt(3,3,4),"
-        write (23,*)  indQpt(3,3,4),  numQpt(3,3,4), &
-                        intmax
-        write (23,*)" iin,    igeom,  ipar,   ibndc,  imat,   iecho,"
-        write (23,*) iin,    igeom,  ipar,   ibndc,  imat,   iecho, &
-                        iout,   ichmou, irstin, irstou, ihist,  iflux, &
-                        ierror, itable, iforce, igraph, itime 
-        write (23,*)"fwr1,ngaussf,idim,nlist "
-        write (23,*)fwr1,ngaussf,idim,nlist 
-        write (23,*) " fin,    fgeom,  fpar,   fbndc,  fmat,   fecho,"
-        write (23,*)  fin,    fgeom,  fpar,   fbndc,  fmat,   fecho, &
-                        frstin, frstou, fhist,  ferror, ftable, fforce, &
-                        fgraph, ftime 
-        write (23,*)" fin,    fgeom,  fpar,   fbndc,  fmat,   fecho,"
-        write (23,*) fin,    fgeom,  fpar,   fbndc,  fmat,   fecho, &
-                        frstin, frstou, fhist,  ferror, ftable, fforce, &
-                        fgraph, ftime 
-        write (23,*)" eGMRES, lGMRES, iKs,    ntotGM "
-        write (23,*) eGMRES, lGMRES, iKs,    ntotGM 
-        write (23,*) " mHBrg,  meBrg,  myBrg,  mRcos,  mRsin"
-        write (23,*)  mHBrg,  meBrg,  myBrg,  mRcos,  mRsin
+!        if(myrank.eq.master) then
+!        mxats=1
+!        open (unit=23,   file="dumpnew.dat",   status='unknown')
+!        write (23,*)" master, numpe, myrank"
+!        write (23,*) master, numpe, myrank
+!        write (23,*)" maxfront, nlwork"
+!        write (23,*) maxfront, nlwork
+!        write (23,*)"  numper, nshgt, nshg0"
+!        write (23,*)  numper, nshgt, nshg0
+!        write (23,*) " birth, death, comtim"
+!        write (23,*)  birth, death, comtim
+!        write (23,*)"  pzero, wtavei,dtavei, dke, ierrcalc,"
+!        write (23,*)  pzero, wtavei,dtavei, dke, ierrcalc, &
+!                         itwmod,taucfct
+!        write (23,*)"irscale, intpres,rxinlt, rxrecy,"
+!        write (23,*)irscale, intpres,rxinlt, rxrecy, &
+!                  rbltin,rvscal,  xlngth, ylngth, zlngth
 !
-        write (23,*)" pr,     Planck, Stefan, Nh,     Rh,     Rgas,"
-        write (23,*) pr,     Planck, Stefan, Nh,     Rh,     Rgas, &
-                        gamma,  gamma1, s0,     const,  xN2,    xO2, &
-                        yN2,    yO2,    Msh(5), cpsh(5),s0sh(5),h0sh(5), &
-                        Rs(5),  cps(5), cvs(5), h0s(5), Trot(5),sigs(5), &
-                        Tvib(5),g0s(5), dofs(5),ithm 
-        write (23,*) " mexist"
-        write (23,*)  mexist
-        write (23,*) " datmat(3,5,mxats),      matflg(5,mxats),"
-        write (23,*)  datmat(3,5,mxats),      matflg(5,mxats), &
-                        nummat,                 mexist
-        write (23,*)"ro,     vel,    temper, press,  entrop, ntout,"
-        write (23,*)ro,     vel,    temper, press,  entrop, ntout, &
-                        ioform 
-        write (23,*)"mbeg,   mend,   mprec "
-        write (23,*)mbeg,   mend,   mprec 
-        write (23,*)"epsM,   iabres, npro,resfrt"
-        write (23,*)epsM,   iabres, npro,resfrt
-        write (23,*)"  imap,   ivart,  iDC,    iPcond, Kspace, nGMRES"
-        write (23,*)  imap,   ivart,  iDC,    iPcond, Kspace, nGMRES
+!        write (23,*)"  scdiff(5),nsclr,isclr,nsolt"
+!        write (23,*)  scdiff(5),nsclr,isclr,nsolt
+!        write (23,*) " flxID(10,20), Force(3),HFlux, nsrflist(0:20)"
+!        write (23,*)  flxID(10,20), Force(3),HFlux, nsrflist(0:20)
+!        write (23,*) " numnp,  numel,  numelb, numpbc, nen,    nfaces,"
+!        write (23,*)  numnp,  numel,  numelb, numpbc, nen,    nfaces, &
+!                        numflx, ndof,   iALE,   icoord, navier, &
+!                        irs,    iexec,  necho,  ichem,  iRK,    nedof, &
+!                        nshg,   nnz,    istop,  nflow,  nnz_tot, idtn, &
+!                        iLSet
+!        write (23,*)"  epsilon_ls, epsilon_lsd, dtlset"
+!        write (23,*)  epsilon_ls, epsilon_lsd, dtlset
+!        write (23,*)" nshape, nshapeb, maxshb,"
+!        write (23,*) nshape, nshapeb, maxshb, &
+!                        nshl, nshlb,nfath,  ntopsh,  nsonmax
+!        write (23,*) " mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb,"
+!        write (23,*)  mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb, &
+!                        mmut,   mrhot,  mxst
+!        write (23,*)" mcsyst, melCat, nenCat(8,3),    nfaCat(8,3)"
+!        write (23,*) mcsyst, melCat, nenCat(8,3),    nfaCat(8,3)
+!
+!        write (23,*)" lelCat, lcsyst, iorder, nenb, "
+!        write (23,*) lelCat, lcsyst, iorder, nenb,    &
+!                        nelblk, nelblb, ndofl,  nsymdl, nenl,   nfacel, &
+!                        nenbl,  intind, mattyp
+!        write (23,*)" E3nsd,  I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB,"
+!        write (23,*) E3nsd,  I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB, &
+!                        Jactyp, jump,   ires,   iprec,  ibound, &
+!                        idiff,  lhs,    itau,   ipord,  ipred,  lstres, &
+!                        iepstm, dtsfct, ibksiz, iabc
+!        write (23,*)"  epstol(mxats),  Delt(mxats),"
+!        write (23,*)  epstol(mxats),  Delt(mxats),     nstep(mxats),  &
+!                        impl(mxats),    rhoinf(mxats), &
+!                        LHSupd(mxats),  loctim(mxats),  deltol(mxats,2)
+!
+!        write (23,*)" intg(2,mxats),  intpt(3),       intptb(3)"
+!        write (23,*) intg(2,mxats),  intpt(3),       intptb(3)
+!        write (23,*) " indQpt(3,3,4),  numQpt(3,3,4),"
+!        write (23,*)  indQpt(3,3,4),  numQpt(3,3,4), &
+!                        intmax
+!        write (23,*)" iin,    igeom,  ipar,   ibndc,  imat,   iecho,"
+!        write (23,*) iin,    igeom,  ipar,   ibndc,  imat,   iecho, &
+!                        iout,   ichmou, irstin, irstou, ihist,  iflux, &
+!                        ierror, itable, iforce, igraph, itime
+!        write (23,*)"fwr1,ngaussf,idim,nlist "
+!        write (23,*)fwr1,ngaussf,idim,nlist
+!        write (23,*) " fin,    fgeom,  fpar,   fbndc,  fmat,   fecho,"
+!        write (23,*)  fin,    fgeom,  fpar,   fbndc,  fmat,   fecho, &
+!                        frstin, frstou, fhist,  ferror, ftable, fforce, &
+!                        fgraph, ftime
+!        write (23,*)" fin,    fgeom,  fpar,   fbndc,  fmat,   fecho,"
+!        write (23,*) fin,    fgeom,  fpar,   fbndc,  fmat,   fecho, &
+!                        frstin, frstou, fhist,  ferror, ftable, fforce, &
+!                        fgraph, ftime
+!        write (23,*)" eGMRES, lGMRES, iKs,    ntotGM "
+!        write (23,*) eGMRES, lGMRES, iKs,    ntotGM
+!        write (23,*) " mHBrg,  meBrg,  myBrg,  mRcos,  mRsin"
+!        write (23,*)  mHBrg,  meBrg,  myBrg,  mRcos,  mRsin
 
-        write (23,*)" indsym(5,5) "
-        write (23,*) indsym(5,5) 
-        write (23,*) " time,   CFLfld, CFLsld, Dtgl,   Dtmax,  alpha,"
-        write (23,*)  time,   CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
-                        etol,   lstep,  ifunc,  itseq,  istep,  iter, &
-                        nitr,   almi,   alfi,   gami,   flmpl,  flmpr, &
-                        dtol(2) 
-        write (23,*) "LCtime, ntseq"
-        write (23,*) LCtime, ntseq
-        write (23,*) " numeqns(100), minIters, maxIters," 
-        write (23,*)  numeqns(100), minIters, maxIters,  &
-                        iprjFlag,     nPrjs,    ipresPrjFlag, nPresPrjs, &
-                        prestol,      statsflow(6), statssclr(6), &
-                        iverbose
-        write (23,*) " ccode" 
-        write (23,*)  ccode 
-        write (23,*) " flops,  gbytes, sbytes, iclock, icd,    icode,"
-        write (23,*)  flops,  gbytes, sbytes, iclock, icd,    icode, &
-                        icode2, icode3
-        write (23,*) " cpu(11),        cpu0(11),       nacess(11)"
-        write (23,*)  cpu(11),        cpu0(11),       nacess(11)
-        write (23,*) " title,  ititle"
-        write (23,*)  title,  ititle
-        close (23)
-        endif
+!        write (23,*)" pr,     Planck, Stefan, Nh,     Rh,     Rgas,"
+!        write (23,*) pr,     Planck, Stefan, Nh,     Rh,     Rgas, &
+!                        gamma,  gamma1, s0,     const,  xN2,    xO2, &
+!                        yN2,    yO2,    Msh(5), cpsh(5),s0sh(5),h0sh(5), &
+!                        Rs(5),  cps(5), cvs(5), h0s(5), Trot(5),sigs(5), &
+!                        Tvib(5),g0s(5), dofs(5),ithm
+!        write (23,*) " mexist"
+!        write (23,*)  mexist
+!        write (23,*) " datmat(3,5,mxats),      matflg(5,mxats),"
+!        write (23,*)  datmat(3,5,mxats),      matflg(5,mxats), &
+!                        nummat,                 mexist
+!        write (23,*)"ro,     vel,    temper, press,  entrop, ntout,"
+!        write (23,*)ro,     vel,    temper, press,  entrop, ntout, &
+!                        ioform
+!        write (23,*)"mbeg,   mend,   mprec "
+!        write (23,*)mbeg,   mend,   mprec
+!        write (23,*)"epsM,   iabres, npro,resfrt"
+!        write (23,*)epsM,   iabres, npro,resfrt
+!        write (23,*)"  imap,   ivart,  iDC,    iPcond, Kspace, nGMRES"
+!        write (23,*)  imap,   ivart,  iDC,    iPcond, Kspace, nGMRES
+!
+!        write (23,*)" indsym(5,5) "
+!        write (23,*) indsym(5,5)
+!        write (23,*) " time,   CFLfld, CFLsld, Dtgl,   Dtmax,  alpha,"
+!        write (23,*)  time,   CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
+!                        etol,   lstep,  ifunc,  itseq,  istep,  iter, &
+!                        nitr,   almi,   alfi,   gami,   flmpl,  flmpr, &
+!                        dtol(2)
+!        write (23,*) "LCtime, ntseq"
+!        write (23,*) LCtime, ntseq
+!        write (23,*) " numeqns(100), minIters, maxIters,"
+!        write (23,*)  numeqns(100), minIters, maxIters,  &
+!                        iprjFlag,     nPrjs,    ipresPrjFlag, nPresPrjs, &
+!                        prestol,      statsflow(6), statssclr(6), &
+!                        iverbose
+!        write (23,*) " ccode"
+!        write (23,*)  ccode
+!        write (23,*) " flops,  gbytes, sbytes, iclock, icd,    icode,"
+!        write (23,*)  flops,  gbytes, sbytes, iclock, icd,    icode, &
+!                        icode2, icode3
+!        write (23,*) " cpu(11),        cpu0(11),       nacess(11)"
+!        write (23,*)  cpu(11),        cpu0(11),       nacess(11)
+!        write (23,*) " title,  ititle"
+!        write (23,*)  title,  ititle
+!        close (23)
+!        endif
 !
 !....return
 !

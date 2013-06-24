@@ -1,6 +1,6 @@
-        subroutine gensvbDef (ientmp, iBCBtmp, BCBtmp, SWBtmp,  TWBtmp, &
+        subroutine gensvbDef (ientmp, iBCBtmp, BCBtmp, SWBtmp,  &
                               mattmp, ienb,    iBCB,   BCB,     &
-                              SWB,    TWB,  materb)
+                              SWB,    materb)
 !
 !----------------------------------------------------------------------
 !
@@ -11,7 +11,6 @@
 !  iBCtmp (npro,ndiBCB)         : boundary condition codes
 !  BCBtmp (npro,nshlb,ndBCB)    : boundary condition values
 !  SWBtmp (npro,nProps)         : Vessel Wall Properties
-!  TWBtmp (npro,2)              : Tissue Support Properties
 !  mattmp (npro)                : material type flag
 !
 ! output:
@@ -19,7 +18,6 @@
 !  iBCB   (npro,ndiBCB)         : boundary condition codes
 !  BCB    (npro,nshlb,ndBCB)    : boundary condition values
 !  SWB    (npro,nProps)         : Vessel Wall Properties
-!  TWB    (npro,2)              : Tissue Support Properties
 !  materb (npro)                : material type flag
 !
 !
@@ -32,8 +30,7 @@
 !
         dimension   ientmp(npro,nshl), &
                     iBCBtmp(npro,ndiBCB),    BCBtmp(npro,ndBCB), &
-                    SWBtmp(npro,nProps),     SWB(npro,nProps), &
-                    TWBtmp(npro,2),          TWB(npro,2)
+                    SWBtmp(npro,nProps),     SWB(npro,nProps)
 
         dimension   mattmp(npro),           ienb(npro,nshl), &
                     iBCB(npro,ndiBCB),      BCB(npro,nshlb,ndBCB), &
@@ -59,13 +56,6 @@
 
         SWB(:,3) = SWBtmp(:,4)
         SWB(:,4) = SWBtmp(:,3)
-
-!
-!.... save the tissue support properties array
-!        
-        do i = 1, 2
-          TWB(:,i) = TWBtmp(:,i)
-        enddo
          
 !
 !.... save the boundary element data

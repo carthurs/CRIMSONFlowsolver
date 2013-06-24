@@ -9,908 +9,917 @@
 ! Zdenek Johan, Winter 1991.  (Fortran 90)
 !----------------------------------------------------------------------
 module phcommonvars
-  use iso_c_binding
-  IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-!
-!.... parameters  IF YOU CHANGE THESE YOU HAVE TO CHANGE THEM IN
-!                  common_c.h ALSO
-!
-  parameter     ( MAXBLK = 500000, MAXTS = 100)
-  parameter     ( MAXSH = 32, NSD = 3 )
-  parameter     ( maxtask = 256 ) ! this used to be in auxmpi.h
-!
-!  The five types of region topology are  1= Tet, 2=Hex, 3= Wedge (tri-start),
-!                                         4= Wedge (quad-first) 5=pyramid
-!
-!  The two types of face topology are  1= tri, 2=quad
-!
-  parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255 )
+    use iso_c_binding
+    IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+    !
+    !.... parameters  IF YOU CHANGE THESE YOU HAVE TO CHANGE THEM IN
+    !                  common_c.h ALSO
+    !
+    parameter     ( MAXBLK = 500000, MAXTS = 100)
+    parameter     ( MAXSH = 32, NSD = 3 )
+    parameter     ( maxtask = 256 ) ! this used to be in auxmpi.h
+    !
+    !  The five types of region topology are  1= Tet, 2=Hex, 3= Wedge (tri-start),
+    !                                         4= Wedge (quad-first) 5=pyramid
+    !
+    !  The two types of face topology are  1= tri, 2=quad
+    !
+    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255 )
   
-! the common block nomodule holds all the things which have been removed
-! from different modules
+    ! the common block nomodule holds all the things which have been removed
+    ! from different modules
 
-! the next two used to be in auxmpi.h
-!----------------------------------------------------------
-  integer INEWCOMM
-  common /newcom/ INEWCOMM
-  bind(C, name="newcom") :: /newcom/
-!----------------------------------------------------------
+    ! the next two used to be in auxmpi.h
+    !----------------------------------------------------------
+    integer INEWCOMM
+    common /newcom/ INEWCOMM
+    bind(C, name="newcom") :: /newcom/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer sevsegtype(maxtask,15)
-  common /newtyp/ sevsegtype
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    integer sevsegtype(maxtask,15)
+    common /newtyp/ sevsegtype
+    !----------------------------------------------------------
 
-!----------------------------------------------------------      
-  real*8            bcttimescale,ValueListResist(0:MAXSURF), &
-                    rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
-                    tissSuppStiffCoeff, tissSuppDampCoeff, &
-                    stateFilterCoeff, &
-                    rescontrol,ResCriteria
-  integer           icardio, itvn, ipvsq, &
-                    incp, numINCPSrfs, nsrflistINCP(0:MAXSURF),incpfile, &
-                    numResistSrfs, nsrflistResist(0:MAXSURF), &
-                    numImpSrfs, nsrflistImp(0:MAXSURF),impfile, &
-                    numRCRSrfs, nsrflistRCR(0:MAXSURF),ircrfile, &
-                    numTRCRSrfs,nsrflistTRCR(0:MAXSURF),itrcrfile, &
-                    numCORSrfs, nsrflistCOR(0:MAXSURF),icorfile, &
-                    numVisFluxSrfs, nsrflistVisFlux(0:MAXSURF), &
-                    numCalcSrfs, nsrflistCalc(0:MAXSURF), &
-                    numDirCalcSrfs,nsrflistDirCalc(0:MAXSURF), &
-                    Lagrange,numLagrangeSrfs,nsrflistLagrange(0:MAXSURF),iLagfile, &
-                    MinNumIter, &
-                    ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
-                    iUseSWB, iUseTWB, &
-                    numevw, &
-                    iwalldamp, iwallsupp, imeasdist, idistancenudge, &
-                    iinitialprestress
-  common /nomodule/ bcttimescale,ValueListResist, &
-                    rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
-                    tissSuppStiffCoeff, tissSuppDampCoeff, &
-                    stateFilterCoeff, &
-                    rescontrol,ResCriteria, &
-                    icardio, itvn, ipvsq, &
-                    incp, numINCPSrfs, nsrflistINCP,incpfile, &
-                    numResistSrfs, nsrflistResist, &
-                    numImpSrfs, nsrflistImp,impfile, &
-                    numRCRSrfs, nsrflistRCR,ircrfile, &
-                    numTRCRSrfs,nsrflistTRCR,itrcrfile, &
-                    numCORSrfs, nsrflistCOR,icorfile, &
-                    numVisFluxSrfs, nsrflistVisFlux, &
-                    numCalcSrfs, nsrflistCalc, &
-                    numDirCalcSrfs,nsrflistDirCalc, &
-                    Lagrange,numLagrangeSrfs,nsrflistLagrange,iLagfile, &
-                    MinNumIter, &
-                    ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
-                    iUseSWB, iUseTWB, &
-                    numevw, &
-                    iwalldamp, iwallsupp, imeasdist, idistancenudge, &
-                    iinitialprestress
-  bind(C, name="nomodule") :: /nomodule/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    real*8            bcttimescale,ValueListResist(0:MAXSURF), &
+        rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
+        ValueListWallE(0:MAXSURF), &
+        ValueListWallh(0:MAXSURF), &
+        tissSuppStiffCoeff, tissSuppDampCoeff, &
+        stateFilterCoeff, &
+        rescontrol,ResCriteria
+    integer           icardio, itvn, ipvsq, &
+        incp, numINCPSrfs, nsrflistINCP(0:MAXSURF),incpfile, &
+        numResistSrfs, nsrflistResist(0:MAXSURF), &
+        numImpSrfs, nsrflistImp(0:MAXSURF),impfile, &
+        numRCRSrfs, nsrflistRCR(0:MAXSURF),ircrfile, &
+        numTRCRSrfs,nsrflistTRCR(0:MAXSURF),itrcrfile, &
+        numCORSrfs, nsrflistCOR(0:MAXSURF),icorfile, &
+        numVisFluxSrfs, nsrflistVisFlux(0:MAXSURF), &
+        numCalcSrfs, nsrflistCalc(0:MAXSURF), &
+        numDirCalcSrfs,nsrflistDirCalc(0:MAXSURF), &
+        Lagrange,numLagrangeSrfs,nsrflistLagrange(0:MAXSURF),iLagfile, &
+        MinNumIter, &
+        ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
+        iUseSWB, &
+        numWallRegions, nsrflistWallRegions(0:MAXSURF), &
+        iwalldamp, iwallsupp, imeasdist, idistancenudge, &
+        iinitialprestress, iupdateprestress
+    common /nomodule/ bcttimescale,ValueListResist, &
+        rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
+        ValueListWallE, &
+        ValueListWallh, &
+        tissSuppStiffCoeff, tissSuppDampCoeff, &
+        stateFilterCoeff, &
+        rescontrol,ResCriteria, &
+        icardio, itvn, ipvsq, &
+        incp, numINCPSrfs, nsrflistINCP,incpfile, &
+        numResistSrfs, nsrflistResist, &
+        numImpSrfs, nsrflistImp,impfile, &
+        numRCRSrfs, nsrflistRCR,ircrfile, &
+        numTRCRSrfs,nsrflistTRCR,itrcrfile, &
+        numCORSrfs, nsrflistCOR,icorfile, &
+        numVisFluxSrfs, nsrflistVisFlux, &
+        numCalcSrfs, nsrflistCalc, &
+        numDirCalcSrfs,nsrflistDirCalc, &
+        Lagrange,numLagrangeSrfs,nsrflistLagrange,iLagfile, &
+        MinNumIter, &
+        ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
+        iUseSWB, &
+        numWallRegions, nsrflistWallRegions, &
+        iwalldamp, iwallsupp, imeasdist, idistancenudge, &
+        iinitialprestress, iupdateprestress
+    bind(C, name="nomodule") :: /nomodule/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer              numGRCRSrfs,nsrflistGRCR(0:MAXSURF),igrcrfile
-  common /grcrbccom/   numGRCRSrfs,nsrflistGRCR,igrcrfile
-  bind(C, name="grcrbccom") :: /grcrbccom/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    integer              numGRCRSrfs,nsrflistGRCR(0:MAXSURF),igrcrfile
+    common /grcrbccom/   numGRCRSrfs,nsrflistGRCR,igrcrfile
+    bind(C, name="grcrbccom") :: /grcrbccom/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer seqsize, stepseq(100)
-  common /sequence/ seqsize, stepseq
-  bind(C, name="sequence") :: /sequence/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer seqsize, stepseq(100)
+    common /sequence/ seqsize, stepseq
+    bind(C, name="sequence") :: /sequence/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer :: master != 0
-  integer numpe, myrank
-  common /workfc/ master, numpe, myrank
-  bind(C, name="workfc") :: /workfc/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer :: master != 0
+    integer numpe, myrank
+    common /workfc/ master, numpe, myrank
+    bind(C, name="workfc") :: /workfc/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer, target ::  maxfront
-  integer, target ::  nlwork
-  common /fronts/ maxfront, nlwork
-  bind(C, name="fronts") :: /fronts/
-!----------------------------------------------------------    
+    !----------------------------------------------------------
+    integer, target ::  maxfront
+    integer, target ::  nlwork
+    common /fronts/ maxfront, nlwork
+    bind(C, name="fronts") :: /fronts/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer numper, nshgt, nshg0
-  common /newdim/ numper, nshgt, nshg0  
-  bind(C, name="newdim") :: /newdim/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer numper, nshgt, nshg0
+    common /newdim/ numper, nshgt, nshg0
+    bind(C, name="newdim") :: /newdim/
+    !----------------------------------------------------------
  
-!----------------------------------------------------------   
-  real*8 birth, death, comtim
-  common /timer4/ birth, death, comtim
-  bind(C, name="timer4") :: /timer4/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8 birth, death, comtim
+    common /timer4/ birth, death, comtim
+    bind(C, name="timer4") :: /timer4/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------    
-  real*8 ttim(100)
-  common /extrat/ ttim
-  bind(C, name="extrat") :: /extrat/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8 ttim(100)
+    common /extrat/ ttim
+    bind(C, name="extrat") :: /extrat/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------    
-  real*8             zoutSponge, radSponge, zinSponge, &
-                     grthOSponge,grthISponge,betamax
-  integer            spongecontinuity, spongemomentum1, spongemomentum2, &
-                     spongeenergy, spongemomentum3
-  common /spongevar/ zoutSponge, radSponge, zinSponge, &
-                     grthOSponge,grthISponge,betamax, &
-                     spongecontinuity, spongemomentum1, spongemomentum2, &
-                     spongeenergy, spongemomentum3                     
-  bind(C, name="spongevar") :: /spongevar/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    real*8             zoutSponge, radSponge, zinSponge, &
+        grthOSponge,grthISponge,betamax
+    integer            spongecontinuity, spongemomentum1, spongemomentum2, &
+        spongeenergy, spongemomentum3
+    common /spongevar/ zoutSponge, radSponge, zinSponge, &
+        grthOSponge,grthISponge,betamax, &
+        spongecontinuity, spongemomentum1, spongemomentum2, &
+        spongeenergy, spongemomentum3
+    bind(C, name="spongevar") :: /spongevar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8           eles,ylimit(3,9), rmutarget, pzero,  wtavei, &
-                   dtavei, dke,  fwr1, flump
-  integer          ierrcalc, ihessian, itwmod, ngaussf,idim, &
-                   nlist, nintf(MAXTOP), sonfathvar
-  common /turbvar/ eles,ylimit, rmutarget, pzero,  wtavei, &
-                   dtavei, dke,  fwr1, flump, &
-                   ierrcalc, ihessian, itwmod, ngaussf,idim, &
-                   nlist, nintf
-  bind(C, name="turbvar") :: /turbvar/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    real*8           eles,ylimit(3,9), rmutarget, pzero,  wtavei, &
+        dtavei, dke,  fwr1, flump
+    integer          ierrcalc, ihessian, itwmod, ngaussf,idim, &
+        nlist, nintf(MAXTOP), sonfathvar
+    common /turbvar/ eles,ylimit, rmutarget, pzero,  wtavei, &
+        dtavei, dke,  fwr1, flump, &
+        ierrcalc, ihessian, itwmod, ngaussf,idim, &
+        nlist, nintf
+    bind(C, name="turbvar") :: /turbvar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer           iRANS, iLES, isubmod, ifproj, i2filt, &
-                    modlstats, idis, nohomog, ierrsmooth
-  common /turbvari/ iRANS, iLES, isubmod, ifproj, i2filt, &
-                    modlstats, idis, nohomog, ierrsmooth                    
-  bind(C, name="turbvari") :: /turbvari/
-!---------------------------------------------------------- 
+    !----------------------------------------------------------
+    integer           iRANS, iLES, isubmod, ifproj, i2filt, &
+        modlstats, idis, nohomog, ierrsmooth
+    common /turbvari/ iRANS, iLES, isubmod, ifproj, i2filt, &
+        modlstats, idis, nohomog, ierrsmooth
+    bind(C, name="turbvari") :: /turbvari/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------   
-  integer          irscale, intpres
-  real*8           plandist, &
-                   thetag, ds, tolerence, radcyl, rbltin, rvscal
-  common /spebcvr/ irscale, intpres, &
-                   plandist, &
-                   thetag, ds, tolerence, radcyl, rbltin, rvscal
-  bind(C, name="spebcvr") :: /spebcvr/
-!----------------------------------------------------------   
+    !----------------------------------------------------------
+    integer          irscale, intpres
+    real*8           plandist, &
+        thetag, ds, tolerence, radcyl, rbltin, rvscal
+    common /spebcvr/ irscale, intpres, &
+        plandist, &
+        thetag, ds, tolerence, radcyl, rbltin, rvscal
+    bind(C, name="spebcvr") :: /spebcvr/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  real*8         scdiff(5), tdecay
-  integer        nsclr, isclr, nsolt, nosource
-  integer        consrv_sclr_conv_vel
-  common /sclrs/ scdiff, tdecay, &
-                 nsclr, isclr, nsolt, nosource, &
-                 consrv_sclr_conv_vel
-  bind(C, name="sclrs") :: /sclrs/
-!----------------------------------------------------------   
-! 
-!.... common blocks
-!
-  parameter (MAXQPT = 125)
-!
-!.... common blocks for hierarchic basis functions
-!
-!----------------------------------------------------------   
-  real*8          Qpt (MAXTOP,4,MAXQPT),  Qwt (MAXTOP,MAXQPT), &
-                  Qptb(MAXTOP,4,MAXQPT),  Qwtb(MAXTOP,MAXQPT)
-  integer         nint(MAXTOP),           nintb(MAXTOP), &
-                  ngauss,                 ngaussb,   intp, &
-                  maxnint
-  common /intpt/  Qpt                  ,  Qwt                , &
-                  Qptb                 ,  Qwtb               , &
-                  nint,                   nintb, &
-                  ngauss,                 ngaussb,   intp, &
-                  maxnint                  
-!----------------------------------------------------------                     
+    !----------------------------------------------------------
+    real*8         scdiff(5), tdecay
+    integer        nsclr, isclr, nsolt, nosource
+    integer        consrv_sclr_conv_vel
+    common /sclrs/ scdiff, tdecay, &
+        nsclr, isclr, nsolt, nosource, &
+        consrv_sclr_conv_vel
+    bind(C, name="sclrs") :: /sclrs/
+    !----------------------------------------------------------
+    !
+    !.... common blocks
+    !
+    parameter (MAXQPT = 125)
+    !
+    !.... common blocks for hierarchic basis functions
+    !
+    !----------------------------------------------------------
+    real*8          Qpt (MAXTOP,4,MAXQPT),  Qwt (MAXTOP,MAXQPT), &
+        Qptb(MAXTOP,4,MAXQPT),  Qwtb(MAXTOP,MAXQPT)
+    integer         nint(MAXTOP),           nintb(MAXTOP), &
+        ngauss,                 ngaussb,   intp, &
+        maxnint
+    common /intpt/  Qpt                  ,  Qwt                , &
+        Qptb                 ,  Qwtb               , &
+        nint,                   nintb, &
+        ngauss,                 ngaussb,   intp, &
+        maxnint
+    !----------------------------------------------------------
   
-! nsrflist is a binary switch that tells us if a given srfID should be
-! included in the consistent flux calculation.  It starts from zero
-! since we need to be able to handle/ignore surfaces with no srfID attached
-!
-! flxID(numfluxes,nIDs+1)
-! numfluxes = area, mass, fx, fy, fz, heat, scalar_flux_{1,2,3,4}
-! nIDs currently set to MAXSURF, each surface has its own
-!
+    ! nsrflist is a binary switch that tells us if a given srfID should be
+    ! included in the consistent flux calculation.  It starts from zero
+    ! since we need to be able to handle/ignore surfaces with no srfID attached
+    !
+    ! flxID(numfluxes,nIDs+1)
+    ! numfluxes = area, mass, fx, fy, fz, heat, scalar_flux_{1,2,3,4}
+    ! nIDs currently set to MAXSURF, each surface has its own
+    !
 
-!----------------------------------------------------------         
-  real*8          flxID(10,0:MAXSURF), Force(3),HFlux, &
-                  flxIDsclr(4,MAXSURF)
-  integer         nsrflist(0:MAXSURF), isrfIM
-  common /aerfrc/ flxID              , Force   ,HFlux, &
-                  flxIDsclr          , &
-                  nsrflist           , isrfIM  
-  bind(C, name="aerfrc") :: /aerfrc/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          flxID(10,0:MAXSURF), Force(3),HFlux, &
+        flxIDsclr(4,MAXSURF)
+    integer         nsrflist(0:MAXSURF), isrfIM
+    common /aerfrc/ flxID              , Force   ,HFlux, &
+        flxIDsclr          , &
+        nsrflist           , isrfIM
+    bind(C, name="aerfrc") :: /aerfrc/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8 a(100000)
-  common /astore/ a
-  bind(C, name="astore") :: /astore/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    real*8 a(100000)
+    common /astore/ a
+    bind(C, name="astore") :: /astore/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer         lcblk(10,MAXBLK+1),      lcblkb(10,MAXBLK+1)
-  common /blkdat/ lcblk             ,      lcblkb
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    integer         lcblk(10,MAXBLK+1),      lcblkb(10,MAXBLK+1)
+    common /blkdat/ lcblk             ,      lcblkb
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer :: mnodeb(9,8,3) 
-  common /mbndnod/ mnodeb  
-  bind(C, name="mbndnod") :: /mbndnod/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    integer :: mnodeb(9,8,3)
+    common /mbndnod/ mnodeb
+    bind(C, name="mbndnod") :: /mbndnod/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer, target ::  numnp
-  integer, target ::  numel
-  integer, target ::  numelb
-  integer, target ::  numpbc
-  integer, target ::  nen
-  integer, target ::  nwnp
-  integer, target ::  nfaces
-  integer, target ::  numflx
-  integer, target ::  ndof
-  integer, target ::  iALE
-  integer, target ::  icoord
-  integer, target ::  navier
-  integer, target ::  irs
-  integer, target ::  iexec
-  integer, target ::  necho
-  integer, target ::  ichem
-  integer, target ::  iRK
-  integer, target ::  nedof
-  integer, target ::  nshg
-  integer, target ::  nnz
-  integer, target ::  istop
-  integer, target ::  nflow
-  integer, target ::  nnz_tot
-  integer, target ::  idtn
-  integer, target ::  nshguniq
-  common /conpar/ numnp,  numel,  numelb, numpbc, nen,     nwnp, &
-                  nfaces, numflx, ndof,   iALE,    icoord,  navier, &
-                  irs,    iexec,  necho,  ichem,  iRK,     nedof, &
-                  nshg,   nnz,    istop,  nflow,  nnz_tot, idtn, &
-                  nshguniq
-  bind(C, name="conpar") :: /conpar/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    integer, target ::  numnp
+    integer, target ::  numel
+    integer, target ::  numelb
+    integer, target ::  numpbc
+    integer, target ::  nen
+    integer, target ::  nwnp
+    integer, target ::  nfaces
+    integer, target ::  numflx
+    integer, target ::  ndof
+    integer, target ::  iALE
+    integer, target ::  icoord
+    integer, target ::  navier
+    integer, target ::  irs
+    integer, target ::  iexec
+    integer, target ::  necho
+    integer, target ::  ichem
+    integer, target ::  iRK
+    integer, target ::  nedof
+    integer, target ::  nshg
+    integer, target ::  nnz
+    integer, target ::  istop
+    integer, target ::  nflow
+    integer, target ::  nnz_tot
+    integer, target ::  idtn
+    integer, target ::  nshguniq
+    integer, target ::  icurrentblk
+    common /conpar/ numnp,  numel,  numelb, numpbc, nen,     nwnp, &
+        nfaces, numflx, ndof,   iALE,    icoord,  navier, &
+        irs,    iexec,  necho,  ichem,  iRK,     nedof, &
+        nshg,   nnz,    istop,  nflow,  nnz_tot, idtn, &
+        nshguniq, icurrentblk
+    bind(C, name="conpar") :: /conpar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8           epsilon_ls, epsilon_lsd, dtlset
-  integer          iLSet, &
-                   ivconstraint, iExpLSSclr1, iExpLSSclr2
-  common /levlset/ epsilon_ls, epsilon_lsd, dtlset, &
-                   iLSet, &
-                   ivconstraint, iExpLSSclr1, iExpLSSclr2
-  bind (C, name="levlset") :: /levlset/
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    real*8           epsilon_ls, epsilon_lsd, dtlset
+    integer          iLSet, &
+        ivconstraint, iExpLSSclr1, iExpLSSclr2
+    common /levlset/ epsilon_ls, epsilon_lsd, dtlset, &
+        iLSet, &
+        ivconstraint, iExpLSSclr1, iExpLSSclr2
+    bind (C, name="levlset") :: /levlset/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer, target :: nshape
-  integer, target :: nshapeb
-  integer, target :: maxshb
-  integer, target :: nshl
-  integer, target :: nshlb
-  integer, target :: nfath
-  integer, target :: ntopsh
-  integer, target :: nsonmax
-  common /shpdat/ nshape, nshapeb, maxshb, &
-                  nshl, nshlb,nfath,  ntopsh,  nsonmax
-  bind (C, name="shpdat") :: /shpdat/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer, target :: nshape
+    integer, target :: nshapeb
+    integer, target :: maxshb
+    integer, target :: nshl
+    integer, target :: nshlb
+    integer, target :: nfath
+    integer, target :: ntopsh
+    integer, target :: nsonmax
+    common /shpdat/ nshape, nshapeb, maxshb, &
+        nshl, nshlb,nfath,  ntopsh,  nsonmax
+    bind (C, name="shpdat") :: /shpdat/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer         mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb, &
-                  mmut,   mrhot,  mxst
-  common /datpnt/ mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb, &
-                  mmut,   mrhot,  mxst                  
-!----------------------------------------------------------
+    !----------------------------------------------------------
+    integer         mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb, &
+        mmut,   mrhot,  mxst
+    common /datpnt/ mshp,   mshgl,  mwght,  mshpb,  mshglb, mwghtb, &
+        mmut,   mrhot,  mxst
+    !----------------------------------------------------------
 
-!----------------------------------------------------------
-  integer :: mcsyst
-  integer :: melCat
-  integer :: nenCat(8,3)
-  integer :: nfaCat(8,3)
-  common /melmcat/ mcsyst, melCat, nenCat, nfaCat                                           
-  bind (C, name="melmcat") :: /melmcat/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer :: mcsyst
+    integer :: melCat
+    integer :: nenCat(8,3)
+    integer :: nfaCat(8,3)
+    common /melmcat/ mcsyst, melCat, nenCat, nfaCat
+    bind (C, name="melmcat") :: /melmcat/
+    !----------------------------------------------------------
   
-!----------------------------------------------------------  
-  integer, target :: lelCat
-  integer, target :: lcsyst
-  integer, target :: iorder
-  integer, target :: nenb
-  integer, target :: nelblk
-  integer, target :: nelblb
-  integer, target :: ndofl
-  integer, target :: nsymdl
-  integer, target :: nenl
-  integer, target :: nfacel
-  integer, target :: nenbl
-  integer, target :: intind
-  integer, target :: mattyp
-  common /elmpar/ lelCat, lcsyst, iorder, nenb, &
-                  nelblk, nelblb, ndofl,  nsymdl, nenl,   nfacel, &
-                  nenbl,  intind, mattyp
-  bind (C, name="elmpar") :: /elmpar/
-!----------------------------------------------------------    
+    !----------------------------------------------------------
+    integer, target :: lelCat
+    integer, target :: lcsyst
+    integer, target :: iorder
+    integer, target :: nenb
+    integer, target :: nelblk
+    integer, target :: nelblb
+    integer, target :: ndofl
+    integer, target :: nsymdl
+    integer, target :: nenl
+    integer, target :: nfacel
+    integer, target :: nenbl
+    integer, target :: intind
+    integer, target :: mattyp
+    common /elmpar/ lelCat, lcsyst, iorder, nenb, &
+        nelblk, nelblb, ndofl,  nsymdl, nenl,   nfacel, &
+        nenbl,  intind, mattyp
+    bind (C, name="elmpar") :: /elmpar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  common /errpar/ numerr
-  integer numerr
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    common /errpar/ numerr
+    integer numerr
+    !----------------------------------------------------------
 
-!---------------------------------------------------------- 
-  real*8          E3nsd
-  integer         I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB, &
-                  Jactyp, jump,   ires,   iprec,  iprev,  ibound, &
-                  idiff,  lhs,    itau,   ipord,  ipred,  lstres, &
-                  iepstm
-  real*8          dtsfct, taucfct
-  integer         ibksiz, iabc, isurf, &
-                  idflx
-  real*8          Bo
-  integer         EntropyPressure
-  common /genpar/ E3nsd,  &
-                  I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB, &
-                  Jactyp, jump,   ires,   iprec,  iprev,  ibound, &
-                  idiff,  lhs,    itau,   ipord,  ipred,  lstres, &
-                  iepstm, &
-                  dtsfct, taucfct, &
-                  ibksiz, iabc, isurf, &
-                  idflx,  &
-                  Bo,     &
-                  EntropyPressure 
-  bind (C, name="genpar") :: /genpar/
-!----------------------------------------------------------   
+    !----------------------------------------------------------
+    real*8          E3nsd
+    integer         I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB, &
+        Jactyp, jump,   ires,   iprec,  iprev,  ibound, &
+        idiff,  lhs,    itau,   ipord,  ipred,  lstres, &
+        iepstm
+    real*8          dtsfct, taucfct
+    integer         ibksiz, iabc, isurf, &
+        idflx
+    real*8          Bo
+    integer         EntropyPressure
+    common /genpar/ E3nsd,  &
+        I3nsd,  nsymdf, ndofBC, ndiBCB, ndBCB, &
+        Jactyp, jump,   ires,   iprec,  iprev,  ibound, &
+        idiff,  lhs,    itau,   ipord,  ipred,  lstres, &
+        iepstm, &
+        dtsfct, taucfct, &
+        ibksiz, iabc, isurf, &
+        idflx,  &
+        Bo,     &
+        EntropyPressure
+    bind (C, name="genpar") :: /genpar/
+    !----------------------------------------------------------
 
-!!---------------------------------------------------------- 
-  character*128   mesh_filename
-  real*8          epstol(6), Delt(MAXTS), CFLfl(MAXTS), CFLsl(MAXTS)
-  integer         nstep(MAXTS),   niter(MAXTS), &
-                  impl(MAXTS)
-  real*8          rhoinf(MAXTS)
-  integer         LHSupd(6),  loctim(MAXTS)
-  real*8          deltol(MAXTS,2)
-  common /inpdat/ epstol   , Delt, CFLfl, CFLsl, &
-                  nstep,   niter, &
-                  impl, &
-                  rhoinf, &
-                  LHSupd,  loctim, &
-                  deltol
-  bind (C, name="inpdat") :: /inpdat/
-!---------------------------------------------------------- 
+    !!----------------------------------------------------------
+    character*128   mesh_filename
+    real*8          epstol(6), Delt(MAXTS), CFLfl(MAXTS), CFLsl(MAXTS)
+    integer         nstep(MAXTS),   niter(MAXTS), &
+        impl(MAXTS)
+    real*8          rhoinf(MAXTS)
+    integer         LHSupd(6),  loctim(MAXTS)
+    real*8          deltol(MAXTS,2)
+    common /inpdat/ epstol   , Delt, CFLfl, CFLsl, &
+        nstep,   niter, &
+        impl, &
+        rhoinf, &
+        LHSupd,  loctim, &
+        deltol
+    bind (C, name="inpdat") :: /inpdat/
+    !----------------------------------------------------------
 
-!---------------------------------------------------------- 
-  integer         intg(2,MAXTS),  intpt(3),       intptb(3)
-  common /intdat/ intg,           intpt,          intptb
-  bind (C, name="intdat") :: /intdat/
-!---------------------------------------------------------- 
+    !----------------------------------------------------------
+    integer         intg(2,MAXTS),  intpt(3),       intptb(3)
+    common /intdat/ intg,           intpt,          intptb
+    bind (C, name="intdat") :: /intdat/
+    !----------------------------------------------------------
 
-!---------------------------------------------------------- 
-  integer :: indQpt(3,3,4),  numQpt(3,3,4), intmax != 3
-  common /mintpar/ indQpt,   numQpt,        intmax
-  bind (C, name="mintpar") :: /mintpar/
-!----------------------------------------------------------   
+    !----------------------------------------------------------
+    integer :: indQpt(3,3,4),  numQpt(3,3,4), intmax != 3
+    common /mintpar/ indQpt,   numQpt,        intmax
+    bind (C, name="mintpar") :: /mintpar/
+    !----------------------------------------------------------
 
-  parameter (ivol= 27)
+    parameter (ivol= 27)
   
-!----------------------------------------------------------    
-  integer         iin,    igeom,  ipar,   ibndc,  imat,   iecho, &
-                  iout,   ichmou, irstin, irstou, ihist,  iflux, &
-                  ierror, itable, iforce, igraph, itime 
-  common /mio   / iin,    igeom,  ipar,   ibndc,  imat,   iecho, &
-                  iout,   ichmou, irstin, irstou, ihist,  iflux, &
-                  ierror, itable, iforce, igraph, itime 
+    !----------------------------------------------------------
+    integer         iin,    igeom,  ipar,   ibndc,  imat,   iecho, &
+        iout,   ichmou, irstin, irstou, ihist,  iflux, &
+        ierror, itable, iforce, igraph, itime
+    common /mio   / iin,    igeom,  ipar,   ibndc,  imat,   iecho, &
+        iout,   ichmou, irstin, irstou, ihist,  iflux, &
+        ierror, itable, iforce, igraph, itime
   
-  bind (C, name="mio") :: /mio/
-!----------------------------------------------------------  
+    bind (C, name="mio") :: /mio/
+    !----------------------------------------------------------
 
-! /*         common /andres/ fwr1,ngaussf,idim,nlist */
+    ! /*         common /andres/ fwr1,ngaussf,idim,nlist */
 
-!---------------------------------------------------------- 
-!   character :: fin = 'input.dat'
-!   character :: fgeom = 'geombc.dat'
-!   character :: fpar = 'partition.dat'
-!   character :: fbndc = 'bc.dat'
-!   character :: fmat = 'material.dat'
-!   character :: fecho = 'echo.dat'
-!   character :: frstin = 'restart'
-!   character :: frstou = 'restart'
-!   character :: fhist = 'histor.dat'
-!   character :: ferror = 'error.dat'
-!   character :: ftable = 'table.dat'
-!   character :: fforce = 'forces.dat'
-!   character :: fgraph = 'graph.dat'
-!   character :: ftime = 'time.out'
-  character*80     fin,    fgeom,  fpar,  fbndc,  fmat,   fecho, &
-                   frstin, frstou, fhist, ferror, ftable, fforce, &
-                   fgraph, ftime
-  common /mioname/ fin,    fgeom,  fpar,  fbndc,  fmat,   fecho, &
-                   frstin, frstou, fhist, ferror, ftable, fforce, &
-                   fgraph, ftime 
-  bind (C, name="mioname") :: /mioname/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    !   character :: fin = 'input.dat'
+    !   character :: fgeom = 'geombc.dat'
+    !   character :: fpar = 'partition.dat'
+    !   character :: fbndc = 'bc.dat'
+    !   character :: fmat = 'material.dat'
+    !   character :: fecho = 'echo.dat'
+    !   character :: frstin = 'restart'
+    !   character :: frstou = 'restart'
+    !   character :: fhist = 'histor.dat'
+    !   character :: ferror = 'error.dat'
+    !   character :: ftable = 'table.dat'
+    !   character :: fforce = 'forces.dat'
+    !   character :: fgraph = 'graph.dat'
+    !   character :: ftime = 'time.out'
+    character*80     fin,    fgeom,  fpar,  fbndc,  fmat,   fecho, &
+        frstin, frstou, fhist, ferror, ftable, fforce, &
+        fgraph, ftime
+    common /mioname/ fin,    fgeom,  fpar,  fbndc,  fmat,   fecho, &
+        frstin, frstou, fhist, ferror, ftable, fforce, &
+        fgraph, ftime
+    bind (C, name="mioname") :: /mioname/
+    !----------------------------------------------------------
   
-!----------------------------------------------------------  
-  real*8          eGMRES
-  integer         lGMRES, iKs,    ntotGM
-  common /itrpar/ eGMRES, lGMRES, iKs,    ntotGM
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          eGMRES
+    integer         lGMRES, iKs,    ntotGM
+    common /itrpar/ eGMRES, lGMRES, iKs,    ntotGM
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer         mHBrg,  meBrg,  myBrg,  mRcos,  mRsin
-  common /itrpnt/ mHBrg,  meBrg,  myBrg,  mRcos,  mRsin
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer         mHBrg,  meBrg,  myBrg,  mRcos,  mRsin
+    common /itrpnt/ mHBrg,  meBrg,  myBrg,  mRcos,  mRsin
+    !----------------------------------------------------------
 
-!----------------------------------------------------------    
-  real*8           pr,     Planck, Stefan, Nh,     Rh,     Rgas, &
-                   gamma,  gamma1, s0,     const,  xN2,    xO2, &
-                   yN2,    yO2,    Msh(5), cpsh(5), s0sh(5), h0sh(5), &
-                   Rs(5),  cps(5), cvs(5), h0s(5), Trot(5), sigs(5), &
-                   Tvib(5), g0s(5), dofs(5), ithm
-  common /mmatpar/ pr,     Planck, Stefan, Nh,     Rh,     Rgas, &
-                   gamma,  gamma1, s0,     const,  xN2,    xO2, &
-                   yN2,    yO2,    Msh, cpsh, s0sh, h0sh, &
-                   Rs,  cps, cvs, h0s, Trot, sigs, &
-                   Tvib, g0s, dofs, ithm   
-  bind(C, name="mmatpar") :: /mmatpar/
-!----------------------------------------------------------    
+    !----------------------------------------------------------
+    real*8           pr,     Planck, Stefan, Nh,     Rh,     Rgas, &
+        gamma,  gamma1, s0,     const,  xN2,    xO2, &
+        yN2,    yO2,    Msh(5), cpsh(5), s0sh(5), h0sh(5), &
+        Rs(5),  cps(5), cvs(5), h0s(5), Trot(5), sigs(5), &
+        Tvib(5), g0s(5), dofs(5), ithm
+    common /mmatpar/ pr,     Planck, Stefan, Nh,     Rh,     Rgas, &
+        gamma,  gamma1, s0,     const,  xN2,    xO2, &
+        yN2,    yO2,    Msh, cpsh, s0sh, h0sh, &
+        Rs,  cps, cvs, h0s, Trot, sigs, &
+        Tvib, g0s, dofs, ithm
+    bind(C, name="mmatpar") :: /mmatpar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8          datmat(3,7,MAXTS)
-  integer         matflg(6,MAXTS)
-  integer         nummat,  mexist
-  common /matdat/ datmat,      &
-                  matflg, &
-                  nummat,  mexist
-  bind(C, name="matdat") :: /matdat/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          datmat(3,7,MAXTS)
+    integer         matflg(6,MAXTS)
+    integer         nummat,  mexist
+    common /matdat/ datmat,      &
+        matflg, &
+        nummat,  mexist
+    bind(C, name="matdat") :: /matdat/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8          ro,     vel,    temper, press,  entrop
-  integer         ntout, &
-                  ioform, iowflux, iofieldv
-  character*80    iotype
-  integer         ioybar
-  common /outpar/ ro,     vel,    temper, press,  entrop, &
-                  ntout, &
-                  ioform, iowflux, iofieldv, &
-                  iotype, &
-                  ioybar
-  bind(C, name="outpar") :: /outpar/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          ro,     vel,    temper, press,  entrop
+    integer         ntout, &
+        ioform, iowflux, iofieldv
+    character*80    iotype
+    integer         ioybar
+    common /outpar/ ro,     vel,    temper, press,  entrop, &
+        ntout, &
+        ioform, iowflux, iofieldv, &
+        iotype, &
+        ioybar
+    bind(C, name="outpar") :: /outpar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer         mbeg,   mend,   mprec
-  common /point / mbeg,   mend,   mprec
-  bind(C, name="point") :: /point/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer         mbeg,   mend,   mprec
+    common /point / mbeg,   mend,   mprec
+    bind(C, name="point") :: /point/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8          epsM
-  integer         iabres
-  common /precis/ epsM,   iabres
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          epsM
+    integer         iabres
+    common /precis/ epsM,   iabres
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer         npro
-  common /propar/ npro
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer         npro
+    common /propar/ npro
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8 :: resfrt != 0.00000000000000d+0
-  common /resdat/ resfrt
-  bind(C, name="resdat") :: /resdat/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8 :: resfrt != 0.00000000000000d+0
+    common /resdat/ resfrt
+    bind(C, name="resdat") :: /resdat/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer         imap,   ivart,  iDC,    iPcond, Kspace, nGMRES, &
-                  iconvflow, iconvsclr, idcsclr(2)
-  common /solpar/ imap,   ivart,  iDC,    iPcond, Kspace, nGMRES, &
-                  iconvflow, iconvsclr, idcsclr
-  bind(C, name="solpar") :: /solpar/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer         imap,   ivart,  iDC,    iPcond, Kspace, nGMRES, &
+        iconvflow, iconvsclr, idcsclr(2)
+    common /solpar/ imap,   ivart,  iDC,    iPcond, Kspace, nGMRES, &
+        iconvflow, iconvsclr, idcsclr
+    bind(C, name="solpar") :: /solpar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer          indsym(5,5)
-  common /msympar/ indsym
-  bind(C, name="msympar") :: /msympar/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer          indsym(5,5)
+    common /msympar/ indsym
+    bind(C, name="msympar") :: /msympar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8          time,    CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
-                  etol
-  integer         lstep,  ifunc,  itseq,  istep,  iter, &
-                  nitr
-  real*8          almi,   alfi,   gami,   flmpl,  flmpr, &
-                  dtol(2)
-  integer         iCFLworst
-  common /timdat/ time,    CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
-                  etol,    &
-                  lstep,  ifunc,  itseq,  istep,  iter, &
-                  nitr,    &
-                  almi,   alfi,   gami,   flmpl,  flmpr, &
-                  dtol, &
-                  iCFLworst
-  bind(C, name="timdat") :: /timdat/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          time,    CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
+        etol
+    integer         lstep,  ifunc,  itseq,  istep,  iter, &
+        nitr
+    real*8          almi,   alfi,   gami,   flmpl,  flmpr, &
+        dtol(2)
+    integer         iCFLworst
+    common /timdat/ time,    CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
+        etol,    &
+        lstep,  ifunc,  itseq,  istep,  iter, &
+        nitr,    &
+        almi,   alfi,   gami,   flmpl,  flmpr, &
+        dtol, &
+        iCFLworst
+    bind(C, name="timdat") :: /timdat/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer         LCtime, ntseq
-  common /timpar/ LCtime, ntseq
-  bind(C, name="timpar") :: /timpar/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer         LCtime, ntseq
+    common /timpar/ LCtime, ntseq
+    bind(C, name="timpar") :: /timpar/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  integer         numeqns(100), minIters, maxIters, &
-                  iprjFlag,     nPrjs,    ipresPrjFlag, nPresPrjs
-  real*8          prestol,      statsflow(6), statssclr(6)
-  integer         iverbose
-  common /incomp/ numeqns, minIters, maxIters, &
-                  iprjFlag,     nPrjs,    ipresPrjFlag, nPresPrjs, &
-                  prestol,      statsflow, statssclr, &
-                  iverbose
-  bind(C, name="incomp") :: /incomp/
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    integer         numeqns(100), minIters, maxIters, &
+        iprjFlag,     nPrjs,    ipresPrjFlag, nPresPrjs
+    real*8          prestol,      statsflow(6), statssclr(6)
+    integer         iverbose
+    common /incomp/ numeqns, minIters, maxIters, &
+        iprjFlag,     nPrjs,    ipresPrjFlag, nPresPrjs, &
+        prestol,      statsflow, statssclr, &
+        iverbose
+    bind(C, name="incomp") :: /incomp/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  ! not sure about the alignment on this one... should it be:
-  ! character (c_char) :: ccode(13,8) 
-  ! common /mtimer1/ ccode(13,8)
-  ! common_c.h has ccode defined as array of 13 doubles....
-  ! ?????? ONKAR
-  ! no C code is using this array 
-  ! the strings are not NULL terminated and thus cannot be read properly from C 
-!  character(8) :: ccode(13) = (/ 'Input   ', 'PrProces', 'Rezoning', 'Elm_Form', & 
-!                                 'Solver  ', 'Bnd_Flux', 'Output  ', 'Mapping ', & 
-!                                 'Gather  ', 'Scatter ', 'Begin   ', 'End     ', & 
-!                                 'Back    ' /)
-  character(8) :: ccode(13)                                  
-  common /mtimer1/ ccode
-  bind(C, name="mtimer1") :: /mtimer1/  
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    ! not sure about the alignment on this one... should it be:
+    ! character (c_char) :: ccode(13,8)
+    ! common /mtimer1/ ccode(13,8)
+    ! common_c.h has ccode defined as array of 13 doubles....
+    ! ?????? ONKAR
+    ! no C code is using this array
+    ! the strings are not NULL terminated and thus cannot be read properly from C
+    !  character(8) :: ccode(13) = (/ 'Input   ', 'PrProces', 'Rezoning', 'Elm_Form', &
+    !                                 'Solver  ', 'Bnd_Flux', 'Output  ', 'Mapping ', &
+    !                                 'Gather  ', 'Scatter ', 'Begin   ', 'End     ', &
+    !                                 'Back    ' /)
+    character(8) :: ccode(13)
+    common /mtimer1/ ccode
+    bind(C, name="mtimer1") :: /mtimer1/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  ! there was a mismatch in types for flops,  gbytes, sbytes with common_c.h ? ONKAR
-  real*8 :: flops,  gbytes, sbytes  ! modified from integer to real 
-  integer :: iclock, icd, &
-             icode, icode2, icode3
-  common /mtimer2/ flops,  gbytes, sbytes, iclock, icd,    icode, &
-                   icode2, icode3
-  bind(C, name="mtimer2") :: /mtimer2/
-!----------------------------------------------------------    
+    !----------------------------------------------------------
+    ! there was a mismatch in types for flops,  gbytes, sbytes with common_c.h ? ONKAR
+    real*8 :: flops,  gbytes, sbytes  ! modified from integer to real
+    integer :: iclock, icd, &
+        icode, icode2, icode3
+    common /mtimer2/ flops,  gbytes, sbytes, iclock, icd,    icode, &
+        icode2, icode3
+    bind(C, name="mtimer2") :: /mtimer2/
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  real*8          cpu(11),        cpu0(11)
-  integer         nacess(11)
-  common /timer3/ cpu,        cpu0,       nacess
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    real*8          cpu(11),        cpu0(11)
+    integer         nacess(11)
+    common /timer3/ cpu,        cpu0,       nacess
+    !----------------------------------------------------------
 
-!----------------------------------------------------------  
-  character*80    title,  ititle
-  common /title / title,  ititle
-!----------------------------------------------------------  
+    !----------------------------------------------------------
+    character*80    title,  ititle
+    common /title / title,  ititle
+    !----------------------------------------------------------
 
 
-  character*8     machin
-  parameter     ( machin = 'RS/6000 ' )
-  parameter     ( machfl = 4 )
+    character*8     machin
+    parameter     ( machin = 'RS/6000 ' )
+    parameter     ( machfl = 4 )
   
-  parameter ( zero   = 0.0000000000000000000000000000000d0, &
-              pt125  = 0.1250000000000000000000000000000d0, &
-              pt25   = 0.2500000000000000000000000000000d0, &
-              pt33   = 0.3333333333333333333333333333333d0, &
-              pt39   = 0.3968502629920498686879264098181d0, &
-              pt5    = 0.5000000000000000000000000000000d0, &
-              pt57   = 0.5773502691896257645091487805020d0, &
-              pt66   = 0.6666666666666666666666666666667d0, &
-              pt75   = 0.7500000000000000000000000000000d0, &
-              one    = 1.0000000000000000000000000000000d0, &
-              sqt2   = 1.4142135623730950488016887242097d0, &
-              onept5 = 1.5000000000000000000000000000000d0, &
-              two    = 2.0000000000000000000000000000000d0, &
-              three  = 3.0000000000000000000000000000000d0, &
-              four   = 4.0000000000000000000000000000000d0, &
-              five   = 5.0000000000000000000000000000000d0, &
-              pi     = 3.1415926535897932384626433832795d0)
+    parameter ( zero   = 0.0000000000000000000000000000000d0, &
+        pt125  = 0.1250000000000000000000000000000d0, &
+        pt25   = 0.2500000000000000000000000000000d0, &
+        pt33   = 0.3333333333333333333333333333333d0, &
+        pt39   = 0.3968502629920498686879264098181d0, &
+        pt5    = 0.5000000000000000000000000000000d0, &
+        pt57   = 0.5773502691896257645091487805020d0, &
+        pt66   = 0.6666666666666666666666666666667d0, &
+        pt75   = 0.7500000000000000000000000000000d0, &
+        one    = 1.0000000000000000000000000000000d0, &
+        sqt2   = 1.4142135623730950488016887242097d0, &
+        onept5 = 1.5000000000000000000000000000000d0, &
+        two    = 2.0000000000000000000000000000000d0, &
+        three  = 3.0000000000000000000000000000000d0, &
+        four   = 4.0000000000000000000000000000000d0, &
+        five   = 5.0000000000000000000000000000000d0, &
+        pi     = 3.1415926535897932384626433832795d0)
 
  
-  interface 
+    interface
   
-  subroutine getintpnts(pts, numpts) bind(C, name="getIntPnts")
-  use iso_c_binding
-  real (c_double), intent(inout), dimension(*) :: pts    ! array written out by reference
-  integer (c_int), value, intent(in) :: numpts           ! input integer
-  end subroutine getintpnts
+        subroutine getintpnts(pts, numpts) bind(C, name="getIntPnts")
+            use iso_c_binding
+            real (c_double), intent(inout), dimension(*) :: pts    ! array written out by reference
+            integer (c_int), value, intent(in) :: numpts           ! input integer
+        end subroutine getintpnts
 
-  subroutine shp6w(p, par, N, dN) bind(C, name="shp6w")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(in) :: par(3)  ! array of 3 doubles
-  real (c_double), intent(inout), dimension(*) :: N  ! not used in WedgeShapeAndDrv
-  real (c_double), intent(inout), dimension(*) :: dN ! not used in WedgeShapeAndDrv
-  end subroutine shp6w
+        subroutine shp6w(p, par, N, dN) bind(C, name="shp6w")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(in) :: par(3)  ! array of 3 doubles
+            real (c_double), intent(inout), dimension(*) :: N  ! not used in WedgeShapeAndDrv
+            real (c_double), intent(inout), dimension(*) :: dN ! not used in WedgeShapeAndDrv
+        end subroutine shp6w
 
-  subroutine shphex(p, par, N, dN) bind(C, name="shphex")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(in) :: par(3)  ! array of 3 doubles
-  real (c_double), intent(inout), dimension(*) :: N  ! array written out from HexShapeAndDrv
-  real (c_double), intent(inout), dimension(*) :: dN ! array written out from HexShapeAndDrv
-  end subroutine shphex
+        subroutine shphex(p, par, N, dN) bind(C, name="shphex")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(in) :: par(3)  ! array of 3 doubles
+            real (c_double), intent(inout), dimension(*) :: N  ! array written out from HexShapeAndDrv
+            real (c_double), intent(inout), dimension(*) :: dN ! array written out from HexShapeAndDrv
+        end subroutine shphex
 
-  subroutine shppyr(p, par, N, dN) bind(C, name="shppyr")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(in) :: par(3)  ! array of 3 doubles
-  real (c_double), intent(inout), dimension(*) :: N  ! array written out 
-  real (c_double), intent(inout), dimension(*) :: dN ! array written out 
-  end subroutine shppyr
+        subroutine shppyr(p, par, N, dN) bind(C, name="shppyr")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(in) :: par(3)  ! array of 3 doubles
+            real (c_double), intent(inout), dimension(*) :: N  ! array written out
+            real (c_double), intent(inout), dimension(*) :: dN ! array written out
+        end subroutine shppyr
 
-  subroutine shptet(p, par, N, dN) bind(C, name="shptet")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(in) :: par(3)  ! input array 2 doubles
-  real (c_double), intent(inout), dimension(*) :: N  ! ouput array 
-  real (c_double), intent(inout), dimension(*) :: dN ! output array
-  end subroutine shptet
+        subroutine shptet(p, par, N, dN) bind(C, name="shptet")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(in) :: par(3)  ! input array 2 doubles
+            real (c_double), intent(inout), dimension(*) :: N  ! ouput array
+            real (c_double), intent(inout), dimension(*) :: dN ! output array
+        end subroutine shptet
 
-  subroutine shptri(p, par, N, dN) bind(C, name="shptri")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(in) :: par(2)  ! input array 3 doubles
-  real (c_double), intent(inout), dimension(*) :: N  ! array written out 
-  real (c_double), intent(inout), dimension(*) :: dN ! array written out 
-  end subroutine shptri
+        subroutine shptri(p, par, N, dN) bind(C, name="shptri")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(in) :: par(2)  ! input array 3 doubles
+            real (c_double), intent(inout), dimension(*) :: N  ! array written out
+            real (c_double), intent(inout), dimension(*) :: dN ! array written out
+        end subroutine shptri
 
-  subroutine symhex(p, pt, wt, err) bind(C, name="symhex")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symhex
+        subroutine symhex(p, pt, wt, err) bind(C, name="symhex")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symhex
   
-  subroutine sympyr(p, pt, wt, err) bind(C, name="sympyr")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine sympyr
+        subroutine sympyr(p, pt, wt, err) bind(C, name="sympyr")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine sympyr
   
-  subroutine symquad(p, pt, wt, err) bind(C, name="symquad")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symquad
+        subroutine symquad(p, pt, wt, err) bind(C, name="symquad")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symquad
   
-  subroutine symquadw(p, pt, wt, err) bind(C, name="symquadw")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symquadw
+        subroutine symquadw(p, pt, wt, err) bind(C, name="symquadw")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symquadw
   
-  subroutine symtet(p, pt, wt, err) bind(C, name="symtet")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symtet
+        subroutine symtet(p, pt, wt, err) bind(C, name="symtet")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symtet
   
-  subroutine symtri(p, pt, wt, err) bind(C, name="symtri")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symtri
+        subroutine symtri(p, pt, wt, err) bind(C, name="symtri")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symtri
   
-  subroutine symtripyr(p, pt, wt, err) bind(C, name="symtripyr")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symtripyr
+        subroutine symtripyr(p, pt, wt, err) bind(C, name="symtripyr")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symtripyr
   
-  subroutine symwdg(p, pt, wt, err) bind(C, name="symwdg")
-  use iso_c_binding
-  integer (c_int), value, intent(in) :: p  
-  real (c_double), intent(inout), dimension(*) :: pt  ! array written out
-  real (c_double), intent(inout), dimension(*) :: wt  ! array written out 
-  integer (c_int), intent(inout) :: err ! integer written out 
-  end subroutine symwdg
+        subroutine symwdg(p, pt, wt, err) bind(C, name="symwdg")
+            use iso_c_binding
+            integer (c_int), value, intent(in) :: p
+            real (c_double), intent(inout), dimension(*) :: pt  ! array written out
+            real (c_double), intent(inout), dimension(*) :: wt  ! array written out
+            integer (c_int), intent(inout) :: err ! integer written out
+        end subroutine symwdg
 
-  real(c_double) function tmrc() bind(C, name="tmrc")
-  use iso_c_binding, only: c_double
-  end function
+        real(c_double) function tmrc() bind(C, name="tmrc")
+            use iso_c_binding, only: c_double
+        end function
 
-  ! the following functions are implented in GlobalArrayTransfer.cxx
+        ! the following functions are implented in PhGlobalArrayTransfer.cxx
 
-  subroutine globalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, coordptr, taptr, distptr, oyptr, oaptr, ouptr, odptr) &
-  bind(C, name='GlobalArrayAssignPointer')
-      use iso_c_binding
-      type(c_ptr), value :: uniqptr
-      type(c_ptr), value :: yoldptr
-      type(c_ptr), value :: acoldptr
-      type(c_ptr), value :: uoldptr
-      type(c_ptr), value :: coordptr
-      type(c_ptr), value :: taptr
-      type(c_ptr), value :: distptr
-      type(c_ptr), value :: oyptr
-      type(c_ptr), value :: oaptr
-      type(c_ptr), value :: ouptr
-      type(c_ptr), value :: odptr
-  end subroutine globalarrayassignpointer
+        subroutine phglobalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, &
+            coordptr, taptr, distptr, df_femptr, &
+            oyptr, oaptr, ouptr, odptr) &
+            bind(C, name='PhGlobalArrayAssignPointer')
+            use iso_c_binding
+            type(c_ptr), value :: uniqptr
+            type(c_ptr), value :: yoldptr
+            type(c_ptr), value :: acoldptr
+            type(c_ptr), value :: uoldptr
+            type(c_ptr), value :: coordptr
+            type(c_ptr), value :: taptr
+            type(c_ptr), value :: distptr
+            type(c_ptr), value :: df_femptr
+            type(c_ptr), value :: oyptr
+            type(c_ptr), value :: oaptr
+            type(c_ptr), value :: ouptr
+            type(c_ptr), value :: odptr
+        end subroutine phglobalarrayassignpointer
 
-  subroutine globalblockedarrayassignpointer (npro_in, nshl_in, ien_in) &
-  bind(C, name='GlobalBlockedArrayAssignPointer')
-      use iso_c_binding
-      integer(c_int), value :: npro_in
-      integer(c_int), value :: nshl_in
-      type(c_ptr), value :: ien_in
-  end subroutine globalblockedarrayassignpointer
+        subroutine phglobalblockedarrayassignpointer (npro_in, nshl_in, ien_in) &
+            bind(C, name='PhGlobalBlockedArrayAssignPointer')
+            use iso_c_binding
+            integer(c_int), value :: npro_in
+            integer(c_int), value :: nshl_in
+            type(c_ptr), value :: ien_in
+        end subroutine phglobalblockedarrayassignpointer
 
-  subroutine globallumpedparameterarrayassignpointer (p_ptr, q_ptr) &
-  bind(C, name='GlobalLumpedParameterArrayAssignPointer')
-      use iso_c_binding
-      type(c_ptr), value :: p_ptr
-      type(c_ptr), value :: q_ptr
-  end subroutine globallumpedparameterarrayassignpointer
+        subroutine phgloballumpedparameterarrayassignpointer (p_ptr, q_ptr, param_ptr) &
+            bind(C, name='PhGlobalLumpedParameterArrayAssignPointer')
+            use iso_c_binding
+            type(c_ptr), value :: p_ptr
+            type(c_ptr), value :: q_ptr
+            type(c_ptr), value :: param_ptr
+        end subroutine phgloballumpedparameterarrayassignpointer
 
-  end interface
+    end interface
 
-  end module 
+end module
   
-  subroutine initPhCommonVars
+subroutine initPhCommonVars
   
-  use phcommonvars
-  IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+    use phcommonvars
+    IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-  master = 0
+    master = 0
 
-  mnodeb(:,:,:) = reshape((/   1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  0,  0,   0,  0,  0,   0,  0,  0,  &   ! 1D  
-                               1,  2,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  0,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  5,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  4,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  4,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  4,   0,  0,  0,   0,  0,  0,  &  ! 2D
-                               1,  2,  3,   4,  0,  0,   0,  0,  0,  & 
-                               1,  2,  3,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  3,   0,  0,  0,   0,  0,  0,  & 
-                               1,  2,  5,   4,  0,  0,   0,  0,  0,  & 
-                               1,  2,  3,   4,  9, 10,  11, 12, 21,  & 
-                               1,  2,  3,   5,  6,  9,   0,  0,  0,  & 
-                               1,  2,  3,   7,  9,  8,   0,  0,  0,  & 
-                               1,  2,  5,   4,  7, 10,  13, 14, 16   /), &
-                               shape(mnodeb))  ! 3D
+    mnodeb(:,:,:) = reshape((/   1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  0,  0,   0,  0,  0,   0,  0,  0,  &   ! 1D
+        1,  2,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  0,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  5,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  4,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  4,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  4,   0,  0,  0,   0,  0,  0,  &  ! 2D
+        1,  2,  3,   4,  0,  0,   0,  0,  0,  &
+        1,  2,  3,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  3,   0,  0,  0,   0,  0,  0,  &
+        1,  2,  5,   4,  0,  0,   0,  0,  0,  &
+        1,  2,  3,   4,  9, 10,  11, 12, 21,  &
+        1,  2,  3,   5,  6,  9,   0,  0,  0,  &
+        1,  2,  3,   7,  9,  8,   0,  0,  0,  &
+        1,  2,  5,   4,  7, 10,  13, 14, 16   /), &
+        shape(mnodeb))  ! 3D
                               
-   !nsd = 3                                          
+    !nsd = 3
                               
-   mcsyst = 4
-   melCat = 8
+    mcsyst = 4
+    melCat = 8
   
-   nenCat(:,:) = reshape((/  2,  2,  2,  2,    3,  3,  3,  3, &        ! 1D  
-                             4,  3,  3,  4,    9,  6,  6,  9, &        ! 2D  
-                             8,  4,  6,  6,   27, 10, 18, 18    /), &
-                                shape(nenCat))     ! 3D
-   nfaCat(:,:) = reshape((/  2,  2,  2,  2,    2,  2,  2,  2, &       ! 1D 
-                             4,  3,  3,  4,    4,  3,  3,  4, &       ! 2D  
-                             6,  4,  5,  5,    6,  4,  5,  5    /), &     ! 3D
-                                shape(nfaCat))   
+    nenCat(:,:) = reshape((/  2,  2,  2,  2,    3,  3,  3,  3, &        ! 1D
+        4,  3,  3,  4,    9,  6,  6,  9, &        ! 2D
+        8,  4,  6,  6,   27, 10, 18, 18    /), &
+        shape(nenCat))     ! 3D
+    nfaCat(:,:) = reshape((/  2,  2,  2,  2,    2,  2,  2,  2, &       ! 1D
+        4,  3,  3,  4,    4,  3,  3,  4, &       ! 2D
+        6,  4,  5,  5,    6,  4,  5,  5    /), &     ! 3D
+        shape(nfaCat))
                                
-   intmax = 3                    
+    intmax = 3
   
-   iin = 10 
-   igeom = 11
-   ipar = 12 
-   ibndc = 13 
-   imat = 14
-   iecho = 15
-   iout = 16
-   ichmou = 17
-   irstin = 18
-   irstou = 19
-   ihist = 20
-   iflux = 21
-   ierror = 22
-   itable = 23
-   iforce = 24
-   igraph = 25
-   itime = 26
+    iin = 10
+    igeom = 11
+    ipar = 12
+    ibndc = 13
+    imat = 14
+    iecho = 15
+    iout = 16
+    ichmou = 17
+    irstin = 18
+    irstou = 19
+    ihist = 20
+    iflux = 21
+    ierror = 22
+    itable = 23
+    iforce = 24
+    igraph = 25
+    itime = 26
   
-   fin = 'input.dat'
-   fgeom = 'geombc.dat'
-   fpar = 'partition.dat'
-   fbndc = 'bc.dat'
-   fmat = 'material.dat'
-   fecho = 'echo.dat'
-   frstin = 'restart'
-   frstou = 'restart'
-   fhist = 'histor.dat'
-   ferror = 'error.dat'
-   ftable = 'table.dat'
-   fforce = 'forces.dat'
-   fgraph = 'graph.dat'
-   ftime = 'time.out'
+    fin = 'input.dat'
+    fgeom = 'geombc.dat'
+    fpar = 'partition.dat'
+    fbndc = 'bc.dat'
+    fmat = 'material.dat'
+    fecho = 'echo.dat'
+    frstin = 'restart'
+    frstou = 'restart'
+    fhist = 'histor.dat'
+    ferror = 'error.dat'
+    ftable = 'table.dat'
+    fforce = 'forces.dat'
+    fgraph = 'graph.dat'
+    ftime = 'time.out'
   
-   Planck = 6.62617600000000d-34
-   Stefan = 5.66970000000000d-08
-   Nh = 6.02204500000000d+23
-   Rh = 8.31441000000000d+0
-   gamma = 1.40000000000000d+0
-   gamma1 = 0.40000000000000d+0
-   xN2 = 0.79000000000000d+0 
-   xO2 = 0.21000000000000d+0  
-   Msh(:) = reshape((/ 2.80000000000000d-2,  3.20000000000000d-2, & 
-                       3.00000000000000d-2,  1.40000000000000d-2, & 
-                       1.60000000000000d-2 /), &
-                     shape(Msh))
-   h0sh(:) = reshape((/ 0.00000000000000d+0,  0.00000000000000d+0, &
-                        8.97750000000000d+4,  4.70820000000000d+5, & 
-                        2.46790000000000d+5 /), &
-                     shape(h0sh))
-   Trot(:) = reshape((/ 2.87000000000000d+0,  2.08000000000000d+0, & 
-                        2.45000000000000d+0,  0.00000000000000d+0, & 
-                        0.00000000000000d+0 /), &
-                     shape(Trot))
-   sigs(:) = reshape((/ 2.00000000000000d+0,  2.00000000000000d+0, & 
-                        1.00000000000000d+0,  0.00000000000000d+0, & 
-                        0.00000000000000d+0 /), &
-                     shape(sigs))
-   Tvib(:) = reshape((/ 3.39350000000000d+3,  2.27356000000000d+3, & 
-                        2.73887000000000d+3,  0.00000000000000d+0, & 
-                        0.00000000000000d+0 /), &
-                     shape(Tvib))
-   g0s(:) = reshape((/ 1.00000000000000d+0,  3.00000000000000d+0, & 
-                       4.00000000000000d+0,  4.00000000000000d+0, & 
-                       9.00000000000000d+0 /), &
-                     shape(g0s))
-   dofs(:) = reshape((/ 5.00000000000000d+0,  5.00000000000000d+0, & 
-                        5.00000000000000d+0,  3.00000000000000d+0, & 
-                        3.00000000000000d+0 /), &
-                     shape(dofs))
+    Planck = 6.62617600000000d-34
+    Stefan = 5.66970000000000d-08
+    Nh = 6.02204500000000d+23
+    Rh = 8.31441000000000d+0
+    gamma = 1.40000000000000d+0
+    gamma1 = 0.40000000000000d+0
+    xN2 = 0.79000000000000d+0
+    xO2 = 0.21000000000000d+0
+    Msh(:) = reshape((/ 2.80000000000000d-2,  3.20000000000000d-2, &
+        3.00000000000000d-2,  1.40000000000000d-2, &
+        1.60000000000000d-2 /), &
+        shape(Msh))
+    h0sh(:) = reshape((/ 0.00000000000000d+0,  0.00000000000000d+0, &
+        8.97750000000000d+4,  4.70820000000000d+5, &
+        2.46790000000000d+5 /), &
+        shape(h0sh))
+    Trot(:) = reshape((/ 2.87000000000000d+0,  2.08000000000000d+0, &
+        2.45000000000000d+0,  0.00000000000000d+0, &
+        0.00000000000000d+0 /), &
+        shape(Trot))
+    sigs(:) = reshape((/ 2.00000000000000d+0,  2.00000000000000d+0, &
+        1.00000000000000d+0,  0.00000000000000d+0, &
+        0.00000000000000d+0 /), &
+        shape(sigs))
+    Tvib(:) = reshape((/ 3.39350000000000d+3,  2.27356000000000d+3, &
+        2.73887000000000d+3,  0.00000000000000d+0, &
+        0.00000000000000d+0 /), &
+        shape(Tvib))
+    g0s(:) = reshape((/ 1.00000000000000d+0,  3.00000000000000d+0, &
+        4.00000000000000d+0,  4.00000000000000d+0, &
+        9.00000000000000d+0 /), &
+        shape(g0s))
+    dofs(:) = reshape((/ 5.00000000000000d+0,  5.00000000000000d+0, &
+        5.00000000000000d+0,  3.00000000000000d+0, &
+        3.00000000000000d+0 /), &
+        shape(dofs))
   
 
-   mbeg = 1
-   mend = 100000
-   mprec = 2
+    mbeg = 1
+    mend = 100000
+    mprec = 2
   
-   resfrt = 0.00000000000000d+0
+    resfrt = 0.00000000000000d+0
   
-   indsym(:,:) = reshape((/ 1,  2,  4,  7, 11, & 
-                            2,  3,  5,  8, 12, & 
-                            4,  5,  6,  9, 13, & 
-                            7,  8,  9, 10, 14, & 
-                            11, 12, 13, 14, 15   /), &
-                          shape(indsym))
+    indsym(:,:) = reshape((/ 1,  2,  4,  7, 11, &
+        2,  3,  5,  8, 12, &
+        4,  5,  6,  9, 13, &
+        7,  8,  9, 10, 14, &
+        11, 12, 13, 14, 15   /), &
+        shape(indsym))
                          
-   ccode(:) = (/ 'Input   ', 'PrProces', 'Rezoning', 'Elm_Form', & 
-                 'Solver  ', 'Bnd_Flux', 'Output  ', 'Mapping ', & 
-                 'Gather  ', 'Scatter ', 'Begin   ', 'End     ', & 
-                 'Back    ' /)        
+    ccode(:) = (/ 'Input   ', 'PrProces', 'Rezoning', 'Elm_Form', &
+        'Solver  ', 'Bnd_Flux', 'Output  ', 'Mapping ', &
+        'Gather  ', 'Scatter ', 'Begin   ', 'End     ', &
+        'Back    ' /)
                          
-   icd = 11
+    icd = 11
   
-   numerr = 10
+    numerr = 10
               
-   end subroutine
+end subroutine
 
 !
 !----------------------------------------------------------------------

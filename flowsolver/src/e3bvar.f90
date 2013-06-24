@@ -1,8 +1,9 @@
-  subroutine e3bvar (yl,      acl,     ul, &
+  subroutine e3bvar(yl,      acl,     ul, &
+                     iBCB,    BCB, &
                      shpb,    shglb, &
                      xlb,     xdistl,  xdnvl, &
-                     lnode,   SWB,     TWB,  &
-                     WdetJb,  bnorm,   pres, &
+                     lnode,   SWB,            &
+                     WdetJb,  bnorm,   pres,  &
                      u1,      u2,      u3,     rmu, &
                      unm,     tau1n,   tau2n,  tau3n, &
                      vdot,    usup1,   usup2,  velsup, &
@@ -18,6 +19,8 @@
 !          ndof: 5[p,v1,v2,v3,T]+number of scalars solved 
 !  acl    (npro,nshl,ndof)      : acceleration (local)
 !  ul     (npro,nshlb,nsd)       : displacement (local)
+!  iBCB   (npro,ndiBCB)         : boundary condition code
+!  BCB    (npro,nshlb,ndBCB)    : boundary Condition values
 !  shpb   (nen)                 : boundary element shape-functions
 !  shglb  (nsd,nen)             : boundary element grad-shape-functions
 !  xlb    (npro,nenl,nsd)       : nodal coordinates at current step
@@ -48,10 +51,15 @@
 !
       use turbsa
       use pointer_data
-      use phcommonvars  
+      use phcommonvars
+
+      use deformableWall
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
       dimension   yl(npro,nshl,ndof),        rmu(npro), &
+                  iBCB(npro,ndiBCB), &
+                  BCB(npro,nshlb,ndBCB), &
                   shpb(npro,nshl),           shglb(npro,nsd,nshl), &
                   xlb(npro,nenl,nsd), &
                   lnode(27),                 g1yi(npro,ndof), &
@@ -69,7 +77,7 @@
                   usup1(npro,nsd),           usup2(npro,nsd), &
                   velsup(npro,nsd), &
                   rlKwall(npro,nshlb,nsd), &
-                  SWB(npro,nProps),          TWB(npro,2)
+                  SWB(npro,nProps)
 !
       dimension   gl1yi(npro,ndof),          gl2yi(npro,ndof), &
                   gl3yi(npro,ndof),          dxdxib(npro,nsd,nsd), &
@@ -82,18 +90,21 @@
       dimension   xKebe(npro,nsd**2,nshl,nshl)
 
       real*8      rotel(npro,nsd,nsd)
-      real*8      strainterm(npro,5,nshlb)
       real*8      uterm(npro,nsd)
       real*8      ulrot(npro,nshl,nsd)
       real*8      xlbrot(npro,nenl,nsd)
-      real*8      Dmatrix(npro,5,5)
-      real*8      Dtimesstrain(npro,5,nshlb)
       real*8      dxdxib_el(npro,nsd,nsd)
       real*8      dxidxb_el(npro,nsd,nsd)
       real*8      shgb_el(npro,nsd,nshl)
-      real*8      LHSwall(npro,nsd**2,nshl,nshl)
+
+      real*8      Dmatrix(npro,5,5)
+
+      real*8      strainterm(npro,5,nshlb)
+      real*8      Dtimesstrain(npro,5,nshlb)
       real*8      straindisp_g(npro,5,nshlb,nsd)
       real*8      DtimesB(npro,5,nshlb,nsd)
+
+      real*8      LHSwall(npro,nsd**2,nshl,nshl)
 
       real*8      Wall_LHSfactor(npro), &
                   Wall_LHSfactorSupp(npro), &
@@ -452,80 +463,118 @@
           !.... -----> Deformable Wall Residual Terms  <-----------
           !
 
+          ! ---------------------------------------------------------------------
+          !
+          ! stiffness term
+          !
           ! define the material properties for the enhanced membrane
           ! the membrane thickness is always SWB(:,1)
           Dmatrix = zero
-          if (iUseSWB.gt.0) then
-              if (nProps.eq.10) then
-                  ! This is an Isotropic Material
-                  Dmatrix(:,1,1) = SWB(:,7)
-                  Dmatrix(:,2,2) = SWB(:,7)
-                  Dmatrix(:,1,2) = SWB(:,8)
-                  Dmatrix(:,2,1) = SWB(:,8)
-                  Dmatrix(:,3,3) = SWB(:,9)
-                  Dmatrix(:,4,4) = SWB(:,10)
-                  Dmatrix(:,5,5) = SWB(:,10)
-              elseif(nProps.eq.21) then
 
-                  ! This is an Orthotropic Material
-                  Dmatrix(:,1,1) = SWB(:,7)
-
-                  Dmatrix(:,2,1) = SWB(:,8)
-                  Dmatrix(:,1,2) = SWB(:,8)
-                  Dmatrix(:,2,2) = SWB(:,9)
-
-                  Dmatrix(:,3,1) = SWB(:,10)
-                  Dmatrix(:,1,3) = SWB(:,10)
-                  Dmatrix(:,3,2) = SWB(:,11)
-                  Dmatrix(:,2,3) = SWB(:,11)
-                  Dmatrix(:,3,3) = SWB(:,12)
-
-                  Dmatrix(:,4,1) = SWB(:,13)
-                  Dmatrix(:,1,4) = SWB(:,13)
-                  Dmatrix(:,4,2) = SWB(:,14)
-                  Dmatrix(:,2,4) = SWB(:,14)
-                  Dmatrix(:,4,3) = SWB(:,15)
-                  Dmatrix(:,3,4) = SWB(:,15)
-                  Dmatrix(:,4,4) = SWB(:,16)
-
-                  Dmatrix(:,5,1) = SWB(:,17)
-                  Dmatrix(:,1,5) = SWB(:,17)
-                  Dmatrix(:,5,2) = SWB(:,18)
-                  Dmatrix(:,2,5) = SWB(:,18)
-                  Dmatrix(:,5,3) = SWB(:,19)
-                  Dmatrix(:,3,5) = SWB(:,19)
-                  Dmatrix(:,5,4) = SWB(:,20)
-                  Dmatrix(:,4,5) = SWB(:,20)
-                  Dmatrix(:,5,5) = SWB(:,21)
-
-              else
-
-                  write(*,*) 'Number of wall properties not set correctly!'
-                  stop
-
-              end if
-
-          else
+          if (iUseSWB.eq.0) then
 
               ! when the legacy SWB field is not used
               ! only the isotropic case
               ! is implemented so far
-              Dmatrix(:,1,1) = one
-              Dmatrix(:,2,2) = Dmatrix(:,1,1)
-              Dmatrix(:,1,2) = rnuvw
-              Dmatrix(:,2,1) = Dmatrix(:,1,2)
-              Dmatrix(:,3,3) = pt5*(1-rnuvw)
-              Dmatrix(:,4,4) = pt5*(1-rnuvw)*rshearconstantvw
-              Dmatrix(:,5,5) = pt5*(1-rnuvw)*rshearconstantvw
 
-              Dmatrix(:,:,:) = evw * one/(one-rnuvw**2)*Dmatrix(:,:,:);
+              tempcoeff = one/(one-rnuvw**2);
+
+              do iel = 1, npro
+
+                  ! default values
+                  SWB(iel,1) = thicknessvw
+                  SWB(iel,7) = evw * tempcoeff * one
+                  SWB(iel,8) = evw * tempcoeff * rnuvw
+                  SWB(iel,9) = evw * tempcoeff * pt5*(1-rnuvw)
+                  SWB(iel,10) = evw * tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+
+                  ! regional values
+                  if (numWallRegions .gt. 0) then
+                      SWB(iel,1) = ValueListWallh( iBCB(iel,2) )
+                      SWB(iel,7) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * one
+                      SWB(iel,8) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * rnuvw
+                      SWB(iel,9) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * pt5*(1-rnuvw)
+                      SWB(iel,10) = ValueListWallE( iBCB(iel,2) ) * &
+                                    tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+                  endif
+
+              enddo
+
+!              Dmatrix(:,1,1) = one
+!              Dmatrix(:,2,2) = Dmatrix(:,1,1)
+!              Dmatrix(:,1,2) = rnuvw
+!              Dmatrix(:,2,1) = Dmatrix(:,1,2)
+!              Dmatrix(:,3,3) = pt5*(1-rnuvw)
+!              Dmatrix(:,4,4) = pt5*(1-rnuvw)*rshearconstantvw
+!              Dmatrix(:,5,5) = pt5*(1-rnuvw)*rshearconstantvw
+
+              !Dmatrix(:,:,:) = evw * one/(one-rnuvw**2)*Dmatrix(:,:,:);
+
+              !do iel = 1, npro
+
+              !    Dmatrix(iel,:,:) = ValueListWallE( iBCB(iel,2) ) * &
+              !                       one/(one-rnuvw**2) * &
+              !                       Dmatrix(iel,:,:)
+
+              !enddo
+
           endif
 
+          if (nProps.eq.10) then
+              ! This is an Isotropic Material
+              Dmatrix(:,1,1) = SWB(:,7)
+              Dmatrix(:,2,2) = SWB(:,7)
+              Dmatrix(:,1,2) = SWB(:,8)
+              Dmatrix(:,2,1) = SWB(:,8)
+              Dmatrix(:,3,3) = SWB(:,9)
+              Dmatrix(:,4,4) = SWB(:,10)
+              Dmatrix(:,5,5) = SWB(:,10)
+          elseif(nProps.eq.21) then
+
+              ! This is an Orthotropic Material
+              Dmatrix(:,1,1) = SWB(:,7)
+
+              Dmatrix(:,2,1) = SWB(:,8)
+              Dmatrix(:,1,2) = SWB(:,8)
+              Dmatrix(:,2,2) = SWB(:,9)
+
+              Dmatrix(:,3,1) = SWB(:,10)
+              Dmatrix(:,1,3) = SWB(:,10)
+              Dmatrix(:,3,2) = SWB(:,11)
+              Dmatrix(:,2,3) = SWB(:,11)
+              Dmatrix(:,3,3) = SWB(:,12)
+
+              Dmatrix(:,4,1) = SWB(:,13)
+              Dmatrix(:,1,4) = SWB(:,13)
+              Dmatrix(:,4,2) = SWB(:,14)
+              Dmatrix(:,2,4) = SWB(:,14)
+              Dmatrix(:,4,3) = SWB(:,15)
+              Dmatrix(:,3,4) = SWB(:,15)
+              Dmatrix(:,4,4) = SWB(:,16)
+
+              Dmatrix(:,5,1) = SWB(:,17)
+              Dmatrix(:,1,5) = SWB(:,17)
+              Dmatrix(:,5,2) = SWB(:,18)
+              Dmatrix(:,2,5) = SWB(:,18)
+              Dmatrix(:,5,3) = SWB(:,19)
+              Dmatrix(:,3,5) = SWB(:,19)
+              Dmatrix(:,5,4) = SWB(:,20)
+              Dmatrix(:,4,5) = SWB(:,20)
+              Dmatrix(:,5,5) = SWB(:,21)
+
+          else
+
+              write(*,*) 'Number of wall properties not set correctly!'
+              stop
+
+          end if
 
           ! strain term on the right
           strainterm = zero
+
           ulrot = zero
           Dtimesstrain = zero
+
           straindisp_g = zero
           DtimesB = zero
           do n = 1, nshlb
@@ -547,8 +596,11 @@
               ! compute local strain from nodal displacements
               do j = 1, 5
                   do i = 1, 3
+                      ! the "prestress" if not added from the SWB field
+                      ! is added here via a reference displacement
                       strainterm(:,j,nodlcl) = strainterm(:,j,nodlcl) + &
-                                               straindisp_g(:,j,nodlcl,i) * ul(:,nodlcl,i)
+                                               straindisp_g(:,j,nodlcl,i) * &
+                                               (ul(:,nodlcl,i) + mDisp_ref(icurrentblk)%p(:,nodlcl,i))
                   enddo
               enddo
 
@@ -585,6 +637,7 @@
                   nodlclm = lnode(m)
 
                   ! multiply by transpose of global strain displacement matrix
+                  ! to get the residual contribution
                   do j = 1, 5
                       do i = 1, 3
                           rlKwall(:,nodlcln,i) = &
@@ -593,10 +646,24 @@
                       enddo
                   enddo
 
+                  ! now compute the tangent LHS contribution
+                  do k = 1, 3
+                      do j = 1, 5
+                          do i = 1, 3
+
+                              LHSwall(:,3*(i-1)+k,nodlcln,nodlclm) = &
+                              LHSwall(:,3*(i-1)+k,nodlcln,nodlclm) + &
+                              straindisp_g(:,j,nodlcln,i) * DtimesB(:,j,nodlclm,k) * &
+                              WdetJb * SWB(:,1)
+
+                          enddo
+                      enddo
+                  enddo
+
               enddo
 
               ! ---------------------------------------------------------------------
-              ! now add the prestress contribution
+              ! now add the legacy prestress contribution
               !
               if(iUseSWB.gt.0) then
 
@@ -620,29 +687,6 @@
               do i = 1, 3
                   rlKwall(:,nodlcln,i) = rlKwall(:,nodlcln,i) * WdetJb * SWB(:,1)
               enddo
-
-
-              ! ---------------------------------------------------------------------
-              ! now compute the tangent LHS contribution
-              !
-              do m = 1, nshlb
-
-                  nodlclm = lnode(m)
-
-                  do k = 1, 3
-                      do j = 1, 5
-                          do i = 1, 3
-
-                              LHSwall(:,3*(i-1)+k,nodlcln,nodlclm) = &
-                              LHSwall(:,3*(i-1)+k,nodlcln,nodlclm) + &
-                              straindisp_g(:,j,nodlcln,i) * DtimesB(:,j,nodlclm,k) * &
-                              WdetJb * SWB(:,1)
-
-                          enddo
-                      enddo
-                  enddo
-              enddo
-
 
           enddo
 
@@ -682,12 +726,12 @@
             
               enddo
          
-              usup1(:,1) = usup1(:,1) * TWB(:,1)
-              usup1(:,2) = usup1(:,2) * TWB(:,1)
-              usup1(:,3) = usup1(:,3) * TWB(:,1)
+              usup1(:,1) = usup1(:,1) * tissSuppStiffCoeff
+              usup1(:,2) = usup1(:,2) * tissSuppStiffCoeff
+              usup1(:,3) = usup1(:,3) * tissSuppStiffCoeff
          
               Wall_LHSfactor = Wall_LHSfactor + &
-              Delt(itseq) * alfi * betai * Delt(itseq) * TWB(:,1)
+              Delt(itseq) * alfi * betai * Delt(itseq) * tissSuppStiffCoeff
             
           endif
          
@@ -699,16 +743,15 @@
          
                   nodlcl = lnode(n)
 
-                  usup2(:,1) = usup2(:,1) + &
-                  shpb(:,nodlcl) * xdistl(:,nodlcl) * xdnvl(:,nodlcl,1)
-
-                  usup2(:,2) = usup2(:,2) + &
-                  shpb(:,nodlcl) * xdistl(:,nodlcl) * xdnvl(:,nodlcl,2)
-
-                  usup2(:,3) = usup2(:,3) + &
-                  shpb(:,nodlcl) * xdistl(:,nodlcl) * xdnvl(:,nodlcl,3)
+                  usup2(:,1) = usup2(:,1) + shpb(:,nodlcl) * xdistl(:,nodlcl) * xdnvl(:,nodlcl,1)
+                  usup2(:,2) = usup2(:,2) + shpb(:,nodlcl) * xdistl(:,nodlcl) * xdnvl(:,nodlcl,2)
+                  usup2(:,3) = usup2(:,3) + shpb(:,nodlcl) * xdistl(:,nodlcl) * xdnvl(:,nodlcl,3)
      
               enddo
+
+              usup2(:,1) = usup2(:,1) * stateFilterCoeff
+              usup2(:,2) = usup2(:,2) * stateFilterCoeff
+              usup2(:,3) = usup2(:,3) * stateFilterCoeff
             
           endif
             
@@ -726,11 +769,11 @@
             
               enddo
 
-              velsup(:,1) = velsup(:,1) * TWB(:,2)
-              velsup(:,2) = velsup(:,2) * TWB(:,2)
-              velsup(:,3) = velsup(:,3) * TWB(:,2)
+              velsup(:,1) = velsup(:,1) * tissSuppDampCoeff
+              velsup(:,2) = velsup(:,2) * tissSuppDampCoeff
+              velsup(:,3) = velsup(:,3) * tissSuppDampCoeff
 
-              Wall_LHSfactor = Wall_LHSfactor + Delt(itseq) * alfi * gami * TWB(:,2)
+              Wall_LHSfactor = Wall_LHSfactor + Delt(itseq) * alfi * gami * tissSuppDampCoeff
             
           end if
                    

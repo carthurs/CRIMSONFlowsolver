@@ -37,7 +37,7 @@
       if (allocated(wnrm)) deallocate (wnrm)
       if (allocated(otwn)) deallocate (otwn)
       if(iRANS.lt.0 .and. allocated(d2wall)) deallocate (d2wall)
-      if(nsidg.gt.0 .and. allocated(sidmapg)) deallocate (sidmapg)
+      if(allocated(sidmapg)) deallocate (sidmapg)
       return
       end
 

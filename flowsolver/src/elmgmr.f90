@@ -138,6 +138,7 @@
           npro   = lcblk(1,iblk+1) - iel 
           inum   = iel + npro - 1
           ngauss = nint(lcsyst)
+
 !
 !.... allocate the element matrices
 !
@@ -276,6 +277,9 @@
           else
              ngaussb = nintb(lcsyst)
           endif
+
+          icurrentblk = iblk  ! current block
+
 !
 !.... allocate the element matrices
 !
@@ -307,9 +311,7 @@
                        mienb(iblk)%p,           mmatb(iblk)%p, &
                        miBCB(iblk)%p,           mBCB(iblk)%p, &
                        res,                     xKebe, &
-                       mSWB(iblk)%p,            mTWB(iblk)%p, &
-                       mPS_global(iblk)%p, &
-                       mKwall_xKebe(iblk)%p)
+                       mSWB(iblk)%p )
 
 !
 !.... satisfy (again, for the vessel wall contributions) the BC's on the implicit LHS

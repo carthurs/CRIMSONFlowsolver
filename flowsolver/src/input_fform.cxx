@@ -928,47 +928,79 @@ int input_fform() {
 				nomodule.iUseSWB = 1;
 			else {
 				nomodule.iUseSWB = 0;
+
+				if (nomodule.numWallRegions = inp.GetValue(
+						"Number of Wall Regions")) {
+
+					cout << "Number of Wall Regions " << nomodule.numWallRegions << endl;
+
+					ivec = inp.GetValue("List of Wall Region Surfaces");
+					for (i = 0; i < MAXSURF + 1; i++)
+						nomodule.nsrflistWallRegions[i] = 0;
+					for (i = 0; i < nomodule.numWallRegions; i++) {
+						nomodule.nsrflistWallRegions[i + 1] = ivec[i];
+					}
+
+					vec = inp.GetValue("Wall Elastic Modulus Values");
+					for (i = 0; i < MAXSURF + 1; i++)
+						nomodule.ValueListWallE[i] = 0;
+					for (i = 0; i < nomodule.numWallRegions; i++)
+						nomodule.ValueListWallE[ nomodule.nsrflistWallRegions[i + 1] ] = vec[i];
+					vec.erase(vec.begin(), vec.end());
+
+					vec = inp.GetValue("Wall Thickness Values");
+					for (i = 0; i < MAXSURF + 1; i++)
+						nomodule.ValueListWallh[i] = 0;
+					for (i = 0; i < nomodule.numWallRegions; i++)
+						nomodule.ValueListWallh[ nomodule.nsrflistWallRegions[i + 1] ] = vec[i];
+					vec.erase(vec.begin(), vec.end());
+				}
+
+
 				nomodule.evw = inp.GetValue("Young Mod of Vessel Wall");
 				nomodule.thicknessvw = inp.GetValue("Thickness of Vessel Wall");
 			}
 
 
-			if ((string) inp.GetValue("Prestress from Initial Configuration") == "True") {
-                nomodule.iinitialprestress = 1;
-			}
-			else {
-				nomodule.iinitialprestress = 0;
-			}
 
-
-			if ((string) inp.GetValue("Use TWB File") == "True")
-				nomodule.iUseTWB = 1;
-			else
-				nomodule.iUseTWB = 0;
 
 			if ((string) inp.GetValue("Wall Damping Term") == "True") {
 				nomodule.iwalldamp = 1;
-				if (nomodule.iUseTWB == 0)
-					nomodule.tissSuppDampCoeff = inp.GetValue(
-							"Damping Coefficient for Tissue Support");
+				nomodule.tissSuppDampCoeff = inp.GetValue("Damping Coefficient for Tissue Support");
 			} else
 				nomodule.iwalldamp = 0;
 
 			if ((string) inp.GetValue("Wall External Support Term") == "True") {
 				nomodule.iwallsupp = 1;
-				if (nomodule.iUseTWB == 0)
-					nomodule.tissSuppStiffCoeff = inp.GetValue(
-							"Stiffness Coefficient for Tissue Support");
+				nomodule.tissSuppStiffCoeff = inp.GetValue("Stiffness Coefficient for Tissue Support");
 			} else
 				nomodule.iwallsupp = 0;
+
+			if ((string) inp.GetValue("Measure Distance to Wall Data") == "True") {
+				nomodule.imeasdist = 1;
+			} else
+				nomodule.imeasdist = 0;
 
 			if ((string) inp.GetValue("Wall State Filter Term") == "True") {
 				nomodule.imeasdist = 1;
 				nomodule.idistancenudge = 1;
 				nomodule.stateFilterCoeff = inp.GetValue("Wall State Filter Coefficient");
 			} else {
-				nomodule.imeasdist = 0;
 				nomodule.idistancenudge = 0;
+			}
+
+			if ((string) inp.GetValue("Use Reference Displacements") == "True") {
+				nomodule.iinitialprestress = 1;
+
+				if ((string) inp.GetValue("Update Reference Displacements with Average") == "True")
+					nomodule.iupdateprestress = 1;
+				else
+					nomodule.iupdateprestress = 0;
+
+			}
+			else {
+				nomodule.iinitialprestress = 0;
+				nomodule.iupdateprestress = 0;
 			}
 		}
 

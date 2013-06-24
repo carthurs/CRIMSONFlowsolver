@@ -10,10 +10,15 @@ module globalArrays
     real (c_double), target, allocatable :: y(:,:)
     real (c_double), target, allocatable :: ac(:,:)
     real (c_double), target, allocatable :: u(:,:)
-    real (c_double), target, allocatable :: uref(:,:)
     real (c_double), target, allocatable :: yold(:,:)
     real (c_double), target, allocatable :: acold(:,:)
     real (c_double), target, allocatable :: uold(:,:)
+    real*8, allocatable :: uref(:,:)
+    real*8, allocatable :: ubar(:,:)
+
+    real*8, allocatable :: xdist(:)
+    real*8, allocatable :: xdnv(:,:)
+    real*8, allocatable :: df_fem(:)
 
     real (c_double), allocatable :: temporary_array(:,:)
 
@@ -28,9 +33,6 @@ module globalArrays
     real*8, allocatable :: dummyVar(:)
     real*8, allocatable :: uhess(:,:)
     real*8, allocatable :: gradu(:,:)
-      
-    real*8, allocatable :: xdist(:)
-    real*8, allocatable :: xdnv(:,:)
 
 
     ! the ones listed below were formerly in readarrays but since they are
@@ -103,14 +105,16 @@ subroutine initGlobalArrays
     !
     ! conditional allocates
     !
-    ! the next four are currently passed but should be moved to a
+    ! these are currently passed but should be moved to a
     ! module so that they can be conditionally allocated to save
     ! memory when not used
     if (.not. allocated(u)) allocate (u(nshg,nsd))
     if (.not. allocated(uold)) allocate (uold(nshg,nsd))
     if (.not. allocated(uref)) allocate (uref(nshg,nsd))
+    if (.not. allocated(ubar)) allocate (ubar(nshg,nsd))
     if (.not. allocated(xdist)) allocate (xdist(nshg))
     if (.not. allocated(xdnv)) allocate (xdnv(nshg,nsd))
+    if (.not. allocated(df_fem)) allocate (df_fem(nshg))
       
 
     if (.not. allocated(rerr)) allocate (rerr(nshg,numerr)) ! this one was pulled out because it
@@ -155,6 +159,19 @@ subroutine GlobalDestruction
     if (allocated(x)) deallocate (x)
     if (allocated(iper)) deallocate (iper)
     if (allocated(res)) deallocate (res)
+    !
+    ! conditional allocates
+    !
+    ! the next four are currently passed but should be moved to a
+    ! module so that they can be conditionally allocated to save
+    ! memory when not used
+
+    if (allocated(u)) deallocate (u)
+    if (allocated(uold)) deallocate (uold)
+    if (allocated(xdist)) deallocate(xdist)
+    if (allocated(xdnv)) deallocate(xdnv)
+    if (allocated(df_fem)) deallocate(df_fem)
+
 
     if (numpe>1) then
         call Dctypes(ilwork) ! free the MPI derived datatypes
@@ -167,17 +184,6 @@ subroutine GlobalDestruction
     !
     !
     call DShapeTable  ! destroy the shape functions
-    !
-    ! conditional allocates
-    !
-    ! the next four are currently passed but should be moved to a
-    ! module so that they can be conditionally allocated to save
-    ! memory when not used
-      
-    if (allocated(u)) deallocate (u)
-    if (allocated(uold)) deallocate (uold)
-    if (allocated(xdist)) deallocate (xdist)
-    if (allocated(xdnv)) deallocate (xdnv)
       
     call DdeformableWall
       

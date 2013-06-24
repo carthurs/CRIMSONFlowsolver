@@ -192,6 +192,8 @@
             else
                ngaussb = nintb(lcsyst)
             endif
+
+            icurrentblk = iblk  ! current block
 !
 !.... allocate the element matrices (though they're not needed)
 !
@@ -210,9 +212,7 @@
                          invflx,                  flxres,       &
                          flxLHS,                  flxnrm,       &
                          xKebe,                                 &
-                         mSWB(iblk)%p,            mTWB(iblk)%p, &
-                         mPS_global(iblk)%p,                    &
-                         mKwall_xKebe(iblk)%p)
+                         mSWB(iblk)%p )
 !     
             deallocate ( xKebe )
 !     

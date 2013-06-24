@@ -18,25 +18,25 @@
 #define MAXQPT   125
 #define MAXSH    32
 #define NSD      3
-#define machin   'RS/6000'
-#define machfl   4
-#define zero   0.0000000000000000000000000000000d0
-#define pt125   0.1250000000000000000000000000000d0
-#define pt25   0.2500000000000000000000000000000d0
-#define pt33   0.3333333333333333333333333333333d0
-#define pt39   0.3968502629920498686879264098181d0
-#define pt5   0.5000000000000000000000000000000d0
-#define pt57   0.5773502691896257645091487805020d0
-#define pt66   0.6666666666666666666666666666667d0
-#define pt75   0.7500000000000000000000000000000d0
-#define one   1.0000000000000000000000000000000d0
-#define sqt2   1.4142135623730950488016887242097d0
-#define onept5   1.5000000000000000000000000000000d0
-#define two   2.0000000000000000000000000000000d0
-#define three   3.0000000000000000000000000000000d0
-#define four   4.0000000000000000000000000000000d0
-#define five   5.0000000000000000000000000000000d0
-#define pi   3.1415926535897932384626433832795d0
+//#define machin   'RS/6000'
+//#define machfl   4
+//#define zero   0.0000000000000000000000000000000d0
+//#define pt125   0.1250000000000000000000000000000d0
+//#define pt25   0.2500000000000000000000000000000d0
+//#define pt33   0.3333333333333333333333333333333d0
+//#define pt39   0.3968502629920498686879264098181d0
+//#define pt5   0.5000000000000000000000000000000d0
+//#define pt57   0.5773502691896257645091487805020d0
+//#define pt66   0.6666666666666666666666666666667d0
+//#define pt75   0.7500000000000000000000000000000d0
+//#define one   1.0000000000000000000000000000000d0
+//#define sqt2   1.4142135623730950488016887242097d0
+//#define onept5   1.5000000000000000000000000000000d0
+//#define two   2.0000000000000000000000000000000d0
+//#define three   3.0000000000000000000000000000000d0
+//#define four   4.0000000000000000000000000000000d0
+//#define five   5.0000000000000000000000000000000d0
+//#define pi   3.1415926535897932384626433832795d0
 
 //namespace PHSOLVER {
 
@@ -172,6 +172,7 @@
          int nnz_tot;
          int idtn;
          int nshguniq;
+         int icurrentblk;
       } conpar ;
 
       extern struct { 
@@ -464,6 +465,8 @@
          double rnuvw;
          double rshearconstantvw;
          double betai;
+         double ValueListWallE[MAXSURF+1];
+         double ValueListWallh[MAXSURF+1];
          double tissSuppStiffCoeff; 
          double tissSuppDampCoeff;
          double stateFilterCoeff;
@@ -506,13 +509,14 @@
          int iwallstiffactor;
          int nProps;
          int iUseSWB;
-         int iUseTWB;
-         int numevw;
+         int numWallRegions;
+         int nsrflistWallRegions[MAXSURF+1];
          int iwalldamp;
          int iwallsupp;
          int imeasdist;
          int idistancenudge;
          int iinitialprestress;
+         int iupdateprestress;
       } nomodule;
 
       extern struct {

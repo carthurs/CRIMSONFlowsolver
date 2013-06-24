@@ -65,10 +65,6 @@ void bzero_old(void* ptr, size_t sz) {
 }
 #endif
 #include <time.h>
-#include "Seldon.hxx"
-#include "SeldonSolver.hxx"
-
-using namespace Seldon;
 
 // =========
 //   Cross
@@ -122,10 +118,9 @@ extern double init_p_;
 extern double init_v_[3];
 extern double* soln_;
 extern double* dispsoln_;
+extern double* dispsoln_ref_;
 extern double* acc_;
 extern double* SWBtp_;
-extern double* TWBtp_;
-extern double* EWBtp_;
 extern int* linobs_soln_;
 extern int* linobs_acc_;
 extern int* linobs_disp_;
@@ -144,7 +139,6 @@ extern double Displacement_pressure_;
 
 extern int numObs_;
 extern int numParams_;
-Matrix<double, General, ArrayRowSparse> Htemp;
 
 int writeGEOMBCDAT(char* filename);
 int writeRESTARTDAT(char* filename);
@@ -1307,14 +1301,143 @@ int cmd_append_displacements(char *cmd) {
 	writedatablock_(&filenum, "displacement ", (void*) (dispsoln_), &nitems,
 			"double", oformat);
 
+//	closefile_(&filenum, "append");
+
+
+	if (dispsoln_ref_ == NULL) {
+
+		nsd = 3;
+		nshg = numNodes_;
+		size = nsd * nshg;
+
+		dispsoln_ref_ = new double[size];
+
+		for (i = 0; i < size; i++) {
+			dispsoln_ref_[i] = 0.0;
+		}
+
+	}
+
+
+//	filenum = -1;
+//	openfile_(filename, "append", &filenum);
+//	if (filenum < 0) {
+//		fprintf(stderr, "ERROR:  could not open file (%s)\n", filename);
+//		return CV_ERROR;
+//	}
+
+	nitems = 3;
+
+	writeheader_(&filenum, "displacement_ref ", (void*) iarray, &nitems, &size,
+				"double", oformat);
+
+	nitems = size;
+
+	writedatablock_(&filenum, "displacement_ref ", (void*) (dispsoln_ref_), &nitems,
+				"double", oformat);
+
 	closefile_(&filenum, "append");
 
 	delete dispsoln_;
+	delete dispsoln_ref_;
 
 	// cleanup
 	debugprint(stddbg, "Exiting cmd_append_displacements.\n");
 	return CV_OK;
 }
+
+int cmd_append_displacements_with_ref(char *cmd) {
+
+	// enter
+	debugprint(stddbg, "Entering cmd_append_displacements.\n");
+
+	char filename[MAXPATHLENGTH];
+
+	// do work
+	parseCmdStr(cmd, filename);
+
+	// some simple validity checks
+	if (numNodes_ == 0 || numSolnVars_ == 0 || dispsoln_ == NULL) {
+		fprintf(stderr, "ERROR:  Not all required info set!\n");
+		return CV_ERROR;
+	}
+
+	int i;
+
+	int filenum = -1;
+	openfile_(filename, "append", &filenum);
+	if (filenum < 0) {
+		fprintf(stderr, "ERROR:  could not open file (%s)\n", filename);
+		return CV_ERROR;
+	}
+
+	int nsd = 3;
+	int lstep = 0;
+	int nshg = numNodes_;
+	int size = nsd * nshg;
+
+	if (dispsoln_ref_ == NULL) {
+
+		nsd = 3;
+		nshg = numNodes_;
+		size = nsd * nshg;
+
+		dispsoln_ref_ = new double[size];
+
+		for (i = 0; i < size; i++) {
+			dispsoln_ref_[i] = dispsoln_[i];
+		}
+
+	}
+
+	for (i = 0; i < size; i++) {
+		dispsoln_[i] = 0.0;
+	}
+
+	// append to file
+	int nitems = 3;
+
+	int iarray[3];
+	iarray[0] = nshg;
+	iarray[1] = nsd;
+	iarray[2] = lstep;
+
+	writeheader_(&filenum, "displacement ", (void*) iarray, &nitems, &size,
+			"double", oformat);
+
+	nitems = size;
+	writedatablock_(&filenum, "displacement ", (void*) (dispsoln_), &nitems,
+			"double", oformat);
+
+//	closefile_(&filenum, "append");
+
+//	filenum = -1;
+//	openfile_(filename, "append", &filenum);
+//	if (filenum < 0) {
+//		fprintf(stderr, "ERROR:  could not open file (%s)\n", filename);
+//		return CV_ERROR;
+//	}
+
+	nitems = 3;
+
+	writeheader_(&filenum, "displacement_ref ", (void*) iarray, &nitems, &size,
+				"double", oformat);
+
+	nitems = size;
+
+	writedatablock_(&filenum, "displacement_ref ", (void*) (dispsoln_ref_), &nitems,
+				"double", oformat);
+
+	closefile_(&filenum, "append");
+
+	delete dispsoln_;
+	delete dispsoln_ref_;
+
+	// cleanup
+	debugprint(stddbg, "Exiting cmd_append_displacements.\n");
+	return CV_OK;
+}
+
 
 int cmd_read_displacements(char *cmd) {
 
@@ -1597,110 +1720,6 @@ int cmd_read_SWB_ISO(char *cmd) {
 	debugprint(stddbg, "Exiting cmd_read_SWB_ISO.\n");
 	return CV_OK;
 
-}
-
-int cmd_read_TWB(char *cmd) {
-
-	// enter
-	debugprint(stddbg, "Entering cmd_read_TWB.\n");
-
-	// do work
-	if (numBoundaryFaces_ == 0) {
-		fprintf(stderr,
-				"ERROR:  Must specify number of boundary faces before you read in TWB!\n");
-		return CV_ERROR;
-	}
-
-	if (parseFile(cmd) == CV_ERROR) {
-		return CV_ERROR;
-	}
-
-	int i;
-
-	if (TWBtp_ == NULL) {
-
-		int nProps = 2; // tissue stiffness and damping constants
-		int neltp = numBoundaryFaces_;
-		int size = nProps * neltp;
-
-		TWBtp_ = new double[size];
-
-		// zeros everywhere
-		for (i = 0; i < size; i++) {
-			TWBtp_[i] = 0.0;
-		}
-	}
-
-	double suppstiff, suppvisc;
-	int faceId;
-	int eof = 0;
-
-	while (NWgetNextNonBlankLine(&eof) == CV_OK) {
-		if (sscanf(buffer_, "%i %lf %lf", &faceId, &suppstiff, &suppvisc)
-				!= 3) {
-			fprintf(stderr, "WARNING:  line not of correct format (%s)\n",
-					buffer_);
-			return CV_ERROR;
-		}
-		TWBtp_[numBoundaryFaces_ * 0 + faceId - 1] = suppstiff;
-		TWBtp_[numBoundaryFaces_ * 1 + faceId - 1] = suppvisc;
-	}
-	NWcloseFile();
-
-	// cleanup
-	debugprint(stddbg, "Exiting cmd_read_TWB_ISO.\n");
-	return CV_OK;
-}
-
-int cmd_read_EWB(char *cmd) {
-
-	// enter
-	debugprint(stddbg, "Entering cmd_read_EWB.\n");
-
-	// do work
-	if (numBoundaryFaces_ == 0) {
-		fprintf(stderr,
-				"ERROR:  Must specify number of boundary faces before you read in EWB!\n");
-		return CV_ERROR;
-	}
-
-	if (parseFile(cmd) == CV_ERROR) {
-		return CV_ERROR;
-	}
-
-	int i;
-
-	if (EWBtp_ == NULL) {
-
-		int nProps = 1; // State filter coefficient
-		int neltp = numBoundaryFaces_;
-		int size = nProps * neltp;
-
-		EWBtp_ = new double[size];
-
-		// zeros everywhere
-		for (i = 0; i < size; i++) {
-			EWBtp_[i] = 0.0;
-		}
-	}
-
-	double statefcoeff;
-	int faceId;
-	int eof = 0;
-
-	while (NWgetNextNonBlankLine(&eof) == CV_OK) {
-		if (sscanf(buffer_, "%i %lf", &faceId, &statefcoeff) != 2) {
-			fprintf(stderr, "WARNING:  line not of correct format (%s)\n",
-					buffer_);
-			return CV_ERROR;
-		}
-		EWBtp_[numBoundaryFaces_ * 0 + faceId - 1] = statefcoeff;
-	}
-	NWcloseFile();
-
-	// cleanup
-	debugprint(stddbg, "Exiting cmd_read_EWB.\n");
-	return CV_OK;
 }
 
 int cmd_number_of_observations(char *cmd) {
@@ -2384,46 +2403,6 @@ int writeGEOMBCDAT(char* filename) {
 		delete SWBtp_;
 	}
 
-	// TWB array
-	if (TWBtp_ != NULL) {
-		nProps = 2;
-		neltp = numBoundaryFaces_;
-		size = nProps * neltp;
-
-		iarray[0] = neltp;
-		iarray[1] = nProps;
-
-		nitems = 2;
-		writeheader_(&filenum, "TWB array", (void*) iarray, &nitems, &size,
-				"double", oformat);
-
-		nitems = size;
-		writedatablock_(&filenum, "TWB array ", (void*) (TWBtp_), &nitems,
-				"double", oformat);
-
-		delete TWBtp_;
-	}
-
-	// EWB array
-	if (EWBtp_ != NULL) {
-		nProps = 1;
-		neltp = numBoundaryFaces_;
-		size = nProps * neltp;
-
-		iarray[0] = neltp;
-		iarray[1] = nProps;
-
-		nitems = 2;
-		writeheader_(&filenum, "EWB array", (void*) iarray, &nitems, &size,
-				"double", oformat);
-
-		nitems = size;
-		writedatablock_(&filenum, "EWB array ", (void*) (EWBtp_), &nitems,
-				"double", oformat);
-
-		delete EWBtp_;
-	}
-
 	// simple observation function arrays
 
 	//
@@ -2539,7 +2518,7 @@ int writeGEOMBCDAT(char* filename) {
 
 	nitems = size;
 	writedatablock_(&filenum, "observation function distance",
-			(void*) (linobs_disp_), &nitems, "integer", oformat);
+			(void*) (obs_dist_), &nitems, "integer", oformat);
 
 	delete obs_dist_;
 

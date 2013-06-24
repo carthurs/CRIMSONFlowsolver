@@ -178,7 +178,8 @@ Write_Displ(  int* pid,
               int* stepno, 
               int* nshg, 
               int* numVars,
-              double* array1 ) { 
+              double* array1,
+              double* array2) {
 
 
     char fname[255];
@@ -204,6 +205,12 @@ Write_Displ(  int* pid,
         
     nitems = (*nshg)*(*numVars);
     writedatablock_( &irstou, "displacement", (void*)(array1), &nitems, "double", outpar.iotype );
+
+    nitems = 3;
+    writeheader_( &irstou, "displacement_ref", (void*)iarray, &nitems, &isize, "double", outpar.iotype );
+
+    nitems = (*nshg)*(*numVars);
+    writedatablock_( &irstou, "displacement_ref", (void*)(array2), &nitems, "double", outpar.iotype );
 
     closefile_( &irstou, "append" );
     

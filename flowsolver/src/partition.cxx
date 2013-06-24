@@ -830,12 +830,10 @@ void Partition_Problem(int numProcs) {
 	//ibcb -- Natural Boundary Condition Codes
 	//bcb  -- Natural Boundary Condition Values
 	//swb  -- Vessel Wall Properties array
-	//twb  -- Tissue Support Properties array
 
 	vector < map<block, vector<int>, lessKey> > iBCBpart(numProcs);
 	vector < map<block, vector<double>, lessKey> > BCBpart(numProcs);
 	vector < map<block, vector<double>, lessKey> > SWBpart(numProcs);
-	vector < map<block, vector<double>, lessKey> > TWBpart(numProcs);
 
 	for (int b = 0; b < nblock; b++) {
 
@@ -876,7 +874,6 @@ void Partition_Problem(int numProcs) {
 				iformat);
 
 		double* SWB = NULL;
-		double* TWB = NULL;
 
 		if (nomodule.ideformwall != 0 && nomodule.iUseSWB != 0) {
 			readheader_(&igeombc, "SWB array?", (void*) iarray, &itwo, "double",
@@ -886,18 +883,6 @@ void Partition_Problem(int numProcs) {
 			SWB = new double[isize];
 			readdatablock_(&igeombc, "SWB array?", (void*) SWB, &isize,
 					"double", iformat);
-		}
-
-		if (nomodule.ideformwall != 0 && nomodule.iUseTWB != 0) {
-			// added by Nan 06/26/09
-			readheader_(&igeombc, "TWB array?", (void*) iarray, &itwo, "double",
-					iformat);
-
-			isize = iarray[0] * nPropsTS;
-			TWB = new double[isize];
-			readdatablock_(&igeombc, "TWB array?", (void*) TWB, &isize,
-					"double", iformat);
-
 		}
 
 		for (int c = 0; c < iarray[0]; c++) {
@@ -930,12 +915,6 @@ void Partition_Problem(int numProcs) {
 							SWB[c + iarray[0] * o]);
 			}
 
-			if (nomodule.ideformwall != 0 && nomodule.iUseTWB != 0) {
-				for (int o = 0; o < nPropsTS; o++)
-					TWBpart[pid][CurrentBlock].push_back(
-							TWB[c + iarray[0] * o]);
-			}
-
 		}
 
 		delete[] ient;
@@ -945,10 +924,6 @@ void Partition_Problem(int numProcs) {
 
 		if (nomodule.ideformwall != 0 && nomodule.iUseSWB != 0) {
 			delete[] SWB;
-		}
-
-		if (nomodule.ideformwall != 0 && nomodule.iUseTWB != 0) {
-			delete[] TWB;
 		}
 
 	}
@@ -1142,47 +1117,6 @@ void Partition_Problem(int numProcs) {
 					writedatablock_(&fgeom, keyphrase, (void*) (SWBf), &nitems,
 							"double", oformat);
 					delete[] SWBf;
-				}
-
-				if (nomodule.iUseTWB != 0) {
-
-#if defined ( DEBUG )
-					fascii.precision( 8 );
-					fascii << "------------------------" << endl;
-					fascii << "TWB for the above block" << endl;
-					fascii << "------------------------" << endl;
-					fascii.precision( 8 );
-#endif
-					double* TWBf = new double[blockIEN.size() * nPropsTS];
-					for (int u = 0; u < blockIEN.size(); u++) {
-						for (int v = 0; v < nPropsTS; v++) {
-							TWBf[v * blockIEN.size() + u] =
-									TWBpart[p][CurrentBlock][u * nPropsTS + v];
-
-#if defined ( DEBUG )   
-							fascii << TWBf[v* blockIEN.size()+u] << " ";
-#endif
-
-						}
-
-#if defined ( DEBUG )
-						fascii << endl;
-#endif
-					}
-
-					TWBpart[p][CurrentBlock].clear();
-
-					isize = blockIEN.size() * nPropsTS;
-					xct = 2;
-					iarray[1] = nPropsTS;
-					generate_keyphrase(keyphrase, "TWB array ", CurrentBlock);
-					writeheader_(&fgeom, keyphrase, (void*) iarray, &xct,
-							&isize, "double", oformat);
-
-					nitems = blockIEN.size() * nPropsTS;
-					writedatablock_(&fgeom, keyphrase, (void*) (TWBf), &nitems,
-							"double", oformat);
-					delete[] TWBf;
 				}
 
 			} // end of ideformwall check
@@ -1907,9 +1841,12 @@ void Partition_Problem(int numProcs) {
 
 	int nsd = 3;
 	double* displacement;
+	double* displacement_ref;
 	double* fDisplacement;
+	double* fDisplacement_ref;
 	int nshgLocalDisp;
 	vector < map<int, vector<double> > > dispPart(numProcs);
+	vector < map<int, vector<double> > > dispPart_ref(numProcs);
 
 	// check flag to see if we expect displacements to exist
 	if (nomodule.ideformwall != 0) {
@@ -1937,7 +1874,31 @@ void Partition_Problem(int numProcs) {
 			}
 		}
 
+		// read reference displacements
+
+		readheader_(&irestart, "displacement_ref?", (void*) iarray, &ithree,
+				"double", iformat);
+
+		nshg = iarray[0];
+		nsd = iarray[1];
+		isize = nshg * nsd;
+
+		displacement_ref = new double[isize];
+
+		readdatablock_(&irestart, "displacement_ref?", (void*) displacement_ref, &isize,
+				"double", iformat);
+
+		for (int x = 1; x < nshg + 1; x++) {
+			for (map<int, int>::iterator pIter = ParallelData[x].begin();
+					pIter != ParallelData[x].end(); pIter++) {
+				for (int v = 0; v < nsd; v++)
+					dispPart_ref[(*pIter).first][(*pIter).second].push_back(
+							displacement_ref[v * nshg + x - 1]);
+			}
+		}
+
 		delete[] displacement;
+		delete[] displacement_ref;
 
 	}
 
@@ -1955,6 +1916,7 @@ void Partition_Problem(int numProcs) {
 		if (nomodule.ideformwall != 0) {
 			nshgLocalDisp = dispPart[a].size();
 			fDisplacement = new double[nshgLocalDisp * nsd];
+			fDisplacement_ref = new double[nshgLocalDisp * nsd];
 		}
 
 #if defined ( DEBUG )
@@ -2006,6 +1968,14 @@ void Partition_Problem(int numProcs) {
 				for (int y = 1; y < nshgLocalDisp + 1; y++) {
 					fDisplacement[w * nshgLocalDisp + (y - 1)] =
 							dispPart[a][y][w];
+				}
+
+			dispPart[a].clear();
+
+			for (int w = 0; w < nsd; w++)
+				for (int y = 1; y < nshgLocalDisp + 1; y++) {
+					fDisplacement_ref[w * nshgLocalDisp + (y - 1)] =
+							dispPart_ref[a][y][w];
 				}
 
 			dispPart[a].clear();
@@ -2077,6 +2047,19 @@ void Partition_Problem(int numProcs) {
 
 			nitems = nshgLocalDisp * nsd;
 			writedatablock_(&frest, "displacement ", (void*) (fDisplacement),
+					&nitems, "double", oformat);
+
+
+			isize = nshgLocalDisp * nsd;
+			nitems = 3;
+			iarray[0] = nshgLocalDisp;
+			iarray[1] = nsd;
+			iarray[2] = stepno;
+			writeheader_(&frest, "displacement_ref ", (void*) iarray, &nitems,
+					&isize, "double", oformat);
+
+			nitems = nshgLocalDisp * nsd;
+			writedatablock_(&frest, "displacement_ref ", (void*) (fDisplacement_ref),
 					&nitems, "double", oformat);
 		}
 

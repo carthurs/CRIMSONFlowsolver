@@ -9,6 +9,7 @@ using namespace std;
 #include "common_c.h"
 #include "cvSolverIO.h"
 #include "distmeas.h"
+#include "PhGlobalArrayTransfer.h"
 
 #include "mpi.h"
 
@@ -26,6 +27,7 @@ using namespace std;
 #include "vtkSmartPointer.h"
 #include "vtkPlane.h"
 #include "vtkCutter.h"
+#include "vtkConnectivityFilter.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridWriter.h"
 
@@ -56,13 +58,14 @@ public:
 	//! Type of the observation vector.
 	typedef Vector<double> observation;
 
+
+
 protected:
 
 	/*** Observation file structure ***/
 
 	//! Directory that stores the forward results.
 	string data_directory_;
-
 
 	//! Total number of observations at current time.
 	int Nobservation_;
@@ -85,8 +88,8 @@ protected:
 	//! Flag that denotes whether we use simulation restarts as data
 	int use_restarts_;
 
-    int ignore_nodal_observations_;
-    int ignore_distance_observations_;
+    int execute_nodal_observations_;
+    int execute_distance_observations_;
 
 	/*** Observation times ***/
 
@@ -101,18 +104,36 @@ protected:
 
 	//! Tangent operator matrix (H).
 	tangent_linear_operator tangent_operator_matrix_;
+
 	//! Indices for simple observation operator
 	Vector<int> StateObsIndex_;
 	Vector<int> DataArraysObsIndex_;
 
 	//! Observation error variance.
 	double error_variance_value_;
+
+	double error_variance_value_nodal_;
+	double error_variance_value_dist_;
+	double error_variance_value_avgpress_;
+	double error_variance_value_flow_;
+
+
 	//! Observation error covariance matrix (R).
 	error_variance error_variance_;
-	//! Inverse of the observation error covariance matrix (R).
+
+#ifdef VERDANDI_ROUKF_PARALLEL_INNOVATION
+	//! Inverse of the diagonal observation error covariance matrix
+	Vector<double, PETScPar> error_variance_inverse_diag_;
+#endif
+	//! Inverse of the observation error covariance matrix
 	error_variance error_variance_inverse_;
 
+
     /*** Model domain ***/
+
+	// pointer ot the single instance
+	// of PhGlobalArrayTransfer
+	PhGlobalArrayTransfer *gat;
 
     //! The size of a model state.
     int Nstate_model_;
@@ -122,17 +143,12 @@ protected:
     int current_lower_bound_;
 
     //! Arrays for linear interpolation
-    double* dataarrays_lower_;
-    double* dataarrays_upper_;
-    double* soln_lower_;
-    double* soln_upper_;
-    double* acc_lower_;
-    double* acc_upper_;
-    double* disp_lower_;
-    double* disp_upper_;
+    Vector<double> dataarrays_lower_;
+    Vector<double> dataarrays_upper_;
 
     //! Size of internal arrays
     int isize_solution_;
+
     int isize_displacement_;
     //! Number of global shape functions
     int isize_nshg_;
@@ -150,13 +166,13 @@ protected:
 
 	vtkSmartPointer<vtkPlane> geom_plane_;
 	vtkSmartPointer<vtkCutter> geom_cutter_;
+	vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
 
 	vector <vtkSmartPointer<vtkPlane> > geom_planes_;
 	vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
+    vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connec_filters_;
 
 	vector<vector<double> > distances_fromorigin_;
-
-	/***  ***/
 
 	/*** File handling ***/
     string obsfilename_part_;
@@ -167,13 +183,10 @@ protected:
 
 	ofstream obs_out_part_;
 	ofstream obs_out_single_;
-	//ofstream flow_out_;
 
 	/*** MPI ***/
 	int rank_;
 	int numProcs_;
-
-	int *obs_recvcount_;
 
 public:
 
@@ -183,35 +196,61 @@ public:
 	/*** Initialization ***/
 	template<class Model>
 	void Initialize(const Model& model, string configuration_file);
+
 	template<class Model>
 	void SetTime(const Model& model, double time);
-	void InitializeFiles();
 
     /*** Methods for observation data ***/
 	bool HasObservation() const;
+
 	bool HasObservation(double time);
+
 	void DiscardObservation(bool discard_observation);
+
 	int GetNobservation() const;
+
+	int GetLocalNobservation() const;
+
 	void GetObservation(observation& observation);
-	void loadrestart(int timeindex, double* soln, double* acc, double* disp);
-	void LoadObservationSingleLocal(int timeindex, double* dataarray);
+	//void loadrestart(int timeindex, double* soln, double* acc, double* disp);
+
+	void LoadObservationSingleLocal(int timeindex, Vector<double>& dataarray);
+
 	template<class state>
 	void SaveObservationSingleLocal(const state& x);
+
+
+
 
 	/*** Operators ***/
 	template<class state>
 	void ApplyOperator(const state& x, observation& y) const;
+
 	template<class state>
-	void ApplyOperatorLocal(const state& x, observation& Hx);
+	void ApplyOperatorLocal(const state& x, observation& Hx1, observation& Hx2);
+
 	template<class state>
 	void ApplyOperatorFlow(const state& x, observation& Hx);
+
 	template<class state>
 	void GetInnovation(const state& x, observation& innovation);
+
+#if defined(VERDANDI_ROUKF_PARALLEL_INNOVATION)
+	template<class state>
+	void GetInnovation(const state& x,state& innovation_p_orig, state& innovation_p_fe);
+#else
+	template<class state>
+	void GetInnovation(const state& x,observation& innovation_orig, observation& innovation_fe);
+#endif
+
 	double GetErrorVariance(int i, int j) const;
+
 	const error_variance& GetErrorVariance() const;
+
 	const error_variance& GetErrorVarianceInverse() const;
 
 	string GetName() const;
+
 	void Message(string message);
 };
 

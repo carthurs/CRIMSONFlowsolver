@@ -114,6 +114,7 @@ int CALLTYPE cmd_deformable_thickness(char*);
 int CALLTYPE cmd_deformable_pressure(char*);
 int CALLTYPE cmd_deformable_kcons(char*);
 int CALLTYPE cmd_append_displacements(char*);
+int CALLTYPE cmd_append_displacements_with_ref(char*);
 int CALLTYPE cmd_read_restart_solution(char*);
 int CALLTYPE cmd_read_restart_displacements(char*);
 int CALLTYPE cmd_read_restart_accelerations(char*);
@@ -124,9 +125,6 @@ int CALLTYPE cmd_number_of_wall_Props(char*);
 //int CALLTYPE cmd_scale_coordinates(char*);
 //int CALLTYPE cmd_zero_scalar_flux(char*);
 //int CALLTYPE cmd_scalar_flux(char*);
-// added by Nan 6/24/09
-int CALLTYPE cmd_read_TWB(char*);
-int CALLTYPE cmd_read_EWB(char*);
 int CALLTYPE cmd_write_displacements(char*);
 int CALLTYPE cmd_write_pressures(char*);
 int CALLTYPE cmd_number_of_observations(char*);

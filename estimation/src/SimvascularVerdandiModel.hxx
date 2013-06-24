@@ -8,7 +8,7 @@
 #include "proces.h"
 #include "itrdrv.h"
 #include "estimation_helpers.h"
-#include "GlobalArrayTransfer.h"
+#include "PhGlobalArrayTransfer.h"
 
 #include "mpi.h"
 
@@ -20,8 +20,7 @@
 
 #include <iostream>
 #include <fstream>
-
-GlobalArrayTransfer *gat;
+#include <vector>
 
 namespace Verdandi
 {
@@ -49,21 +48,29 @@ public:
 
 protected:
 
-	int Nparameter_;
+	int Nreduced_;
 	int Nstate_;
 	int Nstate_local_;
+	int state_reduced_start_local_;
 
 	int rank_;
 	int numProcs_;
 
+	int nreduced_has_wall_parameters_;
+	int nreduced_has_coupled_parameters_;
+
 	MPI_Comm iNewComm_C_;
 
-	state duplicated_state_;
-
-	int solveReturn_;
-
 	//! Background error variance.
-	double state_error_variance_value_;
+	vector<double> state_error_variance_value_;
+
+    // pointer to the single instance
+	// of PhGlobalArrayTransfer
+	PhGlobalArrayTransfer *gat;
+
+	Vector<int> WallEInd_;
+
+	state duplicated_state_;
 
 	ofstream param_out_;
 
@@ -86,14 +93,14 @@ public:
 	bool HasFinished() const;
 
 	// Operators.
-	void ApplyOperator(state& x,
-			bool forward = false, bool preserve_state = true);
+	void ApplyOperator(state& x, bool forward = false, bool preserve_state = true);
 
 	// Access methods.
 	double GetTime() const;
 	void SetTime(double time);
 	int GetNstate() const;
 	int GetLocalNstate() const;
+	int GetLocalReducedStart() const;
 	state& GetState();
 	void StateUpdated();
 

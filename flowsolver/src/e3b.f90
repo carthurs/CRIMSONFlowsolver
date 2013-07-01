@@ -87,6 +87,9 @@
                   shapeVar(npro,nshl),         shdrv(npro,nsd,nshl), &
                   rNa(npro,4)
 
+        real*8    unm_copy(npro)
+        real*8    rou_copy(npro)
+
         real*8    xmudmi(npro,ngauss),         dwl(npro,nshl)
 !
       	dimension xKebe(npro,9,nshl,nshl)
@@ -172,6 +175,16 @@
 
            endif
            
+!
+!.... normal velocity component for advective stabilization for inflows
+!
+           unm_copy(iel) = zero
+           if (btest(iBCB(iel,1),1)) then
+               if(unm(iel) .lt. real(0.0,8))then
+                   unm_copy(iel) = unm(iel)
+               end if
+           end if
+
 !
 !.... mass flux
 !
@@ -375,6 +388,14 @@
            rNa(:,3) = rNa(:,3) + rou*u3
         endif
         
+!
+!.... advective stabilization for inflows
+!
+        rou_copy=rho*unm_copy
+        rNa(:,1) = rNa(:,1) - rou_copy*u1
+        rNa(:,2) = rNa(:,2) - rou_copy*u2
+        rNa(:,3) = rNa(:,3) - rou_copy*u3
+
         rNa(:,1) = rNa(:,1)*WdetJb
         rNa(:,2) = rNa(:,2)*WdetJb
         rNa(:,3) = rNa(:,3)*WdetJb

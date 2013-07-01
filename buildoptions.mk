@@ -27,8 +27,8 @@ MAKE_OPTIMIZED = 1
 ifeq ($(MAKE_OPTIMIZED),1)
    DEBUG_FLAGS     =
    DEBUG_FFLAGS    =
-   OPT_FLAGS       = -O2 -fp-model precise
-   OPT_FFLAGS      = -O2 -align array64byte -fp-model source
+   OPT_FLAGS       = -O3 #-fp-model precise
+   OPT_FFLAGS      = -O3 -align array64byte #-fp-model source
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
    #LINK_EXE        = $(CXX) -o 
 else

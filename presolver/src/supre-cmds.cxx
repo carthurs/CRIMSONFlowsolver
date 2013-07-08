@@ -125,6 +125,7 @@ extern int* linobs_soln_;
 extern int* linobs_acc_;
 extern int* linobs_disp_;
 extern int* obs_dist_;
+extern int* inodeTag_;
 
 extern int DisplacementNumElements_;
 extern int* DisplacementConn_[3];
@@ -159,6 +160,7 @@ int parseNum2(char *cmd, int *num);
 int check_node_order(int n0, int n1, int n2, int n3, int elementId, int *k0,
 		int *k1, int *k2, int *k3);
 int fixFreeEdgeNodes(char *cmd);
+int tagRingNodes(char *cmd);
 int createMeshForDispCalc(char *cmd);
 
 extern gzFile fp_;
@@ -642,6 +644,11 @@ int cmd_deformable_wall(char *cmd) {
 
 	if (setBoundaryFacesWithCode(cmd, setSurfID, surfID, setCode, code,
 			value) == CV_ERROR) {
+		return CV_ERROR;
+	}
+
+	// tag ring nodes
+	if (tagRingNodes(cmd) == CV_ERROR) {
 		return CV_ERROR;
 	}
 
@@ -2173,6 +2180,19 @@ int writeGEOMBCDAT(char* filename) {
 	nitems = 3 * numNodes_;
 	writedatablock_(&filenum, "co-ordinates ", (void*) nodes_, &nitems,
 			"double", oformat);
+
+	// write node tags
+	size = numNodes_;
+	nitems = 2;
+	iarray[0] = numNodes_;
+	iarray[1] = 1;
+
+	writeheader_(&filenum, "node tags ", (void*) iarray, &nitems, &size,
+			"integer", oformat);
+
+	nitems = numNodes_;
+	writedatablock_(&filenum, "node tags ", (void*) inodeTag_, &nitems,
+			"integer", oformat);
 
 	//
 	// write elements

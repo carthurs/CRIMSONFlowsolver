@@ -40,6 +40,7 @@
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
       real (c_double), allocatable :: xread(:,:), qread(:,:), acread(:,:)
+      integer, allocatable :: ntagread(:)
       real (c_double), allocatable :: uread(:,:)
       real (c_double), allocatable :: BCinpread(:,:)
       integer, allocatable :: iperread(:), iBCtmpread(:)
@@ -194,6 +195,18 @@
       ixsiz=numnp*nsd
       call readdatablock(igeom,fname1//c_null_char,xread,ixsiz, c_char_"double"//c_null_char,iotype)
       x = xread
+
+!
+!.... read the node tags
+!
+      itwo=2
+      fname1='node tags?'
+      call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"integer"//c_null_char, iotype)
+      numnp=intfromfile(1)
+      allocate( ntagread(numnp) )
+      ixsiz=numnp
+      call readdatablock(igeom,fname1//c_null_char,ntagread,ixsiz, c_char_"integer"//c_null_char,iotype)
+      nodetagfield = ntagread
 
 !
 !.... read in and block out the connectivity

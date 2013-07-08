@@ -976,6 +976,18 @@ int input_fform() {
 			} else
 				nomodule.iwallsupp = 0;
 
+			if ((string) inp.GetValue("Axial Tethering Damping Term") == "True") {
+				nomodule.iringdamp = 1;
+				nomodule.tissSuppRingDampCoeff = inp.GetValue("Axial Tethering Damping Coefficient");
+			} else
+				nomodule.iringdamp = 0;
+
+			if ((string) inp.GetValue("Axial Tethering Stiffness Term") == "True") {
+				nomodule.iringsupp = 1;
+				nomodule.tissSuppRingStiffCoeff = inp.GetValue("Axial Tethering Stiffness Coefficient");
+			} else
+				nomodule.iringsupp = 0;
+
 			if ((string) inp.GetValue("Measure Distance to Wall Data") == "True") {
 				nomodule.imeasdist = 1;
 			} else

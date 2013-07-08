@@ -111,7 +111,13 @@
                   Wall_LHSfactorDamp(npro), &
                   tempSuppStiff(npro),       tempSuppDamp(npro)
 
-      dimension   tmp1(npro)
+      integer    numrgndslcl
+      integer, allocatable :: rgndslcl(:)
+      real*8      xmidpoint(nsd), ringsegmid(nsd)
+      real*8      tmpvc1(nsd), tmpvc2(nsd), tmpdirec(nsd)
+      real*8      tmplen, tmphfact
+
+      dimension  tmp1(npro)
 !     
       real*8      Turb(npro),                xki, &
                   xki3,                      fv1
@@ -600,7 +606,7 @@
                       ! is added here via a reference displacement
                       strainterm(:,j,nodlcl) = strainterm(:,j,nodlcl) + &
                                                straindisp_g(:,j,nodlcl,i) * &
-                                               (ul(:,nodlcl,i) + mDisp_ref(icurrentblk)%p(:,nodlcl,i))
+                                               (ul(:,nodlcl,i) + mDisp_refl(icurrentblk)%p(:,nodlcl,i))
                   enddo
               enddo
 
@@ -654,7 +660,7 @@
                               LHSwall(:,3*(i-1)+k,nodlcln,nodlclm) = &
                               LHSwall(:,3*(i-1)+k,nodlcln,nodlclm) + &
                               straindisp_g(:,j,nodlcln,i) * DtimesB(:,j,nodlclm,k) * &
-                              WdetJb * SWB(:,1)
+                              WdetJb * SWB(:,1) * iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi
 
                           enddo
                       enddo
@@ -712,7 +718,7 @@
           Wall_LHSfactor = almi*(one-flmpl)*rhovw*SWB(:,1)
          
           ! tissue support stiffness term
-          if (iwallsupp.eq.1) then
+          if (iwallsupp.gt.0) then
          
               usup1 = zero
          
@@ -732,10 +738,10 @@
          
               Wall_LHSfactor = Wall_LHSfactor + &
               Delt(itseq) * alfi * betai * Delt(itseq) * tissSuppStiffCoeff
-            
+
           endif
          
-          if (idistancenudge.eq.1) then
+          if (idistancenudge.gt.0) then
          
               usup2 = zero
          
@@ -756,7 +762,7 @@
           endif
             
           ! tissue support damping term
-          if (iwalldamp.eq.1) then
+          if (iwalldamp.gt.0) then
          
               velsup = zero
          
@@ -776,6 +782,126 @@
               Wall_LHSfactor = Wall_LHSfactor + Delt(itseq) * alfi * gami * tissSuppDampCoeff
             
           end if
+
+          ! additional contribution at the rings
+          ! from wall support
+
+          ! since we aren't using the built-in quadrature rule
+          ! we only add to the residual once through the integration loop
+          if (intp .eq. 1 .and. (iringsupp.gt.0 .or. iringdamp.gt.0)) then
+
+              allocate(rgndslcl(nenl))
+
+              do iel = 1, npro
+
+                  ! check if element is on deformable wall
+                  if (btest(iBCB(iel,1),4)) then
+
+                      numrgndslcl = 0
+
+                      xmidpoint = zero
+
+                      ringsegmid = zero
+
+                      do ielnode = 1, nenbl
+
+                          ! check if node tag is 'ring'
+                          if ( btest(mNodeTagl(icurrentblk)%p(iel,ielnode),0) ) then
+
+                              numrgndslcl = numrgndslcl + 1
+
+                              rgndslcl(numrgndslcl) = ielnode
+
+                              ringsegmid = ringsegmid + xlb(iel,ielnode,:)
+
+                          end if
+
+                          xmidpoint = xmidpoint + xlb(iel,ielnode,:)
+
+                      end do
+
+                      xmidpoint = xmidpoint / nenbl
+
+                      ringsegmid = ringsegmid / numrgndslcl
+
+                      if (numrgndslcl .gt. 1) then
+
+                          tmpdirec = ringsegmid - xmidpoint
+
+                          tmpvc2 = xlb(iel,rgndslcl(2),:) - ringsegmid
+
+                          tmpvc2 = tmpvc2 / sqrt(tmpvc2(1)**2+tmpvc2(2)**2+tmpvc2(3)**2)
+
+                          ! compute longitudinal tethering direction
+                          tmpdirec = tmpdirec - tmpvc2*(tmpdirec(1)*tmpvc2(1)+tmpdirec(2)*tmpvc2(2)+tmpdirec(3)*tmpvc2(3))
+
+                          tmpdirec = tmpdirec / sqrt(tmpdirec(1)**2+tmpdirec(2)**2+tmpdirec(3)**2)
+
+                          tmpvc2 = xlb(iel,rgndslcl(2),:)-xlb(iel,rgndslcl(1),:)
+
+                          tmplen = sqrt(tmpvc2(1)**2+tmpvc2(2)**2+tmpvc2(3)**2) / real(6.0,8)
+
+
+
+                          ! compute the traction
+                          tmpvc1 = zero
+                          tmpvc2 = zero
+
+                          if (iringsupp .gt. 0) then
+                              tmpvc1 = tmpvc1 + tissSuppRingStiffCoeff * ul(iel,rgndslcl(1),:)
+                              tmpvc2 = tmpvc2 + tissSuppRingStiffCoeff * ul(iel,rgndslcl(2),:)
+                          end if
+
+                          if (iringdamp .gt. 0) then
+                              tmpvc1 = tmpvc1 + tissSuppRingDampCoeff * yl(iel,rgndslcl(1),2:4)
+                              tmpvc2 = tmpvc2 + tissSuppRingDampCoeff * yl(iel,rgndslcl(1),2:4)
+                          end if
+
+                          tmpvc1 = tmpdirec*(tmpdirec(1)*tmpvc1(1)+tmpdirec(2)*tmpvc1(2)+tmpdirec(3)*tmpvc1(3))
+                          tmpvc2 = tmpdirec*(tmpdirec(1)*tmpvc2(1)+tmpdirec(2)*tmpvc2(2)+tmpdirec(3)*tmpvc2(3))
+
+                          rlKwall(iel,rgndslcl(1),:) = rlKwall(iel,rgndslcl(1),:) + &
+                                                             tmplen * (two * tmpvc1 + tmpvc2)
+                          rlKwall(iel,rgndslcl(2),:) = rlKwall(iel,rgndslcl(2),:) + &
+                                                             tmplen * (tmpvc1 + two * tmpvc2)
+
+                          ! calculate tangent contribution
+                          tmphfact = zero
+
+                          if (iringsupp .gt. 0) then
+                              tmphfact = tmphfact + tmplen * tissSuppRingStiffCoeff * betai*Delt(itseq)*Delt(itseq)*alfi
+                          end if
+
+                          if (iringdamp .gt. 0) then
+                              tmphfact = tmphfact + tmplen * tissSuppRingDampCoeff  * Delt(itseq)*alfi*gami
+                          end if
+
+
+                          do i = 1, 3
+                              do k = 1, 3
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(1),rgndslcl(1)) = &
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(1),rgndslcl(1)) + tmpdirec(i) * tmpdirec(k) * tmphfact * two
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(1),rgndslcl(2)) = &
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(1),rgndslcl(2)) + tmpdirec(i) * tmpdirec(k) * tmphfact
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(2),rgndslcl(1)) = &
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(2),rgndslcl(1)) + tmpdirec(i) * tmpdirec(k) * tmphfact
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(2),rgndslcl(2)) = &
+                                  LHSwall(iel,3*(i-1)+k,rgndslcl(2),rgndslcl(2)) + tmpdirec(i) * tmpdirec(k) * tmphfact * two
+                              end do
+                          end do
+
+                          !write(*,*) ringsegmid, tmpvc1 + ringsegmid
+
+                      end if
+
+                  end if
+
+              end do
+
+              deallocate(rgndslcl)
+
+          end if
+
                    
           ! ---------------------------------------------------------------------
           !.... -----> Wall Mass matrix for implicit LHS  <-----------
@@ -807,7 +933,7 @@
           ! .... -----> Wall Stiffness matrix for implicit LHS
           !
 
-          xKebe = xKebe + LHSwall*iwallstiffactor*betai*Delt(itseq)*Delt(itseq)*alfi
+          xKebe = xKebe + LHSwall
 
 123       continue
 

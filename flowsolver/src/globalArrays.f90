@@ -7,6 +7,7 @@
 
 module globalArrays
     use, intrinsic :: iso_c_binding
+    integer, target, allocatable :: nodetagfield(:)
     real (c_double), target, allocatable :: y(:,:)
     real (c_double), target, allocatable :: ac(:,:)
     real (c_double), target, allocatable :: u(:,:)
@@ -82,6 +83,7 @@ subroutine initGlobalArrays
     use globalArrays
     use phcommonvars
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+    if (.not. allocated(nodetagfield)) allocate (nodetagfield(numnp))
     if (.not. allocated(y)) allocate (y(nshg,ndof))
     if (.not. allocated(ac)) allocate (ac(nshg,ndof))
     if (.not. allocated(yold)) allocate (yold(nshg,ndof))
@@ -148,6 +150,7 @@ subroutine GlobalDestruction
     use phcommonvars
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
     !deallocate (y) ! this is a produced array that will be deallocated from the driver
+    if (allocated(nodetagfield)) deallocate (nodetagfield)
     if (allocated(ac)) deallocate (ac)
     if (allocated(yold)) deallocate (yold)
     if (allocated(acold)) deallocate (acold)

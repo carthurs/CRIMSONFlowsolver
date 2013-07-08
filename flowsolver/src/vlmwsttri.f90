@@ -31,22 +31,27 @@ module deformableWall
     ! currently dynamically allocated in genbkb
     type (r2d), dimension(MAXBLK2) ::  mSWB
       
-    ! currently allocated in gendat
+    ! currently allocated in gendat, but should be moved here
     type (i1d) :: mWNodes, mWNodes_gtlmap
 
     ! these are dynamically allocated in a local routine
-    type (r2d), dimension(MAXBLK2) :: mPS_global
-    type (r4d), dimension(MAXBLK2) :: mKwall_xKebe
+    ! type (r2d), dimension(MAXBLK2) :: mPS_global
+    ! type (r4d), dimension(MAXBLK2) :: mKwall_xKebe
 
 
     ! the reference element local displacements
-    type (r3d), dimension(MAXBLK2) :: mDisp_ref
+    type (r3d), dimension(MAXBLK2) :: mDisp_refl
+
+
+
+    ! element local node tags
+    type (i2d), dimension(MAXBLK2) :: mNodeTagl
       
 contains
       
       
       
-    subroutine vlmwStTri(u)
+    subroutine vlmwStTri(u,nodetagfield,x)
       
         use pointer_data
         use measureWallDistance
@@ -54,10 +59,13 @@ contains
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-        real*8 u(nshg,nsd)
+        real*8 u(nshg,nsd),x(numnp,nsd)
+        integer nodetagfield(numnp)
+
+
 
         !
-        !.... initialize distance evaluation
+        !.... initialize distance evaluation (maybe move this to itrdrv)
         !
         if(ideformwall.eq.1 .and. imeasdist.eq.1) then
             ! read "observed mesh data"
@@ -69,6 +77,11 @@ contains
             call dm_initialize()
         end if
 
+!        do i = 1, numnp
+!            if (nodetagfield(i).gt.0) then
+!                write(*,*) nodetagfield(i)
+!            end if
+!        end do
 
             
         !
@@ -102,8 +115,8 @@ contains
 !                allocate(mKwall_xKebe(iblk)%p(npro,9,nshl,nshl))
 !            end if
 
-            if (.not.associated(mDisp_ref(iblk)%p)) then
-                allocate(mDisp_ref(iblk)%p(npro,nshl,nsd))
+            if (.not.associated(mDisp_refl(iblk)%p)) then
+                allocate(mDisp_refl(iblk)%p(npro,nshl,nsd))
             end if
 
             !
@@ -117,13 +130,25 @@ contains
             end if
 
             ! save the initial element local displacements
-            mDisp_ref(iblk)%p = zero
+            mDisp_refl(iblk)%p = zero
 
             ! add a flag here to say if we are using initial prestress
             if (iinitialprestress.gt.0) then
-                call localx(u, mDisp_ref(iblk)%p, mienb(iblk)%p, nsd, 'gather  ')
+                call localx(u, mDisp_refl(iblk)%p, mienb(iblk)%p, nsd, 'gather  ')
             end if
-         
+
+            ! check if element nodes contain more than one ring node
+
+            if (iwallsupp.gt.0 .or. iwalldamp.gt.0) then
+
+                if (.not.associated(mNodeTagl(iblk)%p)) then
+                    allocate(mNodeTagl(iblk)%p(npro,nenl))
+                end if
+
+                call locali(nodetagfield, mNodeTagl(iblk)%p, mienb(iblk)%p, 1, 'gather  ')
+
+            end if
+
             !
             !.... pre-assemble the element matrices for the deformable wall
             !
@@ -552,11 +577,11 @@ subroutine DdeformableWall
       
     if (ideformwall.ne.0) then
         do iblk = 1, nelblb
-      
-            if (associated(mPS_global(iblk)%p)) deallocate(mPS_global(iblk)%p)
-            if (associated(mKwall_xKebe(iblk)%p)) deallocate(mKwall_xKebe(iblk)%p)
             
             if (associated(mSWB(iblk)%p)) deallocate (mSWB(iblk)%p)
+
+            if (associated(mDisp_refl(iblk)%p)) deallocate (mDisp_refl(iblk)%p)
+            if (associated(mNodeTagl(iblk)%p)) deallocate (mNodeTagl(iblk)%p)
       
         end do
     end if

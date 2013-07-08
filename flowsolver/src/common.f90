@@ -47,6 +47,8 @@ module phcommonvars
         ValueListWallE(0:MAXSURF), &
         ValueListWallh(0:MAXSURF), &
         tissSuppStiffCoeff, tissSuppDampCoeff, &
+        tissSuppRingStiffCoeff, &
+        tissSuppRingDampCoeff, &
         stateFilterCoeff, &
         rescontrol,ResCriteria
     integer           icardio, itvn, ipvsq, &
@@ -64,13 +66,17 @@ module phcommonvars
         ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
         iUseSWB, &
         numWallRegions, nsrflistWallRegions(0:MAXSURF), &
-        iwalldamp, iwallsupp, imeasdist, idistancenudge, &
+        iwalldamp, iwallsupp, &
+        iringdamp, iringsupp, &
+        imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
         ValueListWallh, &
         tissSuppStiffCoeff, tissSuppDampCoeff, &
+        tissSuppRingStiffCoeff, &
+        tissSuppRingDampCoeff, &
         stateFilterCoeff, &
         rescontrol,ResCriteria, &
         icardio, itvn, ipvsq, &
@@ -88,7 +94,9 @@ module phcommonvars
         ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
         iUseSWB, &
         numWallRegions, nsrflistWallRegions, &
-        iwalldamp, iwallsupp, imeasdist, idistancenudge, &
+        iwalldamp, iwallsupp, &
+        iringdamp, iringsupp, &
+        imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------

@@ -52,6 +52,7 @@ DAMAGE.
 #endif
 #include <time.h>
 #include <fstream>
+#include <iostream>
 using namespace std;
 // =========
 //   Cross
@@ -105,10 +106,14 @@ extern int adjncySize_;
 extern int* iBC_;
 extern int* iBCB_;
 extern double* BCB_;
+
+extern int* inodeTag_;
+
 extern int   DisplacementNumElements_;
 extern int*  DisplacementConn_[3];
 extern int   DisplacementNumNodes_;
 extern int*  DisplacementNodeMap_;
+
 
 int writeGEOMBCDAT(char* filename);
 
@@ -814,6 +819,205 @@ int fixFreeEdgeNodes(char *cmd) {
     debugprint(stddbg,"Exiting fixFreeEdgeNodes.\n");
     return CV_OK;
 }
+
+
+
+int tagRingNodes(char *cmd) {
+
+    // enter
+    debugprint(stddbg,"Entering tagRingNodes.\n");
+
+    int i,j;
+
+    // parse command string
+    if (parseFile(cmd) == CV_ERROR) {
+        return CV_ERROR;
+    }
+
+    if (inodeTag_ == NULL) {
+    	inodeTag_ = new int [numNodes_];
+    	for (i  = 0; i < numNodes_;i++) {
+    		inodeTag_[i] = 0;
+    	}
+    }
+
+    // count lines in file
+    int eof = 0;
+    int numLinesInFile = 0;
+    while (NWgetNextNonBlankLine(&eof) == CV_OK) {
+        numLinesInFile++;
+    }
+    NWcloseFile();
+
+    debugprint(stddbg,"Number of lines in file: %i\n",numLinesInFile);
+
+    if (numLinesInFile == 0) {
+        return CV_ERROR;
+    }
+
+    int* edges[2];
+    edges[0] = new int[numLinesInFile*3];
+    edges[1] = new int[numLinesInFile*3];
+
+    if (parseFile(cmd) == CV_ERROR) {
+        delete [] edges[0];
+        delete [] edges[1];
+        return CV_ERROR;
+    }
+
+
+    int n0,n1,n2,n3;
+    int elementId,matId;
+    eof = 0;
+    int numEdges = 0;
+
+    while (NWgetNextNonBlankLine(&eof) == CV_OK) {
+
+        if (sscanf(buffer_,"%i %i %i %i %i",&elementId,&matId,&n0,&n1,&n2) != 5) {
+            fprintf(stderr,"WARNING:  line not of correct format (%s)\n",buffer_);
+            NWcloseFile();
+            delete [] edges[0];
+            delete [] edges[1];
+            return CV_ERROR;
+        }
+
+        // stuff edges into array
+
+        // edge 1
+        if (n0 < n1) {
+            edges[0][numEdges] = n0;
+            edges[1][numEdges] = n1;
+            numEdges++;
+        } else {
+            edges[0][numEdges] = n1;
+            edges[1][numEdges] = n0;
+            numEdges++;
+        }
+        // edge 2
+        if (n1 < n2) {
+            edges[0][numEdges] = n1;
+            edges[1][numEdges] = n2;
+            numEdges++;
+        } else {
+            edges[0][numEdges] = n2;
+            edges[1][numEdges] = n1;
+            numEdges++;
+        }
+        // edge 3
+        if (n0 < n2) {
+            edges[0][numEdges] = n0;
+            edges[1][numEdges] = n2;
+            numEdges++;
+        } else {
+            edges[0][numEdges] = n2;
+            edges[1][numEdges] = n0;
+            numEdges++;
+        }
+    }
+
+    NWcloseFile();
+
+    // sort edges so we can find free edges
+
+    // debugging output
+    //for (i = 0; i < numEdges; i++) {
+    //    debugprint(stddbg,"org order [%i] %i %i\n",i,edges[0][i],edges[1][i]);
+    //}
+
+   int index0, index1;
+
+
+    // heap sort
+
+    int temp0,temp1;
+    int array_size = numEdges;
+
+    for (i = (array_size / 2)-1; i >= 0; i--)
+      siftDownEdges(edges, i, array_size, array_size);
+
+    for (i = array_size-1; i >= 1; i--)
+    {
+      temp0 = edges[0][0];
+      temp1 = edges[1][0];
+      edges[0][0] = edges[0][i];
+      edges[1][0] = edges[1][i];
+      edges[0][i] = temp0;
+      edges[1][i] = temp1;
+      siftDownEdges(edges, 0, i-1, array_size);
+    }
+
+
+
+    // insertion sort algorithm
+/*
+    for (i=1; i < numEdges; i++) {
+       index0 = edges[0][i];
+       index1 = edges[1][i];
+       j = i;
+       while ((j > 0) && (edges[0][j-1] > index0)) {
+         edges[0][j] = edges[0][j-1];
+         edges[1][j] = edges[1][j-1];
+         j = j - 1;
+       }
+       edges[0][j] = index0;
+       edges[1][j] = index1;
+    }
+*/
+
+    // debugging output
+    //for (i = 0; i < numEdges; i++) {
+    //    debugprint(stddbg,"after heap [%i] %i %i\n",i,edges[0][i],edges[1][i]);
+    //}
+
+    // second pass
+    // NOTE:  if you use the heap double heap sort above, this pass
+    // should be unnecessary
+
+    for (i=1; i < numEdges; i++) {
+       index0 = edges[0][i];
+       index1 = edges[1][i];
+       j = i;
+       while ((j > 0) && ((edges[0][j-1] >= index0) && (edges[1][j-1] > index1))) {
+         edges[0][j] = edges[0][j-1];
+         edges[1][j] = edges[1][j-1];
+         j = j - 1;
+       }
+       edges[0][j] = index0;
+       edges[1][j] = index1;
+    }
+
+    // debugging output
+    //for (i = 0; i < numEdges; i++) {
+    //    debugprint(stddbg,"after insert [%i] %i %i\n",i,edges[0][i],edges[1][i]);
+    //}
+
+    // tag ring nodes
+    for (i = 0; i < numEdges-1; i++) {
+      // if edge occurs twice, not a free edge
+      if ((edges[0][i] == edges[0][i+1]) && (edges[1][i] == edges[1][i+1])) {
+          i++;
+      } else {
+          debugprint(stddbg,"  Tagging Ring Node: %i\n",edges[0][i]);
+          debugprint(stddbg,"  Tagging Ring Node: %i\n",edges[1][i]);
+
+          // this should be a bit set instead of an int!!
+          inodeTag_[edges[0][i] - 1] = 1;
+          inodeTag_[edges[1][i] - 1] = 1;
+      }
+    }
+
+//    for (i = 0; i < numNodes_; i++)
+//    	if (inodeTag_[i] > 0)
+//    		std::cout << inodeTag_[i] << endl;
+
+    // cleanup
+    delete [] edges[0];
+    delete [] edges[1];
+
+    debugprint(stddbg,"Exiting tagRingNodes.\n");
+    return CV_OK;
+}
+
 
 
 void siftDownKentriesCalcMesh(int **ids, int root, int bottom, int array_size)

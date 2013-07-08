@@ -388,7 +388,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !.... deformable wall initialization
     !
     if(ideformwall.eq.1) then
-        call vlmwStTri(uref)
+        call vlmwStTri(uref,nodetagfield,x)
         ! call solveWallProb(rowp,colm,ilwork,iBC,BC,iper)
     end if
 

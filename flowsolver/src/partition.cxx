@@ -568,6 +568,24 @@ void Partition_Problem(int numProcs) {
 	}
 	delete[] xloc;
 
+	/* node tags */
+	readheader_(&igeombc, "node tags", (void*) iarray, &itwo, "integer",
+			iformat);
+	isize = iarray[0] * iarray[1];
+	int* ntagsloc = new int[isize];
+	readdatablock_(&igeombc, "node tags", (void*) ntagsloc, &isize, "integer",
+			iformat);
+	vector < map<int, vector<int> > > ntagspart(numProcs);
+
+	for (int x = 1; x < iarray[0] + 1; x++) {
+		for (map<int, int>::iterator iter = ParallelData[x].begin();
+				iter != ParallelData[x].end(); iter++) {
+			ntagspart[(*iter).first][(*iter).second].push_back(
+					ntagsloc[x - 1]);
+		}
+	}
+	delete[] ntagsloc;
+
 	// if we need to calculate sonfath later we will need to have vnumnp[i]
 	int* vnumnp;
 	if (SONFATH_VAR > 0)
@@ -624,9 +642,31 @@ void Partition_Problem(int numProcs) {
 
 		delete[] xf;
 		Xpart[p].clear();
+
+		int* ntagsf = new int[ntagspart[p].size()];
+		for (map<int, vector<int> >::iterator mIter = ntagspart[p].begin();
+				mIter != ntagspart[p].end(); mIter++)
+			ntagsf[(*mIter).first - 1] = (*mIter).second[0];
+
+		isize = ntagspart[p].size();
+		nitems = 2;
+		iarray[0] = ntagspart[p].size();
+		iarray[1] = 1;
+		writeheader_(&fgeom, "node tags", (void*) iarray, &nitems, &isize,
+				"integer", oformat);
+
+		nitems = ntagspart[p].size();
+		writedatablock_(&fgeom, "node tags", (void*) (ntagsf), &nitems, "integer",
+				oformat);
+
+		delete[] ntagsf;
+		ntagspart[p].clear();
+
 		closefile_(&fgeom, "append");
 	}
 	Xpart.clear();
+	ntagspart.clear();
+
 
 	/* let us take care of Essential BCs.*/
 	// BCs are in the indirect numbering of nBC so only nBC needs to be sorted 

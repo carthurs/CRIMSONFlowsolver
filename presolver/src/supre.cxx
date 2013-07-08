@@ -82,6 +82,7 @@ int* linobs_soln_ = NULL;
 int* linobs_acc_ = NULL;
 int* linobs_disp_ = NULL;
 int* obs_dist_ = NULL;
+int* inodeTag_ = NULL;
 
 int numObs_ = 0;
 int numParams_ = 0;

@@ -200,6 +200,95 @@
         end
 !
 
+
+
+        subroutine locali (global, rlocal, ien, n, code)
+!
+!----------------------------------------------------------------------
+!
+! This subroutine performs a vector gather/scatter operation for an
+! integer array.
+!
+! input:
+!  global (numnp,n)             : global array
+!  rlocal (npro,nenl,n)         : local array
+!  ien    (npro,nshl)      : nodal connectivity
+!  n                            : number of d.o.f.'s to be copied
+!  code                         : the transfer code
+!                                  .eq. 'gather  ', from global to local
+!                                  .eq. 'scatter ', add  local to global
+!
+!----------------------------------------------------------------------
+!
+         use phcommonvars
+ IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+        integer global(numnp,n),           rlocal(npro,nenl,n), &
+                  ien(npro,nshl)
+!
+        character*8 code
+!
+!.... ------------------------>  'localization  '  <--------------------
+!
+        if (code .eq. 'gather  ') then
+!
+!.... gather the data
+!
+          do j = 1, n
+            do i = 1, nenl
+              rlocal(:,i,j) = global(ien(:,i),j)
+            enddo
+          enddo
+
+
+!
+!.... transfer count
+!
+          gbytes = gbytes + n*nenl*npro
+!
+!.... return
+!
+          return
+        endif
+!
+!.... ------------------------->  'assembling '  <----------------------
+!
+        if (code .eq. 'scatter ') then
+!
+!.... scatter the data (possible collisions)
+!
+
+          do j = 1, n
+            do i = 1, nenl
+              do nel = 1,npro
+                global(ien(nel,i),j) = global(ien(nel,i),j)  &
+                                     + rlocal(nel,i,j)
+              enddo
+            enddo
+          enddo
+
+
+!
+!.... transfer and flop counts
+!
+          sbytes = sbytes + n*nenl*npro
+          flops  = flops  + n*nenl*npro
+!
+!.... return
+!
+          return
+        endif
+!
+!.... --------------------------->  error  <---------------------------
+!
+        call error ('local   ', code, 0)
+!
+!.... end
+!
+        end
+
+
+
 !        subroutine localM (global, xKebe, xGoC, ien)
 !c
 !c----------------------------------------------------------------------

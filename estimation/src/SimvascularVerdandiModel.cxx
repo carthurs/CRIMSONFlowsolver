@@ -51,6 +51,17 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 			nreduced_has_wall_parameters_);
 	configuration.Set("state_reduced_has_coupled_parameters",
 			nreduced_has_coupled_parameters_);
+
+
+	if (nreduced_has_coupled_parameters_) {
+		configuration.Set("RCR_parameters_info.estimate_combined_resistance",
+				cp_rcr_estimate_combined_resistance_);
+		configuration.Set("RCR_parameters_info.estimate_compliance",
+				cp_rcr_estimate_compliance_);
+		configuration.Set("RCR_parameters_info.face_grouping",
+				cp_rcr_face_grouping_);
+	}
+
 	configuration.Set("error_statistics.state_error_variance",
 			state_error_variance_value_);
 
@@ -150,8 +161,12 @@ void SimvascularVerdandiModel::Initialize() {
 		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0)
 			Nstate_local_ += nomodule.numWallRegions;
 
-		if (nreduced_has_coupled_parameters_)
-			Nstate_local_ += grcrbccom.numGRCRSrfs;
+		if (nreduced_has_coupled_parameters_) {
+			if (cp_rcr_estimate_compliance_)
+				Nstate_local_ += grcrbccom.numGRCRSrfs;
+			if (cp_rcr_estimate_combined_resistance_)
+				Nstate_local_ += grcrbccom.numGRCRSrfs;
+		}
 	}
 
 	// Compute the reduced state size

@@ -469,6 +469,8 @@
          double ValueListWallh[MAXSURF+1];
          double tissSuppStiffCoeff; 
          double tissSuppDampCoeff;
+         double tissSuppRingStiffCoeff;
+         double tissSuppRingDampCoeff;
          double stateFilterCoeff;
          double rescontrol;
          double ResCriteria;
@@ -513,6 +515,8 @@
          int nsrflistWallRegions[MAXSURF+1];
          int iwalldamp;
          int iwallsupp;
+         int iringdamp;
+         int iringsupp;
          int imeasdist;
          int idistancenudge;
          int iinitialprestress;

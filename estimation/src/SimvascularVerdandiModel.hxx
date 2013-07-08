@@ -59,6 +59,10 @@ protected:
 	int nreduced_has_wall_parameters_;
 	int nreduced_has_coupled_parameters_;
 
+	int cp_rcr_estimate_combined_resistance_;
+	int cp_rcr_estimate_compliance_;
+	vector<int> cp_rcr_face_grouping_;
+
 	MPI_Comm iNewComm_C_;
 
 	//! Background error variance.

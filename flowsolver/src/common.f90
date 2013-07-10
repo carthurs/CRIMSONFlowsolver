@@ -65,6 +65,7 @@ module phcommonvars
         MinNumIter, &
         ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
         iUseSWB, &
+        iUseSWBthickonly, &
         numWallRegions, nsrflistWallRegions(0:MAXSURF), &
         iwalldamp, iwallsupp, &
         iringdamp, iringsupp, &
@@ -93,6 +94,7 @@ module phcommonvars
         MinNumIter, &
         ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
         iUseSWB, &
+        iUseSWBthickonly, &
         numWallRegions, nsrflistWallRegions, &
         iwalldamp, iwallsupp, &
         iringdamp, iringsupp, &

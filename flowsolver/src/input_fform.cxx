@@ -956,9 +956,15 @@ int input_fform() {
 					vec.erase(vec.begin(), vec.end());
 				}
 
-
 				nomodule.evw = inp.GetValue("Young Mod of Vessel Wall");
 				nomodule.thicknessvw = inp.GetValue("Thickness of Vessel Wall");
+
+				// only use the thickness value in SWB
+				// this will allow the use of the wall regions only for stiffness
+				nomodule.iUseSWBthickonly = 0;
+				if ((string) inp.GetValue("Use SWB Wall Thickness Only") == "True")
+					nomodule.iUseSWBthickonly = 1;
+
 			}
 
 

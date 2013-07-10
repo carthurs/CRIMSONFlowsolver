@@ -511,6 +511,7 @@
          int iwallstiffactor;
          int nProps;
          int iUseSWB;
+         int iUseSWBthickonly;
          int numWallRegions;
          int nsrflistWallRegions[MAXSURF+1];
          int iwalldamp;

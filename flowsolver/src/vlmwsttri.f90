@@ -124,10 +124,10 @@ contains
             !.... if no, then use the entered uniform values
             !
 
-            if (iUseSWB.eq.0) then
-                mSWB(iblk)%p = zero
-                mSWB(iblk)%p(:,1) = thicknessvw
-            end if
+            !if (iUseSWB.eq.0) then
+            !    mSWB(iblk)%p = zero
+            !    mSWB(iblk)%p(:,1) = thicknessvw
+            !end if
 
             ! save the initial element local displacements
             mDisp_refl(iblk)%p = zero

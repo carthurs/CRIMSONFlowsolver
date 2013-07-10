@@ -117,7 +117,7 @@
 
            SWBtp = zero
            
-           if(ideformwall.eq.1.and.iUseSWB.gt.0) then
+           if(ideformwall.eq.1 .and. iUseSWB.gt.0) then
               itwo=2                      
               fname1='SWB array?'
               call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"double"//c_null_char, &

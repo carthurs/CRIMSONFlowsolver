@@ -465,19 +465,15 @@
               enddo
           enddo
 
-          ! ---------------------------------------------------------------------
-          !.... -----> Deformable Wall Residual Terms  <-----------
-          !
+          ! Deformable Wall Residual Terms
 
-          ! ---------------------------------------------------------------------
-          !
           ! stiffness term
           !
           ! define the material properties for the enhanced membrane
           ! the membrane thickness is always SWB(:,1)
           Dmatrix = zero
 
-          if (iUseSWB.eq.0) then
+          if (iUseSWB.eq.0 .or. (iUseSWB.gt.0 .and. iUseSWBthickonly.gt.0) ) then
 
               ! when the legacy SWB field is not used
               ! only the isotropic case
@@ -488,15 +484,21 @@
               do iel = 1, npro
 
                   ! default values
-                  SWB(iel,1) = thicknessvw
+                  if (iUseSWBthickonly .eq. 0) then
+                      SWB(iel,1) = thicknessvw
+                  end if
                   SWB(iel,7) = evw * tempcoeff * one
                   SWB(iel,8) = evw * tempcoeff * rnuvw
                   SWB(iel,9) = evw * tempcoeff * pt5*(1-rnuvw)
                   SWB(iel,10) = evw * tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
 
                   ! regional values
+                  ! supersedes default values
                   if (numWallRegions .gt. 0) then
-                      SWB(iel,1) = ValueListWallh( iBCB(iel,2) )
+
+                      if (iUseSWBthickonly .eq. 0) then
+                          SWB(iel,1) = ValueListWallh( iBCB(iel,2) )
+                      end if
                       SWB(iel,7) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * one
                       SWB(iel,8) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * rnuvw
                       SWB(iel,9) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * pt5*(1-rnuvw)
@@ -668,9 +670,7 @@
 
               enddo
 
-              ! ---------------------------------------------------------------------
               ! now add the legacy prestress contribution
-              !
               if(iUseSWB.gt.0) then
 
                   ! multiply element local prestress (elements 2 through 6 of SWB)
@@ -686,19 +686,17 @@
                   enddo
               endif
 
-              ! ---------------------------------------------------------------------
               ! complete the numerical integration
               ! multiply by weighted jacobian and thickness
-              !
+
               do i = 1, 3
                   rlKwall(:,nodlcln,i) = rlKwall(:,nodlcln,i) * WdetJb * SWB(:,1)
               enddo
 
           enddo
 
-          ! ---------------------------------------------------------------------
           ! mass term
-          !
+
           vdot = zero
       
           do n = 1, nshlb
@@ -903,13 +901,7 @@
           end if
 
                    
-          ! ---------------------------------------------------------------------
-          !.... -----> Wall Mass matrix for implicit LHS  <-----------
-          !
-          !           alpha_m*(1-lmp)*WdetJ*N^aN^b*rho*thickness         mass term
-          !          +alpha_fv*gamma_v*DeltaT*WdetJ*N^a*N^b*supportvisc  viscous damping
-          !          +alpha_fv*beta*DeltaT^2*WdetJ*N^a*N^b*supportstiff  elastic support
-          !
+          ! Wall LHS tangent contributions
          
           Wall_LHSfactor = iwallmassfactor*Wall_LHSfactor*WdetJb
 
@@ -928,10 +920,6 @@
                
               enddo
           enddo
-
-          ! ---------------------------------------------------------------------
-          ! .... -----> Wall Stiffness matrix for implicit LHS
-          !
 
           xKebe = xKebe + LHSwall
 

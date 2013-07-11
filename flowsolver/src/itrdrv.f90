@@ -870,11 +870,24 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     lstep = lstep + 1
 
     !
+    !.... update reference displacement
+    !
+    if (ideformwall.eq.1 .and. iupdateprestress.eq.1) then
+         tfact = one/istep
+
+         ubar = tfact*uold + (one-tfact)*ubar
+    endif
+
+    !
     ! ... write out the solution
     !
     if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
+            if (iupdateprestress.eq.1) then
+                uref = uref + ubar
+                u = u - ubar
+            end if
             call write_displ(myrank, lstep, nshg, 3, uold, uref )
             if (imeasdist.eq.1) then
                 call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
@@ -1066,17 +1079,6 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         rerr(:,10)=rerr(:,10)+(yold(:,4)-ybar(:,4))**2
     endif
 
-    !
-    !.... update reference displacement
-    !
-
-    if (iupdateprestress.eq.1) then
-         tfact = one/istep
-
-         ubar = tfact*uold + (one-tfact)*ubar
-
-    endif
-         
  !if(istop.eq.1000) exit ! stop when delta small (see rstatic)
        
 !2000  continue

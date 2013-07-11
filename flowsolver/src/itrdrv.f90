@@ -870,13 +870,27 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     lstep = lstep + 1
 
     !
-    !.... update reference displacement
+    !.... update average displacement
     !
-    if (ideformwall.eq.1 .and. iupdateprestress.eq.1) then
+    if (iupdateprestress.eq.1) then
          tfact = one/istep
 
          ubar = tfact*uold + (one-tfact)*ubar
+
     endif
+
+    !
+    !.... update reference displacement
+    !.... at the very last time step
+    !
+    !
+    if (nstep(1).eq.istep .and. iupdateprestress.eq.1) then
+        uref = uref + ubar
+        u = u - ubar
+        uold = uold - ubar
+        write(*,*) 'updating uref with avg'
+    end if
+
 
     !
     ! ... write out the solution
@@ -884,10 +898,6 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
-            if (iupdateprestress.eq.1) then
-                uref = uref + ubar
-                u = u - ubar
-            end if
             call write_displ(myrank, lstep, nshg, 3, uold, uref )
             if (imeasdist.eq.1) then
                 call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
@@ -1144,10 +1154,6 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         call rwvelb  ('out ',  velbar  ,ifail)
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
-            if (iupdateprestress.eq.1) then
-                uref = uref + ubar
-                u = u - ubar
-            end if
             call write_displ(myrank, lstep, nshg, 3, u, uref )
             if (imeasdist.eq.1) then
                 call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)

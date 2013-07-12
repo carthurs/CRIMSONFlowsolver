@@ -933,9 +933,11 @@ int input_fform() {
 				if ((string) inp.GetValue("Use SWB Wall Thickness Only") == "True")
 					nomodule.iUseSWBthickonly = 1;
 			}
-			else {
+			else
 				nomodule.iUseSWB = 0;
 
+			// wall regions
+			if (nomodule.iUseSWB == 0 || (nomodule.iUseSWB == 1 && nomodule.iUseSWBthickonly == 1 )) {
 				if (nomodule.numWallRegions = inp.GetValue(
 						"Number of Wall Regions")) {
 
@@ -963,6 +965,7 @@ int input_fform() {
 					vec.erase(vec.begin(), vec.end());
 				}
 
+				// default values
 				nomodule.evw = inp.GetValue("Young Mod of Vessel Wall");
 				nomodule.thicknessvw = inp.GetValue("Thickness of Vessel Wall");
 

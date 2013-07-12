@@ -924,8 +924,15 @@ int input_fform() {
 			else
 				nomodule.iwallstiffactor = 0;
 
-			if ((string) inp.GetValue("Use SWB File") == "True")
+			if ((string) inp.GetValue("Use SWB File") == "True") {
 				nomodule.iUseSWB = 1;
+
+				// only use the thickness value in SWB
+				// this will allow the use of the wall regions only for stiffness
+				nomodule.iUseSWBthickonly = 0;
+				if ((string) inp.GetValue("Use SWB Wall Thickness Only") == "True")
+					nomodule.iUseSWBthickonly = 1;
+			}
 			else {
 				nomodule.iUseSWB = 0;
 
@@ -959,16 +966,7 @@ int input_fform() {
 				nomodule.evw = inp.GetValue("Young Mod of Vessel Wall");
 				nomodule.thicknessvw = inp.GetValue("Thickness of Vessel Wall");
 
-				// only use the thickness value in SWB
-				// this will allow the use of the wall regions only for stiffness
-				nomodule.iUseSWBthickonly = 0;
-				if ((string) inp.GetValue("Use SWB Wall Thickness Only") == "True")
-					nomodule.iUseSWBthickonly = 1;
-
 			}
-
-
-
 
 			if ((string) inp.GetValue("Wall Damping Term") == "True") {
 				nomodule.iwalldamp = 1;

@@ -494,9 +494,9 @@
 
                   ! regional values
                   ! supersedes default values
-                  if (numWallRegions .gt. 0) then
+                  if (numWallRegions .gt. 0 .and. iBCB(iel,2).gt.1) then
 
-                      if (iUseSWBthickonly .eq. 0 .and. iBCB(iel,2) .gt. 1) then
+                      if (iUseSWBthickonly .eq. 0) then
                           SWB(iel,1) = ValueListWallh( iBCB(iel,2) )
                       end if
                       SWB(iel,7) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * one

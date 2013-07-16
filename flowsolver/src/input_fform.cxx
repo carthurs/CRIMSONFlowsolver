@@ -29,10 +29,6 @@ int input_fform() {
 			strcpy(inpfname, inpfilename_env);
 		else
 			strcpy(inpfname, "solver.inp");
-		if (workfc.myrank == workfc.master) {
-			printf("\n Complete Filename: %s \n", complete_filename);
-			printf("\n Local Config: %s \n\n", inpfname);
-		}
 		printf("\n Complete Filename: %s \n", complete_filename);
 		printf("\n Local Config: %s \n\n", inpfname);
 		string def(complete_filename);

@@ -654,8 +654,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
          
     iter=0
     ilss=0  ! this is a switch thrown on first solve of LS redistance
-         
-         
+
+
     do istepc=1,seqsize
         icode=stepseq(istepc)
         if(mod(icode,5).eq.0) then ! this is a solve
@@ -868,6 +868,14 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     istep = istep + 1
     lstep = lstep + 1
+
+    !
+    !.... in case yold,acold,uold were changed externally
+    !.... sync y,ac,u with yold,acold,uold
+    !
+    y = yold
+    ac = acold
+    u = uold
 
     !
     !.... update average displacement

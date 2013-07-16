@@ -2029,7 +2029,25 @@ int writeRESTARTDAT(char* filename) {
 	writedatablock_(&filenum, "solution", (void*) soln_, &size, "double",
 			oformat);
 
+
+	writeheader_(&filenum, "time derivative of solution", (void*) iarray, &nitems, &size, "double",
+				oformat);
+
+	for (i = 0; i < numNodes_; i++) {
+		soln_[i] = 0.0;
+	}
+	for (i = 0; i < numNodes_; i++) {
+		soln_[1 * numNodes_ + i] = 0.0;
+		soln_[2 * numNodes_ + i] = 0.0;
+		soln_[3 * numNodes_ + i] = 0.0;
+	}
+
+	writedatablock_(&filenum, "time derivative of solution", (void*) soln_, &size, "double",
+				oformat);
+
 	delete[] soln_;
+
+
 
 	int nsd, lstep, nshg;
 

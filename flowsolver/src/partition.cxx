@@ -1846,38 +1846,38 @@ void Partition_Problem(int numProcs) {
 
 	delete[] solution;
 
-//	readheader_(&irestart, "time derivative of solution?", (void*) iarray, &ithree, "double",
-//				iformat);
-//
-//	int iexistAccel = 0;
-//
-//	double* fAccel;
-//	vector < map<int, vector<double> > > accelPart(numProcs);
-//
-//	if (iarray[0] != 0) {
-//
-//		nshg = iarray[0];
-//		ndof = iarray[1];
-//		isize = nshg * ndof;
-//
-//		double* accel = new double[isize];
-//
-//		readdatablock_(&irestart, "time derivative of solution?", (void*) accel, &isize, "double",
-//				iformat);
-//
-//		for (int x = 1; x < nshg + 1; x++) {
-//			for (map<int, int>::iterator pIter = ParallelData[x].begin();
-//					pIter != ParallelData[x].end(); pIter++) {
-//				for (int v = 0; v < ndof; v++)
-//					accelPart[(*pIter).first][(*pIter).second].push_back(
-//							accel[v * nshg + x - 1]);
-//			}
-//		}
-//
-//		delete [] accel;
-//
-//		iexistAccel = 1;
-//	}
+	readheader_(&irestart, "time derivative of solution?", (void*) iarray, &ithree, "double",
+				iformat);
+
+	int iexistAccel = 0;
+
+	double* fAccel;
+	vector < map<int, vector<double> > > accelPart(numProcs);
+
+	if (iarray[0] != 0) {
+
+		nshg = iarray[0];
+		ndof = iarray[1];
+		isize = nshg * ndof;
+
+		double* accel = new double[isize];
+
+		readdatablock_(&irestart, "time derivative of solution?", (void*) accel, &isize, "double",
+				iformat);
+
+		for (int x = 1; x < nshg + 1; x++) {
+			for (map<int, int>::iterator pIter = ParallelData[x].begin();
+					pIter != ParallelData[x].end(); pIter++) {
+				for (int v = 0; v < ndof; v++)
+					accelPart[(*pIter).first][(*pIter).second].push_back(
+							accel[v * nshg + x - 1]);
+			}
+		}
+
+		delete [] accel;
+
+		iexistAccel = 1;
+	}
 
 	int nsd = 3;
 	double* displacement;
@@ -1949,9 +1949,9 @@ void Partition_Problem(int numProcs) {
 		int nshgLocal = solPart[a].size();
 		double* fSolution = new double[nshgLocal * ndof];
 
-//		if (iexistAccel) {
-//			fAccel = new double[nshgLocal * ndof];
-//		}
+		if (iexistAccel) {
+			fAccel = new double[nshgLocal * ndof];
+		}
 
 		if (nomodule.ideformwall != 0) {
 			nshgLocalDisp = dispPart[a].size();
@@ -1995,13 +1995,13 @@ void Partition_Problem(int numProcs) {
 
 		solPart[a].clear();
 
-//		if (iexistAccel) {
-//			for (int w = 0; w < ndof; w++)
-//				for (int y = 1; y < nshgLocal + 1; y++) {
-//					fAccel[w * nshgLocal + (y - 1)] = accelPart[a][y][w];
-//				}
-//			accelPart[a].clear();
-//		}
+		if (iexistAccel) {
+			for (int w = 0; w < ndof; w++)
+				for (int y = 1; y < nshgLocal + 1; y++) {
+					fAccel[w * nshgLocal + (y - 1)] = accelPart[a][y][w];
+				}
+			accelPart[a].clear();
+		}
 
 		if (nomodule.ideformwall != 0) {
 			for (int w = 0; w < nsd; w++)
@@ -2062,19 +2062,19 @@ void Partition_Problem(int numProcs) {
 		writedatablock_(&frest, "solution ", (void*) (fSolution), &nitems,
 				"double", oformat);
 
-//		if (iexistAccel) {
-//			isize = nshgLocal * ndof;
-//			nitems = 3;
-//			iarray[0] = nshgLocal;
-//			iarray[1] = ndof;
-//			iarray[2] = stepno;
-//			writeheader_(&frest, "time derivative of solution ", (void*) iarray, &nitems, &isize,
-//					"double", oformat);
-//
-//			nitems = nshgLocal * ndof;
-//			writedatablock_(&frest, "time derivative of solution ", (void*) (fAccel), &nitems,
-//					"double", oformat);
-//		}
+		if (iexistAccel) {
+			isize = nshgLocal * ndof;
+			nitems = 3;
+			iarray[0] = nshgLocal;
+			iarray[1] = ndof;
+			iarray[2] = stepno;
+			writeheader_(&frest, "time derivative of solution ", (void*) iarray, &nitems, &isize,
+					"double", oformat);
+
+			nitems = nshgLocal * ndof;
+			writedatablock_(&frest, "time derivative of solution ", (void*) (fAccel), &nitems,
+					"double", oformat);
+		}
 
 		if (nomodule.ideformwall != 0) {
 			isize = nshgLocalDisp * nsd;
@@ -2105,7 +2105,7 @@ void Partition_Problem(int numProcs) {
 
 		closefile_(&frest, "write");
 
-		//delete[] fAccel;
+		delete[] fAccel;
 		delete[] fSolution;
 
 		if (nomodule.ideformwall != 0) {

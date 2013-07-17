@@ -577,6 +577,8 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 		}
 	}
 
+	//dataarrays_lower_.Print();
+
     // compute the interpolation factors
     double t_alpha = ((int)time_ - current_lower_bound_)/(current_upper_bound_-current_lower_bound_);
     t_alpha = 1 - t_alpha;
@@ -1048,13 +1050,13 @@ void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, Ve
     }
 
     if (execute_distance_observations_) {
-    	if (obs_in_part_.is_open()) {
+    	//if (obs_in_part_.is_open()) {
 
     		// simply increment counter since the
     		// distances are not loaded from this file
     		for (int kk = 0; kk < Nobservation_dist_; kk++)
     			ncounter++;
-    	}
+    	//}
     }
 
     // read in flow observation data

@@ -1,6 +1,6 @@
 module deformableWall
      
-    parameter ( MAXBLK2 = 500000 )
+    parameter ( MAXBLK2 = 5000 )
 
     type r1d
         real*8, pointer :: p(:)

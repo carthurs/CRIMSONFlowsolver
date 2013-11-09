@@ -1,6 +1,6 @@
       module local_mass
       
-      parameter (MAXBLK2 = 500000)
+      parameter (MAXBLK2 = 5000)
       
       integer :: iblock = 0
       integer :: have_local_mass = 0

@@ -10,7 +10,7 @@
 
 #include "mpi.h"
 
-#define MAXBLK   500000
+#define MAXBLK   5000
 #define MAXSURF  199
 #define MAXREGIONS 255
 #define MAXTS   100

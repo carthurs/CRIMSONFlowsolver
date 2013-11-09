@@ -22,7 +22,7 @@ TARGET_FORWARDANDOBSERVE = flowsolver_and_observer
 TARGET_POSTSOLVER = postsolver
 TARGET_PRESOLVER = presolver
  
-MAKE_OPTIMIZED = 1
+MAKE_OPTIMIZED = 0
  
 ifeq ($(MAKE_OPTIMIZED),1)
    DEBUG_FLAGS     =

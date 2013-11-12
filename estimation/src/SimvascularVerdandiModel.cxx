@@ -795,7 +795,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 		if (nreduced_has_wall_parameters_)
 			for (int i = 0; i < nomodule.numWallRegions; i++) {
 				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-						i, double(1));
+						ncounter, double(1));
 
 				ncounter++;
 			}
@@ -805,7 +805,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 			if(cp_rcr_estimate_compliance_)
 				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
 					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-							i, double(1));
+							ncounter, double(1));
 
 					ncounter++;
 				}
@@ -813,7 +813,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 			if(cp_rcr_estimate_resistance_)
 				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
 					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-							i, double(1));
+							ncounter, double(1));
 
 					ncounter++;
 				}
@@ -822,12 +822,15 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 	}
 	L.Flush();
+	//L.Print();
 
 	U.Reallocate(Nreduced_, Nreduced_);
 	U.Zero();
 
 	for (int i = 0; i < Nreduced_; i++)
 		U(i, i) = double(double(1) / state_error_variance_value_[i]);
+
+	//U.Print();
 
 
 #ifdef VERDANDI_ROUKF_DEBUG_OUTPUT

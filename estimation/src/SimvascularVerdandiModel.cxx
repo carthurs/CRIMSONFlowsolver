@@ -174,8 +174,12 @@ void SimvascularVerdandiModel::Initialize() {
     if (nreduced_has_wall_parameters_)
     	Nreduced_ += nomodule.numWallRegions;
 
-    if (nreduced_has_coupled_parameters_)
-    	Nreduced_ += grcrbccom.numGRCRSrfs;
+    if (nreduced_has_coupled_parameters_) {
+    	if (cp_rcr_estimate_compliance_)
+    		Nreduced_ += grcrbccom.numGRCRSrfs;
+    	if (cp_rcr_estimate_resistance_)
+    		Nreduced_ += grcrbccom.numGRCRSrfs;
+    }
 
 	// Compute the global state size
 	MPI_Allreduce(&Nstate_local_, &Nstate_, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);

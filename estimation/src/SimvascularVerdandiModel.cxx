@@ -54,8 +54,8 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 
 
 	if (nreduced_has_coupled_parameters_) {
-		configuration.Set("RCR_parameters_info.estimate_combined_resistance",
-				cp_rcr_estimate_combined_resistance_);
+		configuration.Set("RCR_parameters_info.estimate_resistance",
+				cp_rcr_estimate_resistance_);
 		configuration.Set("RCR_parameters_info.estimate_compliance",
 				cp_rcr_estimate_compliance_);
 		configuration.Set("RCR_parameters_info.face_grouping",
@@ -164,7 +164,7 @@ void SimvascularVerdandiModel::Initialize() {
 		if (nreduced_has_coupled_parameters_) {
 			if (cp_rcr_estimate_compliance_)
 				Nstate_local_ += grcrbccom.numGRCRSrfs;
-			if (cp_rcr_estimate_combined_resistance_)
+			if (cp_rcr_estimate_resistance_)
 				Nstate_local_ += grcrbccom.numGRCRSrfs;
 		}
 	}
@@ -533,18 +533,30 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
 
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+			if (cp_rcr_estimate_compliance_)
+				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
-				val = gat->global_lumped_parameter_params[parIdx*3+1];
+					val = gat->global_lumped_parameter_params[parIdx*3+1];
 
-				duplicated_state_.SetBuffer(icounter++,log2(val));
+					duplicated_state_.SetBuffer(icounter++,log2(val));
 
-			}
+					//				cout << "outlet " << parIdx << " ";
+					//				cout << gat->global_lumped_parameter_params[parIdx*3+0] << " ";
+					//			    cout << gat->global_lumped_parameter_params[parIdx*3+1] << " ";
+					//				cout << gat->global_lumped_parameter_params[parIdx*3+2] << " " << endl;
+
+				}
+
+			if (cp_rcr_estimate_resistance_)
+				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+
+					val = gat->global_lumped_parameter_params[parIdx*3+2];
+
+					duplicated_state_.SetBuffer(icounter++,log2(val));
+
+				}
 
 		}
-		//cout << gat->global_lumped_parameter_params[0] << " ";
-		//cout << gat->global_lumped_parameter_params[1] << " ";
-		//cout << gat->global_lumped_parameter_params[2] << " " << endl;
 
 	}
 
@@ -705,14 +717,27 @@ void SimvascularVerdandiModel::StateUpdated() {
 
 		double* tempArray = new double[grcrbccom.numGRCRSrfs];
 
-		if (rank_ == numProcs_ - 1)
+		if (cp_rcr_estimate_compliance_) {
+			if (rank_ == numProcs_ - 1)
+				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
+					tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
+
+			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
+
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-				tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
+				gat->global_lumped_parameter_params[parIdx*3+1] = tempArray[parIdx];
+		}
 
-		MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
+		if (cp_rcr_estimate_resistance_) {
+			if (rank_ == numProcs_ - 1)
+				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
+					tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
 
-		for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-			gat->global_lumped_parameter_params[parIdx*3+1] = tempArray[parIdx];
+			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
+
+			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
+				gat->global_lumped_parameter_params[parIdx*3+2] = tempArray[parIdx];
+		}
 
 		delete [] tempArray;
 	}

@@ -256,10 +256,19 @@ void SimvascularVerdandiModel::ForwardFinalize() {
 		}
 
 		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
-			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-				ncounter++;
-			}
+
+			if (cp_rcr_estimate_compliance_)
+				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
+					param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+					ncounter++;
+				}
+
+			if (cp_rcr_estimate_resistance_)
+				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
+					param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+					ncounter++;
+				}
+
 		}
 
 		param_out_ << endl;
@@ -791,13 +800,25 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 				ncounter++;
 			}
 
-		if (nreduced_has_coupled_parameters_)
-			for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-						i, double(1));
+		if (nreduced_has_coupled_parameters_) {
 
-				ncounter++;
-			}
+			if(cp_rcr_estimate_compliance_)
+				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
+					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
+							i, double(1));
+
+					ncounter++;
+				}
+
+			if(cp_rcr_estimate_resistance_)
+				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
+					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
+							i, double(1));
+
+					ncounter++;
+				}
+
+		}
 
 	}
 	L.Flush();

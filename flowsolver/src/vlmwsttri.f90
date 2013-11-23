@@ -42,10 +42,10 @@ module deformableWall
     ! the reference element local displacements
     type (r3d), dimension(MAXBLK2) :: mDisp_refl
 
-
-
     ! element local node tags
     type (i2d), dimension(MAXBLK2) :: mNodeTagl
+
+    integer numwallelems, numwallelems_global
       
 contains
       
@@ -57,12 +57,12 @@ contains
         use measureWallDistance
 
         use phcommonvars
+
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+        include "mpif.h"
 
         real*8 u(nshg,nsd),x(numnp,nsd)
         integer nodetagfield(numnp)
-
-
 
         !
         !.... initialize distance evaluation (maybe move this to itrdrv)
@@ -87,6 +87,11 @@ contains
         !
         !.... loop over the boundary elements
         !
+
+        numwallelems = 0
+        numwallelems_global = 0
+        ncount = 1
+
         do iblk = 1, nelblb
             !
             !.... set up the parameters
@@ -149,6 +154,13 @@ contains
 
             end if
 
+
+            do i=1,npro
+                if (btest(miBCB(iblk)%p(i,1),4)) then ! check element deformable
+                    numwallelems = numwallelems + 1
+                end if
+            end do
+
             !
             !.... pre-assemble the element matrices for the deformable wall
             !
@@ -161,6 +173,15 @@ contains
 !            mKwall_xKebe(iblk)%p)
 
         end do
+
+        ! communicate number of wall elements (sum globally)
+
+        write(*,*) 'number of wall elements local: ',numwallelems
+
+        call MPI_ALLREDUCE(numwallelems, numwallelems_global, 1, MPI_INT,MPI_SUM,MPI_COMM_WORLD,ierr)
+
+        write(*,*) 'number of wall elements: ',numwallelems_global
+
             
     end subroutine
       

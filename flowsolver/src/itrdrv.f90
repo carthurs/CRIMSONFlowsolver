@@ -869,6 +869,14 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     istep = istep + 1
     lstep = lstep + 1
 
+    ! interface to compute distances to observed wall motion
+    if (imeasdist.eq.1) then
+        if (myrank.eq.zero) then
+            write(*,*) "computing distance to wall data surfaces (end of step -- finalize)"
+        end if
+        call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)
+    end if
+
     !
     !.... in case yold,acold,uold were changed externally
     !.... sync y,ac,u with yold,acold,uold

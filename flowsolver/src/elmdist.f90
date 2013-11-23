@@ -23,7 +23,7 @@ subroutine ElmDist(u, x, xdist, xdnv, shpb, shglb, df_fem)
          
     real*8, allocatable :: tmpshpb(:,:), tmpshglb(:,:,:)
 
-    real*8 df_fem(nshg)
+    real*8 df_fem(nshg),df_fem_sum
 
     integer ii,jj,nn,nPer,nObsInt,obsFr1,obsFr2
          
@@ -95,6 +95,12 @@ subroutine ElmDist(u, x, xdist, xdnv, shpb, shglb, df_fem)
 
     df_fem = zero
 
+    ! testing
+    !xdist = zero
+    ! testing
+    !xdist(mWNodes%p) = one
+    !write(*,*) sum(xdist)
+
     do iblk = 1, nelblb
 
         iel    = lcblkb(1,iblk)
@@ -126,6 +132,13 @@ subroutine ElmDist(u, x, xdist, xdnv, shpb, shglb, df_fem)
 
     end do
 
+    ! testing
+!    df_fem_sum = zero
+!    do n = 1,nshg
+!    df_fem_sum = df_fem_sum + df_fem(n)
+!    enddo
+!
+!    write(*,*) df_fem_sum
                   
 end subroutine
 
@@ -133,6 +146,7 @@ subroutine AsBDist(x, xdist, xdnv, shpb, shglb, ienb, df_fem)
 
     use phcommonvars
     use deformableWall
+    use pointer_data
     use measureWallDistance
 
     real*8 x(numnp,NSD)
@@ -226,7 +240,6 @@ subroutine AsBDist(x, xdist, xdnv, shpb, shglb, ienb, df_fem)
     bnorm(:,2) = temp2 * temp
     bnorm(:,3) = temp3 * temp
 
-
     dfl  = zero
 
     do intp = 1, ngaussb ! loop through quadrature points
@@ -272,6 +285,17 @@ subroutine AsBDist(x, xdist, xdnv, shpb, shglb, ienb, df_fem)
 
         enddo
 
+    end do
+
+    do n = 1, nshlb
+        nodlcl = lnode(n)
+        dfl(:,nodlcl) = dfl(:,nodlcl) * temp(:) * two / numwallelems_global ! this works for triangles
+    enddo
+
+    do i=1,npro
+        if (.not.btest(miBCB(icurrentblk)%p(i,1),4)) then ! check element deformable
+            dfl(i,:) = zero
+        end if
     end do
 
 

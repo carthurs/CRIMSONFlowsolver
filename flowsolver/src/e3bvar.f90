@@ -483,14 +483,6 @@
 
               do iel = 1, npro
 
-                  ! default values
-                  if (iUseSWBthickonly .eq. 0) then
-                      SWB(iel,1) = thicknessvw
-                  end if
-                  SWB(iel,7) = evw * tempcoeff * one
-                  SWB(iel,8) = evw * tempcoeff * rnuvw
-                  SWB(iel,9) = evw * tempcoeff * pt5*(1-rnuvw)
-                  SWB(iel,10) = evw * tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
 
                   ! regional values
                   ! supersedes default values
@@ -503,8 +495,17 @@
                       SWB(iel,8) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * rnuvw
                       SWB(iel,9) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * pt5*(1-rnuvw)
                       SWB(iel,10) = ValueListWallE( iBCB(iel,2) ) * &
-                                    tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
-                  endif
+                          tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+                  else
+                      ! default values
+                      if (iUseSWBthickonly .eq. 0) then
+                          SWB(iel,1) = thicknessvw
+                      end if
+                      SWB(iel,7) = evw * tempcoeff * one
+                      SWB(iel,8) = evw * tempcoeff * rnuvw
+                      SWB(iel,9) = evw * tempcoeff * pt5*(1-rnuvw)
+                      SWB(iel,10) = evw * tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+                  end if
 
               enddo
 

@@ -100,6 +100,10 @@ int main(int argc, char** argv)
     	outfile.open(Pfilename.c_str());
 
 
+    driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
+    driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
+
+
     while (!driver.HasFinished())
     {
         driver.InitializeStep();
@@ -119,6 +123,9 @@ int main(int argc, char** argv)
         	outfile << driver.GetModel().GetTime() << endl;
         	Pred.WriteText(outfile);
         }
+
+        driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
+        driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
 
     }
 

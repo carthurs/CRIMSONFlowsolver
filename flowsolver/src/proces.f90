@@ -67,14 +67,14 @@
         
         call perprep(iBC,iper,nshg)
         
-        if (iLES/10 .eq. 1) then
-           call keeplhsG ! Allocating space for the mass (Gram) matrix to be
-                         ! used for projection filtering and reconstruction
-                         ! of the strain rate tensor.
-
-           call setrls   ! Allocating space for the resolved Leonard stresses
-                         ! See bardmc.f 
-        endif
+!        if (iLES/10 .eq. 1) then
+!           call keeplhsG ! Allocating space for the mass (Gram) matrix to be
+!                         ! used for projection filtering and reconstruction
+!                         ! of the strain rate tensor.
+!
+!           call setrls   ! Allocating space for the resolved Leonard stresses
+!                         ! See bardmc.f
+!        endif
 !
 !.... time averaged statistics
 !

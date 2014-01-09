@@ -27,8 +27,8 @@ module globalArrays
     real*8, allocatable :: BC(:,:)
     real*8, allocatable :: solinc(:,:)
     real*8, allocatable :: res(:,:)
-    real*8, allocatable :: rowp(:,:)
-    real*8, allocatable :: colm(:)
+    integer, allocatable :: rowp(:,:)
+    integer, allocatable :: colm(:)
     real*8, allocatable :: rerr(:,:)
     real*8, allocatable :: ybar(:,:)
     real*8, allocatable :: dummyVar(:)
@@ -214,11 +214,11 @@ subroutine GlobalDestruction
     !   Now destroy all of the other allocatables
     !
     !if(ilset.gt.0) call DspatVarVol
-    if (iLES/10 .eq. 2) call Daveall
-    if (iLES/10 .eq. 1) then
-        call DlhsGkeep
-        call Drlssave
-    endif
+!    if (iLES/10 .eq. 2) call Daveall
+!    if (iLES/10 .eq. 1) then
+!        call DlhsGkeep
+!        call Drlssave
+!    endif
     call DspecialBC           ! conditionals inside
     call DincpBC              ! conditionals inside
     call DconvolImpFlow       ! conditionals inside
@@ -227,7 +227,7 @@ subroutine GlobalDestruction
     call DcalcFlowPressure    ! conditionals inside
     call DLagrangeMultipliers ! conditionals inside
     if(idtn.eq.1) call Ddtnmod
-    if(myrank.eq. master .and. irscale.ge.0) call DSPEBC
+!    if(myrank.eq. master .and. irscale.ge.0) call DSPEBC
     call Dturbsa          ! always allocated???
     !      if((flmpr.ne.0) .or. (flmpl.ne.0))
     call Dgmass

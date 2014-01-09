@@ -1593,82 +1593,82 @@ void Partition_Problem(int numProcs) {
 
 	// SONFATH stuff
 
-	if (SONFATH_VAR > 0) {
-		int* ncvec = new int[maxnshg * numProcs];
-		for (int x = 0; x < numProcs * maxnshg; x++)
-			ncvec[x] = 0;
-
-		for (int p = 0; p < numProcs; p++)
-			for (map<int, int>::iterator niter = ncorp[p].begin();
-					niter != ncorp[p].end(); niter++)
-				ncvec[numProcs * (*niter).first + p] = (*niter).second;
-
-		int* nsons = new int[SONFATH_VAR];
-		int* ifath = new int[maxnshg * numProcs];
-
-		sonfath_(ncvec, vnumnp, ifath, nsons, &SONFATH_VAR, &numProcs, &nshgTot,
-				&maxnshg);
-
-		delete[] vnumnp;
-		delete[] ncvec;
-
-		// now we have ifath and nsons for the whole mesh, need to split it 
-		// and write out.
-
-		int* ifath1d;
-
-		for (int a = 0; a < numProcs; a++) {
-
-			bzero_old((void*) filename, 255);
-			sprintf(filename, "%sgeombc.dat.%d", _directory_name, a + 1);
-			openfile_(filename, "append", &fgeom);
-
-			bzero_old((void*) filename, 255);
-			sprintf(filename, "number of father-nodes : < 0 > %d\n",
-					SONFATH_VAR);
-			writestring_(&fgeom, filename);
-
-			isize = SONFATH_VAR;
-			nitems = 1;
-			iarray[0] = SONFATH_VAR;
-			writeheader_(&fgeom, "number of son-nodes for each father ",
-					(void*) iarray, &nitems, &isize, "integer", oformat);
-			nitems = SONFATH_VAR;
-			writedatablock_(&fgeom, "number of son-nodes for each father ",
-					(void*) (nsons), &nitems, "integer", oformat);
-
-			ifath1d = new int[ncorp[a].size()];
-			for (int j = 0; j < ncorp[a].size(); j++)
-				ifath1d[j] = ifath[j * numProcs + a];
-
-			isize = ncorp[a].size();
-			nitems = 1;
-			iarray[0] = ncorp[a].size();
-			writeheader_(&fgeom, "keyword ifath ", (void*) iarray, &nitems,
-					&isize, "integer", oformat);
-			nitems = ncorp[a].size();
-			writedatablock_(&fgeom, "keyword ifath ", (void*) (ifath1d),
-					&nitems, "integer", oformat);
-
-#if defined ( DEBUG )
-			sprintf( filename, "%sascii_out.%d",_directory_name, a+1 );
-			ofstream fascii( filename, ios_base::app );
-			fascii <<"\n-------------------------------"<< endl;
-			fascii <<"IFATH array "<<endl;
-			fascii <<"-------------------------------"<< endl;
-			for( int j=0; j < ncorp[a].size(); j++ )
-			fascii << ifath1d[j] << endl;
-			fascii <<"-------------------------------"<< endl;
-			fascii.close();
-#endif
-
-			closefile_(&fgeom, "append");
-			delete[] ifath1d;
-		}
-
-		delete[] nsons;
-		delete[] ifath;
-	}
+//	if (SONFATH_VAR > 0) {
+//		int* ncvec = new int[maxnshg * numProcs];
+//		for (int x = 0; x < numProcs * maxnshg; x++)
+//			ncvec[x] = 0;
+//
+//		for (int p = 0; p < numProcs; p++)
+//			for (map<int, int>::iterator niter = ncorp[p].begin();
+//					niter != ncorp[p].end(); niter++)
+//				ncvec[numProcs * (*niter).first + p] = (*niter).second;
+//
+//		int* nsons = new int[SONFATH_VAR];
+//		int* ifath = new int[maxnshg * numProcs];
+//
+//		sonfath_(ncvec, vnumnp, ifath, nsons, &SONFATH_VAR, &numProcs, &nshgTot,
+//				&maxnshg);
+//
+//		delete[] vnumnp;
+//		delete[] ncvec;
+//
+//		// now we have ifath and nsons for the whole mesh, need to split it
+//		// and write out.
+//
+//		int* ifath1d;
+//
+//		for (int a = 0; a < numProcs; a++) {
+//
+//			bzero_old((void*) filename, 255);
+//			sprintf(filename, "%sgeombc.dat.%d", _directory_name, a + 1);
+//			openfile_(filename, "append", &fgeom);
+//
+//			bzero_old((void*) filename, 255);
+//			sprintf(filename, "number of father-nodes : < 0 > %d\n",
+//					SONFATH_VAR);
+//			writestring_(&fgeom, filename);
+//
+//			isize = SONFATH_VAR;
+//			nitems = 1;
+//			iarray[0] = SONFATH_VAR;
+//			writeheader_(&fgeom, "number of son-nodes for each father ",
+//					(void*) iarray, &nitems, &isize, "integer", oformat);
+//			nitems = SONFATH_VAR;
+//			writedatablock_(&fgeom, "number of son-nodes for each father ",
+//					(void*) (nsons), &nitems, "integer", oformat);
+//
+//			ifath1d = new int[ncorp[a].size()];
+//			for (int j = 0; j < ncorp[a].size(); j++)
+//				ifath1d[j] = ifath[j * numProcs + a];
+//
+//			isize = ncorp[a].size();
+//			nitems = 1;
+//			iarray[0] = ncorp[a].size();
+//			writeheader_(&fgeom, "keyword ifath ", (void*) iarray, &nitems,
+//					&isize, "integer", oformat);
+//			nitems = ncorp[a].size();
+//			writedatablock_(&fgeom, "keyword ifath ", (void*) (ifath1d),
+//					&nitems, "integer", oformat);
+//
+//#if defined ( DEBUG )
+//			sprintf( filename, "%sascii_out.%d",_directory_name, a+1 );
+//			ofstream fascii( filename, ios_base::app );
+//			fascii <<"\n-------------------------------"<< endl;
+//			fascii <<"IFATH array "<<endl;
+//			fascii <<"-------------------------------"<< endl;
+//			for( int j=0; j < ncorp[a].size(); j++ )
+//			fascii << ifath1d[j] << endl;
+//			fascii <<"-------------------------------"<< endl;
+//			fascii.close();
+//#endif
+//
+//			closefile_(&fgeom, "append");
+//			delete[] ifath1d;
+//		}
+//
+//		delete[] nsons;
+//		delete[] ifath;
+//	}
 
 	for (int a = 0; a < numProcs; a++) {
 

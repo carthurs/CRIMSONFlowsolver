@@ -12,7 +12,7 @@
 !----------------------------------------------------------------------
 !
       use stats
-      use rlssave  ! Use the resolved Leonard stresses at the nodes.
+      !use rlssave  ! Use the resolved Leonard stresses at the nodes.
       use timedata    ! time series
       use turbsa                ! access to d2wall
       use LagrangeMultipliers 

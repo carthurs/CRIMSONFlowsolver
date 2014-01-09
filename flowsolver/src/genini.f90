@@ -58,18 +58,18 @@
 !
         !call restar ('in  ',  y,  ac)
 !
-        if((itwmod.gt.0)  &
-           .or. (nsonmax.eq.1 .and. iLES.gt.0) ) then 
-           call rwvelb('in  ',velbar,ifail)
+!        if((itwmod.gt.0)  &
+!           .or. (nsonmax.eq.1 .and. iLES.gt.0) ) then
+!           call rwvelb('in  ',velbar,ifail)
 !
 ! if the read failed calculate velbar
 !
-           if(ifail.eq.1) then
-              call getvel (y,     ilwork, iBC, &
-                           nsons, ifath, velbar)
-           endif
- 
-        endif   ! for the itwmod or irscale
+!           if(ifail.eq.1) then
+!              call getvel (y,     ilwork, iBC, &
+!                           nsons, ifath, velbar)
+!           endif
+!
+!        endif   ! for the itwmod or irscale
 !
 !.... time varying boundary conditions as set from file bct.dat and impt.dat 
 !     (see function for format in file bctint.f)
@@ -170,9 +170,9 @@
            call itrBCSclr (y, ac,  iBC, BC, iper, ilwork)
         enddo
 
-        if((irscale.ge.0) .and. (myrank.eq.master)) then
-           call genscale(y, x, iBC)
-        endif
+!        if((irscale.ge.0) .and. (myrank.eq.master)) then
+!           call genscale(y, x, iBC)
+!        endif
 !
 !.... --------------------------->  Echo  <----------------------------
 !

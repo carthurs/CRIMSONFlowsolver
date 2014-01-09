@@ -22,7 +22,7 @@ TARGET_FORWARDANDOBSERVE = flowsolver_and_observer
 TARGET_POSTSOLVER = postsolver
 TARGET_PRESOLVER = presolver
  
-MAKE_OPTIMIZED = 1
+MAKE_OPTIMIZED = 0
  
 ifeq ($(MAKE_OPTIMIZED),1)
    DEBUG_FLAGS     =
@@ -32,8 +32,8 @@ ifeq ($(MAKE_OPTIMIZED),1)
    LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
    #LINK_EXE        = $(CXX) -o 
 else
-   DEBUG_FLAGS     = -O0 -g -fp-model precise
-   DEBUG_FFLAGS    = -O0 -g -align array64byte -fp-model source -traceback -fp-stack-check
+   DEBUG_FLAGS     = -prof-gen -prof-dir/home/nxiao/profiled -O0 -g -fp-model precise
+   DEBUG_FFLAGS    = -prof-gen -prof-dir/home/nxiao/profiled -O0 -g -align array64byte -fp-model source -traceback -fp-stack-check
    OPT_FLAGS       =
    OPT_FFLAGS      =
    #LINK_EXE        = $(CXX) -o 

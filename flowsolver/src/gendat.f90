@@ -141,24 +141,24 @@
 ! KEJ moved them to this point because cdelsq now passed with module
 !     and it is read in with velb.<stepnum>.<proc#> now
 !
-        if (iLES .gt. 0) then
-
-           call setfilt         ! For setting quad. rule to use for integrating
-           call filtprep        ! the hat filter.
-           if(iLES/10 .eq. 2) then
-              call setave       ! For averaging cdelsq computed at quad pts
-              call aveprep(shp,x)
-           endif
-        endif
+!        if (iLES .gt. 0) then
+!
+!           call setfilt         ! For setting quad. rule to use for integrating
+!           call filtprep        ! the hat filter.
+!           if(iLES/10 .eq. 2) then
+!              call setave       ! For averaging cdelsq computed at quad pts
+!              call aveprep(shp,x)
+!           endif
+!        endif
 !
 ! User sets request pzero in solver.inp now
 !
 !        call genpzero(iBC,iper)
 !
-      if((myrank.eq.master).and.(irscale.ge.0)) then
-         call setSPEBC(numnp,nsd) 	 
-	 call eqn_plane(x, iBC)
-      endif
+!      if((myrank.eq.master).and.(irscale.ge.0)) then
+!         call setSPEBC(numnp,nsd)
+!	 call eqn_plane(x, iBC)
+!      endif
       
 !
 ! Here we find the nodes on the deformable wall

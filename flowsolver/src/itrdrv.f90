@@ -582,22 +582,22 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     if(nosource.eq.1) BC(:,7:6+nsclr)= BC(:,7:6+nsclr)*0.8
 
 
-    if(iLES.gt.0) then  !complicated stuff has moved to
-                                       !routine below
-        call lesmodels(yold,  acold,     shgl,      shp,  &
-        iper,  ilwork,    rowp,      colm, &
-        nsons, ifath,     x,    &
-        iBC,   BC)
-
-         
-    endif
+!    if(iLES.gt.0) then  !complicated stuff has moved to
+!                                       !routine below
+!        call lesmodels(yold,  acold,     shgl,      shp,  &
+!        iper,  ilwork,    rowp,      colm, &
+!        nsons, ifath,     x,    &
+!        iBC,   BC)
+!
+!
+!    endif
 
     !.... set traction BCs for modeled walls
     !
-    if (itwmod.ne.0) then
-        call asbwmod(yold,   acold,   x,      BC,     iBC, &
-        iper,   ilwork,  ifath,  velbar)
-    endif
+!    if (itwmod.ne.0) then
+!        call asbwmod(yold,   acold,   x,      BC,     iBC, &
+!        iper,   ilwork,  ifath,  velbar)
+!    endif
       
 end subroutine
       
@@ -1040,25 +1040,25 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !
     call forces ( yold,  ilwork )
          
-    if((irscale.ge.0).or.(itwmod.gt.0))  &
-    call getvel (yold,     ilwork, iBC, &
-    nsons,    ifath, velbar)
+!    if((irscale.ge.0).or.(itwmod.gt.0))  &
+!    call getvel (yold,     ilwork, iBC, &
+!    nsons,    ifath, velbar)
 
-    if((irscale.ge.0).and.(myrank.eq.master)) then
-        call genscale(yold,       x,       iper,  &
-        iBC,     ifath,   velbar, &
-        nsons)
-    endif
+!    if((irscale.ge.0).and.(myrank.eq.master)) then
+!        call genscale(yold,       x,       iper,  &
+!        iBC,     ifath,   velbar, &
+!        nsons)
+!    endif
     !
     !....  print out results.
     !
-    ntoutv=max(ntout,100)   ! velb is not needed so often
-    if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
-        if( (mod(lstep, ntoutv) .eq. 0) .and. &
-        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
-        ((nsonmax.eq.1).and.(iLES.gt.0)))) &
-        call rwvelb  ('out ',  velbar  ,ifail)
-    endif
+!    ntoutv=max(ntout,100)   ! velb is not needed so often
+!    if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
+!        if( (mod(lstep, ntoutv) .eq. 0) .and. &
+!        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
+!        ((nsonmax.eq.1).and.(iLES.gt.0)))) &
+!        call rwvelb  ('out ',  velbar  ,ifail)
+!    endif
     !
     !.... end of the NSTEP loop
     !
@@ -1167,7 +1167,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         if( &
         ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
         ((nsonmax.eq.1).and.iLES.gt.0))) &
-        call rwvelb  ('out ',  velbar  ,ifail)
+!        call rwvelb  ('out ',  velbar  ,ifail)
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
             call write_displ(myrank, lstep, nshg, 3, u, uref )

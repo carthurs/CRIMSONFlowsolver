@@ -8,5 +8,13 @@ syntax: glob
 *.a
 *.manifest
 *.exe
+*.dyn
+*.spi
+*.dpi
+*.spl
+*.orig
+*.dat
+*.lic
+*.txt
 .project
 .cproject

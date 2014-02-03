@@ -21,7 +21,7 @@
 !
 !----------------------------------------------------------------------
 !
-        use turbsa      ! access to d2wall
+        !use turbsa      ! access to d2wall
         use phcommonvars  
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
@@ -53,9 +53,9 @@
 
         call localy(y,      yl,     ien,    ndof,   'gather  ')
         call localx (x,      xl,     ien,    nsd,    'gather  ')
-        if (iRANS .eq. -2) then ! kay-epsilon
-           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
-        endif
+!        if (iRANS .eq. -2) then ! kay-epsilon
+!           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
+!        endif
 !
 !.... get the element residuals 
 !
@@ -90,7 +90,7 @@
                              shgl,    ien,     qres, &   
                              rmass    )
 !
-        use turbsa      ! access to d2wall
+        !use turbsa      ! access to d2wall
         use phcommonvars  
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
@@ -112,9 +112,9 @@
 !
         call localy(y,      yl,     ien,    ndof,   'gather  ')
         call localx (x,      xl,     ien,    nsd,    'gather  ')
-        if (iRANS .eq. -2) then ! kay-epsilon
-           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
-        endif
+!        if (iRANS .eq. -2) then ! kay-epsilon
+!           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
+!        endif
 !
 !.... get the element residuals 
 !

@@ -25,13 +25,13 @@
                   ac(nshg,nflow),            BC(nshg,ndofBC)
 
         dimension ilwork(nlwork),           iper(nshg)
-!
-!  limiting...ugly but sometimes the only way
-!
-        do i=1,nflow
-           if(ylimit(1,i).gt.0)  &
-                y(:,i)=min(ylimit(3,i),max(ylimit(2,i),y(:,i))) 
-        enddo
+!!
+!!  limiting...ugly but sometimes the only way
+!!
+!        do i=1,nflow
+!           if(ylimit(1,i).gt.0)  &
+!                y(:,i)=min(ylimit(3,i),max(ylimit(2,i),y(:,i)))
+!        enddo
 !
 !.... ------------------------->  Velocity  <--------------------------
 !.... 3D
@@ -156,11 +156,11 @@
            ibb=ib+1
            id=ib
         endif
-!
-!  limiting...ugly but sometimes the only way
-!
-           if(ylimit(1,id).gt.0)  &
-                y(:,id)=min(ylimit(3,id),max(ylimit(2,id),y(:,id))) 
+!!
+!!  limiting...ugly but sometimes the only way
+!!
+!           if(ylimit(1,id).gt.0)  &
+!                y(:,id)=min(ylimit(3,id),max(ylimit(2,id),y(:,id)))
 !
 !
 !.... ------------------------>  Scalar  <------------------------

@@ -106,29 +106,29 @@
           enddo
        endif
 !
-       if(iRANS.eq.-2) then ! kay-epsilon
-          dist2w = zero
-          do n = 1, nenl
-             dist2w = dist2w + shpfun(:,n) * dwl(:,n)
-          enddo
-       endif
+!       if(iRANS.eq.-2) then ! kay-epsilon
+!          dist2w = zero
+!          do n = 1, nenl
+!             dist2w = dist2w + shpfun(:,n) * dwl(:,n)
+!          enddo
+!       endif
 !
  
-       if( (iLES.gt.10).and.(iLES.lt.20))  then  ! bardina
-       rlsli = zero
-       do n = 1, nshl 
-
-          rlsli(:,1) = rlsli(:,1) + shpfun(:,n) * rlsl(:,n,1)
-          rlsli(:,2) = rlsli(:,2) + shpfun(:,n) * rlsl(:,n,2)
-          rlsli(:,3) = rlsli(:,3) + shpfun(:,n) * rlsl(:,n,3)
-          rlsli(:,4) = rlsli(:,4) + shpfun(:,n) * rlsl(:,n,4)
-          rlsli(:,5) = rlsli(:,5) + shpfun(:,n) * rlsl(:,n,5)
-          rlsli(:,6) = rlsli(:,6) + shpfun(:,n) * rlsl(:,n,6)
-
-       enddo
-       else
+!       if( (iLES.gt.10).and.(iLES.lt.20))  then  ! bardina
+!       rlsli = zero
+!       do n = 1, nshl
+!
+!          rlsli(:,1) = rlsli(:,1) + shpfun(:,n) * rlsl(:,n,1)
+!          rlsli(:,2) = rlsli(:,2) + shpfun(:,n) * rlsl(:,n,2)
+!          rlsli(:,3) = rlsli(:,3) + shpfun(:,n) * rlsl(:,n,3)
+!          rlsli(:,4) = rlsli(:,4) + shpfun(:,n) * rlsl(:,n,4)
+!          rlsli(:,5) = rlsli(:,5) + shpfun(:,n) * rlsl(:,n,5)
+!          rlsli(:,6) = rlsli(:,6) + shpfun(:,n) * rlsl(:,n,6)
+!
+!       enddo
+!       else
           rlsli = zero
-       endif
+!       endif
 !
 !.... ----------------------->  accel. at int. point  <----------------------
 !
@@ -478,20 +478,20 @@
 !     
 !.... compute  source terms
 !
-!ad
-!ad    if we are solving the redistancing equation, the umod(:,:) are 
-!AD    modified in e3sourceSclr.  
-!AD
-!AD  if we are redistancing levelset variable we want to use a use the  
-!AD  convective term from the equation.  
+!!ad
+!!ad    if we are solving the redistancing equation, the umod(:,:) are
+!!AD    modified in e3sourceSclr.
+!!AD
+!!AD  if we are redistancing levelset variable we want to use a use the
+!!AD  convective term from the equation.
 
 
        if(nosource.ne.1) then
-        call e3sourceSclr ( Sclr,         Sdot,      gradS,  dwl, &
-                            shpfun,    shg,       yl,     dxidx, &
-                            diffus,       u1,        u2,     u3, &
-                            srcR,         srcL,      uMod,    &
-                            srcRat)
+        !call e3sourceSclr ( Sclr,         Sdot,      gradS,  dwl, &
+        !                    shpfun,    shg,       yl,     dxidx, &
+        !                    diffus,       u1,        u2,     u3, &
+        !                    srcR,         srcL,      uMod,    &
+        !                    srcRat)
        else
         srcRat = zero
         srcR   = zero

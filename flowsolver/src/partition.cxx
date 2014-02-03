@@ -16,7 +16,7 @@
 #include <direct.h>
 #define chdir _chdir
 #define stat _stat
-#define sonfath_ SONFATH
+//#define sonfath_ SONFATH
 
 #else
 #include <unistd.h>
@@ -33,7 +33,7 @@ extern "C" {
 void
 METIS_PartGraphKway(int*, int*, int*, int*, int*, int*, int*, int*, int*, int*,
 		int*);
-void sonfath_(int*, int*, int*, int*, int*, int*, int*, int*);
+//void sonfath_(int*, int*, int*, int*, int*, int*, int*, int*);
 }
 
 void
@@ -133,7 +133,7 @@ void Partition_Problem(int numProcs) {
 
 	char iformat[80];
 	char oformat[80];
-	int SONFATH_VAR = turbvar.sonfathvar;
+	//int SONFATH_VAR = turbvar.sonfathvar;
 
 	map<int, map<int, int> > ParallelData;
 
@@ -587,9 +587,9 @@ void Partition_Problem(int numProcs) {
 	delete[] ntagsloc;
 
 	// if we need to calculate sonfath later we will need to have vnumnp[i]
-	int* vnumnp;
-	if (SONFATH_VAR > 0)
-		vnumnp = new int[numProcs];
+//	int* vnumnp;
+//	if (SONFATH_VAR > 0)
+//		vnumnp = new int[numProcs];
 
 	for (int p = 0; p < numProcs; p++) {
 
@@ -597,8 +597,8 @@ void Partition_Problem(int numProcs) {
 		sprintf(filename, "%sgeombc.dat.%d", _directory_name, p + 1);
 		openfile_(filename, "append", &fgeom);
 
-		if (SONFATH_VAR > 0)
-			vnumnp[p] = Xpart[p].size();
+//		if (SONFATH_VAR > 0)
+//			vnumnp[p] = Xpart[p].size();
 
 		bzero_old((void*) filename, 255);
 		sprintf(filename, "number of nodes : < 0 > %d \n",
@@ -726,7 +726,7 @@ void Partition_Problem(int numProcs) {
 
 	// we will calculate a maxnshg here for later use with sonfath.
 
-	int maxnshg = 0;
+	//int maxnshg = 0;
 
 	for (int p = 0; p < numProcs; p++) {
 
@@ -740,8 +740,8 @@ void Partition_Problem(int numProcs) {
 		fprintf(cfascii,"\nBoundary Condition Mapping Array (nBC):\n" );
 		fprintf(cfascii,"---------------------------------------\n" );
 #endif
-		if ((SONFATH_VAR > 0) && (maxnshg < nBCpart[p].size()))
-			maxnshg = nBCpart[p].size();
+//		if ((SONFATH_VAR > 0) && (maxnshg < nBCpart[p].size()))
+//			maxnshg = nBCpart[p].size();
 		bzero_old((void*) filename, 255);
 		sprintf(filename, "maximum number of element nodes : < 0 > %d\n",
 				nenmax);

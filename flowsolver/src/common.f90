@@ -148,45 +148,49 @@ module phcommonvars
     !----------------------------------------------------------
 
     !----------------------------------------------------------
-    real*8             zoutSponge, radSponge, zinSponge, &
-        grthOSponge,grthISponge,betamax
-    integer            spongecontinuity, spongemomentum1, spongemomentum2, &
-        spongeenergy, spongemomentum3
-    common /spongevar/ zoutSponge, radSponge, zinSponge, &
-        grthOSponge,grthISponge,betamax, &
-        spongecontinuity, spongemomentum1, spongemomentum2, &
-        spongeenergy, spongemomentum3
-    bind(C, name="spongevar") :: /spongevar/
+!    real*8             zoutSponge, radSponge, zinSponge, &
+!        grthOSponge,grthISponge,betamax
+!    integer            spongecontinuity, spongemomentum1, spongemomentum2, &
+!        spongeenergy, spongemomentum3
+!    common /spongevar/ zoutSponge, radSponge, zinSponge, &
+!        grthOSponge,grthISponge,betamax, &
+!        spongecontinuity, spongemomentum1, spongemomentum2, &
+!        spongeenergy, spongemomentum3
+!    bind(C, name="spongevar") :: /spongevar/
     !----------------------------------------------------------
 
     !----------------------------------------------------------
-    real*8           eles,ylimit(3,9), rmutarget, pzero,  wtavei, &
-        dtavei, dke,  fwr1, flump
-    integer          ierrcalc, ihessian, itwmod, ngaussf,idim, &
-        nlist, nintf(MAXTOP), sonfathvar
-    common /turbvar/ eles,ylimit, rmutarget, pzero,  wtavei, &
-        dtavei, dke,  fwr1, flump, &
-        ierrcalc, ihessian, itwmod, ngaussf,idim, &
-        nlist, nintf
+!    real*8           eles,ylimit(3,9), rmutarget, pzero,  wtavei, &
+!        dtavei, dke,  fwr1, flump
+!    integer          ierrcalc, ihessian, itwmod, ngaussf,idim, &
+!        nlist, nintf(MAXTOP), sonfathvar
+!    common /turbvar/ eles,ylimit, rmutarget, pzero,  wtavei, &
+!        dtavei, dke,  fwr1, flump, &
+!        ierrcalc, ihessian, itwmod, ngaussf,idim, &
+!        nlist, nintf
+!    bind(C, name="turbvar") :: /turbvar/
+    integer           ierrcalc, ihessian
+    common /turbvar/ ierrcalc, ihessian
     bind(C, name="turbvar") :: /turbvar/
+
     !----------------------------------------------------------
 
     !----------------------------------------------------------
-    integer           iRANS, iLES, isubmod, ifproj, i2filt, &
-        modlstats, idis, nohomog, ierrsmooth
-    common /turbvari/ iRANS, iLES, isubmod, ifproj, i2filt, &
-        modlstats, idis, nohomog, ierrsmooth
+    integer           ierrsmooth !iRANS, iLES, isubmod, ifproj, i2filt, &
+        !modlstats, idis, nohomog, ierrsmooth
+    common /turbvari/ ierrsmooth !iRANS, iLES, isubmod, ifproj, i2filt, &
+        !modlstats, idis, nohomog, ierrsmooth
     bind(C, name="turbvari") :: /turbvari/
     !----------------------------------------------------------
 
     !----------------------------------------------------------
-    integer          irscale, intpres
-    real*8           plandist, &
-        thetag, ds, tolerence, radcyl, rbltin, rvscal
-    common /spebcvr/ irscale, intpres, &
-        plandist, &
-        thetag, ds, tolerence, radcyl, rbltin, rvscal
-    bind(C, name="spebcvr") :: /spebcvr/
+!    integer          irscale, intpres
+!    real*8           plandist, &
+!        thetag, ds, tolerence, radcyl, rbltin, rvscal
+!    common /spebcvr/ irscale, intpres, &
+!        plandist, &
+!        thetag, ds, tolerence, radcyl, rbltin, rvscal
+!    bind(C, name="spebcvr") :: /spebcvr/
     !----------------------------------------------------------
 
     !----------------------------------------------------------
@@ -238,9 +242,9 @@ module phcommonvars
     !----------------------------------------------------------
 
     !----------------------------------------------------------
-    real*8 a(100000)
-    common /astore/ a
-    bind(C, name="astore") :: /astore/
+!    real*8 a(100000)
+!    common /astore/ a
+!    bind(C, name="astore") :: /astore/
     !----------------------------------------------------------
 
     !----------------------------------------------------------

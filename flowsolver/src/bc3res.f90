@@ -109,20 +109,20 @@
 !
 !.... scaled plane extraction boundary condition
 !
-        if(intpres.eq.1) then  ! interpolating pressure so zero continuity res 
+!        if(intpres.eq.1) then  ! interpolating pressure so zero continuity res
+!           where (btest(iBC,11))
+!              res(:,1) = zero
+!              res(:,2) = zero
+!              res(:,3) = zero
+!              res(:,4) = zero
+!           endwhere
+!        else  ! leave residual in continuity equation
            where (btest(iBC,11))
               res(:,1) = zero
               res(:,2) = zero
               res(:,3) = zero
-              res(:,4) = zero
            endwhere
-        else  ! leave residual in continuity equation
-           where (btest(iBC,11))
-              res(:,1) = zero
-              res(:,2) = zero
-              res(:,3) = zero
-           endwhere
-        endif
+!        endif
 !
 !.... return
 !

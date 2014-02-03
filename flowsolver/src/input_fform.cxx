@@ -56,33 +56,33 @@ int input_fform() {
 		else
 			conpar.navier = 0;
 
-		if ((string) inp.GetValue("Turbulence Model") == "No-Model") {
-			turbvari.irans = 0;
-			turbvari.iles = 0;
-		} else if ((string) inp.GetValue("Turbulence Model") == "LES") {
-			turbvari.iles = 1;
-			turbvari.irans = 0;
-		} else if ((string) inp.GetValue("Turbulence Model") == "RANS-SA") {
-			turbvari.iles = 0;
-			turbvari.irans = -1;
-		} else if ((string) inp.GetValue("Turbulence Model") == "RANS") {
-			turbvari.iles = 0;
-			turbvari.irans = -1; // assume S-A for backward compatibility
-		} else if ((string) inp.GetValue("Turbulence Model") == "RANS-KE") {
-			turbvari.iles = 0;
-			turbvari.irans = -2;
-		} else if ((string) inp.GetValue("Turbulence Model") == "DES") {
-			turbvari.iles = 1;
-			turbvari.irans = -1;
-		} else {
-			cout
-			<< " Turbulence Model: Only Legal Values ( No-Model, LES, RANS-SA, RANS-KE, DES )";
-			cout << endl;
-			exit(1);
-		}
+//		if ((string) inp.GetValue("Turbulence Model") == "No-Model") {
+//			turbvari.irans = 0;
+//			turbvari.iles = 0;
+//		} else if ((string) inp.GetValue("Turbulence Model") == "LES") {
+//			turbvari.iles = 1;
+//			turbvari.irans = 0;
+//		} else if ((string) inp.GetValue("Turbulence Model") == "RANS-SA") {
+//			turbvari.iles = 0;
+//			turbvari.irans = -1;
+//		} else if ((string) inp.GetValue("Turbulence Model") == "RANS") {
+//			turbvari.iles = 0;
+//			turbvari.irans = -1; // assume S-A for backward compatibility
+//		} else if ((string) inp.GetValue("Turbulence Model") == "RANS-KE") {
+//			turbvari.iles = 0;
+//			turbvari.irans = -2;
+//		} else if ((string) inp.GetValue("Turbulence Model") == "DES") {
+//			turbvari.iles = 1;
+//			turbvari.irans = -1;
+//		} else {
+//			cout
+//			<< " Turbulence Model: Only Legal Values ( No-Model, LES, RANS-SA, RANS-KE, DES )";
+//			cout << endl;
+//			exit(1);
+//		}
 
-		if (turbvari.iles * turbvari.irans != 0)
-			turbvar.eles = inp.GetValue("DES Edge Length");
+		//if (turbvari.iles * turbvari.irans != 0)
+			//turbvar.eles = inp.GetValue("DES Edge Length");
 
 		int solflow, solheat, solscalr, ilset;
 		((string) inp.GetValue("Solve Flow") == "True") ?
@@ -95,10 +95,10 @@ int input_fform() {
 		ilset = (int) inp.GetValue("Solve Level Set");
 		solscalr = (int) inp.GetValue("Solve Scalars");
 		solscalr += ilset;
-		if (turbvari.irans == -1)
-			solscalr++;
-		if (turbvari.irans == -2)
-			solscalr = solscalr + 2;
+//		if (turbvari.irans == -1)
+//			solscalr++;
+//		if (turbvari.irans == -2)
+//			solscalr = solscalr + 2;
 		if (solscalr > 4) {
 			cout << " Only Four Scalars are supported \n";
 			cout << " Please reduce number of scalars \n";
@@ -159,7 +159,7 @@ int input_fform() {
 		strcpy(outpar.iotype,
 				((string) inp.GetValue("Data Block Format")).c_str());
 		//strcpy( phasta_iotype , ((string)inp.GetValue("Data Block Format")).c_str());
-		turbvar.sonfathvar = inp.GetValue("Number of Father Nodes");
+		//turbvar.sonfathvar = inp.GetValue("Number of Father Nodes");
 
 		if ((string) inp.GetValue("Print Residual at End of Step") == "True")
 			genpar.lstres = 1;
@@ -195,35 +195,35 @@ int input_fform() {
 
 		aerfrc.isrfIM = inp.GetValue("Surface ID for Integrated Mass");
 		//Limiting
-		vec = inp.GetValue("Limit u1");
-		for (i = 0; i < 3; i++) {
-			turbvar.ylimit[0][i] = vec[i];
-		}
-		vec.erase(vec.begin(), vec.end());
-
-		vec = inp.GetValue("Limit u2");
-		for (i = 0; i < 3; i++) {
-			turbvar.ylimit[1][i] = vec[i];
-		}
-		vec.erase(vec.begin(), vec.end());
-
-		vec = inp.GetValue("Limit u3");
-		for (i = 0; i < 3; i++) {
-			turbvar.ylimit[2][i] = vec[i];
-		}
-		vec.erase(vec.begin(), vec.end());
-
-		vec = inp.GetValue("Limit Pressure");
-		for (i = 0; i < 3; i++) {
-			turbvar.ylimit[3][i] = vec[i];
-		}
-		vec.erase(vec.begin(), vec.end());
-
-		vec = inp.GetValue("Limit Temperature");
-		for (i = 0; i < 3; i++) {
-			turbvar.ylimit[4][i] = vec[i];
-		}
-		vec.erase(vec.begin(), vec.end());
+//		vec = inp.GetValue("Limit u1");
+//		for (i = 0; i < 3; i++) {
+//			turbvar.ylimit[0][i] = vec[i];
+//		}
+//		vec.erase(vec.begin(), vec.end());
+//
+//		vec = inp.GetValue("Limit u2");
+//		for (i = 0; i < 3; i++) {
+//			turbvar.ylimit[1][i] = vec[i];
+//		}
+//		vec.erase(vec.begin(), vec.end());
+//
+//		vec = inp.GetValue("Limit u3");
+//		for (i = 0; i < 3; i++) {
+//			turbvar.ylimit[2][i] = vec[i];
+//		}
+//		vec.erase(vec.begin(), vec.end());
+//
+//		vec = inp.GetValue("Limit Pressure");
+//		for (i = 0; i < 3; i++) {
+//			turbvar.ylimit[3][i] = vec[i];
+//		}
+//		vec.erase(vec.begin(), vec.end());
+//
+//		vec = inp.GetValue("Limit Temperature");
+//		for (i = 0; i < 3; i++) {
+//			turbvar.ylimit[4][i] = vec[i];
+//		}
+//		vec.erase(vec.begin(), vec.end());
 
 		//Material Properties Keywords
 		matdat.nummat = levlset.iLSet + 1;
@@ -273,10 +273,10 @@ int input_fform() {
 		}
 		vec.erase(vec.begin(), vec.end());
 
-		if ((string) inp.GetValue("Zero Mean Pressure") == "True")
-			turbvar.pzero = 1;
+		//if ((string) inp.GetValue("Zero Mean Pressure") == "True")
+		//	turbvar.pzero = 1;
 
-		turbvar.rmutarget = inp.GetValue("Target Viscosity For Step NSTEP");
+		//turbvar.rmutarget = inp.GetValue("Target Viscosity For Step NSTEP");
 
 		if ((string) inp.GetValue("Body Force Option") == "None") {
 			for (i = 0; i < levlset.iLSet + 1; i++)
@@ -304,42 +304,42 @@ int input_fform() {
 		// the following block of stuff is common to all cooling type sponges.
 		// Specific stuff belongs in the conditionals above
 
-		if (matdat.matflg[0][4] >= 4) {
-			spongevar.betamax = inp.GetValue(
-					"Maximum Value of Sponge Parameter");
-			spongevar.zinsponge = inp.GetValue(
-					"Inflow Cooling Sponge Ends at z");
-			spongevar.zoutsponge = inp.GetValue(
-					"Outflow Cooling Sponge Begins at z");
-			spongevar.radsponge = inp.GetValue(
-					"Radial Cooling Sponge Begins at r");
-			spongevar.grthosponge = inp.GetValue(
-					"Sponge Growth Coefficient Outflow");
-			spongevar.grthisponge = inp.GetValue(
-					"Sponge Growth Coefficient Inflow");
-
-			spongevar.spongecontinuity = 0;
-			spongevar.spongemomentum1 = 0;
-			spongevar.spongemomentum2 = 0;
-			spongevar.spongemomentum3 = 0;
-			spongevar.spongeenergy = 0;
-
-			if ((string) inp.GetValue("Sponge for Continuity Equation")
-					== "True")
-				spongevar.spongecontinuity = 1;
-			if ((string) inp.GetValue("Sponge for x Momentum Equation")
-					== "True")
-				spongevar.spongemomentum1 = 1;
-			if ((string) inp.GetValue("Sponge for y Momentum Equation")
-					== "True")
-				spongevar.spongemomentum2 = 1;
-			if ((string) inp.GetValue("Sponge for z Momentum Equation")
-					== "True")
-				spongevar.spongemomentum3 = 1;
-			if ((string) inp.GetValue("Sponge for Energy Equation") == "True")
-				spongevar.spongeenergy = 1;
-
-		}
+//		if (matdat.matflg[0][4] >= 4) {
+//			spongevar.betamax = inp.GetValue(
+//					"Maximum Value of Sponge Parameter");
+//			spongevar.zinsponge = inp.GetValue(
+//					"Inflow Cooling Sponge Ends at z");
+//			spongevar.zoutsponge = inp.GetValue(
+//					"Outflow Cooling Sponge Begins at z");
+//			spongevar.radsponge = inp.GetValue(
+//					"Radial Cooling Sponge Begins at r");
+//			spongevar.grthosponge = inp.GetValue(
+//					"Sponge Growth Coefficient Outflow");
+//			spongevar.grthisponge = inp.GetValue(
+//					"Sponge Growth Coefficient Inflow");
+//
+//			spongevar.spongecontinuity = 0;
+//			spongevar.spongemomentum1 = 0;
+//			spongevar.spongemomentum2 = 0;
+//			spongevar.spongemomentum3 = 0;
+//			spongevar.spongeenergy = 0;
+//
+//			if ((string) inp.GetValue("Sponge for Continuity Equation")
+//					== "True")
+//				spongevar.spongecontinuity = 1;
+//			if ((string) inp.GetValue("Sponge for x Momentum Equation")
+//					== "True")
+//				spongevar.spongemomentum1 = 1;
+//			if ((string) inp.GetValue("Sponge for y Momentum Equation")
+//					== "True")
+//				spongevar.spongemomentum2 = 1;
+//			if ((string) inp.GetValue("Sponge for z Momentum Equation")
+//					== "True")
+//				spongevar.spongemomentum3 = 1;
+//			if ((string) inp.GetValue("Sponge for Energy Equation") == "True")
+//				spongevar.spongeenergy = 1;
+//
+//		}
 
 		vec = inp.GetValue("Body Force");
 		for (i = 0; i < levlset.iLSet + 1; i++) {
@@ -450,11 +450,11 @@ int input_fform() {
 					inp.GetValue(
 							"Number of Solves of Scalar 1 per Left-hand-side Formation");
 
-			vec = inp.GetValue("Limit Scalar 1");
-			for (i = 0; i < 3; i++) {
-				turbvar.ylimit[5][i] = vec[i];
-			}
-			vec.erase(vec.begin(), vec.end());
+//			vec = inp.GetValue("Limit Scalar 1");
+//			for (i = 0; i < 3; i++) {
+//				turbvar.ylimit[5][i] = vec[i];
+//			}
+//			vec.erase(vec.begin(), vec.end());
 		}
 
 		if (solscalr > 1) {
@@ -463,11 +463,11 @@ int input_fform() {
 					inp.GetValue(
 							"Number of Solves of Scalar 2 per Left-hand-side Formation");
 
-			vec = inp.GetValue("Limit Scalar 2");
-			for (i = 0; i < 3; i++) {
-				turbvar.ylimit[6][i] = vec[i];
-			}
-			vec.erase(vec.begin(), vec.end());
+//			vec = inp.GetValue("Limit Scalar 2");
+//			for (i = 0; i < 3; i++) {
+//				turbvar.ylimit[6][i] = vec[i];
+//			}
+//			vec.erase(vec.begin(), vec.end());
 		}
 
 		if (solscalr > 2) {
@@ -476,11 +476,11 @@ int input_fform() {
 					inp.GetValue(
 							"Number of Solves of Scalar 3 per Left-hand-side Formation");
 
-			vec = inp.GetValue("Limit Scalar 3");
-			for (i = 0; i < 3; i++) {
-				turbvar.ylimit[7][i] = vec[i];
-			}
-			vec.erase(vec.begin(), vec.end());
+//			vec = inp.GetValue("Limit Scalar 3");
+//			for (i = 0; i < 3; i++) {
+//				turbvar.ylimit[7][i] = vec[i];
+//			}
+//			vec.erase(vec.begin(), vec.end());
 		}
 
 		if (solscalr > 3) {
@@ -489,11 +489,11 @@ int input_fform() {
 					inp.GetValue(
 							"Number of Solves of Scalar 4 per Left-hand-side Formation");
 
-			vec = inp.GetValue("Limit Scalar 4");
-			for (i = 0; i < 3; i++) {
-				turbvar.ylimit[8][i] = vec[i];
-			}
-			vec.erase(vec.begin(), vec.end());
+//			vec = inp.GetValue("Limit Scalar 4");
+//			for (i = 0; i < 3; i++) {
+//				turbvar.ylimit[8][i] = vec[i];
+//			}
+//			vec.erase(vec.begin(), vec.end());
 		}
 
 		// DISCRETIZATION CONTROL
@@ -610,106 +610,106 @@ int input_fform() {
 		sclrs.tdecay = inp.GetValue("Decay Multiplier for Scalars");
 
 		// TURBULENCE MODELING PARAMETER
-		int tpturb = turbvari.iles - turbvari.irans;
-		int ifrule;
-		if (tpturb != 0) {
-
-			turbvari.nohomog = inp.GetValue("Number of Homogenous Directions");
-
-			if ((string) inp.GetValue("Turbulence Wall Model Type")
-					== "Slip Velocity")
-				turbvar.itwmod = 1;
-			else if ((string) inp.GetValue("Turbulence Wall Model Type")
-					== "Effective Viscosity")
-				turbvar.itwmod = 2;
-			else
-				turbvar.itwmod = 0;
-			if (turbvari.irans < 0)
-				turbvar.itwmod = turbvar.itwmod * (-1);
-			ifrule = inp.GetValue("Velocity Averaging Steps");
-			turbvar.wtavei = (ifrule > 0) ? 1.0 / ifrule : -1.0 / ifrule;
-
-			if (turbvari.iles == 1) {
-
-				if ((string) inp.GetValue("Dynamic Model Type") == "Bardina")
-					turbvari.iles += 10;
-				else if ((string) inp.GetValue("Dynamic Model Type")
-						== "Projection")
-					turbvari.iles += 20;
-
-				ifrule = inp.GetValue("Filter Integration Rule");
-				turbvari.iles += ifrule - 1;
-				ifrule = inp.GetValue("Dynamic Model Averaging Steps");
-				turbvar.dtavei = (ifrule > 0) ? 1.0 / ifrule : -1.0 / ifrule;
-				turbvar.fwr1 = inp.GetValue("Filter Width Ratio");
-				turbvar.flump = inp.GetValue("Lumping Factor for Filter");
-
-				if ((string) inp.GetValue("Model Statistics") == "True") {
-					turbvari.modlstats = 1;
-				} else {
-					turbvari.modlstats = 0;
-				}
-
-				if ((string) inp.GetValue("Double Filter") == "True") {
-					turbvari.i2filt = 1;
-				} else {
-					turbvari.i2filt = 0;
-				}
-
-				if ((string) inp.GetValue("Model/SUPG Dissipation") == "True") {
-					turbvari.idis = 1;
-				} else {
-					turbvari.idis = 0;
-				}
-
-				if ((string) inp.GetValue("Dynamic Model Type") == "Standard") {
-
-					if ((string) inp.GetValue("Dynamic Sub-Model Type")
-							== "None")
-						turbvari.isubmod = 0;
-					else if ((string) inp.GetValue("Dynamic Sub-Model Type")
-							== "DFWR")
-						turbvari.isubmod = 1;
-					else if ((string) inp.GetValue("Dynamic Sub-Model Type")
-							== "SUPG")
-						turbvari.isubmod = 2;
-				} else if ((string) inp.GetValue("Dynamic Model Type")
-						== "Projection") {
-
-					if ((string) inp.GetValue("Projection Filter Type")
-							== "Linear")
-						turbvari.ifproj = 0;
-					else if ((string) inp.GetValue("Projection Filter Type")
-							== "Quadratic")
-						turbvari.ifproj = 1;
-
-					if ((string) inp.GetValue("Dynamic Sub-Model Type")
-							== "None")
-						turbvari.isubmod = 0;
-					else if ((string) inp.GetValue("Dynamic Sub-Model Type")
-							== "ConsistentProj")
-						turbvari.isubmod = 1;
-				}
-
-			}
-		}
+//		int tpturb = turbvari.iles - turbvari.irans;
+//		int ifrule;
+//		if (tpturb != 0) {
+//
+//			turbvari.nohomog = inp.GetValue("Number of Homogenous Directions");
+//
+//			if ((string) inp.GetValue("Turbulence Wall Model Type")
+//					== "Slip Velocity")
+//				turbvar.itwmod = 1;
+//			else if ((string) inp.GetValue("Turbulence Wall Model Type")
+//					== "Effective Viscosity")
+//				turbvar.itwmod = 2;
+//			else
+//				turbvar.itwmod = 0;
+//			if (turbvari.irans < 0)
+//				turbvar.itwmod = turbvar.itwmod * (-1);
+//			ifrule = inp.GetValue("Velocity Averaging Steps");
+//			turbvar.wtavei = (ifrule > 0) ? 1.0 / ifrule : -1.0 / ifrule;
+//
+//			if (turbvari.iles == 1) {
+//
+//				if ((string) inp.GetValue("Dynamic Model Type") == "Bardina")
+//					turbvari.iles += 10;
+//				else if ((string) inp.GetValue("Dynamic Model Type")
+//						== "Projection")
+//					turbvari.iles += 20;
+//
+//				ifrule = inp.GetValue("Filter Integration Rule");
+//				turbvari.iles += ifrule - 1;
+//				ifrule = inp.GetValue("Dynamic Model Averaging Steps");
+//				turbvar.dtavei = (ifrule > 0) ? 1.0 / ifrule : -1.0 / ifrule;
+//				turbvar.fwr1 = inp.GetValue("Filter Width Ratio");
+//				turbvar.flump = inp.GetValue("Lumping Factor for Filter");
+//
+//				if ((string) inp.GetValue("Model Statistics") == "True") {
+//					turbvari.modlstats = 1;
+//				} else {
+//					turbvari.modlstats = 0;
+//				}
+//
+//				if ((string) inp.GetValue("Double Filter") == "True") {
+//					turbvari.i2filt = 1;
+//				} else {
+//					turbvari.i2filt = 0;
+//				}
+//
+//				if ((string) inp.GetValue("Model/SUPG Dissipation") == "True") {
+//					turbvari.idis = 1;
+//				} else {
+//					turbvari.idis = 0;
+//				}
+//
+//				if ((string) inp.GetValue("Dynamic Model Type") == "Standard") {
+//
+//					if ((string) inp.GetValue("Dynamic Sub-Model Type")
+//							== "None")
+//						turbvari.isubmod = 0;
+//					else if ((string) inp.GetValue("Dynamic Sub-Model Type")
+//							== "DFWR")
+//						turbvari.isubmod = 1;
+//					else if ((string) inp.GetValue("Dynamic Sub-Model Type")
+//							== "SUPG")
+//						turbvari.isubmod = 2;
+//				} else if ((string) inp.GetValue("Dynamic Model Type")
+//						== "Projection") {
+//
+//					if ((string) inp.GetValue("Projection Filter Type")
+//							== "Linear")
+//						turbvari.ifproj = 0;
+//					else if ((string) inp.GetValue("Projection Filter Type")
+//							== "Quadratic")
+//						turbvari.ifproj = 1;
+//
+//					if ((string) inp.GetValue("Dynamic Sub-Model Type")
+//							== "None")
+//						turbvari.isubmod = 0;
+//					else if ((string) inp.GetValue("Dynamic Sub-Model Type")
+//							== "ConsistentProj")
+//						turbvari.isubmod = 1;
+//				}
+//
+//			}
+//		}
 
 		// SPEBC MODELING PARAMETERS
 
-		if ((spebcvr.irscale = inp.GetValue("SPEBC Model Active")) >= 0) {
-
-			ifrule = inp.GetValue("Velocity Averaging Steps");
-			turbvar.wtavei =
-					(ifrule > 0) ? 1.0 / ifrule : 1.0 / inpdat.nstep[0];
-			spebcvr.intpres = inp.GetValue("Interpolate Pressure");
-			spebcvr.plandist = inp.GetValue("Distance between Planes");
-			spebcvr.thetag = inp.GetValue("Theta Angle of Arc");
-			spebcvr.ds = inp.GetValue("Distance for Velocity Averaging");
-			spebcvr.tolerence = inp.GetValue("SPEBC Cylindrical Tolerance");
-			spebcvr.radcyl = inp.GetValue("Radius of recycle plane");
-			spebcvr.rbltin = inp.GetValue("Inlet Boundary Layer Thickness");
-			spebcvr.rvscal = inp.GetValue("Vertical Velocity Scale Factor");
-		}
+//		if ((spebcvr.irscale = inp.GetValue("SPEBC Model Active")) >= 0) {
+//
+//			//ifrule = inp.GetValue("Velocity Averaging Steps");
+//			//turbvar.wtavei =
+//			//		(ifrule > 0) ? 1.0 / ifrule : 1.0 / inpdat.nstep[0];
+//			spebcvr.intpres = inp.GetValue("Interpolate Pressure");
+//			spebcvr.plandist = inp.GetValue("Distance between Planes");
+//			spebcvr.thetag = inp.GetValue("Theta Angle of Arc");
+//			spebcvr.ds = inp.GetValue("Distance for Velocity Averaging");
+//			spebcvr.tolerence = inp.GetValue("SPEBC Cylindrical Tolerance");
+//			spebcvr.radcyl = inp.GetValue("Radius of recycle plane");
+//			spebcvr.rbltin = inp.GetValue("Inlet Boundary Layer Thickness");
+//			spebcvr.rvscal = inp.GetValue("Vertical Velocity Scale Factor");
+//		}
 
 		// CARDIOVASCULAR MODELING PARAMETERS
 		if ((string) inp.GetValue("Time Varying Boundary Conditions From File")

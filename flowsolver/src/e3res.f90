@@ -147,17 +147,17 @@
          rGNa(:,3,2) = tmp2                        - u3(:)*u2(:)*rho(:)
          rGNa(:,3,3) = two * rmu * g3yi(:,4) + tmp - u3(:)*u3(:)*rho(:)
       endif
-      if((iLES.gt.10).and.(iLES.lt.20)) then    ! bard
-         rGNa(:,1,1) = rGNa(:,1,1) - rlsli(:,1)*rho(:)
-         rGNa(:,1,2) = rGNa(:,1,2) - rlsli(:,4)*rho(:)
-         rGNa(:,1,3) = rGNa(:,1,3) - rlsli(:,5)*rho(:)
-         rGNa(:,2,1) = rGNa(:,2,1) - rlsli(:,4)*rho(:)
-         rGNa(:,2,2) = rGNa(:,2,2) - rlsli(:,2)*rho(:)
-         rGNa(:,2,3) = rGNa(:,2,3) - rlsli(:,6)*rho(:)
-         rGNa(:,3,1) = rGNa(:,3,1) - rlsli(:,5)*rho(:)
-         rGNa(:,3,2) = rGNa(:,3,2) - rlsli(:,6)*rho(:)
-         rGNa(:,3,3) = rGNa(:,3,3) - rlsli(:,3)*rho(:)
-      endif  
+!      if((iLES.gt.10).and.(iLES.lt.20)) then    ! bard
+!         rGNa(:,1,1) = rGNa(:,1,1) - rlsli(:,1)*rho(:)
+!         rGNa(:,1,2) = rGNa(:,1,2) - rlsli(:,4)*rho(:)
+!         rGNa(:,1,3) = rGNa(:,1,3) - rlsli(:,5)*rho(:)
+!         rGNa(:,2,1) = rGNa(:,2,1) - rlsli(:,4)*rho(:)
+!         rGNa(:,2,2) = rGNa(:,2,2) - rlsli(:,2)*rho(:)
+!         rGNa(:,2,3) = rGNa(:,2,3) - rlsli(:,6)*rho(:)
+!         rGNa(:,3,1) = rGNa(:,3,1) - rlsli(:,5)*rho(:)
+!         rGNa(:,3,2) = rGNa(:,3,2) - rlsli(:,6)*rho(:)
+!         rGNa(:,3,3) = rGNa(:,3,3) - rlsli(:,3)*rho(:)
+!      endif
    
       tmp1        = tauM * rLui(:,1) 
       tmp2        = tauM * rLui(:,2) 
@@ -392,7 +392,7 @@
             src(:,2) = bfy * (Temp(:)-Tref)
             src(:,3) = bfz * (Temp(:)-Tref)
          case ( 3 )             ! user specified f(x,y,z)
-            call e3source(xx, src)
+            !call e3source(xx, src)
          end select
       endif
 !     

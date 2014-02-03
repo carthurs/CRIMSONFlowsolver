@@ -190,14 +190,14 @@
 !
         rdy1 = zero
         rdy2 = zero
-!
-!.... normalize turbulence with molecular viscosity
-!        
-        if ( (icomp .eq. 6).and. (iRANS.eq.-1) ) then
-           nrm = datmat(1,2,1)
-        else 
+!!
+!!.... normalize turbulence with molecular viscosity
+!!
+!        if ( (icomp .eq. 6).and. (iRANS.eq.-1) ) then
+!           nrm = datmat(1,2,1)
+!        else
            nrm = zero
-        endif
+!        endif
         call sumgat( abs(gami*Delt(itseq)*Dy(:)),1,rdy1)
         call sumgat( abs( y(:,icomp)),1,rdy2)
         rmaxdyT = rdy1/(rdy2+nrm)

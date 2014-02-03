@@ -315,133 +315,145 @@
 !
             iBCSAV=iBC(nn)
 !     
-            if(abs(itwmod).eq.1) then ! slip velocity wall-model
-! If we're using the slip-velocity wall-model, then the velocity
-! boundary condition for this node will depend on how many modeled
-! surfaces share it...
-               if(nsurf(nn).eq.1) then ! 1 modeled wall
-!   If this node is part of only one modeled wall, then the component
-!   of the velocity normal to the surface is set to zero.  In this case
-!   only the first vector of BCtmp received normal contributions
-                  iBC(nn)=iBC(nn)+8 ! assume normal is x-dominated first
-                  wnrm(nn,:)=BCtmp(nn,4:6)
-                  if(abs(wnrm(nn,3)).gt.abs(wnrm(nn,2)))then ! z beats y
-                     if(abs(wnrm(nn,3)).gt.abs(wnrm(nn,1)))then ! z beats x
-                        iBC(nn)=iBC(nn)+24
-                     endif      ! z beats x
-                  endif         ! z beats y
-                  if(abs(wnrm(nn,2)).ge.abs(wnrm(nn,3)))then ! y beats z
-                     if(abs(wnrm(nn,2)).gt.abs(wnrm(nn,1)))then ! y beats x
-                        iBC(nn)=iBC(nn)+8
-                     endif      ! y beats x
-                  endif         ! y beats z           !(adjusted iBC)
-                  BCtmp(nn,7)=zero
-               else if(nsurf(nn).eq.2) then
-!   If this node is shared by two modeled walls, then each wall
-!   provides a normal vector along which the velocity must be zero.
-!   This leaves only one "free" direction, along which the flow is nonzero.
-!   The two normal vectors define a plane.  Any pair of non-parallel
-!   vectors in this plane can also be specified, leaving the same free 
-!   direction.  Area-weighted average normal vectors for the two surfaces
-!   sharing this node have been stored in BCtmp(4:6) and BCtmp(8:10)
-!   We normalize the first of these, and then orthogonalize the second
-!   against the first.  After then normalizing the second, we choose which
-!   cartesian direction dominates each of the vectors, and adjust iBC 
-!   and BCtmp accordingly
-                  e1=BCtmp(nn,4:6)
-                  wmag=e1(1)*e1(1)+e1(2)*e1(2)+e1(3)*e1(3)
-                  wmag=1./sqrt(wmag)
-                  e1=e1*wmag    ! first vector is normalized
+
+
+
+
+!            if(abs(itwmod).eq.1) then ! slip velocity wall-model
+!! If we're using the slip-velocity wall-model, then the velocity
+!! boundary condition for this node will depend on how many modeled
+!! surfaces share it...
+!               if(nsurf(nn).eq.1) then ! 1 modeled wall
+!!   If this node is part of only one modeled wall, then the component
+!!   of the velocity normal to the surface is set to zero.  In this case
+!!   only the first vector of BCtmp received normal contributions
+!                  iBC(nn)=iBC(nn)+8 ! assume normal is x-dominated first
+!                  wnrm(nn,:)=BCtmp(nn,4:6)
+!                  if(abs(wnrm(nn,3)).gt.abs(wnrm(nn,2)))then ! z beats y
+!                     if(abs(wnrm(nn,3)).gt.abs(wnrm(nn,1)))then ! z beats x
+!                        iBC(nn)=iBC(nn)+24
+!                     endif      ! z beats x
+!                  endif         ! z beats y
+!                  if(abs(wnrm(nn,2)).ge.abs(wnrm(nn,3)))then ! y beats z
+!                     if(abs(wnrm(nn,2)).gt.abs(wnrm(nn,1)))then ! y beats x
+!                        iBC(nn)=iBC(nn)+8
+!                     endif      ! y beats x
+!                  endif         ! y beats z           !(adjusted iBC)
+!                  BCtmp(nn,7)=zero
+!               else if(nsurf(nn).eq.2) then
+!!   If this node is shared by two modeled walls, then each wall
+!!   provides a normal vector along which the velocity must be zero.
+!!   This leaves only one "free" direction, along which the flow is nonzero.
+!!   The two normal vectors define a plane.  Any pair of non-parallel
+!!   vectors in this plane can also be specified, leaving the same free
+!!   direction.  Area-weighted average normal vectors for the two surfaces
+!!   sharing this node have been stored in BCtmp(4:6) and BCtmp(8:10)
+!!   We normalize the first of these, and then orthogonalize the second
+!!   against the first.  After then normalizing the second, we choose which
+!!   cartesian direction dominates each of the vectors, and adjust iBC
+!!   and BCtmp accordingly
+!                  e1=BCtmp(nn,4:6)
+!                  wmag=e1(1)*e1(1)+e1(2)*e1(2)+e1(3)*e1(3)
+!                  wmag=1./sqrt(wmag)
+!                  e1=e1*wmag    ! first vector is normalized
+
+!                  e2=BCtmp(nn,8:10)
+!                  wmag=e2(1)*e1(1)+e2(2)*e1(2)+e2(3)*e1(3) ! wmag=e2.n1
+!                  e2=e2-wmag*e1 ! second vector is orthogonalized
+
+!                  wmag=e2(1)*e2(1)+e2(2)*e2(2)+e2(3)*e2(3)
+!                  wmag=1./sqrt(wmag)
+!                  e2=e2*wmag    ! second vector is normalized
+
+!               ! idom tells us which component is currently dominant
+!               ! ivec(n) tells us which vector is dominated by comp n
+!                  ivec(:)=0     ! initialize
+!                  idom=1        ! assume x-comp dominates e1
+!                  bigcomp=abs(e1(1))
+!                  ivec(idom)=1
+!                  do i = 2, nsd
+!                     if(abs(e1(i)).gt.bigcomp) then
+!                        ivec(idom)=0
+!                        bigcomp=abs(e1(i))
+!                        idom=i
+!                        ivec(i)=1
+!                     endif
+!                  enddo
+!                  if(idom.ne.1) then
+!                     idom=1     ! assume x-comp dominates e2
+!                  else
+!                     idom=3     ! assume z-comp dominates e2
+!                  endif
+!                  bigcomp=abs(e2(idom))
 !
-                  e2=BCtmp(nn,8:10)
-                  wmag=e2(1)*e1(1)+e2(2)*e1(2)+e2(3)*e1(3) ! wmag=e2.n1
-                  e2=e2-wmag*e1 ! second vector is orthogonalized
-!     
-                  wmag=e2(1)*e2(1)+e2(2)*e2(2)+e2(3)*e2(3)
-                  wmag=1./sqrt(wmag)
-                  e2=e2*wmag    ! second vector is normalized
+!                  ivec(idom)=2
+!                  do i = 1, nsd
+!                     if(abs(e2(i)).gt.bigcomp) then
+!                        if(ivec(i).eq.1) cycle
+!                        ivec(idom)=0
+!                        bigcomp=abs(e2(i))
+!                        idom=i
+!                        ivec(i)=2
+!                     endif
+!                  enddo
+!               ! now we know which components dominate each vector
+!                  ixset=0       !
+!                  iyset=0       ! initialize
+!                  izset=0       !
+!                  if(ivec(1).ne.0) ixset=1
+!                  if(ivec(2).ne.0) iyset=1
+!                  if(ivec(3).ne.0) izset=1
+!                  ncomp=ixset+iyset+izset
+!                  if(ncomp.ne.2) write(*,*) 'WARNING: TROUBLE IN GENBC'
+!                  BCvecs(1,1:3)=e1(:)
+!                  BCvecs(2,1:3)=e2(:)
+!                  if((ixset.eq.1).and.(iyset.eq.1)) then
+!                     BCtmp(nn,4:6)=BCvecs(ivec(1),1:3)
+!                     BCtmp(nn,8:10)=BCvecs(ivec(2),1:3)
+!                  else if((ixset.eq.1).and.(izset.eq.1)) then
+!                     BCtmp(nn,4:6)=BCvecs(ivec(1),1:3)
+!                     BCtmp(nn,8:10)=BCvecs(ivec(3),1:3)
+!                  else if((iyset.eq.1).and.(izset.eq.1)) then
+!                     BCtmp(nn,4:6)=BCvecs(ivec(2),1:3)
+!                     BCtmp(nn,8:10)=BCvecs(ivec(3),1:3)
+!                  endif
+!                  iBC(nn)=iBC(nn)+ixset*8+iyset*16+izset*32
+!                  BCtmp(nn,7)=zero
+!                  BCtmp(nn,11)=zero
+!                  wnrm(nn,:)=BCtmp(nn,4:6)+BCtmp(nn,8:10)
+!               else if(nsurf(nn).gt.2) then
+!!     If this node is shared by more than two modeled walls, then
+!!     it is a corner node and it will be treated as having no slip
+!!     The normals for all surfaces beyond the first two were
+!!     contributed to the first vector of BCtmp
+!                  wnrm(nn,:)=BCtmp(nn,4:6)+BCtmp(nn,8:10)
+!                  iBC(nn)=iBC(nn)+56
+!                  BCtmp(nn,7)=zero
+!               endif            ! curved surface
+!            else if(abs(itwmod).eq.2) then ! effective viscosity wall-model
+!! Otherwise, we're using the effective-viscosity wall-model and the
+!! nodes on modeled surfaces are treated as no-slip
+!               iBC(nn)=iBC(nn)+56 ! set 3-comp
+!               if(itwmod.eq.-2) BCtmp(nn,7)=zero ! no slip
+!               if(nsurf(nn).eq.1) &
+!                    wnrm(nn,:)=BCtmp(nn,4:6)
+!               if(nsurf(nn).ge.2) &
+!                    wnrm(nn,:)=BCtmp(nn,4:6)+BCtmp(nn,8:10)
+!            endif
 !
-               ! idom tells us which component is currently dominant
-               ! ivec(n) tells us which vector is dominated by comp n
-                  ivec(:)=0     ! initialize
-                  idom=1        ! assume x-comp dominates e1
-                  bigcomp=abs(e1(1))
-                  ivec(idom)=1
-                  do i = 2, nsd
-                     if(abs(e1(i)).gt.bigcomp) then
-                        ivec(idom)=0
-                        bigcomp=abs(e1(i))
-                        idom=i
-                        ivec(i)=1
-                     endif
-                  enddo
-                  if(idom.ne.1) then
-                     idom=1     ! assume x-comp dominates e2
-                  else
-                     idom=3     ! assume z-comp dominates e2
-                  endif
-                  bigcomp=abs(e2(idom))
-                  
-                  ivec(idom)=2
-                  do i = 1, nsd
-                     if(abs(e2(i)).gt.bigcomp) then
-                        if(ivec(i).eq.1) cycle
-                        ivec(idom)=0
-                        bigcomp=abs(e2(i))
-                        idom=i
-                        ivec(i)=2
-                     endif
-                  enddo
-               ! now we know which components dominate each vector
-                  ixset=0       !
-                  iyset=0       ! initialize
-                  izset=0       !
-                  if(ivec(1).ne.0) ixset=1
-                  if(ivec(2).ne.0) iyset=1
-                  if(ivec(3).ne.0) izset=1
-                  ncomp=ixset+iyset+izset
-                  if(ncomp.ne.2) write(*,*) 'WARNING: TROUBLE IN GENBC'
-                  BCvecs(1,1:3)=e1(:)
-                  BCvecs(2,1:3)=e2(:)
-                  if((ixset.eq.1).and.(iyset.eq.1)) then
-                     BCtmp(nn,4:6)=BCvecs(ivec(1),1:3)
-                     BCtmp(nn,8:10)=BCvecs(ivec(2),1:3)
-                  else if((ixset.eq.1).and.(izset.eq.1)) then
-                     BCtmp(nn,4:6)=BCvecs(ivec(1),1:3)
-                     BCtmp(nn,8:10)=BCvecs(ivec(3),1:3)
-                  else if((iyset.eq.1).and.(izset.eq.1)) then
-                     BCtmp(nn,4:6)=BCvecs(ivec(2),1:3)
-                     BCtmp(nn,8:10)=BCvecs(ivec(3),1:3)
-                  endif
-                  iBC(nn)=iBC(nn)+ixset*8+iyset*16+izset*32
-                  BCtmp(nn,7)=zero
-                  BCtmp(nn,11)=zero
-                  wnrm(nn,:)=BCtmp(nn,4:6)+BCtmp(nn,8:10)
-               else if(nsurf(nn).gt.2) then
-!     If this node is shared by more than two modeled walls, then
-!     it is a corner node and it will be treated as having no slip
-!     The normals for all surfaces beyond the first two were 
-!     contributed to the first vector of BCtmp
-                  wnrm(nn,:)=BCtmp(nn,4:6)+BCtmp(nn,8:10)
-                  iBC(nn)=iBC(nn)+56
-                  BCtmp(nn,7)=zero
-               endif            ! curved surface
-            else if(abs(itwmod).eq.2) then ! effective viscosity wall-model
-! Otherwise, we're using the effective-viscosity wall-model and the 
-! nodes on modeled surfaces are treated as no-slip
-               iBC(nn)=iBC(nn)+56 ! set 3-comp
-               if(itwmod.eq.-2) BCtmp(nn,7)=zero ! no slip
-               if(nsurf(nn).eq.1) &
-                    wnrm(nn,:)=BCtmp(nn,4:6)
-               if(nsurf(nn).ge.2) &
-                    wnrm(nn,:)=BCtmp(nn,4:6)+BCtmp(nn,8:10)
-            endif
-! Now normalize the wall normal for this node
-            if(itwmod.ne.0) then
-               wmag=sqrt(wnrm(nn,1)*wnrm(nn,1) &
-                    +wnrm(nn,2)*wnrm(nn,2)+wnrm(nn,3)*wnrm(nn,3))
-               wnrm(nn,:)=wnrm(nn,:)/wmag
-            endif
+!
+!
+!! Now normalize the wall normal for this node
+!            if(itwmod.ne.0) then
+!               wmag=sqrt(wnrm(nn,1)*wnrm(nn,1) &
+!                    +wnrm(nn,2)*wnrm(nn,2)+wnrm(nn,3)*wnrm(nn,3))
+!               wnrm(nn,:)=wnrm(nn,:)/wmag
+!            endif
+
+
+
+
+
 !
 !.... put back the comp3 info for bctmp
 !

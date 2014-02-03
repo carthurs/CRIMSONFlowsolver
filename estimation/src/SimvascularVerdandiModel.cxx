@@ -58,8 +58,14 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 				cp_rcr_estimate_resistance_);
 		configuration.Set("RCR_parameters_info.estimate_compliance",
 				cp_rcr_estimate_compliance_);
-		configuration.Set("RCR_parameters_info.face_grouping",
-				cp_rcr_face_grouping_);
+
+		configuration.Set("RCR_parameters_info.resistance_included",
+				cp_rcr_include_resistance_);
+		configuration.Set("RCR_parameters_info.compliance_included",
+				cp_rcr_include_compliance_);
+
+//		configuration.Set("RCR_parameters_info.face_grouping",
+//						cp_rcr_face_grouping_);
 	}
 
 	configuration.Set("error_statistics.state_error_variance",
@@ -175,10 +181,36 @@ void SimvascularVerdandiModel::Initialize() {
     	Nreduced_ += nomodule.numWallRegions;
 
     if (nreduced_has_coupled_parameters_) {
-    	if (cp_rcr_estimate_compliance_)
-    		Nreduced_ += grcrbccom.numGRCRSrfs;
-    	if (cp_rcr_estimate_resistance_)
-    		Nreduced_ += grcrbccom.numGRCRSrfs;
+
+    	if (cp_rcr_estimate_compliance_) {
+
+    		int NCreduced = 0;
+
+    		for (unsigned int kk = 0; kk < cp_rcr_include_compliance_.size(); kk++) {
+    			if (cp_rcr_include_compliance_[kk])
+    				NCreduced++;
+    		}
+
+    		//cout << "NCreduced " << NCreduced << endl;
+
+    		//Nreduced_ += grcrbccom.numGRCRSrfs;
+    		Nreduced_ += NCreduced;
+    	}
+
+    	if (cp_rcr_estimate_resistance_) {
+
+    		int NRreduced = 0;
+
+    		for (unsigned int kk = 0; kk < cp_rcr_include_resistance_.size(); kk++) {
+    			if (cp_rcr_include_resistance_[kk])
+    				NRreduced++;
+            }
+
+    		//cout << "NRreduced " << NRreduced << endl;
+
+    		//Nreduced_ += grcrbccom.numGRCRSrfs;
+    		Nreduced_ += NRreduced;
+    	}
     }
 
 	// Compute the global state size
@@ -549,23 +581,29 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 			if (cp_rcr_estimate_compliance_)
 				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
-					val = gat->global_lumped_parameter_params[parIdx*3+1];
+					if (cp_rcr_include_compliance_[parIdx]) {
+						val = gat->global_lumped_parameter_params[parIdx*3+1];
 
-					duplicated_state_.SetBuffer(icounter++,log2(val));
+						duplicated_state_.SetBuffer(icounter++,log2(val));
 
-					//				cout << "outlet " << parIdx << " ";
-					//				cout << gat->global_lumped_parameter_params[parIdx*3+0] << " ";
-					//			    cout << gat->global_lumped_parameter_params[parIdx*3+1] << " ";
-					//				cout << gat->global_lumped_parameter_params[parIdx*3+2] << " " << endl;
+						//				cout << "outlet " << parIdx << " ";
+						//				cout << gat->global_lumped_parameter_params[parIdx*3+0] << " ";
+						//			    cout << gat->global_lumped_parameter_params[parIdx*3+1] << " ";
+						//				cout << gat->global_lumped_parameter_params[parIdx*3+2] << " " << endl;
+					}
 
 				}
 
 			if (cp_rcr_estimate_resistance_)
 				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
-					val = gat->global_lumped_parameter_params[parIdx*3+2];
+					if (cp_rcr_include_resistance_[parIdx]) {
 
-					duplicated_state_.SetBuffer(icounter++,log2(val));
+						val = gat->global_lumped_parameter_params[parIdx*3+2];
+
+						duplicated_state_.SetBuffer(icounter++,log2(val));
+
+					}
 
 				}
 
@@ -733,23 +771,33 @@ void SimvascularVerdandiModel::StateUpdated() {
 		if (cp_rcr_estimate_compliance_) {
 			if (rank_ == numProcs_ - 1)
 				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-					tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
+					if (cp_rcr_include_compliance_[parIdx]) {
+						tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
+					} else {
+						tempArray[parIdx] = 0.0;
+					}
 
 			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
 
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-				gat->global_lumped_parameter_params[parIdx*3+1] = tempArray[parIdx];
+				if (cp_rcr_include_compliance_[parIdx])
+					gat->global_lumped_parameter_params[parIdx*3+1] = tempArray[parIdx];
 		}
 
 		if (cp_rcr_estimate_resistance_) {
 			if (rank_ == numProcs_ - 1)
 				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-					tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
+					if (cp_rcr_include_resistance_[parIdx]) {
+						tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
+					} else {
+						tempArray[parIdx] = 0.0;
+					}
 
 			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
 
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-				gat->global_lumped_parameter_params[parIdx*3+2] = tempArray[parIdx];
+				if (cp_rcr_include_resistance_[parIdx])
+					gat->global_lumped_parameter_params[parIdx*3+2] = tempArray[parIdx];
 		}
 
 		delete [] tempArray;
@@ -794,9 +842,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 		if (nreduced_has_wall_parameters_)
 			for (int i = 0; i < nomodule.numWallRegions; i++) {
-				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-						ncounter, double(1));
-
+				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
 				ncounter++;
 			}
 
@@ -804,18 +850,18 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 			if(cp_rcr_estimate_compliance_)
 				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-							ncounter, double(1));
-
-					ncounter++;
+					if (cp_rcr_include_compliance_[i]) {
+						L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
+						ncounter++;
+					}
 				}
 
 			if(cp_rcr_estimate_resistance_)
 				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter,
-							ncounter, double(1));
-
-					ncounter++;
+					if (cp_rcr_include_resistance_[i]) {
+						L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
+						ncounter++;
+					}
 				}
 
 		}

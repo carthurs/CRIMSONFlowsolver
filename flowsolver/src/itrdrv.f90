@@ -413,11 +413,11 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !
     istop=0
     rmub=datmat(1,2,1)
-    if(rmutarget.gt.0) then
-        rmue=rmutarget
-    else
+    !if(rmutarget.gt.0) then
+    !    rmue=rmutarget
+    !else
         rmue=datmat(1,2,1) ! keep constant
-    endif
+    !endif
       
 end subroutine
       
@@ -751,11 +751,11 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
                 isclr=iupdate  !unless
                 if(icode.eq.6) isclr=0
-                if(iRANS.lt.0)then  ! RANS
-                    call itrCorrectSclrPos(y,ac,solinc(1,isclr+5))
-                else
+                !if(iRANS.lt.0)then  ! RANS
+                !    call itrCorrectSclrPos(y,ac,solinc(1,isclr+5))
+                !else
                     call itrCorrectSclr (y, ac, solinc(1,isclr+5))
-                endif
+                !endif
                 if (ilset.eq.2 .and. isclr.eq.2)  then
                     if (ivconstraint .eq. 1) then
                         call itrBCSclr (  y,  ac,  iBC,  BC, iper, &
@@ -978,7 +978,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !
     !.... compute the consistent boundary flux
     !
-    if(abs(itwmod).ne.1) &
+    !if(abs(itwmod).ne.1) &
     call Bflux ( yold,      acold,      uold,      &
     x,         xdist,      xdnv, &
     shp,       shgl,       shpb,    &
@@ -1038,7 +1038,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !
     !.... update and the aerodynamic forces
     !
-    call forces ( yold,  ilwork )
+    !call forces ( yold,  ilwork )
          
 !    if((irscale.ge.0).or.(itwmod.gt.0))  &
 !    call getvel (yold,     ilwork, iBC, &
@@ -1164,9 +1164,9 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     !
     if ((irs .ge. 1) .and. ((mod(lstep, ntout) .ne. 0) .or. &
     (nstp .eq. 0))) then
-        if( &
-        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
-        ((nsonmax.eq.1).and.iLES.gt.0))) &
+!        if( &
+!        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
+!        ((nsonmax.eq.1).and.iLES.gt.0))) &
 !        call rwvelb  ('out ',  velbar  ,ifail)
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then

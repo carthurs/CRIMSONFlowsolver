@@ -387,52 +387,52 @@
 !
       nfath=1  ! some architectures choke on a zero or undeclared
                  ! dimension variable.  This sets it to a safe, small value.
-      if(((iLES .lt. 20) .and. (iLES.gt.0)) &
-                         .or. (itwmod.gt.0)  ) then ! don't forget same
-                                                    ! conditional in proces.f
-
-!           read (igeom) nfath  ! nfath already read in input.f,
-                                     ! needed for alloc
-         ione=1
-!         call creadlist(igeom,ione,nfath)
-!         fname1='keyword sonfath?'
-         if(nohomog.gt.0) then
-            fname1='number of father-nodes?'
-            call readheader(igeom,fname1//c_null_char,nfath,ione,c_char_"integer"//c_null_char, iotype)
+!      if(((iLES .lt. 20) .and. (iLES.gt.0)) &
+!                         .or. (itwmod.gt.0)  ) then ! don't forget same
+!                                                    ! conditional in proces.f
 !
-!     fname1='keyword nsons?'
-            fname1='number of son-nodes for each father?'
-            call readheader(igeom,fname1//c_null_char,nfath,ione,c_char_"integer"//c_null_char, iotype)
-            allocate (nsons(nfath))
-            call readdatablock(igeom,fname1//c_null_char,nsons,nfath, &
-                            c_char_"integer"//c_null_char,iotype)
-!
-            fname1='keyword ifath?'
-            call readheader(igeom,fname1//c_null_char,nshg,ione,c_char_"integer"//c_null_char, iotype)
-            allocate (ifath(nshg))
-            call readdatablock(igeom,fname1//c_null_char,ifath,nshg, &
-                            c_char_"integer"//c_null_char,iotype)
-!     
-            nsonmax=maxval(nsons)
-!
-         else  ! this is the case where there is no homogeneity
-               ! therefore ever node is a father (too itself).  sonfath
-               ! (a routine in NSpre) will set this up but this gives
-               ! you an option to avoid that.
-            nfath=nshg
-            allocate (nsons(nfath))
-            nsons=1
-            allocate (ifath(nshg))
-            do i=1,nshg
-               ifath(i)=i
-            enddo
-            nsonmax=1
-!
-         endif
-      else
-         allocate (nsons(1))
-         allocate (ifath(1))
-      endif
+!!           read (igeom) nfath  ! nfath already read in input.f,
+!                                     ! needed for alloc
+!         ione=1
+!!         call creadlist(igeom,ione,nfath)
+!!         fname1='keyword sonfath?'
+!         if(nohomog.gt.0) then
+!            fname1='number of father-nodes?'
+!            call readheader(igeom,fname1//c_null_char,nfath,ione,c_char_"integer"//c_null_char, iotype)
+!!
+!!     fname1='keyword nsons?'
+!            fname1='number of son-nodes for each father?'
+!            call readheader(igeom,fname1//c_null_char,nfath,ione,c_char_"integer"//c_null_char, iotype)
+!            allocate (nsons(nfath))
+!            call readdatablock(igeom,fname1//c_null_char,nsons,nfath, &
+!                            c_char_"integer"//c_null_char,iotype)
+!!
+!            fname1='keyword ifath?'
+!            call readheader(igeom,fname1//c_null_char,nshg,ione,c_char_"integer"//c_null_char, iotype)
+!            allocate (ifath(nshg))
+!            call readdatablock(igeom,fname1//c_null_char,ifath,nshg, &
+!                            c_char_"integer"//c_null_char,iotype)
+!!
+!            nsonmax=maxval(nsons)
+!!
+!         else  ! this is the case where there is no homogeneity
+!               ! therefore ever node is a father (too itself).  sonfath
+!               ! (a routine in NSpre) will set this up but this gives
+!               ! you an option to avoid that.
+!            nfath=nshg
+!            allocate (nsons(nfath))
+!            nsons=1
+!            allocate (ifath(nshg))
+!            do i=1,nshg
+!               ifath(i)=i
+!            enddo
+!            nsonmax=1
+!!
+!         endif
+!      else
+!         allocate (nsons(1))
+!         allocate (ifath(1))
+!      endif
       allocate (velbar(nfath,ndof))
 !
 !  renumber the master partition for SPEBC
@@ -610,44 +610,44 @@
 !
       end
 
+!!
+!! No longer called but kept around in case....
+!!
+!      subroutine genpzero(iBC)
 !
-! No longer called but kept around in case....
+!      use pointer_data
+!!
+!       use phcommonvars
+! IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!      integer iBC(nshg)
+!!
+!!....  check to see if any of the nodes have a dirichlet pressure
+!!
+!      pzero=1
+!      if (any(btest(iBC,2))) pzero=0
+!!
+!      do iblk = 1, nelblb
+!         npro = lcblkb(1,iblk+1)-lcblkb(1,iblk)
+!         do i=1, npro
+!            iBCB1=miBCB(iblk)%p(i,1)
+!!
+!!.... check to see if any of the nodes have a Neumann pressure
+!!     but not periodic (note that
+!!
+!            if(btest(iBCB1,1)) pzero=0
+!         enddo
+!!
+!!.... share results with other processors
+!!
+!         pzl=pzero
+!         if (numpe .gt. 1) &
+!              call MPI_ALLREDUCE (pzl, pzero, 1, &
+!              MPI_DOUBLE_PRECISION,MPI_MIN, INEWCOMM,ierr)
 !
-      subroutine genpzero(iBC)
-
-      use pointer_data
-!
-       use phcommonvars
- IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      integer iBC(nshg)
-!
-!....  check to see if any of the nodes have a dirichlet pressure
-!
-      pzero=1
-      if (any(btest(iBC,2))) pzero=0  
-!
-      do iblk = 1, nelblb
-         npro = lcblkb(1,iblk+1)-lcblkb(1,iblk)
-         do i=1, npro
-            iBCB1=miBCB(iblk)%p(i,1)
-!     
-!.... check to see if any of the nodes have a Neumann pressure 
-!     but not periodic (note that 
-!     
-            if(btest(iBCB1,1)) pzero=0
-         enddo
-!     
-!.... share results with other processors
-!     
-         pzl=pzero
-         if (numpe .gt. 1) &
-              call MPI_ALLREDUCE (pzl, pzero, 1, &
-              MPI_DOUBLE_PRECISION,MPI_MIN, INEWCOMM,ierr)
-           
-      enddo
-!
-!.... return
-!
-      return
-!
-      end
+!      enddo
+!!
+!!.... return
+!!
+!      return
+!!
+!      end

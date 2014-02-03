@@ -14,7 +14,7 @@
 ! Irene Vignon, Spring 2004.
 !----------------------------------------------------------------------
 !
-        use turbSA                ! access to d2wall
+        !use turbSA                ! access to d2wall
         use phcommonvars  
         use deformableWall
         use LagrangeMultipliers 
@@ -60,9 +60,9 @@
         call localx(xdist,     xdistl,    ienb,   1,      'gather  ')
         call localx(xdnv,      xdnvl,     ienb,   nsd,    'gather  ')
         
-        if (iRANS.eq.-2) then
-           call local(d2wall, dwl, ienb, 1, 'gather  ')
-        endif
+!        if (iRANS.eq.-2) then
+!           call local(d2wall, dwl, ienb, 1, 'gather  ')
+!        endif
 
 !
 !.... zero the matrices if they are being recalculated
@@ -114,7 +114,7 @@
       subroutine AsBSclr (y,       x,       shpb,    shglb, &
                          ienb,    materb,  iBCB,    BCB, &
                          res)
-        use turbSA ! access to d2wall
+        !use turbSA ! access to d2wall
         use phcommonvars  
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
@@ -139,9 +139,9 @@
 !
         call localy(y,      yl,     ienb,   ndofl,  'gather  ')
         call localx(x,      xlb,    ienb,   nsd,    'gather  ')
-        if(iRANS.eq.-2) then
-           call local(d2wall, dwl, ienb, 1, 'gather  ')
-        endif
+!        if(iRANS.eq.-2) then
+!           call local(d2wall, dwl, ienb, 1, 'gather  ')
+!        endif
 !
 !.... get the boundary element residuals
 !

@@ -14,7 +14,7 @@
       use stats
       !use rlssave  ! Use the resolved Leonard stresses at the nodes.
       use timedata    ! time series
-      use turbsa                ! access to d2wall
+      !use turbsa                ! access to d2wall
       use LagrangeMultipliers 
 
 
@@ -61,15 +61,15 @@
         call localy(ac,    acl,     ien,    ndofl,  'gather  ')
         call localx(x,      xl,     ien,    nsd,    'gather  ')
         call local (qres,   ql,     ien,    idflx,  'gather  ')
-        if (iRANS .eq. -2) then ! kay-epsilon
-           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
-        endif
+!        if (iRANS .eq. -2) then ! kay-epsilon
+!           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
+!        endif
  
-        if( (iLES.gt.10).and.(iLES.lt.20)) then  ! bardina 
-           call local (rls, rlsl,     ien,       6, 'gather  ')  
-        else
+        !if( (iLES.gt.10).and.(iLES.lt.20)) then  ! bardina
+        !   call local (rls, rlsl,     ien,       6, 'gather  ')
+        !else
            rlsl = zero
-        endif      
+        !endif
 
 !
 !.... zero the matrices if they are being recalculated
@@ -139,7 +139,7 @@
 ! Zdenek Johan, Winter 1991.  (Fortran 90)
 !----------------------------------------------------------------------
 !
-      use     turbSA  
+      !use     turbSA
       use phcommonvars  
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !

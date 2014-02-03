@@ -14,7 +14,7 @@
 ! Zdenek Johan, Winter 1991.  (Fortran 90)
 !----------------------------------------------------------------------
 !
-        use turbSA ! access to d2wall
+        !use turbSA ! access to d2wall
         use LagrangeMultipliers 
 !
         use phcommonvars  
@@ -65,9 +65,9 @@
         call localx(xdist,     xdistl,    ienb,   1,      'gather  ')
         call localx(xdnv,      xdnvl,     ienb,   nsd,    'gather  ')
         
-        if(iRANS.eq.-2) then
-           call local(d2wall, dwl, ienb, 1, 'gather  ')
-        endif
+!        if(iRANS.eq.-2) then
+!           call local(d2wall, dwl, ienb, 1, 'gather  ')
+!        endif
 
         rl    = zero
         flhsl = zero

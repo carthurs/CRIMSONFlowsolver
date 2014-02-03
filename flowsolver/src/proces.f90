@@ -84,9 +84,9 @@
 !
 !.... RANS turbulence model
 !
-        if (iRANS .lt. 0) then
-           call initTurb( x )
-        endif
+!        if (iRANS .lt. 0) then
+!           call initTurb( x )
+!        endif
 !
 !.... p vs. Q boundary
 !

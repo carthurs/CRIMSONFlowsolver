@@ -518,7 +518,7 @@
         endif
 
         dts=  (Dtgl*dtsfct)
-        if(iRANS.ne.-2) srcRat=srcP
+        !if(iRANS.ne.-2) srcRat=srcP
         tauT = &
       	       (two*dts)**2 &
              + srcRat ** 2 &

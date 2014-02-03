@@ -35,7 +35,6 @@ FSRCS   = common.f90 pointer.f90 globalArrays.f90 shapeTable.f90\
           pvsqbi.f90 \
           dtn.f90 \
           timedata.f90 \
-          turbke.f90 \
           bctint.f90 readnblk.f90 \
           distmeas.f90 \
           vlmwsttri.f90 \
@@ -44,9 +43,9 @@ FSRCS   = common.f90 pointer.f90 globalArrays.f90 shapeTable.f90\
           error.f90 \
           asadj.f90 asbflx.f90 asbmfg.f90 asbnabi.f90 asigmr.f90 \
           asiq.f90 bc3diag.f90 bc3lhs.f90 bc3per.f90 \
-          bc3res.f90 bctcardio.f90 bflux.f90 cmass.f90 cname.f90 commu.f90 ctypes.f90 \
+          bc3res.f90 bctcardio.f90 bflux.f90 cname.f90 commu.f90 ctypes.f90 \
           e3.f90 e3b.f90 e3bvar.f90 e3dc.f90 e3ivar.f90 e3lhs.f90 e3metric.f90 e3q.f90 e3ql.f90 \
-          e3qvar.f90 e3res.f90 e3source.f90 e3stab.f90 e3sts.f90 \
+          e3qvar.f90 e3res.f90 e3stab.f90 e3sts.f90 \
           elm3keps.f90 elmdist.f90 elmgmr.f90 elmStats.f90 errsmooth.f90 f3lhs.f90 \
           fillsparse.f90 forces.f90 ftools.f90 genadj.f90 genbc.f90 genbc1.f90 genbkb.f90 \
           genblk.f90 gendat.f90 genibc.f90 genini.f90 genint.f90 genlmass.f90 gensav.f90 gensvb.f90 genshp.f90 \

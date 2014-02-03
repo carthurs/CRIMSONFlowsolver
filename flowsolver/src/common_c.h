@@ -71,40 +71,40 @@
          double ttim[100];
       } extrat ;
 
-      extern struct {
-         double zoutsponge, radsponge, zinsponge, grthosponge, grthisponge;
-         double betamax;
-         int spongecontinuity, spongemomentum1, spongemomentum2;
-         int spongeenergy, spongemomentum3;
-      } spongevar ;
+//      extern struct {
+//         double zoutsponge, radsponge, zinsponge, grthosponge, grthisponge;
+//         double betamax;
+//         int spongecontinuity, spongemomentum1, spongemomentum2;
+//         int spongeenergy, spongemomentum3;
+//      } spongevar ;
 
       extern struct {
-         double eles;
-         double ylimit[9][3]; /* 9 = 5 + 4 = puvwT + 4Scalars */
-         double rmutarget;
-         double pzero;
-         double wtavei;
-         double dtavei;
-         double dke;
-         double fwr1;
-         double flump;
+//         double eles;
+//         double ylimit[9][3]; /* 9 = 5 + 4 = puvwT + 4Scalars */
+//         double rmutarget;
+//         double pzero;
+//         double wtavei;
+//         double dtavei;
+//         double dke;
+//         double fwr1;
+//         double flump;
          int ierrcalc;
          int ihessian;
-         int itwmod;
-         int ngaussf;
-         int idim;
-         int nlist;
-         int nintf[MAXTOP];
-         int sonfathvar;
+//         int itwmod;
+//         int ngaussf;
+//         int idim;
+//         int nlist;
+//         int nintf[MAXTOP];
+//         int sonfathvar;
       } turbvar ;
 
       extern struct {
-         int irans, iles, isubmod;
-         int ifproj;
-         int i2filt;
-         int modlstats;
-         int idis;
-         int nohomog;
+//         int irans, iles, isubmod;
+//         int ifproj;
+//         int i2filt;
+//         int modlstats;
+//         int idis;
+//         int nohomog;
          int ierrsmooth;
          /* wonder if we should include nintf(MAXTOP) and MAXTOP since its
          in common.h */
@@ -114,17 +114,17 @@
          /*      int ierrcalc; */
       } turbvari ;
 
-      extern struct { 
-         int irscale;
-         int intpres;
-         double plandist;
-         double thetag;
-         double ds;
-         double tolerence;
-         double radcyl;
-         double rbltin;
-         double rvscal;
-      } spebcvr ;
+//      extern struct {
+//         int irscale;
+//         int intpres;
+//         double plandist;
+//         double thetag;
+//         double ds;
+//         double tolerence;
+//         double radcyl;
+//         double rbltin;
+//         double rvscal;
+//      } spebcvr ;
 
       extern struct {
          double scdiff[5];
@@ -142,9 +142,9 @@
          int isrfIM;
       } aerfrc ;
 
-      extern struct { 
-         double a[100000];
-      } astore ;
+//      extern struct {
+//         double a[100000];
+//      } astore ;
 
       extern struct { 
          int numnp;
@@ -175,7 +175,7 @@
          int icurrentblk;
       } conpar ;
 
-      extern struct { 
+      extern struct {
          double epsilon_ls;
          double epsilon_lsd;
          double dtlset;
@@ -328,7 +328,7 @@
          int mexist;
       } matdat ;
 
-      extern struct { 
+      extern struct {
          double pr, Planck, Stephan, Nh, Rh, Rgas;
          double gamma, gamma1, s0;
          //, const, xN2, xO2;

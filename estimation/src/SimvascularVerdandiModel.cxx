@@ -958,7 +958,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 	}
 	L.Flush();
-	L.Print();
+	//L.Print();
 
 	U.Reallocate(Nreduced_, Nreduced_);
 	U.Zero();
@@ -966,7 +966,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 	for (int i = 0; i < Nreduced_; i++)
 		U(i, i) = double(double(1) / state_error_variance_value_[i]);
 
-	U.Print();
+	//U.Print();
 
 
 #ifdef VERDANDI_ROUKF_DEBUG_OUTPUT

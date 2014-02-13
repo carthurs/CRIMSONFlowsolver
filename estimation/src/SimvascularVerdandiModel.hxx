@@ -61,8 +61,12 @@ protected:
 
 	int cp_rcr_estimate_resistance_;
 	int cp_rcr_estimate_compliance_;
+	int cp_rcr_estimate_prox_resistance_;
+
 	std::vector<int> cp_rcr_include_resistance_;
 	std::vector<int> cp_rcr_include_compliance_;
+	std::vector<int> cp_rcr_include_prox_resistance_;
+
 	std::vector<int> cp_rcr_face_grouping_;
 
 	MPI_Comm iNewComm_C_;

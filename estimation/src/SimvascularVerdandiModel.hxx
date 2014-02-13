@@ -62,6 +62,7 @@ protected:
 	int cp_rcr_estimate_resistance_;
 	int cp_rcr_estimate_compliance_;
 	int cp_rcr_estimate_prox_resistance_;
+	int cp_rcr_estimate_pstates_;
 
 	std::vector<int> cp_rcr_include_resistance_;
 	std::vector<int> cp_rcr_include_compliance_;

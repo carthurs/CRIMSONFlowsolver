@@ -61,6 +61,9 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 		configuration.Set("RCR_parameters_info.estimate_prox_resistance",
 						cp_rcr_estimate_prox_resistance_);
 
+		configuration.Set("RCR_parameters_info.estimate_pstates",
+						cp_rcr_estimate_pstates_);
+
 		configuration.Set("RCR_parameters_info.resistance_included",
 				cp_rcr_include_resistance_);
 		configuration.Set("RCR_parameters_info.compliance_included",
@@ -168,9 +171,13 @@ void SimvascularVerdandiModel::Initialize() {
 
 		Nstate_local_ += grcrbccom.numGRCRSrfs;
 
+		if (!cp_rcr_estimate_pstates_)
+			Nstate_local_ += grcrbccom.numGRCRSrfs;
+
 		state_reduced_start_local_ = Nstate_local_; // index for first element of reduced state
 
-		Nstate_local_ += grcrbccom.numGRCRSrfs;
+		if (cp_rcr_estimate_pstates_)
+			Nstate_local_ += grcrbccom.numGRCRSrfs;
 
 	}
 
@@ -195,7 +202,8 @@ void SimvascularVerdandiModel::Initialize() {
 
     if (nreduced_has_coupled_parameters_) {
 
-    	Nreduced_ += grcrbccom.numGRCRSrfs; // account for reduced-order P state
+    	if (cp_rcr_estimate_pstates_)
+    		Nreduced_ += grcrbccom.numGRCRSrfs; // account for reduced-order P state
 
     	if (cp_rcr_estimate_compliance_) {
 
@@ -304,7 +312,7 @@ void SimvascularVerdandiModel::ForwardFinalize() {
 		int ncounter = 0;
 
 		// reduced-order P-states
-		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
+		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_ && grcrbccom.numGRCRSrfs > 0) {
 			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
@@ -915,7 +923,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 		int ncounter = 0;
 
-		if (nreduced_has_coupled_parameters_) { // for the reduced-order P-states
+		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_) { // for the reduced-order P-states
 			for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
 				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
 				ncounter++;

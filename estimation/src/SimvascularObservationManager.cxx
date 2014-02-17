@@ -105,6 +105,21 @@ void SimvascularObservationManager::Initialize(const Model& model,
 		configuration.Set("csobs_radii",csobs_radii_);
 	}
 
+	if ((unsigned int)Nobservation_flow_+Nobservation_avgpressure_ != csobs_origins_.size() ||
+		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_ != csobs_normals_.size() ||
+		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_ != csobs_radii_.size()) {
+
+		throw Error("SimvascularObservationManager::Initialize: number of observation locations does not match listed locations!");
+	}
+
+	if (rank_ == 0) {
+		for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
+			csobs_origins_[kk].Print();
+			csobs_normals_[kk].Print();
+			cout << csobs_radii_[kk] << endl;
+		}
+	}
+
 	configuration.Set("error.variance", "v > 0", error_variance_value_);
 
 	configuration.Set("error.variance_nodal", "v > 0", error_variance_value_nodal_);

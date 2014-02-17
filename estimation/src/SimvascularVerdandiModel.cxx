@@ -19,6 +19,10 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
  	state_reduced_start_local_(-1),
  	nreduced_has_wall_parameters_(0),
  	nreduced_has_coupled_parameters_(0),
+ 	cp_rcr_estimate_resistance_(0),
+ 	cp_rcr_estimate_compliance_(0),
+ 	cp_rcr_estimate_prox_resistance_(0),
+ 	cp_rcr_estimate_pstates_(0),
  	rank_(0),
  	numProcs_(1),
  	state_error_variance_value_(1),
@@ -171,12 +175,12 @@ void SimvascularVerdandiModel::Initialize() {
 
 		Nstate_local_ += grcrbccom.numGRCRSrfs;
 
-		if (!cp_rcr_estimate_pstates_)
+		if (!(nreduced_has_wall_parameters_ && cp_rcr_estimate_pstates_))
 			Nstate_local_ += grcrbccom.numGRCRSrfs;
 
 		state_reduced_start_local_ = Nstate_local_; // index for first element of reduced state
 
-		if (cp_rcr_estimate_pstates_)
+		if (nreduced_has_wall_parameters_ && cp_rcr_estimate_pstates_)
 			Nstate_local_ += grcrbccom.numGRCRSrfs;
 
 	}

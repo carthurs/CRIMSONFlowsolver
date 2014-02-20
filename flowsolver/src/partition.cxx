@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstring> 
+#include <cstring>
 #include <map>
 #include <utility>
 #include <fstream>
@@ -12,7 +12,7 @@
 #include "cvSolverIO.h"
 #include "common_c.h"
 
-#ifdef intel 
+#ifdef intel
 #include <direct.h>
 #define chdir _chdir
 #define stat _stat
@@ -61,7 +61,7 @@ struct CommuTask {
 
 typedef struct CommuTask CommuTask;
 
-// since ParallelData[x] is a sorted data structure, the lowest pid 
+// since ParallelData[x] is a sorted data structure, the lowest pid
 // adjacency always  becomes the master.
 
 int getMaster(int x, map<int, map<int, int> > &ParallelData) {
@@ -160,7 +160,7 @@ void Partition_Problem(int numProcs) {
 	sprintf(probdir,"%d-procs-case",numProcs);
 	int result = _stat( probdir, &buf );
 
-	//    if ( (result == 0 ) &&  ( 01 & ( buf.st_mode >> _S_IFDIR ) ) ) 
+	//    if ( (result == 0 ) &&  ( 01 & ( buf.st_mode >> _S_IFDIR ) ) )
 	if ( (result == 0 ) && ( buf.st_mode & _S_IFDIR ) )
 #else
 	struct stat buf;
@@ -172,7 +172,7 @@ void Partition_Problem(int numProcs) {
 		//if ( !chdir( _directory_name ) ) {/* cd successful */
 		//	cout <<"changing to the problem directory " << _directory_name << endl;
 		return;
-		//}else { 
+		//}else {
 		//	cout << "Please check the permissions for the problem";
 		//	cout << " directory " << _directory_name << endl;
 		//	exit(0);
@@ -367,7 +367,7 @@ void Partition_Problem(int numProcs) {
 		delete[] ient_sms;
 	}
 
-	/* At this point the values stored in vcount ecount and fcount are 1 more 
+	/* At this point the values stored in vcount ecount and fcount are 1 more
 	 * than  the number of vertices edges and faces respectively , sp we need
 	 * to decrement  all of them by one so that we can directly added them to
 	 * the lower order counts  in the next  step.
@@ -638,7 +638,7 @@ void Partition_Problem(int numProcs) {
 		fprintf( cfascii,"%f %f %f \n",
 				xf[ c ], xf[ c + numnp_tmp ],xf[c+2*numnp_tmp] );
 		fclose( cfascii );
-#endif          
+#endif
 
 		delete[] xf;
 		Xpart[p].clear();
@@ -669,7 +669,7 @@ void Partition_Problem(int numProcs) {
 
 
 	/* let us take care of Essential BCs.*/
-	// BCs are in the indirect numbering of nBC so only nBC needs to be sorted 
+	// BCs are in the indirect numbering of nBC so only nBC needs to be sorted
 	// according to nshg
 	// BC abd iBC are numbered as numpbc which us given by nBC.
 	int numEBC = ndof + 7;
@@ -1133,7 +1133,7 @@ void Partition_Problem(int numProcs) {
 							SWBf[v * blockIEN.size() + u] =
 									SWBpart[p][CurrentBlock][u * nPropshere + v];
 
-#if defined ( DEBUG )   
+#if defined ( DEBUG )
 							fascii << SWBf[v* blockIEN.size()+u] << " ";
 #endif
 
@@ -1210,8 +1210,8 @@ void Partition_Problem(int numProcs) {
 	bool isPERIODIC = false;
 	for (int x = 1; x < nshg + 1; x++) {
 
-		// first we need to fill a 0 in all the iper entries of x and its images 
-		// since this will be the case even if the node has no periodicity at all 
+		// first we need to fill a 0 in all the iper entries of x and its images
+		// since this will be the case even if the node has no periodicity at all
 
 		isPERIODIC = false;
 
@@ -1224,14 +1224,14 @@ void Partition_Problem(int numProcs) {
 
 		if (periodic[x - 1] > 0) {
 
-			// if there is periodicity, then the real master node and processor are 
-			// not that of the current mode but of the master mode,  and need 
-			// updating...also now the image which shares this master_pid should get 
+			// if there is periodicity, then the real master node and processor are
+			// not that of the current mode but of the master mode,  and need
+			// updating...also now the image which shares this master_pid should get
 			// an iper and not a commu.
 
 			master_pid = getMaster(periodic[x - 1],ParallelData);
 
-			// master_pid is the processor on which the master is real ( present ) 
+			// master_pid is the processor on which the master is real ( present )
 
 			Global_Master = ParallelData[periodic[x - 1]][master_pid];
 
@@ -1240,8 +1240,8 @@ void Partition_Problem(int numProcs) {
 
 			isPERIODIC = true;
 		}
-		// periodicity has been taken care of 
-		// now we do the simple commu to the master_pid 
+		// periodicity has been taken care of
+		// now we do the simple commu to the master_pid
 
 		for (map<int, int>::iterator iter = ParallelData[x].begin();
 				iter != ParallelData[x].end(); iter++)
@@ -1250,8 +1250,8 @@ void Partition_Problem(int numProcs) {
 				int sender = (*iter).first;
 				int receiver = master_pid;
 
-				// if we ever add a send task from A to B then we also immediately add a 
-				// receive task from B to A so its enuf if we check one of them 
+				// if we ever add a send task from A to B then we also immediately add a
+				// receive task from B to A so its enuf if we check one of them
 				if (!stask[sender][receiver]) {
 					stask[sender][receiver] = new CommuTask;
 					rtask[receiver][sender] = new CommuTask;
@@ -1455,8 +1455,8 @@ void Partition_Problem(int numProcs) {
 	delete[] stask;
 
 	// write ncorp
-	// generating ncorp 
-	// ncorp is our map between the "partition local" and the global (sms) 
+	// generating ncorp
+	// ncorp is our map between the "partition local" and the global (sms)
 	// numbering of modes  ncorp[ proc ][ local number ] = sms_number
 
 	vector < map<int, int> > ncorp(numProcs);
@@ -1465,6 +1465,22 @@ void Partition_Problem(int numProcs) {
 				iter != ParallelData[x].end(); iter++)
 			ncorp[(*iter).first][(*iter).second] = x;
 	}
+
+    // Here writing data required for memLS
+    for( int a=0; a < numProcs ; a++ ) {
+        bzero( (void*)filename, 255 );
+        ofstream myfileltg;
+        sprintf( filename, "%sltg.dat.%d",_directory_name,a);
+        myfileltg.open (filename, ios::out);
+        myfileltg << nshg << endl;
+        myfileltg << ncorp[a].size() << endl;
+        for( map<int, int>::iterator niter = ncorp[a].begin(); niter != ncorp[a].end(); niter++ ) {
+            myfileltg << (*niter).second << endl;
+        }
+        myfileltg.close();
+    }
+
+    // The end of writing data
 
 	// generate an index of the local nodes with no duplication of nodes across
 	// processors -- this is used when interfacing with external routines that require
@@ -1829,8 +1845,8 @@ void Partition_Problem(int numProcs) {
 			iformat);
 
 	// now we need to create the partitioned data structure.
-	// keeping in mind that unlike BCs this has a direct corelation 
-	// to each nshg so we need to use a 
+	// keeping in mind that unlike BCs this has a direct corelation
+	// to each nshg so we need to use a
 	// sorted data structure and we choose a std::map for simplicity
 
 	vector < map<int, vector<double> > > solPart(numProcs);

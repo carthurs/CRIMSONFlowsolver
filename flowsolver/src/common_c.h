@@ -255,7 +255,7 @@
       } genpar ;
 
       extern struct { 
-         double epstol[6];  /* 1+ max number of scalars  (beginning of the
+         double epstol[8];  /* 1+ max number of scalars  (beginning of the
                             end of time sequences) */
          double Delt[MAXTS];
          double CFLfl[MAXTS];
@@ -267,6 +267,7 @@
          int LHSupd[6];
          int loctim[MAXTS];
          double deltol[2][MAXTS];
+         int memLSFlag;
       } inpdat ;
 
       extern struct { 

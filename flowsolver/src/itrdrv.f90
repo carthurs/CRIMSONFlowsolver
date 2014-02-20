@@ -1,19 +1,21 @@
 module itrDrvVars ! this needs to be cleaned up
-            
+
+    include "memLS.h"
+
     integer npermdims !perhaps these can go in global or common
     integer ntmpdims
-      
+
     integer npermdimss
     integer ntmpdimss
-     
+
     integer nstp
     real*8 rmub
     real*8 rmue
-          
+
     integer    ifuncs(6)
 
     real*8  almit, alfit, gamit
-      
+
     !integer istp
     real*8 xi
     integer ilss
@@ -25,12 +27,22 @@ module itrDrvVars ! this needs to be cleaned up
     integer ierr
     integer ifile
     integer ntoutv
-      
+
     real*8 tfact
-      
+
+    !for memLS
+    INTEGER memLS_nFaces, gnNo, nNo, faIn, facenNo
+    INTEGER, ALLOCATABLE :: ltg(:), gNodes(:)
+    REAL*8, ALLOCATABLE :: sV(:,:)
+
+    CHARACTER*128 fileName
+    TYPE(memLS_commuType) communicator
+    TYPE(memLS_lhsType) memLS_lhs
+    TYPE(memLS_lsType) memLS_ls
+
 end module
 
-!! This iterative driver is the semi-discrete, predictor multi-corrector 
+!! This iterative driver is the semi-discrete, predictor multi-corrector
 !! algorithm. It contains the Hulbert Generalized Alpha method which
 !! is 2nd order accurate for Rho_inf from 0 to 1.  The method can be
 !! made  first-order accurate by setting Rho_inf=-1. It uses CGP and
@@ -52,7 +64,7 @@ end module
 !.... ---------------> initialization and pre-processing <---------------
 !
 subroutine itrdrv_init() bind(C, name="itrdrv_init")
-      
+
     use iso_c_binding
     use shapeTable
     use globalArrays
@@ -73,23 +85,23 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
-      
+
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
+
     include "mpif.h"
-      
-    integer i,jj,k
-      
+
+    integer i,j,jj,k
+
     integer lesid
     integer nkvecs, nsclrsol, nsolflow
     integer icnt
     integer ndofs
-      
+
     integer ntempdims
     integer isolsc
     integer indx
-      
+
     integer lstep0
     !
     !.... For linear solver Library
@@ -97,15 +109,45 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     integer eqnType, prjFlag, presPrjFlag, verbose  ! init
     character*1024    servername ! init
     character*20        license_f_name ! init
-      
-    !
+
+
+!--------------------------------------------------------------------
+!   Setting up memLS
+
+    IF (memLSFlag .EQ. 1) THEN
+        CALL memLS_LS_CREATE(memLS_ls, LS_TYPE_NS, dimKry=Kspace,relTol=epstol(8), &
+                             relTolIn=(/epstol(1),epstol(7)/), maxItr=nPrjs, maxItrIn=(/nGMRES,maxIters/))
+
+        CALL memLS_COMMU_CREATE(communicator, MPI_COMM_WORLD)
+
+        IF (numpe .GT. 1) THEN
+            WRITE(fileName,*) myrank
+            fileName = "ltg.dat."//ADJUSTL(TRIM(fileName))
+            OPEN(1,FILE=fileName)
+            READ(1,*) gnNo
+            READ(1,*) nNo
+            ALLOCATE(ltg(nNo))
+            READ(1,*) ltg
+            CLOSE(1)
+        ELSE
+            gnNo = nshg
+            nNo = nshg
+            ALLOCATE(ltg(nNo))
+            DO i=1, nNo
+                ltg(i) = i
+            END DO
+        END IF
+    ELSE
+
     ! find the machine name so that we set the license key properly
 
-    call MPI_BARRIER(INEWCOMM,ierr)
+        call MPI_BARRIER(INEWCOMM,ierr)
 
-    license_f_name='license.dat'
+        license_f_name='license.dat'
 
-    call SolverLicenseServer(servername)
+        call SolverLicenseServer(servername)
+
+    END IF
 
     !
     ! only master should be verbose
@@ -114,13 +156,13 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     if(numpe.gt.0 .and. myrank.ne.master)iverbose=0
     !
     inquire(file='xyzts.dat',exist=exts)
-       
+
     if(exts) then
-           
+
         open(unit=626,file='xyzts.dat',status='old')
         read(626,*) ntspts, freq, tolpt, iterat, varcod
         call sTD             ! sets data structures
-           
+
         do jj=1,ntspts       ! read coordinate data where solution desired
             read(626,*) ptts(jj,1),ptts(jj,2),ptts(jj,3)
         enddo
@@ -181,13 +223,13 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
 
     nsolflow=mod(impl(1),100)/10  ! 1 if solving flow
-      
+
     !
     !.... Now, call lesNew routine to initialize
     !     memory space
     !
     call genadj(colm, rowp, icnt )  ! preprocess the adjacency list
-      
+
     nnz_tot=icnt ! this is exactly the number of non-zero blocks on
                  ! this proc
 
@@ -195,21 +237,76 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         lesId   = numeqns(1)
         eqnType = 1
         nDofs   = 4
-        call myfLesNew( lesId,          41994, &
-        eqnType, &
-        nDofs,          minIters,       maxIters, &
-        nKvecs,         prjFlag,        nPrjs, &
-        presPrjFlag,    nPresPrjs,      epstol(1), &
-        prestol,        verbose,        statsflow, &
-        nPermDims,      nTmpDims,      servername  )
-         
+
+        !--------------------------------------------------------------------
+        !     Rest of configuration of memLS is added here, where we have LHS
+        !     pointers
+        IF (memLSFlag .EQ. 1) THEN
+            IF  (ipvsq .GE. 2) THEN
+                memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs
+            ELSE
+                memLS_nFaces = 1
+            END IF
+
+            CALL memLS_LHS_CREATE(memLS_lhs, communicator, gnNo, nNo, nnz_tot, ltg, colm, rowp, memLS_nFaces)
+
+            faIn = 1
+            facenNo = 0
+            DO i=1, nshg
+                IF (IBITS(iBC(i),3,3) .NE. 0)  facenNo = facenNo + 1
+            END DO
+            ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
+            sV = 0D0
+            j = 0
+            DO i=1, nshg
+                IF (IBITS(iBC(i),3,3) .NE. 0) THEN
+                    j = j + 1
+                    gNodes(j) = i
+                    IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0
+                    IF (.NOT.BTEST(iBC(i),4)) sV(2,j) = 1D0
+                    IF (.NOT.BTEST(iBC(i),5)) sV(3,j) = 1D0
+                END IF
+            END DO
+            CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Dir, gNodes, sV)
+
+            IF  (ipvsq .GE. 2) THEN
+                DO k = 1, numResistSrfs
+                    faIn = faIn + 1
+                    CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn)
+                END DO
+                DO k = 1, numImpSrfs
+                    faIn = faIn + 1
+                    CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn)
+                END DO
+                DO k = 1, numRCRSrfs
+                    faIn = faIn + 1
+                    CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn)
+                END DO
+                DO k = 1, numGRCRSrfs
+                    faIn = faIn + 1
+                    CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn)
+                END DO
+            END IF
+        ELSE
+!--------------------------------------------------------------------
+
+
+            call myfLesNew( lesId,          41994, &
+                            eqnType, &
+                            nDofs,          minIters,       maxIters, &
+                            nKvecs,         prjFlag,        nPrjs, &
+                            presPrjFlag,    nPresPrjs,      epstol(1), &
+                            prestol,        verbose,        statsflow, &
+                            nPermDims,      nTmpDims,      servername  )
+
+        END IF
+
         allocate (aperm(nshg,nPermDims))
         allocate (atemp(nshg,nTmpDims))
         allocate (lhsP(4,nnz_tot))
         allocate (lhsK(9,nnz_tot))
 
-        call readLesRestart( lesId,  aperm, nshg, myrank, lstep, &
-        nPermDims )
+        call readLesRestart( lesId,  aperm, nshg, myrank, lstep, nPermDims )
 
     else
         nPermDims = 0
@@ -222,8 +319,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             lesId       = numeqns(isolsc+1)
             eqnType     = 2
             nDofs       = 1
-            presPrjflag = 0        
-            nPresPrjs   = 0       
+            presPrjflag = 0
+            nPresPrjs   = 0
             prjFlag     = 1
             indx=isolsc+2-nsolt ! complicated to keep epstol(2) for
                              ! temperature followed by scalars
@@ -312,7 +409,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             endif
         endif
     endif
-      
+
     !
     !
     !.... satisfy the boundary conditions
@@ -324,7 +421,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !
     !.... loop through the time sequences
     !
-      
+
     itseq = 1
 
     !AD         tcorecp1 = second(0)
@@ -383,7 +480,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     if(Lagrange.gt.zero) then
         call calcLagrangeic(nsrflistLagrange,numLagrangeSrfs)
     endif
-      
+
     !
     !.... deformable wall initialization
     !
@@ -418,15 +515,45 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !else
         rmue=datmat(1,2,1) ! keep constant
     !endif
-      
+
+    CONTAINS
+
+    SUBROUTINE AddNeumannBCTomemLS(srfID, faIn)
+
+    INTEGER, INTENT(IN) :: srfID, faIn
+
+    INTEGER facenNo, i, j
+
+    facenNo = 0
+    DO i = 1, nshg
+     IF (srfID .EQ. ndsurf(i)) THEN
+        facenNo = facenNo + 1
+     END IF
+    END DO
+    IF (ALLOCATED(gNodes)) DEALLOCATE(gNodes, sV)
+    ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
+    sV = 0D0
+    j = 0
+    DO i = 1, nshg
+     IF (srfID .EQ. ndsurf(i)) THEN
+        j = j + 1
+        gNodes(j) = i
+        sV(:,j) = NABI(i,1:3)
+     END IF
+    END DO
+    CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Neu, gNodes, sV)
+
+    RETURN
+    END SUBROUTINE AddNeumannBCTomemLS
+
 end subroutine
-      
-      
+
+
 !
 !.... ---------------> initialize the time step <---------------
-!      
+!
 subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
-      
+
     use iso_c_binding
     use shapeTable
     use globalArrays
@@ -447,12 +574,12 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
-      
+
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
+
     include "mpif.h"
-      
+
     if (incp.gt.zero) then  ! works only when there is one "INCP" srf
         if (numINCPSrfs .eq. one) then
             if(PLV(lstep+1,1) .gt. Paorta(lstep+1,1)) then
@@ -598,14 +725,14 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 !        call asbwmod(yold,   acold,   x,      BC,     iBC, &
 !        iper,   ilwork,  ifath,  velbar)
 !    endif
-      
+
 end subroutine
-      
+
 !
 !.... ---------------> a single time step <---------------
-!            
+!
 subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
-      
+
     use iso_c_binding
     use shapeTable
     use globalArrays
@@ -626,14 +753,14 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
-      
+
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
+
     include "mpif.h"
-      
+
     integer j
-      
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !.... -----------------------> predictor phase <-----------------------
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -651,7 +778,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         call itrBCSclr (y, ac,  iBC, BC, iper, ilwork)
     enddo
 
-         
+
     iter=0
     ilss=0  ! this is a switch thrown on first solve of LS redistance
 
@@ -669,7 +796,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 Force(2) = zero
                 Force(3) = zero
                 HFlux    = zero
-                lhs = 1 - min(1,mod(ifuncs(1)-1,LHSupd(1))) 
+                lhs = 1 - min(1,mod(ifuncs(1)-1,LHSupd(1)))
 
 
                 call SolFlow(y,             ac,        u, &
@@ -681,9 +808,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 ilwork,        shp,       shgl, &
                 shpb,          shglb,     rowp,      &
                 colm,          lhsK,      lhsP, &
-                solinc,        rerr)
+                solinc,        rerr, &
+                memLS_lhs,     memLS_ls,  memLS_nFaces)
 
-               
+
             else          ! scalar type solve
                 if (icode.eq.5) then ! Solve for Temperature
                             ! (encoded as (nsclr+1)*10)
@@ -730,8 +858,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 shpb,          shglb,     rowp,      &
                 colm,          lhsS(1,j),  &
                 solinc(1,isclr+5))
-                     
-                     
+
+
             endif         ! end of scalar type solve
 
         else ! this is an update  (mod did not equal zero)
@@ -778,13 +906,13 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             if (controlResidual .lt. ResCriteria .and.  &
             CurrentIter .ge. MinNumIter) then
                 CurrentIter = 0
-                
+
                 exit
             endif
         endif
-            
+
     enddo            ! loop over sequence in step
-       
+
     if (ioform .eq. 2) then
 
         call stsGetStats( y,      yold,     ac,     acold, &
@@ -974,7 +1102,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     if (Lagrange .gt. 0) then
         call UpdateLagrangeCoef(y,colm,rowp,nsrflistLagrange,numLagrangeSrfs)
     endif
-        
+
     !
     !.... compute the consistent boundary flux
     !
@@ -987,51 +1115,51 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
 
     !...  dump TIME SERIES
-         
+
     if (exts) then
-            
+
         if (mod(lstep-1,freq).eq.0) then
-               
+
             do jj = 1, ntspts
-                  
+
                 if (numpe > 1) then
-                     
+
                     soln = varts(jj)
                     asoln = abs(soln)
-                     
+
                     !     if(jj.eq.24) then
                     !     write(*,*) soln
                     !     write(*,*)"and..."
                     !     endif
-                     
+
                     if (asoln.ne.zero) then
                         sgn = soln/asoln
                     else
                         sgn = 1
                     endif
-                     
+
                     call MPI_ALLREDUCE ( asoln, asolng, 1,  &
                     MPI_DOUBLE_PRECISION, MPI_MAX, &
                     INEWCOMM,ierr)
                     varts(jj) = sgn * asolng
-                     
+
                 endif
-                  
+
                 if (myrank.eq.zero) then
                     ifile = 1000+jj
                     write(ifile,555) varts(jj)
                     call flush(ifile)
                 endif
-                  
+
             enddo
-               
-               
+
+
             varts = zero  ! reset the array for next step
-               
+
 555         format(e18.11)
-               
+
         endif
-            
+
     endif
 
 
@@ -1039,7 +1167,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !.... update and the aerodynamic forces
     !
     !call forces ( yold,  ilwork )
-         
+
 !    if((irscale.ge.0).or.(itwmod.gt.0))  &
 !    call getvel (yold,     ilwork, iBC, &
 !    nsons,    ifath, velbar)
@@ -1106,17 +1234,17 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     endif
 
  !if(istop.eq.1000) exit ! stop when delta small (see rstatic)
-       
+
 !2000  continue
-        
+
 
 
 end subroutine
-      
+
 
 !
 !.... ---------------------->  Post Processing  <----------------------
-!      
+!
 subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
     use iso_c_binding
@@ -1139,24 +1267,24 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
-      
+
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
+
     include "mpif.h"
 
     integer i,ku
-      
+
     integer iqoldsiz
     integer itmp
     integer isize
     integer nitems
     integer lesid
     integer ifail
-      
+
     real*8    tf(nshg,ndof)
     character*5  cname
-      
+
     character*20    fname2,fmt2,fnamer2 ! for appending ybar
     integer         iarray(50) ! integers for headers
 
@@ -1180,8 +1308,9 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
 
     lesId   = numeqns(1)
-    call saveLesRestart( lesId,  aperm , nshg, myrank, lstep, &
-    nPermDims )
+    IF (memLSflag .NE. 1) THEN
+        call saveLesRestart( lesId,  aperm , nshg, myrank, lstep, nPermDims )
+    ENDIF
 
 
     if(ierrcalc.eq.1) then
@@ -1197,8 +1326,8 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         !
         iqoldsiz=nshg*ndof*2
         call write_error(myrank, lstep, nshg, 10, rerr )
-                         
-                         
+
+
     endif
 
     if(ioybar.eq.1) then
@@ -1262,7 +1391,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     call GlobalDestruction()
 
     return
-      
+
 end subroutine
 
 

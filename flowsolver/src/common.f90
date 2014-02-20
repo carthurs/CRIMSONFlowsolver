@@ -384,18 +384,20 @@ module phcommonvars
 
     !!----------------------------------------------------------
     character*128   mesh_filename
-    real*8          epstol(6), Delt(MAXTS), CFLfl(MAXTS), CFLsl(MAXTS)
+    real*8          epstol(8), Delt(MAXTS), CFLfl(MAXTS), CFLsl(MAXTS)
     integer         nstep(MAXTS),   niter(MAXTS), &
         impl(MAXTS)
     real*8          rhoinf(MAXTS)
     integer         LHSupd(6),  loctim(MAXTS)
     real*8          deltol(MAXTS,2)
+    integer         memLSFlag
     common /inpdat/ epstol   , Delt, CFLfl, CFLsl, &
         nstep,   niter, &
         impl, &
         rhoinf, &
         LHSupd,  loctim, &
-        deltol
+        deltol, &
+        memLSFlag
     bind (C, name="inpdat") :: /inpdat/
     !----------------------------------------------------------
 

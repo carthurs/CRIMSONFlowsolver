@@ -7,11 +7,12 @@
                          ilwork,     shp,        shgl,  &
                          shpb,       shglb,      rowp,      &
                          colm,       lhsK,       lhsP,  &
-                         solinc,     rerr  )
+                         solinc,     rerr,              &
+                         memLS_lhs,  memLS_ls,   memLS_nFaces  )
 !
 !----------------------------------------------------------------------
 !
-! This is the 2nd interface routine to the Farzin's linear equation 
+! This is the 2nd interface routine to the Farzin's linear equation
 ! solver library that uses the CGP and GMRES methods.
 !
 ! input:
@@ -41,28 +42,32 @@
 !
 !     where
 !
-!      xKebe : K_ab = dRmom_a/du_b    xTe : E_ab = dRtemp_a/dT_b 
+!      xKebe : K_ab = dRmom_a/du_b    xTe : E_ab = dRtemp_a/dT_b
 !
 !              G_ab = dRmom_a/dp_b
 !      xGoC  :
-!              C_ab = dRcon_a/dp_b       
+!              C_ab = dRcon_a/dp_b
 !
 !              resf = Rmon Rcon       rest = Rtemp
 !
-!  
+!
 ! Zdenek Johan,  Winter 1991.  (Fortran 90)
 ! Juin Kim, Summer 1998. (Incompressible flow solver interface)
 ! Alberto Figueroa.  CMM-FSI
 !----------------------------------------------------------------------
 !
       use pointer_data
-      use LagrangeMultipliers 
-!        
+      use LagrangeMultipliers
+!
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
       !include "auxmpi.h"
-!     
+      INCLUDE "memLS.h"
+
+      TYPE(memLS_lhsType) memLS_lhs
+      TYPE(memLS_lsType) memLS_ls
+!
       real*8    y(nshg,ndof),             ac(nshg,ndof), &
                 yold(nshg,ndof),          acold(nshg,ndof), &
                 u(nshg,nsd),              uold(nshg,nsd), &
@@ -74,24 +79,28 @@
                 flowDiag(nshg,4), &
                 aperm(nshg,nPermDims),    atemp(nshg,nTmpDims), &
                 sclrDiag(nshg,1),          &
-                lhsK(9,nnz_tot),	  lhsP(4,nnz_tot)          
+                lhsK(9,nnz_tot),	  lhsP(4,nnz_tot)
 !
       real*8    shp(MAXTOP,maxsh,MAXQPT),   &
                 shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
                 shpb(MAXTOP,maxsh,MAXQPT), &
-                shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+                shglb(MAXTOP,nsd,maxsh,MAXQPT)
 !
       integer   usr(100),                 eqnType, &
                 rowp(nshg*nnz),           colm(nshg+1), &
                 iBC(nshg),                ilwork(nlwork), &
-                iper(nshg) 
+                iper(nshg)
 !
       real*8    yAlpha(nshg,ndof),        acAlpha(nshg,ndof), &
                 uAlpha(nshg,nsd),          &
                 lesP(nshg,4),             lesQ(nshg,4), &
                 solinc(nshg,ndof)
-      
+
       real*8    rerr(nshg,10),            rtmp(nshg,4)
+
+      INTEGER dof, memLS_nFaces, i, j, k, l
+      INTEGER, ALLOCATABLE :: incL(:)
+      REAL*8, ALLOCATABLE :: faceRes(:), Res4(:,:), Val4(:,:)
 !
 !.... *******************>> Element Data Formation <<******************
 !
@@ -99,10 +108,10 @@
 !.... set the parameters for flux and surface tension calculations
 !
 !
-      idflx = 0 
+      idflx = 0
       if(idiff >= 1 )  idflx= (nflow-1) * nsd
       if (isurf == 1) idflx=nflow*nsd
-!        
+!
 !.... compute solution at n+alpha
 !
       call itrYAlpha( uold,    yold,    acold,        &
@@ -120,6 +129,52 @@
                     rowp,      colm,       lhsK,       &
                     lhsP,      rerr   )
 
+
+      IF (memLSFlag .EQ. 1) THEN
+!####################################################################
+!     Here calling memLS
+
+      ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
+      CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+
+      incL = 1
+      dof = 4
+      IF (.NOT.ALLOCATED(Res4)) THEN
+         ALLOCATE (Res4(dof,nshg), Val4(dof*dof,nnz_tot))
+      END IF
+
+      DO i=1, nshg
+         Res4(1:dof,i) = res(i,1:dof)
+      END DO
+
+      DO i=1, nnz_tot
+         Val4(1:3,i)   = lhsK(1:3,i)
+         Val4(5:7,i)   = lhsK(4:6,i)
+         Val4(9:11,i)  = lhsK(7:9,i)
+         Val4(13:15,i) = lhsP(1:3,i)
+         Val4(16,i)    = lhsP(4,i)
+      END DO
+
+      !Val4(4:12:4,:) = -lhsP(1:3,:)^t
+      DO i=1, nshg
+         Do j=colm(i), colm(i+1) - 1
+            k = rowp(j)
+            DO l=colm(k), colm(k+1) - 1
+               IF (rowp(l) .EQ. i) THEN
+                  Val4(4:12:4,l) = -lhsP(1:3,j)
+                  EXIT
+               END IF
+            END DO
+         END DO
+      END DO
+      CALL memLS_SOLVE(memLS_lhs, memLS_ls, dof, Res4, Val4, incL, faceRes)
+
+      DO i=1, nshg
+         solinc(i,1:dof) = Res4(1:dof,i)
+      END DO
+
+!####################################################################
+      ELSE
 !
 !.... lesSolve : main matrix solver
 !
@@ -153,15 +208,17 @@
       if(Lagrange .gt. zero) then
          call CalcNANBLagrange(colm, rowp, solinc(:,1:3))
          call LagMultiplyMatrix(solinc, 0, nsrflistLagrange, &
-            numLagrangeSrfs)  
+            numLagrangeSrfs)
          Lagincr(:,1:3) = (- resL(:,1:3) - AddLag(:,1:3) ) &
             /ScaleFactor(1,1)/alfi/gami/two
       endif
-      
+
+      ENDIF
+
       call rstatic (res, y, solinc) ! output flow stats
-!     
+!
 !.... end
-!     
+!
       return
       end
 
@@ -176,7 +233,7 @@
 !
 !----------------------------------------------------------------------
 !
-! This is the 2nd interface routine to the linear equation 
+! This is the 2nd interface routine to the linear equation
 ! solver library.
 !
 ! input:
@@ -201,12 +258,12 @@
 !----------------------------------------------------------------------
 !
       use pointer_data
-        
+
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       include "mpif.h"
       !include "auxmpi.h"
-!     
+!
       real*8    y(nshg,ndof),             ac(nshg,ndof), &
                 yold(nshg,ndof),          acold(nshg,ndof), &
                 u(nshg,nsd),              uold(nshg,nsd), &
@@ -220,7 +277,7 @@
       real*8    shp(MAXTOP,maxsh,MAXQPT),   &
                 shgl(MAXTOP,nsd,maxsh,MAXQPT),  &
                 shpb(MAXTOP,maxsh,MAXQPT), &
-                shglb(MAXTOP,nsd,maxsh,MAXQPT) 
+                shglb(MAXTOP,nsd,maxsh,MAXQPT)
 !
       integer   usr(100),                 eqnType, &
                 rowp(nshg*nnz),           colm(nshg+1), &
@@ -231,8 +288,8 @@
                 uAlpha(nshg,nsd), &
                 lesP(nshg,1),               lesQ(nshg,1), &
                 solinc(nshg,1)
-      
-!     
+
+!
 !.... *******************>> Element Data Formation <<******************
 !
 !.... compute solution at n+alpha
@@ -275,12 +332,12 @@
       if (numpe > 1) then
          call commu ( solinc, ilwork, 1, 'out')
       endif
-      
+
       nsolsc=5+isclr
       call rstaticSclr (res, y, solinc, nsolsc) ! output scalar stats
-!     
+!
 !.... end
-!     
+!
       return
       end
 

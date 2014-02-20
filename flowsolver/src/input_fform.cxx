@@ -388,6 +388,7 @@ int input_fform() {
 		}
 
 		//Linear Solver parameters
+		inpdat.memLSFlag=0;
 		if ((string) inp.GetValue("Solver Type")
 				== "ACUSIM with P Projection") {
 			incomp.iprjFlag = 0;
@@ -408,6 +409,8 @@ int input_fform() {
 			inpdat.impl[0] += 10 * solflow;
 		} else if ((string) inp.GetValue("Solver Type") == "GMRES EBE") {
 			inpdat.impl[0] += 20 * solflow;
+		} else if( (string)inp.GetValue("Solver Type") =="memLS"){
+		    inpdat.memLSFlag=1;
 		}
 		//GMRES sparse is assumed default and has the value of 10, MFG 20,
 		// EBE 30
@@ -419,6 +422,8 @@ int input_fform() {
 		inpdat.LHSupd[0] = inp.GetValue(
 				"Number of Solves per Left-hand-side Formation");
 		inpdat.epstol[0] = inp.GetValue("Tolerance on Momentum Equations");
+		inpdat.epstol[6] = inp.GetValue("Tolerance on Continuity Equations");
+		inpdat.epstol[7] = inp.GetValue("Tolerance on memLS NS Solver");
 		incomp.prestol = inp.GetValue(
 				"Tolerance on ACUSIM Pressure Projection");
 		incomp.minIters = inp.GetValue(

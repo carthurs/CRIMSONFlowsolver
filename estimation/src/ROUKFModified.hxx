@@ -62,19 +62,27 @@ protected:
 
 	int Nstate_local_;
 
+	reduced_state_error_variance Preduced_;
+	reduced_state_error_variance obsGram_;
+
 public:
 
 	ROUKFModified();
 	~ROUKFModified();
 
-	void GetReducedStateErrorVariance(reduced_state_error_variance &Preduced,
-			int state_reduced_start_local);
+	void GetReducedStateErrorVariance(reduced_state_error_variance &Preduced);
+
+	void GetObservabilityGramian(reduced_state_error_variance &obsGram);
 
 	void SaveStateErrorVariance();
 
 	void Analyze();
 
 	void Forward();
+
+	void Initialize(string configuration_file,
+            bool initialize_model = true,
+            bool initialize_observation_manager = true);
 
 };
 

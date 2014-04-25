@@ -16,32 +16,47 @@ ROUKFModified<T, Model, ObservationManager>::~ROUKFModified() {
 }
 
 template<class T, class Model, class ObservationManager>
+void ROUKFModified<T, Model, ObservationManager>::Initialize(string configuration_file,
+		bool initialize_model,bool initialize_observation_manager) {
+
+	Verdandi::ReducedOrderUnscentedKalmanFilter<T,Model,ObservationManager>::
+	Initialize(configuration_file,initialize_model,initialize_observation_manager);
+
+	this->obsGram_.Reallocate(this->Nreduced_, this->Nreduced_);
+	this->obsGram_.Zero();
+}
+
+template<class T, class Model, class ObservationManager>
 void ROUKFModified<T, Model, ObservationManager>::GetReducedStateErrorVariance(
-		reduced_state_error_variance &Preduced, int state_reduced_start_local) {
+		reduced_state_error_variance &Preduced) {
+
+	int state_reduced_start_local;
+
+	state_reduced_start_local = this->model_.GetLocalReducedStart();
 
 	if (this->rank_ == this->model_.GetNumProcs() - 1) {
 
-		Preduced.Reallocate(this->Nreduced_,this->Nreduced_);
+		Preduced_.Reallocate(this->Nreduced_,this->Nreduced_);
 
-		reduced_state_error_variance L_temp, LU_inv_temp;
+		reduced_state_error_variance L_theta, LU_inv_temp;
 
-		L_temp.Reallocate(this->Nreduced_, this->Nreduced_);
+		L_theta.Reallocate(this->Nreduced_, this->Nreduced_);
 		LU_inv_temp.Reallocate(this->Nreduced_, this->Nreduced_);
 
-		L_temp.Zero();
+		L_theta.Zero();
 
 		int start_ind_local, end_ind_local;
 
 		this->L_.GetProcessorRowRange(start_ind_local, end_ind_local);
 
 		for (int i = 0; i < this->Nreduced_; i++)
-			L_temp(i,i) = this->L_(start_ind_local + i + state_reduced_start_local, i);
+			L_theta(i,i) = this->L_(start_ind_local + i + state_reduced_start_local, i);
 
-		MltAdd(T(1), SeldonNoTrans, L_temp, SeldonNoTrans, this->U_inv_, T(0), LU_inv_temp);
+		MltAdd(T(1), SeldonNoTrans, L_theta, SeldonNoTrans, this->U_inv_, T(0), LU_inv_temp);
 
-		MltAdd(T(1), SeldonNoTrans, LU_inv_temp, SeldonTrans, L_temp, T(0), Preduced);
+		MltAdd(T(1), SeldonNoTrans, LU_inv_temp, SeldonTrans, L_theta, T(0), Preduced_);
 
-		//L_temp.Print();
+		//L_theta.Print();
 		//this->U_inv_.Print();
 
 	}
@@ -50,6 +65,14 @@ void ROUKFModified<T, Model, ObservationManager>::GetReducedStateErrorVariance(
 	// reconsider whether this is necessary?
 	//MPI_Bcast( Preduced.GetData(), Preduced.GetDataSize(), MPI_DOUBLE, this->model_.GetNumProcs()-1, MPI_COMM_WORLD );
 
+	Preduced.Copy(Preduced_);
+
+}
+
+template<class T, class Model, class ObservationManager>
+void ROUKFModified<T, Model, ObservationManager>::GetObservabilityGramian(reduced_state_error_variance &obsGram)
+{
+	obsGram.Copy(this->obsGram_);
 }
 
 //! Predict step
@@ -470,6 +493,35 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 //		// broadcast to all
 //		MPI_Bcast( global_c, this->Nreduced_*this->Nreduced_, MPI_DOUBLE,
 //				     0, MPI_COMM_WORLD );
+
+
+		// compute the observability Gramian matrix
+		if (this->rank_ == this->model_.GetNumProcs() - 1) {
+
+			reduced_state_error_variance L_theta_inv, M1;
+
+			L_theta_inv.Reallocate(this->Nreduced_, this->Nreduced_);
+			L_theta_inv.Zero();
+			M1.Reallocate(this->Nreduced_, this->Nreduced_);
+
+			int start_ind_local, end_ind_local, state_reduced_start_local;
+			this->L_.GetProcessorRowRange(start_ind_local, end_ind_local);
+			state_reduced_start_local = this->model_.GetLocalReducedStart();
+
+			for (int i = 0; i < this->Nreduced_; i++)
+				L_theta_inv(i,i) = this->L_(start_ind_local + i + state_reduced_start_local, i);
+
+			GetInverse(L_theta_inv);
+
+			MltAdd(T(1), SeldonNoTrans, global_C, SeldonNoTrans, L_theta_inv, T(0), M1);
+			MltAdd(T(1), SeldonTrans, L_theta_inv, SeldonNoTrans, M1, T(1), this->obsGram_);
+
+			//MltAdd(T(1), SeldonNoTrans, LU_inv_temp, SeldonTrans, L_theta, T(0), Preduced_);
+
+			//L_theta.Print();
+			//this->U_inv_.Print();
+
+		}
 
 #ifdef VERDANDI_ROUKF_DEBUG_OUTPUT
 		{

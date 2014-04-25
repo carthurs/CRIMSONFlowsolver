@@ -8,7 +8,7 @@
 !     California. All Rights Reserved.
 !
 !     Permission to copy and modify this software and its documentation
-!     for educational, research and non-profit purposes, without fee, 
+!     for educational, research and non-profit purposes, without fee,
 !     and without a written agreement is hereby granted, provided that
 !     the above copyright notice, this paragraph and the following three
 !     paragraphs appear in all copies.
@@ -31,21 +31,51 @@
 !     purposes and is advised not to rely exclusively on the program for
 !     any reason.
 !
-!     IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY 
-!     PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL 
-!     DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS 
-!     SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF 
-!     CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-!     THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY 
-!     WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-!     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE 
-!     SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE 
-!     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
+!     IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY
+!     PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
+!     DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS
+!     SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF
+!     CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+!     THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY
+!     WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+!     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+!     SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE
+!     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-      
-      SUBROUTINE memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes, 
+
+
+      ! --------------------------------------------------
+      ! memLS_COMMU_CREATE
+      !
+      ! creation subroutine for memLS_lhsType, dataype for
+      ! an object that containing information about
+      ! the Left Hand Side (LHS) matrix
+      ! (sparse, compressed column storage).
+      !
+      ! lhs    : Handle to the LHS structure
+      ! commu  : Handle to the communicator structure
+      ! gnNo   : Total number of nodes (global node No.)
+      ! nNo    : Number of nodes on this processor
+      ! nnz    : Number of nonzero entries in the LHS
+      !          (of calling processor)
+      ! ltg    : Local to global index
+      ! rowPtr : Pointer to the beginning of each row
+      ! colPtr : Column number of LHS sparse array
+      ! nFaces : Number of boundary conditions supposed to be added
+      !          to this structure
+      !
+      ! The local to global pointer vector, ltg(a),
+      ! should return the node number of the node a in
+      ! the entire mesh.
+      ! The row pointer, rowPtr(i),
+      ! should return the LHS entries position that
+      ! corresponds to the first element of row i.
+      ! The column pointer, colPtr(j), should return the
+      ! column number of jth entire of LHS sparse vector.
+
+      SUBROUTINE memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes,
      2   rowPtr, colPtr, nFaces)
-      
+
       INCLUDE "STD.h"
 
       TYPE(memLS_lhsType), INTENT(INOUT) :: lhs
@@ -53,12 +83,12 @@
       INTEGER, INTENT(IN) :: gnNo, nNo, nnz
       INTEGER, INTENT(IN) :: gNodes(nNo), rowPtr(nNo+1), colPtr(nnz)
       INTEGER, INTENT(IN) :: nFaces
-      
-      INTEGER i, j, k, a, Ac, ai, s, e, nTasks, tF, maxnNo, ierr, 
+
+      INTEGER i, j, k, a, Ac, ai, s, e, nTasks, tF, maxnNo, ierr,
      2   stat(MPI_STATUS_SIZE)
-      
+
       INTEGER comm
-      INTEGER, ALLOCATABLE :: aNodes(:,:), gtlPtr(:), ltg(:), 
+      INTEGER, ALLOCATABLE :: aNodes(:,:), gtlPtr(:), ltg(:),
      2   part(:), sCount(:), disp(:)
 
       IF (lhs%foC) THEN
@@ -72,14 +102,14 @@
       lhs%nnz    = nnz
       lhs%commu  = commu
       lhs%nFaces = nFaces
-     
+
       nTasks = commu%nTasks
       comm   = commu%comm
       tF     = commu%tF
 
       ALLOCATE (lhs%colPtr(nnz), lhs%rowPtr(2,nNo), lhs%diagPtr(nNo),
      2   lhs%map(nNo), lhs%cS(nTasks), lhs%face(nFaces))
-      
+
       IF (nTasks .EQ. 1) THEN
          DO i=1, nnz
             lhs%colPtr(i) = colPtr(i)
@@ -106,26 +136,26 @@
       END IF
 
       CALL MPI_ALLREDUCE (nNo, maxnNo, 1, mpint, MPI_MAX, comm, ierr)
-      
-      ALLOCATE(aNodes(maxnNo,nTasks), part(maxnNo), sCount(nTasks), 
+
+      ALLOCATE(aNodes(maxnNo,nTasks), part(maxnNo), sCount(nTasks),
      2   disp(nTasks), gtlPtr(gnNo), ltg(nNo))
 
       part = 0
       part(1:nNo) = gNodes
-       
+
       DO i=1, nTasks
          disp(i)   = (i-1)*maxnNo
          sCount(i) = maxnNo
       END DO
       CALL MPI_ALLGATHERV(part, maxnNo, mpint, aNodes, sCount, disp,
      2   mpint, comm, ierr)
-      
+
       gtlPtr = 0
       DO a=1, nNo
          Ac = gNodes(a)
          gtlPtr(Ac) = a
       END DO
-      
+
       DO i=nTasks, 1, -1
          IF (i .EQ. tF) CYCLE
 
@@ -153,7 +183,7 @@
          IF (i.NE.tF .AND. i.NE.1)  THEN
             lhs%cS(i)%ptr = lhs%cS(i-1)%ptr + lhs%cS(i-1)%n
          END IF
-         
+
          DO a=1, maxnNo
             Ac = aNodes(a,i)
             IF (Ac .NE. 0) THEN
@@ -166,7 +196,7 @@
                END IF
             END IF
          END DO
-         
+
          IF (i .LT. tF) THEN
             lhs%cS(i)%tag = nTasks*i  + tF
          ELSE
@@ -195,7 +225,7 @@
          lhs%rowPtr(1,Ac) = rowPtr(a)
          lhs%rowPtr(2,Ac) = rowPtr(a+1) - 1
       END DO
-      
+
       DO i=1, nnz
          lhs%colPtr(i) = lhs%map(colPtr(i))
       END DO
@@ -215,14 +245,14 @@
          i = lhs%cS(i)%ptr + lhs%cS(i)%n - 1
          ALLOCATE(part(i))
       END IF
-      
+
       DO i=1, nTasks
          lhs%cS(i)%nBl = 0
          IF (lhs%cS(i)%tag .NE. 0) THEN
             s = lhs%cS(i)%ptr
             e = s + lhs%cS(i)%n - 1
             IF (i .LT. tF) THEN
-               CALL MPI_RECV(part(s:e), lhs%cS(i)%n, mpint, i-1, 
+               CALL MPI_RECV(part(s:e), lhs%cS(i)%n, mpint, i-1,
      2            lhs%cS(i)%tag, comm, stat, ierr)
 
                k = 0
@@ -237,7 +267,7 @@
                END DO
                a = lhs%cS(i)%nBl
                ALLOCATE(lhs%cS(i)%blPtr(a), lhs%cS(i)%blN(a))
-               
+
                k = 0
                a = 0
                DO j=s, e
@@ -256,12 +286,12 @@
                   END IF
                END DO
             ELSE
-               CALL MPI_SEND(ltg(s:e), lhs%cS(i)%n, mpint, i-1, 
+               CALL MPI_SEND(ltg(s:e), lhs%cS(i)%n, mpint, i-1,
      2            lhs%cS(i)%tag, comm, stat, ierr)
             END IF
          END IF
       END DO
-      
+
       IF (ALLOCATED(part)) DEALLOCATE(part)
       DEALLOCATE(ltg)
 
@@ -271,11 +301,11 @@
 !====================================================================
 
       SUBROUTINE memLS_LHS_FREE(lhs)
-      
+
       INCLUDE "STD.h"
 
       TYPE(memLS_lhsType), INTENT(INOUT) :: lhs
-      
+
       INTEGER faIn, i
 
       IF (.NOT.lhs%foC) THEN
@@ -283,11 +313,11 @@
          PRINT *, 'It is not created yet'
          STOP
       END IF
-      
+
       DO faIn = 1, lhs%nFaces
          IF (lhs%face(faIn)%foC) CALL memLS_BC_FREE(lhs, faIn)
       END DO
-      
+
       DO i=1, lhs%commu%nTasks
          IF (ALLOCATED(lhs%cS(i)%blPtr)) THEN
             DEALLOCATE(lhs%cS(i)%blPtr, lhs%cS(i)%blN)
@@ -300,7 +330,7 @@
       lhs%nnz    = 0
       lhs%nFaces = 0
 
-      DEALLOCATE (lhs%colPtr, lhs%rowPtr, lhs%diagPtr, lhs%map, lhs%cS, 
+      DEALLOCATE (lhs%colPtr, lhs%rowPtr, lhs%diagPtr, lhs%map, lhs%cS,
      2   lhs%face)
 
       RETURN
@@ -310,7 +340,7 @@
 
       SUBROUTINE memLS_LHS_CREATE_C(pLHS, commu, gnNo, nNo, nnz, gNodes,
      2   rowPtr, colPtr, nFaces)
-      
+
       INCLUDE "STD.h"
 
       TYPE(memLS_lhsType), POINTER, INTENT(OUT) :: pLHS
@@ -318,7 +348,7 @@
       INTEGER, INTENT(IN) :: gnNo, nNo, nnz
       INTEGER, INTENT(IN) :: gNodes(nNo), rowPtr(nNo+1), colPtr(nnz)
       INTEGER, INTENT(IN) :: nFaces
-      
+
       TYPE(memLS_lhsType), TARGET, SAVE :: lhs
 
       CALL memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes,

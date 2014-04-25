@@ -8,7 +8,7 @@
 !     California. All Rights Reserved.
 !
 !     Permission to copy and modify this software and its documentation
-!     for educational, research and non-profit purposes, without fee, 
+!     for educational, research and non-profit purposes, without fee,
 !     and without a written agreement is hereby granted, provided that
 !     the above copyright notice, this paragraph and the following three
 !     paragraphs appear in all copies.
@@ -31,19 +31,42 @@
 !     purposes and is advised not to rely exclusively on the program for
 !     any reason.
 !
-!     IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY 
-!     PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL 
-!     DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS 
-!     SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF 
-!     CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-!     THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY 
-!     WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-!     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE 
-!     SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE 
-!     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
+!     IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY
+!     PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
+!     DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS
+!     SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF
+!     CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+!     THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY
+!     WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+!     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+!     SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE
+!     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-      
-      SUBROUTINE memLS_LS_CREATE(ls, LS_type, relTol, absTol, maxItr, 
+
+
+
+      ! comments added by nx following mem's LS document
+      ! in an attempt to better understand the code
+
+      ! --------------------------------------------------
+      ! memLS_LS_CREATE
+      !
+      ! creation subroutine for memLS_lsType, the
+      ! dataype for an object containing information about the type of solver.
+      !
+      ! (also contains tolerance parameters)
+      !
+      ! ls       : Handle to LS object
+      ! LS_type  : LS algorithm LS TYPE GMRES to be used in memLS
+      ! relTol   : Relative tolerance (ratio between final & initial residuals)
+      ! absTole  : Absolute tolerance (final residual)
+      ! maxItr   : Maximum number of iterations
+      ! dimKry   : Krylov space dimension (for GMRES and NS solvers)
+      ! relTolIn : Inner loop relative tolerances (for NS solver)
+      ! absTolIn : Inner loop absolute tolerances (for NS solver)
+      ! maxItrIn : Inner loop maximum number of iterations (for NS solver)
+
+      SUBROUTINE memLS_LS_CREATE(ls, LS_type, relTol, absTol, maxItr,
      2   dimKry, relTolIn, absTolIn, maxItrIn)
 
       INCLUDE "STD.h"
@@ -89,7 +112,7 @@
       IF (PRESENT(relTol)) ls%RI%relTol = relTol
       IF (PRESENT(absTol)) ls%RI%absTol = absTol
       IF (PRESENT(maxItr)) ls%RI%mItr   = maxItr
-      
+
       IF (PRESENT(dimKry)) THEN
          ls%RI%sD = dimKry
          ls%GM%sD = dimKry
@@ -106,14 +129,14 @@
          ls%GM%mItr = maxItrIn(1)
          ls%CG%mItr = maxItrIn(2)
       END IF
-      
+
       RETURN
       END SUBROUTINE memLS_LS_CREATE
 
-!====================================================================      
+!====================================================================
 
       SUBROUTINE memLS_LS_FREE (ls)
-      
+
       INCLUDE "STD.h"
 
       TYPE(memLS_lsType), INTENT(INOUT) :: ls

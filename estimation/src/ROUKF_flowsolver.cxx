@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 
 	PetscInitialize(&argc, &argv, (char *)0, help);
 
-	SimvascularVerdandiModel::reduced_state_error_variance Pred;
+	SimvascularVerdandiModel::reduced_state_error_variance Pred, obsGram;
 
     std::string current_directory = getenv("PWD");
     std::string input_filename = argv[1];
@@ -90,15 +90,18 @@ int main(int argc, char** argv)
     driver.Initialize(argv[1], true);
 
     // debugging output
-    std::ostringstream ostr; //output string stream
+    //std::ostringstream ostr; //output string stream
     std::string Pfilename = "Pred",filename_ext = ".dat";
+    std::string Gfilename = "Gram";
     //ostr << driver.GetModel().GetRank();
     Pfilename = Pfilename+filename_ext;
-    ofstream outfile;
+    Gfilename = Gfilename+filename_ext;
+    ofstream Poutfile,Goutfile;
 
-    if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1)
-    	outfile.open(Pfilename.c_str());
-
+    if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
+    	Poutfile.open(Pfilename.c_str());
+    	Goutfile.open(Gfilename.c_str());
+    }
 
     driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
     driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
@@ -108,20 +111,21 @@ int main(int argc, char** argv)
     {
         driver.InitializeStep();
 
-//    	driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
-//    	driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-//        driver.GetModel().Forward();
-
         driver.Forward();
         driver.Analyze();
 
         driver.GetModel().ForwardFinalize();
 
-        driver.GetReducedStateErrorVariance(Pred, driver.GetModel().GetLocalReducedStart());
+        driver.GetReducedStateErrorVariance(Pred);
+
+        driver.GetObservabilityGramian(obsGram);
+
         // write out the covariance matrix for the reduced state estimate
         if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
-        	outfile << driver.GetModel().GetTime() << endl;
-        	Pred.WriteText(outfile);
+        	Poutfile << driver.GetModel().GetTime() << endl;
+        	Pred.WriteText(Poutfile);
+        	Goutfile << driver.GetModel().GetTime() << endl;
+        	obsGram.WriteText(Goutfile);
         }
 
         driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
@@ -131,9 +135,10 @@ int main(int argc, char** argv)
 
     driver.GetModel().Finalize();
 
-    if (driver.GetModel().GetRank() == 0)
-    	outfile.close();
-
+    if (driver.GetModel().GetRank() == 0) {
+    	Poutfile.close();
+    	Goutfile.close();
+    }
     END;
 
     int ierr;

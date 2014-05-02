@@ -238,8 +238,6 @@ void SimvascularVerdandiModel::Initialize() {
 	// of elements per processor that is given by Nstate_local_
 	duplicated_state_.Reallocate(Nstate_, Nstate_local_);
 
-    param_out_.open ("estimated_reduced_state.dat");
-
     // display some output
     cout << "At rank " << rank_ << " we have " << Nstate_local_ << " state variables" << endl;
 
@@ -251,6 +249,8 @@ void SimvascularVerdandiModel::Initialize() {
 
 //! Initializes the first time step for the model.
 void SimvascularVerdandiModel::InitializeFirstStep() {
+
+	// load estimates and error covariance for
 
 }
 
@@ -264,7 +264,6 @@ void SimvascularVerdandiModel::Finalize() {
 
 	itrdrv_finalize();
 
-	param_out_.close();
 }
 
 
@@ -286,7 +285,7 @@ void SimvascularVerdandiModel::Forward() {
 
 //! Finalizes the current time step
 //! meant to be called after the mean state with innovation is set
-void SimvascularVerdandiModel::ForwardFinalize() {
+void SimvascularVerdandiModel::FinalizeStep() {
 
 	itrdrv_iter_finalize(); // routines that allow moving to the next step
 
@@ -950,7 +949,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 }
 
-void SimvascularVerdandiModel::WriteEstimates() {
+void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
 	// write down the parameter values in a file
 	int state_start, state_end;
 
@@ -963,7 +962,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 		// reduced-order P-states
 		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_ && grcrbccom.numGRCRSrfs > 0) {
 			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
 			}
 		}
@@ -971,7 +970,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 		// wall parameters
 		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
 			for (int kk = 0; kk < nomodule.numWallRegions; kk++) {
-				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
 			}
 		}
@@ -982,7 +981,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 			if (cp_rcr_estimate_compliance_)
 				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 					if (cp_rcr_include_compliance_[kk]) {
-						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 						ncounter++;
 					}
 				}
@@ -990,7 +989,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 			if (cp_rcr_estimate_resistance_)
 				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 					if (cp_rcr_include_resistance_[kk]) {
-						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 						ncounter++;
 					}
 				}
@@ -998,19 +997,19 @@ void SimvascularVerdandiModel::WriteEstimates() {
 			if (cp_rcr_estimate_prox_resistance_)
 				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 					if (cp_rcr_include_prox_resistance_[kk]) {
-						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 						ncounter++;
 					}
 				}
 
 			if (cp_rcr_estimate_pout_) {
-				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
 			}
 
 		}
 
-		param_out_ << endl;
+		param_out << endl;
 	}
 }
 

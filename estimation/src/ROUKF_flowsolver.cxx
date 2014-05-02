@@ -21,6 +21,9 @@
 
 //#define VERDANDI_LOGGING_LEVEL -7
 
+#include <fstream>
+#include <iomanip>
+
 //#if defined(VERDANDI_WITH_MPI)
 //#include <mpi.h>
 //#endif
@@ -78,8 +81,6 @@ int main(int argc, char** argv)
 
 	PetscInitialize(&argc, &argv, (char *)0, help);
 
-	SimvascularVerdandiModel::reduced_state_error_variance Pred, obsGram;
-
     std::string current_directory = getenv("PWD");
     std::string input_filename = argv[1];
 
@@ -89,37 +90,6 @@ int main(int argc, char** argv)
 
     driver.Initialize(argv[1], true);
 
-    // debugging output
-    //std::ostringstream ostr; //output string stream
-    std::string Pfilename = "Pred",filename_ext = ".dat";
-    std::string Gfilename = "Gram";
-    //ostr << driver.GetModel().GetRank();
-    Pfilename = Pfilename+filename_ext;
-    Gfilename = Gfilename+filename_ext;
-    ofstream Poutfile,Goutfile;
-
-    if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
-    	Poutfile.open(Pfilename.c_str());
-    	Goutfile.open(Gfilename.c_str());
-    }
-
-    driver.GetReducedStateErrorVariance(Pred);
-
-    driver.GetObservabilityGramian(obsGram);
-
-    driver.GetModel().WriteEstimates();
-
-    // write out the covariance matrix for the reduced state estimate
-    if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
-    	Poutfile << driver.GetModel().GetTime() << endl;
-    	Pred.WriteText(Poutfile);
-    	Goutfile << driver.GetModel().GetTime() << endl;
-    	obsGram.WriteText(Goutfile);
-    }
-
-    driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
-    driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-
     while (!driver.HasFinished())
     {
         driver.InitializeStep();
@@ -127,33 +97,11 @@ int main(int argc, char** argv)
         driver.Forward();
         driver.Analyze();
 
-        driver.GetModel().ForwardFinalize();
-
-        driver.GetModel().WriteEstimates();
-
-        driver.GetReducedStateErrorVariance(Pred);
-
-        driver.GetObservabilityGramian(obsGram);
-
-        // write out the covariance matrix for the reduced state estimate
-        if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
-        	Poutfile << driver.GetModel().GetTime() << endl;
-        	Pred.WriteText(Poutfile);
-        	Goutfile << driver.GetModel().GetTime() << endl;
-        	obsGram.WriteText(Goutfile);
-        }
-
-        driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
-        driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-
+        driver.FinalizeStep();
     }
 
-    driver.GetModel().Finalize();
+    driver.Finalize();
 
-    if (driver.GetModel().GetRank() == 0) {
-    	Poutfile.close();
-    	Goutfile.close();
-    }
     END;
 
     int ierr;

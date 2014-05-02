@@ -12,7 +12,11 @@ ROUKFModified<T, Model, ObservationManager>::ROUKFModified() {
 
 template<class T, class Model, class ObservationManager>
 ROUKFModified<T, Model, ObservationManager>::~ROUKFModified() {
-
+	if (this->model_.GetRank() == 0) {
+		Poutfile_.close();
+		Goutfile_.close();
+		Eoutfile_.close();
+	}
 }
 
 template<class T, class Model, class ObservationManager>
@@ -22,17 +26,47 @@ void ROUKFModified<T, Model, ObservationManager>::Initialize(string configuratio
 	Verdandi::ReducedOrderUnscentedKalmanFilter<T,Model,ObservationManager>::
 	Initialize(configuration_file,initialize_model,initialize_observation_manager);
 
-	this->obsGram_.Reallocate(this->Nreduced_, this->Nreduced_);
-	this->obsGram_.Zero();
+	obsGram_.Reallocate(this->Nreduced_, this->Nreduced_);
+	obsGram_.Zero();
+
+	// set up file output
+	std::string Pfilename = "Pred",filename_ext = ".dat";
+	std::string Gfilename = "Gram";
+	std::string Efilename = "estimated_reduced_state";
+	Pfilename = Pfilename+filename_ext;
+	Gfilename = Gfilename+filename_ext;
+	Efilename = Efilename+filename_ext;
+
+	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
+		Poutfile_.open(Pfilename.c_str());
+		Goutfile_.open(Gfilename.c_str());
+		Eoutfile_.open(Efilename.c_str());
+
+		Poutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
+		Goutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
+		Eoutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
+	}
+
+	// output for initial step
+	this->ComputeReducedStateErrorVariance();
+
+	this->model_.WriteEstimates(Eoutfile_);
+
+	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
+		Poutfile_ << this->model_.GetTime() << endl;
+		Preduced_.WriteText(Poutfile_);
+		Goutfile_ << this->model_.GetTime() << endl;
+		obsGram_.WriteText(Goutfile_);
+	}
+
+	this->observation_manager_.SetTime(this->model_,this->model_.GetTime());
+	this->observation_manager_.SaveObservationSingleLocal(this->model_.GetState());
+
+
 }
 
 template<class T, class Model, class ObservationManager>
-void ROUKFModified<T, Model, ObservationManager>::GetReducedStateErrorVariance(
-		reduced_state_error_variance &Preduced) {
-
-	int state_reduced_start_local;
-
-	state_reduced_start_local = this->model_.GetLocalReducedStart();
+void ROUKFModified<T, Model, ObservationManager>::ComputeReducedStateErrorVariance() {
 
 	if (this->rank_ == this->model_.GetNumProcs() - 1) {
 
@@ -50,7 +84,7 @@ void ROUKFModified<T, Model, ObservationManager>::GetReducedStateErrorVariance(
 		this->L_.GetProcessorRowRange(start_ind_local, end_ind_local);
 
 		for (int i = 0; i < this->Nreduced_; i++)
-			L_theta(i,i) = this->L_(start_ind_local + i + state_reduced_start_local, i);
+			L_theta(i,i) = this->L_(start_ind_local + i + this->model_.GetLocalReducedStart(), i);
 
 		MltAdd(T(1), SeldonNoTrans, L_theta, SeldonNoTrans, this->U_inv_, T(0), LU_inv_temp);
 
@@ -64,15 +98,6 @@ void ROUKFModified<T, Model, ObservationManager>::GetReducedStateErrorVariance(
 	// broadcast contents of Preduced to all ranks
 	// reconsider whether this is necessary?
 	//MPI_Bcast( Preduced.GetData(), Preduced.GetDataSize(), MPI_DOUBLE, this->model_.GetNumProcs()-1, MPI_COMM_WORLD );
-
-	Preduced.Copy(Preduced_);
-
-}
-
-template<class T, class Model, class ObservationManager>
-void ROUKFModified<T, Model, ObservationManager>::GetObservabilityGramian(reduced_state_error_variance &obsGram)
-{
-	obsGram.Copy(this->obsGram_);
 }
 
 //! Predict step
@@ -923,6 +948,26 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 #endif
 }
 
+template<class T, class Model, class ObservationManager>
+void ROUKFModified<T, Model, ObservationManager>::FinalizeStep() {
+
+	Verdandi::ReducedOrderUnscentedKalmanFilter<T,Model,ObservationManager>::FinalizeStep();
+
+	this->model_.WriteEstimates(Eoutfile_);
+
+	this->ComputeReducedStateErrorVariance();
+
+	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
+		Poutfile_ << this->model_.GetTime() << endl;
+		Preduced_.WriteText(Poutfile_);
+		Goutfile_ << this->model_.GetTime() << endl;
+		obsGram_.WriteText(Goutfile_);
+	}
+
+	this->observation_manager_.SetTime(this->model_,this->model_.GetTime());
+	this->observation_manager_.SaveObservationSingleLocal(this->model_.GetState());
+
+}
 
 #define ROUKFMODIFIED_CXX
 #endif

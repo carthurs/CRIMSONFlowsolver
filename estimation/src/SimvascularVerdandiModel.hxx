@@ -84,8 +84,6 @@ protected:
 
 	state duplicated_state_;
 
-	ofstream param_out_;
-
 public:
 
 	// Constructor and destructor.
@@ -101,7 +99,7 @@ public:
 
 	// Processing.
 	void Forward();
-	void ForwardFinalize();
+	void FinalizeStep();
 	bool HasFinished() const;
 
 	// Operators.
@@ -124,7 +122,7 @@ public:
 	void GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U);
 
 	// Output
-	void WriteEstimates();
+	void WriteEstimates(std::ofstream &param_out);
 
 	string GetName() const;
 	void Message(string message);

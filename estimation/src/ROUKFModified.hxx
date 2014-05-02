@@ -65,14 +65,14 @@ protected:
 	reduced_state_error_variance Preduced_;
 	reduced_state_error_variance obsGram_;
 
+	ofstream Poutfile_,Goutfile_,Eoutfile_;
+
 public:
 
 	ROUKFModified();
 	~ROUKFModified();
 
-	void GetReducedStateErrorVariance(reduced_state_error_variance &Preduced);
-
-	void GetObservabilityGramian(reduced_state_error_variance &obsGram);
+	void ComputeReducedStateErrorVariance();
 
 	void SaveStateErrorVariance();
 
@@ -83,6 +83,8 @@ public:
 	void Initialize(string configuration_file,
             bool initialize_model = true,
             bool initialize_observation_manager = true);
+
+	void FinalizeStep();
 
 };
 

@@ -210,7 +210,12 @@ void Partition_Problem(int numProcs) {
 	systemcmd[0] = '\0';
 
 	sprintf(systemcmd, "cp *.dat %s", _directory_name);
+	system(systemcmd);
 
+	sprintf(systemcmd, "cp *.inp %s", _directory_name);
+	system(systemcmd);
+
+	sprintf(systemcmd, "cp *.lua %s", _directory_name);
 	system(systemcmd);
 
 	if (numProcs < 2) {

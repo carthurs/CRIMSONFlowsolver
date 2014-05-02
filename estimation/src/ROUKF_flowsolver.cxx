@@ -103,9 +103,22 @@ int main(int argc, char** argv)
     	Goutfile.open(Gfilename.c_str());
     }
 
+    driver.GetReducedStateErrorVariance(Pred);
+
+    driver.GetObservabilityGramian(obsGram);
+
+    driver.GetModel().WriteEstimates();
+
+    // write out the covariance matrix for the reduced state estimate
+    if (driver.GetModel().GetRank() == driver.GetModel().GetNumProcs() - 1) {
+    	Poutfile << driver.GetModel().GetTime() << endl;
+    	Pred.WriteText(Poutfile);
+    	Goutfile << driver.GetModel().GetTime() << endl;
+    	obsGram.WriteText(Goutfile);
+    }
+
     driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
     driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-
 
     while (!driver.HasFinished())
     {
@@ -115,6 +128,8 @@ int main(int argc, char** argv)
         driver.Analyze();
 
         driver.GetModel().ForwardFinalize();
+
+        driver.GetModel().WriteEstimates();
 
         driver.GetReducedStateErrorVariance(Pred);
 

@@ -32,6 +32,7 @@ public:
 	double* global_lumped_parameter_P;
 	double* global_lumped_parameter_Q;
 	double* global_lumped_parameter_params;
+	double* global_lumped_parameter_pout;
 
 	vector <int> global_npro;
 	vector <int> global_nshl;

@@ -22,6 +22,7 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
  	cp_rcr_estimate_resistance_(0),
  	cp_rcr_estimate_compliance_(0),
  	cp_rcr_estimate_prox_resistance_(0),
+ 	cp_rcr_estimate_pout_(0),
  	cp_rcr_estimate_pstates_(0),
  	rank_(0),
  	numProcs_(1),
@@ -51,36 +52,25 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 	VerdandiOps configuration(configuration_file);
 
 	configuration.SetPrefix("simvascular_model.");
-	configuration.Set("state_reduced_has_wall_parameters",
-			nreduced_has_wall_parameters_);
-	configuration.Set("state_reduced_has_coupled_parameters",
-			nreduced_has_coupled_parameters_);
-
+	configuration.Set("state_reduced_has_wall_parameters",nreduced_has_wall_parameters_);
+	configuration.Set("state_reduced_has_coupled_parameters",nreduced_has_coupled_parameters_);
 
 	if (nreduced_has_coupled_parameters_) {
-		configuration.Set("RCR_parameters_info.estimate_resistance",
-				cp_rcr_estimate_resistance_);
-		configuration.Set("RCR_parameters_info.estimate_compliance",
-				cp_rcr_estimate_compliance_);
-		configuration.Set("RCR_parameters_info.estimate_prox_resistance",
-						cp_rcr_estimate_prox_resistance_);
+		configuration.Set("RCR_parameters_info.estimate_resistance",cp_rcr_estimate_resistance_);
+		configuration.Set("RCR_parameters_info.estimate_compliance",cp_rcr_estimate_compliance_);
+		configuration.Set("RCR_parameters_info.estimate_prox_resistance",cp_rcr_estimate_prox_resistance_);
+		configuration.Set("RCR_parameters_info.estimate_pout",cp_rcr_estimate_pout_);
+		configuration.Set("RCR_parameters_info.estimate_pstates",cp_rcr_estimate_pstates_);
 
-		configuration.Set("RCR_parameters_info.estimate_pstates",
-						cp_rcr_estimate_pstates_);
-
-		configuration.Set("RCR_parameters_info.resistance_included",
-				cp_rcr_include_resistance_);
-		configuration.Set("RCR_parameters_info.compliance_included",
-				cp_rcr_include_compliance_);
-		configuration.Set("RCR_parameters_info.prox_resistance_included",
-						cp_rcr_include_prox_resistance_);
+		configuration.Set("RCR_parameters_info.resistance_included",cp_rcr_include_resistance_);
+		configuration.Set("RCR_parameters_info.compliance_included",cp_rcr_include_compliance_);
+		configuration.Set("RCR_parameters_info.prox_resistance_included",cp_rcr_include_prox_resistance_);
 
 //		configuration.Set("RCR_parameters_info.face_grouping",
 //						cp_rcr_face_grouping_);
 	}
 
-	configuration.Set("error_statistics.state_error_variance",
-			state_error_variance_value_);
+	configuration.Set("error_statistics.state_error_variance",state_error_variance_value_);
 
 	//cout << "assimilation file: " << configuration.GetFilePath() << endl;
 
@@ -185,15 +175,6 @@ void SimvascularVerdandiModel::Initialize() {
 
 	}
 
-
-//		if (nreduced_has_coupled_parameters_) {
-//			if (cp_rcr_estimate_compliance_)
-//				Nstate_local_ += grcrbccom.numGRCRSrfs;
-//			if (cp_rcr_estimate_resistance_)
-//				Nstate_local_ += grcrbccom.numGRCRSrfs;
-//		}
-
-
 	// Compute the reduced state size
 	// (the number of variables to be estimated)
     if (nreduced_has_wall_parameters_  && nomodule.ideformwall > 0) {
@@ -222,8 +203,6 @@ void SimvascularVerdandiModel::Initialize() {
 
     	if (cp_rcr_estimate_resistance_) {
 
-    		int NRreduced = 0;
-
     		for (unsigned int kk = 0; kk < cp_rcr_include_resistance_.size(); kk++) {
     			if (cp_rcr_include_resistance_[kk]) {
     				Nreduced_++;
@@ -235,8 +214,6 @@ void SimvascularVerdandiModel::Initialize() {
 
     	if (cp_rcr_estimate_prox_resistance_) {
 
-    		int NRreduced = 0;
-
     		for (unsigned int kk = 0; kk < cp_rcr_include_prox_resistance_.size(); kk++) {
     			if (cp_rcr_include_prox_resistance_[kk]) {
     				Nreduced_++;
@@ -244,6 +221,12 @@ void SimvascularVerdandiModel::Initialize() {
     					Nstate_local_++;
     			}
     		}
+    	}
+
+    	if (cp_rcr_estimate_pout_) {
+    		Nreduced_++;
+    		if (rank_ == numProcs_ - 1)
+    			Nstate_local_++;
     	}
 
     }
@@ -257,6 +240,7 @@ void SimvascularVerdandiModel::Initialize() {
 
     param_out_.open ("estimated_reduced_state.dat");
 
+    // display some output
     cout << "At rank " << rank_ << " we have " << Nstate_local_ << " state variables" << endl;
 
     if (rank_ == numProcs_ - 1) {
@@ -306,62 +290,6 @@ void SimvascularVerdandiModel::ForwardFinalize() {
 
 	itrdrv_iter_finalize(); // routines that allow moving to the next step
 
-	// write down the parameter values in a file
-	int state_start, state_end;
-
-	duplicated_state_.GetProcessorRange(state_start, state_end);
-
-	if (rank_ == numProcs_ -1) {
-
-		int ncounter = 0;
-
-		// reduced-order P-states
-		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_ && grcrbccom.numGRCRSrfs > 0) {
-			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-				ncounter++;
-			}
-		}
-
-		// wall parameters
-		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
-			for (int kk = 0; kk < nomodule.numWallRegions; kk++) {
-				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-				ncounter++;
-			}
-		}
-
-		// reduced-order parameters
-		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
-
-			if (cp_rcr_estimate_compliance_)
-				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-					if (cp_rcr_include_compliance_[kk]) {
-						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_resistance_)
-				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-					if (cp_rcr_include_resistance_[kk]) {
-						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_prox_resistance_)
-				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-					if (cp_rcr_include_prox_resistance_[kk]) {
-						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-						ncounter++;
-					}
-				}
-
-		}
-
-		param_out_ << endl;
-	}
 }
 
 
@@ -678,6 +606,11 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 				}
 
+			if (cp_rcr_estimate_pout_) {
+				val = gat->global_lumped_parameter_pout[0];
+				duplicated_state_.SetBuffer(icounter++,log2(val));
+			}
+
 		}
 
 	}
@@ -887,6 +820,16 @@ void SimvascularVerdandiModel::StateUpdated() {
 					gat->global_lumped_parameter_params[parIdx*3+0] = tempArray[parIdx];
 		}
 
+		if (cp_rcr_estimate_pout_) {
+			if (rank_ == numProcs_ - 1) {
+				tempArray[0] = pow(2.0,duplicated_state_(icounter++));
+			}
+
+			MPI_Bcast(tempArray, 1, MPI_DOUBLE, numProcs_ - 1, MPI_COMM_WORLD);
+
+			gat->global_lumped_parameter_pout[0] = tempArray[0];
+		}
+
 		delete [] tempArray;
 	}
 
@@ -966,6 +909,11 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 					}
 				}
 
+			if (cp_rcr_estimate_pout_){
+				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
+				ncounter++;
+			}
+
 		}
 
 	}
@@ -1000,6 +948,70 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 //	for (int i = 0; i < Nreduced_; i++)
 //		L(i + Nstate_ - Nreduced_, i) = 1.;
 
+}
+
+void SimvascularVerdandiModel::WriteEstimates() {
+	// write down the parameter values in a file
+	int state_start, state_end;
+
+	duplicated_state_.GetProcessorRange(state_start, state_end);
+
+	if (rank_ == numProcs_ -1) {
+
+		int ncounter = 0;
+
+		// reduced-order P-states
+		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_ && grcrbccom.numGRCRSrfs > 0) {
+			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
+				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				ncounter++;
+			}
+		}
+
+		// wall parameters
+		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
+			for (int kk = 0; kk < nomodule.numWallRegions; kk++) {
+				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				ncounter++;
+			}
+		}
+
+		// reduced-order parameters
+		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
+
+			if (cp_rcr_estimate_compliance_)
+				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
+					if (cp_rcr_include_compliance_[kk]) {
+						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						ncounter++;
+					}
+				}
+
+			if (cp_rcr_estimate_resistance_)
+				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
+					if (cp_rcr_include_resistance_[kk]) {
+						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						ncounter++;
+					}
+				}
+
+			if (cp_rcr_estimate_prox_resistance_)
+				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
+					if (cp_rcr_include_prox_resistance_[kk]) {
+						param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						ncounter++;
+					}
+				}
+
+			if (cp_rcr_estimate_pout_) {
+				param_out_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				ncounter++;
+			}
+
+		}
+
+		param_out_ << endl;
+	}
 }
 
 //! Returns the number of MPI

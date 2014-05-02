@@ -62,6 +62,7 @@ protected:
 	int cp_rcr_estimate_resistance_;
 	int cp_rcr_estimate_compliance_;
 	int cp_rcr_estimate_prox_resistance_;
+	int cp_rcr_estimate_pout_;
 	int cp_rcr_estimate_pstates_;
 
 	std::vector<int> cp_rcr_include_resistance_;
@@ -121,6 +122,9 @@ public:
 	// Errors.
 	template <class L_matrix, class U_matrix>
 	void GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U);
+
+	// Output
+	void WriteEstimates();
 
 	string GetName() const;
 	void Message(string message);

@@ -8,6 +8,7 @@ module grcrbc_internal
     real*8, allocatable :: RCoverDt(:) ! (C * Rd / dt)
 !    real*8, allocatable :: PDist_alpha(:)     ! Pd_n+1 distal pressure
 !    real*8, allocatable :: PDist_current(:)  ! Pd_n distal pressure
+
     real*8, allocatable :: P_current(:)
     real*8, allocatable :: Q_current(:)
 
@@ -15,6 +16,7 @@ module grcrbc_internal
 
     integer numtimepoints_Pdistmax
     integer, allocatable :: numtimepoints_Pdist(:)
+    real*8  PDist ! one constant distal pressure everywhere
 
 contains
 
@@ -62,8 +64,11 @@ contains
         enddo
         close(818)
 
+        PDist = parameters_Pdist(1,2,1) ! read just the first value
+        !write(*,*) 'PDIST: ', PDist
+
         call phgloballumpedparameterarrayassignpointer(c_loc(P_current), &
-            c_loc(Q_current), c_loc(parameters_RCR))
+            c_loc(Q_current), c_loc(parameters_RCR), c_loc(PDist))
 
     end subroutine
 
@@ -173,7 +178,8 @@ contains
 
 !        coeff_2_implicit(:) = one / (one + RCoverDt(:)) * ( RCoverDt(:)*( P_current(:)+PDist_alpha(:)-PDist_current(:)-parameters_RCR(1,:)*Q_current(:) ) + PDist_alpha(:) )
 
-        coeff_2_implicit(:) = one / (one + RCoverDt(:)) * ( RCoverDt(:)*( P_current(:)-parameters_RCR(1,:)*Q_current(:) ) )
+        coeff_2_implicit(:) = one / (one + RCoverDt(:)) * ( RCoverDt(:)*( P_current(:)-parameters_RCR(1,:)*Q_current(:) ) + PDist )
+        !coeff_2_implicit(:) = one / (one + RCoverDt(:)) * ( RCoverDt(:)*( P_current(:)-parameters_RCR(1,:)*Q_current(:) ) )
 
 !        write(*,*) "rank ", myrank, " PDist_current ", PDist_current
 !        write(*,*) "rank ", myrank, " PDist_current ", PDist_current

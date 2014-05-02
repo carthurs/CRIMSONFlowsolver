@@ -23,7 +23,9 @@ PhGlobalArrayTransfer::PhGlobalArrayTransfer()
      global_ilinobsfunc_disp_ptr(NULL),
      global_obsfunc_dist_ptr(NULL),
      global_lumped_parameter_P(NULL),
-     global_lumped_parameter_Q(NULL)
+     global_lumped_parameter_Q(NULL),
+     global_lumped_parameter_params(NULL),
+     global_lumped_parameter_pout(NULL)
 {
 
 }
@@ -65,8 +67,9 @@ extern "C" void PhGlobalBlockedArrayAssignPointer(int npro_in, int nshl_in, int*
 	PhGlobalArrayTransfer::Instance()->global_mien.push_back(ien_in);
 }
 
-extern "C" void PhGlobalLumpedParameterArrayAssignPointer(double* p_ptr, double* q_ptr, double* param_ptr) {
+extern "C" void PhGlobalLumpedParameterArrayAssignPointer(double* p_ptr, double* q_ptr, double* param_ptr, double* pout_ptr) {
 	PhGlobalArrayTransfer::Instance()->global_lumped_parameter_P = p_ptr;
 	PhGlobalArrayTransfer::Instance()->global_lumped_parameter_Q = q_ptr;
 	PhGlobalArrayTransfer::Instance()->global_lumped_parameter_params = param_ptr;
+	PhGlobalArrayTransfer::Instance()->global_lumped_parameter_pout = pout_ptr;
 }

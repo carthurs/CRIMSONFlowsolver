@@ -781,12 +781,13 @@ module phcommonvars
             type(c_ptr), value :: ien_in
         end subroutine phglobalblockedarrayassignpointer
 
-        subroutine phgloballumpedparameterarrayassignpointer (p_ptr, q_ptr, param_ptr) &
+        subroutine phgloballumpedparameterarrayassignpointer (p_ptr, q_ptr, param_ptr, pout_ptr) &
             bind(C, name='PhGlobalLumpedParameterArrayAssignPointer')
             use iso_c_binding
             type(c_ptr), value :: p_ptr
             type(c_ptr), value :: q_ptr
             type(c_ptr), value :: param_ptr
+            type(c_ptr), value :: pout_ptr
         end subroutine phgloballumpedparameterarrayassignpointer
 
     end interface

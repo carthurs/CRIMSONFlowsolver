@@ -73,11 +73,9 @@
             s = cS(i)%ptr
             e = s + cS(i)%n - 1
             IF (i .LT. tF) THEN
-               CALL MPI_IRECV(rTmp(:,s:e), cS(i)%n*dof, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_IRECV(rTmp(:,s:e), cS(i)%n*dof, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             ELSE
-               CALL MPI_ISEND(R(:,s:e), cS(i)%n*dof, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_ISEND(R(:,s:e), cS(i)%n*dof, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             END IF
          END IF
       END DO
@@ -111,11 +109,9 @@
             e = s + cS(i)%n - 1
             IF (i .GT. tF) THEN
                CALL MPI_WAIT(cS(i)%req, stat, ierr)
-               CALL MPI_IRECV(R(:,s:e), cS(i)%n*dof, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_IRECV(R(:,s:e), cS(i)%n*dof, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             ELSE
-               CALL MPI_ISEND(rTmp(:,s:e), cS(i)%n*dof, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_ISEND(rTmp(:,s:e), cS(i)%n*dof, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             END IF
          END IF
       END DO
@@ -161,11 +157,9 @@
             s = cS(i)%ptr
             e = s + cS(i)%n - 1
             IF (i .LT. tF) THEN
-               CALL MPI_IRECV(rTmp(s:e), cS(i)%n, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_IRECV(rTmp(s:e), cS(i)%n, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             ELSE
-               CALL MPI_ISEND(R(s:e), cS(i)%n, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_ISEND(R(s:e), cS(i)%n, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             END IF
          END IF
       END DO
@@ -199,11 +193,9 @@
             e = s + cS(i)%n - 1
             IF (i .GT. tF) THEN
                CALL MPI_WAIT(cS(i)%req, stat, ierr)
-               CALL MPI_IRECV(R(s:e), cS(i)%n, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_IRECV(R(s:e), cS(i)%n, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             ELSE
-               CALL MPI_ISEND(rTmp(s:e), cS(i)%n, mpreal, i-1, 
-     2            cS(i)%tag, comm, cS(i)%req, ierr)
+               CALL MPI_ISEND(rTmp(s:e), cS(i)%n, mpreal, i-1, cS(i)%tag, comm, cS(i)%req, ierr)
             END IF
          END IF
       END DO

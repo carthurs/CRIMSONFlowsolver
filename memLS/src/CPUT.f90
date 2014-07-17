@@ -43,76 +43,22 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      FUNCTION DOTV(dof, nNo, commu, U, V)
- 
-      INCLUDE "STD.h"
+      FUNCTION CPUT()
+
+      IMPLICIT NONE
+
+      INTEGER timeArray(8), i
+      INTEGER, PARAMETER::nD(12)=(/31,28,31,30,31,30,31,31,30,31,30,31/)
+
+      REAL*8 CPUT
+
+      CALL DATE_AND_TIME (VALUES=timeArray)
       
-      INTEGER, INTENT(IN) :: dof, nNo
-      TYPE(memLS_commuType), INTENT(IN) :: commu
-      REAL*8, INTENT(IN) :: V(dof,nNo), U(dof,nNo)
-      
-      INTEGER i, ierr
-      REAL*8 tmp, DOTV
-
-      DOTV = 0D0
-      SELECT CASE(dof)
-      CASE(1)
-         DO i=1, nNo
-            DOTV = DOTV + U(1,i)*V(1,i)
-         END DO
-      CASE(2)
-         DO i=1, nNo
-            DOTV = DOTV + U(1,i)*V(1,i) + U(2,i)*V(2,i)
-         END DO
-      CASE(3)
-         DO i=1, nNo
-            DOTV = DOTV + U(1,i)*V(1,i) + U(2,i)*V(2,i) +U(3,i)*V(3,i)
-         END DO
-      CASE(4)
-         DO i=1, nNo
-            DOTV = DOTV + U(1,i)*V(1,i) + U(2,i)*V(2,i) 
-     2                  + U(3,i)*V(3,i) + U(4,i)*V(4,i)
-         END DO
-      CASE DEFAULT 
-         DO i=1, nNo
-            DOTV = DOTV + SUM(U(:,i)*V(:,i))
-         END DO
-      END SELECT
-
-      IF (commu%nTasks .EQ. 1) RETURN
-
-      CALL MPI_ALLREDUCE(DOTV, tmp, 1, mpreal, MPI_SUM, commu%comm, 
-     2   ierr)
-
-      DOTV = tmp
-
-      RETURN
-      END FUNCTION DOTV
-
-!====================================================================
-      
-      FUNCTION DOTS(nNo, commu, U, V)
- 
-      INCLUDE "STD.h"
-      
-      INTEGER, INTENT(IN) :: nNo
-      TYPE(memLS_commuType), INTENT(IN) :: commu
-      REAL*8, INTENT(IN) :: V(nNo), U(nNo)
- 
-      INTEGER i, ierr
-      REAL*8 tmp, DOTS
-
-      DOTS = 0D0
-      DO i=1, nNo
-         DOTS = DOTS + U(i)*V(i)
+      timeArray(3) = timeArray(3) + (timeArray(1) - 2010)*365
+      DO i=1, timeArray(2) - 1
+         timeArray(3) = timeArray(3) + nD(i)
       END DO
-
-      IF (commu%nTasks .EQ. 1) RETURN
-
-      CALL MPI_ALLREDUCE(DOTS, tmp, 1, mpreal, MPI_SUM, commu%comm, 
-     2   ierr)
-
-      DOTS = tmp
+      CPUT = timeArray(3)*8.64D4 + timeArray(5)*3.6D3 + timeArray(6)*6D1 + timeArray(7)*1D0 + timeArray(8)*1D-3
 
       RETURN
-      END FUNCTION DOTS
+      END FUNCTION CPUT

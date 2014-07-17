@@ -43,8 +43,7 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      SUBROUTINE NSSOLVER(nFaces, gnNo, dof, nNo, nnz, mynNo, commu, 
-     2   cS, face, ls, rowPtr, colPtr, Val, Ri)
+      SUBROUTINE NSSOLVER(nFaces, gnNo, dof, nNo, nnz, mynNo, commu, cS, face, ls, rowPtr, colPtr, Val, Ri)
       
       INCLUDE "STD.h"
       
@@ -60,16 +59,16 @@
 
       INTEGER i, j, k, iB, iBB, nB, nsd
       REAL*8 CPUT, NORMS, NORMV, DOTS, DOTV, eps
-      REAL*8, ALLOCATABLE :: U(:,:,:), P(:,:),
-     2   MU(:,:,:), MP(:,:), A(:,:), B(:), xB(:), mK(:,:), mG(:,:), 
-     3   mD(:,:), mL(:), Gt(:,:), Rm(:,:), Rc(:), Rmi(:,:), Rci(:)
+      REAL*8, ALLOCATABLE :: U(:,:,:), P(:,:), &
+         MU(:,:,:), MP(:,:), A(:,:), B(:), xB(:), mK(:,:), mG(:,:), &
+         mD(:,:), mL(:), Gt(:,:), Rm(:,:), Rc(:), Rmi(:,:), Rci(:)
  
       nsd = dof - 1
       iB = ls%RI%mItr
       nB = 2*iB
-      ALLOCATE(Rm(nsd,nNo), Rc(nNo), Rmi(nsd,nNo), Rci(nNo), 
-     2   U(nsd,nNo,iB), P(nNo,iB), MU(nsd,nNo,nB), MP(nNo,nB), 
-     3   A(nB,nB), B(nB), xB(nB))
+      ALLOCATE(Rm(nsd,nNo), Rc(nNo), Rmi(nsd,nNo), Rci(nNo), &
+         U(nsd,nNo,iB), P(nNo,iB), MU(nsd,nNo,nB), MP(nNo,nB), &
+         A(nB,nB), B(nB), xB(nB))
 
       Rmi = Ri(1:nsd,:)
       Rci = Ri(dof,:)
@@ -78,8 +77,8 @@
       B           = 0D0
       Rm          = Rmi
       Rc          = Rci
-      eps         = SQRT(NORMV(nsd, mynNo, commu, Rm)**2D0
-     2            +      NORMS(     mynNo, commu, Rc)**2D0)
+      eps         = SQRT(NORMV(nsd, mynNo, commu, Rm)**2D0 &
+                  +      NORMS(     mynNo, commu, Rc)**2D0)
       ls%RI%iNorm = eps
       ls%RI%fNorm = eps
       ls%CG%callD = 0D0
@@ -97,45 +96,36 @@
          iB  = 2*i - 1
          iBB = 2*i
          ls%RI%dB = ls%RI%fNorm
-         CALL GMRES(nFaces, nsd, nNo, nnz, mynNo, commu, cS, face, 
-     2      ls%GM, rowPtr, colPtr, mK, Rm, U(:,:,i))  
+         CALL GMRES(nFaces, nsd, nNo, nnz, mynNo, commu, cS, face, ls%GM, rowPtr, colPtr, mK, Rm, U(:,:,i))
          
-         CALL SPARMULVS(nsd, nNo, nnz, commu, cS, 
-     2      rowPtr, colPtr, mD, U(:,:,i), P(:,i))   
+         CALL SPARMULVS(nsd, nNo, nnz, commu, cS, rowPtr, colPtr, mD, U(:,:,i), P(:,i))
          
          P(:,i) = Rc - P(:,i)       
-         CALL CGRAD(nFaces, nsd, nNo, nnz, mynNo, commu, cS, face, 
-     2      ls%CG, rowPtr, colPtr, Gt, mG, mL, P(:,i)) 
+         CALL CGRAD(nFaces, nsd, nNo, nnz, mynNo, commu, cS, face, ls%CG, rowPtr, colPtr, Gt, mG, mL, P(:,i))
          
-         CALL SPARMULSV(nsd, nNo, nnz, commu, cS, 
-     2      rowPtr, colPtr, mG, P(:,i), MU(:,:,iB)) 
+         CALL SPARMULSV(nsd, nNo, nnz, commu, cS, rowPtr, colPtr, mG, P(:,i), MU(:,:,iB))
          
          MU(:,:,iBB) = Rm - MU(:,:,iB)   
-         CALL GMRES(nFaces, nsd, nNo, nnz, mynNo, commu, cS, face, 
-     2      ls%GM, rowPtr, colPtr, mK, MU(:,:,iBB), U(:,:,i)) 
+         CALL GMRES(nFaces, nsd, nNo, nnz, mynNo, commu, cS, face, ls%GM, rowPtr, colPtr, mK, MU(:,:,iBB), U(:,:,i))
          
-         CALL SPARMULVV(nsd, nNo, nnz, commu, cS, 
-     2      rowPtr, colPtr, mK, U(:,:,i), MU(:,:,iBB))
+         CALL SPARMULVV(nsd, nNo, nnz, commu, cS, rowPtr, colPtr, mK, U(:,:,i), MU(:,:,iBB))
          
-         CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, nsd, nNo, mynNo, commu, 
-     2      face, U(:,:,i), MU(:,:,iBB))
+         CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, nsd, nNo, mynNo, commu, face, U(:,:,i), MU(:,:,iBB))
          
-         CALL SPARMULSS(nNo, nnz, commu, cS, 
-     2      rowPtr, colPtr, mL, P(:,i), MP(:,iB))
+         CALL SPARMULSS(nNo, nnz, commu, cS, rowPtr, colPtr, mL, P(:,i), MP(:,iB))
          
-         CALL SPARMULVS(nsd, nNo, nnz, commu, cS, 
-     2      rowPtr, colPtr, mD, U(:,:,i), MP(:,iBB))
+         CALL SPARMULVS(nsd, nNo, nnz, commu, cS, rowPtr, colPtr, mD, U(:,:,i), MP(:,iBB))
 
          DO k=iB, iBB
             DO j=1, k - 1
-               A(j,k) = DOTV(nsd, mynNo, commu, MU(:,:,j), MU(:,:,k))
-     2                + DOTS(     mynNo, commu, MP(:,j),   MP(:,k))
+               A(j,k) = DOTV(nsd, mynNo, commu, MU(:,:,j), MU(:,:,k)) &
+                      + DOTS(     mynNo, commu, MP(:,j),   MP(:,k))
                A(k,j) = A(j,k)
             END DO
-            A(k,k) = NORMV(nsd, mynNo, commu, MU(:,:,k))**2D0 
-     2             + NORMS(     mynNo, commu, MP(:,k))**2D0
-            B(k)   = DOTV (nsd, mynNo, commu, MU(:,:,k), Rmi) 
-     2             + DOTS (     mynNo, commu, MP(:,k), Rci)
+            A(k,k) = NORMV(nsd, mynNo, commu, MU(:,:,k))**2D0 &
+                   + NORMS(     mynNo, commu, MP(:,k))**2D0
+            B(k)   = DOTV (nsd, mynNo, commu, MU(:,:,k), Rmi) &
+                   + DOTS (     mynNo, commu, MP(:,k), Rci)
          END DO
 
          xB = B
@@ -164,8 +154,7 @@
             Rc = Rc - xB(j)*MP(:,j)
          END DO
       END IF
-      ls%Resc = NINT(1D2*(NORMS(mynNo, commu, Rc)/
-     2   ls%RI%fNorm)**2D0)
+      ls%Resc = NINT(1D2*(NORMS(mynNo, commu, Rc)/ls%RI%fNorm)**2D0)
       ls%Resm = 100 - ls%Resc
  
       Rmi = xB(2)*U(:,:,1)
@@ -184,8 +173,7 @@
       Ri(1:nsd,:) = Rmi
       Ri(dof,:) = Rci
       
-      DEALLOCATE (Rm, Rc, Rmi, Rci, U, P, MU, MP, A, B, mK, mD, mG, mL, 
-     2   Gt)
+      DEALLOCATE (Rm, Rc, Rmi, Rci, U, P, MU, MP, A, B, mK, mD, mG, mL, Gt)
  
       IF (commu%masF) CALL LOGFILE
 
@@ -201,8 +189,7 @@
       INTEGER i, j, k, l
       REAL*8 tmp((nsd+1)*(nsd+1))
       
-      ALLOCATE(mK(nsd*nsd,nnz), mG(nsd,nnz), mD(nsd,nnz), mL(nnz), 
-     2   Gt(nsd,nnz))
+      ALLOCATE(mK(nsd*nsd,nnz), mG(nsd,nnz), mD(nsd,nnz), mL(nnz), Gt(nsd,nnz))
 
       IF (nsd .EQ. 2) THEN
          DO i=1, nnz
@@ -291,8 +278,7 @@
                DO a=1, face(faIn)%nNo
                   Ac = face(faIn)%glob(a)
                   DO i=1, nsd
-                     face(faIn)%nS = face(faIn)%nS + 
-     2                  face(faIn)%valM(i,a)**2D0
+                     face(faIn)%nS = face(faIn)%nS + face(faIn)%valM(i,a)**2D0
                   END DO
                END DO
             END IF
@@ -330,13 +316,13 @@
       IF (ls%GM%suc) i = i + 10
       IF (ls%CG%suc) i = i + 1
 
-      WRITE(fid,"(I4.3,I3,I4,I5,3I4,3ES9.2E2,3I4)") 
-     2   i, ls%RI%itr, ls%GM%itr, ls%CG%itr, 
-     3   NINT((ls%RI%CallD-ls%GM%CallD-ls%CG%CallD)/ls%RI%CallD*1D2),
-     4   NINT(ls%GM%callD/ls%RI%CallD*1D2),
-     5   NINT(ls%CG%callD/ls%RI%CallD*1D2),
-     6   ls%RI%iNorm, ls%RI%fNorm/ls%RI%iNorm, ls%RI%CallD,
-     7   ls%Resm, ls%Resc, NINT(ls%RI%dB) 
+      WRITE(fid,"(I4.3,I3,I4,I5,3I4,3ES9.2E2,3I4)") &
+         i, ls%RI%itr, ls%GM%itr, ls%CG%itr, &
+         NINT((ls%RI%CallD-ls%GM%CallD-ls%CG%CallD)/ls%RI%CallD*1D2), &
+         NINT(ls%GM%callD/ls%RI%CallD*1D2), &
+         NINT(ls%CG%callD/ls%RI%CallD*1D2), &
+         ls%RI%iNorm, ls%RI%fNorm/ls%RI%iNorm, ls%RI%CallD, &
+         ls%Resm, ls%Resc, NINT(ls%RI%dB)
 
       CLOSE(fid)
 

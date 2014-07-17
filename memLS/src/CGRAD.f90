@@ -43,8 +43,7 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      SUBROUTINE CGRAD(nFaces, dof, nNo, nnz, mynNo, commu, cS, face, 
-     2   ls, rowPtr, colPtr, D, G, L, R)
+      SUBROUTINE CGRAD(nFaces, dof, nNo, nnz, mynNo, commu, cS, face, ls, rowPtr, colPtr, D, G, L, R)
       
       INCLUDE "STD.h"
 
@@ -60,11 +59,9 @@
       INTEGER i
       REAL*8 errO, err, alpha, eps, time
       REAL*8 CPUT, NORMS, DOTS
-      REAL*8, ALLOCATABLE :: X(:), P(:), SP(:), DGP(:), GP(:,:),
-     2   unCondU(:,:)
+      REAL*8, ALLOCATABLE :: X(:), P(:), SP(:), DGP(:), GP(:,:), unCondU(:,:)
 
-      ALLOCATE(X(nNo), P(nNo), SP(nNo), DGP(nNo), GP(dof,nNo), 
-     2   unCondU(dof,nNo))
+      ALLOCATE(X(nNo), P(nNo), SP(nNo), DGP(nNo), GP(dof,nNo), unCondU(dof,nNo))
  
       time     = CPUT()
       ls%suc   = .FALSE.
@@ -83,20 +80,16 @@
             EXIT
          END IF
          errO = err
-         CALL SPARMULSV(dof, nNo, nnz, commu, cS, rowPtr, colPtr,
-     2      G, P, GP)
+         CALL SPARMULSV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, G, P, GP)
 
          IF (ANY(face%coupledFlag)) THEN
             unCondU = GP
-            CALL ADDBCMUL(BCOP_TYPE_PRE, nFaces, dof, nNo, mynNo, commu,
-     2         face, unCondU, GP)
+            CALL ADDBCMUL(BCOP_TYPE_PRE, nFaces, dof, nNo, mynNo, commu, face, unCondU, GP)
          END IF
 
-         CALL SPARMULVS(dof, nNo, nnz, commu, cS, rowPtr, colPtr,
-     2      D, GP, DGP)
+         CALL SPARMULVS(dof, nNo, nnz, commu, cS, rowPtr, colPtr, D, GP, DGP)
          
-         CALL SPARMULSS(     nNo, nnz, commu, cS, rowPtr, colPtr,
-     2      L, P, SP)
+         CALL SPARMULSS(     nNo, nnz, commu, cS, rowPtr, colPtr, L, P, SP)
          
          SP    = SP - DGP
          alpha = errO/DOTS(mynNo, commu, P, SP)
@@ -119,8 +112,7 @@
 
 !====================================================================
        
-      SUBROUTINE CGRADV(dof, nNo, nnz, mynNo, commu, cS, ls, 
-     2   rowPtr, colPtr, K, R)
+      SUBROUTINE CGRADV(dof, nNo, nnz, mynNo, commu, cS, ls, rowPtr, colPtr, K, R)
       
       INCLUDE "STD.h"
 
@@ -155,8 +147,7 @@
             EXIT
          END IF
          errO = err
-         CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr,
-     2      K, P, KP)
+         CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, K, P, KP)
          
          alpha = errO/DOTV(dof, mynNo, commu, P, KP)
          X     = X + alpha*P
@@ -178,8 +169,7 @@
 
 !====================================================================
        
-      SUBROUTINE CGRADS(nNo, nnz, mynNo, commu, cS, ls, 
-     2   rowPtr, colPtr, K, R)
+      SUBROUTINE CGRADS(nNo, nnz, mynNo, commu, cS, ls, rowPtr, colPtr, K, R)
       
       INCLUDE "STD.h"
 

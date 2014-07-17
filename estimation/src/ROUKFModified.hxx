@@ -65,7 +65,7 @@ protected:
 	reduced_state_error_variance Preduced_;
 	reduced_state_error_variance obsGram_;
 
-	ofstream Poutfile_,Goutfile_,Eoutfile_;
+	ofstream Poutfile_,Goutfile_;
 
 public:
 
@@ -85,6 +85,8 @@ public:
             bool initialize_observation_manager = true);
 
 	void FinalizeStep();
+
+	void Finalize();
 
 };
 

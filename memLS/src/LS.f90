@@ -66,15 +66,13 @@
       ! absTolIn : Inner loop absolute tolerances (for NS solver)
       ! maxItrIn : Inner loop maximum number of iterations (for NS solver)
 
-      SUBROUTINE memLS_LS_CREATE(ls, LS_type, relTol, absTol, maxItr,
-     2   dimKry, relTolIn, absTolIn, maxItrIn)
+      SUBROUTINE memLS_LS_CREATE(ls, LS_type, relTol, absTol, maxItr, dimKry, relTolIn, absTolIn, maxItrIn)
 
       INCLUDE "STD.h"
 
       TYPE(memLS_lsType), INTENT(INOUT) :: ls
       INTEGER, INTENT(IN) :: LS_type
-      REAL*8, INTENT(IN), OPTIONAL :: relTol, absTol, relTolIn(2),
-     2   absTolIn(2)
+      REAL*8, INTENT(IN), OPTIONAL :: relTol, absTol, relTolIn(2), absTolIn(2)
       INTEGER, INTENT(IN), OPTIONAL :: maxItr, dimKry, maxItrIn(2)
 
       IF (ls%foC) THEN

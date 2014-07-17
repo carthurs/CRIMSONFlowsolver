@@ -92,24 +92,18 @@
       END DO
 
       CALL COMMUV(dof, nNo, lhs%commu, lhs%cS, R)
-      CALL PRECOND(nFaces, dof, nNo, nnz, lhs%commu, lhs%cS, 
-     2   lhs%face, lhs%rowPtr, lhs%colPtr, lhs%diagPtr, Val, R, W)
+      CALL PRECOND(nFaces, dof, nNo, nnz, lhs%commu, lhs%cS, lhs%face, lhs%rowPtr, lhs%colPtr, lhs%diagPtr, Val, R, W)
  
       SELECT CASE (ls%LS_type)
          CASE (LS_TYPE_NS)
-            CALL NSSOLVER(nFaces, lhs%gnNo, dof, nNo, nnz, lhs%mynNo, 
-     2         lhs%commu, lhs%cS, lhs%face, ls, lhs%rowPtr, lhs%colPtr,
-     3         Val, R)
+            CALL NSSOLVER(nFaces, lhs%gnNo, dof, nNo, nnz, lhs%mynNo, lhs%commu, lhs%cS, lhs%face, ls, lhs%rowPtr, lhs%colPtr, Val, R)
          CASE (LS_TYPE_GMRES)
-            CALL GMRESV(nFaces, dof, nNo, nnz, lhs%mynNo, lhs%commu, 
-     2         lhs%cS, lhs%face, ls%RI, lhs%rowPtr, lhs%colPtr, Val, R)
+            CALL GMRESV(nFaces, dof, nNo, nnz, lhs%mynNo, lhs%commu, lhs%cS, lhs%face, ls%RI, lhs%rowPtr, lhs%colPtr, Val, R)
          CASE (LS_TYPE_CG)
             IF (dof .EQ. 1) THEN
-               CALL CGRADS(nNo, nnz, lhs%mynNo, lhs%commu, lhs%cS, 
-     2            ls%RI, lhs%rowPtr, lhs%colPtr, Val, R)
+               CALL CGRADS(nNo, nnz, lhs%mynNo, lhs%commu, lhs%cS, ls%RI, lhs%rowPtr, lhs%colPtr, Val, R)
             ELSE
-               CALL CGRADV(dof, nNo, nnz, lhs%mynNo, lhs%commu, lhs%cS, 
-     2            ls%RI, lhs%rowPtr, lhs%colPtr, Val, R)
+               CALL CGRADV(dof, nNo, nnz, lhs%mynNo, lhs%commu, lhs%cS, ls%RI, lhs%rowPtr, lhs%colPtr, Val, R)
             END IF
          CASE DEFAULT
             PRINT *, 'LS_type not defined'

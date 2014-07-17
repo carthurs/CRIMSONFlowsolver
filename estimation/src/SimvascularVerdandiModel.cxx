@@ -2,6 +2,15 @@
 
 #include "SimvascularVerdandiModel.hxx"
 
+inline bool exists_test1 (const std::string& name) {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 namespace Verdandi {
 
 
@@ -34,6 +43,7 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
 
 //! Destructor.
 SimvascularVerdandiModel::~SimvascularVerdandiModel() {
+	Eoutfile_.close();
 	//MPI_Finalize();
 }
 
@@ -244,13 +254,33 @@ void SimvascularVerdandiModel::Initialize() {
     if (rank_ == numProcs_ - 1) {
     	cout << "At rank " << rank_ << " we have " << Nreduced_ << " reduced variables" << endl;
     }
+
+    // file output for initial step if starting from scratch
+
+    std::string Efilename = "estimated_reduced_state.dat";
+
+    if (exists_test1(Efilename)) { // still need to finish this
+        // The file exists, and is open for input
+    	cout << "we can start from the previous estimates" << endl;
+    } else {
+    	cout << "we need to write the new file" << endl;
+    }
+
+    if (rank_ == numProcs_ - 1) {
+
+    	Eoutfile_.open(Efilename.c_str(),ofstream::app);
+    	Eoutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
+
+    }
+
+
+
 }
 
 
 //! Initializes the first time step for the model.
 void SimvascularVerdandiModel::InitializeFirstStep() {
 
-	// load estimates and error covariance for
 
 }
 
@@ -339,7 +369,7 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
 		s_temp << this->rank_;
 		string outname = "x_internal_before_apply-"+s_temp.str()+".dat";
 		ofstream outfile(outname.c_str(), ofstream::app);
-		outfile.precision(15);
+		outfile.precision(std::numeric_limits<double>::digits10);
 
 		string outnameb = "x_internal_before_apply-"+s_temp.str()+".bin";
 		ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -934,7 +964,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 		s_temp << this->rank_;
 		string outname = "U_initial-"+s_temp.str()+".dat";
 		ofstream outfile(outname.c_str(), ofstream::app);
-		outfile.precision(15);
+		outfile.precision(std::numeric_limits<double>::digits10);
 
 		U.WriteText(outfile);
 	}
@@ -949,7 +979,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 }
 
-void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
+void SimvascularVerdandiModel::WriteEstimates() {
 	// write down the parameter values in a file
 	int state_start, state_end;
 
@@ -962,7 +992,7 @@ void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
 		// reduced-order P-states
 		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_ && grcrbccom.numGRCRSrfs > 0) {
 			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-				param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
 			}
 		}
@@ -970,7 +1000,7 @@ void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
 		// wall parameters
 		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
 			for (int kk = 0; kk < nomodule.numWallRegions; kk++) {
-				param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
 			}
 		}
@@ -981,7 +1011,7 @@ void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
 			if (cp_rcr_estimate_compliance_)
 				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 					if (cp_rcr_include_compliance_[kk]) {
-						param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 						ncounter++;
 					}
 				}
@@ -989,7 +1019,7 @@ void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
 			if (cp_rcr_estimate_resistance_)
 				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 					if (cp_rcr_include_resistance_[kk]) {
-						param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 						ncounter++;
 					}
 				}
@@ -997,19 +1027,19 @@ void SimvascularVerdandiModel::WriteEstimates(std::ofstream &param_out) {
 			if (cp_rcr_estimate_prox_resistance_)
 				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
 					if (cp_rcr_include_prox_resistance_[kk]) {
-						param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+						Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 						ncounter++;
 					}
 				}
 
 			if (cp_rcr_estimate_pout_) {
-				param_out << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
+				Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
 				ncounter++;
 			}
 
 		}
 
-		param_out << endl;
+		Eoutfile_ << endl;
 	}
 }
 

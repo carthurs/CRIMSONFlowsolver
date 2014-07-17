@@ -12,9 +12,9 @@ ifeq ($(MAKE_WITH_POSTSOLVER),1)
    SUBDIRS += postsolver/src
 endif
 
-ifeq ($(MAKE_WITH_MEMLS),1)
-   SUBDIRS += memLS/src
-endif
+#ifeq ($(MAKE_WITH_MEMLS),1)
+#   SUBDIRS += memLS/src
+#endif
 
 ifeq ($(MAKE_WITH_FLOWSOLVER),1)
    SUBDIRS += flowsolver/src

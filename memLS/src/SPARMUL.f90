@@ -43,8 +43,7 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
-      SUBROUTINE SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr,
-     2   K, U, KU)
+      SUBROUTINE SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, K, U, KU)
 
       INCLUDE "STD.h"
 
@@ -77,26 +76,26 @@
          DO i=1, nNo
             DO j=rowPtr(1,i), rowPtr(2,i)
                col = colPtr(j)
-               KU(1,i) = KU(1,i) + K(1,j)*U(1,col) + K(2,j)*U(2,col)
-     2                           + K(3,j)*U(3,col)
-               KU(2,i) = KU(2,i) + K(4,j)*U(1,col) + K(5,j)*U(2,col)
-     2                           + K(6,j)*U(3,col)
-               KU(3,i) = KU(3,i) + K(7,j)*U(1,col) + K(8,j)*U(2,col)
-     2                           + K(9,j)*U(3,col)
+               KU(1,i) = KU(1,i) + K(1,j)*U(1,col) + K(2,j)*U(2,col) &
+                                 + K(3,j)*U(3,col)
+               KU(2,i) = KU(2,i) + K(4,j)*U(1,col) + K(5,j)*U(2,col) &
+                                 + K(6,j)*U(3,col)
+               KU(3,i) = KU(3,i) + K(7,j)*U(1,col) + K(8,j)*U(2,col) &
+                                 + K(9,j)*U(3,col)
             END DO
          END DO
       CASE(4)
          DO i=1, nNo
             DO j=rowPtr(1,i), rowPtr(2,i)
                col = colPtr(j)
-               KU(1,i) = KU(1,i) + K(1 ,j)*U(1,col) + K(2 ,j)*U(2,col)
-     2                           + K(3 ,j)*U(3,col) + K(4 ,j)*U(4,col)
-               KU(2,i) = KU(2,i) + K(5 ,j)*U(1,col) + K(6 ,j)*U(2,col)
-     2                           + K(7 ,j)*U(3,col) + K(8 ,j)*U(4,col)
-               KU(3,i) = KU(3,i) + K(9 ,j)*U(1,col) + K(10,j)*U(2,col)
-     2                           + K(11,j)*U(3,col) + K(12,j)*U(4,col)
-               KU(4,i) = KU(4,i) + K(13,j)*U(1,col) + K(14,j)*U(2,col)
-     2                           + K(15,j)*U(3,col) + K(16,j)*U(4,col)
+               KU(1,i) = KU(1,i) + K(1 ,j)*U(1,col) + K(2 ,j)*U(2,col) &
+                                 + K(3 ,j)*U(3,col) + K(4 ,j)*U(4,col)
+               KU(2,i) = KU(2,i) + K(5 ,j)*U(1,col) + K(6 ,j)*U(2,col) &
+                                 + K(7 ,j)*U(3,col) + K(8 ,j)*U(4,col)
+               KU(3,i) = KU(3,i) + K(9 ,j)*U(1,col) + K(10,j)*U(2,col) &
+                                 + K(11,j)*U(3,col) + K(12,j)*U(4,col)
+               KU(4,i) = KU(4,i) + K(13,j)*U(1,col) + K(14,j)*U(2,col) &
+                                 + K(15,j)*U(3,col) + K(16,j)*U(4,col)
             END DO
          END DO
       CASE DEFAULT
@@ -119,8 +118,7 @@
 
 !====================================================================
 
-      SUBROUTINE SPARMULVS(dof, nNo, nnz, commu, cS, rowPtr, colPtr,
-     2   K, U, KU)
+      SUBROUTINE SPARMULVS(dof, nNo, nnz, commu, cS, rowPtr, colPtr, K, U, KU)
 
       INCLUDE "STD.h"
 
@@ -152,16 +150,16 @@
          DO i=1, nNo
             DO j=rowPtr(1,i), rowPtr(2,i)
                col = colPtr(j)
-               KU(i) = KU(i) + K(1,j)*U(1,col) + K(2,j)*U(2,col)
-     2                       + K(3,j)*U(3,col)
+               KU(i) = KU(i) + K(1,j)*U(1,col) + K(2,j)*U(2,col) &
+                             + K(3,j)*U(3,col)
             END DO
          END DO
       CASE(4)
          DO i=1, nNo
             DO j=rowPtr(1,i), rowPtr(2,i)
                col = colPtr(j)
-               KU(i) = KU(i) + K(1,j)*U(1,col) + K(2,j)*U(2,col)
-     2                       + K(3,j)*U(3,col) + K(4,j)*U(4,col)
+               KU(i) = KU(i) + K(1,j)*U(1,col) + K(2,j)*U(2,col) &
+                             + K(3,j)*U(3,col) + K(4,j)*U(4,col)
             END DO
          END DO
       CASE DEFAULT
@@ -179,8 +177,7 @@
 
 !====================================================================
 
-      SUBROUTINE SPARMULSV(dof, nNo, nnz, commu, cS, rowPtr, colPtr,
-     2   K, U, KU)
+      SUBROUTINE SPARMULSV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, K, U, KU)
 
       INCLUDE "STD.h"
 
@@ -243,8 +240,7 @@
 
 !====================================================================
 
-      SUBROUTINE SPARMULSS(nNo, nnz, commu, cS, rowPtr, colPtr,
-     2   K, U, KU)
+      SUBROUTINE SPARMULSS(nNo, nnz, commu, cS, rowPtr, colPtr, K, U, KU)
 
       INCLUDE "STD.h"
 

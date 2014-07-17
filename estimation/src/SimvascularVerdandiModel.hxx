@@ -19,6 +19,7 @@
 #endif
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <vector>
 
@@ -73,16 +74,19 @@ protected:
 
 	MPI_Comm iNewComm_C_;
 
-	//! Background error variance.
+	// Background error variance.
 	std::vector<double> state_error_variance_value_;
 
-    // pointer to the single instance
-	// of PhGlobalArrayTransfer
+    // pointer to the single instance of PhGlobalArrayTransfer
 	PhGlobalArrayTransfer *gat;
 
 	Vector<int> WallEInd_;
 
 	state duplicated_state_;
+
+	// file output
+	ofstream Eoutfile_;
+	ifstream Einfile_;
 
 public:
 
@@ -122,7 +126,7 @@ public:
 	void GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U);
 
 	// Output
-	void WriteEstimates(std::ofstream &param_out);
+	void WriteEstimates();
 
 	string GetName() const;
 	void Message(string message);

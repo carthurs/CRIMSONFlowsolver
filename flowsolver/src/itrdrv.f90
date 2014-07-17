@@ -1,6 +1,6 @@
 module itrDrvVars ! this needs to be cleaned up
 
-    include "memLS.h"
+    use memLS
 
     integer npermdims !perhaps these can go in global or common
     integer ntmpdims
@@ -88,8 +88,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-
-    include "mpif.h"
 
     integer i,j,jj,k
 
@@ -578,8 +576,6 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-    include "mpif.h"
-
     if (incp.gt.zero) then  ! works only when there is one "INCP" srf
         if (numINCPSrfs .eq. one) then
             if(PLV(lstep+1,1) .gt. Paorta(lstep+1,1)) then
@@ -756,8 +752,6 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-
-    include "mpif.h"
 
     integer j
 
@@ -986,8 +980,6 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-
-    include "mpif.h"
 
     integer jj
     integer ifail
@@ -1270,8 +1262,6 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-
-    include "mpif.h"
 
     integer i,ku
 

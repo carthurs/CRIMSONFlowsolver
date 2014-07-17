@@ -43,8 +43,7 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      SUBROUTINE PRECOND(nFaces, dof, nNo, nnz, commu, cS, face, 
-     2   rowPtr, colPtr, diagPtr, Val, R, W)
+      SUBROUTINE PRECOND(nFaces, dof, nNo, nnz, commu, cS, face, rowPtr, colPtr, diagPtr, Val, R, W)
 
       INCLUDE "STD.h"
 

@@ -43,69 +43,74 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      SUBROUTINE ADDBCMUL(op_Type, nFaces, dof, nNo, mynNo, commu, face,
-     2   X, Y)
-
+      FUNCTION DOTV(dof, nNo, commu, U, V)
+ 
       INCLUDE "STD.h"
-
-      INTEGER, INTENT(IN) :: op_type, nFaces, dof, nNo, mynNo
+      
+      INTEGER, INTENT(IN) :: dof, nNo
       TYPE(memLS_commuType), INTENT(IN) :: commu
-      TYPE(memLS_faceType), INTENT(IN) :: face(nFaces)
-      REAL*8, INTENT(IN) :: X(dof, nNo)
-      REAL*8, INTENT(INOUT) :: Y(dof, nNo)
+      REAL*8, INTENT(IN) :: V(dof,nNo), U(dof,nNo)
+      
+      INTEGER i, ierr
+      REAL*8 tmp, DOTV
 
-      INTEGER faIn, i, a, Ac, nsd
-      REAL*8 S, DOTV
-      REAL*8, ALLOCATABLE :: v(:,:), coef(:)
+      DOTV = 0D0
+      SELECT CASE(dof)
+      CASE(1)
+         DO i=1, nNo
+            DOTV = DOTV + U(1,i)*V(1,i)
+         END DO
+      CASE(2)
+         DO i=1, nNo
+            DOTV = DOTV + U(1,i)*V(1,i) + U(2,i)*V(2,i)
+         END DO
+      CASE(3)
+         DO i=1, nNo
+            DOTV = DOTV + U(1,i)*V(1,i) + U(2,i)*V(2,i) +U(3,i)*V(3,i)
+         END DO
+      CASE(4)
+         DO i=1, nNo
+            DOTV = DOTV + U(1,i)*V(1,i) + U(2,i)*V(2,i) &
+                        + U(3,i)*V(3,i) + U(4,i)*V(4,i)
+         END DO
+      CASE DEFAULT 
+         DO i=1, nNo
+            DOTV = DOTV + SUM(U(:,i)*V(:,i))
+         END DO
+      END SELECT
 
-      ALLOCATE(coef(nFaces))
+      IF (commu%nTasks .EQ. 1) RETURN
 
-      IF (op_Type .EQ. BCOP_TYPE_ADD) THEN
-         coef = face%res
-      ELSE IF(op_Type .EQ. BCOP_TYPE_PRE) THEN
-         coef = -face%res/(1D0 + face%res*face%nS)
-      ELSE
-         PRINT *, "op_Type is not defined"
-         STOP
-      END IF
+      CALL MPI_ALLREDUCE(DOTV, tmp, 1, mpreal, MPI_SUM, commu%comm, ierr)
 
-      DO faIn=1, nFaces
-         nsd = MIN(face(faIn)%dof,dof)
-         IF (face(faIn)%coupledFlag) THEN
-            IF (face(faIn)%sharedFlag) THEN
-               IF (.NOT.ALLOCATED(v)) ALLOCATE(v(dof,nNo))
-               v = 0D0
-               DO a=1, face(faIn)%nNo
-                  Ac = face(faIn)%glob(a)
-                  DO i=1, nsd
-                     v(i,Ac) = face(faIn)%valM(i,a)
-                  END DO
-               END DO
-               S = coef(faIn)*DOTV(dof, mynNo, commu, v, X)
-               DO a=1, face(faIn)%nNo
-                  Ac = face(faIn)%glob(a)
-                  DO i=1, nsd
-                     Y(i,Ac) = Y(i,Ac) + v(i,Ac)*S
-                  END DO
-               END DO
-            ELSE
-               S = 0D0
-               DO a=1, face(faIn)%nNo
-                  Ac = face(faIn)%glob(a)
-                  DO i=1, nsd
-                     S = S + face(faIn)%valM(i,a)*X(i,Ac)
-                  END DO
-               END DO
-               S = coef(faIn)*S
-               DO a=1, face(faIn)%nNo
-                  Ac = face(faIn)%glob(a)
-                  DO i=1, nsd
-                     Y(i,Ac) = Y(i,Ac) + face(faIn)%valM(i,a)*S
-                  END DO
-               END DO
-            END IF
-         END IF
-      END DO
+      DOTV = tmp
 
       RETURN
-      END SUBROUTINE ADDBCMUL
+      END FUNCTION DOTV
+
+!====================================================================
+      
+      FUNCTION DOTS(nNo, commu, U, V)
+ 
+      INCLUDE "STD.h"
+      
+      INTEGER, INTENT(IN) :: nNo
+      TYPE(memLS_commuType), INTENT(IN) :: commu
+      REAL*8, INTENT(IN) :: V(nNo), U(nNo)
+ 
+      INTEGER i, ierr
+      REAL*8 tmp, DOTS
+
+      DOTS = 0D0
+      DO i=1, nNo
+         DOTS = DOTS + U(i)*V(i)
+      END DO
+
+      IF (commu%nTasks .EQ. 1) RETURN
+
+      CALL MPI_ALLREDUCE(DOTS, tmp, 1, mpreal, MPI_SUM, commu%comm, ierr)
+
+      DOTS = tmp
+
+      RETURN
+      END FUNCTION DOTS

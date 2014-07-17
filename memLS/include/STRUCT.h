@@ -122,7 +122,7 @@
       TYPE memLS_lhsType
          SEQUENCE
 !        Free of created                     (USE)
-         LOGICAL :: foC = .FALSE.            
+         LOGICAL :: foC = .FALSE.
 !        Global number of nodes              (IN)
          INTEGER :: gnNo = 0
 !        Number of nodes                     (IN)

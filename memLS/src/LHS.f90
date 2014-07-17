@@ -73,8 +73,7 @@
       ! The column pointer, colPtr(j), should return the
       ! column number of jth entire of LHS sparse vector.
 
-      SUBROUTINE memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes,
-     2   rowPtr, colPtr, nFaces)
+      SUBROUTINE memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes, rowPtr, colPtr, nFaces)
 
       INCLUDE "STD.h"
 
@@ -84,12 +83,10 @@
       INTEGER, INTENT(IN) :: gNodes(nNo), rowPtr(nNo+1), colPtr(nnz)
       INTEGER, INTENT(IN) :: nFaces
 
-      INTEGER i, j, k, a, Ac, ai, s, e, nTasks, tF, maxnNo, ierr,
-     2   stat(MPI_STATUS_SIZE)
+      INTEGER i, j, k, a, Ac, ai, s, e, nTasks, tF, maxnNo, ierr, stat(MPI_STATUS_SIZE)
 
       INTEGER comm
-      INTEGER, ALLOCATABLE :: aNodes(:,:), gtlPtr(:), ltg(:),
-     2   part(:), sCount(:), disp(:)
+      INTEGER, ALLOCATABLE :: aNodes(:,:), gtlPtr(:), ltg(:), part(:), sCount(:), disp(:)
 
       IF (lhs%foC) THEN
          PRINT *, "LHS is not free"
@@ -107,8 +104,7 @@
       comm   = commu%comm
       tF     = commu%tF
 
-      ALLOCATE (lhs%colPtr(nnz), lhs%rowPtr(2,nNo), lhs%diagPtr(nNo),
-     2   lhs%map(nNo), lhs%cS(nTasks), lhs%face(nFaces))
+      ALLOCATE (lhs%colPtr(nnz), lhs%rowPtr(2,nNo), lhs%diagPtr(nNo), lhs%map(nNo), lhs%cS(nTasks), lhs%face(nFaces))
 
       IF (nTasks .EQ. 1) THEN
          DO i=1, nnz
@@ -137,8 +133,7 @@
 
       CALL MPI_ALLREDUCE (nNo, maxnNo, 1, mpint, MPI_MAX, comm, ierr)
 
-      ALLOCATE(aNodes(maxnNo,nTasks), part(maxnNo), sCount(nTasks),
-     2   disp(nTasks), gtlPtr(gnNo), ltg(nNo))
+      ALLOCATE(aNodes(maxnNo,nTasks), part(maxnNo), sCount(nTasks), disp(nTasks), gtlPtr(gnNo), ltg(nNo))
 
       part = 0
       part(1:nNo) = gNodes
@@ -147,8 +142,7 @@
          disp(i)   = (i-1)*maxnNo
          sCount(i) = maxnNo
       END DO
-      CALL MPI_ALLGATHERV(part, maxnNo, mpint, aNodes, sCount, disp,
-     2   mpint, comm, ierr)
+      CALL MPI_ALLGATHERV(part, maxnNo, mpint, aNodes, sCount, disp, mpint, comm, ierr)
 
       gtlPtr = 0
       DO a=1, nNo
@@ -252,8 +246,7 @@
             s = lhs%cS(i)%ptr
             e = s + lhs%cS(i)%n - 1
             IF (i .LT. tF) THEN
-               CALL MPI_RECV(part(s:e), lhs%cS(i)%n, mpint, i-1,
-     2            lhs%cS(i)%tag, comm, stat, ierr)
+               CALL MPI_RECV(part(s:e), lhs%cS(i)%n, mpint, i-1, lhs%cS(i)%tag, comm, stat, ierr)
 
                k = 0
                DO j=s, e
@@ -286,8 +279,7 @@
                   END IF
                END DO
             ELSE
-               CALL MPI_SEND(ltg(s:e), lhs%cS(i)%n, mpint, i-1,
-     2            lhs%cS(i)%tag, comm, stat, ierr)
+               CALL MPI_SEND(ltg(s:e), lhs%cS(i)%n, mpint, i-1, lhs%cS(i)%tag, comm, stat, ierr)
             END IF
          END IF
       END DO
@@ -330,16 +322,14 @@
       lhs%nnz    = 0
       lhs%nFaces = 0
 
-      DEALLOCATE (lhs%colPtr, lhs%rowPtr, lhs%diagPtr, lhs%map, lhs%cS,
-     2   lhs%face)
+      DEALLOCATE (lhs%colPtr, lhs%rowPtr, lhs%diagPtr, lhs%map, lhs%cS, lhs%face)
 
       RETURN
       END SUBROUTINE memLS_LHS_FREE
 
 !====================================================================
 
-      SUBROUTINE memLS_LHS_CREATE_C(pLHS, commu, gnNo, nNo, nnz, gNodes,
-     2   rowPtr, colPtr, nFaces)
+      SUBROUTINE memLS_LHS_CREATE_C(pLHS, commu, gnNo, nNo, nnz, gNodes, rowPtr, colPtr, nFaces)
 
       INCLUDE "STD.h"
 
@@ -351,8 +341,7 @@
 
       TYPE(memLS_lhsType), TARGET, SAVE :: lhs
 
-      CALL memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes,
-     2   rowPtr, colPtr, nFaces)
+      CALL memLS_LHS_CREATE(lhs, commu, gnNo, nNo, nnz, gNodes, rowPtr, colPtr, nFaces)
 
       pLHS => lhs
 

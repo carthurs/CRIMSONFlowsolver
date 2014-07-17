@@ -60,10 +60,11 @@
       use LagrangeMultipliers
 !
       use phcommonvars
+      use memLS
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      include "mpif.h"
+      !include "mpif.h"
       !include "auxmpi.h"
-      INCLUDE "memLS.h"
 
       TYPE(memLS_lhsType) memLS_lhs
       TYPE(memLS_lsType) memLS_ls

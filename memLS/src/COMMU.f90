@@ -77,8 +77,7 @@
       CALL MPI_COMM_RANK(comm, commu%task, ierr)
       CALL MPI_COMM_SIZE(comm, commu%nTasks, ierr)
 
-      CALL MPI_ALLREDUCE(commu%task, commu%master, 1, mpint, MPI_MIN,
-     2   comm, ierr)
+      CALL MPI_ALLREDUCE(commu%task, commu%master, 1, mpint, MPI_MIN, comm, ierr)
 
       IF (commu%master .NE. 0) THEN
          PRINT *, "master is not zero"

@@ -43,8 +43,7 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      SUBROUTINE GMRES(nFaces, dof, nNo, nnz, mynNo, commu, cS, face, 
-     2   ls, rowPtr, colPtr, Val, R, X)
+      SUBROUTINE GMRES(nFaces, dof, nNo, nnz, mynNo, commu, cS, face, ls, rowPtr, colPtr, Val, R, X)
       
       INCLUDE "STD.h"
 
@@ -59,8 +58,7 @@
      
       INTEGER i, j, k, l
       REAL*8 CPUT, NORMV, DOTV
-      REAL*8 eps, tmp, time, y(ls%sD), c(ls%sD), s(ls%sD), 
-     2   err(ls%sD+1)
+      REAL*8 eps, tmp, time, y(ls%sD), c(ls%sD), s(ls%sD), err(ls%sD+1)
       REAL*8, ALLOCATABLE :: u(:,:,:), h(:,:), unCondU(:,:)
 
       ALLOCATE(h(ls%sD+1,ls%sD), u(dof,nNo,ls%sD+1), unCondU(dof,nNo))
@@ -74,18 +72,15 @@
             u(:,:,1) = R
          ELSE
             ls%itr = ls%itr + 1
-            CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, 
-     2         Val, X, u(:,:,1))
+            CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, Val, X, u(:,:,1))
          
-            CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu,
-     2         face, X, u(:,:,1))
+            CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu, face, X, u(:,:,1))
          
             u(:,:,1) = R - u(:,:,1)
          END IF
          IF (ANY(face%coupledFlag)) THEN
             unCondU = u(:,:,1)
-            CALL ADDBCMUL(BCOP_TYPE_PRE, nFaces, dof, nNo, mynNo, commu,
-     2         face, unCondU, u(:,:,1))
+            CALL ADDBCMUL(BCOP_TYPE_PRE, nFaces, dof, nNo, mynNo, commu, face, unCondU, u(:,:,1))
          END IF
 
          err(1)   = NORMV(dof, mynNo, commu, u(:,:,1))
@@ -104,16 +99,13 @@
          u(:,:,1) = u(:,:,1)/err(1)
          DO i=1, ls%sD
             ls%itr = ls%itr + 1
-            CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, 
-     2         Val, u(:,:,i), u(:,:,i+1))
+            CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, Val, u(:,:,i), u(:,:,i+1))
             
-            CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu,
-     2         face, u(:,:,i), u(:,:,i+1))
+            CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu, face, u(:,:,i), u(:,:,i+1))
             
             IF (ANY(face%coupledFlag)) THEN
                unCondU = u(:,:,i+1)
-               CALL ADDBCMUL(BCOP_TYPE_PRE, nFaces, dof, nNo, mynNo, 
-     2            commu, face, unCondU, u(:,:,i+1))
+               CALL ADDBCMUL(BCOP_TYPE_PRE, nFaces, dof, nNo, mynNo, commu, face, unCondU, u(:,:,i+1))
             END IF
             DO j=1, i
                h(j,i) = DOTV(dof, mynNo, commu, u(:,:,i+1), u(:,:,j))
@@ -164,8 +156,7 @@
 
 !====================================================================
       
-      SUBROUTINE GMRESV(nFaces, dof, nNo, nnz, mynNo, commu, cS, face, 
-     2   ls, rowPtr, colPtr, Val, R)
+      SUBROUTINE GMRESV(nFaces, dof, nNo, nnz, mynNo, commu, cS, face, ls, rowPtr, colPtr, Val, R)
       
       INCLUDE "STD.h"
 
@@ -203,20 +194,16 @@
       DO l=1, ls%mItr
          ls%dB = ls%fNorm
          ls%itr = ls%itr + 1
-         CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, 
-     2      Val, X, u(:,:,1))
-         CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu,
-     2      face, X, u(:,:,1))
+         CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, Val, X, u(:,:,1))
+         CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu, face, X, u(:,:,1))
          
          u(:,:,1) = R - u(:,:,1)
          err(1)   = NORMV(dof, mynNo, commu, u(:,:,1))
          u(:,:,1) = u(:,:,1)/err(1)
          DO i=1, ls%sD
             ls%itr = ls%itr + 1
-            CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, 
-     2         Val, u(:,:,i), u(:,:,i+1))
-            CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu,
-     2         face, u(:,:,i), u(:,:,i+1))
+            CALL SPARMULVV(dof, nNo, nnz, commu, cS, rowPtr, colPtr, Val, u(:,:,i), u(:,:,i+1))
+            CALL ADDBCMUL(BCOP_TYPE_ADD, nFaces, dof, nNo, mynNo, commu, face, u(:,:,i), u(:,:,i+1))
             
             DO j=1, i
                h(j,i) = DOTV(dof, mynNo, commu, u(:,:,i+1), u(:,:,j))

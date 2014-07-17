@@ -2,9 +2,9 @@ TOP = ../..
 
 include $(TOP)/buildoptions.mk
 
-CFLAGS = $(GLOBAL_CFLAGS) $(MPI_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(MEMLS_INCDIR) $(MEMLS_DEFS) $(SOLVERIO_INCDIR)
+CFLAGS = $(GLOBAL_CFLAGS) $(MPI_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(SOLVERIO_INCDIR)
 CXXFLAGS  = $(GLOBAL_CXXFLAGS) $(MPI_INCDIR) $(METIS_INCDIR) $(LESLIB_DEFS) $(LESLIB_INCDIR) $(SOLVERIO_INCDIR) $(VTK_INCDIR)
-FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR) $(MEMLS_INCDIR) $(MEMLS_DEFS)
+FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR)
 
 # required link flag because of leslib 1.4
 #CXXFLAGS += /MT
@@ -28,7 +28,7 @@ CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           shptet.c shptri.c symhex.c symline.c sympyr.c symquad.c symquadw.c \
           symtet.c symtri.c symtripyr.c symwdg.c tmrc.c uniformP.c usr.c write_hessian.c
 
-FSRCS   = common.f90 pointer.f90 globalArrays.f90 shapeTable.f90\
+FSRCS   = common.f90 pointer.f90 globalArrays.f90 shapeTable.f90 memLS.f90 \
           general_rcrbc.f90 \
           turbsa.f90 \
           perprep.f90 local_mass.f90 \

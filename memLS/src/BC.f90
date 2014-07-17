@@ -43,8 +43,7 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
    
-      SUBROUTINE memLS_BC_CREATE (lhs, faIn, nNo, dof, BC_type, gNodes,
-     2   Val)
+      SUBROUTINE memLS_BC_CREATE (lhs, faIn, nNo, dof, BC_type, gNodes, Val)
       
       INCLUDE "STD.h"
 
@@ -58,8 +57,7 @@
       REAL*8, ALLOCATABLE :: v(:,:)
 
       IF (faIn .GT. lhs%nFaces) THEN
-         PRINT *, "faIn is exceeding lhs structure maximum number of",
-     2      "face:", lhs%nFaces, ">", faIn
+         PRINT *, "faIn is exceeding lhs structure maximum number of", "face:", lhs%nFaces, ">", faIn
          STOP
       END IF
       IF (faIn .LT. 0) THEN
@@ -76,8 +74,7 @@
       lhs%face(faIn)%dof  = dof
       lhs%face(faIn)%bGrp = BC_type
 
-      ALLOCATE(lhs%face(faIn)%glob(nNo), lhs%face(faIn)%val(dof,nNo),
-     2   lhs%face(faIn)%valM(dof,nNo))
+      ALLOCATE(lhs%face(faIn)%glob(nNo), lhs%face(faIn)%val(dof,nNo), lhs%face(faIn)%valM(dof,nNo))
 
       DO a=1, nNo
          Ac = lhs%map(gNodes(a))
@@ -136,8 +133,7 @@
       lhs%face(faIn)%res        = 0D0
       lhs%face(faIn)%sharedFlag = .FALSE.
 
-      DEALLOCATE(lhs%face(faIn)%glob, lhs%face(faIn)%val,
-     2   lhs%face(faIn)%valM)
+      DEALLOCATE(lhs%face(faIn)%glob, lhs%face(faIn)%val,lhs%face(faIn)%valM)
 
       RETURN
       END SUBROUTINE memLS_BC_FREE

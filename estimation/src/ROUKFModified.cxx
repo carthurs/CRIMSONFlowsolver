@@ -15,7 +15,6 @@ ROUKFModified<T, Model, ObservationManager>::~ROUKFModified() {
 	if (this->model_.GetRank() == 0) {
 		Poutfile_.close();
 		Goutfile_.close();
-		Eoutfile_.close();
 	}
 }
 
@@ -32,25 +31,26 @@ void ROUKFModified<T, Model, ObservationManager>::Initialize(string configuratio
 	// set up file output
 	std::string Pfilename = "Pred",filename_ext = ".dat";
 	std::string Gfilename = "Gram";
-	std::string Efilename = "estimated_reduced_state";
+
 	Pfilename = Pfilename+filename_ext;
 	Gfilename = Gfilename+filename_ext;
-	Efilename = Efilename+filename_ext;
 
 	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
-		Poutfile_.open(Pfilename.c_str());
-		Goutfile_.open(Gfilename.c_str());
-		Eoutfile_.open(Efilename.c_str());
+		Poutfile_.open(Pfilename.c_str(),ofstream::app);
+		Goutfile_.open(Gfilename.c_str(),ofstream::app);
 
 		Poutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
 		Goutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
-		Eoutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
 	}
 
-	// output for initial step
+	// load previous estimates if starting from previous estimation
+	// this still needs to be finished
+
+
+	// output for initial step if starting from scratch
 	this->ComputeReducedStateErrorVariance();
 
-	this->model_.WriteEstimates(Eoutfile_);
+	this->model_.WriteEstimates();
 
 	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
 		Poutfile_ << this->model_.GetTime() << endl;
@@ -61,7 +61,6 @@ void ROUKFModified<T, Model, ObservationManager>::Initialize(string configuratio
 
 	this->observation_manager_.SetTime(this->model_,this->model_.GetTime());
 	this->observation_manager_.SaveObservationSingleLocal(this->model_.GetState());
-
 
 }
 
@@ -122,7 +121,7 @@ void ROUKFModified<T, Model, ObservationManager> ::Forward() {
 			s_temp << this->rank_;
 			string outname = "x_before_sample-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "x_before_sample-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -175,7 +174,7 @@ void ROUKFModified<T, Model, ObservationManager> ::Forward() {
 				s_temp2 << i;
 				string outname = "x_part_before_apply.p"+s_temp2.str()+"-"+s_temp.str()+".dat";
 				ofstream outfile(outname.c_str(), ofstream::app);
-				outfile.precision(15);
+				outfile.precision(std::numeric_limits<double>::digits10);
 
 				string outnameb = "x_part_before_apply.p"+s_temp2.str()+"-"+s_temp.str()+".bin";
 				ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -204,7 +203,7 @@ void ROUKFModified<T, Model, ObservationManager> ::Forward() {
 				s_temp2 << i;
 				string outname = "x_part_after_apply.p"+s_temp2.str()+"-"+s_temp.str()+".dat";
 				ofstream outfile(outname.c_str(), ofstream::app);
-				outfile.precision(15);
+				outfile.precision(std::numeric_limits<double>::digits10);
 
 				string outnameb = "x_part_after_apply.p"+s_temp2.str()+"-"+s_temp.str()+".bin";
 				ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -348,7 +347,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "Z_i_p_orig-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "Z_i_p_orig-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -385,7 +384,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "I_trans-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "I_trans-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -431,7 +430,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 				s_temp << this->rank_;
 				string outname = "local_A-"+s_temp.str()+".dat";
 				ofstream outfile(outname.c_str(), ofstream::app);
-				outfile.precision(15);
+				outfile.precision(std::numeric_limits<double>::digits10);
 
 				string outnameb = "local_A-"+s_temp.str()+".bin";
 				ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -457,7 +456,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 				s_temp << this->rank_;
 				string outname = "local_B-"+s_temp.str()+".dat";
 				ofstream outfile(outname.c_str(), ofstream::app);
-				outfile.precision(15);
+				outfile.precision(std::numeric_limits<double>::digits10);
 
 				string outnameb = "local_B-"+s_temp.str()+".bin";
 				ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -478,7 +477,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 				s_temp << this->rank_;
 				string outname = "local_C-"+s_temp.str()+".dat";
 				ofstream outfile(outname.c_str(), ofstream::app);
-				outfile.precision(15);
+				outfile.precision(std::numeric_limits<double>::digits10);
 
 				string outnameb = "local_C-"+s_temp.str()+".bin";
 				ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -554,7 +553,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "global_C-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "global_C-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -578,7 +577,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "U_inv-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "U_inv-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -652,7 +651,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "local_Z-avg-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "local_Z-avg-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -668,7 +667,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "global_D-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "global_D-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -684,7 +683,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "local_D-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "local_D-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -717,7 +716,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "x_updated-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			string outnameb = "x_updated-"+s_temp.str()+".bin";
 			ofstream outfileb(outnameb.c_str(), ofstream::app);
@@ -827,7 +826,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "Z_i_trans_orig-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			Z_i_trans_orig.WriteText(outfile);
 		}
@@ -845,7 +844,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "HL_trans_orig-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			HL_trans_orig.WriteText(outfile);
 		}
@@ -860,7 +859,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "HL_trans_fe-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			HL_trans_fe.WriteText(outfile);
 		}
@@ -882,7 +881,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "working_matrix_po-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			working_matrix_po.WriteText(outfile);
 		}
@@ -900,7 +899,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			s_temp << this->rank_;
 			string outname = "U_inv-"+s_temp.str()+".dat";
 			ofstream outfile(outname.c_str(), ofstream::app);
-			outfile.precision(15);
+			outfile.precision(std::numeric_limits<double>::digits10);
 
 			this->U_inv_.WriteText(outfile);
 		}
@@ -953,7 +952,7 @@ void ROUKFModified<T, Model, ObservationManager>::FinalizeStep() {
 
 	Verdandi::ReducedOrderUnscentedKalmanFilter<T,Model,ObservationManager>::FinalizeStep();
 
-	this->model_.WriteEstimates(Eoutfile_);
+	this->model_.WriteEstimates();
 
 	this->ComputeReducedStateErrorVariance();
 
@@ -966,6 +965,47 @@ void ROUKFModified<T, Model, ObservationManager>::FinalizeStep() {
 
 	this->observation_manager_.SetTime(this->model_,this->model_.GetTime());
 	this->observation_manager_.SaveObservationSingleLocal(this->model_.GetState());
+
+}
+
+template<class T, class Model, class ObservationManager>
+void ROUKFModified<T, Model, ObservationManager>::Finalize() {
+
+	Verdandi::ReducedOrderUnscentedKalmanFilter<T,Model,ObservationManager>::Finalize();
+
+	// write out the estimation error factors
+
+	Matrix<T, General, ColMajor, MallocAlloc<T> > local_L;
+
+	// L matrix
+	int n = this->L_.GetN();
+	T *local_l;
+	MatGetArray(this->L_.GetPetscMatrix(), &local_l);
+	int nlocal_L;
+	int mlocal_L;
+	MatGetLocalSize(this->L_.GetPetscMatrix(), &mlocal_L, &nlocal_L);
+	local_L.SetData(mlocal_L, n, local_l);
+
+	{
+		stringstream s_temp;
+		s_temp << this->rank_;
+		string outname = "L_local-final-"+s_temp.str()+".dat";
+		ofstream outfile(outname.c_str(), ofstream::app);
+		outfile.precision(std::numeric_limits<T>::digits10);
+		local_L.WriteText(outfile);
+	}
+
+	local_L.Nullify();
+
+	// U matrix
+	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
+		string outname = "U.dat";
+		ofstream outfile(outname.c_str(), ofstream::app);
+		outfile.precision(std::numeric_limits<T>::digits10);
+		this->U_.WriteText(outfile);
+
+	}
+
 
 }
 

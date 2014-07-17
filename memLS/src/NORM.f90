@@ -43,26 +43,78 @@
 !     UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE 
 !     MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
       
-      FUNCTION CPUT()
-
-      IMPLICIT NONE
-
-      INTEGER timeArray(8), i
-      INTEGER, PARAMETER::nD(12)=(/31,28,31,30,31,30,31,31,30,31,30,31/)
-
-      REAL*8 CPUT
-
-      CALL DATE_AND_TIME (VALUES=timeArray)
+      FUNCTION NORMV(dof, nNo, commu, U)
+ 
+      INCLUDE "STD.h"
+       
+      INTEGER, INTENT(IN) :: dof, nNo
+      TYPE(memLS_commuType), INTENT(IN) :: commu
+      REAL*8, INTENT(IN) :: U(dof,nNo)
       
-      timeArray(3) = timeArray(3) + (timeArray(1) - 2010)*365
-      DO i=1, timeArray(2) - 1
-         timeArray(3) = timeArray(3) + nD(i)
-      END DO
-      CPUT = timeArray(3)*8.64D4
-     2   + timeArray(5)*3.6D3  
-     3   + timeArray(6)*6D1    
-     4   + timeArray(7)*1D0   
-     5   + timeArray(8)*1D-3 
+      INTEGER i, ierr
+      REAL*8 tmp, NORMV
+            
+      NORMV = 0D0
+      SELECT CASE(dof)
+      CASE(1)
+         DO i=1, nNo
+            NORMV = NORMV + U(1,i)*U(1,i)
+         END DO
+      CASE(2)
+         DO i=1, nNo
+            NORMV = NORMV + U(1,i)*U(1,i) + U(2,i)*U(2,i)
+         END DO
+      CASE(3)
+         DO i=1, nNo
+            NORMV = NORMV+ U(1,i)*U(1,i) + U(2,i)*U(2,i) + U(3,i)*U(3,i)
+         END DO
+      CASE(4)
+         DO i=1, nNo
+            NORMV = NORMV + U(1,i)*U(1,i) + U(2,i)*U(2,i) &
+                          + U(3,i)*U(3,i) + U(4,i)*U(4,i)
+         END DO
+      CASE DEFAULT 
+         DO i=1, nNo
+            NORMV = NORMV + SUM(U(:,i)*U(:,i))
+         END DO
+      END SELECT
+
+      IF (commu%nTasks .NE. 1) THEN
+         CALL MPI_ALLREDUCE(NORMV, tmp, 1, mpreal, MPI_SUM, commu%comm, ierr)
+         NORMV = tmp
+      END IF
+      
+      NORMV = SQRT(NORMV)
 
       RETURN
-      END FUNCTION CPUT
+      END FUNCTION NORMV
+
+!====================================================================
+      
+      FUNCTION NORMS(nNo, commu, U)
+ 
+      INCLUDE "STD.h"
+      
+      INTEGER, INTENT(IN) :: nNo
+      TYPE(memLS_commuType), INTENT(IN) :: commu
+      REAL*8, INTENT(IN) :: U(nNo)
+      
+      INTEGER i, ierr
+      REAL*8 tmp, NORMS
+      
+      NORMS = 0D0
+      DO i=1, nNo
+         NORMS = NORMS + U(i)*U(i)
+      END DO
+
+      IF (commu%nTasks .NE. 1) THEN
+         CALL MPI_ALLREDUCE(NORMS, tmp, 1, mpreal, MPI_SUM, commu%comm, ierr)
+         NORMS = tmp
+      END IF
+      
+      NORMS = SQRT(NORMS)
+
+      RETURN
+      END FUNCTION NORMS
+
+

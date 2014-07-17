@@ -72,18 +72,11 @@ int main(int argc, char** argv)
 
     driver.Initialize(argv[1], true);
 
-    driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
-    driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
-
     while (!driver.HasFinished())
     {
         driver.InitializeStep();
 
-
-
     	driver.GetModel().Forward();
-
-
 
         driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
         driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());

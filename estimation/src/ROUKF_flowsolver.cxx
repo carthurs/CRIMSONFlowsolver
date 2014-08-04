@@ -52,7 +52,6 @@
 #include "ROUKFModified.cxx"
 
 using namespace Verdandi;
-using namespace std;
 
 static char help[] = "ROUKF driver.\n\n";
 

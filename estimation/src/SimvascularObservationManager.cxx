@@ -81,20 +81,20 @@ void SimvascularObservationManager::Initialize(const Model& model,
     int obsCounter = 0;
 
 	configuration.SetPrefix("observation.");
-	configuration.Set("use_restarts",use_restarts_);
+	//configuration.Set("use_restarts",use_restarts_);
 	configuration.Set("data_directory", data_directory_);
 	configuration.Set("Nskip", "v > 0", Nskip_);
 	configuration.Set("initial_time", "", 0., initial_time_);
 	configuration.Set("final_time", "", numeric_limits<double>::max(),final_time_);
 	configuration.Set("data_period","",final_time_,data_period_);
 
-	configuration.Set("execute_nodal_observations_",execute_nodal_observations_);
+	configuration.Set("execute_nodal_observations_","",0,execute_nodal_observations_);
 
-	configuration.Set("execute_distance_observations_",execute_distance_observations_);
+	configuration.Set("execute_distance_observations_","",0,execute_distance_observations_);
 
-	configuration.Set("Nobservation_flow",Nobservation_flow_);
+	configuration.Set("Nobservation_flow","",0,Nobservation_flow_);
 
-	configuration.Set("Nobservation_avgpressure",Nobservation_avgpressure_);
+	configuration.Set("Nobservation_avgpressure","",0,Nobservation_avgpressure_);
 
 	if (Nobservation_flow_ > 0 || Nobservation_avgpressure_ > 0) {
 		csobs_origins_.resize(Nobservation_flow_+Nobservation_avgpressure_);
@@ -120,7 +120,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 		}
 	}
 
-	configuration.Set("error.variance", "v > 0", error_variance_value_);
+	//configuration.Set("error.variance", "v > 0", error_variance_value_);
 
 	configuration.Set("error.variance_nodal", "v > 0", error_variance_value_nodal_);
 	configuration.Set("error.variance_dist", "v > 0", error_variance_value_dist_);
@@ -139,7 +139,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	isize_nshg_ = conpar.nshg;
 
 	// Get pointer to the single instance of PhGlobalArrayTransfer
-	gat = PhGlobalArrayTransfer::Instance();
+	gat = PhGlobalArrayTransfer::Get();
 
 	// Set up observation operator and increment number of local observations
     int actualnshg = conpar.nshguniq;
@@ -433,20 +433,23 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 #else
 
-#ifdef VERDANDI_OBSERVATION_ERROR_SPARSE
-	build_diagonal_sparse_matrix(Nobservation_, error_variance_value_,
-			error_variance_);
-	build_diagonal_sparse_matrix(Nobservation_,
-			double(double(1) / error_variance_value_),
-			error_variance_inverse_);
-#else
-	error_variance_.Reallocate(Nobservation_, Nobservation_);
-	error_variance_.SetIdentity();
-	Mlt(error_variance_value_, error_variance_);
-	error_variance_inverse_.Reallocate(Nobservation_, Nobservation_);
-	error_variance_inverse_.SetIdentity();
-	Mlt(double(double(1)/ error_variance_value_), error_variance_inverse_);
-#endif
+	throw ErrorUndefined("SimvascularObservationManager::"
+	                                 "Initialize()", "Serial algorithm for storing observations not implemented.");
+
+//#ifdef VERDANDI_OBSERVATION_ERROR_SPARSE
+//	build_diagonal_sparse_matrix(Nobservation_, error_variance_value_,
+//			error_variance_);
+//	build_diagonal_sparse_matrix(Nobservation_,
+//			double(double(1) / error_variance_value_),
+//			error_variance_inverse_);
+//#else
+//	error_variance_.Reallocate(Nobservation_, Nobservation_);
+//	error_variance_.SetIdentity();
+//	Mlt(error_variance_value_, error_variance_);
+//	error_variance_inverse_.Reallocate(Nobservation_, Nobservation_);
+//	error_variance_inverse_.SetIdentity();
+//	Mlt(double(double(1)/ error_variance_value_), error_variance_inverse_);
+//#endif
 
 #endif
 
@@ -1117,7 +1120,9 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 		observation Hx1,Hx2;
 		int ncounter = 0, ncounter2 = 0;
 
-		cout << "SAVING OBSERVATIONS";
+		if (rank_ == 0) {
+			cout << "SAVING OBSERVATIONS";
+		}
 
 		this->ApplyOperatorLocal(x,Hx1,Hx2);
 

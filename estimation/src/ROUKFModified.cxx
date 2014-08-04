@@ -142,6 +142,8 @@ void ROUKFModified<T, Model, ObservationManager> ::Forward() {
 
 		/*** Sampling ***/
 
+		//this->I_.Print();
+
 		model_state_error_variance LC;
 		sigma_point_matrix C;
 		C.Copy(this->U_inv_);

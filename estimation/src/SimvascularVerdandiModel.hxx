@@ -1,6 +1,6 @@
 #ifndef VERDANDI_FILE_MODEL_SimvascularVerdandiModel_HXX
 
-#include "common_c.h"yy
+#include "common_c.h"
 
 #include "partition.h"
 #include "input_fform.h"
@@ -22,6 +22,49 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <string>
+
+//! This class organizes the pointers to the PHASTA arrays
+class SimvascularAugStatePart
+{
+protected:
+
+	std::vector<double*> pointers_;
+	std::vector<bool> is_estimated_;
+	std::vector<double> state_error_variance_value_;
+
+	std::string name_;
+
+	double c_;
+
+public:
+
+	SimvascularAugStatePart();
+	~SimvascularAugStatePart();
+
+	void Initialize(const std::string& setname);
+
+	void addDataPointer(double* data_pointer);
+	void addIsEstimated(bool val);
+
+	void setDataPointer(int position, double* data_pointer);
+	void setData(int position, double val);
+	void setIsEstimated(int position, bool val);
+	void setPremulConstant(double val);
+
+	double * getDataPointer(int position);
+	double getData(int position);
+
+	bool getIsEstimated(int position);
+	std::size_t getSize();
+	std::size_t getNumEstimated();
+    int getFirstEstimated();
+
+	std::string getName();
+
+	void Clear();
+
+};
 
 namespace Verdandi
 {
@@ -53,6 +96,7 @@ protected:
 	int Nstate_;
 	int Nstate_local_;
 	int state_reduced_start_local_;
+	int est_parts_size_;
 
 	int rank_;
 	int numProcs_;
@@ -74,17 +118,17 @@ protected:
 
 	MPI_Comm iNewComm_C_;
 
-	// Background error variance.
 	std::vector<double> state_error_variance_value_;
 
-    // pointer to the single instance of PhGlobalArrayTransfer
 	PhGlobalArrayTransfer *gat;
 
 	Vector<int> WallEInd_;
 
 	state duplicated_state_;
 
-	// file output
+	std::vector<SimvascularAugStatePart> state_parts_;
+	std::vector<SimvascularAugStatePart> est_parts_;
+
 	ofstream Eoutfile_;
 	ifstream Einfile_;
 
@@ -93,9 +137,10 @@ public:
 	// Constructor and destructor.
 	SimvascularVerdandiModel();
 	~SimvascularVerdandiModel();
-	void Initialize(string configuration_file);
 
+	void Initialize(string configuration_file);
 	void Initialize();
+	void BuildAugmentedState();
 
 	void InitializeFirstStep();
 	void InitializeStep();

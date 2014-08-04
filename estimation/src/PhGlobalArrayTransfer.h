@@ -4,13 +4,27 @@
 #include <stdlib.h>
 #include <vector>
 
-using namespace std;
+//class PhDataField {
+//public:
+//	~PhDataField() {}
+//	PhDataField() :data_ptr_(0) {}
+//
+//private:
+//	void* data_ptr_;
+//};
 
 class PhGlobalArrayTransfer {
 public:
 
-	static PhGlobalArrayTransfer* Instance();
-	~PhGlobalArrayTransfer();
+	//static PhGlobalArrayTransfer* Instance();
+
+	static PhGlobalArrayTransfer *Get()
+	{
+		static PhGlobalArrayTransfer instance;
+		return &instance;
+	}
+
+	~PhGlobalArrayTransfer() {}
 
 	int* global_inodesuniq_ptr;
 
@@ -34,16 +48,18 @@ public:
 	double* global_lumped_parameter_params;
 	double* global_lumped_parameter_pout;
 
-	vector <int> global_npro;
-	vector <int> global_nshl;
-	vector <int*> global_mien;
+	std::vector <int> global_npro;
+	std::vector <int> global_nshl;
+	std::vector <int*> global_mien;
 
 	//int numblocks_;
 
 private:
-	PhGlobalArrayTransfer();
+	PhGlobalArrayTransfer() {}
+	PhGlobalArrayTransfer(const PhGlobalArrayTransfer &) { }
+	PhGlobalArrayTransfer &operator=(const PhGlobalArrayTransfer &) { return *this; }
 
-	static PhGlobalArrayTransfer* p_Instance_;
+	//static PhGlobalArrayTransfer* p_Instance_;
 };
 
 #endif

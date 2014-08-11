@@ -114,6 +114,8 @@ extern int*  DisplacementConn_[3];
 extern int   DisplacementNumNodes_;
 extern int*  DisplacementNodeMap_;
 
+extern int numBoundaryTagFields_;
+extern int* boundaryTagstp_;
 
 int writeGEOMBCDAT(char* filename);
 
@@ -236,6 +238,45 @@ int parseNum2(char *cmd, int *num) {
 
     return CV_OK;
  
+}
+
+int parseNum3(char *cmd, int *num1, int *num2) {
+
+	// parse command string
+	int n = 0;
+	int end = 0;
+	char ignored[MAXSTRINGLENGTH];
+	ignored[0]='\0';
+	cmd_token_get (&n, cmd, ignored, &end);
+	char infile[MAXPATHLENGTH];
+	infile[0]='\0';
+	cmd_token_get (&n, cmd, infile, &end);
+	char fieldidstr[MAXSTRINGLENGTH];
+	fieldidstr[0]='\0';
+	cmd_token_get (&n, cmd, fieldidstr, &end);
+	char valueidstr[MAXSTRINGLENGTH];
+	valueidstr[0]='\0';
+	cmd_token_get (&n, cmd, valueidstr, &end);
+
+	*num1 = 0;
+	*num2 = 0;
+
+	int fieldID = 0;
+	if (sscanf(fieldidstr,"%i",&fieldID) != 1) {
+		fprintf(stderr,"error parsing num!\n");
+		return CV_ERROR;
+	}
+
+	int value = 0;
+	if (sscanf(valueidstr,"%i",&value) != 1) {
+		fprintf(stderr,"error parsing num!\n");
+		return CV_ERROR;
+	}
+
+	*num1 = fieldID;
+	*num2 = value;
+
+	return CV_OK;
 }
 
 
@@ -583,6 +624,129 @@ int setBoundaryFacesWithCode(char *cmd,int setSurfID, int surfID,
     // cleanup
     debugprint(stddbg,"Exiting setBoundaryFacesWithCode.\n");
     return CV_OK;
+}
+
+
+int setBoundaryFacesWithBoundaryTagNumber(char *cmd, int fieldID, int value) {
+
+	// enter
+	debugprint(stddbg,"Entering setBoundaryFacesWithBoundaryTagNumber.\n");
+
+	int i;
+
+	// parse command string
+	if (parseFile(cmd) == CV_ERROR) {
+		return CV_ERROR;
+	}
+
+	if (fieldID >= numBoundaryTagFields_) {
+		fprintf(stderr,"ERROR: fieldID too large!\n");
+		return CV_ERROR;
+	}
+
+	if (boundaryTagstp_ == NULL) {
+		int size = numBoundaryFaces_*numBoundaryTagFields_;
+		boundaryTagstp_ = new int[size];
+
+		for (int ii = 0; ii < size; ii++)
+			boundaryTagstp_[ii] = 0;
+	}
+
+	int n0,n1,n2,n3;
+
+	int elementId,matId;
+
+	int eof = 0;
+
+	while (NWgetNextNonBlankLine(&eof) == CV_OK) {
+
+		if (sscanf(buffer_,"%i %i %i %i %i",&elementId,&matId,&n0,&n1,&n2) != 5) {
+			fprintf(stderr,"WARNING:  line not of correct format (%s)\n",buffer_);
+			NWcloseFile();
+			return CV_ERROR;
+		}
+
+		int j0 = n0;
+		int j1 = n1;
+		int j2 = n2;
+		int j3 = -1;
+
+		for (i = 0; i < 4; i++) {
+			if (elements_[i*numElements_+(elementId-1)] != j0 &&
+					elements_[i*numElements_+(elementId-1)] != j1 &&
+					elements_[i*numElements_+(elementId-1)] != j2) {
+				j3 = elements_[i*numElements_+(elementId-1)];
+				break;
+			}
+		}
+		if (j3 < 0) {
+			NWcloseFile();
+			fprintf(stderr,"ERROR:  could not find nodes in element (%i %i %i %i)\n",
+					elementId,n0,n1,n2);
+			return CV_ERROR;
+		}
+
+		double a[3];
+		double b[3];
+		double c[3];
+		double norm0,norm1,norm2;
+
+		a[0] = nodes_[0*numNodes_+j1 - 1] - nodes_[0*numNodes_+j0 - 1];
+		a[1] = nodes_[1*numNodes_+j1 - 1] - nodes_[1*numNodes_+j0 - 1];
+		a[2] = nodes_[2*numNodes_+j1 - 1] - nodes_[2*numNodes_+j0 - 1];
+		b[0] = nodes_[0*numNodes_+j2 - 1] - nodes_[0*numNodes_+j0 - 1];
+		b[1] = nodes_[1*numNodes_+j2 - 1] - nodes_[1*numNodes_+j0 - 1];
+		b[2] = nodes_[2*numNodes_+j2 - 1] - nodes_[2*numNodes_+j0 - 1];
+		c[0] = nodes_[0*numNodes_+j3 - 1] - nodes_[0*numNodes_+j0 - 1];
+		c[1] = nodes_[1*numNodes_+j3 - 1] - nodes_[1*numNodes_+j0 - 1];
+		c[2] = nodes_[2*numNodes_+j3 - 1] - nodes_[2*numNodes_+j0 - 1];
+
+		Cross(a[0],a[1],a[2],b[0],b[1],b[2],&norm0,&norm1,&norm2);
+		double mydot = Dot(norm0,norm1,norm2,c[0],c[1],c[2]);
+
+		if (mydot > 0) {
+			int tmpj = j0;
+			j0 = j2;
+			j2 = j1;
+			j1 = tmpj;
+			fprintf(stdout,"elementId %i : %i %i %i %i   (flipped0) %lf\n",elementId,j0,j1,j2,j3,mydot);
+		} else {
+			//fprintf(stdout,"elementId %i : %i %i %i %i  %lf\n",elementId,j0,j1,j2,j3,mydot);
+		}
+
+		// find matching element already read in
+		int foundIt = 0;
+		for (i = 0; i < numBoundaryFaces_;i++) {
+
+			if  (boundaryElementsIds_[i] == (elementId -1)) {
+				if (boundaryElements_[0][i] == j0 &&
+						boundaryElements_[1][i] == j1 &&
+						boundaryElements_[2][i] == j2 &&
+						boundaryElements_[3][i] == j3) {
+
+						boundaryTagstp_[numBoundaryFaces_*fieldID+i] = value;
+						foundIt = 1;
+
+						//std::cout << "boundaryTagstp_[" << fieldID << "," << i << "]" << "=" << value <<std::endl;
+
+					break;
+				}
+			}
+
+		}
+
+		if (foundIt == 0) {
+			fprintf(stderr,"ERROR: could not find face in boundary faces!\n");
+			return CV_ERROR;
+		}
+	}
+
+	NWcloseFile();
+
+	// cleanup
+	debugprint(stddbg,"Exiting setBoundaryFacesWithBoundaryTagNumber.\n");
+	return CV_OK;
+
 }
 
 

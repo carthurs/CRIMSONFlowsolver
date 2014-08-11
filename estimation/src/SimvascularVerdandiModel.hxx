@@ -8,7 +8,7 @@
 #include "proces.h"
 #include "itrdrv.h"
 #include "estimation_helpers.h"
-#include "PhGlobalArrayTransfer.h"
+#include "SimvascularGlobalArrayTransfer.h"
 
 #include "mpi.h"
 
@@ -35,7 +35,7 @@ protected:
 
 	std::string name_;
 
-	double c_;
+	double premulconst_;
 
 public:
 
@@ -54,6 +54,8 @@ public:
 
 	double * getDataPointer(int position);
 	double getData(int position);
+
+	double getPremulConstant();
 
 	bool getIsEstimated(int position);
 	std::size_t getSize();
@@ -96,7 +98,7 @@ protected:
 	int Nstate_;
 	int Nstate_local_;
 	int state_reduced_start_local_;
-	int est_parts_size_;
+	int shared_parts_size_;
 
 	int rank_;
 	int numProcs_;
@@ -120,14 +122,12 @@ protected:
 
 	std::vector<double> state_error_variance_value_;
 
-	PhGlobalArrayTransfer *gat;
-
-	Vector<int> WallEInd_;
+	SimvascularGlobalArrayTransfer *gat;
 
 	state duplicated_state_;
 
-	std::vector<SimvascularAugStatePart> state_parts_;
-	std::vector<SimvascularAugStatePart> est_parts_;
+	std::vector<SimvascularAugStatePart> dstrb_parts_;
+	std::vector<SimvascularAugStatePart> shared_parts_;
 
 	ofstream Eoutfile_;
 	ifstream Einfile_;

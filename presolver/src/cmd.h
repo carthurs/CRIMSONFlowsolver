@@ -96,6 +96,8 @@ int CALLTYPE cmd_number_of_solnvars(char*);
 int CALLTYPE cmd_boundary_faces(char*);
 int CALLTYPE cmd_adjacency(char*);
 int CALLTYPE cmd_set_surface_id(char*);
+int CALLTYPE cmd_set_boundary_tag(char*);
+int CALLTYPE cmd_number_of_boundary_tag_types(char*);
 int CALLTYPE cmd_deformable_wall(char*);
 int CALLTYPE cmd_ascii_format(char*);
 int CALLTYPE cmd_verbose(char*);

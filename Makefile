@@ -24,9 +24,9 @@ ifeq ($(MAKE_WITH_ADAPTOR),1)
    SUBDIRS += lu/src meshSimShapeFunction/src solution/src adapt/src
 endif
 
-ifeq ($(MAKE_WITH_MAIN),1)
-   SUBDIRS += forwardmain/src
-endif
+#ifeq ($(MAKE_WITH_MAIN),1)
+#   SUBDIRS += forwardmain/src
+#endif
 
 ifeq ($(MAKE_WITH_ESTIMATOR),1)
    SUBDIRS += estimation/src

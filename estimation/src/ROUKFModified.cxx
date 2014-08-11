@@ -310,7 +310,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 				this->observation_manager_.GetLocalNobservation(), this->Nsigma_point_ );
 
 		model_state_error_variance Z_i_p_fe;    // matrix of stored innovations (distributed)
-		// with appropriate entries premultiplied by FE mass matrix
+		// with appropriate entries premultiplied by measurement error covariance inverse
 		// and observed state error variance
 		Z_i_p_fe.Reallocate( this->Nobservation_, this->Nsigma_point_,
 				this->observation_manager_.GetLocalNobservation(), this->Nsigma_point_ );
@@ -339,7 +339,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 			}
 		else
 			throw Verdandi::ErrorUndefined("ROUKFModified::"
-					"AnalyseCustomII()", "Alternative to innovation not"
+					"Analyze()", "Alternative to innovation not"
 					" implemented.");
 
 
@@ -1001,7 +1001,7 @@ void ROUKFModified<T, Model, ObservationManager>::Finalize() {
 
 	// U matrix
 	if (this->model_.GetRank() == this->model_.GetNumProcs() - 1) {
-		string outname = "U.dat";
+		string outname = "U-final.dat";
 		ofstream outfile(outname.c_str(), ofstream::app);
 		outfile.precision(std::numeric_limits<T>::digits10);
 		this->U_.WriteText(outfile);

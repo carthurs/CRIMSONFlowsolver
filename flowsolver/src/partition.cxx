@@ -317,6 +317,9 @@ void Partition_Problem(int numProcs) {
 			"integer", iformat);
 	int numedges = iarray[0];
 
+	readheader_(&igeombc, "number of boundary element tag IDs", (void*) iarray, &ione, "integer", iformat);
+	nomodule.numBETFields = iarray[0];
+
 	vector<Block_Map> ien(numProcs);
 
 	int* vcount = new int[numProcs];
@@ -880,6 +883,8 @@ void Partition_Problem(int numProcs) {
 	vector < map<block, vector<double>, lessKey> > BCBpart(numProcs);
 	vector < map<block, vector<double>, lessKey> > SWBpart(numProcs);
 
+	vector < map<block, vector<double>, lessKey> > boundaryTagspart(numProcs);
+
 	for (int b = 0; b < nblock; b++) {
 
 		readheader_(&igeombc, "connectivity boundary?", (void*) iarray, &ieight,
@@ -920,6 +925,8 @@ void Partition_Problem(int numProcs) {
 
 		double* SWB = NULL;
 
+		int* boundaryTags = NULL;
+
 		if (nomodule.ideformwall != 0 && nomodule.iUseSWB != 0) {
 			readheader_(&igeombc, "SWB array?", (void*) iarray, &itwo, "double",
 					iformat);
@@ -928,6 +935,15 @@ void Partition_Problem(int numProcs) {
 			SWB = new double[isize];
 			readdatablock_(&igeombc, "SWB array?", (void*) SWB, &isize,
 					"double", iformat);
+		}
+
+		if (nomodule.ideformwall != 0 && nomodule.iuseBET != 0) {
+			readheader_(&igeombc, "boundary element tags?", (void*) iarray, &itwo, "integer",iformat);
+
+			nomodule.numBETFields = iarray[1];
+			isize = iarray[0] * nomodule.numBETFields;
+			boundaryTags = new int[isize];
+			readdatablock_(&igeombc, "boundary element tags?", (void*) boundaryTags, &isize,"integer", iformat);
 		}
 
 		for (int c = 0; c < iarray[0]; c++) {
@@ -960,6 +976,11 @@ void Partition_Problem(int numProcs) {
 							SWB[c + iarray[0] * o]);
 			}
 
+			if (nomodule.ideformwall != 0 && nomodule.iuseBET != 0) {
+				for (int o = 0; o < nomodule.numBETFields; o++)
+					boundaryTagspart[pid][CurrentBlock].push_back(boundaryTags[c + iarray[0] * o]);
+			}
+
 		}
 
 		delete[] ient;
@@ -967,9 +988,11 @@ void Partition_Problem(int numProcs) {
 		delete[] iBCB;
 		delete[] BCB;
 
-		if (nomodule.ideformwall != 0 && nomodule.iUseSWB != 0) {
-			delete[] SWB;
-		}
+		if (nomodule.ideformwall != 0 && nomodule.iUseSWB != 0)
+			delete [] SWB;
+
+		if (nomodule.ideformwall != 0 && nomodule.iuseBET != 0)
+			delete [] boundaryTags;
 
 	}
 
@@ -986,6 +1009,11 @@ void Partition_Problem(int numProcs) {
 		bzero_old((void*) filename, 255);
 		sprintf(filename, "number of boundary tpblocks : < 0 > %d\n",
 				(int) ien[p].size());
+		writestring_(&fgeom, filename);
+
+		bzero_old((void*) filename, 255);
+		sprintf(filename, "number of boundary element tag IDs : < 0 > %d\n",
+				(int) nomodule.numBETFields);
 		writestring_(&fgeom, filename);
 
 #if defined ( DEBUG )
@@ -1162,6 +1190,26 @@ void Partition_Problem(int numProcs) {
 					writedatablock_(&fgeom, keyphrase, (void*) (SWBf), &nitems,
 							"double", oformat);
 					delete[] SWBf;
+				}
+
+				if (nomodule.iuseBET != 0) {
+					int* BETf = new int[blockIEN.size() * nomodule.numBETFields];
+					for (int u = 0; u < blockIEN.size(); u++)
+						for (int v = 0; v < nomodule.numBETFields; v++)
+							BETf[v*blockIEN.size()+u] = boundaryTagspart[p][CurrentBlock][u*nomodule.numBETFields+v];
+
+					boundaryTagspart[p][CurrentBlock].clear();
+
+					isize = blockIEN.size()*nomodule.numBETFields;
+					xct = 2;
+					iarray[1] = nomodule.numBETFields;
+					generate_keyphrase(keyphrase, "boundary element tags ", CurrentBlock);
+					writeheader_(&fgeom,keyphrase,(void*)iarray,&xct,&isize,"integer",oformat);
+
+					nitems = blockIEN.size() * nomodule.numBETFields;
+					writedatablock_(&fgeom,keyphrase,(void*)(BETf),&nitems,"integer",oformat);
+
+					delete [] BETf;
 				}
 
 			} // end of ideformwall check

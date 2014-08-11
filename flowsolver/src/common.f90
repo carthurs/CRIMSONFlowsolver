@@ -44,8 +44,8 @@ module phcommonvars
     !----------------------------------------------------------
     real*8            bcttimescale,ValueListResist(0:MAXSURF), &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
-        ValueListWallE(0:MAXSURF), &
-        ValueListWallh(0:MAXSURF), &
+        ValueListWallE(0:MAXREGIONS), &
+        ValueListWallh(0:MAXREGIONS), &
         tissSuppStiffCoeff, tissSuppDampCoeff, &
         tissSuppRingStiffCoeff, &
         tissSuppRingDampCoeff, &
@@ -66,11 +66,13 @@ module phcommonvars
         ideformwall, iwallmassfactor, iwallstiffactor, nProps, &
         iUseSWB, &
         iUseSWBthickonly, &
-        numWallRegions, nsrflistWallRegions(0:MAXSURF), &
+        numWallRegions, nsrflistWallRegions(0:MAXREGIONS), &
+        nWallETagID, nWallhTagID, &
         iwalldamp, iwallsupp, &
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
-        iinitialprestress, iupdateprestress
+        iinitialprestress, iupdateprestress, &
+        iuseBET, numBETFields
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -96,10 +98,12 @@ module phcommonvars
         iUseSWB, &
         iUseSWBthickonly, &
         numWallRegions, nsrflistWallRegions, &
+        nWallETagID, nWallhTagID, &
         iwalldamp, iwallsupp, &
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
-        iinitialprestress, iupdateprestress
+        iinitialprestress, iupdateprestress, &
+        iuseBET, numBETFields
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 
@@ -752,26 +756,36 @@ module phcommonvars
             use iso_c_binding, only: c_double
         end function
 
+        ! this one is needed because it is called from both C++ and Fortran
+        subroutine elmdist(u, x, xdist, xdnv, df_fem) bind(C, name="elmdist")
+            use iso_c_binding
+            real (c_double), intent(in), dimension(*) :: u
+            real (c_double), intent(in), dimension(*) :: x
+            real (c_double), intent(inout), dimension(*) :: xdist
+            real (c_double), intent(inout), dimension(*) :: xdnv
+            real (c_double), intent(inout), dimension(*) :: df_fem
+        end subroutine elmdist
+
         ! the following functions are implented in PhGlobalArrayTransfer.cxx
 
-        subroutine phglobalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, &
-            coordptr, taptr, distptr, df_femptr, &
-            oyptr, oaptr, ouptr, odptr) &
-            bind(C, name='PhGlobalArrayAssignPointer')
-            use iso_c_binding
-            type(c_ptr), value :: uniqptr
-            type(c_ptr), value :: yoldptr
-            type(c_ptr), value :: acoldptr
-            type(c_ptr), value :: uoldptr
-            type(c_ptr), value :: coordptr
-            type(c_ptr), value :: taptr
-            type(c_ptr), value :: distptr
-            type(c_ptr), value :: df_femptr
-            type(c_ptr), value :: oyptr
-            type(c_ptr), value :: oaptr
-            type(c_ptr), value :: ouptr
-            type(c_ptr), value :: odptr
-        end subroutine phglobalarrayassignpointer
+!        subroutine phglobalarrayassignpointer (uniqptr, yoldptr, acoldptr, uoldptr, &
+!            coordptr, taptr, distptr, df_femptr, &
+!            oyptr, oaptr, ouptr, odptr) &
+!            bind(C, name='PhGlobalArrayAssignPointer')
+!            use iso_c_binding
+!            type(c_ptr), value :: uniqptr
+!            type(c_ptr), value :: yoldptr
+!            type(c_ptr), value :: acoldptr
+!            type(c_ptr), value :: uoldptr
+!            type(c_ptr), value :: coordptr
+!            type(c_ptr), value :: taptr
+!            type(c_ptr), value :: distptr
+!            type(c_ptr), value :: df_femptr
+!            type(c_ptr), value :: oyptr
+!            type(c_ptr), value :: oaptr
+!            type(c_ptr), value :: ouptr
+!            type(c_ptr), value :: odptr
+!        end subroutine phglobalarrayassignpointer
 
         subroutine phglobalblockedarrayassignpointer (npro_in, nshl_in, ien_in) &
             bind(C, name='PhGlobalBlockedArrayAssignPointer')
@@ -781,14 +795,29 @@ module phcommonvars
             type(c_ptr), value :: ien_in
         end subroutine phglobalblockedarrayassignpointer
 
-        subroutine phgloballumpedparameterarrayassignpointer (p_ptr, q_ptr, param_ptr, pout_ptr) &
-            bind(C, name='PhGlobalLumpedParameterArrayAssignPointer')
+!        subroutine phgloballumpedparameterarrayassignpointer (p_ptr, q_ptr, param_ptr, pout_ptr) &
+!            bind(C, name='PhGlobalLumpedParameterArrayAssignPointer')
+!            use iso_c_binding
+!            type(c_ptr), value :: p_ptr
+!            type(c_ptr), value :: q_ptr
+!            type(c_ptr), value :: param_ptr
+!            type(c_ptr), value :: pout_ptr
+!        end subroutine phgloballumpedparameterarrayassignpointer
+
+        subroutine PhAssignPointerInt (ptrInt, fieldName) &
+            bind(C, name='PhAssignPointerInt')
             use iso_c_binding
-            type(c_ptr), value :: p_ptr
-            type(c_ptr), value :: q_ptr
-            type(c_ptr), value :: param_ptr
-            type(c_ptr), value :: pout_ptr
-        end subroutine phgloballumpedparameterarrayassignpointer
+            type(c_ptr), value :: ptrInt
+            character(kind=c_char), intent(in) :: fieldName(*)
+        end subroutine PhAssignPointerInt
+
+        subroutine PhAssignPointerDP (ptrDP, fieldName) &
+            bind(C, name='PhAssignPointerDP')
+            use iso_c_binding
+            type(c_ptr), value :: ptrDP
+            character(kind=c_char), intent(in) :: fieldName(*)
+        end subroutine PhAssignPointerDP
+
 
     end interface
 

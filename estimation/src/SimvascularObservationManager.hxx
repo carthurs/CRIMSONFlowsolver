@@ -9,7 +9,8 @@ using namespace std;
 #include "common_c.h"
 #include "cvSolverIO.h"
 #include "distmeas.h"
-#include "PhGlobalArrayTransfer.h"
+#include "elmdist.h"
+#include "SimvascularGlobalArrayTransfer.h"
 
 #include "mpi.h"
 
@@ -30,6 +31,10 @@ using namespace std;
 #include "vtkConnectivityFilter.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridWriter.h"
+
+//class SimvascularObservationType {
+//
+//};
 
 namespace Verdandi {
 
@@ -131,9 +136,9 @@ protected:
 
     /*** Model domain ***/
 
-	// pointer ot the single instance
-	// of PhGlobalArrayTransfer
-	PhGlobalArrayTransfer *gat;
+	// pointer to the single instance
+	// of SimvascularGlobalArrayTransfer
+	SimvascularGlobalArrayTransfer *gat;
 
     //! The size of a model state.
     int Nstate_model_;
@@ -185,6 +190,7 @@ protected:
 	ofstream obs_out_single_;
 
 	/*** MPI ***/
+	MPI_Comm iNewComm_C_;
 	int rank_;
 	int numProcs_;
 

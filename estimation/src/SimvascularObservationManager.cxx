@@ -64,16 +64,18 @@ SimvascularObservationManager::~SimvascularObservationManager() {
 /*!
  \param[in] model model.
  \param[in] configuration_file configuration file.
- \tparam Model the model type; e.g. ShallowWater<double>
+ \tparam Model the model type; e.g. SimvascularVerdandiModel<double>
  */
 template<class Model>
 void SimvascularObservationManager::Initialize(const Model& model,
 		string configuration_file) {
 	VerdandiOps configuration(configuration_file);
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
+	iNewComm_C_ = MPI_Comm_f2c(newcom.iNewComm);
 
-	MPI_Comm_size(MPI_COMM_WORLD, &numProcs_);
+	MPI_Comm_rank(iNewComm_C_, &rank_);
+
+	MPI_Comm_size(iNewComm_C_, &numProcs_);
 
 	Nstate_model_ = model.GetNstate();
 	Nobservation_local_ = 0;
@@ -138,8 +140,8 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	isize_nshg_ = conpar.nshg;
 
-	// Get pointer to the single instance of PhGlobalArrayTransfer
-	gat = PhGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
+	gat = SimvascularGlobalArrayTransfer::Get();
 
 	// Set up observation operator and increment number of local observations
     int actualnshg = conpar.nshguniq;
@@ -149,40 +151,38 @@ void SimvascularObservationManager::Initialize(const Model& model,
     if (execute_nodal_observations_) {
     	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    		int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+    		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
     		actualIdx--;
 
     		for (int kk = 0; kk < 4; kk++) {
 
-    			int obsFuncVal = (gat->global_ilinobsfunc_sol_ptr)[kk * conpar.nshg + actualIdx];
+    			int obsFuncVal = (gat->pointerMapInt_["observation function solution"])[kk * conpar.nshg + actualIdx];
 
     			if (obsFuncVal > 0) {
     				StateObsIndex_.PushBack(kk+4*unitIdx);
     				//if (use_restarts_)
     				//	DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx);
     				//else
-    				DataArraysObsIndex_.PushBack(obsCounter);
-    				obsCounter++;
+    				DataArraysObsIndex_.PushBack(obsCounter++);
     			}
     		}
     	}
 
     	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    		int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+    		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
     		actualIdx--;
 
     		for (int kk = 0; kk < 4; kk++) {
 
-    			int obsFuncVal = (gat->global_ilinobsfunc_acc_ptr)[kk * conpar.nshg + actualIdx];
+    			int obsFuncVal = (gat->pointerMapInt_["observation function time derivative of solution"])[kk * conpar.nshg + actualIdx];
 
     			if (obsFuncVal > 0) {
     				StateObsIndex_.PushBack(kk+4*unitIdx + actualnshg*4);
     				//if (use_restarts_)
     				//	DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_);
     				//else
-    				DataArraysObsIndex_.PushBack(obsCounter);
-    				obsCounter++;
+    				DataArraysObsIndex_.PushBack(obsCounter++);
     			}
     		}
     	}
@@ -191,20 +191,19 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
     		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    			int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+    			int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
     			actualIdx--;
 
     			for (int kk = 0; kk < 3; kk++) {
 
-    				int obsFuncVal = (gat->global_ilinobsfunc_disp_ptr)[kk * conpar.nshg + actualIdx];
+    				int obsFuncVal = (gat->pointerMapInt_["observation function displacement"])[kk * conpar.nshg + actualIdx];
 
     				if (obsFuncVal > 0) {
     					StateObsIndex_.PushBack(kk+3*unitIdx + actualnshg*4 + actualnshg*4);
     					//if (use_restarts_)
     					//	DataArraysObsIndex_.PushBack(kk*isize_nshg_+actualIdx + isize_solution_*2);
     					//else
-    					DataArraysObsIndex_.PushBack(obsCounter);
-    					obsCounter++;
+    					DataArraysObsIndex_.PushBack(obsCounter++);
     				}
     			}
     		}
@@ -228,16 +227,14 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
     	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-    		int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+    		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
     		actualIdx--;
 
-    		int obsFuncVal = (gat->global_obsfunc_dist_ptr)[actualIdx];
+    		int obsFuncVal = (gat->pointerMapInt_["observation function distance"])[actualIdx];
 
     		if (obsFuncVal > 0) {
-    			// this is the position in the state vector of the distance vector
-    			StateObsIndex_.PushBack(unitIdx + actualnshg*3 + actualnshg*4 + actualnshg*4);
-    			DataArraysObsIndex_.PushBack(obsCounter);
-    			obsCounter++;
+    			//StateObsIndex_.PushBack(unitIdx + actualnshg*3 + actualnshg*4 + actualnshg*4); // position in the state vector of the distance vector
+    			DataArraysObsIndex_.PushBack(obsCounter++);
     			Nobservation_dist_++;
     		}
     	}
@@ -267,10 +264,10 @@ void SimvascularObservationManager::Initialize(const Model& model,
     		double solVal[4];
 
     		for (int kk = 0; kk < 3; kk++)
-    			coordVal[kk] = (gat->global_coord_ptr)[kk * conpar.nshg + unitIdx];
+    			coordVal[kk] = (gat->pointerMapDP_["coordinates"])[kk * conpar.nshg + unitIdx];
 
     		for (int kk = 0; kk < 4; kk++)
-    			solVal[kk] = (gat->global_yold_ptr)[kk * conpar.nshg + unitIdx];
+    			solVal[kk] = (gat->pointerMapDP_["solution"])[kk * conpar.nshg + unitIdx];
 
     		geom_points_->InsertPoint(unitIdx,coordVal[0],coordVal[1],coordVal[2]);
     		geom_vel_array->InsertNextTuple3(solVal[0],solVal[1],solVal[2]);
@@ -388,7 +385,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
     }
 
     // compute the global number of observation
-    MPI_Allreduce(&Nobservation_local_, &Nobservation_, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&Nobservation_local_, &Nobservation_, 1, MPI_INT, MPI_SUM, iNewComm_C_);
 
 	// we don't need to populate data arrays for distance observations
 	// distance data is handled directly in getinnovation
@@ -510,11 +507,7 @@ void SimvascularObservationManager::DiscardObservation(bool discard_observation)
 	discard_observation_ = discard_observation;
 }
 
-//! Returns the observations.
-/*! This method is called after 'SetTime' set the time at which the
- observations are requested.
- \param[out] observation observation vector.
- */
+//! Returns the observations. Not implemented, as we prefer 'GetInnovation'
 void SimvascularObservationManager::GetObservation(
 		SimvascularObservationManager::observation& observation) {
 	throw ErrorUndefined(
@@ -661,7 +654,7 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 
     MPI_Allgather(&Nobservation_local_, 1, MPI_INT,
     		obs_recvcount, 1, MPI_INT,
-    		MPI_COMM_WORLD);
+    		iNewComm_C_);
 
     obs_displ[0] = 0;
     for (int kk = 1; kk < numProcs_; kk++) {
@@ -675,11 +668,11 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 
     MPI_Allgatherv(zHx1.GetData(), Nobservation_local_, MPI_DOUBLE,
                    innovation_orig.GetData(), obs_recvcount, obs_displ, MPI_DOUBLE,
-                   MPI_COMM_WORLD);
+                   iNewComm_C_);
 
     MPI_Allgatherv(zHx2.GetData(), Nobservation_local_, MPI_DOUBLE,
     		       innovation_fe.GetData(), obs_recvcount, obs_displ, MPI_DOUBLE,
-    		       MPI_COMM_WORLD);
+    		       iNewComm_C_);
 
     delete [] obs_recvcount;
     delete [] obs_displ;
@@ -778,8 +771,56 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 	// distance observations
 	ncounter += icounter;
 	icounter = 0;
-	int actualnshg = conpar.nshguniq;
 
+	// compute distance from within the fortran routine
+	if (Nobservation_dist_ > 0 && nomodule.ideformwall) {
+
+		// populate temporary array with displacement information from input state
+		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
+
+			int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
+
+			for(int varIdx=0; varIdx < 3; varIdx++) { // 3 components
+
+				// this will need to be generalized perhaps with marker for where each field starts in x
+				(gat->pointerMapDP_["temporary array"])[varIdx * conpar.nshg + actualIdx-1] = x(state_start+conpar.nshguniq*4*2+icounter++);
+
+			}
+
+		}
+
+		// the values coming from the state vector need to communicated at the interprocessor boundaries
+		estim_helpers_temp_comm();
+
+		// call the distance computation function
+		if (rank_ == 0)
+			std::cout << "computing distance to wall data surfaces (obs. op.)" << std::endl;
+
+		elmdist(gat->pointerMapDP_["temporary array"], // now has displacement from input state
+				gat->pointerMapDP_["coordinates"],
+				gat->pointerMapDP_["distance"],
+				gat->pointerMapDP_["distance normal"],
+				gat->pointerMapDP_["M*distance"]);
+
+		icounter = 0;
+
+		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
+
+			int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
+			actualIdx--;
+
+			if ( gat->pointerMapInt_["observation function distance"][actualIdx] ) {
+				Hx1(ncounter+icounter) = gat->pointerMapDP_["distance"][actualIdx];
+			    Hx2(ncounter+icounter) = gat->pointerMapDP_["M*distance"][actualIdx];
+			    icounter++;
+			}
+
+		}
+
+	}
+
+
+	/*
 	for (int kk = 0; kk < Nobservation_dist_; kk++) {
 
 		// grab the distance vector
@@ -790,6 +831,7 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 
 		icounter++;
 	}
+	*/
 
 	// flow observation
 	// the values are located on the last processor
@@ -813,6 +855,13 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 
 }
 
+//! Applies the flow/ avg. pressure observation operator to a given state.
+/*! This method is called after 'SetTime' set the time at which the
+ operator is defined.
+ \param[in] x a vector.
+ \param[out] y the value of the operator applied to \a x. It is resized
+ if needed.
+ */
 template<class state>
 void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observation& Hx) {
 
@@ -833,13 +882,13 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 	// before the getinnovation function is called
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
-		int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
 
 			double val = x(icounter++);
 
-			(gat->global_temporary_array_ptr)[varIdx * conpar.nshg + actualIdx-1] = val;
+			(gat->pointerMapDP_["temporary array"])[varIdx * conpar.nshg + actualIdx-1] = val;
 
 		}
 
@@ -855,7 +904,7 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 		double solVal[4];
 
 		for (int ii = 0; ii < 4; ii++)
-			solVal[ii] = (gat->global_temporary_array_ptr)[ii * conpar.nshg + unitIdx];
+			solVal[ii] = (gat->pointerMapDP_["temporary array"])[ii * conpar.nshg + unitIdx];
 
 		geom_UGrid_->GetPointData()->GetArray(0)->SetTuple3(unitIdx,solVal[0],solVal[1],solVal[2]);
 		geom_UGrid_->GetPointData()->GetArray(1)->SetTuple1(unitIdx,solVal[3]);
@@ -944,9 +993,9 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 		}
 
 		// Compute the total flow and average pressure by summing across processes
-		MPI_Reduce(&avgFlow_local, &avgFlow, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
-		MPI_Reduce(&avgPres_local, &avgPres, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
-		MPI_Reduce(&area_local, &area, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,MPI_COMM_WORLD);
+		MPI_Reduce(&avgFlow_local, &avgFlow, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,iNewComm_C_);
+		MPI_Reduce(&avgPres_local, &avgPres, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,iNewComm_C_);
+		MPI_Reduce(&area_local, &area, 1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,iNewComm_C_);
 
 		if (rank_ == numProcs_ -1) {
 			(kk < Nobservation_flow_) ?
@@ -1121,7 +1170,7 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 		int ncounter = 0, ncounter2 = 0;
 
 		if (rank_ == 0) {
-			cout << "SAVING OBSERVATIONS";
+			std::cout << "SAVING OBSERVATIONS" << std::endl;
 		}
 
 		this->ApplyOperatorLocal(x,Hx1,Hx2);

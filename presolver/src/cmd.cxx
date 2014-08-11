@@ -82,6 +82,8 @@ static Cmd cmd_table[] = {
   {"boundary_faces", cmd_boundary_faces},
   {"adjacency", cmd_adjacency},
   {"set_surface_id", cmd_set_surface_id},
+  {"number_of_boundary_tag_types",cmd_number_of_boundary_tag_types},
+  {"set_boundary_tag", cmd_set_boundary_tag},
   {"deformable_wall", cmd_deformable_wall},
   {"verbose", cmd_verbose},
   {"phasta_node_order",cmd_phasta_node_order},

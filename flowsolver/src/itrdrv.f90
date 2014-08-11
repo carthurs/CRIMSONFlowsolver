@@ -491,7 +491,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         if (myrank.eq.zero) then
             write(*,*) "computing distance to wall data surfaces (initial)"
         end if
-        call ElmDist(uold,x,xdist,xdnv,shpb,shglb,df_fem)
+        call ElmDist(uold,x,xdist,xdnv,df_fem)
     end if
 
     !
@@ -942,12 +942,12 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     ! ------------------------------------------
 
     ! interface to compute distances to observed wall motion
-    if (imeasdist.eq.1) then
-        if (myrank.eq.zero) then
-            write(*,*) "computing distance to wall data surfaces (end of step)"
-        end if
-        call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)
-    end if
+!    if (imeasdist.eq.1) then
+!        if (myrank.eq.zero) then
+!            write(*,*) "computing distance to wall data surfaces (end of step)"
+!        end if
+!        call ElmDist(u,x,xdist,xdnv,df_fem)
+!    end if
 
 end subroutine
 
@@ -994,7 +994,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         if (myrank.eq.zero) then
             write(*,*) "computing distance to wall data surfaces (end of step -- finalize)"
         end if
-        call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)
+        call ElmDist(u,x,xdist,xdnv,df_fem)
     end if
 
     !
@@ -1290,7 +1290,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         if(ideformwall.eq.1) then
             call write_displ(myrank, lstep, nshg, 3, u, uref )
             if (imeasdist.eq.1) then
-                call ElmDist(u,x,xdist,xdnv,shpb,shglb,df_fem)
+                call ElmDist(u,x,xdist,xdnv,df_fem)
                 call write_distl(myrank, lstep, nshg,1,xdist)
             end if
         end if

@@ -466,8 +466,8 @@
          double rnuvw;
          double rshearconstantvw;
          double betai;
-         double ValueListWallE[MAXSURF+1];
-         double ValueListWallh[MAXSURF+1];
+         double ValueListWallE[MAXREGIONS+1];
+         double ValueListWallh[MAXREGIONS+1];
          double tissSuppStiffCoeff; 
          double tissSuppDampCoeff;
          double tissSuppRingStiffCoeff;
@@ -514,7 +514,9 @@
          int iUseSWB;
          int iUseSWBthickonly;
          int numWallRegions;
-         int nsrflistWallRegions[MAXSURF+1];
+         int nsrflistWallRegions[MAXREGIONS+1];
+         int nWallETagID;
+         int nWallhTagID;
          int iwalldamp;
          int iwallsupp;
          int iringdamp;
@@ -523,6 +525,8 @@
          int idistancenudge;
          int iinitialprestress;
          int iupdateprestress;
+         int iuseBET;
+         int numBETFields;
       } nomodule;
 
       extern struct {

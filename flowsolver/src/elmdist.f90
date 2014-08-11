@@ -1,8 +1,9 @@
-subroutine ElmDist(u, x, xdist, xdnv, shpb, shglb, df_fem)
+subroutine ElmDist(u, x, xdist, xdnv, df_fem) bind(C, name="elmdist")
       
     use pointer_data  ! brings in the pointers for the blocked arrays
     use measureWallDistance
     use deformableWall
+    use shapeTable
          
     use phcommonvars
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -10,7 +11,8 @@ subroutine ElmDist(u, x, xdist, xdnv, shpb, shglb, df_fem)
     real*8 x(numnp,NSD),u(nshg,NSD)
     real*8 xdist(nshg)
     real*8 xdnv(numnp,NSD)
-    real*8 shpb(MAXTOP,MAXSH,MAXQPT), shglb(MAXTOP,NSD,MAXSH,MAXQPT)
+    real*8 df_fem(nshg)
+    !real*8 shpb(MAXTOP,MAXSH,MAXQPT), shglb(MAXTOP,NSD,MAXSH,MAXQPT)
 
     real*8 tempnv1(NSD)
     real*8 tempnv2(NSD)
@@ -23,7 +25,7 @@ subroutine ElmDist(u, x, xdist, xdnv, shpb, shglb, df_fem)
          
     real*8, allocatable :: tmpshpb(:,:), tmpshglb(:,:,:)
 
-    real*8 df_fem(nshg),df_fem_sum
+    real*8 df_fem_sum
 
     integer ii,jj,nn,nPer,nObsInt,obsFr1,obsFr2
          

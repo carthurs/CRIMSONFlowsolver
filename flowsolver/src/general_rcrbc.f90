@@ -67,8 +67,10 @@ contains
         PDist = parameters_Pdist(1,2,1) ! read just the first value
         !write(*,*) 'PDIST: ', PDist
 
-        call phgloballumpedparameterarrayassignpointer(c_loc(P_current), &
-            c_loc(Q_current), c_loc(parameters_RCR), c_loc(PDist))
+        call PhAssignPointerDP(c_loc(P_current), c_char_"WindkesselRCR_P"//c_null_char)
+        call PhAssignPointerDP(c_loc(Q_current), c_char_"WindkesselRCR_Q"//c_null_char)
+        call PhAssignPointerDP(c_loc(parameters_RCR), c_char_"WindkesselRCR_Params"//c_null_char)
+        call PhAssignPointerDP(c_loc(PDist), c_char_"WindkesselRCR_Pdist"//c_null_char)
 
     end subroutine
 

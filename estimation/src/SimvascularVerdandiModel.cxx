@@ -17,7 +17,7 @@ inline bool exists_test1 (const std::string& name) {
 
 //! Constructor
 SimvascularAugStatePart::SimvascularAugStatePart()
-:   c_(1.0)
+:   premulconst_(1.0)
 {
 	name_ = "undefined";
 }
@@ -66,7 +66,7 @@ void SimvascularAugStatePart::setDataPointer(int position, double* data_pointer)
       \param[in] double val
  */
 void SimvascularAugStatePart::setData(int position, double val) {
-	is_estimated_[position] ? *(pointers_[position]) = pow(2.0,val) : *(pointers_[position]) = val;
+	is_estimated_[position] ? *(pointers_[position]) = pow(2.0,val)/premulconst_ : *(pointers_[position]) = val/premulconst_;
 }
 
 
@@ -84,7 +84,7 @@ void SimvascularAugStatePart::setIsEstimated(int position, bool val) {
       \param[in] double val
  */
 void SimvascularAugStatePart::setPremulConstant(double val) {
-	c_ = val;
+	premulconst_ = val;
 }
 
 //! Returns the data pointer to a specific variable
@@ -100,7 +100,12 @@ double * SimvascularAugStatePart::getDataPointer(int position) {
       \param[in] int position
  */
 double SimvascularAugStatePart::getData(int position) {
-	return is_estimated_[position] ? log2(*(pointers_[position]))*c_ : (*pointers_[position])*c_;
+	return is_estimated_[position] ? log2((*pointers_[position])*premulconst_) : (*pointers_[position])*premulconst_;
+}
+
+//! Returns the constant that the output of getData is multiplied with
+double SimvascularAugStatePart::getPremulConstant() {
+	return premulconst_;
 }
 
 //! Returns the estimated-variable-flag for a specific variable
@@ -146,6 +151,7 @@ void SimvascularAugStatePart::Clear() {
 	pointers_.clear();
 	is_estimated_.clear();
 	state_error_variance_value_.clear();
+	premulconst_ = 1.0;
 }
 
 namespace Verdandi {
@@ -163,7 +169,7 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
  	Nstate_(0),
  	Nstate_local_(0),
  	state_reduced_start_local_(-1),
- 	est_parts_size_(0),
+ 	shared_parts_size_(0),
  	nreduced_has_wall_parameters_(0),
  	nreduced_has_coupled_parameters_(0),
  	cp_rcr_estimate_resistance_(0),
@@ -229,8 +235,8 @@ void SimvascularVerdandiModel::Initialize() {
 
 	char pathToProcsCaseDir[100];
 
-	// Get pointer to the single instance of PhGlobalArrayTransfer
-	gat = PhGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
+	gat = SimvascularGlobalArrayTransfer::Get();
 
 	// save the communicator
 	iNewComm_C_ = MPI_COMM_WORLD;
@@ -259,146 +265,45 @@ void SimvascularVerdandiModel::Initialize() {
     proces();
     itrdrv_init(); // initialize solver
 
-    // find nonzero entries of wall props
-    for (int surfIdx = 0; surfIdx <= MAXSURF; surfIdx++)
-    	if (nomodule.ValueListWallE[surfIdx] > 0)
-    		WallEInd_.PushBack(surfIdx);
-
     // organize the arrays from PHASTA into the SimvascularAugStatePart class
     BuildAugmentedState();
 
-	// Compute the local state size
-	// perhaps this can be less hard-coded
-	// NSD is 3
-	// 4 comes from the 3 vel components and 1 pressure component
-
-    /*
-    Nreduced_ = 0;
-	Nstate_local_ = (2 * 4) * conpar.nshguniq;
-
-	if (nomodule.ideformwall > 0) {
-		Nstate_local_ += NSD * conpar.nshguniq;
-
-		if (nomodule.imeasdist > 0)
-			Nstate_local_ += conpar.nshguniq * 2; // distance vector and pre-multiplied distance vector
-	}
-
-	if (rank_ == numProcs_ - 1) {
-
-		// Add the lumped parameter states to the local state size of the last process
-		//Nstate_local_ += grcrbccom.numGRCRSrfs * 2; // number of lumped parameter states
-
-		Nstate_local_ += grcrbccom.numGRCRSrfs;
-
-		if (!(nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_))
-			Nstate_local_ += grcrbccom.numGRCRSrfs;
-
-		state_reduced_start_local_ = Nstate_local_; // index for first element of reduced state
-
-		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_)
-			Nstate_local_ += grcrbccom.numGRCRSrfs;
-
-	}
-
-	// Compute the reduced state size
-	// (the number of variables to be estimated)
-    if (nreduced_has_wall_parameters_  && nomodule.ideformwall > 0) {
-    	Nreduced_ += nomodule.numWallRegions;
-
-    	// Add the number of wall parameters to the local state size of the last process
-    	if (rank_ == numProcs_ - 1)
-    		Nstate_local_ += nomodule.numWallRegions;
-    }
-
-    if (nreduced_has_coupled_parameters_) {
-
-    	if (cp_rcr_estimate_pstates_)
-    		Nreduced_ += grcrbccom.numGRCRSrfs; // account for reduced-order P state
-
-    	if (cp_rcr_estimate_compliance_) {
-
-    		for (unsigned int kk = 0; kk < cp_rcr_include_compliance_.size(); kk++) {
-    			if (cp_rcr_include_compliance_[kk]) {
-    				Nreduced_++;
-    				if (rank_ == numProcs_ - 1)
-    					Nstate_local_++;
-    			}
-    		}
-    	}
-
-    	if (cp_rcr_estimate_resistance_) {
-
-    		for (unsigned int kk = 0; kk < cp_rcr_include_resistance_.size(); kk++) {
-    			if (cp_rcr_include_resistance_[kk]) {
-    				Nreduced_++;
-    				if (rank_ == numProcs_ - 1)
-    					Nstate_local_++;
-    			}
-            }
-    	}
-
-    	if (cp_rcr_estimate_prox_resistance_) {
-
-    		for (unsigned int kk = 0; kk < cp_rcr_include_prox_resistance_.size(); kk++) {
-    			if (cp_rcr_include_prox_resistance_[kk]) {
-    				Nreduced_++;
-    				if (rank_ == numProcs_ - 1)
-    					Nstate_local_++;
-    			}
-    		}
-    	}
-
-    	if (cp_rcr_estimate_pout_) {
-    		Nreduced_++;
-    		if (rank_ == numProcs_ - 1)
-    			Nstate_local_++;
-    	}
-
-    }
-    */
-
     int estimated_total = 0, state_total = 0;
 
-    std::cout << "at rank " << rank_ << " number of states " << state_parts_.size() << std::endl;
+    std::cout << "at rank " << rank_ << " number of states " << dstrb_parts_.size() << std::endl;
 
-    for (std::size_t kk = 0; kk < state_parts_.size(); kk++) {
-
-    	std::cout << "at rank " << rank_ << " " << state_parts_[(int)kk].getName().c_str() << " " << state_parts_[(int)kk].getSize() << std::endl;
-
-    	state_total += (int)state_parts_[(int)kk].getSize();
-
+    for (std::size_t kk = 0; kk < dstrb_parts_.size(); kk++) {
+    	std::cout << "at rank " << rank_ << " " << dstrb_parts_[(int)kk].getName().c_str() << " " << dstrb_parts_[(int)kk].getSize() <<  std::endl;
+    	state_total += (int)dstrb_parts_[(int)kk].getSize();
     }
 
     if (rank_ == numProcs_ - 1) {
 
-    	for (std::size_t kk = 0; kk < est_parts_.size(); kk++) {
+    	for (std::size_t kk = 0; kk < shared_parts_.size(); kk++) {
+    		std::cout << "at rank " << rank_ << " " << shared_parts_[(int)kk].getName().c_str() << " " << shared_parts_[(int)kk].getSize() << std::endl;
 
-    		std::cout << "at rank " << rank_ << " " << est_parts_[(int)kk].getName().c_str() << " " << est_parts_[(int)kk].getSize() << std::endl;
-
-    		int first_estimated = est_parts_[(int)kk].getFirstEstimated();
+    		int first_estimated = shared_parts_[(int)kk].getFirstEstimated();
 
     		if (first_estimated >= 0 && state_reduced_start_local_ < 0)
     			state_reduced_start_local_ = (int)state_total+first_estimated;
 
-    		estimated_total += (int)est_parts_[(int)kk].getNumEstimated();
-
-    		state_total += (int)est_parts_[(int)kk].getSize();
-
+    		estimated_total += (int)shared_parts_[(int)kk].getNumEstimated();
+    		state_total += (int)shared_parts_[(int)kk].getSize();
     	}
     }
 
-    for (std::size_t kk = 0; kk < est_parts_.size(); kk++)
-    	est_parts_size_ += est_parts_[(int)kk].getSize();
+    for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
+    	shared_parts_size_ += shared_parts_[(int)kk].getSize();
 
-    Nstate_local_ = state_total;
+    Nstate_local_ = state_total; // the size of the on-proc duplicated_state_
 
-    Nreduced_ = estimated_total;
+    Nreduced_ = estimated_total; // the size of the estimated portion
 
     // we want Nreduced_ on every proc
     MPI_Allreduce(&Nreduced_, &Nreduced_, 1, MPI_INT, MPI_SUM, iNewComm_C_);
 
     std::cout << "at rank " << rank_ << " # of distributed states: " << Nstate_local_ << std::endl;
-    std::cout << "at rank " << rank_ << " # of shared states: " << est_parts_size_ << std::endl;
+    std::cout << "at rank " << rank_ << " # of shared states: " << shared_parts_size_ << std::endl;
     std::cout << "at rank " << rank_ << " # of estimated states: " << Nreduced_ << std::endl;
     std::cout << "at rank " << rank_ << " state_reduced_start " << state_reduced_start_local_ << std::endl;
 
@@ -434,77 +339,79 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 	SimvascularAugStatePart state_part;
 
+
 	// velocity and pressure field
-	state_part.Initialize("solution (v1,v2,v3,p)");
+	state_part.Initialize("solution");
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-		int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-			state_part.addDataPointer(&(gat->global_yold_ptr[varIdx * conpar.nshg + actualIdx-1]));
+			state_part.addDataPointer(&gat->pointerMapDP_["solution"][varIdx * conpar.nshg + actualIdx-1]);
 			state_part.addIsEstimated(0);
 		}
 	}
-	state_parts_.push_back(state_part);
+	dstrb_parts_.push_back(state_part);
 	state_part.Clear();
 
 	// acceleration fields
-	state_part.Initialize("time derivative of solution (v1',v2',v3',p')");
+	state_part.Initialize("time derivative of solution");
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-		int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-			state_part.addDataPointer(&(gat->global_acold_ptr[varIdx * conpar.nshg + actualIdx-1]));
+			state_part.addDataPointer(&gat->pointerMapDP_["time derivative of solution"][varIdx * conpar.nshg + actualIdx-1]);
 			state_part.addIsEstimated(0);
 		}
 	}
-	state_parts_.push_back(state_part);
+	dstrb_parts_.push_back(state_part);
 	state_part.Clear();
 
 	if (nomodule.ideformwall > 0) {
 
 		// displacement field
-		state_part.Initialize("displacement (u1,u2,u3)");
+		state_part.Initialize("displacement");
 		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-			int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+			int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 			for(int varIdx=0; varIdx < 3; varIdx++) {
-				state_part.addDataPointer(&(gat->global_uold_ptr[varIdx * conpar.nshg + actualIdx-1]));
+				state_part.addDataPointer(&gat->pointerMapDP_["displacement"][varIdx * conpar.nshg + actualIdx-1]);
 				state_part.addIsEstimated(0);
 			}
 		}
-		state_parts_.push_back(state_part);
+		dstrb_parts_.push_back(state_part);
 		state_part.Clear();
 
+		/*
 		if (nomodule.imeasdist > 0) {
 
 			// these distance fields are stored in the state strictly for convenience
 			// distance field
-			state_part.Initialize("distance (d)");
+			state_part.Initialize("distance");
 			for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-				int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+				int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 				for(int varIdx=0; varIdx < 1; varIdx++) {
-					state_part.addDataPointer(&(gat->global_xdist_ptr[varIdx * conpar.nshg + actualIdx-1]));
+					state_part.addDataPointer(&gat->pointerMapDP_["distance"][varIdx * conpar.nshg + actualIdx-1]);
 					state_part.addIsEstimated(0);
 					state_part.setPremulConstant(-1.0);
 				}
 			}
-			state_parts_.push_back(state_part);
+			dstrb_parts_.push_back(state_part);
 			state_part.Clear();
 
 			// mass matrix multiplied by distance
-			state_part.Initialize("M * distance (M*d)");
+			state_part.Initialize("M*distance");
 			for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-				int actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
+				int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 				for(int varIdx=0; varIdx < 1; varIdx++) {
-					state_part.addDataPointer(&(gat->global_df_fem_ptr[varIdx * conpar.nshg + actualIdx-1]));
+					state_part.addDataPointer(&(gat->pointerMapDP_["M*distance"][varIdx * conpar.nshg + actualIdx-1]));
 					state_part.addIsEstimated(0);
 					state_part.setPremulConstant(-1.0);
 				}
 			}
-			state_parts_.push_back(state_part);
+			dstrb_parts_.push_back(state_part);
             state_part.Clear();
 
 		}
+		*/
 
 	}
-
 
 	// this is where the estimated parts of the augmented state will go
 
@@ -512,24 +419,24 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	if (grcrbccom.numGRCRSrfs > 0) {
 		state_part.Initialize("RCR P_current");
 		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
-			state_part.addDataPointer(&(gat->global_lumped_parameter_P[surfIdx]));
+			state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_P"][surfIdx]);
 			if (cp_rcr_estimate_pstates_)
 				state_part.addIsEstimated(1);
 			else
 				state_part.addIsEstimated(0);
 		}
-		est_parts_.push_back(state_part);
+		shared_parts_.push_back(state_part);
 		state_part.Clear();
 	}
 
 	// for vessel wall regional properties (E)
-	if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
+	if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0 && nomodule.numWallRegions > 0) {
 		state_part.Initialize("E");
 		for(int parIdx = 0; parIdx < nomodule.numWallRegions; parIdx++) {
-			state_part.addDataPointer(&(nomodule.ValueListWallE[WallEInd_(parIdx)])); //note not from global array transfer (hmm...)
+			state_part.addDataPointer(&gat->pointerMapDP_["Vessel Wall Young's Modulus"][parIdx]);
 			state_part.addIsEstimated(1);
 		}
-		est_parts_.push_back(state_part);
+		shared_parts_.push_back(state_part);
 		state_part.Clear();
 	}
 
@@ -544,12 +451,12 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
 				if (cp_rcr_include_compliance_[parIdx]) {
-					state_part.addDataPointer(&(gat->global_lumped_parameter_params[parIdx*3+1]));
+					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1]);
 					state_part.addIsEstimated(1);
 				}
 
 			}
-			est_parts_.push_back(state_part);
+			shared_parts_.push_back(state_part);
 			state_part.Clear();
 
 		}
@@ -561,12 +468,12 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
 				if (cp_rcr_include_resistance_[parIdx]) {
-					state_part.addDataPointer(&(gat->global_lumped_parameter_params[parIdx*3+2]));
+					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2]);
 					state_part.addIsEstimated(1);
 				}
 
 			}
-			est_parts_.push_back(state_part);
+			shared_parts_.push_back(state_part);
 			state_part.Clear();
 
 		}
@@ -578,12 +485,12 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
 				if (cp_rcr_include_prox_resistance_[parIdx]) {
-					state_part.addDataPointer(&(gat->global_lumped_parameter_params[parIdx*3+0]));
+					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0]);
 					state_part.addIsEstimated(1);
 				}
 
 			}
-			est_parts_.push_back(state_part);
+			shared_parts_.push_back(state_part);
 			state_part.Clear();
 
 		}
@@ -593,10 +500,10 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 			state_part.Initialize("RCR Pdist");
 
-			state_part.addDataPointer(&(gat->global_lumped_parameter_pout[0]));
+			state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Pdist"][0]);
 			state_part.addIsEstimated(1);
 
-			est_parts_.push_back(state_part);
+			shared_parts_.push_back(state_part);
 			state_part.Clear();
 
 		}
@@ -790,194 +697,14 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 	icounter = state_start;
 
-	for (std::size_t kk = 0; kk < state_parts_.size(); kk++) {
-		for (std::size_t jj = 0; jj < state_parts_[(int)kk].getSize(); jj++) {
-			duplicated_state_.SetBuffer(icounter++,state_parts_[(int)kk].getData((int)jj));
-		}
-	}
-
-	if (rank_ == numProcs_ - 1) {
-		for (std::size_t kk = 0; kk < est_parts_.size(); kk++) {
-			for (std::size_t jj = 0; jj < est_parts_[(int)kk].getSize(); jj++) {
-				duplicated_state_.SetBuffer(icounter++,est_parts_[(int)kk].getData((int)jj));
-			}
-		}
-	}
-
-	/*
-	// Get the "solution field"
-	// The state elements must be distributed such that there are no duplicate entries across processors
-	// The list of unique nodes (master image) is subset of the nodes that are on the local processor
-
-	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			duplicated_state_.SetBuffer(icounter++,(gat->global_yold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
-
-		}
-
-	}
-
-	// get the "acceleration field"
-	// in the flowsolver this is acold
-
-	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			duplicated_state_.SetBuffer(icounter++,(gat->global_acold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
-
-		}
-
-	}
-
-	// get the "displacement field"
-	// in the flowsolver this is uold
-
-	if (nomodule.ideformwall > 0) {
-
-		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-			for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
-
-				duplicated_state_.SetBuffer(icounter++,(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1]);
-
-			}
-
-		}
-
-	}
-
-	// get the "distance field"
-	// even though the distances are not true state variables
-	// (i.e. they are not used to in the current time step to update the
-	// state variables for the next time step), it is convenient to store the distances
-	// in the state vector that is passed to the roukf filter driver so that they may be accessed
-	// by the observation manager (for the distance field innovation)
-
-	if (nomodule.ideformwall > 0 && nomodule.imeasdist > 0) {
-
-		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-			// in the observation manager, the innovation takes the general form of G(X) = Z-H(X)
-			// for practical purpooses, the applyoperator function in
-			// the observation manager assigns H(X) to the signed distance and zero to Z;
-
-			duplicated_state_.SetBuffer(icounter++,-(gat->global_xdist_ptr)[actualIdx-1]);
-
-		}
-
-		// get the distance field premultiplied by a finite element 'mass' matrix
-		// on the wall boundary
-		// i.e. the effect of the mass matrix part of the measurement covariance is
-		// already included here
-
-		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-			duplicated_state_.SetBuffer(icounter++,-(gat->global_df_fem_ptr)[actualIdx-1]);
-			//duplicated_state_.SetBuffer(icounter++,-(gat->global_xdist_ptr)[actualIdx-1]);
-
-		}
-
-	}
-
-
-	// get the P states for the lumped parameter model
-	// note that this part of the state is only on the last processor
-
-	if (rank_ == numProcs_ - 1) {
-
-		//for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++)
-		//	duplicated_state_.SetBuffer(icounter++,(gat->global_lumped_parameter_Q)[surfIdx]);
-
-		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++)
-			duplicated_state_.SetBuffer(icounter++,log2(gat->global_lumped_parameter_P[surfIdx]));
-
-	}
-
-	// get the parameter values
-	// note that this part of the state is only on the last processor
-
-	if (rank_ == numProcs_ - 1) {
-
-		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
-
-			//val = nomodule.evw;
-			//duplicated_state_.SetBuffer(icounter++,log2(val));
-
-			for(int parIdx = 0; parIdx < nomodule.numWallRegions; parIdx++) {
-
-				val = nomodule.ValueListWallE[WallEInd_(parIdx)];
-
-				duplicated_state_.SetBuffer(icounter++,log2(val));
-
-			}
-			//std::cout << "[get] rank: " << rank_ << " val: " << log2(val) << std::endl;
-		}
-
-		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
-
-			if (cp_rcr_estimate_compliance_)
-				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
-
-					if (cp_rcr_include_compliance_[parIdx]) {
-						val = gat->global_lumped_parameter_params[parIdx*3+1];
-
-						duplicated_state_.SetBuffer(icounter++,log2(val));
-
-						//				std::cout << "outlet " << parIdx << " ";
-						//				std::cout << gat->global_lumped_parameter_params[parIdx*3+0] << " ";
-						//			    std::cout << gat->global_lumped_parameter_params[parIdx*3+1] << " ";
-						//				std::cout << gat->global_lumped_parameter_params[parIdx*3+2] << " " << std::endl;
-					}
-
-				}
-
-			if (cp_rcr_estimate_resistance_)
-				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
-
-					if (cp_rcr_include_resistance_[parIdx]) {
-
-						val = gat->global_lumped_parameter_params[parIdx*3+2];
-
-						duplicated_state_.SetBuffer(icounter++,log2(val));
-
-					}
-
-				}
-
-			if (cp_rcr_estimate_prox_resistance_)
-				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
-
-					if (cp_rcr_include_prox_resistance_[parIdx]) {
-
-						val = gat->global_lumped_parameter_params[parIdx*3+0];
-
-						duplicated_state_.SetBuffer(icounter++,log2(val));
-
-					}
-
-				}
-
-			if (cp_rcr_estimate_pout_) {
-				val = gat->global_lumped_parameter_pout[0];
-				duplicated_state_.SetBuffer(icounter++,log2(val));
-			}
-
-		}
-
-	}*/
+	for (std::size_t kk = 0; kk < dstrb_parts_.size(); kk++)
+		for (std::size_t jj = 0; jj < dstrb_parts_[(int)kk].getSize(); jj++)
+			duplicated_state_.SetBuffer(icounter++,dstrb_parts_[(int)kk].getData((int)jj));
+
+	if (rank_ == numProcs_ - 1)
+		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
+			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
+				duplicated_state_.SetBuffer(icounter++,shared_parts_[(int)kk].getData((int)jj));
 
 	duplicated_state_.Flush();
 
@@ -1005,231 +732,33 @@ void SimvascularVerdandiModel::StateUpdated() {
 	icounter = state_start;
 
 
-	for (std::size_t kk = 0; kk < state_parts_.size(); kk++) {
-		for (std::size_t jj = 0; jj < state_parts_[(int)kk].getSize(); jj++) {
-			state_parts_[(int)kk].setData((int)jj,duplicated_state_(icounter++));
-		}
-	}
+	for (std::size_t kk = 0; kk < dstrb_parts_.size(); kk++)
+		for (std::size_t jj = 0; jj < dstrb_parts_[(int)kk].getSize(); jj++)
+			dstrb_parts_[(int)kk].setData((int)jj,duplicated_state_(icounter++));
 
-	double* tempArray = new double[est_parts_size_];
+	double* tempArray = new double[shared_parts_size_];
 	int tcounter = 0;
 
 	if (rank_ == numProcs_ - 1) {
-		for (std::size_t kk = 0; kk < est_parts_.size(); kk++) {
-			for (std::size_t jj = 0; jj < est_parts_[(int)kk].getSize(); jj++) {
-				est_parts_[(int)kk].setData((int)jj,duplicated_state_(icounter++));
-				tempArray[tcounter++] = *est_parts_[(int)kk].getDataPointer((int)jj);
+		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
+			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++) {
+				shared_parts_[(int)kk].setData((int)jj,duplicated_state_(icounter++));
+				tempArray[tcounter++] = *shared_parts_[(int)kk].getDataPointer((int)jj);
 			}
-		}
 
-		MPI_Bcast(tempArray, est_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
+		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
 	}
 	else {
 
-		MPI_Bcast(tempArray, est_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
+		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
 
 		tcounter = 0;
-		for (std::size_t kk = 0; kk < est_parts_.size(); kk++)
-			for (std::size_t jj = 0; jj < est_parts_[(int)kk].getSize(); jj++)
-				*est_parts_[(int)kk].getDataPointer((int)jj) = tempArray[tcounter++];
+		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
+			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
+				*shared_parts_[(int)kk].getDataPointer((int)jj) = tempArray[tcounter++];
 	}
 
 	delete [] tempArray;
-
-    /*
-	// set the "solution field"
-	// The list of unique nodes (master image) is subset of the nodes that are on the local processor
-
-	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			(gat->global_yold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
-
-		}
-
-	}
-
-	// set the "acceleration field"
-	// in the flowsolver this is acold
-
-	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-		actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-
-			(gat->global_acold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
-
-		}
-
-	}
-
-	// set the "displacement field"
-	// in the flowsolver this is uold
-
-	if (nomodule.ideformwall > 0) {
-
-		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-
-			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-			for(int varIdx=0; varIdx < 3; varIdx++) { // 3 dofs
-
-				(gat->global_uold_ptr)[varIdx * conpar.nshg + actualIdx-1] = duplicated_state_(icounter++);
-
-			}
-
-		}
-
-	}
-
-	// increment the counter to skip the "distance field"
-	// since the distance field does not get used to update the state
-	// we don't need to update it internally, but the counter
-	// needs to be incremented
-
-	if (nomodule.imeasdist > 0) {
-
-		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-			//icounter++;
-			(gat->global_xdist_ptr)[actualIdx-1] = duplicated_state_(icounter++);
-			//icounter++; // skips the space occupied by the second finite element distance vector
-		}
-
-		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-			actualIdx = (gat->global_inodesuniq_ptr)[unitIdx];
-
-			(gat->global_df_fem_ptr)[actualIdx-1] = duplicated_state_(icounter++);
-		}
-
-	}*/
-
-	/*
-
-	// set the P,Q states for the lumped parameter model
-
-	if (rank_ == numProcs_ - 1) {
-
-		// setting the Q state isn't strictly necessary
-		// as Q is recomputed from the velocity field
-		//for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
-
-		//	(gat->global_lumped_parameter_Q)[surfIdx] = duplicated_state_(icounter++);
-
-		//}
-
-		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
-
-			//(gat->global_lumped_parameter_P)[surfIdx] = pow(2.0,duplicated_state_(icounter++));
-			(gat->global_lumped_parameter_P)[surfIdx] = duplicated_state_(icounter++);
-
-		}
-	}
-
-	MPI_Bcast(gat->global_lumped_parameter_P,grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
-	//MPI_Bcast(gat->global_lumped_parameter_Q,grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
-	//std::cout << "average distal P at rank " << rank_ << " : ";
-
-//	for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
-//		std::cout << (gat->global_lumped_parameter_P)[surfIdx] << " ";
-//	}
-//	std::cout << std::endl;
-
-
-	// set the values of the reduced state
-	// note that this part of the state is only on the last processor
-	// so we need to broadcast the parameter value to every processor
-
-	if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
-
-		double* tempArray = new double[nomodule.numWallRegions];
-
-		if (rank_ == numProcs_ - 1)
-			for(int parIdx = 0; parIdx < nomodule.numWallRegions; parIdx++)
-				tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
-
-		//MPI_Bcast(&val, 1, MPI_DOUBLE, numProcs_ - 1, iNewComm_C_);
-		//nomodule.evw = val;
-
-		MPI_Bcast(tempArray, nomodule.numWallRegions, MPI_DOUBLE, numProcs_ - 1, iNewComm_C_);
-
-		for(int parIdx = 0; parIdx < nomodule.numWallRegions; parIdx++)
-			nomodule.ValueListWallE[WallEInd_(parIdx)] = tempArray[parIdx];
-
-		delete [] tempArray;
-
-	}
-
-	if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
-
-		double* tempArray = new double[grcrbccom.numGRCRSrfs];
-
-		if (cp_rcr_estimate_compliance_) {
-			if (rank_ == numProcs_ - 1)
-				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-					if (cp_rcr_include_compliance_[parIdx]) {
-						tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
-					} else {
-						tempArray[parIdx] = 0.0;
-					}
-
-			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, iNewComm_C_);
-
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-				if (cp_rcr_include_compliance_[parIdx])
-					gat->global_lumped_parameter_params[parIdx*3+1] = tempArray[parIdx];
-		}
-
-		if (cp_rcr_estimate_resistance_) {
-			if (rank_ == numProcs_ - 1)
-				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-					if (cp_rcr_include_resistance_[parIdx]) {
-						tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
-					} else {
-						tempArray[parIdx] = 0.0;
-					}
-
-			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, iNewComm_C_);
-
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-				if (cp_rcr_include_resistance_[parIdx])
-					gat->global_lumped_parameter_params[parIdx*3+2] = tempArray[parIdx];
-		}
-
-		if (cp_rcr_estimate_prox_resistance_) {
-			if (rank_ == numProcs_ - 1)
-				for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-					if (cp_rcr_include_prox_resistance_[parIdx]) {
-						tempArray[parIdx] = pow(2.0,duplicated_state_(icounter++));
-					} else {
-						tempArray[parIdx] = 0.0;
-					}
-
-			MPI_Bcast(tempArray, grcrbccom.numGRCRSrfs, MPI_DOUBLE, numProcs_ - 1, iNewComm_C_);
-
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++)
-				if (cp_rcr_include_prox_resistance_[parIdx])
-					gat->global_lumped_parameter_params[parIdx*3+0] = tempArray[parIdx];
-		}
-
-		if (cp_rcr_estimate_pout_) {
-			if (rank_ == numProcs_ - 1) {
-				tempArray[0] = pow(2.0,duplicated_state_(icounter++));
-			}
-
-			MPI_Bcast(tempArray, 1, MPI_DOUBLE, numProcs_ - 1, iNewComm_C_);
-
-			gat->global_lumped_parameter_pout[0] = tempArray[0];
-		}
-
-		delete [] tempArray;
-	}
-    */
 
 	// since we have set the state only on the master image nodes, we need to
 	// copy state values from the master image to the interprocessor boundary nodes
@@ -1268,62 +797,12 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 		int ncounter = 0;
 
-		for (std::size_t kk = 0; kk < est_parts_.size(); kk++) {
-			for (std::size_t jj = 0; jj < est_parts_[(int)kk].getSize(); jj++) {
-				if (est_parts_[(int)kk].getIsEstimated((int)jj)) {
+		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
+			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
+				if (shared_parts_[(int)kk].getIsEstimated((int)jj)) {
 					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
 					ncounter++;
 				}
-			}
-		}
-
-		/*
-		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_) { // for the reduced-order P-states
-			for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
-				ncounter++;
-			}
-		}
-
-		if (nreduced_has_wall_parameters_)
-			for (int i = 0; i < nomodule.numWallRegions; i++) {
-				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
-				ncounter++;
-			}
-
-		if (nreduced_has_coupled_parameters_) {
-
-			if (cp_rcr_estimate_compliance_)
-				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-					if (cp_rcr_include_compliance_[i]) {
-						L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_resistance_)
-				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-					if (cp_rcr_include_resistance_[i]) {
-						L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_prox_resistance_)
-				for (int i = 0; i < grcrbccom.numGRCRSrfs; i++) {
-					if (cp_rcr_include_prox_resistance_[i]) {
-						L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_pout_){
-				L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
-				ncounter++;
-			}
-
-		}
-		*/
 
 	}
 	L.Flush();
@@ -1360,76 +839,23 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 //! Write only the estimated parameters to file
 void SimvascularVerdandiModel::WriteEstimates() {
 	// write down the parameter values in a file
-	int state_start, state_end;
+	//int state_start, state_end;
 
-	duplicated_state_.GetProcessorRange(state_start, state_end);
+	//duplicated_state_.GetProcessorRange(state_start, state_end);
 
 	if (rank_ == numProcs_ -1) {
 
 		int ncounter = 0;
 
-		for (std::size_t kk = 0; kk < est_parts_.size(); kk++) {
-			for (std::size_t jj = 0; jj < est_parts_[(int)kk].getSize(); jj++) {
-				if (est_parts_[(int)kk].getIsEstimated((int)jj)) {
-					Eoutfile_ << *est_parts_[(int)kk].getDataPointer((int)jj) << " ";
+		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
+			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
+				if (shared_parts_[(int)kk].getIsEstimated((int)jj)) {
+					Eoutfile_ << *shared_parts_[(int)kk].getDataPointer((int)jj) << " ";
 					ncounter++;
 				}
-			}
-		}
-
-		/*
-		// reduced-order P-states
-		if (nreduced_has_coupled_parameters_ && cp_rcr_estimate_pstates_ && grcrbccom.numGRCRSrfs > 0) {
-			for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-				Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-				ncounter++;
-			}
-		}
-
-		// wall parameters
-		if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0) {
-			for (int kk = 0; kk < nomodule.numWallRegions; kk++) {
-				Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-				ncounter++;
-			}
-		}
-
-		// reduced-order parameters
-		if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
-
-			if (cp_rcr_estimate_compliance_)
-				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-					if (cp_rcr_include_compliance_[kk]) {
-						Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_resistance_)
-				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-					if (cp_rcr_include_resistance_[kk]) {
-						Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_prox_resistance_)
-				for (int kk = 0; kk < grcrbccom.numGRCRSrfs; kk++) {
-					if (cp_rcr_include_prox_resistance_[kk]) {
-						Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-						ncounter++;
-					}
-				}
-
-			if (cp_rcr_estimate_pout_) {
-				Eoutfile_ << pow(2.0,duplicated_state_(state_start + state_reduced_start_local_ + ncounter) ) << " ";
-				ncounter++;
-			}
-
-		}
-		*/
 
 		Eoutfile_ << std::endl;
+
 	}
 }
 

@@ -925,6 +925,14 @@ int input_fform() {
 			else
 				nomodule.iwallstiffactor = 0;
 
+			// new "boundary element tags"
+			if ((string) inp.GetValue("Use Boundary Element Tags") == "True") {
+				nomodule.iuseBET = 1;
+			}
+			else
+                nomodule.iuseBET = 0;
+
+			// SWB vessel wall properties
 			if ((string) inp.GetValue("Use SWB File") == "True") {
 				nomodule.iUseSWB = 1;
 
@@ -939,30 +947,35 @@ int input_fform() {
 
 			// wall regions
 			if (nomodule.iUseSWB == 0 || (nomodule.iUseSWB == 1 && nomodule.iUseSWBthickonly == 1 )) {
-				if (nomodule.numWallRegions = inp.GetValue(
-						"Number of Wall Regions")) {
+				if (nomodule.numWallRegions = inp.GetValue("Number of Wall Regions")) {
 
 					cout << "Number of Wall Regions " << nomodule.numWallRegions << endl;
 
 					ivec = inp.GetValue("List of Wall Region Surfaces");
-					for (i = 0; i < MAXSURF + 1; i++)
+					for (i = 0; i < MAXREGIONS + 1; i++)
 						nomodule.nsrflistWallRegions[i] = 0;
 					for (i = 0; i < nomodule.numWallRegions; i++) {
 						nomodule.nsrflistWallRegions[i + 1] = ivec[i];
 					}
 
+					nomodule.nWallETagID = inp.GetValue("Wall Elastic Modulus Region Tag ID");
+
 					vec = inp.GetValue("Wall Elastic Modulus Values");
-					for (i = 0; i < MAXSURF + 1; i++)
+					for (i = 0; i < MAXREGIONS + 1; i++)
 						nomodule.ValueListWallE[i] = 0;
 					for (i = 0; i < nomodule.numWallRegions; i++)
-						nomodule.ValueListWallE[ nomodule.nsrflistWallRegions[i + 1] ] = vec[i];
+						//nomodule.ValueListWallE[ nomodule.nsrflistWallRegions[i + 1] ] = vec[i];
+						nomodule.ValueListWallE[ i + 1 ] = vec[i];
 					vec.erase(vec.begin(), vec.end());
 
+					nomodule.nWallhTagID = inp.GetValue("Wall Thickness Region Tag ID");
+
 					vec = inp.GetValue("Wall Thickness Values");
-					for (i = 0; i < MAXSURF + 1; i++)
+					for (i = 0; i < MAXREGIONS + 1; i++)
 						nomodule.ValueListWallh[i] = 0;
 					for (i = 0; i < nomodule.numWallRegions; i++)
-						nomodule.ValueListWallh[ nomodule.nsrflistWallRegions[i + 1] ] = vec[i];
+						//nomodule.ValueListWallh[ nomodule.nsrflistWallRegions[i + 1] ] = vec[i];
+						nomodule.ValueListWallh[ i + 1 ] = vec[i];
 					vec.erase(vec.begin(), vec.end());
 				}
 

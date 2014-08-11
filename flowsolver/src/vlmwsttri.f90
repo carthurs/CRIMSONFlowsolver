@@ -29,7 +29,10 @@ module deformableWall
       
 
     ! currently dynamically allocated in genbkb
-    type (r2d), dimension(MAXBLK2) ::  mSWB
+    type (r2d), dimension(MAXBLK2) :: mSWB
+
+    ! boundary element tags
+    type (i2d), dimension(MAXBLK2) :: mBET
       
     ! currently allocated in gendat, but should be moved here
     type (i1d) :: mWNodes, mWNodes_gtlmap
@@ -46,6 +49,9 @@ module deformableWall
     type (i2d), dimension(MAXBLK2) :: mNodeTagl
 
     integer numwallelems, numwallelems_global
+
+    real*8, allocatable :: regionWallProps(:,:)
+    integer WallETagID, WallhTagID
       
 contains
       
@@ -58,11 +64,15 @@ contains
 
         use phcommonvars
 
-        IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+        IMPLICIT NONE
         include "mpif.h"
 
         real*8 u(nshg,nsd),x(numnp,nsd)
         integer nodetagfield(numnp)
+
+        integer iblk,iel,ii,ierr,itwo
+        integer intfromfile(50) ! integers read from headers
+        character*255 fname1
 
         !
         !.... initialize distance evaluation (maybe move this to itrdrv)
@@ -83,6 +93,28 @@ contains
 !            end if
 !        end do
 
+        if(ideformwall.eq.1 .and. numWallRegions.gt. 0 .and. iUseBET.eq.1) then
+
+            allocate(regionWallProps(numWallRegions,2))
+
+            do ii=1,numWallRegions
+
+                regionWallProps(ii,2) = ValueListWallE(ii);
+                regionWallProps(ii,1) = ValueListWallh(ii);
+
+                if (myrank.eq.0) then
+                    write(*,*) 'Region ',ii,' E: ',regionWallProps(ii,2), ' h: ',regionWallProps(ii,1)
+                endif
+
+            end do
+
+            WallETagID = nWallETagID
+            WallhTagID = nWallhTagID
+
+            call PhAssignPointerDP(c_loc(regionWallProps(1,2)), c_char_"Vessel Wall Young's Modulus"//c_null_char)
+
+        end if
+
             
         !
         !.... loop over the boundary elements
@@ -90,28 +122,18 @@ contains
 
         numwallelems = 0
         numwallelems_global = 0
-        ncount = 1
 
         do iblk = 1, nelblb
             !
             !.... set up the parameters
             !
             iel    = lcblkb(1,iblk)
-            lelCat = lcblkb(2,iblk)
-            lcsyst = lcblkb(3,iblk)
-            iorder = lcblkb(4,iblk)
-            nenl   = lcblkb(5,iblk)  ! no. of vertices per element
-            nenbl  = lcblkb(6,iblk)  ! no. of vertices per bdry. face
-            nshl   = lcblkb(9,iblk)
-            nshlb  = lcblkb(10,iblk)
-            mattyp = lcblkb(7,iblk)
-            ndofl  = lcblkb(8,iblk)
             npro   = lcblkb(1,iblk+1) - iel
          
             !
             !.... allocate space for the arrays
             !
-    
+
 !            if (.not.associated(mPS_global(iblk)%p)) then
 !                allocate(mPS_global(iblk)%p(npro,9))
 !            end if
@@ -155,8 +177,8 @@ contains
             end if
 
 
-            do i=1,npro
-                if (btest(miBCB(iblk)%p(i,1),4)) then ! check element deformable
+            do ii=1,npro
+                if (btest(miBCB(iblk)%p(ii,1),4)) then ! check element deformable
                     numwallelems = numwallelems + 1
                 end if
             end do
@@ -178,7 +200,7 @@ contains
 
         write(*,*) 'number of wall elements local: ',numwallelems
 
-        call MPI_ALLREDUCE(numwallelems, numwallelems_global, 1, MPI_INT,MPI_SUM,MPI_COMM_WORLD,ierr)
+        call MPI_ALLREDUCE(numwallelems, numwallelems_global, 1, MPI_INT,MPI_SUM,INEWCOMM,ierr)
 
         write(*,*) 'number of wall elements: ',numwallelems_global
 

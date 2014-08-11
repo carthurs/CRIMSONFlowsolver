@@ -65,6 +65,7 @@ void bzero_old(void* ptr, size_t sz) {
 }
 #endif
 #include <time.h>
+#include <iostream>
 
 // =========
 //   Cross
@@ -101,6 +102,7 @@ extern int numElements_;
 extern int numMeshEdges_;
 extern int numMeshFaces_;
 extern int numWallProps_;
+extern int numBoundaryTagFields_;
 extern int numSolnVars_;
 extern int numBoundaryFaces_;
 extern int** boundaryElements_;
@@ -121,6 +123,7 @@ extern double* dispsoln_;
 extern double* dispsoln_ref_;
 extern double* acc_;
 extern double* SWBtp_;
+extern int* boundaryTagstp_;
 extern int* linobs_soln_;
 extern int* linobs_acc_;
 extern int* linobs_disp_;
@@ -152,11 +155,13 @@ int NWcloseFile();
 int setNodesWithCode(char *cmd, int val);
 int setBoundaryFacesWithCode(char *cmd, int setSurfID, int surfID, int setCode,
 		int code, double value);
+int setBoundaryFacesWithBoundaryTagNumber(char *cmd, int fieldID, int value);
 int parseDouble(char *cmd, double *num);
 int parseDouble2(char *cmd, double *num);
 int parseDouble3(char *cmd, double *v1, double *v2, double *v3);
 int parseCmdStr(char *cmd, char *mystr);
 int parseNum2(char *cmd, int *num);
+int parseNum3(char *cmd, int *num1, int *num2);
 int check_node_order(int n0, int n1, int n2, int n3, int elementId, int *k0,
 		int *k1, int *k2, int *k3);
 int fixFreeEdgeNodes(char *cmd);
@@ -686,6 +691,26 @@ int cmd_set_surface_id(char *cmd) {
 	return CV_OK;
 }
 
+int cmd_set_boundary_tag(char *cmd) {
+
+	// enter
+	debugprint(stddbg, "Entering cmd_set_boundary_tag.\n");
+
+	// do work
+	int fieldID = 0;
+	int value = 0;
+
+	if (parseNum3(cmd, &fieldID, &value) == CV_ERROR) return CV_ERROR;
+
+	debugprint(stddbg, "  Setting fieldID to [%i] and value to [%i]\n", fieldID, value);
+
+	if (setBoundaryFacesWithBoundaryTagNumber(cmd, fieldID-1, value) == CV_ERROR) return CV_ERROR;
+
+	// cleanup
+	debugprint(stddbg, "Exiting cmd_set_boundary_tag.\n");
+	return CV_OK;
+}
+
 int cmd_adjacency(char *cmd) {
 
 	// enter
@@ -887,6 +912,35 @@ int cmd_number_of_wall_Props(char *cmd) {
 
 	// cleanup
 	debugprint(stddbg, "Exiting cmd_number_of_wall_Props.\n");
+	return CV_OK;
+
+}
+
+int cmd_number_of_boundary_tag_types(char *cmd) {
+
+	// enter
+	debugprint(stddbg, "Entering cmd_number_of_boundary_tag_types.\n");
+
+	// do work
+	numBoundaryTagFields_ = 0;
+	if (parseNum(cmd, &numBoundaryTagFields_) == CV_ERROR) {
+		return CV_ERROR;
+	}
+
+	debugprint(stddbg, "  Number of Boundary Tag Types = %i\n", numBoundaryTagFields_);
+
+	// we can have multiple "tag fields" corresponding to different element-dependent properties
+	if (numBoundaryTagFields_ > 0) {
+		int size = numBoundaryFaces_*numBoundaryTagFields_;
+
+		boundaryTagstp_ = new int[size];
+
+		for (int ii = 0; ii < size; ii++)
+			boundaryTagstp_[ii] = 0;
+	}
+
+	// cleanup
+	debugprint(stddbg, "Exiting cmd_number_of_boundary_tag_types.\n");
 	return CV_OK;
 
 }
@@ -2045,7 +2099,7 @@ int writeRESTARTDAT(char* filename) {
 	writedatablock_(&filenum, "time derivative of solution", (void*) soln_, &size, "double",
 				oformat);
 
-	delete[] soln_;
+	delete [] soln_;
 
 
 
@@ -2069,7 +2123,7 @@ int writeRESTARTDAT(char* filename) {
 		writedatablock_(&filenum, "displacement ", (void*) (dispsoln_), &nitems,
 				"double", oformat);
 
-		delete[] dispsoln_;
+		delete [] dispsoln_;
 	}
 
 	closefile_(&filenum, "write");
@@ -2183,6 +2237,10 @@ int writeGEOMBCDAT(char* filename) {
 	sprintf(wrtstr, "number of nodes with Dirichlet BCs : < 0 > %d \n", numpbc);
 	writestring_(&filenum, wrtstr);
 
+	bzero_old((void*) wrtstr, 255);
+	sprintf(wrtstr, "number of boundary element tag IDs : < 0 > %d \n", numBoundaryTagFields_);
+	writestring_(&filenum, wrtstr);
+
 	//
 	//  write nodes
 	//
@@ -2258,7 +2316,7 @@ int writeGEOMBCDAT(char* filename) {
 	}
 	writedatablock_(&filenum, "ien to sms linear tetrahedron ", (void*) ien_sms,
 			&nitems, "integer", oformat);
-	delete ien_sms;
+	delete [] ien_sms;
 
 	//  boundary elements
 	//
@@ -2292,7 +2350,7 @@ int writeGEOMBCDAT(char* filename) {
 	writedatablock_(&filenum, "connectivity boundary linear tetrahedron ",
 			(void*) ienb, &nitems, "integer", oformat);
 
-	delete ienb;
+	delete [] ienb;
 
 	//
 	// ienb to sms linear tetrahedron
@@ -2371,7 +2429,7 @@ int writeGEOMBCDAT(char* filename) {
 	writedatablock_(&filenum, "bc mapping array ", (void*) iBCmap, &numNodes_,
 			"integer", oformat);
 
-	delete[] iBCmap;
+	delete [] iBCmap;
 
 	iarray[0] = numEBC;
 	nitems = 1;
@@ -2383,7 +2441,7 @@ int writeGEOMBCDAT(char* filename) {
 	writedatablock_(&filenum, "bc codes array ", (void*) iBC, &numEBC,
 			"integer", oformat);
 
-	delete iBC;
+	delete [] iBC;
 
 	// boundary condition array : < 312 > 312
 
@@ -2410,7 +2468,7 @@ int writeGEOMBCDAT(char* filename) {
 	writedatablock_(&filenum, "boundary condition array ", (void*) (BCf),
 			&nitems, "double", oformat);
 
-	delete BCf;
+	delete [] BCf;
 
 	// SWBtp array
 
@@ -2438,7 +2496,29 @@ int writeGEOMBCDAT(char* filename) {
 		writedatablock_(&filenum, "SWB array ", (void*) (SWBtp_), &nitems,
 				"double", oformat);
 
-		delete SWBtp_;
+		delete [] SWBtp_;
+	}
+
+	// boundaryTagstp_
+
+	if (boundaryTagstp_ != NULL) {
+		if (numBoundaryTagFields_ > 0) {
+			neltp = numBoundaryFaces_;
+			size = numBoundaryTagFields_*numBoundaryFaces_;
+
+			iarray[0] = neltp;
+			iarray[1] = numBoundaryTagFields_;
+
+			nitems = 2;
+			writeheader_(&filenum, "boundary element tags ", (void*) iarray, &nitems, &size,
+					"integer", oformat);
+
+			nitems = size;
+			writedatablock_(&filenum, "boundary element tags ", (void*) (boundaryTagstp_), &nitems,
+					"integer", oformat);
+		}
+
+		delete [] boundaryTagstp_;
 	}
 
 	// simple observation function arrays

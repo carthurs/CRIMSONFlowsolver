@@ -122,6 +122,11 @@
       fname1='number of shape functions?'
       call readheader(igeom,fname1//c_null_char,ntopsh,ione,c_char_"integer"//c_null_char, iotype)
 
+      fname1='number of boundary element tag IDs?'
+      call readheader(igeom,fname1//c_null_char,numBETFields,ione,c_char_"integer"//c_null_char, iotype)
+
+      write(*,*) numBETFields
+
 !
 !.... calculate the maximum number of boundary element nodes
 !     
@@ -577,11 +582,20 @@
 
       temporary_array = zero
 
-      call phglobalarrayassignpointer(c_loc(inodesuniq),c_loc(yold),c_loc(acold),c_loc(uold), &
-                                    c_loc(x), c_loc(temporary_array), &
-                                    c_loc(xdist), c_loc(df_fem), &
-                                    c_loc(ilinobsfunc_sol), c_loc(ilinobsfunc_acc), c_loc(ilinobsfunc_disp), &
-                                    c_loc(obsfunc_dist))
+      call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)
+      call PhAssignPointerInt(c_loc(ilinobsfunc_sol), c_char_"observation function solution"//c_null_char)
+      call PhAssignPointerInt(c_loc(ilinobsfunc_acc), c_char_"observation function time derivative of solution"//c_null_char)
+      call PhAssignPointerInt(c_loc(ilinobsfunc_disp), c_char_"observation function displacement"//c_null_char)
+      call PhAssignPointerInt(c_loc(obsfunc_dist), c_char_"observation function distance"//c_null_char)
+
+      call PhAssignPointerDP(c_loc(yold), c_char_"solution"//c_null_char)
+      call PhAssignPointerDP(c_loc(acold), c_char_"time derivative of solution"//c_null_char)
+      call PhAssignPointerDP(c_loc(uold), c_char_"displacement"//c_null_char)
+      call PhAssignPointerDP(c_loc(x), c_char_"coordinates"//c_null_char)
+      call PhAssignPointerDP(c_loc(temporary_array), c_char_"temporary array"//c_null_char)
+      call PhAssignPointerDP(c_loc(xdist), c_char_"distance"//c_null_char)
+      call PhAssignPointerDP(c_loc(df_fem), c_char_"M*distance"//c_null_char)
+      call PhAssignPointerDP(c_loc(xdnv), c_char_"distance normal"//c_null_char)
 
 ! 
 !

@@ -9,8 +9,10 @@ FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR) $(METIS_INCDIR)
 
 HDRS  =   
 
-CXXSRCS1 = ROUKF_flowsolver.cxx
-CXXSRCS2 = forwardandobserve.cxx  
+CXXSRCS  = SimvascularGlobalArrayTransfer.cxx
+CXXSRCS1 = ROUKF_flowsolver.cxx $(CXXSRCS)
+CXXSRCS2 = forwardandobserve.cxx $(CXXSRCS)
+CXXSRCS3 = main.cxx $(CXXSRCS) 
 
 #CSRCS   = 
 
@@ -22,10 +24,11 @@ CXXSRCS2 = forwardandobserve.cxx
 
 OBJS1  = $(CXXSRCS1:.cxx=.$(OBJECTEXT))
 OBJS2  = $(CXXSRCS2:.cxx=.$(OBJECTEXT))
+OBJS3  = $(CXXSRCS3:.cxx=.$(OBJECTEXT))
 
 .PHONY : all
 .DEFAULT : all
-all: $(TARGET_ESTIMATOR) $(TARGET_FORWARDANDOBSERVE)
+all: $(TARGET_ESTIMATOR) $(TARGET_FORWARDANDOBSERVE) $(TARGET_FLOWSOLVER)
 
 $(TARGET_ESTIMATOR): $(OBJS1)
 	$(LINK_EXE)$(TARGET_ESTIMATOR) $(GLOBAL_LFLAGS) $(OBJS1) \
@@ -43,7 +46,14 @@ $(TARGET_FORWARDANDOBSERVE): $(OBJS2)
 	$(VTK_LIBS) $(BLASLAPACK_LIBS) \
 	$(F90_LIBS) $(CXX_LIBS)
 					
-	mv $(TARGET_FORWARDANDOBSERVE) $(TOP)/bin		
+	mv $(TARGET_FORWARDANDOBSERVE) $(TOP)/bin
+	
+$(TARGET_FLOWSOLVER): $(OBJS3)
+	$(LINK_EXE)$(TARGET_FLOWSOLVER) $(GLOBAL_LFLAGS) $(OBJS3) \
+	$(FLOWSOLVER_LIBS) $(SOLVERIO_LIBS) $(METIS_LIBS) $(LESLIB_LIBS) $(MEMLS_LIBS) $(FLOWSOLVER_LIBS) \
+	$(MPI_LIBS) $(F90_LIBS) $(CXX_LIBS)
+					
+	mv $(TARGET_FLOWSOLVER) $(TOP)/bin		
 
 .PHONY : clean
 clean : 
@@ -51,3 +61,5 @@ clean :
 	-$(RM) $(TOP)/bin/$(TARGET_ESTIMATOR)*
 	-$(RM) $(OBJS2) $(TARGET_FORWARDANDOBSERVE) *.mod *.exe *.pdb *.manifest
 	-$(RM) $(TOP)/bin/$(TARGET_FORWARDANDOBSERVE)*
+	-$(RM) $(OBJS3) $(TARGET_FLOWSOLVER) *.mod *.exe *.pdb *.manifest
+	-$(RM) $(TOP)/bin/$(TARGET_FLOWSOLVER)*

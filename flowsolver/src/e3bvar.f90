@@ -486,16 +486,21 @@
 
                   ! regional values
                   ! supersedes default values
-                  if (numWallRegions .gt. 0 .and. iBCB(iel,2).gt.1) then
+                  if (iUseBET.eq.1 .and. numWallRegions .gt. 0 .and. mBET(icurrentblk)%p(iel,WallETagID).gt.0) then
 
                       if (iUseSWBthickonly .eq. 0) then
-                          SWB(iel,1) = ValueListWallh( iBCB(iel,2) )
+                          SWB(iel,1) = regionWallProps(mBET(icurrentblk)%p(iel,WallhTagID) ,1)
                       end if
-                      SWB(iel,7) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * one
-                      SWB(iel,8) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * rnuvw
-                      SWB(iel,9) = ValueListWallE( iBCB(iel,2) ) * tempcoeff * pt5*(1-rnuvw)
-                      SWB(iel,10) = ValueListWallE( iBCB(iel,2) ) * &
-                          tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+                      SWB(iel,7) = regionWallProps(mBET(icurrentblk)%p(iel,WallETagID), 2) * tempcoeff * one
+                      SWB(iel,8) = regionWallProps(mBET(icurrentblk)%p(iel,WallETagID), 2) * tempcoeff * rnuvw
+                      SWB(iel,9) = regionWallProps(mBET(icurrentblk)%p(iel,WallETagID), 2) * tempcoeff * pt5*(1-rnuvw)
+                      SWB(iel,10) = regionWallProps(mBET(icurrentblk)%p(iel,WallETagID), 2) * tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+
+                      !write(*,*) icurrentblk,intp,iel
+                      !if (mBET(icurrentblk)%p(iel,WallETagID) .gt. 0) then
+                      !write(*,*) WallETagID, mBET(icurrentblk)%p(iel,WallETagID), ValueListWallE( mBET(icurrentblk)%p(iel,WallETagID) )
+                      !endif
+
                   else
                       ! default values
                       if (iUseSWBthickonly .eq. 0) then
@@ -505,6 +510,7 @@
                       SWB(iel,8) = evw * tempcoeff * rnuvw
                       SWB(iel,9) = evw * tempcoeff * pt5*(1-rnuvw)
                       SWB(iel,10) = evw * tempcoeff * pt5*(1-rnuvw)*rshearconstantvw
+
                   end if
 
               enddo

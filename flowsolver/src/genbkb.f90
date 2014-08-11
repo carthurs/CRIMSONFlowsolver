@@ -18,6 +18,9 @@
 
         integer, allocatable :: ientp(:,:),iBCBtp(:,:)
         real*8, allocatable :: BCBtp(:,:), SWBtp(:,:)
+
+        integer, allocatable :: BETtp(:,:)
+
         integer materb(ibksz)
         integer intfromfile(50) ! integers read from headers
         character*255 fname1
@@ -40,19 +43,19 @@
            nenbl =intfromfile(6)
            lcsyst=intfromfile(7)
            numnbc=intfromfile(8)
-           
-           !call phSolverUpdateField( &
-           !     c_char_"connectivity boundary linear tetrahedron"//c_null_char, &
-           !     c_char_"Surface"//c_null_char, &
-           !     c_char_"Integer"//c_null_char, &
-           !     neltp, nshl, c_null_ptr, c_null_ptr)
-!
+           !
            allocate (ientp(neltp,nshl))
            allocate (iBCBtp(neltp,ndiBCB))
            allocate (BCBtp(neltp,ndBCB))
+
            if (ideformwall.eq.1) then
              allocate (SWBtp(neltp,nProps))
            end if
+
+           if (ideformwall.eq.1 .and. iUseBET.gt.0) then
+             allocate (BETtp(neltp,numBETFields))
+           end if
+
            iientpsiz=neltp*nshl
            call readdatablock(igeom,fname1//c_null_char,ientp,iientpsiz, &
                            c_char_"integer"//c_null_char,iotype)
@@ -62,11 +65,6 @@
            fname1='nbc codes?'
            call readheader(igeom,fname1//c_null_char,intfromfile,ieight, &
                            c_char_"integer"//c_null_char,iotype)
-           !call phSolverUpdateField( &
-           !     c_char_"nbc codes linear tetrahedron"//c_null_char, &
-           !     c_char_"Surface"//c_null_char, &
-           !     c_char_"Integer"//c_null_char, &
-           !     neltp, ndiBCB, c_null_ptr, c_null_ptr)
                            
            iiBCBtpsiz=neltp*ndiBCB
            call readdatablock(igeom,fname1//c_null_char,iBCBtp,iiBCBtpsiz, &
@@ -77,11 +75,6 @@
            fname1='nbc values?'
            call readheader(igeom,fname1//c_null_char,intfromfile,ieight, &
                            c_char_"integer"//c_null_char,iotype)
-           !call phSolverUpdateField( &
-           !     c_char_"nbc values linear tetrahedron"//c_null_char, &
-           !     c_char_"Surface"//c_null_char, &
-           !     c_char_"Double"//c_null_char, &
-           !     neltp, ndBCB, c_null_ptr, c_null_ptr)
                            
            BCBtp    = zero
            iBCBtpsiz=neltp*ndBCB
@@ -118,16 +111,46 @@
            SWBtp = zero
            
            if(ideformwall.eq.1 .and. iUseSWB.gt.0) then
-              itwo=2                      
-              fname1='SWB array?'
-              call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"double"//c_null_char, &
-                              iotype)
-              numelb=intfromfile(1)
-              nProps=intfromfile(2)
+               itwo=2
+               fname1='SWB array?'
+               call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"double"//c_null_char, &
+                   iotype)
+
+               !numelb=intfromfile(1)
+               nProps=intfromfile(2)
+
+               if (numelb.ne.intfromfile(1)) then
+                   write(*,*) 'numelb does not match iarray[0] from boundary element tags field'
+               endif
               
-              call readdatablock(igeom,fname1//c_null_char,SWBtp,numelb*nProps, &
-                             c_char_"double"//c_null_char,iotype)
+               call readdatablock(igeom,fname1//c_null_char,SWBtp,numelb*nProps, &
+                   c_char_"double"//c_null_char,iotype)
            endif
+
+!
+!.... boundary element tags array
+!
+           BETtp = one
+
+           if(ideformwall.eq.1 .and. iUseBET.gt.0) then
+               !               if (.not.associated(mBET(iblk)%p)) then
+               !                   allocate(mBET(iblk)%p(npro,numBETFields))
+               !               end if
+
+               itwo = 2
+               fname1='boundary element tags?'
+               call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"integer"//c_null_char, iotype)
+
+               numBETFields = intfromfile(2)
+
+               if (numelb.ne.intfromfile(1)) then
+                   write(*,*) 'numelb does not match iarray[0] from boundary element tags field'
+               endif
+
+               call readdatablock(igeom,fname1//c_null_char,BETtp,numelb*numBETFields,c_char_"integer"//c_null_char,iotype)
+
+           endif
+
 
            do n=1,neltp,ibksz 
               nelblb=nelblb+1
@@ -162,19 +185,23 @@
               if (ideformwall.eq.1) then
                 allocate (mSWB(nelblb)%p(npro,nProps))
               end if
-                           
+
+              if (ideformwall.eq.1 .and. iUseBET.gt.0) then
+                allocate (mBET(nelblb)%p(npro,numBETFields))
+              end if
 !
               allocate (mmatb(nelblb)%p(npro))
 !
 !.... save the boundary element block
 !
+
               if (ideformwall.eq.1) then
                 call gensvbDef (ientp(n1:n2,1:nshl), &
                                 iBCBtp(n1:n2,:),      BCBtp(n1:n2,:),  &
-                                SWBtp(n1:n2,:),                        &
+                                SWBtp(n1:n2,:),       BETtp(n1:n2,:),  &
                                 materb,               mienb(nelblb)%p, &
                                 miBCB(nelblb)%p,      mBCB(nelblb)%p,  &
-                                mSWB(nelblb)%p,                        &
+                                mSWB(nelblb)%p,       mBET(nelblb)%p,  &
                                 mmatb(nelblb)%p)
               
               else  
@@ -192,8 +219,11 @@
            deallocate(ientp)
            deallocate(iBCBtp)
            deallocate(BCBtp)
-           if (ideformwall.eq.1) then
+           if (ideformwall.eq.1 .and. iUseSWB.gt.0) then
              deallocate(SWBtp)
+           end if
+           if (ideformwall.eq.1 .and. iUseBET.gt.0) then
+             deallocate(BETtp)
            end if
            
            

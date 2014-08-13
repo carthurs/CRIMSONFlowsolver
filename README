@@ -1,7 +1,5 @@
 1. Edit the buildoptions file and change the lines for CC,CXX,F90 to specify the names of the compilers to use.
-   The code compiles with either the Intel or GNU compilers, but the Intel compilers are preferred because the LesLib
-   library was compiled with dependencies on a certain Fortran libraries ...
-   
+      
 2. Edit the three lines MPI_TOP, MPI_INCDIR, and MPI_LIBS to specify the location of the MPI library.  Optionally, you can use
    the mpicc,mpicxx,mpif90 commands in step 1 and leave these lines blank.
    

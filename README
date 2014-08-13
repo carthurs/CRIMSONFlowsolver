@@ -4,6 +4,3 @@
    the mpicc,mpicxx,mpif90 commands in step 1 and leave these lines blank.
    
 3. "Make" should compile the code and place an executable called flowsolver in the bin folder
-
-4. Edit the launch script called "mysolver" in the bin folder as necessary to specify the name of the license server, the location
-   of the config file (default location is the config folder in the top directory), and the path to the flowsolver executable.

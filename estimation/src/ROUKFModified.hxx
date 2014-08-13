@@ -1,4 +1,5 @@
 #ifndef ROUKFMODIFIED_HXX
+#define ROUKFMODIFIED_HXX
 
 #include "seldon/vector/VectorCollection.hxx"
 
@@ -90,6 +91,4 @@ public:
 
 };
 
-
-#define ROUKFMODIFIED_HXX
 #endif

@@ -1,4 +1,5 @@
 #ifndef SIMVASCULAROBSERVATIONMANAGER_CXX
+#define SIMVASCULAROBSERVATIONMANAGER_CXX
 
 #include "SimvascularObservationManager.hxx"
 
@@ -8,7 +9,7 @@ namespace Verdandi {
 // CONSTRUCTORS AND DESTRUCTOR //
 /////////////////////////////////
 
-//! Default constructor.
+
 SimvascularObservationManager::SimvascularObservationManager()
 :   Nobservation_(0),
     Nobservation_local_(0),
@@ -44,7 +45,7 @@ SimvascularObservationManager::SimvascularObservationManager()
 
 }
 
-//! Destructor.
+
 SimvascularObservationManager::~SimvascularObservationManager() {
 	// Operations to be performed when the object is destroyed.
 
@@ -60,7 +61,7 @@ SimvascularObservationManager::~SimvascularObservationManager() {
 // INITIALIZATION //
 ////////////////////
 
-//! Initializes the observation manager.
+
 /*!
  \param[in] model model.
  \param[in] configuration_file configuration file.
@@ -480,7 +481,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 }
 
-//! Sets the time of observations to be loaded.
+
 /*!
  \param[in] model the model.
  \param[in] time a given time.
@@ -497,7 +498,7 @@ void SimvascularObservationManager::SetTime(const Model& model, double time) {
 // OBSERVATION //
 /////////////////
 
-//! Activates or deactivates the option 'discard_observation'.
+
 /*!
       \param[in] discard_observation if set to true, each observation will be
       used at most one time.
@@ -507,7 +508,7 @@ void SimvascularObservationManager::DiscardObservation(bool discard_observation)
 	discard_observation_ = discard_observation;
 }
 
-//! Returns the observations. Not implemented, as we prefer 'GetInnovation'
+
 void SimvascularObservationManager::GetObservation(
 		SimvascularObservationManager::observation& observation) {
 	throw ErrorUndefined(
@@ -519,7 +520,7 @@ void SimvascularObservationManager::GetObservation(
 // INNOVATION //
 ////////////////
 
-//! Returns an innovation.
+
 /*! This method is called after 'SetTime' set the time at which the
  innovation is requested.
  \param[in] state state vector.
@@ -532,7 +533,7 @@ void SimvascularObservationManager::GetInnovation(const state& x, observation& i
 			"GetInnovation(const state& x, observation& innovation)");
 }
 
-//! Returns an innovation.
+
 /*! This method is called after 'SetTime' set the time at which the
  innovation is requested.
  \param[in] state state vector.
@@ -685,7 +686,7 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 // ACCESS //
 ////////////
 
-//! Indicates if some observations are available at a given time.
+
 /*!
  \param[in] time a given time.
  */
@@ -693,12 +694,12 @@ bool SimvascularObservationManager::HasObservation(double time) {
 	return time_ <= final_time_ && time_ >= initial_time_;
 }
 
-//! Indicates if some observations are available at current time.
+
 bool SimvascularObservationManager::HasObservation() const {
 	return time_ <= final_time_ && time_ >= initial_time_;
 }
 
-//! Returns the number of available observations.
+
 /*!
  \return The total number of observation at current time.
  */
@@ -706,7 +707,7 @@ int SimvascularObservationManager::GetNobservation() const {
 	return Nobservation_;
 }
 
-//! Returns the size of the local (on-processor) state vector.
+
 /*!
       \return The size of the local state vector.
  */
@@ -718,7 +719,7 @@ int SimvascularObservationManager::GetLocalNobservation() const {
 // OPERATORS //
 ///////////////
 
-//! Applies the observation operator to a given vector.
+
 /*! This method is called after 'SetTime' set the time at which the
  operator is defined.
  \param[in] x a vector.
@@ -735,7 +736,7 @@ void SimvascularObservationManager::ApplyOperator(const state& x, observation& y
 
 }
 
-//! Applies the observation operator to a given vector.
+
 /*! This method is called after 'SetTime' set the time at which the
  operator is defined.
  \param[in] x a vector.
@@ -855,7 +856,7 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 
 }
 
-//! Applies the flow/ avg. pressure observation operator to a given state.
+
 /*! This method is called after 'SetTime' set the time at which the
  operator is defined.
  \param[in] x a vector.
@@ -1009,7 +1010,7 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 //		this->flow_out_ << endl;
 }
 
-//! Return an observation error covariance.
+
 /*!
  \param[in] i row index.
  \param[in] j column index.
@@ -1020,7 +1021,7 @@ double SimvascularObservationManager::GetErrorVariance(int i, int j) const {
 			"::GetErrorVariance(int i, int j) const");
 }
 
-//! Returns the observation error variance.
+
 /*!
  \return The observation error covariance matrix.
  */
@@ -1031,7 +1032,7 @@ SimvascularObservationManager::GetErrorVariance() const {
 			"SimvascularObservationManager::GetErrorVariance() const");
 }
 
-//! Returns the inverse of the observation error covariance matrix.
+
 /*!
  \return The inverse of the matrix of the observation error covariance.
  */
@@ -1156,7 +1157,7 @@ void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, Ve
 
 }
 
-//! Saves observations in file
+
 /*! This function isn't actually used in any data assimilator routine
 
  */
@@ -1169,9 +1170,8 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 		observation Hx1,Hx2;
 		int ncounter = 0, ncounter2 = 0;
 
-		if (rank_ == 0) {
+		if (rank_ == 0)
 			std::cout << "SAVING OBSERVATIONS" << std::endl;
-		}
 
 		this->ApplyOperatorLocal(x,Hx1,Hx2);
 
@@ -1192,7 +1192,7 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 			ncounter2++;
 		}
 
-		obs_out_part_ << endl;
+		obs_out_part_ << std::endl;
 
 		if (rank_ == numProcs_ - 1) {
 			for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
@@ -1204,13 +1204,14 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 
 		}
 
-		cout << " [done] " << endl;
+		if (rank_ == 0)
+			std::cout << " [done] " << std::endl;
 
 	}
 
 }
 
-//! Returns the name of the class.
+
 /*!
  \return The name of the class.
  */
@@ -1228,5 +1229,4 @@ void SimvascularObservationManager::Message(string message) {
 
 }
 
-#define SIMVASCULAROBSERVATIONMANAGER_CXX
 #endif

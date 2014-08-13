@@ -125,8 +125,6 @@
       fname1='number of boundary element tag IDs?'
       call readheader(igeom,fname1//c_null_char,numBETFields,ione,c_char_"integer"//c_null_char, iotype)
 
-      write(*,*) numBETFields
-
 !
 !.... calculate the maximum number of boundary element nodes
 !     

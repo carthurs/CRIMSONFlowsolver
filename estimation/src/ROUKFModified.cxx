@@ -1,4 +1,5 @@
 #ifndef ROUKFMODIFIED_CXX
+#define ROUKFMODIFIED_CXX
 
 #include "ROUKFModified.hxx"
 #include "Seldon.hxx"
@@ -1011,5 +1012,4 @@ void ROUKFModified<T, Model, ObservationManager>::Finalize() {
 
 }
 
-#define ROUKFMODIFIED_CXX
 #endif

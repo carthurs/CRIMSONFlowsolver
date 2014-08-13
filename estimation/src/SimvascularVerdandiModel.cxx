@@ -1,10 +1,16 @@
 #ifndef VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
+#define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
 
 #include "SimvascularVerdandiModel.hxx"
 
 //! Checks for existance of file
 /*!
       \param[in] const std::string& name
+
+      This function simply takes a file name
+      and attempts to open it.
+      If successful, it returns true,
+      otherwise, it returns false.
  */
 inline bool exists_test1 (const std::string& name) {
     if (FILE *file = fopen(name.c_str(), "r")) {
@@ -15,121 +21,199 @@ inline bool exists_test1 (const std::string& name) {
     }
 }
 
-//! Constructor
+/*!
+ *    This is the constructor for SimvascularAugStatePart.
+ *    Currently, it sets the multiplying constant to 1.0
+ *    and the name to an initial value.
+ */
 SimvascularAugStatePart::SimvascularAugStatePart()
 :   premulconst_(1.0)
 {
 	name_ = "undefined";
 }
 
-//! Destructor
+/*!
+ *    This is the destructor for SimvascularAugStatePart.
+ *    Currently, nothing is explicitly done here.
+ */
 SimvascularAugStatePart::~SimvascularAugStatePart() {
 
 }
 
-//! Initialize with name
+
 /*!
       \param[in] const std::string& setname
+
+      The only task that this function carries
+      out currently is assigning the name of the
+      augmented state part.
  */
 void SimvascularAugStatePart::Initialize(const std::string& setname) {
 	name_ = setname;
 }
 
-//! Adds a pointer to the array of pointers
+
 /*!
       \param[in] double* data_pointer
+
+      This function adds a pointer to the
+      internal vector of pointers.
  */
 void SimvascularAugStatePart::addDataPointer(double* data_pointer) {
 	pointers_.push_back(data_pointer);
 }
 
-//! Adds to the array of boolean flags for the estimated variables
+
 /*!
       \param[in] bool val
+
+      This function adds a boolean flag to
+      the internal array of boolean flags denoting
+      whether or not the associated quantity
+      is included in the estimated portion
+      of the augmented state.
  */
 void SimvascularAugStatePart::addIsEstimated(bool val) {
 	is_estimated_.push_back(val);
 }
 
-//! Sets a specific pointer in the array of pointers
+
 /*!
       \param[in] int position
       \param[in] double* data_pointer
+
+      This function assigns a pointer
+      to a specific location in the internal array of pointers.
  */
 void SimvascularAugStatePart::setDataPointer(int position, double* data_pointer) {
 	pointers_[position] = data_pointer;
 }
 
-//! Sets the data for a specific variable; re-parameterize if it is an estimated variable
+
 /*!
       \param[in] int position
       \param[in] double val
+
+      This function assings a value to
+      a location that is pointed to
+      at the specified position
+      in the internal array of pointers.
+      Note that if the is_estimated_
+      flag is 1, then, the actual
+      assigned value is pow(2.0,val), i.e.
+      the estimated quantity is re-parameterized.
  */
 void SimvascularAugStatePart::setData(int position, double val) {
 	is_estimated_[position] ? *(pointers_[position]) = pow(2.0,val)/premulconst_ : *(pointers_[position]) = val/premulconst_;
 }
 
 
-//! Sets the estimated-variable-flag for a specific variable
+
 /*!
       \param[in] int position
       \param[in] bool val
+
+      This function assigns the
+      value of the is_estimated_ flag
+      at the specified position.
+
  */
 void SimvascularAugStatePart::setIsEstimated(int position, bool val) {
 	is_estimated_[position] = val;
 }
 
-//! Sets the constant that the output of getData is multiplied with
+
 /*!
       \param[in] double val
+
+      This function assigns the value
+      for the constant that is multiplied
+      to the output of getData().
  */
 void SimvascularAugStatePart::setPremulConstant(double val) {
 	premulconst_ = val;
 }
 
-//! Returns the data pointer to a specific variable
+
 /*!
       \param[in] int position
+
+      This function returns the pointer
+      at the specified position.
+      Use this function to provide external access
+      to the pointers_ array.
  */
 double * SimvascularAugStatePart::getDataPointer(int position) {
 	return pointers_[position];
 }
 
-//! Returns the value of a specific variable; re-parameterize if it is an estimated variable
+
 /*!
       \param[in] int position
+
+      This function returns the value pointed to
+      at the specified position.
+      If the associated is_estimated_ flag is true
+      then the return value is actually log2 of the internal value.
  */
 double SimvascularAugStatePart::getData(int position) {
 	return is_estimated_[position] ? log2((*pointers_[position])*premulconst_) : (*pointers_[position])*premulconst_;
 }
 
-//! Returns the constant that the output of getData is multiplied with
+
+/*!
+ *    This function returns
+ *    the value of the multiplier constant
+ */
 double SimvascularAugStatePart::getPremulConstant() {
 	return premulconst_;
 }
 
-//! Returns the estimated-variable-flag for a specific variable
+
 /*!
       \param[in] int position
+
+      This returns the value of the is_estimated_
+      flag at a specified position
  */
 bool SimvascularAugStatePart::getIsEstimated(int position) {
 	return is_estimated_[position];
 }
 
-//! Returns the number of variables
+
+/*!
+ *    \return: std::size_t
+ *
+ *    This function returns the size of the
+ *    internal pointers_ vector
+ */
 std::size_t SimvascularAugStatePart::getSize() {
 	return pointers_.size();
 }
 
-//! Returns the number of estimated variables
-std::size_t SimvascularAugStatePart::getNumEstimated() {
+
+/*!
+ *    \return: unsigned int
+ *
+ *    This function returns the total
+ *    number of estimated variables in
+ *    the augmented state component
+ */
+unsigned int SimvascularAugStatePart::getNumEstimated() {
 	unsigned int sum_of_elems=0;
 	for(std::vector<bool>::iterator j=is_estimated_.begin();j!=is_estimated_.end();++j)
 	    sum_of_elems += *j;
 	return sum_of_elems;
 }
 
-//! Returns the index of the first estimated variable
+
+/*!
+ *    \return: int
+ *
+ *    Returns the index of the first estimated
+ *    variable
+ *    in the augmented state component
+ */
 int SimvascularAugStatePart::getFirstEstimated() {
 	std::vector<bool>::iterator j;
 	int k;
@@ -141,16 +225,27 @@ int SimvascularAugStatePart::getFirstEstimated() {
 	return -1;
 }
 
-//! Returns the name
+
+/*!
+ *    \return: std::string
+ *
+ *    Returns the name
+ *    of the augmented state component
+ */
 std::string SimvascularAugStatePart::getName() {
     return name_;
 }
 
-//! Empty all the arrays
+
+/*!
+ *    This function resets the augmented state component
+ *    by clearing the vectors and resetting
+ *    the multiplying constant to 1.0
+ *
+ */
 void SimvascularAugStatePart::Clear() {
 	pointers_.clear();
 	is_estimated_.clear();
-	state_error_variance_value_.clear();
 	premulconst_ = 1.0;
 }
 
@@ -162,7 +257,11 @@ namespace Verdandi {
 ////////////////////////////////
 
 
-//! Constructor.
+/*
+ *    This is the default constructor for SimvascularVerdandiModel.
+ *    Currently, it sets initial values for the
+ *    data members.
+ */
 SimvascularVerdandiModel::SimvascularVerdandiModel()
 :   gat(NULL),
  	Nreduced_(0),
@@ -179,13 +278,14 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
  	cp_rcr_estimate_pstates_(0),
  	rank_(0),
  	numProcs_(1),
- 	state_error_variance_value_(1),
  	iNewComm_C_(MPI_COMM_WORLD)
 {
 }
 
 
-//! Destructor.
+/*
+ *    This is the default destructor for SimvascularVerdandiModel.
+ */
 SimvascularVerdandiModel::~SimvascularVerdandiModel() {
 	Eoutfile_.close();
 	//MPI_Finalize();
@@ -197,9 +297,13 @@ SimvascularVerdandiModel::~SimvascularVerdandiModel() {
 ////////////////
 
 
-//! Initializes the model.
+
 /*!
       \param[in] configuration_file configuration file.
+
+      This function opens the Verdandi configuration file
+      and reads in configuration settings for the model.
+      It then calls the default Initialize.
  */
 void SimvascularVerdandiModel::Initialize(string configuration_file) {
 
@@ -227,9 +331,18 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 
 }
 
-//! Initializes the model.
-/*!
 
+/*!
+      This is the function that sets up
+      the MPI communicator,
+      calls the PHASTA routines for file input,
+      partitioning, and initialization.
+      This is also where the vectors
+      of augmented state components are populated
+      and the sizes of the augmented state,
+      local part of the augmented state,
+      and the estimated part of the augmented state
+      are tabulated.
  */
 void SimvascularVerdandiModel::Initialize() {
 
@@ -334,7 +447,14 @@ void SimvascularVerdandiModel::Initialize() {
 }
 
 
-//! Organizes the array pointers from simvascular
+/*!
+ *    The purpose of this function is to
+ *    build up the augmented state.
+ *    Specifically, it populates
+ *    the dstrb_parts_ and shared_parts_ vectors
+ *    with SimvascularAugStatePart instances,
+ *    corresponding to various PHASTA Fortran arrays.
+ */
 void SimvascularVerdandiModel::BuildAugmentedState() {
 
 	SimvascularAugStatePart state_part;
@@ -512,17 +632,32 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 }
 
-//! Initializes the first time step for the model.
+/*
+ *    Things that need to be done
+ *    to initalize the first time step
+ *    of the model should go here.
+ */
 void SimvascularVerdandiModel::InitializeFirstStep() {
 
 }
 
-//! Initializes the current time step for the model.
+
+/*
+ *    Things that need to be done
+ *    to initialize a time step
+ *    shoudl go here.
+ */
 void SimvascularVerdandiModel::InitializeStep() {
 
 }
 
-//! Finalizes the current time step for the model.
+
+/*
+ *    Things that need to be done
+ *    to finalizes the model.
+ *    Currently, this calls the finalize
+ *    portion of the itrdrv Fortran routine
+ */
 void SimvascularVerdandiModel::Finalize() {
 
 	itrdrv_finalize();
@@ -535,8 +670,13 @@ void SimvascularVerdandiModel::Finalize() {
 ////////////////
 
 
-//! Advances one step forward in time.
-/*! \f[x^f_{h+1} = \mathcal{M}_h(x^a_h, p_h)\,.\f] */
+
+/*!
+ *    Propagate the model forward by one time step
+ *
+ *    \f[X_{k+1} = A_k(X_k, \theta_k)\,.\f]
+ *
+ */
 void SimvascularVerdandiModel::Forward() {
 
 	itrdrv_iter_init();
@@ -547,19 +687,30 @@ void SimvascularVerdandiModel::Forward() {
 
 }
 
-//! Finalizes the current time step
-//! meant to be called after the mean state with innovation is set
+
+/*
+ *    This simply calls the PHASTA Fortran
+ *    routine itrdrv_iter_finalize
+ *    to allow moving on to the
+ *    next time step
+ */
 void SimvascularVerdandiModel::FinalizeStep() {
 
-	itrdrv_iter_finalize(); // routines that allow moving to the next step
+	itrdrv_iter_finalize();
 
 }
 
 
 
-//! Checks whether the model has finished.
+
 /*!
       \return True if the simulation is done, false otherwise.
+
+      This simply checks if the time step
+      is greater or equal than the
+      number of time steps specified in solver.inp
+      Previously the name loop control
+      was done entirely in itrdrv.
  */
 bool SimvascularVerdandiModel::HasFinished() const {
 
@@ -572,13 +723,27 @@ bool SimvascularVerdandiModel::HasFinished() const {
 ///////////////
 
 
-//! Applies the model to a given vector.
+
 /*! The current state of the model is modified.
       \param[in] x a vector.
       \param[in] forward Boolean to indicate if the model has to go on to the
       next step.
       \param[in] preserve_state Boolean to indicate if the model state has to
       be preserved.
+
+      This function takes an arbitrary input state,
+      copies the relevant variables to
+      the appropriate PHASTA Fortran arrays,
+      calls the PHASTA functions to apply
+      the forward dynamics, and then copies
+      the resulting updated state
+      back into the input state.
+      Unlike the Forward function,
+      ApplyOperator does not call
+      itrdrv_iter_finalize to finalize
+      the time step.  This is because multiple calls
+      to ApplyOperator will happen (i.e., multiple particles)
+      before we will finalize the time step.
  */
 void SimvascularVerdandiModel::ApplyOperator(state& x,
 		bool forward, bool preserve_state) {
@@ -632,9 +797,9 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
 ////////////////////
 
 
-//! Returns the current time.
+
 /*!
-      \return The current time.
+      \return: The current time in the model.
  */
 double SimvascularVerdandiModel::GetTime() const {
 
@@ -642,7 +807,7 @@ double SimvascularVerdandiModel::GetTime() const {
 }
 
 
-//! Sets the time of the model to a given time.
+
 /*!
       \param[in] time a given time.
  */
@@ -652,24 +817,24 @@ void SimvascularVerdandiModel::SetTime(double time) {
 }
 
 
-//! Returns the state vector size.
+
 /*!
-      \return The state vector size.
+      \return The augmented state vector size.
  */
 int SimvascularVerdandiModel::GetNstate() const {
 	return Nstate_;
 }
 
 
-//! Returns the size of the local (on-processor) state vector.
+
 /*!
-      \return The size of the local state vector.
+      \return The size of the local augmented state vector.
  */
 int SimvascularVerdandiModel::GetLocalNstate() const {
-	return Nstate_local_; // this is used in reallocate routine for petsc matrices in ROUKF
+	return Nstate_local_;
 }
 
-//! Returns the starting index of the local reduced state vector
+
 /*!
       \return The starting index of the local reduced state vector.
  */
@@ -678,9 +843,21 @@ int SimvascularVerdandiModel::GetLocalReducedStart() const {
 }
 
 
-//! copies internal state to "duplicated state" and returns a reference to it
+
 /*!
       \return: a reference to "duplicated state" vector
+
+      This function first updates
+      the internal duplicated_state_ with the values
+      from the appropriate PHASTA Fortran arrays,
+      via the pointers stored in
+      the dstrb_parts_ and shared_parts_
+      vectors.  Note that this function
+      is completely agnostic to the entries in these
+      vectors, which were populated
+      in BuildAugmentedState.
+      It then returns a reference to the
+      update duplicated_state_.
  */
 SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
@@ -715,7 +892,14 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 }
 
-//! Updates the internal state from the duplicated state
+/*
+ *    This function essentially performs
+ *    the opposite task of GetState.
+ *    It takes the values from
+ *    duplicated_state_ and updates the appropriate
+ *    PHASTA Fortran arrays via the pointers
+ *    stored in dstrb_parts_ and shared_parts_.
+ */
 void SimvascularVerdandiModel::StateUpdated() {
 
 	int err;
@@ -774,8 +958,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 // ERRORS //
 ////////////
 
-/*! Returns a decomposition of the initial state error covariance matrix (\f$B\f$)
-      as a product \f$LUL^T\f$.
+/*! Returns a decomposition of the initial state error covariance matrix as a product \f$LUL^T\f$.
  */
 /*!
       \param[out] L the matrix \f$L\f$.
@@ -836,7 +1019,12 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 }
 
-//! Write only the estimated parameters to file
+
+/*
+ *    Here, we write out to file
+ *    only the part of augmented state that is estimated
+ *    (i.e., the parameters).
+ */
 void SimvascularVerdandiModel::WriteEstimates() {
 	// write down the parameter values in a file
 	//int state_start, state_end;
@@ -859,26 +1047,26 @@ void SimvascularVerdandiModel::WriteEstimates() {
 	}
 }
 
-//! Returns the number of MPI
+
 /*!
-      \return The name of the class.
+      \return The number of MPI processes.
  */
 int SimvascularVerdandiModel::GetNumProcs() const {
     return numProcs_;
 }
 
-//! Returns the name of the class.
+
 /*!
-      \return The name of the class.
+      \return The rank of the MPI process
  */
 int SimvascularVerdandiModel::GetRank() const {
 	return rank_;
 }
 
 
-//! Returns the name of the class.
+
 /*!
-      \return The name of the class.
+      \return The name of this class
  */
 string SimvascularVerdandiModel::GetName() const {
 
@@ -886,7 +1074,7 @@ string SimvascularVerdandiModel::GetName() const {
 }
 
 
-//! Receives and handles a message.
+
 /*
       \param[in] message the received message.
  */
@@ -898,5 +1086,4 @@ void SimvascularVerdandiModel::Message(string message) {
 
 }
 
-#define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
 #endif

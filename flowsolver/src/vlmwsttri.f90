@@ -605,28 +605,3 @@ contains
 !    end subroutine
 !
 end module
-      
-      
-!      
-!.... deallocated module variables
-!            
-subroutine DdeformableWall
-      
-    use deformableWall
-    use phcommonvars
-    IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
-      
-      
-    if (ideformwall.ne.0) then
-        do iblk = 1, nelblb
-            
-            if (associated(mSWB(iblk)%p)) deallocate (mSWB(iblk)%p)
-
-            if (associated(mDisp_refl(iblk)%p)) deallocate (mDisp_refl(iblk)%p)
-            if (associated(mNodeTagl(iblk)%p)) deallocate (mNodeTagl(iblk)%p)
-      
-        end do
-    end if
-      
-end subroutine

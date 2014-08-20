@@ -3,13 +3,6 @@
       end module
 
 
-      subroutine Ddtnmod
-      use dtnmod
-  use phcommonvars  
-  IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      deallocate (ifeature)
-      end
-
       subroutine initDtN
       use dtnmod
   use phcommonvars  

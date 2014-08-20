@@ -19,16 +19,6 @@
       
       end module
       
-      subroutine DpvsQbi
-      use pvsQbi
-      if(allocated(NABI)) deallocate(NABI)
-      if(allocated(NASC)) deallocate(NASC)
-      if(allocated(PNABI)) deallocate(PNABI)
-      if(allocated(NANBIJ)) deallocate(NANBIJ)
-      deallocate(ndsurf)
-      return
-      end
-
 !-----------------------------------------------------------------------
 !
 !     Initialize:

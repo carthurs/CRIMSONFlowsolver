@@ -15,21 +15,6 @@
       
       end module
 
-
-!-----------------------------------------------------------------------
-!
-!     Destructor:
-!
-!-----------------------------------------------------------------------
-      subroutine DShapeTable
-!
-      use shapeTable
-      if (allocated(shp)) deallocate (shp)
-      if (allocated(shgl)) deallocate (shgl)
-      if (allocated(shpb)) deallocate (shpb)
-      if (allocated(shglb)) deallocate (shglb)
-
-      end
 !-----------------------------------------------------------------------
 !
 !     Initialize:

@@ -30,16 +30,6 @@
       
       end module
       
-      subroutine DturbSA
-      use turbSA
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if (allocated(wnrm)) deallocate (wnrm)
-      if (allocated(otwn)) deallocate (otwn)
-      if(iRANS.lt.0 .and. allocated(d2wall)) deallocate (d2wall)
-      if(allocated(sidmapg)) deallocate (sidmapg)
-      return
-      end
 
 !-----------------------------------------------------------------------
 !

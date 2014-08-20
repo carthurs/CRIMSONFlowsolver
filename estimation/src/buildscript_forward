@@ -1,7 +1,0 @@
-#!/bin/bash
-
-#scons main cpp="mpicxx.mpich2.intel" fortran="mpif90.mpich2.intel" link="mpif90.mpich2.intel -cxxlib -nofor-main -static" line=yes
-#scons main cpp="mpicxx.mpich2" fortran="mpif90.mpich2.gfortran" link="mpicxx.mpich2 -static" line=yes
-#scons main cpp="mpicxx.mpich2 -g" fortran="mpif90.mpich2.gfortran -g" link="mpicxx.mpich2 -static" line=yes
-
-scons forward cc="icc -g" cpp="icpc -g" fortran="ifort" link="ifort -cxxlib -nofor-main" line=yes

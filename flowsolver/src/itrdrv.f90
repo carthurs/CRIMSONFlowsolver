@@ -1378,8 +1378,6 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 5   format(1X,F15.10,3X,F15.10,3X,F15.10,3X,F15.10)
 444 format(6(2x,e14.7))
 
-    call GlobalDestruction()
-
     return
 
 end subroutine

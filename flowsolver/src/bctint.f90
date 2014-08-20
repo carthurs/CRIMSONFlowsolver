@@ -15,20 +15,6 @@
 !$$$      integer itvn
       end module
 
-      subroutine DspecialBC
-      use specialBC
-  use phcommonvars  
-  IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(matflg(5,1).ge.4 .and. allocated(ytarget)) deallocate (ytarget)
-      if(iabc.eq.1 .and. allocated(acs)) deallocate (acs)
-      if(itvn.gt.0) then
-         if(allocated(BCt)) deallocate (BCt)
-         if(allocated(nBCt)) deallocate (nBCt)
-         if(allocated(numBCt)) deallocate (numBCt)
-      endif
-      return
-      end
-
 !-----------------------------------------------------------------------
 !
 !  This module conveys coupled inflow BC(INCP) data.  Below functions read
@@ -58,29 +44,6 @@
       
       end module
       
-      
-!-----------------------------------------------------------------------
-!
-!     Deallocate incpBC:
-!
-!-----------------------------------------------------------------------      
-
-      subroutine DincpBC
-      use incpBC
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(incpfile .gt. 0) then
-         if (allocated(INCPConvCoef)) deallocate (INCPConvCoef)
-         if (allocated(INCPCoef)) deallocate (INCPCoef)
-         if (allocated(InflowArea)) deallocate (InflowArea)
-         if (allocated(poldINCP)) deallocate (poldINCP)
-         if (allocated(QHistINCP)) deallocate (QHistINCP)
-         if (allocated(Eadjust)) deallocate (Eadjust)
-         if (allocated(inactive)) deallocate (inactive)
-      end if
-      
-      end
-      
 !-----------------------------------------------------------------------
 !
 !  This module conveys flow rate history for the different impedance outlets
@@ -99,32 +62,7 @@
       real*8, allocatable ::  QHistTry(:,:), QHistTryF(:,:) !filter
       integer cutfreq !filter
       end module
-      
-!-----------------------------------------------------------------------
-!
-!     Deallocate convolvImpFlow:
-!
-!-----------------------------------------------------------------------
-      subroutine DconvolImpFlow
-      use convolImpFlow
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(impfile.gt.0) then
-         if (allocated(numImpt)) deallocate (numImpt)
-         if (allocated(ValueImpt)) deallocate (ValueImpt)
-         if (allocated(ValueListImp)) deallocate (ValueListImp)
-         if (allocated(poldImp)) deallocate (poldImp)
-         if (allocated(QHistImp)) deallocate (QHistImp)
-         if (allocated(QHistTry)) deallocate (QHistTry) 
-         if (allocated(QHistTryF)) deallocate (QHistTryF)
-      endif
-      if(numImpSrfs.gt.zero) then
-         if (allocated(ConvCoef)) deallocate (ConvCoef)
-         if (allocated(ImpConvCoef)) deallocate (ImpConvCoef)
-      endif
-   
-      return
-      end      
+
 !-----------------------------------------------------------------------
 !
 !  This module conveys the parameters for the different RCR outlets.
@@ -165,31 +103,6 @@
       integer nptsTRCRmax,numDataTRCR, nptsTRCR
       integer RegStartStep, RegIniPeriod, RegFlowSwitch
       end module
-
-!-----------------------------------------------------------------------
-!
-!     Deallocate convolvRCRFlow:
-!
-!-----------------------------------------------------------------------
-
-      subroutine DconvolRCRFlow
-      use convolRCRFlow
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(ircrfile .gt. 0 ) then ! need to fix this! don't use ircrfile!
-         if(allocated(poldRCR)) deallocate (poldRCR)
-         if(allocated(HopRCR)) deallocate (HopRCR)
-         if(allocated(numRCRt)) deallocate (numRCRt)  
-         if(allocated(RCRArea)) deallocate (RCRArea)  
-         if(allocated(ValuePdist)) deallocate (ValuePdist)
-         if(allocated(ValueListRCR)) deallocate (ValueListRCR)
-         if(allocated(dtRCR)) deallocate (dtRCR)
-         if(allocated(QHistRCR)) deallocate (QHistRCR)
-         if(allocated(PHistRCR)) deallocate (PHistRCR)
-         if(allocated(RCRConvCoef)) deallocate (RCRConvCoef)
-         if(allocated(RCRic)) deallocate (RCRic)
-      endif
-      end
       
 !-----------------------------------------------------------------------
 !
@@ -213,42 +126,7 @@
       integer, allocatable :: numCORt(:)
       integer nptsCORmax, numDataCOR, nptsCOR
       end module
-      
-      
-!-----------------------------------------------------------------------
-!
-!     Deallocate convolvCORFlow:
-!
-!-----------------------------------------------------------------------  
 
-      subroutine DconvolCORFlow
-      use convolCORFlow
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(icorfile .gt. 0 ) then
-         if(allocated(CORArea)) deallocate (CORArea)
-         if(allocated(CORic)) deallocate (CORic)
-         if(allocated(poldCOR)) deallocate (poldCOR) !for pressure part that depends on the history only
-         if(allocated(plvoldCOR)) deallocate (plvoldCOR)
-         if(allocated(HopCOR)) deallocate (HopCOR)
-         if(allocated(numCORt)) deallocate (numCORt)  
-         if(allocated(ValuePlvist)) deallocate (ValuePlvist)
-         if(allocated(ValueListCOR)) deallocate (ValueListCOR)
-         if(allocated(dQinidT)) deallocate (dQinidT)
-         if(allocated(dPinidT)) deallocate (dPinidT)
-         if(allocated(CORScaleFactor)) deallocate (CORScaleFactor)
-         if(allocated(dtCOR)) deallocate (dtCOR)
-         if(allocated(COR)) deallocate (COR)
-         if(allocated(CoefCOR)) deallocate (CoefCOR)
-         if(allocated(DetCOR)) deallocate (DetCOR)
-         if(allocated(CORConvCoef)) deallocate (CORConvCoef)
-         if(allocated(CORPlvConvCoef)) deallocate (CORPlvConvCoef)
-         if(allocated(QHistCOR)) deallocate (QHistCOR)
-         if(allocated(PlvHistCOR)) deallocate (PlvHistCOR)
-         if(allocated(PHistCOR)) deallocate (PHistCOR)
-      endif
-      end    
-      
 !-----------------------------------------------------------------------
 !
 ! This module conveys the parameters to save flow and pressure history.
@@ -259,24 +137,7 @@
       real*8, allocatable  :: FlowHist(:,:),         PressHist(:,:)
       real*8, allocatable  :: CalcArea(:)
       end module
-      
-!-----------------------------------------------------------------------
-!
-!     Deallocate calcFlowPressure:
-!
-!-----------------------------------------------------------------------      
-      
-      subroutine DcalcFlowPressure
-      use calcFlowPressure
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(numCalcSrfs .gt. 0) then
-         if(allocated(CalcArea)) deallocate (CalcArea)           
-         if(allocated(FlowHist)) deallocate (FlowHist)
-         if(allocated(PressHist)) deallocate (PressHist)
-      endif
-      end
-      
+
 !-----------------------------------------------------------------------
 !
 ! This module conveys the parameters to save residuals.
@@ -313,45 +174,6 @@
       integer, allocatable :: ProfileOrder(:) 
       integer LagSwitch  
       end module
-      
-!-----------------------------------------------------------------------
-!
-!     Deallocate LagrangeMultipliers:
-!
-!-----------------------------------------------------------------------
-
-      subroutine DLagrangeMultipliers
-      use LagrangeMultipliers
-      use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      if(iLagfile .gt. 0) then
-         if(allocated(QLagrange)) deallocate (QLagrange)        
-         if(allocated(PQLagrange)) deallocate (PQLagrange)
-         if(allocated(NANBLagrange)) deallocate (NANBLagrange)
-         if(allocated(IPLagrange)) deallocate (IPLagrange)
-         if(allocated(Lag)) deallocate (Lag)              
-         if(allocated(Lagold)) deallocate (Lagold)
-         if(allocated(Lagincr)) deallocate (Lagincr)
-         if(allocated(Lagalpha)) deallocate (Lagalpha)
-         if(allocated(LagCenter)) deallocate (LagCenter)        
-         if(allocated(LagRadius)) deallocate (LagRadius)
-         if(allocated(ProfileDelta)) deallocate (ProfileDelta)
-         if(allocated(LagProfileArea)) deallocate (LagProfileArea)
-         if(allocated(loclhsLag)) deallocate (loclhsLag)
-         if(allocated(lhsLagL)) deallocate (lhsLagL)
-         if(allocated(LagErrorHist)) deallocate (LagErrorHist)
-         if(allocated(LagHist)) deallocate (LagHist)
-         if(allocated(PenaltyCoeff)) deallocate (PenaltyCoeff)
-         if(allocated(Penalty)) deallocate (Penalty)
-         if(allocated(ScaleFactor)) deallocate (ScaleFactor)
-         if(allocated(AddLag)) deallocate (AddLag)
-         if(allocated(LagAPproduct)) deallocate (LagAPproduct)
-         if(allocated(resL)) deallocate (resL)
-         if(allocated(LagInplaneVectors)) deallocate (LagInplaneVectors)
-         if(allocated(LagMeanFlow)) deallocate (LagMeanFlow)
-         if(allocated(ProfileOrder)) deallocate (ProfileOrder)
-      endif
-      end        
 
 !-----------------------------------------------------------------------
 !

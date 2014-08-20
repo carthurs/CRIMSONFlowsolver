@@ -238,25 +238,3 @@ module grcrbc
       grcrbc_coeff_2_implicit => coeff_2_implicit
 
 end module
-
-subroutine Dgrcrbc
-
-    use grcrbc_internal
-    use phcommonvars
-    implicit none
-
-    if (igrcrfile .gt. 0) then
-        if (allocated(numtimepoints_Pdist)) deallocate (numtimepoints_Pdist)
-        if (allocated(parameters_Pdist)) deallocate (parameters_Pdist)
-        if (allocated(parameters_RCR)) deallocate (parameters_RCR)
-        if (allocated(coeff_1_implicit)) deallocate (coeff_1_implicit)
-        if (allocated(coeff_2_implicit)) deallocate (coeff_2_implicit)
-        if (allocated(RCoverDt)) deallocate (RCoverDt)
-!        if (allocated(PDist_current)) deallocate (PDist_current)
-!        if (allocated(PDist_alpha)) deallocate (PDist_alpha)
-        if (allocated(P_current)) deallocate (P_current)
-        if (allocated(Q_current)) deallocate (Q_current)
-        if (allocated(SrfArea)) deallocate (SrfArea)
-    end if
-
-end subroutine

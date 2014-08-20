@@ -46,12 +46,3 @@
 
          real*8, allocatable :: gmass(:)
        end module
-       
-       subroutine Dgmass
-       use pointer_data
-       if (allocated(gmass)) deallocate (gmass)
-       return
-       end
-!
-!
-!

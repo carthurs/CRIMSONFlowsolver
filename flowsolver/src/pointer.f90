@@ -8,6 +8,11 @@
 !
 !.... data type definitions
 !
+
+         type r0d
+          real*8, pointer :: p
+         end type
+
          type r1d
            real*8, pointer :: p(:)
          end type

@@ -147,14 +147,18 @@
 !     elements up to the global level in the array ndsurf
 !
         do iel=1,npro
-           if (iBCB(iel,2) .ne. 0) then
+
+          if (indsurf) then        
+          else
+            if (iBCB(iel,2) .ne. 0) then
               iface = iBCB(iel,2)
               do k=1,nshlb
                  if (ndsurf(ienb(iel,k)).ne.1) then
                     ndsurf(ienb(iel,k))=iface   
                  endif
               enddo
-           endif
+            endif
+          end if 
            
            if (numVisFluxSrfs .gt. zero) then
               do k=1, numVisFluxSrfs
@@ -313,16 +317,19 @@
 !     push the surf number which we have associated with boundary
 !     elements up to the global level in the array ndsurf
 !
-        do iel=1,npro
-           if (iBCB(iel,2) .ne. 0) then
+        if (indsurf) then        
+        else
+          do iel=1,npro
+            if (iBCB(iel,2) .ne. 0) then
               iface = iBCB(iel,2)
               do k=1,nshlb
-                 if (ndsurf(ienb(iel,k)).ne.1) then
-                    ndsurf(ienb(iel,k))=iface   
-                 endif
+                if (ndsurf(ienb(iel,k)).ne.1) then
+                  ndsurf(ienb(iel,k))=iface   
+                endif
               enddo
-           endif
-        enddo
+            endif
+          enddo
+        end if 
 !     
 !.... end
 !
@@ -493,9 +500,12 @@
                  if (iBCB(iel,2) .eq. nsrflistLagrange(k)) then
                     iface = iBCB(iel,2)
                     do kk=1,nshlb
-                       if (ndsurf(ienb(iel,kk)).ne.1) then
+                      if (indsurf) then        
+                      else
+                        if (ndsurf(ienb(iel,kk)).ne.1) then
                           ndsurf(ienb(iel,kk))=iface   
-                       endif
+                        endif
+                      end if 
                     enddo
                     count = count+1
                  endif

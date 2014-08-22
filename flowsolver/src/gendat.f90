@@ -16,6 +16,7 @@
         use pointer_data
         use deformableWall
         use phcommonvars
+        use multidomain        
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
 ! arrays in the following line are now dimensioned in readnblk
@@ -216,7 +217,25 @@
       do i=1,nshg
          mWNodes_gtlmap%p(i) = wnodesgtlmap(i)
       end do
+!
+! *** start of intialise multidomain models
+!
+      call startmultidomain()     
+      !call startmultidomain(iheart,'heart')       
+      !call startmultidomain(isystemic,'systemic')
+      !call startmultidomain(inewcoronary,'coronary')
+      !call startmultidomain(inetlistLPN,'netlist')
       
+      ! write out status 
+      call multidomainstatus()                              
+!
+! *** initialise the multidomain container
+!
+      if (multidomainactive) then
+         multidom = multidomconstructor()   
+      end if
+!
+! *** end of intialise multidomain models           
 !
 !.... --------------------->  Initial Conditions  <--------------------
 !

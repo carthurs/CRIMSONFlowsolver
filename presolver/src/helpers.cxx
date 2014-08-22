@@ -106,14 +106,12 @@ extern int adjncySize_;
 extern int* iBC_;
 extern int* iBCB_;
 extern double* BCB_;
-
 extern int* inodeTag_;
-
 extern int   DisplacementNumElements_;
 extern int*  DisplacementConn_[3];
 extern int   DisplacementNumNodes_;
 extern int*  DisplacementNodeMap_;
-
+extern int* ndsurfg_;
 extern int numBoundaryTagFields_;
 extern int* boundaryTagstp_;
 
@@ -527,6 +525,14 @@ int setBoundaryFacesWithCode(char *cmd,int setSurfID, int surfID,
         }
     }
 
+    if (ndsurfg_ == NULL) {
+        ndsurfg_ = new int[numNodes_];
+        for (int i=0; i<numNodes_; i++)
+        {
+            ndsurfg_[i] = 0;
+        }        
+    }
+
     int n0,n1,n2,n3;
 
     int elementId,matId;
@@ -606,6 +612,48 @@ int setBoundaryFacesWithCode(char *cmd,int setSurfID, int surfID,
                   if (setSurfID) {
                     iBCB_[numBoundaryFaces_+i] = surfID;
                     foundIt = 1;
+
+                    // add surf ID to global ndsurfl                    
+
+//                    ndsurfg_[j0-1] = surfID;
+//                    ndsurfg_[j1-1] = surfID;
+//                    ndsurfg_[j2-1] = surfID;        
+
+
+                    // first time we hit a node it is 0
+                    // if it then set to 1 it is left alone                    
+                    if (ndsurfg_[j0-1] != 1){                    
+                        ndsurfg_[j0-1] = surfID;
+                        // fprintf(stdout,"surfID %i\n",surfID);
+                    }
+
+                    if (ndsurfg_[j1-1] != 1){                       
+                        ndsurfg_[j1-1] = surfID;
+                    }
+                    
+                    if (ndsurfg_[j2-1] != 1){
+                        ndsurfg_[j2-1] = surfID;
+                    }                    
+
+                    // we think this is for the dumb cases where all_exterior_faces.ebc 
+                    // is used to tag the wall with 1, although appears redundant 
+                    // KDL NAN 21/08/14
+                    if (surfID != 1) {
+
+                        if (ndsurfg_[j0-1] != 0){                    
+                            ndsurfg_[j0-1] = surfID;
+                            // fprintf(stdout,"surfID %i\n",surfID);
+                        }                    
+                        if (ndsurfg_[j1-1] != 0){                       
+                            ndsurfg_[j1-1] = surfID;
+                        }
+                        
+                        if (ndsurfg_[j2-1] != 0){
+                            ndsurfg_[j2-1] = surfID;
+                        }   
+
+					}
+
                   }
                   break;
               }

@@ -29,16 +29,21 @@ CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           symtet.c symtri.c symtripyr.c symwdg.c tmrc.c uniformP.c usr.c write_hessian.c
 
 FSRCS   = common.f90 pointer.f90 globalArrays.f90 shapeTable.f90 memLS.f90 \
-          general_rcrbc.f90 \
-          turbsa.f90 \
-          perprep.f90 local_mass.f90 \
-          pvsqbi.f90 \
-          dtn.f90 \
-          timedata.f90 \
-          bctint.f90 readnblk.f90 \
-          distmeas.f90 \
+		turbsa.f90 \
+		perprep.f90 local_mass.f90 \
+		pvsqbi.f90 \
+		boundarydata.f90 \
+		dtn.f90 \
+		timedata.f90 \
+		bctint.f90 readnblk.f90 \
+		distmeas.f90 \
           vlmwsttri.f90 \
           stats.f90 \
+		  general_rcrbc.f90 \
+		  debuggingTools.f90 \
+		  datatypes.f90 \
+		  externalDataTools.f90 \
+		  multidomain.f90 \
           itrdrv.f90 \
           error.f90 \
           asadj.f90 asbflx.f90 asbmfg.f90 asbnabi.f90 asigmr.f90 \

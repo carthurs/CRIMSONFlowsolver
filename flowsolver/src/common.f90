@@ -69,6 +69,7 @@ module phcommonvars
         numWallRegions, nsrflistWallRegions(0:MAXREGIONS), &
         nWallETagID, nWallhTagID, &
         iwalldamp, iwallsupp, &
+        indsurf, &
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &
@@ -100,6 +101,7 @@ module phcommonvars
         numWallRegions, nsrflistWallRegions, &
         nWallETagID, nWallhTagID, &
         iwalldamp, iwallsupp, &
+        indsurf, &
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &

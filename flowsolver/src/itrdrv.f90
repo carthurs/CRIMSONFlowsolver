@@ -75,7 +75,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use grcrbc ! Nan rcr
+    !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
@@ -85,6 +85,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
+    use multidomain
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -433,7 +434,12 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     dtol(:)= deltol(itseq,:)
 
     call itrSetup ( y, acold )
+    
     !
+    ! *** set \alpha_{i} in multidomain module
+    !
+         call setsimv_alfi(alfi)
+
     !...initialize the coefficients for the impedance convolution,
     !   which are functions of alphaf so need to do it after itrSetup
     if(numImpSrfs.gt.zero) then
@@ -455,8 +461,14 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     !---------------------------------- Nan rcr
     if (numGRCRSrfs .gt. 0 ) then
-        call grcrbc_Initialize()
-        call grcrbc_SetInternalState(y)
+        !call grcrbc_Initialize()
+        !call grcrbc_SetInternalState(y)
+        
+        if (nrcractive) then
+            nrcr = nrcrconstructor(numGRCRSrfs,nsrflistGRCR)
+            call initreducedordermodel(y, nrcr, 'legacy')
+        end if
+
     endif
    !---------------------------------- Nan rcr
 
@@ -544,6 +556,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     RETURN
     END SUBROUTINE AddNeumannBCTomemLS
 
+
+
+
+
 end subroutine
 
 
@@ -562,7 +578,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use grcrbc ! Nan rcr
+    use multidomain, only: nrcr, nrcractive
+    !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
@@ -670,7 +687,15 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     ! Nan rcr ----------------------------------
     if(numGRCRSrfs.gt.0) then
-        call grcrbc_ComputeImplicitCoefficients(lstep, yold)
+        !call grcrbc_ComputeImplicitCoefficients(lstep, yold)
+
+        if (nrcractive) then
+            ! first reset flow for the filter
+            call reset_flow_n(yold, nrcr)
+            ! calculate the implicit coefficients
+            call nrcr%setimplicitcoeff(lstep)
+        end if 
+
     endif
     ! ------------------------------------------
 
@@ -739,7 +764,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use grcrbc ! Nan rcr
+    use multidomain, only: nrcr, nrcractive
+    !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
@@ -937,7 +963,12 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     ! Nan rcr ----------------------------------
     ! update P,Q variables
     if(numGRCRSrfs.gt.0) then
-        call grcrbc_UpdateInternalState(y)
+        !call grcrbc_UpdateInternalState(y)
+
+        if (nrcractive) then
+            call updreducedordermodel(y,nrcr,'update')
+        end if
+
     endif
     ! ------------------------------------------
 
@@ -967,7 +998,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use grcrbc ! Nan rcr
+    !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
@@ -1249,7 +1280,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use grcrbc ! Nan rcr
+    !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
     use incpBC        !for INCP bc
@@ -1383,6 +1414,188 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 end subroutine
 
 
+!
+! *****************************************************************************
+! *** initialise reduced order model with flows and pressures from 3d model ***
+! *****************************************************************************
+!
+
+subroutine initreducedordermodel(y, rom, asciiformat)
+
+    use multidomain
+    use boundarymodule, only: area, integrScalar, GetFlowQ
+    use phcommonvars
+
+    real*8 :: y(nshg, ndof)
+    type(reducedorder) :: rom
+    integer :: nsurf, i
+    integer :: srflist(0:MAXSURF)
+    real*8  :: integpress(0:MAXSURF)
+    real*8  :: currpress(0:MAXSURF)
+    real*8  :: surfarea(0:MAXSURF)      
+    real*8  :: currflow(0:MAXSURF)
+    real*8  :: unity(nshg)
+    character(len=*) :: asciiformat      
+
+!   get number of surfaces 
+    nsurf = rom%getsurfnum()      
+
+!   get surface list in 0:MAXSURF array
+    srflist = rom%getsurfids()
+
+! !   calculate area by integrating unity over the surface 
+! !   unity has dimensions of nshg = total number of nodes
+!     unity(:) = one 
+!     call integrScalar(surfarea,unity,srflist,nsurf) 
+!     call rom%setarea(nsurf,surfarea)
+
+    ! get surface area from boundarymodule 
+    do i = 1, nsurf
+        surfarea(i) = area(srflist(i))
+        write(*,*) i,' ',srflist(i),' ',surfarea(i)
+    end do
+
+    ! set reduced order model
+    call rom%setarea(nsurf,surfarea)
 
 
+    if (lstep .eq. zero) then
 
+!       integrate flow field on surface in normal direction
+        call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
+
+!       integrate pressure
+        call integrScalar(integpress,y(:,4),srflist,nsurf)
+
+!       get area and divide integrate pressure
+        currpress(1:nsurf) = integpress(1:nsurf)/surfarea(1:nsurf)
+
+!       set flows and pressure in reduced order model at step n
+        call rom%setflow_n(nsurf,currflow) 
+        call rom%setpressure_n(nsurf,currpress)              
+
+    elseif (lstep .gt. zero) then
+       
+!       hack for heart model !!!
+        call rom%loadflowfile(lstep,asciiformat)
+        call rom%loadpressurefile(lstep,asciiformat) !! lstep index starts at zero  
+
+    end if
+
+    return
+
+end subroutine initreducedordermodel
+
+
+! ********************************************************
+! *** subroutine to reset flow at time step n using the fluid solution y
+!     added because of the filter modifies the state at the timestep n
+!     KDL NAN 22/08/14
+! ********************************************************
+
+subroutine reset_flow_n(y,rom)
+
+    use multidomain
+    use boundarymodule, only: GetFlowQ
+    use phcommonvars
+
+    real*8 :: y(nshg, ndof)
+    type(reducedorder) :: rom
+    integer :: nsurf 
+    integer :: srflist(0:MAXSURF)
+    real*8 :: currflow(0:MAXSURF)
+
+    ! get number of surfaces 
+    nsurf = rom%getsurfnum()
+
+    ! get surface list in 0:MAXSURF array
+    srflist = rom%getsurfids()
+
+    ! integrate flow field on surface in normal direction
+    call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
+
+    ! reset flow at step n in reduced order model
+    call rom%setflow_n(nsurf,currflow) 
+
+end subroutine 
+
+
+!      
+! ********************************************************
+! *** update pressure and flows in reduced order model ***
+! ********************************************************
+!
+subroutine updreducedordermodel(y,rom,varchar)
+
+    use multidomain
+    use boundarymodule, only: GetFlowQ, integrScalar
+    use phcommonvars
+
+    real*8 :: y(nshg, ndof)
+    type(reducedorder) :: rom
+    integer :: nsurf 
+    integer :: srflist(0:MAXSURF)
+    real*8 :: integpress(0:MAXSURF)
+    real*8 :: currpress(0:MAXSURF)
+    real*8 :: surfarea(0:MAXSURF)      
+    real*8 :: currflow(0:MAXSURF)
+    character(len=*) :: varchar 
+    character(len=*), parameter :: updchar = 'update' ! n+1
+    character(len=*), parameter :: solchar = 'solve'  ! n+alf
+
+    ! get number of surfaces 
+    nsurf = rom%getsurfnum()
+
+    ! get surface list in 0:MAXSURF array
+    srflist = rom%getsurfids()
+
+    ! integrate flow field on surface in normal direction
+    call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
+
+    ! if update at t = t_{n+1}
+    if (varchar .eq. updchar) then
+  
+        ! set flows and pressure at n+1 step to step n in reduced order
+        ! model before moving onto next step
+        call rom%setflow_n(nsurf,currflow) 
+        call rom%setflow_n1(nsurf,currflow)         
+
+        ! check if pressure is required to be passed to the reduced order model
+        ! for e.g. the heart model when the aortic valve is shut
+          
+        if (rom%ispressureupdate()) then
+  
+            ! integrate pressure
+            call integrScalar(integpress,y(:,4),srflist,nsurf)
+    
+            ! get area and divide integrate pressure
+            surfarea = rom%getarea()
+            currpress(1:nsurf) = integpress(1:nsurf)/surfarea(1:nsurf)
+    
+            ! update model with integrated value
+            call rom%updpressure_n1_withvalue(currpress)
+
+
+            ! else update pressure from pressure flow relationship
+        else
+
+            ! update pressure from pressure/flow from saved flow in reduced model
+            call rom%updpressure_n1_withflow()
+    
+        end if
+
+        ! if (rom%classNameString .eq. 'controlledCoronaryModel') then
+        !   !Update coronary internal pressures, now we're done with this timestep:
+        !   call controlledCoronarySurfaces%updateLPN_coronary(lstep)
+        ! else if (rom%classNameString .eq. 'netlistLPN') then
+        !   call netlistLPNSurfaces%updateLPN_netlistLPN()
+        ! end if
+
+    elseif (varchar .eq. solchar) then
+
+        ! set flows at current n+alf step 
+        call rom%setflow_n1(nsurf,currflow) 
+    
+    end if 
+
+end subroutine 

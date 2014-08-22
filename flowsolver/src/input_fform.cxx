@@ -411,6 +411,9 @@ int input_fform() {
 			inpdat.impl[0] += 20 * solflow;
 		} else if( (string)inp.GetValue("Solver Type") =="memLS"){
 		    inpdat.memLSFlag=1;
+		    printf("**********************************************************************\n"); 
+		    printf("*** IF USING MEMLS ENSURE THE SETTINGS IN INPUT.CONFIG ARE CHANGED ***\n");		    
+		    printf("**********************************************************************\n"); 
 		}
 		//GMRES sparse is assumed default and has the value of 10, MFG 20,
 		// EBE 30
@@ -739,6 +742,22 @@ int input_fform() {
 				nomodule.ipvsq = 2;
 			if ((string) inp.GetValue("Pressure Coupling") == "P-Implicit")
 				nomodule.ipvsq = 3;
+			
+
+     		/**********************************************************
+      		***                Global Node Numbering               ***
+      		**********************************************************/
+
+      		nomodule.indsurf = int(0);
+      		if ((string) inp.GetValue("Global Node Numbering") == "True")
+      		{
+          		nomodule.indsurf = int(1);
+      		}
+
+     		/**********************************************************
+      		***                                                     ***
+      		**********************************************************/
+
 			if ((string) inp.GetValue("Inflow Coupling") == "True")
 				nomodule.incp = 1;
 			else

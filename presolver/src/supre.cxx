@@ -78,6 +78,9 @@ double* soln_ = NULL;
 double* dispsoln_ = NULL;
 double* dispsoln_ref_ = NULL;
 double* acc_ = NULL;
+
+int* ndsurfg_ = NULL;
+
 double* SWBtp_ = NULL;
 int* boundaryTagstp_ = NULL;
 int* linobs_soln_ = NULL;

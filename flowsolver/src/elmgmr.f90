@@ -24,6 +24,7 @@
         use local_mass
         use LagrangeMultipliers
         use deformableWall
+        use multidomain
 !
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -348,6 +349,45 @@
           call CalcNANBLagrange(colm, rowp, y(:,1:3))
        endif
 !
+!
+! ********************************************
+! **** start of multidomain container code ***
+! ********************************************
+!
+       if (multidomainactive) then
+
+!         ! update flows in the container
+          call updmultidomaincontainer(y,multidom,'velocity')
+
+! !         ! solve reduced order model using updated flows
+!           if (sysactive) then
+! !!             call updreducedordermodel(y,sys,'solve')
+!              call sys%solve(lstep)
+!              !! need to code something that adds pressure to the RHS
+!           end if
+! 
+       end if
+
+!
+!      ! use flows at n+alf to set flow dependent implicit coefficients for the heart model       
+       !if (iheart .gt. int(0) .and. isystemic .ne. int(1)) then
+       !   call updreducedordermodel(y,hrt,'solve') ! update flow_n1
+       !   call hrt%iterate_hrt(lstep,'solve')
+       !endif
+
+       !if (numCoronarySrfs .gt. int(0)) then
+       !   call updreducedordermodel(y,controlledCoronarySurfaces,'solve') !\todo make sure this is necessary
+       !endif
+
+       !if (numNetlistLPNSrfs .gt. int(0)) then
+       !   call updreducedordermodel(y,netlistLPNSurfaces,'solve')
+       !end if
+       
+!       
+! ******************************************
+! **** end of multidomain container code ***
+! ******************************************
+!
        if(ipvsq.ge.1) then
 !
 !....  pressure vs. resistance boundary condition sets pressure at
@@ -615,51 +655,51 @@
       return
       end
 !
-!
-!....routine to compute and return the flow rates for coupled surfaces of a given type
-!
-      subroutine GetFlowQ (qsurf, y, srfIdList, numSrfs)
+! !
+! !....routine to compute and return the flow rates for coupled surfaces of a given type
+! !
+!       subroutine GetFlowQ (qsurf, y, srfIdList, numSrfs)
 
-      use pvsQbi  ! brings in NABI
-!
-      use phcommonvars
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      include "mpif.h"
-!
-      real*8  y(nshg,3)
-      real*8  qsurf(0:MAXSURF), qsurfProc(0:MAXSURF)
-      integer numSrfs, srfIdList(0:MAXSURF)
-!
-! note we only need the first three entries (u) from y
+!       use pvsQbi  ! brings in NABI
+! !
+!       use phcommonvars
+!       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!       include "mpif.h"
+! !
+!       real*8  y(nshg,3)
+!       real*8  qsurf(0:MAXSURF), qsurfProc(0:MAXSURF)
+!       integer numSrfs, srfIdList(0:MAXSURF)
+! !
+! ! note we only need the first three entries (u) from y
 
-      if (numSrfs .eq. 0) return
+!       if (numSrfs .eq. 0) return
 
-      qsurfProc=zero
-!
-      do i = 1, nshg
-          do k = 1, numSrfs
-            if (srfIdList(k) .eq. ndsurf(i)) then
-               do j = 1, 3
-                  qsurfProc(k) = qsurfProc(k) + NABI(i,j)*y(i,j)
-               enddo
-            endif
-          enddo
-      enddo
-!
-!     at this point, each qsurf has its "nodes" contributions to Q
-!     accumulated into qsurf. Note, because NABI is on processor this
-!     will NOT be Q for the surface yet
-!
-!.... reduce integrated Q for each surface, push on qsurf
-!
-      npars=MAXSURF+1
-      call MPI_ALLREDUCE (qsurfProc, qsurf, npars, &
-              MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr)
-!
-!.... return
-!
-      return
-      end
+!       qsurfProc=zero
+! !
+!       do i = 1, nshg
+!           do k = 1, numSrfs
+!             if (srfIdList(k) .eq. ndsurf(i)) then
+!                do j = 1, 3
+!                   qsurfProc(k) = qsurfProc(k) + NABI(i,j)*y(i,j)
+!                enddo
+!             endif
+!           enddo
+!       enddo
+! !
+! !     at this point, each qsurf has its "nodes" contributions to Q
+! !     accumulated into qsurf. Note, because NABI is on processor this
+! !     will NOT be Q for the surface yet
+! !
+! !.... reduce integrated Q for each surface, push on qsurf
+! !
+!       npars=MAXSURF+1
+!       call MPI_ALLREDUCE (qsurfProc, qsurf, npars, &
+!               MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr)
+! !
+! !.... return
+! !
+!       return
+!       end
 !
 !.... routine to compute and return the flow rates multiplied by a profile function
 !.... for constrained surfaces
@@ -876,6 +916,7 @@
       subroutine LagMultiplyMatrix (Dy, CaseNumber, srfIDList, numSrfs)
 
       use pvsQbi  ! brings in NABI
+      use boundarymodule, only: GetFlowQ
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
 !
       use phcommonvars
@@ -928,7 +969,9 @@
       use convolCORFlow !brings in the current park of convol coef for Cor BC
       use incpBC        !brings in the current part of coef for INCP BC
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
-!
+      use boundarymodule, only: GetFlowQ
+      use multidomain, only: nrcractive, nrcr
+
       use grcrbc ! Nan rcr
 
       use phcommonvars
@@ -938,6 +981,8 @@
       real*8  res(nshg,ndof), y(nshg,3)
       real*8  p(0:MAXSURF),   q(0:MAXSURF,3)
       integer irankCoupled, i, j, k
+
+      real*8 :: implicitcoeffs(0:MAXSURF,2)
 !
 !... get p for the resistance BC
 !
@@ -1064,11 +1109,36 @@
                     !call grcrbc_UpdateResidualandTangent(p(1:numGRCRSrfs))
 
           do j = 1, numGRCRSrfs
-              if (sign .lt. zero) then  !RHS so -1
+
+              ! switch for the numerical RCR
+              if (nrcractive) then
+                
+                ! get implicit coefficients
+                implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
+                                  
+                ! if sign -ve, add to the right hand side                                  
+                if (sign .lt. zero) then 
+                  
+                  p(j) = sign*(p(j)*implicitcoeffs(j,1)) 
+                  p(j) = p(j) - implicitcoeffs(j,2)
+                  
+                ! else if sign +ve, add to the left hand side
+                else if (sign.gt.zero) then 
+
+                  p(j)= sign*p(j)*implicitcoeffs(j,1)
+
+                end if
+
+              else
+
+                if (sign .lt. zero) then  !RHS so -1
                   p(j)=sign*( grcrbc_coeff_1_implicit(j) * p(j) + grcrbc_coeff_2_implicit(j) )
-              elseif (sign .gt. zero) then
+                elseif (sign .gt. zero) then
                   p(j)=sign*grcrbc_coeff_1_implicit(j) * p(j)
-              endif
+                endif
+
+              end if 
+
           enddo
 
           !
@@ -1323,6 +1393,84 @@
       return
       end
 
+!
+! ******************************************************************************
+! *** start of multidomain container code to update velocities/accelerations ***
+! ***                                                                        *** 
+! *** added by kd lau 26/02/13                                               ***
+! ******************************************************************************
+!
+      subroutine updmultidomaincontainer(y,mdc,varchar)
+
+      use multidomain
+      use boundarymodule, only: integrScalar, GetFlowQ     
+      use phcommonvars
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+
+      real*8 :: y(nshg, ndof)
+      type(multidomaincontainer) :: mdc
+      integer :: nsurf 
+      integer :: srflist(0:MAXSURF)
+      real*8 :: surfarea(0:MAXSURF)
+      real*8 :: currflow(0:MAXSURF)
+      real*8 :: integpress(0:MAXSURF)
+      real*8 :: currpress(0:MAXSURF)      
+      integer :: i
+      character(len=*) :: varchar 
+      character(len=*), parameter :: velocchar = 'velocity'
+      character(len=*), parameter :: accelchar = 'acceleration'
+      character(len=*), parameter :: presschar = 'pressure'
+
+!     ! get number of surfaces 
+      nsurf = mdc%getsurfnum()      
+
+      if (nsurf .gt. int(0)) then
+
+!       ! get surface list in 0:MAXSURF array
+        
+        srflist = mdc%getsurfids()   
+
+!       ! check if pressure update or velocity/acceleration     
+   
+        if (varchar .eq. presschar) then
+
+!           ! integrate pressure
+            call integrScalar(integpress, y(:,4), srflist, nsurf)
+            surfarea = mdc%getarea()
+            
+!           ! get area and divide integrate pressure
+            currpress(1:nsurf) = integpress(1:nsurf)/surfarea(1:nsurf)
+
+!           ! set pressure at step n_{alf_{i}}
+            call mdc%setpressure(nsurf,currpress)
+
+        else
+         
+!         ! integrate flow field on surface in normal direction
+          call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
+
+!         ! if velocities, set flows at step n_{alf_{i}}
+          if (varchar .eq. velocchar) then
+            call mdc%setflow(nsurf,currflow)    
+          end if
+
+!         ! if accelerations, set dflows at step n_{alf_{i}}
+          if (varchar .eq. accelchar) then
+            call mdc%setflowderivative(nsurf,currflow)    
+          end if
+
+        end if 
+
+      end if
+
+      end subroutine 
+!
+! ****************************************************************************
+! *** end of multidomain container code to update velocities/accelerations ***
+! ****************************************************************************
+!
+
 !#################################################################################################
 !
 !... routine to add resistance of current step to faceRef array
@@ -1335,6 +1483,8 @@
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
 
       use grcrbc
+      use multidomain, only: nrcractive, nrcr
+
 
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -1342,6 +1492,7 @@
 
       INTEGER, INTENT(IN) :: memLS_nFaces
       REAL*8, INTENT(OUT) :: faceRes(memLS_nFaces)
+      REAL*8 :: implicitcoeffs(0:MAXSURF,2)
 
       INTEGER faIn, k
 
@@ -1363,7 +1514,12 @@
          END DO
          DO k = 1, numGRCRSrfs
             faIn = faIn + 1
-            faceRes(faIn) = grcrbc_coeff_1_implicit(k)
+            if (nrcractive) then
+              implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
+              faceRes(faIn) = implicitcoeffs(k,1)
+            else  
+              faceRes(faIn) = grcrbc_coeff_1_implicit(k)
+            end if 
          END DO
 
       END IF

@@ -30,6 +30,7 @@
         use incpBC        ! brings in INCP variables
         use LagrangeMultipliers ! brings in variables for Lagrange Multipliers
         use calcFlowPressure
+        use multidomain
 
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -70,6 +71,21 @@
 !           endif
 !
 !        endif   ! for the itwmod or irscale
+!
+! ***********************************************************
+! *** start of set MAXSURF and Delt in multidomain module ***
+! ***********************************************************
+!
+      call setsimv_maxsurf(MAXSURF)
+      call setsimv_delt(Delt(1))     
+      call setsimv_ntout(ntout)
+      call setsimv_nstep(nstep(1))
+      call setsimv_lstep(lstep)
+      call setsimv_rho(datmat(1,1,1))
+!
+! *********************************************************
+! *** end of set MAXSURF and Delt in multidomain module ***
+! *********************************************************
 !
 !.... time varying boundary conditions as set from file bct.dat and impt.dat 
 !     (see function for format in file bctint.f)
@@ -155,6 +171,37 @@
            NANBLagrange = zero
         endif
 !
+! ******************************************************
+! *** multidomain code, add surface ids to container ***
+! ******************************************************
+!
+        if (multidomainactive) then         
+
+!         ! add heart surface 
+          !if (iheart .gt. int(0)) then          
+          !  call multidom%addsurfids(int(1),hrt%getsurfids())
+          !  call hrt%setpresspntrs(multidom)
+          !end if
+
+!         ! add rcr surfaces
+          !if (numRCRSrfs .gt. int(0)) then    
+          !  call multidom%addsurfids(numRCRSrfs,nsrflistRCR)
+          !end if
+
+!         ! add general rcr surfaces
+          if (numGRCRSrfs .gt. int(0)) then    
+            call multidom%addsurfids(numGRCRSrfs,nsrflistGRCR)
+          end if          
+
+!
+          !if (numCoronarySrfs .gt. int(0)) then
+          !  call multidom%addsurfids(numCoronarySrfs,nSrfListCoronary)
+          !end if
+!
+          !if (numNetlistLPNSrfs .gt. int(0)) then
+          !  call multidom%addsurfids(numNetlistLPNSrfs,nSrfListNetlist)
+          !end if
+        end if
 !
 !.... satisfy the boundary conditions
 !

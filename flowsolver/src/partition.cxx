@@ -594,6 +594,33 @@ void Partition_Problem(int numProcs) {
 	}
 	delete[] ntagsloc;
 
+    /* ndsurf global */
+
+    int indsurf = nomodule.indsurf;
+    vector < map<int, vector<int> > > ndsurfgpart(numProcs); // declared outside of if statements
+
+
+    if (indsurf) 
+    {
+
+        int* ndsurfgloc; 
+      
+        readheader_(&igeombc, "global node surface number", (void*) iarray, &itwo, "integer", iformat);
+        isize = iarray[0] * iarray[1];
+        // int* ndsurfgloc = new int[isize];
+        ndsurfgloc = new int[isize];
+        readdatablock_(&igeombc, "global node surface number", (void*) ndsurfgloc, &isize, "integer", iformat);
+    
+        for (int x = 1; x < iarray[0] + 1; x++) {
+            for (map<int, int>::iterator iter = ParallelData[x].begin();
+                iter != ParallelData[x].end(); iter++) {
+                ndsurfgpart[(*iter).first][(*iter).second].push_back(ndsurfgloc[x - 1]);
+            }
+        }
+
+        delete[] ndsurfgloc;
+    }
+
 	// if we need to calculate sonfath later we will need to have vnumnp[i]
 //	int* vnumnp;
 //	if (SONFATH_VAR > 0)
@@ -670,10 +697,38 @@ void Partition_Problem(int numProcs) {
 		delete[] ntagsf;
 		ntagspart[p].clear();
 
+        /* partition of global node surface numbers */
+
+        int indsurf = nomodule.indsurf;
+        if (indsurf)
+        {
+        
+            int* ndsurfgf = new int[ndsurfgpart[p].size()];
+            for (map<int, vector<int> >::iterator mIter = ndsurfgpart[p].begin(); mIter != ndsurfgpart[p].end(); mIter++)
+            {   
+                ndsurfgf[(*mIter).first - 1] = (*mIter).second[0];
+            }
+
+            isize = ndsurfgpart[p].size();
+            nitems = 2;
+            iarray[0] = ndsurfgpart[p].size();
+            iarray[1] = 1;
+            writeheader_(&fgeom, "global node surface number", (void*) iarray, &nitems, &isize,"integer", oformat);
+
+            nitems = ndsurfgpart[p].size();
+            writedatablock_(&fgeom, "global node surface number", (void*) (ndsurfgf), &nitems, "integer", oformat);
+
+            delete[] ndsurfgf;
+            ndsurfgpart[p].clear();
+
+        }
+
+
 		closefile_(&fgeom, "append");
 	}
 	Xpart.clear();
 	ntagspart.clear();
+    ndsurfgpart.clear();
 
 
 	/* let us take care of Essential BCs.*/

@@ -68,8 +68,9 @@
       use convolTRCRFlow
       use convolCORFlow 
       use incpBC
+      use boundarymodule,only: GetFlowQ
 !
-       use phcommonvars
+      use phcommonvars
  IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
       include "mpif.h" !needed?
       
@@ -294,7 +295,7 @@
       subroutine UpdRCR(y, srfIDList, numSrfs)
 
       use convolRCRFlow 
-
+      use boundarymodule, only: integrScalar
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !      
@@ -320,7 +321,7 @@
       subroutine UpdTRCR(y, srfIDList, numSrfs)
 
       use convolTRCRFlow
-
+      use boundarymodule, only: integrScalar
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
@@ -475,7 +476,7 @@
       subroutine CalcHopCOR (timestepCOR, stepn, srfIdList, numSrfs, y)
 
       use convolCORFlow !brings in HopCOR, dtCOR, COR, CoefCOR
-      
+      use boundarymodule, only: integrScalar      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
       include "mpif.h" !needed?
@@ -508,7 +509,7 @@
       subroutine UpdHistPlvConv(y,timestepCOR,stepn,srfIdList,numSrfs) 
       
       use convolCORFlow 
-      
+      use boundarymodule, only: integrScalar      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision 
       include "mpif.h" 
@@ -544,6 +545,7 @@
       subroutine calcCalcic(y,srfIdList,numSrfs)
       
       use calcFlowPressure
+      use boundarymodule, only: area, integrScalar, GetFlowQ      
 !
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
@@ -556,9 +558,19 @@
       real*8    Pini(0:MAXSURF),CoupleArea(0:MAXSURF) ! initial pressure
       real*8    VelOnly(nshg,3), POnly(nshg)
 !
+
       POnly(:)= one ! one to get area
       call integrScalar(CoupleArea,POnly,srfIdList,numSrfs) !get surf area
       CalcArea(1:numSrfs) = CoupleArea(1:numSrfs)
+
+      do i = 1, numSrfs
+        write(*,*) i,' ',srfIdList(i),' ',CalcArea(i)       
+        CalcArea(i) = area(srfIdList(i))
+        write(*,*) i,' ',srfIdList(i),' ',CalcArea(i) 
+      end do
+
+
+
       VelOnly(:,1:3)=y(:,1:3)
       call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs) !get initial flow
       FlowHist(lstep+1,1:numSrfs)=Qini(1:numSrfs) !initialize QHistRCR
@@ -575,8 +587,10 @@
       subroutine calcRCRic(y,srfIdList,numSrfs)
       
       use convolRCRFlow    !brings RCRic, ValueListRCR, ValuePdist
-
+      use boundarymodule, only: integrScalar
+      use boundarymodule, only: GetFlowQ      
       use phcommonvars
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
       include "mpif.h" !needed?
       
@@ -589,9 +603,10 @@
 
       allocate (RCRic(0:MAXSURF))
       call RCRint(lstep,PdistIni) !get initial distal P 
-      POnly(:)= one ! one to get area
+      POnly(:)= one ! one to get area      
       call integrScalar(CoupleArea,POnly,srfIdList,numSrfs) !get surf area
       RCRArea(1:numSrfs) = CoupleArea(1:numSrfs)
+
       if (lstep .eq. zero) then
          VelOnly(:,1:3)=y(:,1:3)
          call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs) !get initial flow
@@ -617,7 +632,7 @@
       subroutine calcTRCRic(y,srfIdList,numSrfs)
 
       use convolTRCRFlow
-
+      use boundarymodule, only: integrScalar, GetFlowQ      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
 
@@ -652,7 +667,7 @@
       subroutine calcCORic(y,srfIdList,numSrfs)
       
       use convolCORFlow    
-
+      use boundarymodule, only: integrScalar, GetFlowQ      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision !needed?
       include "mpif.h" !needed?
@@ -873,7 +888,7 @@
       subroutine calcINCPic(timeINCP, y, srfIDList, numSrfs)
       
       use incpBC      
-      
+      use boundarymodule, only: integrScalar, GetFlowQ           
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision 
       include "mpif.h"   
@@ -934,7 +949,7 @@
          numSrfs, stepn) 
 
       use incpBC
-
+      use boundarymodule, only: integrScalar
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
@@ -1006,7 +1021,7 @@
       subroutine Updcalc(y, srfIDList, numSrfs)
 
       use calcFlowPressure
-
+      use boundarymodule, only: integrScalar, GetFlowQ      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !      
@@ -1035,7 +1050,7 @@
       subroutine UpdateLagrangeCoef(y, col, row, srfIDList, numSrfs)
 
       use LagrangeMultipliers
-
+      use boundarymodule, only: GetFlowQ      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
@@ -1178,45 +1193,45 @@
       return 
       end      
 !  
-!.........function that integrates a scalar over a boundary
-!
-      subroutine integrScalar(scalInt,scal,srfIdList,numSrfs)
+! !.........function that integrates a scalar over a boundary
+! !
+!       subroutine integrScalar(scalInt,scal,srfIdList,numSrfs)
 
-      use pvsQbi !brings ndsurf, NASC
+!       use pvsQbi !brings ndsurf, NASC
 
-      use phcommonvars
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      include "mpif.h"
+!       use phcommonvars
+!       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!       include "mpif.h"
       
-      integer   srfIdList(0:MAXSURF), numSrfs, irankCoupled, i, k
-      real*8    scal(nshg), scalInt(0:MAXSURF), scalIntProc(0:MAXSURF)
+!       integer   srfIdList(0:MAXSURF), numSrfs, irankCoupled, i, k
+!       real*8    scal(nshg), scalInt(0:MAXSURF), scalIntProc(0:MAXSURF)
       
-      scalIntProc = zero
-      do i = 1,nshg
-        if(numSrfs.gt.zero) then
-          do k = 1,numSrfs
-            irankCoupled = 0
-            if (srfIdList(k).eq.ndsurf(i)) then
-              irankCoupled=k
-              scalIntProc(irankCoupled) = scalIntProc(irankCoupled) &
-                                  + NASC(i)*scal(i)
-            endif      
-          enddo       
-        endif
-      enddo
-!      
-!     at this point, each scalint has its "nodes" contributions to the scalar
-!     accumulated into scalIntProc. Note, because NASC is on processor this
-!     will NOT be the scalar for the surface yet
-!
-!.... reduce integrated scalar for each surface, push on scalInt
-!
-        npars=MAXSURF+1
-      call MPI_ALLREDUCE (scalIntProc, scalInt(:), npars, &
-              MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr)  
+!       scalIntProc = zero
+!       do i = 1,nshg
+!         if(numSrfs.gt.zero) then
+!           do k = 1,numSrfs
+!             irankCoupled = 0
+!             if (srfIdList(k).eq.ndsurf(i)) then
+!               irankCoupled=k
+!               scalIntProc(irankCoupled) = scalIntProc(irankCoupled) &
+!                                   + NASC(i)*scal(i)
+!             endif      
+!           enddo       
+!         endif
+!       enddo
+! !      
+! !     at this point, each scalint has its "nodes" contributions to the scalar
+! !     accumulated into scalIntProc. Note, because NASC is on processor this
+! !     will NOT be the scalar for the surface yet
+! !
+! !.... reduce integrated scalar for each surface, push on scalInt
+! !
+!         npars=MAXSURF+1
+!       call MPI_ALLREDUCE (scalIntProc, scalInt(:), npars, &
+!               MPI_DOUBLE_PRECISION,MPI_SUM, INEWCOMM,ierr)  
    
-      return
-      end
+!       return
+!       end
 
 !  
 !.........function that outputs an input data array

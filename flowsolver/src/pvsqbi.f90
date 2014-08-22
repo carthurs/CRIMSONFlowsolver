@@ -32,6 +32,11 @@
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
       real*8   x(numnp,nsd)
+
+      character*255 fname1
+      character*5 cname 
+      integer igeombc
+      integer intfromfile(50) ! integers read from headers 
 !
 ! use is like
 ! 
@@ -55,6 +60,31 @@
            PNABI = zero
            NANBIJ = zero
         endif
+
+!
+! *** set ndsurf from geombc added by KDL & NAN
+!    
+      if (indsurf) then      
+      
+        fname1 = 'geombc.dat'
+        fname1 = trim(fname1) // cname(myrank+1)
+
+        call openfile(fname1//c_null_char, c_char_'read?'//c_null_char, igeombc)
+        
+        itwo = 2
+        fname1='global node surface number?'
+        call readheader(igeombc, fname1//c_null_char, intfromfile, itwo, &
+         c_char_'integer'//c_null_char, iotype)
+        
+        numnp = intfromfile(1)      
+        ixsiz = numnp
+        
+        call readdatablock(igeombc, fname1//c_null_char, ndsurf, ixsiz, &
+        c_char_'integer'//c_null_char,iotype)      
+        
+        call closefile(igeombc, c_char_"read"//c_null_char)
+        
+      end if
 !
 !.... -------------------->   boundary elements   <--------------------
 !

@@ -15,6 +15,9 @@
         use shapeTable
         use turbsa          ! used to access d2wall
 
+        use boundarymodule, only : setupBoundaryModule  ! used to setup boundary module - added by kdl 09/04/14
+!        use pvsQbi, only : ndsurf                       ! used to setup boundary module - added by kdl 09/04/14        
+
         use phcommonvars
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
@@ -91,6 +94,10 @@
 !.... p vs. Q boundary
 !
         call initNABI( x, shpb )
+!
+! *** setup boundary data module 
+!
+        call setupBoundaryModule(x)        
 !     
 !.... check for execution mode
 !

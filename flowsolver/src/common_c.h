@@ -519,6 +519,7 @@
          int nWallhTagID;
          int iwalldamp;
          int iwallsupp;
+         int indsurf;
          int iringdamp;
          int iringsupp;
          int imeasdist;

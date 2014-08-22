@@ -122,6 +122,8 @@ extern double* soln_;
 extern double* dispsoln_;
 extern double* dispsoln_ref_;
 extern double* acc_;
+// global ndsurf 
+extern int* ndsurfg_;
 extern double* SWBtp_;
 extern int* boundaryTagstp_;
 extern int* linobs_soln_;
@@ -2256,6 +2258,30 @@ int writeGEOMBCDAT(char* filename) {
 	nitems = 3 * numNodes_;
 	writedatablock_(&filenum, "co-ordinates ", (void*) nodes_, &nitems,
 			"double", oformat);
+
+    //
+    // write global ndsurf
+    //
+
+    if (ndsurfg_ == NULL) {
+        ndsurfg_ = new int[numNodes_];
+        for (int i=0; i<numNodes_; i++)
+        {
+            ndsurfg_[i] = 0;
+        }        
+    }
+
+    size = numNodes_;
+    nitems = 2;
+    iarray[0] = numNodes_;
+    iarray[1] = 1;
+
+    writeheader_( &filenum, "global node surface number ", (void*)iarray, &nitems, &size,
+                  "integer", oformat  );
+
+    nitems = numNodes_;
+    writedatablock_( &filenum, "global node surface number ", (void*)ndsurfg_, &nitems,
+                     "integer", oformat );
 
 	// write node tags
 	size = numNodes_;

@@ -572,6 +572,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 				if (cp_rcr_include_compliance_[parIdx]) {
 					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1]);
+					std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1] << endl;
 					state_part.addIsEstimated(1);
 				}
 
@@ -589,6 +590,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 				if (cp_rcr_include_resistance_[parIdx]) {
 					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2]);
+					std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2] << endl;
 					state_part.addIsEstimated(1);
 				}
 
@@ -606,6 +608,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 				if (cp_rcr_include_prox_resistance_[parIdx]) {
 					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0]);
+					std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0] << endl;
 					state_part.addIsEstimated(1);
 				}
 

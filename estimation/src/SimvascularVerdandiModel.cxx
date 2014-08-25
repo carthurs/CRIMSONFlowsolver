@@ -361,6 +361,10 @@ void SimvascularVerdandiModel::Initialize() {
 	// read configuration file
 	input_fform();
 
+	// set iestimator to 1, i.e. estimator 
+	// int exists in the common block
+	nomodule.iestimator = int(1);
+
 	// Preprocess data and run the problem
 	// Partition the problem to the correct number of processors
 	if( rank_ == 0 )

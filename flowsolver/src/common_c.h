@@ -528,6 +528,7 @@
          int iupdateprestress;
          int iuseBET;
          int numBETFields;
+         int iestimator;
       } nomodule;
 
       extern struct {

@@ -73,7 +73,7 @@ module phcommonvars
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &
-        iuseBET, numBETFields
+        iuseBET, numBETFields, iestimator
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -105,7 +105,7 @@ module phcommonvars
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &
-        iuseBET, numBETFields
+        iuseBET, numBETFields, iestimator
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 
@@ -829,6 +829,9 @@ subroutine initPhCommonVars
   
     use phcommonvars
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+
+    ! set default value of iestimator to 0, i.e. flowsolver only
+    iestimator = int(0);
 
     master = 0
 

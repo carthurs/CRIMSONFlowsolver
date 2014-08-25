@@ -165,6 +165,7 @@
          procedure :: initialise_rcr => initialise_rcr 
          procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
          procedure :: updxvars_rcr => updxvars_rcr         
+         procedure :: writexvars_rcr => writexvars_rcr
          procedure :: assign_ptrs_ext_rcr => assign_ptrs_ext_rcr
       end type numericalrcr
 
@@ -2466,6 +2467,7 @@
 
       select type (ro)
          type is (numericalrcr) 
+            call ro%writexvars_rcr(stepnum)
          type is (numericaltrcr) 
          type is (numericalheart)
             call ro%writexvars_hrt(stepnum)
@@ -2605,26 +2607,37 @@
       character(len=50) :: multidomformat = 'multidomain'      
 
       if (charvar .eq. legacyformat) then
+         
          ! open file, read header and values
          open(flownum, file=a%flowfile, status='old', iostat=ierr)
          read(flownum,*) temp
+         
+
          do i = 1, torow
            read(flownum,*) flowfile(i,:)
          end do
+         
          close(flownum)         
+
       else if (charvar .eq. multidomformat) then         
-!        ! open file, read header and values
+
+         ! open file, read header and values
          open(flownum, file=a%flowfile, status='old', iostat=ierr)
-!        ! data now organised with step number in first column
+         
+         ! data now organised with step number in first column         
          do i = 1, torow
-            read(flownum,*) j, flowfile(i,1:a%surfnum)
+            ! read(flownum,*) j, flowfile(i,1:a%surfnum)
+            read(flownum,*) j, a%flowhist(i,1:a%surfnum)
          end do
+         
          close(flownum)
+
       end if 
-!
-!     ! set flows
-      a%flow_n(1:a%surfnum) = flowfile(torow,1:a%surfnum)
-!
+
+      ! set flows
+      ! a%flow_n(1:a%surfnum) = flowfile(torow,1:a%surfnum)
+      a%flow_n(1:a%surfnum) = a%flowhist(torow,1:a%surfnum)
+      
       end subroutine
 !
 ! *** load pressure file
@@ -2645,26 +2658,38 @@
 !       
 
       if (charvar .eq. legacyformat) then
+         
          ! open file, read header and values      
          open(presnum, file=a%pressurefile, status='old', iostat=ierr)
          read(presnum,*) temp
+         
          do i = 1, torow
             read(presnum,*) pressfile(i,:)
          end do
+         
          close(presnum)
+
       elseif (charvar .eq. multidomformat) then    
+         
          ! open file, read header and values      
          open(presnum, file=a%pressurefile, status='old', iostat=ierr)
+         
+         ! data now organised with step number in first column                  
          do i = 1, torow
-            read(presnum,*) j, pressfile(i,1:a%surfnum)
+            !read(presnum,*) j, pressfile(i,1:a%surfnum)
+            read(presnum,*) j, a%pressurehist(i,1:a%surfnum)      
          end do
+         
          close(presnum)
+      
       end if
-!
-!     ! set pressure
-      a%pressure_n(1:a%surfnum) = pressfile(torow,1:a%surfnum)
+
+      ! set pressure
+      ! a%pressure_n(1:a%surfnum) = pressfile(torow,1:a%surfnum)
+      a%pressure_n(1:a%surfnum) = a%pressurehist(torow,1:a%surfnum)      
+      
 !      write(*,*) a%pressure_n(1:a%surfnum)
-!  
+ 
       end subroutine
 
 
@@ -6675,7 +6700,7 @@
       integer :: surfnum
       integer :: surflist(0:maxsurf)
       real*8 :: rcrcoeff(3,surfnum)
-      integer :: pdmax
+      integer :: pdmax, hstep
       real*8 :: pdval(pdmax,2,surfnum) ! this array is initialised as zero
 !                                      ! then filled in, therefore values 
                                        ! that are 0 then the index is > 2 
@@ -6693,74 +6718,58 @@
       allocate(this%surfids(surfnum))
       this%surfids(1:surfnum) = surflist(1:surfnum)
 
-      ! set state number
-      ! here the order is 
-      ! r1
-      ! c
-      ! r2
-      ! pd 
-      ! pn 
-      this%statenum = int(5)
 
-      ! allocate array in datatypes
-      allocate(nrcr_states%s(surfnum,this%statenum))
-      nrcr_states%s(:,:) = real(0.0,8)
+      ! allocate history arrays
+      if (lstep .gt. int(0)) then
+         hstep = nstep + lstep
+      else
+         hstep = nstep
+      end if      
+      allocate(this%flowhist(hstep+1,surfnum))       
+      allocate(this%pressurehist(hstep+1,surfnum))             
 
+      ! zero history arrays
+      this%flowhist(:,:) = real(0.0,8)
+      this%pressurehist(:,:) = real(0.0,8)
 
+      ! set flow and pressure file names
+      write(this%flowfile,'(a)') 'QHistRCR.dat'
+      write(this%pressurefile,'(a)') 'PHistRCR.dat'      
 
-!
-!     ! allocate arrays for input parameters & data
+      ! allocate arrays for input parameters & data
       allocate(this%rcrparams(surfnum))
-!!      allocate(this%pdistal(surfnum))
-
       allocate(this%parameters_RCR(3,surfnum)) ! testing
-!
-!     ! allocate and zero other arrays 
+
+      ! allocate and zero other arrays 
       allocate(this%surfarea(surfnum))
       allocate(this%flow_n(surfnum))
       allocate(this%flow_n1(surfnum)) !! flow at n+1 / n+alf NOT USED
-      
-          ! allocate(edgePairs(surf)%p(SUM(edgesPerProc), 2, 3))
-
-      allocate(this%pressure_n(surfnum))
-      allocate(this%pressure_n_ptr(surfnum))
-      do i = 1, surfnum
-         this%pressure_n_ptr(i)%p => nrcr_states%s(i,5)
-      end do 
-      
+      allocate(this%pressure_n(surfnum))      
       allocate(this%implicitcoeff(surfnum,2)) 
       allocate(this%implicitcoeff_n1(surfnum,2)) 
-!!      allocate(this%flowpntr(surfnum))
-!
-!     ! initialise reservoir pressure  
-      if (initrcr) then
-!
-!        ! set int
-         this%init_pRes = 1
 
+      ! initialise reservoir pressure  
+      if (initrcr) then
+         ! set int
+         this%init_pRes = 1
          allocate(this%pRes_n(surfnum))
-!
-!        ! open rcr.x.dat
+         ! open rcr.x.dat
          open(fnum, file='rcrt.x.dat', status='old', iostat=ierr)         
          do i = 1, surfnum
             read(fnum,*) this%pRes_n(i)
          end do
          close(fnum)
-!         
       else 
-!      
          this%init_pRes = 0
-!         
       end if
-!
-!     ! zero variables 
+
+      ! zero variables 
       this%surfarea(:) = real(0.0,8)
       this%flow_n(:) = real(0.0,8)
       this%flow_n1(:) = real(0.0,8)
       this%pressure_n(:) = real(0.0,8)
       this%implicitcoeff(:,:) = real(0.0,8)
       this%implicitcoeff_n1(:,:) = real(0.0,8)
-
 
       do i = 1, surfnum
 
@@ -6773,12 +6782,6 @@
          this%parameters_RCR(1,i) = rcrcoeff(1,i)
          this%parameters_RCR(2,i) = rcrcoeff(2,i)
 
-
-         ! set initial states
-         nrcr_states%s(i,1) = this%rcrparams(i)%rp
-         nrcr_states%s(i,2) = this%rcrparams(i)%c
-         nrcr_states%s(i,3) = this%rcrparams(i)%rd
-
          ! count time points 
          k = int(1)
          do j = 2, pdmax
@@ -6788,43 +6791,23 @@
               k = k + 1
            end if
          end do        
-!
-!        ! allocate i'th entry with k x 2 size
+ 
+         ! allocate i'th entry with k x 2 size
          allocate(this%rcrparams(i)%pd%v(k,2))
-!     
-!        ! set values
+     
+         ! set values
          do j = 1, k
             this%rcrparams(i)%pd%v(j,1) = pdval(j,1,i)
             this%rcrparams(i)%pd%v(j,2) = pdval(j,2,i)
          end do
-!
+
       end do
-!
-      ! set flow and pressure file names
-      ! write (this%flowfile,'(a)') 'QHistRCR.dat'
-      ! write (this%pressurefile,'(a)') 'PHistRCR.dat'      
-
-
-
-      ! hack to create global Pd value for filtering, taken from 1st data point of the 1st surface
-      do i = 1, surfnum
-         nrcr_states%s(i,4) = this%rcrparams(1)%pd%v(1,2)
-      end do
-      this%parameters_Pd = this%rcrparams(1)%pd%v(1,2)
-
-      ! assigning pointers to this data
-      write(*,*) 'assigning pointers in initialize_rcr'
-
-      ! no more assigning pointers here because it seems
-      ! that 'this' is a temporary copy ...
-
-      !call PhAssignPointerDP(c_loc(this%parameters_RCR), c_char_"WindkesselRCR_Params"//c_null_char)
-      !call PhAssignPointerDP(c_loc(this%parameters_Pd), c_char_"WindkesselRCR_Pdist"//c_null_char)
-      !call PhAssignPointerDP(c_loc(nrcr_states%s(:,5)), c_char_"WindkesselRCR_P"//c_null_char)
-      !call PhAssignPointerDP(c_loc(this%pressure_n), c_char_"WindkesselRCR_P"//c_null_char)
-
 
       end subroutine initialise_rcr      
+
+
+
+     
 !
 ! *** set implicit coefficients
 !
@@ -6958,54 +6941,116 @@
 !
 ! *** 
 !
-      subroutine updxvars_rcr(a,lstep_passedIn)
+!       subroutine updxvars_rcr(a,lstep_passedIn)
+! !
+!       use datatypes
+!       implicit none
+
+!       class(numericalrcr) :: a      
+!       integer :: i, lstep_passedIn
+!       real*8 :: time_n1
+!       real*8 :: r1, r2, c, pd
+!       type(timedata) :: pdvals
+!       real*8 :: denom, pc_n1
+! !
+! !     ! time at t = t_{n+1} (no longer at t = t_{n+alfi})
+!       time_n1 = delt*real(lstep_passedIn,8) 
+! !      
+!       do i = 1, a%surfnum
+
+!          ! parameters set from derived types
+!          r1 = a%rcrparams(i)%rp
+!          r2 = a%rcrparams(i)%rd            
+!          c = a%rcrparams(i)%c
+
+!          pdvals = a%rcrparams(i)%pd
+!          pd = getvalue(time_n1,pdvals)
+
+!          ! parameters overwritten
+!          ! dirty hack for filtering
+!           r2 = a%parameters_RCR(3,i)
+!           r1 = a%parameters_RCR(1,i)
+!           c = a%parameters_RCR(2,i)
+!             ! r2 = parameters_RCR(3,i)
+!             ! r1 = parameters_RCR(1,i)
+!             ! c = parameters_RCR(2,i)    
+
+
+
+
+!           pd = a%parameters_Pd
+
+! !
+!          denom = c/delt + real(1,8)/r2
+!          pc_n1 = a%flow_n1(i) + a%pRes_n(i)*(c/delt) + pd/r2
+!          a%pRes_n(i) = pc_n1/denom
+! !         
+!       end do
+! !
+!       end subroutine
 !
-      use datatypes
+
+      ! subroutine to update the pressure and flow history arrays
+      subroutine updxvars_rcr(a,lstep_passedIn)
+
       implicit none
 
       class(numericalrcr) :: a      
       integer :: i, lstep_passedIn
-      real*8 :: time_n1
-      real*8 :: r1, r2, c, pd
-      type(timedata) :: pdvals
-      real*8 :: denom, pc_n1
-!
-!     ! time at t = t_{n+1} (no longer at t = t_{n+alfi})
-      time_n1 = delt*real(lstep_passedIn,8) 
-!      
+
       do i = 1, a%surfnum
-
-         ! parameters set from derived types
-         r1 = a%rcrparams(i)%rp
-         r2 = a%rcrparams(i)%rd            
-         c = a%rcrparams(i)%c
-
-         pdvals = a%rcrparams(i)%pd
-         pd = getvalue(time_n1,pdvals)
-
-         ! parameters overwritten
-         ! dirty hack for filtering
-          r2 = a%parameters_RCR(3,i)
-          r1 = a%parameters_RCR(1,i)
-          c = a%parameters_RCR(2,i)
-            ! r2 = parameters_RCR(3,i)
-            ! r1 = parameters_RCR(1,i)
-            ! c = parameters_RCR(2,i)    
-
-
-
-
-          pd = a%parameters_Pd
-
-!
-         denom = c/delt + real(1,8)/r2
-         pc_n1 = a%flow_n1(i) + a%pRes_n(i)*(c/delt) + pd/r2
-         a%pRes_n(i) = pc_n1/denom
-!         
-      end do
-!
+         a%flowhist(lstep_passedIn,i) = a%flow_n(i)
+         a%pressurehist(lstep_passedIn,i) = a%pressure_n(i)
+      end do 
+      
       end subroutine
-!
+
+      ! subroutine to write out the pressure and flow history arrays
+      subroutine writexvars_rcr(a,stepn)
+      
+      use mpi, only: MPI_COMM_WORLD
+      
+      implicit none
+
+      class(numericalrcr) :: a
+      integer :: stepn
+      integer :: rank
+      integer :: ierr 
+      integer :: anum = 619
+      integer :: bnum = 740
+      integer :: i
+      character(len=100) :: dimchar             
+      character(len=100) :: varsformat
+
+      write(dimchar,'(i10)') a%surfnum
+      write(varsformat,'(3(a))') '(i8,',trim(adjustl(dimchar)),'(e20.10))'
+
+      if (mod(stepn,ntout) .eq. int(0)) then
+
+         call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierr)              
+
+         if (rank .eq. int(0)) then
+
+            open(anum, file=a%pressurefile, status='replace')
+            do i = 1, stepn
+               write(anum,varsformat) i, a%pressurehist(i,:)
+            end do
+            close(anum)
+            
+            open(bnum, file=a%flowfile, status='replace')
+            do i = 1, stepn
+               write(bnum,varsformat) i, a%flowhist(i,1)
+            end do
+            close(bnum)
+
+         end if
+
+      end if
+
+      end subroutine       
+
+
+
 
       subroutine assign_ptrs_ext_rcr(a)
 

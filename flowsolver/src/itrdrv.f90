@@ -466,7 +466,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         
         if (nrcractive) then
             nrcr = nrcrconstructor(numGRCRSrfs,nsrflistGRCR)
-            call initreducedordermodel(y, nrcr, 'legacy')
+            
+            !call initreducedordermodel(y, nrcr, 'legacy')
+            call initreducedordermodel(y, nrcr, 'multidomain')
+
 
             call nrcr%assign_ptrs_ext()
 
@@ -968,6 +971,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     if(numGRCRSrfs.gt.0) then
         !call grcrbc_UpdateInternalState(y)
 
+        ! this is here because it is particle dependent as the WK pressure is part of the state
+        ! the pressure_n is a set via the pointer set previously 
         if (nrcractive) then
             call updreducedordermodel(y,nrcr,'update')
         end if
@@ -1009,6 +1014,9 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     use LagrangeMultipliers
     use deformableWall
     use ResidualControl
+
+    use multidomain, only: nrcr
+
     use phcommonvars
     use itrDrvVars
 
@@ -1095,6 +1103,27 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call UpdHistConv(y,nsrflistRCR,numRCRSrfs) !uses lstep
         call UpdRCR(y,nsrflistRCR,numRCRSrfs)
     endif
+
+    !
+    ! *** update flow and pressure history in the numerical RCR
+    !
+    if(numGRCRSrfs.gt.zero) then        
+        
+        ! here we re-update the RCR with the innovated y (for the flow only)
+        ! the corresponding innovated pressure_n is externally set by the filter directly (see the subroutine updreducedordermodel)
+        call updreducedordermodel(y,nrcr,'update-flow-only')
+
+        ! update pressure and flow history arrays
+        call nrcr%updxvars(lstep)
+
+        ! write pressure and flow history arrays
+        call nrcr%writexvars(lstep)
+
+
+    endif
+
+
+
     !
     ! ... update flow and pressure history of time-varying RCR BCs
     !
@@ -1544,6 +1573,7 @@ subroutine updreducedordermodel(y,rom,varchar)
     real*8 :: currflow(0:MAXSURF)
     character(len=*) :: varchar 
     character(len=*), parameter :: updchar = 'update' ! n+1
+    character(len=*), parameter :: updchar_flow = 'update-flow-only' ! n+1    
     character(len=*), parameter :: solchar = 'solve'  ! n+alf
 
     ! get number of surfaces 
@@ -1563,11 +1593,14 @@ subroutine updreducedordermodel(y,rom,varchar)
         call rom%setflow_n(nsurf,currflow) 
         call rom%setflow_n1(nsurf,currflow)         
 
+        ! if flowsolver only then update pressure the normal way
+        ! if estimator, do nothing as pressure is set by the filter from the average of all the particles
+        
         ! check if pressure is required to be passed to the reduced order model
         ! for e.g. the heart model when the aortic valve is shut
-          
+              
         if (rom%ispressureupdate()) then
-  
+      
             ! integrate pressure
             call integrScalar(integpress,y(:,4),srflist,nsurf)
     
@@ -1583,6 +1616,7 @@ subroutine updreducedordermodel(y,rom,varchar)
         else
 
             ! update pressure from pressure/flow from saved flow in reduced model
+            ! sets it to pressure_n
             call rom%updpressure_n1_withflow()
     
         end if
@@ -1594,11 +1628,17 @@ subroutine updreducedordermodel(y,rom,varchar)
         !   call netlistLPNSurfaces%updateLPN_netlistLPN()
         ! end if
 
-    elseif (varchar .eq. solchar) then
+    else if (varchar .eq. updchar_flow) then
+
+        ! here we only update the flows, this is relevant for the filter 
+        ! the filter sets the pressure in the reduced order model via the pointer
+        call rom%setflow_n(nsurf,currflow) 
+
+    else if (varchar .eq. solchar) then
 
         ! set flows at current n+alf step 
         call rom%setflow_n1(nsurf,currflow) 
-    
+
     end if 
 
 end subroutine 

@@ -105,7 +105,7 @@
          real*8, allocatable  :: flow_n1(:)
          real*8, allocatable  :: pressure_n(:)
          ! real*8, pointer  :: pressure_n(:) => null()
-         type(rd), allocatable :: pressure_n_FU(:)
+         type(r0d), allocatable :: pressure_n_ptr(:)
 
 
 
@@ -138,8 +138,10 @@
          procedure, public :: setimplicitcoeff => setimplicitcoeff              
          procedure, public :: initxvars => initxvars
          procedure, public :: updxvars => updxvars         
-         procedure, public :: writexvars => writexvars         
+         procedure, public :: writexvars => writexvars
          procedure, public :: setpresspntrs => setpresspntrs_ro
+
+         procedure, public :: assign_ptrs_ext => assign_ptrs_ext
       end type reducedorder
 
       
@@ -152,8 +154,8 @@
 ! *** constant rcr with time varying pdistal
 !
       type, extends(reducedorder) :: numericalrcr
-         ! real*8, allocatable  :: parameters_RCR(:,:) ! RCR parameter array - for filter
-         ! real*8               :: parameters_Pd       ! Pd parameter - for filter         
+         real*8, allocatable  :: parameters_RCR(:,:) ! RCR parameter array - for filter
+         real*8               :: parameters_Pd       ! Pd parameter - for filter
          private 
          type(rcrdata), allocatable :: rcrparams(:) ! RCR parameter list
          real*8, allocatable        :: pRes_n(:)    ! Reservoir pressure
@@ -163,6 +165,7 @@
          procedure :: initialise_rcr => initialise_rcr 
          procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
          procedure :: updxvars_rcr => updxvars_rcr         
+         procedure :: assign_ptrs_ext_rcr => assign_ptrs_ext_rcr
       end type numericalrcr
 
       ! real*8, allocatable  :: parameters_RCR(:,:) ! RCR parameter array - for filter
@@ -2747,7 +2750,22 @@
       end do
 !
       return
-      end subroutine     
+      end subroutine
+
+
+!     assign the external pointers
+      subroutine assign_ptrs_ext(ro)
+
+      implicit none
+
+      class(reducedorder) :: ro
+      select type (ro)
+         class is (numericalrcr)
+            call ro%assign_ptrs_ext_rcr()
+      end select
+      end subroutine
+
+
 !
 ! *** update pressure_n_withvalue subroutine, called with final update before
 !     moving onto the next step, here the value in the 3D domain is set as the 
@@ -6694,6 +6712,8 @@
 !     ! allocate arrays for input parameters & data
       allocate(this%rcrparams(surfnum))
 !!      allocate(this%pdistal(surfnum))
+
+      allocate(this%parameters_RCR(3,surfnum)) ! testing
 !
 !     ! allocate and zero other arrays 
       allocate(this%surfarea(surfnum))
@@ -6702,9 +6722,10 @@
       
           ! allocate(edgePairs(surf)%p(SUM(edgesPerProc), 2, 3))
 
-      allocate(this%pressure_n_FU(surfnum))
+      allocate(this%pressure_n(surfnum))
+      allocate(this%pressure_n_ptr(surfnum))
       do i = 1, surfnum
-         this%pressure_n_FU(i)%p => nrcr_states%s(i,5)
+         this%pressure_n_ptr(i)%p => nrcr_states%s(i,5)
       end do 
       
       allocate(this%implicitcoeff(surfnum,2)) 
@@ -6748,6 +6769,10 @@
          this%rcrparams(i)%c = rcrcoeff(2,i)
          this%rcrparams(i)%rd = rcrcoeff(3,i)
 
+         this%parameters_RCR(3,i) = rcrcoeff(3,i)
+         this%parameters_RCR(1,i) = rcrcoeff(1,i)
+         this%parameters_RCR(2,i) = rcrcoeff(2,i)
+
 
          ! set initial states
          nrcr_states%s(i,1) = this%rcrparams(i)%rp
@@ -6784,14 +6809,20 @@
       ! hack to create global Pd value for filtering, taken from 1st data point of the 1st surface
       do i = 1, surfnum
          nrcr_states%s(i,4) = this%rcrparams(1)%pd%v(1,2)
-      end do 
+      end do
+      this%parameters_Pd = this%rcrparams(1)%pd%v(1,2)
 
       ! assigning pointers to this data
       write(*,*) 'assigning pointers in initialize_rcr'
 
-      call PhAssignPointerDP(c_loc(nrcr_states%s(:,1:3)), c_char_"WindkesselRCR_Params"//c_null_char)
-      call PhAssignPointerDP(c_loc(nrcr_states%s(:,4)), c_char_"WindkesselRCR_Pdist"//c_null_char)
-      call PhAssignPointerDP(c_loc(nrcr_states%s(:,5)), c_char_"WindkesselRCR_P"//c_null_char)
+      ! no more assigning pointers here because it seems
+      ! that 'this' is a temporary copy ...
+
+      !call PhAssignPointerDP(c_loc(this%parameters_RCR), c_char_"WindkesselRCR_Params"//c_null_char)
+      !call PhAssignPointerDP(c_loc(this%parameters_Pd), c_char_"WindkesselRCR_Pdist"//c_null_char)
+      !call PhAssignPointerDP(c_loc(nrcr_states%s(:,5)), c_char_"WindkesselRCR_P"//c_null_char)
+      !call PhAssignPointerDP(c_loc(this%pressure_n), c_char_"WindkesselRCR_P"//c_null_char)
+
 
       end subroutine initialise_rcr      
 !
@@ -6853,15 +6884,15 @@
             pdistn_1 = getvalue(timen_1,pd)
 
             ! dirty hack for filtering
-            ! rdn_1 = a%parameters_RCR(3,i)
-            ! rp = a%parameters_RCR(1,i)
-            ! c = a%parameters_RCR(2,i)
+             rdn_1 = a%parameters_RCR(3,i)
+             rp = a%parameters_RCR(1,i)
+             c = a%parameters_RCR(2,i)
             ! rdn_1 = parameters_RCR(3,i)
             ! rp = parameters_RCR(1,i)
             ! c = parameters_RCR(2,i)    
 
-            ! pdistn = parameters_Pd
-            ! pdistn_1 = parameters_Pd
+             pdistn = a%parameters_Pd
+             pdistn_1 = a%parameters_Pd
 
             denom = c/alfi_delt + 1/rdn_1
 !
@@ -6890,15 +6921,15 @@
 
             ! parameters overwritten
             ! dirty hack for filtering
-            ! rdn_1 = a%parameters_RCR(3,i)
-            ! rp = a%parameters_RCR(1,i)
-            ! c = a%parameters_RCR(2,i)
+             rdn_1 = a%parameters_RCR(3,i)
+             rp = a%parameters_RCR(1,i)
+             c = a%parameters_RCR(2,i)
             ! rdn_1 = parameters_RCR(3,i)
             ! rp = parameters_RCR(1,i)
             ! c = parameters_RCR(2,i)    
 
-            ! pdistn = parameters_Pd
-            ! pdistn_1 = parameters_Pd
+             pdistn = a%parameters_Pd
+             pdistn_1 = a%parameters_Pd
 
             denom = real(1.0,8) + ((c*rdn_1)/alfi_delt)
 
@@ -6954,9 +6985,9 @@
 
          ! parameters overwritten
          ! dirty hack for filtering
-         ! r2 = a%parameters_RCR(3,i)
-         ! r1 = a%parameters_RCR(1,i)
-         ! c = a%parameters_RCR(2,i)
+          r2 = a%parameters_RCR(3,i)
+          r1 = a%parameters_RCR(1,i)
+          c = a%parameters_RCR(2,i)
             ! r2 = parameters_RCR(3,i)
             ! r1 = parameters_RCR(1,i)
             ! c = parameters_RCR(2,i)    
@@ -6964,7 +6995,7 @@
 
 
 
-         ! pd = parameters_Pd
+          pd = a%parameters_Pd
 
 !
          denom = c/delt + real(1,8)/r2
@@ -6975,6 +7006,21 @@
 !
       end subroutine
 !
+
+      subroutine assign_ptrs_ext_rcr(a)
+
+      use iso_c_binding
+      use phcommonvars, only: PhAssignPointerDP
+
+      implicit none
+
+      class(numericalrcr) :: a
+
+      call PhAssignPointerDP(c_loc(a%parameters_RCR), c_char_"WindkesselRCR_Params"//c_null_char)
+      call PhAssignPointerDP(c_loc(a%parameters_Pd), c_char_"WindkesselRCR_Pdist"//c_null_char)
+      call PhAssignPointerDP(c_loc(a%pressure_n), c_char_"WindkesselRCR_P"//c_null_char)
+
+      end subroutine
 
 
       subroutine setimplicitcoeff_netlistLPN(this,stepn,varchar)

@@ -467,6 +467,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         if (nrcractive) then
             nrcr = nrcrconstructor(numGRCRSrfs,nsrflistGRCR)
             call initreducedordermodel(y, nrcr, 'legacy')
+
+            call nrcr%assign_ptrs_ext()
+
         end if
 
     endif
@@ -694,7 +697,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
             call reset_flow_n(yold, nrcr)
             ! calculate the implicit coefficients
             call nrcr%setimplicitcoeff(lstep)
-        end if 
+        end if
 
     endif
     ! ------------------------------------------

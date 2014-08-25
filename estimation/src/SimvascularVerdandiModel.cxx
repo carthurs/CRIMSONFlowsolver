@@ -624,6 +624,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			state_part.Initialize("RCR Pdist");
 
 			state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Pdist"][0]);
+			std::cout << gat->pointerMapDP_["WindkesselRCR_Pdist"][0] << endl;
 			state_part.addIsEstimated(1);
 
 			shared_parts_.push_back(state_part);

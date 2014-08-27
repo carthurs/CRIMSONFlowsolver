@@ -40,6 +40,20 @@ module itrDrvVars ! this needs to be cleaned up
     TYPE(memLS_lhsType) memLS_lhs
     TYPE(memLS_lsType) memLS_ls
 
+    ! memLS copies for the heart model - systolic/diastolic 
+    INTEGER memLS_nFaces_s
+    INTEGER, ALLOCATABLE :: gNodes_s(:)
+    REAL*8, ALLOCATABLE :: sV_s(:,:)
+    TYPE(memLS_lhsType) memLS_lhs_d      
+    TYPE(memLS_lhsType) memLS_lhs_s   
+    TYPE(memLS_commuType) communicator_s
+    TYPE(memLS_lsType) memLS_ls_d
+    TYPE(memLS_lsType) memLS_ls_s
+
+    ! iBC copies for heart only, the original iBC is now in globalArrays.f90
+    real*8, allocatable, dimension(:,:) :: iBCs
+    real*8, allocatable, dimension(:)   :: iBCd    
+
 end module
 
 !! This iterative driver is the semi-discrete, predictor multi-corrector
@@ -102,6 +116,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     integer indx
 
     integer lstep0
+
+    integer :: surfids(0:MAXSURF)
+
     !
     !.... For linear solver Library
     !
@@ -118,6 +135,21 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                              relTolIn=(/epstol(1),epstol(7)/), maxItr=nPrjs, maxItrIn=(/nGMRES,maxIters/))
 
         CALL memLS_COMMU_CREATE(communicator, MPI_COMM_WORLD)
+
+        ! make heart model copies of the memLS objects
+        IF (iheart .GT. int(0)) THEN
+            
+            ! default memLS object has prescribed_velocity on the inflow face, in the heart model velocity = 0, i.e. diastole
+            memLS_ls_d = memLS_ls
+            
+            ! recreate memLS_ls for systole, we setup the reduced order boundary condition later
+            CALL memLS_LS_CREATE(memLS_ls_s, LS_TYPE_NS, dimKry=Kspace, relTol=epstol(8), & 
+                                 relTolIn=(/epstol(1),epstol(7)/), maxItr=nPrjs, maxItrIn=(/nGMRES,maxIters/))
+
+            ! recreate communicator for the systolic copy
+            CALL memLS_COMMU_CREATE(communicator_s, MPI_COMM_WORLD)
+
+        END IF 
 
         IF (numpe .GT. 1) THEN
             WRITE(fileName,*) myrank
@@ -271,21 +303,85 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             IF  (ipvsq .GE. 2) THEN
                 DO k = 1, numResistSrfs
                     faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn)
+                    CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn, memLS_lhs)
                 END DO
                 DO k = 1, numImpSrfs
                     faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn)
+                    CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn, memLS_lhs)
                 END DO
                 DO k = 1, numRCRSrfs
                     faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn)
+                    CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn, memLS_lhs)
                 END DO
                 DO k = 1, numGRCRSrfs
                     faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn)
+                    CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs)
                 END DO
             END IF
+
+            ! create systolic memLS_lhs
+            IF (iheart .gt. int(0)) THEN
+
+                ! add 1 for the heart model surface
+                memLS_nFaces_s = memLS_nFaces + int(1)
+                ! create diastolic memLS_lhs
+                memLS_lhs_d = memLS_lhs                
+                ! get surface id of the heart model
+                surfids = hrt%getsurfids()
+                ! here 1 is added to the number of surfaces in memLS_nFaces_s
+                CALL memLS_LHS_CREATE(memLS_lhs_s, communicator_s, gnNo, nNo, nnz_tot, ltg, colm, rowp, memLS_nFaces_s) 
+
+
+                ! here we are counting the number of dirchlet nodes excluding the heart model face
+                faIn = 1
+                facenNo = 0
+                DO i=1, nshg
+                    IF (IBITS(iBC(i),3,3) .NE. 0 .AND. ndsurf(i) .NE. surfids(1)) THEN
+                        facenNo = facenNo + 1
+                    END IF
+                END DO
+                ALLOCATE(gNodes_s(facenNo), sV_s(nsd,facenNo))
+                sV_s = 0D0
+
+                j = 0
+
+                DO i = 1, nshg               
+                    IF (IBITS(iBC(i),3,3) .NE. 0 .AND. ndsurf(i) .NE. surfids(1)) THEN
+                        j = j + 1
+                        gNodes_s(j) = i
+                        IF (.NOT.BTEST(iBC(i),3)) sV_s(1,j) = 1D0
+                        IF (.NOT.BTEST(iBC(i),4)) sV_s(2,j) = 1D0
+                        IF (.NOT.BTEST(iBC(i),5)) sV_s(3,j) = 1D0
+                    END IF
+                END DO
+
+                CALL memLS_BC_CREATE(memLS_lhs_s, faIn, facenNo, nsd, BC_TYPE_Dir, gNodes_s, sV_s)
+
+                ! same as above we add the reduced order surfaces
+                IF  (ipvsq .GE. 2) THEN
+                    DO k = 1, numResistSrfs
+                        faIn = faIn + 1
+                        CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn, memLS_lhs_s)
+                    END DO
+                    DO k = 1, numImpSrfs
+                        faIn = faIn + 1
+                        CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn, memLS_lhs_s)
+                    END DO
+                    DO k = 1, numRCRSrfs
+                        faIn = faIn + 1
+                        CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn, memLS_lhs_s)
+                    END DO
+                    DO k = 1, numGRCRSrfs
+                        faIn = faIn + 1
+                        CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs_s)
+                    END DO
+                    ! here we add the heart model surface
+                    faIn = faIn + 1 ! add one to skip to next surface
+                    CALL AddNeumannBCTomemLS(surfids(1), faIn, memLS_lhs_s)  
+                END IF
+
+            END IF 
+
         ELSE
 !--------------------------------------------------------------------
 
@@ -354,62 +450,50 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !.....open the necessary files to gather time series
     !
     lstep0 = lstep+1
-    !
-    !.... make two copies of iBC array to use a switch for INCP boundary condition
-    !
-    if (incp .gt. zero) then
-        allocate(iBCd(nshg))
+        
+    ! ******************************************************** ! 
+    ! *** initialize the initial condition for heart model *** !
+    ! ******************************************************** !
+
+    ! make copies of iBC        
+    if (iheart .gt. int(0)) then
+        allocate(iBCd(nshg))      
         iBCd = iBC
-        if (numINCPSrfs .eq. one) then
-            allocate(iBCs(1,nshg))
-            iBCs(1,:) = iBC
-            do i=1, nshg
-                if(ndsurf(i).eq.nsrflistINCP(1)) then
-                    iBCs(1,i)=0
-                endif
-            enddo
-        elseif (numINCPSrfs .eq. two) then
-            allocate(iBCs(3,nshg))
-            do k=1, 3
-                iBCs(k,:) = iBC
-            enddo
+        allocate(iBCs(1,nshg))
+        iBCs(1,:) = iBC
+        surfids = hrt%getsurfids()
+        do i = 1,nshg
+            if(ndsurf(i) .eq. surfids(1)) then
+                iBCs(1,i)=0
+            end if
+        end do
+    end if
+   
+    if(iheart .gt. int(0)) then
+        
+        ! set pressures and flows at 3D/0D interface
+        call initreducedordermodel(y,hrt,'multidomain') 
+        
+        ! set internal variables for the left heart     
+        ! if (isystemic .ne. int(1)) then
+            ! call hrt%initxvars(lstep)                   
+        ! end if 
 
-            do i=1, nshg
-                if(ndsurf(i).eq.nsrflistINCP(1)) then
-                    iBCs(1,i)=0
-                    iBCs(2,i)=0
-                elseif(ndsurf(i).eq.nsrflistINCP(2)) then
-                    iBCs(1,i)=0
-                    iBCs(3,i)=0
-                endif
-            enddo
-        endif
-    endif
-    !
-    !...initialize the initial condition for INCP BC
-    !
-    if(numINCPSrfs.gt.zero) then
-        call calcINCPic(Delt(1), y, nsrflistINCP, numINCPSrfs)
-    endif
+        call hrt%initxvars(lstep)                   
 
-    if (incp.gt.zero) then
-        if (numINCPSrfs .eq. one) then
-            if(Qaorta(lstep+1,1) .lt. zero) then
-                iBC = iBCs(1,:)   !systole
-                inactive(1)=1
-                INCPSwitch = 1
-            endif
-        elseif (numINCPSrfs .eq. two) then
-            if(Qaorta(lstep+1,1) .lt. zero .and.  &
-            Qaorta(lstep+1,2) .lt. zero) then
-                iBC = iBCs(1,:)   !systole
-                inactive(1:2)=1
-                INCPSwitch = 1
-            endif
-        endif
-    endif
+        ! if valve open, switch iBC
+        if (hrt%isavopen()) then
+            iBC = iBCs(1,:)
+        else
+            iBC = iBCd
+        end if        
 
-    !
+    end if
+
+    ! ******************************************************** !
+    ! ***                                                  *** !
+    ! ******************************************************** !
+    
     !
     !.... satisfy the boundary conditions
     !
@@ -470,7 +554,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             !call initreducedordermodel(y, nrcr, 'legacy')
             call initreducedordermodel(y, nrcr, 'multidomain')
 
-
             call nrcr%assign_ptrs_ext()
 
         end if
@@ -496,6 +579,21 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     if(Lagrange.gt.zero) then
         call calcLagrangeic(nsrflistLagrange,numLagrangeSrfs)
     endif
+
+    ! ************************************************************ !
+    ! *** intialise multidomain container and systemic circuit *** !
+    ! ************************************************************ !
+
+    if (multidomainactive) then
+        call initmultidomaincontainer(y,multidom) ! set using flows and pressures at t = t_{n}
+        !if (sysactive) then
+        !  call sys%initxvars(lstep)
+        !  call initreducedordermodel(y,sys,'multidomain')
+        !end if
+    end if
+
+    ! ************************************************************ !
+    ! ************************************************************ !
 
     !
     !.... deformable wall initialization
@@ -534,33 +632,85 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     CONTAINS
 
-    SUBROUTINE AddNeumannBCTomemLS(srfID, faIn)
+    !
+    ! replacement subroutine for systolic/diastolic copies
+    !
 
+    SUBROUTINE AddNeumannBCTomemLS(srfID, faIn, memLS_lhs_inout)
+    
     INTEGER, INTENT(IN) :: srfID, faIn
-
+      
     INTEGER facenNo, i, j
+
+    TYPE(memLS_lhsType), INTENT(INOUT) :: memLS_lhs_inout
+    INTEGER, ALLOCATABLE :: gNodes_tmp(:)
+    REAL*8, ALLOCATABLE :: sV_tmp(:,:)
 
     facenNo = 0
     DO i = 1, nshg
-     IF (srfID .EQ. ndsurf(i)) THEN
-        facenNo = facenNo + 1
-     END IF
+        IF (srfID .EQ. ndsurf(i)) THEN
+            facenNo = facenNo + 1
+        END IF
     END DO
-    IF (ALLOCATED(gNodes)) DEALLOCATE(gNodes, sV)
-    ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
-    sV = 0D0
+    IF (ALLOCATED(gNodes_tmp)) THEN
+        DEALLOCATE(gNodes_tmp)
+    END IF
+    IF (ALLOCATED(sV_tmp)) THEN      
+        DEALLOCATE(sV_tmp)
+    END IF
+    
+    ALLOCATE(gNodes_tmp(facenNo), sV_tmp(nsd,facenNo))
+
+    sV_tmp = 0D0
+    gNodes_tmp = int(0)
     j = 0
     DO i = 1, nshg
-     IF (srfID .EQ. ndsurf(i)) THEN
-        j = j + 1
-        gNodes(j) = i
-        sV(:,j) = NABI(i,1:3)
-     END IF
+        IF (srfID .EQ. ndsurf(i)) THEN
+            j = j + 1
+            gNodes_tmp(j) = i
+            sV_tmp(:,j) = NABI(i,1:3)
+        END IF
     END DO
-    CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Neu, gNodes, sV)
+
+    CALL memLS_BC_CREATE(memLS_lhs_inout, faIn, facenNo, nsd, BC_TYPE_Neu, gNodes_tmp, sV_tmp)      
+
 
     RETURN
     END SUBROUTINE AddNeumannBCTomemLS
+
+    ! SUBROUTINE AddNeumannBCTomemLS(srfID, faIn)
+
+    ! INTEGER, INTENT(IN) :: srfID, faIn
+
+    ! INTEGER facenNo, i, j
+
+    ! facenNo = 0
+    ! DO i = 1, nshg
+    !  IF (srfID .EQ. ndsurf(i)) THEN
+    !     facenNo = facenNo + 1
+    !  END IF
+    ! END DO
+    ! IF (ALLOCATED(gNodes)) DEALLOCATE(gNodes, sV)
+    ! ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
+    ! sV = 0D0
+    ! j = 0
+    ! DO i = 1, nshg
+    !  IF (srfID .EQ. ndsurf(i)) THEN
+    !     j = j + 1
+    !     gNodes(j) = i
+    !     sV(:,j) = NABI(i,1:3)
+    !  END IF
+    ! END DO
+    ! CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Neu, gNodes, sV)
+
+    ! RETURN
+    ! END SUBROUTINE AddNeumannBCTomemLS
+
+
+
+
+
+
 
 
 
@@ -584,7 +734,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use multidomain, only: nrcr, nrcractive
+    use multidomain, only: nrcr, nrcractive, hrt
     !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
@@ -599,64 +749,20 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-    if (incp.gt.zero) then  ! works only when there is one "INCP" srf
-        if (numINCPSrfs .eq. one) then
-            if(PLV(lstep+1,1) .gt. Paorta(lstep+1,1)) then
-                iBC = iBCs(1,:)   !systole
-                inactive(1)=1
-                INCPSwitch = 1
-            elseif (INCPSwitch .gt. 0 .and.  &
-            Qaorta(lstep+1,1) .le. zero) then
-                iBC = iBCs(1,:)   !systole
-                inactive(1)=1
-                INCPSwitch = 1
+! ********************************************* !
+! *** heart model boundary condition switch *** !
+! ********************************************* !
+
+          if (iheart) then  
+            if (hrt%isavopen()) then
+              iBC = iBCs(1,:)
             else
-                iBC=iBCd   !diastole
-                inactive(1)=nsrflistINCP(1)
-                INCPSwitch = 0
-            endif
-        elseif (numINCPSrfs .eq. two) then
-            if(PLV(lstep+1,1) .gt. Paorta(lstep+1,1) .and.  &
-            PLV(lstep+1,2) .gt. Paorta(lstep+1,2)) then
-                iBC = iBCs(1,:)   !systole
-                inactive(1:2)=1
-                INCPSwitch = 1
-            elseif(PLV(lstep+1,1) .gt. Paorta(lstep+1,1) .and.  &
-            PLV(lstep+1,2) .le. Paorta(lstep+1,2)) then
-                iBC = iBCs(2,:)   !systole
-                inactive(1)=1
-                inactive(2)=nsrflistINCP(2)
-                INCPSwitch = 1
-            elseif(PLV(lstep+1,1) .le. Paorta(lstep+1,1) .and.  &
-            PLV(lstep+1,2) .gt. Paorta(lstep+1,2)) then
-                iBC = iBCs(3,:)   !systole
-                inactive(2)=1
-                inactive(1)=nsrflistINCP(1)
-                INCPSwitch = 1
-            elseif (INCPSwitch.gt.0 .and. Qaorta(lstep+1,1).le.zero  &
-            .and. Qaorta(lstep+1,2) .le. zero) then
-                iBC = iBCs(1,:)   !systole
-                inactive(1:2)=1
-                INCPSwitch = 1
-            elseif (INCPSwitch.gt.0 .and. Qaorta(lstep+1,1).le.zero  &
-            .and. Qaorta(lstep+1,2) .gt. zero) then
-                iBC = iBCs(2,:)   !systole
-                inactive(1)=1
-                inactive(2)=nsrflistINCP(2)
-                INCPSwitch = 1
-            elseif (INCPSwitch.gt.0 .and. Qaorta(lstep+1,1).gt.zero  &
-            .and. Qaorta(lstep+1,2) .le. zero) then
-                iBC = iBCs(3,:)   !systole
-                inactive(2)=1
-                inactive(1)=nsrflistINCP(1)
-                INCPSwitch = 1
-            else
-                iBC=iBCd   !diastole
-                inactive(1)=nsrflistINCP(1)
-                INCPSwitch = 0
-            endif
-        endif
-    endif
+              iBC = iBCd
+            end if
+          end if
+
+! ********************************************* c
+! ********************************************* c
 
     xi=(istep+1)*1.0/nstp
     datmat(1,2,1)=rmub*(1.0-xi)+xi*rmue
@@ -770,7 +876,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use multidomain, only: nrcr, nrcractive
+    use multidomain, only: nrcr, nrcractive, hrt
     !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
@@ -824,6 +930,22 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 HFlux    = zero
                 lhs = 1 - min(1,mod(ifuncs(1)-1,LHSupd(1)))
 
+                ! ************************************ !
+                ! heart model switch for memLS_lhs *** !
+                ! ************************************ !
+
+                if (iheart .gt. int(0)) then
+                    if (hrt%isavopen()) then
+                        memLS_lhs = memLS_lhs_s
+                        memLS_ls = memLS_ls_s
+                    else
+                        memLS_lhs = memLS_lhs_d
+                        memLS_ls = memLS_ls_d
+                    end if
+                end if 
+
+                ! ************************************ !                    
+                ! ************************************ !
 
                 call SolFlow(y,             ac,        u, &
                 yold,          acold,     uold, &
@@ -1015,7 +1137,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     use deformableWall
     use ResidualControl
 
-    use multidomain, only: nrcr
+    use multidomain, only: nrcr, hrt
 
     use phcommonvars
     use itrDrvVars
@@ -1082,13 +1204,27 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
             end if
         end if
     endif
-    !
-    ! ... update the flow history for the INCP convolution
-    !
-    if(numINCPSrfs.gt.zero) then
-        call UpdHistConv(y,nsrflistINCP,numINCPSrfs)
-        call UpdHeartModel(Delt(itseq),y,nsrflistINCP,numINCPSrfs,lstep)
-    endif
+    
+    ! ************************** !
+    ! *** update heart model *** !
+    ! ************************** !
+    
+    !if (iheart .gt. int(0) .and. isystemic .ne. int(1)) then
+    if (iheart .gt. int(0)) then
+
+        
+        call hrt%iterate_hrt(lstep,'update')
+        call updreducedordermodel(y,hrt,'update') 
+        ! update internal variables in the heart with new flow at t = t_{n+1}
+        call hrt%updxvars(lstep)
+        call hrt%writexvars(lstep)
+        ! call hrt%write_activation_history_hrt(lstep) !moved this to avoid missing latest activation value...
+
+    end if
+
+    ! ************************** !
+    ! ************************** !
+
     !
     ! ... update the flow history for the impedance convolution, filter it and write it out
     !
@@ -1518,6 +1654,70 @@ subroutine initreducedordermodel(y, rom, asciiformat)
 
 end subroutine initreducedordermodel
 
+! ***********************************************************************
+! *** initialise multidomain container with areas, pressure and flows ***
+! ***********************************************************************
+
+
+subroutine initmultidomaincontainer(y,mdc)
+
+    use multidomain, only: multidomaincontainer
+    use boundarymodule, only: area, integrScalar, GetFlowQ
+    use phcommonvars
+
+    real*8 :: y(nshg, ndof)
+    type(multidomaincontainer) :: mdc
+    integer :: nsurf 
+    integer :: srflist(0:MAXSURF)
+    real*8 :: integpress(0:MAXSURF)
+    real*8 :: currpress(0:MAXSURF)
+    real*8 :: surfarea(0:MAXSURF)      
+    real*8 :: currflow(0:MAXSURF)
+    real*8 :: unity(nshg)
+
+    ! get number of surfaces 
+    nsurf = mdc%getsurfnum()      
+
+    if (nsurf .gt. int(0)) then
+    
+        ! get surface list in 0:MAXSURF array
+        srflist = mdc%getsurfids()
+
+        ! get surface area from boundarymodule 
+        do i = 1, nsurf
+           surfarea(i) = area(srflist(i))
+           write(*,*) 'mdc area: ', i,' ',srflist(i),' ',surfarea(i)
+        end do
+
+
+        ! calculate area by integrating unity over the surface 
+        ! unity has dimensions of nshg = total number of nodes
+        unity(:) = one 
+        call integrScalar(surfarea,unity,srflist,nsurf) 
+
+        do i = 1, nsurf
+           write(*,*) 'mdc area: ', i,' ',srflist(i),' ',surfarea(i)
+        end do
+
+
+        call mdc%setarea(nsurf,surfarea)
+         
+        ! integrate flow field on surface in normal direction
+        call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
+
+        ! integrate pressure
+        call integrScalar(integpress,y(:,4),srflist,nsurf)
+        ! get area and divide integrate pressure
+        currpress(1:nsurf) = integpress(1:nsurf)/surfarea(1:nsurf)
+
+        ! set flows and pressure in reduced order model at step n
+        call mdc%setflow(nsurf,currflow)          
+        call mdc%setpressure(nsurf,currpress)
+
+      end if 
+
+      return
+      end subroutine
 
 ! ********************************************************
 ! *** subroutine to reset flow at time step n using the fluid solution y

@@ -55,6 +55,7 @@
 !
         use incpBC
         use LagrangeMultipliers 
+        use multidomain, only: hrt, multidom
 !
         use phcommonvars  
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -87,8 +88,13 @@
                   shapeVar(npro,nshl),         shdrv(npro,nsd,nshl), &
                   rNa(npro,4)
 
-        real*8    unm_copy(npro)
-        real*8    rou_copy(npro)
+        integer   ienb(npro,nshl) ! added by KD Lau 04/01/13 
+        real*8    gpres(npro)     ! added by KD Lau 04/01/13
+        real*8    pval            ! added by KD Lau 22/01/13
+        real*8    unm_copy(npro)  ! added by KD Lau 14/06/13   
+        real*8    rou_copy(npro)  ! added by KD Lau 14/06/13   
+        real*8    stb_pres(npro)  ! added by KD Lau 13/08/13   
+        real*8    s_pres          ! added by KD Lau 13/08/13 
 
         real*8    xmudmi(npro,ngauss),         dwl(npro,nshl)
 !
@@ -98,6 +104,13 @@
 !.... compute the nodes which lie on the boundary (hierarchic)
 !
         call getbnodes(lnode)
+!
+!       ! **************************** !
+!       ! *** zero gpres/stb_press *** !
+!       ! **************************** !
+!
+        gpres(:) = real(0.0,8) 
+        stb_pres(:) = real(0.0,8)               
 !
 !.... loop through the integration points
 !
@@ -174,17 +187,33 @@
                          * WdetJb(iel) 
 
            endif
-           
+!          
 !
-!.... normal velocity component for advective stabilization for inflows
-!
-           unm_copy(iel) = zero
-           if (btest(iBCB(iel,1),1)) then
-               if(unm(iel) .lt. real(0.0,8))then
-                   unm_copy(iel) = unm(iel)
-               end if
-           end if
+! **************************************************************************** ! 
+! *** start of influx stabilisation                                        *** !
+! ***                                                                      *** !
+! *** here a copy of the velocity flux is made: unm = \vec{U}\cdot\vec{n}  *** !
+! *** the resultant stabilisation pressure is also calculated here         *** ! 
+! ***                                                                      *** !
+! **************************************************************************** ! 
+!          
+          unm_copy(iel) = real(0.0,8)
+          if (btest(iBCB(iel,1),1)) then                      
+            
+            ! check if this element/integration point has influx
+            if(unm(iel) .lt. real(0.0,8))then              
+              ! store influx to add to residual later
+              unm_copy(iel) = unm(iel)
+              ! calculate stabilisation pressure on this integration point
+              s_pres = stabflux_coeff*rho(iel)*unm(iel)*unm(iel)
+              ! integrate stabilisation pressure over element for this integration point             
+              stb_pres(iel) = s_pres*WdetJb(iel)             
+            end if                         
 
+          end if
+!          
+! **************************************************************************** ! 
+! **************************************************************************** ! 
 !
 !.... mass flux
 !
@@ -200,32 +229,64 @@
 !
 !.... pressure
 !
-           if (incp .gt. zero) then
-              do k=1, numINCPSrfs
-                 if(iBCB(iel,2).eq.inactive(k)) then
-! .... do nothing in iBCB
-                 else        
-                    if (btest(iBCB(iel,1),1)) then
-                       pres(iel) = zero
-                       do n = 1, nshlb
-                          nodlcl = lnode(n)
-                          pres(iel) = pres(iel) &
-                             + shapeVar(iel,nodlcl) * BCB(iel,n,2)
-                       enddo
-                    endif
-                 endif
-              enddo
+! **************************************************************************** ! 
+! ***                                                                      *** !
+! *** start of zero pressure / multidomain boundary pressure BC            *** !
+! ***                                                                      *** !
+! *** in this section we zero the elemental pressure on zero pressure and  *** !
+! *** multidomain boundary faces, if using the heart model the pressure is *** !
+! *** not zeroed out                                                       *** ! 
+! ***                                                                      *** !
+! *** note that shape is now shapeVar - KDL, NAN & UWM                     *** !  
+! ***                                                                      *** !
+! **************************************************************************** ! 
+!
+        ! check if heart model 
+        if (iheart .gt. int(0)) then
+          
+          ! bit test for zero pressure boundary condition          
+          if (btest(iBCB(iel,1),1)) then
+            
+            ! if heart model surface and valve is closed, do nothing
+            if (hrt%hassurfid(iBCB(iel,2)) .and. hrt%isavopen() == int(0)) then                          
+
+            ! else zero apply zero pressure boundary condition              
+            else 
+
+              ! zero element pressure
+              pres(iel) = zero
+
+              ! apply BCB value, as this is zero pressure is this required?!
+              do n = 1, nshlb
+                 nodlcl = lnode(n)
+                 pres(iel) = pres(iel) + shapeVar(iel,nodlcl) * BCB(iel,n,2)
+              end do
+            
+            end if 
+          
+          end if
+  
+        ! if not using heart model        
+        else 
+
+          ! bit test for zero pressure boundary 
+          if (btest(iBCB(iel,1),1)) then
+
+            ! zero element pressure            
+            pres(iel) = zero
+            
+            ! apply BCB value, as this is zero pressure is this required?!
+            do n = 1, nshlb
+              nodlcl = lnode(n)
+              pres(iel) = pres(iel) + shapeVar(iel,nodlcl) * BCB(iel,n,2)
+            end do
+          
+          end if
         
-           else        
-              if (btest(iBCB(iel,1),1)) then
-                 pres(iel) = zero
-                 do n = 1, nshlb
-                    nodlcl = lnode(n)
-                    pres(iel) = pres(iel) &
-                              + shapeVar(iel,nodlcl) * BCB(iel,n,2)
-                 enddo
-              endif
-           endif
+        end if 
+!        
+! **************************************************************************** ! 
+! **************************************************************************** !   
 !
 !.... viscous flux
 !        
@@ -300,6 +361,17 @@
 !
         enddo                                               ! end of bc loop
 !
+! **************************************
+! *** start of multidomain container ***
+! **************************************
+!
+        ! sum up stabilistion pressure from in multidomain container
+        call multidom%addstb_pres(npro,stb_pres,iBCB(:,2))        
+!
+! **************************************
+! **************************************  
+!
+
 !$$$c.... if we are computing the bdry for the consistent
 !$$$c     boundary forces, we must not include the surface elements
 !$$$c     in the computataion (could be done MUCH more efficiently!)--->
@@ -387,15 +459,21 @@
            rNa(:,2) = rNa(:,2) + rou*u2
            rNa(:,3) = rNa(:,3) + rou*u3
         endif
-        
-!
-!.... advective stabilization for inflows
-!
+!       
+! *************************************
+! *** start of influx stabilisation ***
+! *************************************
+! 
+        ! calculate rho (density) x unm
         rou_copy=rho*unm_copy
-        rNa(:,1) = rNa(:,1) - rou_copy*u1
-        rNa(:,2) = rNa(:,2) - rou_copy*u2
-        rNa(:,3) = rNa(:,3) - rou_copy*u3
-
+        ! minus stabilised term 
+        rNa(:,1) = rNa(:,1) - stabflux_coeff*rou_copy*u1                
+        rNa(:,2) = rNa(:,2) - stabflux_coeff*rou_copy*u2
+        rNa(:,3) = rNa(:,3) - stabflux_coeff*rou_copy*u3        
+!        
+! *************************************
+! *************************************
+!
         rNa(:,1) = rNa(:,1)*WdetJb
         rNa(:,2) = rNa(:,2)*WdetJb
         rNa(:,3) = rNa(:,3)*WdetJb

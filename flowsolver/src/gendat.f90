@@ -221,7 +221,7 @@
 ! *** start of intialise multidomain models
 !
       call startmultidomain()     
-      !call startmultidomain(iheart,'heart')       
+      call startmultidomain(iheart,'heart')       
       !call startmultidomain(isystemic,'systemic')
       !call startmultidomain(inewcoronary,'coronary')
       !call startmultidomain(inetlistLPN,'netlist')

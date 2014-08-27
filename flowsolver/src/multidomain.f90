@@ -3184,7 +3184,9 @@
 
       this%stb_pres(1:this%surfnum) = this%stb_pres(1:this%surfnum) &
                                     + psum(1:this%surfnum)
-!
+
+      ! write(*,*) 'addstb_pres: ',this%stb_pres(1:this%surfnum)
+
       end subroutine      
 !
 ! *** 
@@ -3217,6 +3219,8 @@
       a%stb_pres(1:a%surfnum) = psum_mpi(:)
       !!write(*,*) 'stb_pres: ', this%stb_pres(1:this%surfnum)
       a%stb_pres(1:a%surfnum) = a%stb_pres(1:a%surfnum)/a%areas(1:a%surfnum)
+
+      ! write(*,*) 'sumstb_pres: ',a%stb_pres(1:a%surfnum)
 
       end subroutine
 
@@ -5653,7 +5657,7 @@
       
       implicit none
       type(numericalheart) :: hrtconstructor
-      real*8 :: heartparameters(0:17)
+      real*8 :: heartparameters(0:15)
       integer, intent(in) :: inputHRandSP
       integer, intent(in) :: lstep_passedIn
 
@@ -5673,7 +5677,7 @@
       include "mpif.h"               
 
       class(numericalheart), intent(inout) :: this
-      real*8 :: parameters(0:17)  
+      real*8 :: parameters(0:15)  
       integer :: hstep
       integer :: i
       integer :: hnum = 743
@@ -5688,8 +5692,8 @@
       real*8 :: approxInitialStrokeVolume
 
       call MPI_COMM_RANK(MPI_COMM_WORLD,rank,ierr)
-!
-!     active model
+
+      ! active model
       this%isactive = int(1)
 
       ! Copy the common block flag, making it a member variable:
@@ -5698,7 +5702,7 @@
       ! A label so we can identify this class (avoids a world of pain when working with a tower of derived types)
       this%classNameString = 'numericalheart'
 
-      ! This has been refactored here from the systemic circuit
+      ! This has been refactored here from the systemic circuit      
       this%ahistfilename = 'sysAhist.dat'
       
       ! allocate history arrays
@@ -5721,17 +5725,38 @@
       ! activation
       write(this%avarsformat,'(3(a))') '(i8,e20.10)' 
 
-!     ! number of surfaces, set to 1
+      ! number of surfaces, set to 1
       this%surfnum = int(1)
       allocate(this%surfids(this%surfnum))
-!      
-!     ! aortic surface id
-      this%surfids(1:this%surfnum) = int(parameters(0))
+      
+      ! assign parameters form array set in input_fform.cxx
+      this%surfids(1:this%surfnum) = int(parameters(0))  ! aortic surface id
+      this%patrial = parameters(1)                       ! atrial pressure       
+      this%rmv = parameters(2)                           ! mitral valve    
+      this%edv = parameters(3)                           ! end diastolic volume
+      this%vulv = parameters(4)                          ! unstressed volume  
+      this%emax = parameters(5)                          ! maximum elastance  
+      this%tmax = parameters(6)                          ! time to maximum elastance
+      this%trelax = parameters(7)                        ! time to relax - i.e. min. elastance after max. elastance
+      this%period = parameters(8)                        ! period 
+      this%kelv = parameters(9)                          ! ventricular resistance - kelv      
+      this%rav = parameters(10)                          ! aortic valve
+      this%ibackflow = int(parameters(11))               ! back flow flag
+      this%m_backflow = parameters(12)                   ! back flow magnitude
+      this%s_backflow = parameters(13)                   ! back flow steepness
+      this%c_backflow = parameters(14)                   ! back flow closure
+      this%max_backflow = parameters(15)                 ! back flow time
 
-!     ! end diastolic volume
-      this%edv = parameters(3)
+      ! set model variables from parameters
+      this%vlv_n = this%edv            
+      this%emin = this%patrial/(this%edv - this%vulv)     
 
-!     ! period, time to tmax and trelax input in seconds, and maximum elastance
+      ! store tmax and trelax in non-dimensional units
+      this%tmax = this%tmax/this%period            
+      this%trelax = this%trelax/this%period
+
+      ! reset values if inputHRandSP = 1
+      ! period, time to tmax and trelax input in seconds, and maximum elastance
       if (this%inputHRandSP .eq. int(1)) then
 
          this%systolicPressureList => loadFileAsLinkedList('SystolicPressure.dat',lstep_passedIn)
@@ -5748,82 +5773,47 @@
 
          approxInitialStrokeVolume = 83.3
          this%emax = 0.9*this%systolicPressureList%value*(this%edv - approxInitialStrokeVolume)      
-      else               
-         this%period = parameters(1)
+      ! else                
+         ! this%period = parameters(1)
 
-         this%tmax = parameters(11)
-         this%tmax = this%tmax/this%period            
-         this%trelax = parameters(12)
-         this%trelax = this%trelax/this%period
+         ! this%tmax = parameters(11)
+         ! this%tmax = this%tmax/this%period            
+         ! this%trelax = parameters(12)
+         ! this%trelax = this%trelax/this%period
 
-         this%emax = parameters(2)
+         ! this%emax = parameters(2)
       end if
-!
-      ! initial volume
-      this%vlv_n = this%edv
-!
-!     ! unstressed volume      
-      this%vulv = parameters(4)
-!
-!     ! atrial pressure 
-      this%patrial = parameters(5)
-!
-!     ! aortic valve
-      this%rav = parameters(6)
-      this%lav = parameters(7)
-!
-!     ! mitral valve
-      this%rmv = parameters(8)
-      this%lmv = parameters(9)
-!
-!     ! kelv
-      this%kelv = parameters(10)      
-!      
-!     ! calculate emin from parameters
-      this%emin = this%patrial/(this%edv - this%vulv)      
-!
-!     ! back flow parameters
-      this%ibackflow = int(parameters(13))
-      
-      this%m_backflow = parameters(14)
-      this%s_backflow = parameters(15)
-      this%c_backflow = parameters(16)
-      this%max_backflow = parameters(17)
-!
-
+  
+      ! write out values to file
       call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierr)              
       if (rank .eq. int(0)) then
          open(hnum, file='heartmodel.dat', status='replace')      
-         write(hnum,*) '# heart model input parameters [cm g s]'
+         write(hnum,*) '# heart model input parameters'
          write(hnum,*) '# '
          write(hnum,*) '# aortic surface'
          write(hnum,*) this%surfids(1:this%surfnum) 
-         write(hnum,*) '# heart period [s]'
+         write(hnum,*) '# heart period [time]'
          write(hnum,*) this%period
-         write(hnum,*) '# end diastolic volume [cm^{3}]'            
+         write(hnum,*) '# end diastolic volume [volume]'            
          write(hnum,*) this%edv
-         write(hnum,*) '# unstressed volume [cm^{3}]'
+         write(hnum,*) '# unstressed volume [volume]'
          write(hnum,*) this%vulv
-         write(hnum,*) '# preload [cm^{3}]'
+         write(hnum,*) '# preload [pressure]'
          write(hnum,*) this%patrial 
          write(hnum,*) '# tmax/tperiod [-]'
          write(hnum,*) this%tmax
          write(hnum,*) '# trelax/tperiod [-]'
          write(hnum,*) this%trelax
-         write(hnum,*) '# emax [dynes cm^{-5}]'
+         write(hnum,*) '# emax [pressure/volume]'
          write(hnum,*) this%emax
-         write(hnum,*) '# emin [dynes cm^{-5}]'
+         write(hnum,*) '# emin [pressure/volume]'
          write(hnum,*) this%emin
-         write(hnum,*) '# rav [dynes cm^{-3}]'
+         write(hnum,*) '# rav [pressure/volume]'
          write(hnum,*) this%rav 
-         write(hnum,*) '# lav [dynes cm^{-3} s^{-1}]'      
-         write(hnum,*) this%lav
-         write(hnum,*) '# kelv []'
+         write(hnum,*) '# kelv [1/time]'
          write(hnum,*) this%kelv         
-         write(hnum,*) '# rmv [dynes cm^{-5}]'
+         write(hnum,*) '# rmv [pressure/flow]'
          write(hnum,*) this%rmv
-         write(hnum,*) '# lmv [dynes cm^{-5}]'
-         write(hnum,*) this%lmv
          close(hnum)
       end if
 
@@ -5904,36 +5894,37 @@
          this%elv_senzaki%v(i,2) = en(i)
       end do
 
-!     load elastance from input file ELV.in 
+      ! load elastance from input file ELV.in 
       open(elvnum, file='ELV.in', status='old', iostat=ierr)
-!      
-!     if file exists
+      
+      ! if file exists
       if (ierr .eq. int(0)) then         
-!
-!        set boolean true
+
+         ! set boolean true
          this%input_elastance = int(1)
-!         
-!        read number of data points and read allocate time data object
+         
+         ! read number of data points and read allocate time data object
          read(elvnum,*) nelv
          allocate(this%elv_input%v(nelv,2))
-!
-!        read data from file
+
+         ! read data from file
          do i = 1,nelv         
             read(elvnum,*) tval,eval
             this%elv_input%v(i,1) = tval
             this%elv_input%v(i,2) = eval
          end do 
-!
+
       else
-!
-!        set boolean false      
+
+         ! set boolean false      
          this%input_elastance = int(0)
-!         
+
       end if
-!
-!     close file      
+
+      ! close file      
       close(elvnum)
-!
+
+      ! 
       if (lstep_passedIn .eq. int(0)) then
          ! Note that currently these are only loaded-on-restart if the controlledcoronarymodel is active (from coronary_restart.dat).
          ! If you want to use it somewhere else in the code, make sure it's loaded appropriately on restarts.
@@ -5941,8 +5932,6 @@
          this%newBeatJustStarted = int(0)
       end if
 
-
-!
       return
       end subroutine initialise_hrt
 !
@@ -6132,136 +6121,127 @@
       end if
 !
 !     ! periodic time
-      ptime = time_n1 - a%totalTimeOfAllCompletedPeriods
-      ! Beacuse this subroutine looks ahead in time by dt or alfi*dt, it is possible that
-      ! this look-ahead moves us to the next period , in which case we need to
-      ! correct ptime:
-      if (ptime .ge. a%period) then
-         ptime = ptime - a%period
-      end if
-      ! if (time_n1 .gt. a%period) then
-      !    nperiods = floor(time_n1/a%period)
-      !    ptime = time_n1 - real(nperiods,8)*a%period
-      ! else
-      !    ptime = time_n1
+
+      ! TODO - These versions on ptime clash
+      ! The different forms of ptime need an option flag   
+
+      ! ptime = time_n1 - a%totalTimeOfAllCompletedPeriods
+      ! ! Beacuse this subroutine looks ahead in time by dt or alfi*dt, it is possible that
+      ! ! this look-ahead moves us to the next period , in which case we need to
+      ! ! correct ptime:
+      ! if (ptime .ge. a%period) then
+      !    ptime = ptime - a%period
       ! end if
-!
-!     ! elastance
+      
+      if (time_n1 .gt. a%period) then
+         nperiods = floor(time_n1/a%period)
+         ptime = time_n1 - real(nperiods,8)*a%period
+      else
+         ptime = time_n1
+      end if
+
+
+      ! elastance
       elv_n1 = getelastance(ptime,a%period,a%emax,a%emin,a%tmax,a%trelax)
       ! write(*,*) 'periodic time:', ptime, a%activationTime * a%period !\todo remove
       ! write(*,*) varchar, a%activationTime * a%period
-!      
-!     ! finite difference time step
+      
+      ! finite difference time step
       if (varchar .eq. solvechar) then
          dtime = alfi*delt               
       elseif (varchar .eq. updatechar) then
          dtime = delt
       end if 
 
-!     ! jacobian
+      ! jacobian
       j(:,:) = real(0.0,8)
       j(1,1) = real(1.0,8)
-      j(1,2) = real(-1.0,8)*elv_n1*(real(1.0,8) + a%flow_n1(1)) ! flow -ve
+      j(1,2) = real(-1.0,8)*elv_n1*(real(1.0,8) + a%kelv*a%flow_n1(1)) ! flow -ve
       j(2,2) = real(1.0,8)/dtime
-!
-!     ! initial value and evaluation
+
+      ! initial state variables 
       x0(1) = a%pressure_n(1)
       x0(2) = a%vlv_n
-!
-!     ! initial value and evaluation
+
+      ! initial state value and evaluation
       x = x0
       eval = real(-1.0,8)
-!
-!
-!     ! newton solve only if valve is open    
-      if (a%avopen) then
-!
-!        ! if backflow calculate backflow coefficient 
-         if (a%backflow) then
-            if (a%t_backflow > real(5.0,8)*a%max_backflow) then
-               f_backflow = exp(a%s_backflow*real(5.0,8)) 
-               f_backflow = a%m_backflow*f_backflow           
-            else
-               f_backflow = exp(a%s_backflow*a%t_backflow/a%max_backflow)
-               f_backflow = a%m_backflow*f_backflow
-            end if 
-         end if 
-!
+
+      ! newton solve only if valve is open    
+      if (a%avopen .eq. int(1)) then
+
+         ! zero state and counter  
+         !x(:) = real(0.0,8)
+         counter = int(0)
+ 
          do i = 1,itermax
-!                  
-            r(1) = x(1) - a%sPress                                                  &! add stabilising pressure, this \Delta P act to drive flow 
-                 - elv_n1*(x(2) - a%vulv)*(real(1.0,8) + a%kelv*a%flow_n1(1))       &! flow -ve
-                 - a%rav*a%flow_n1(1)                                               &
-                 + (a%lav/dtime)*(a%flow_n(1) - a%flow_n1(1))
+
+            ! write(*,*) 'a%sPress',a%sPress
+            ! write(*,*) 'x(1)',x(1)
+            ! write(*,*) 'x(2)',x(2)
+            ! write(*,*) 'elv_n1',elv_n1
+            ! write(*,*) 'a%vulv',a%vulv
+            ! write(*,*) 'a%kelv',a%kelv
+            ! write(*,*) 'a%flow_n1(1)',a%flow_n1(1)
+            ! write(*,*) 'a%rav',a%rav
+            ! write(*,*) 'dtime',dtime  
+            ! write(*,*) 'a%vlv_n',a%vlv_n
+
+            r(1) = x(1) - a%sPress &                                            ! add stabilising pressure, this \Delta P acts to drive flow
+                 - elv_n1*(x(2) - a%vulv)*(real(1.0,8) + a%kelv*a%flow_n1(1)) & ! flow -ve
+                 - a%rav*a%flow_n1(1) 
             r(2) = x(2)/dtime - a%vlv_n/dtime - a%flow_n1(1)
 
-!           ! if backflow add backflow to equation
-            if (a%backflow) then
-               r(1) = r(1) + f_backflow*a%rav*a%flow_n1(1) 
-            end if            
 
+
+
+            dx(:) = real(0.0,8)
             dx = solve_axb(j,real(-1.0,8)*r)  
             x = x + dx   
-!
-            eval = dot_product(dx,dx)
+
+            eval = dx(1)*dx(1) + dx(2)*dx(2)
             eval = sqrt(eval)
-!
-!           ! if evaluation is less than tolerance exit
+
+            ! if evaluation is less than tolerance exit
             if (eval .lt. tol) then
                exit
             end if
-!
+
             counter = counter + int(1)        
-!         
+         
          end do
-!    
-!        ! delta ps
-         dps = real(-2.0,8)*rho*a%flow_n1(1)/(a%surfarea(1)*a%surfarea(1))
-!         
-!        ! solve
+    
+         ! calculate implicit coefficients for solve step
          if (varchar .eq. solvechar) then
-            ! pressure from flow, does not include stabilisation pressure as 
+         
+            ! calculate pressure from flow, does not include stabilisation pressure as 
             ! this is already on the right hand side of the residual
-            a%implicitcoeff(1,1) = a%rav + a%lav/dtime 	         	&
-                                + elv_n1*(x(2) - a%vulv)*a%kelv
-!     
-!           ! if backflow add backflow contribution to tangent
-            if (a%backflow) then
-               a%implicitcoeff(1,1) = a%implicitcoeff(1,1) 			&
-                                   + a%rav*f_backflow
-            end if 
-
-            a%implicitcoeff(1,2) = elv_n1*(x(2) - a%vulv) 			&
-                                - (a%lav/dtime)*a%flow_n(1) 
+            a%implicitcoeff(1,1) = a%rav &
+                                 + elv_n1*(x(2) - a%vulv)*a%kelv
+            a%implicitcoeff(1,2) = elv_n1*(x(2) - a%vulv)     
+     
          end if     
-!      
-!        ! update 
+      
+         ! calculate implicit coefficients for update step
          if (varchar .eq. updatechar) then
-            ! pressure from flow, does not include stabilisation pressure as 
+         
+            ! calculate pressure from flow, does not include stabilisation pressure as 
             ! this is already on the right hand side of the residual
-            a%implicitcoeff_n1(1,1) = a%rav + a%lav/dtime 			&
-                                   + elv_n1*(x(2) - a%vulv)*a%kelv
-!     
-!           ! if backflow add backflow contribution to tangent
-            if (a%backflow) then
-               a%implicitcoeff_n1(1,1) = a%implicitcoeff_n1(1,1) 	&
-                                      + a%rav*f_backflow
-            end if 
-
-            a%implicitcoeff_n1(1,2) = elv_n1*(x(2) - a%vulv) 		&
-                                   - (a%lav/dtime)*a%flow_n(1)
-!     
-            !!a%vlv_coeff(1) = dtime
-            !!a%vlv_coeff(2) = a%vlv_n
+            a%implicitcoeff_n1(1,1) = a%rav &
+                                    + elv_n1*(x(2) - a%vulv)*a%kelv
+            a%implicitcoeff_n1(1,2) = elv_n1*(x(2) - a%vulv) 
+     
+            ! set vlv from updated state
             a%vlv_n = x(2)
-!
+
          end if 
 
       end if      
-!      
+      
+      ! store eval and counter
       a%evalval = eval
       a%evalcount = counter   
-!
+
       return
       end subroutine iterate_hrt
 !
@@ -6409,15 +6389,20 @@
       time_n1 = delt*real(lstep_passedIn,8) 
 !
 !     ! periodic time
-      periodic_time = time_n1 - a%totalTimeOfAllCompletedPeriods
-!      current_time = time_n1 
-!      if (current_time .gt. a%period) then
-!         periods = floor(current_time/a%period)
-!         periodic_time = current_time - real(periods,8)*a%period
-!         time_n1 = periodic_time
-!      else
-!         time_n1 = current_time
-!      end if
+      ! TO DO - There are multiple definitions of periodic time - see iterate_hrt
+      ! add a way to define this ???
+
+      ! periodic_time = time_n1 - a%totalTimeOfAllCompletedPeriods
+
+      current_time = time_n1 
+      if (current_time .gt. a%period) then
+         periods = floor(current_time/a%period)
+         periodic_time = current_time - real(periods,8)*a%period
+         ! time_n1 = periodic_time
+      else
+         ! time_n1 = current_time
+         periodic_time = time_n1
+      end if
 !      
 !     ! elv at t = t_{n+1}            
       elv = getelastance(periodic_time,a%period,a%emax,a%emin,a%tmax,a%trelax)

@@ -36,8 +36,9 @@
       
       !(actually allocated in itrdrv.f but destroyed
       !with global destructor)
-      real*8, allocatable :: iBCs(:,:)
-      real*8, allocatable :: iBCd(:)
+      ! *** chill Winston, this is now in itrdrv somewhere - kdl & nan 26/08/14 *** 
+      ! real*8, allocatable :: iBCs(:,:)
+      ! real*8, allocatable :: iBCd(:)
       
       integer nptsElast,   INCPSwitch
       integer nptsPvenous, nptsINCP

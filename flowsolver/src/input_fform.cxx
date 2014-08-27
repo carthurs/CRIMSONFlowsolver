@@ -743,6 +743,11 @@ int input_fform() {
 			if ((string) inp.GetValue("Pressure Coupling") == "P-Implicit")
 				nomodule.ipvsq = 3;
 			
+           /**********************************************************
+            ***          Influx Stabilisation Coefficient          ***
+            **********************************************************/
+      
+            nomodule.stabflux_coeff = inp.GetValue("Influx Coefficient"); 
 
      		/**********************************************************
       		***                Global Node Numbering               ***
@@ -753,6 +758,54 @@ int input_fform() {
       		{
           		nomodule.indsurf = int(1);
       		}
+
+		    /**********************************************************
+		     ***               Heart Model Parameters               ***
+		     **********************************************************/
+
+		    if ((string) inp.GetValue("Heart Model") == "True")
+		    {
+	            nomodule.iheart = 1;        
+                nomodule.heartparam[0] = inp.GetValue("Aortic Surface");
+
+		        nomodule.heartparam[1] = inp.GetValue("Preload");
+                nomodule.heartparam[2] = inp.GetValue("Mitral Valve");
+
+                nomodule.heartparam[3] = inp.GetValue("End Diastolic Volume");
+		        nomodule.heartparam[4] = inp.GetValue("Unstressed Volume");
+                		       
+		        nomodule.heartparam[5] = inp.GetValue("Maximum Elastance");
+                nomodule.heartparam[6] = inp.GetValue("Time to Max Elastance");     
+		        nomodule.heartparam[7] = inp.GetValue("Time to Relax");     
+                nomodule.heartparam[8] = inp.GetValue("Period");		        
+
+                nomodule.heartparam[9] = inp.GetValue("Ventricular Resistance");     
+		        nomodule.heartparam[10] = inp.GetValue("Aortic Valve");
+		        
+		        		       		      
+		        // backflow parameters        
+		        if ((string) inp.GetValue("Backflow") == "True")
+		        {
+		           nomodule.heartparam[11] = 1;    
+		           nomodule.heartparam[12] = inp.GetValue("Backflow Magnitude");
+		           nomodule.heartparam[13] = inp.GetValue("Backflow Steepness");
+		           nomodule.heartparam[14] = inp.GetValue("Backflow Closure");
+		           nomodule.heartparam[15] = inp.GetValue("Backflow Time");           
+		        }
+		        else 
+		        {
+		           nomodule.heartparam[11] = 0;
+		           nomodule.heartparam[12] = 0.0;
+		           nomodule.heartparam[13] = 0.0;
+		           nomodule.heartparam[14] = 0.0;
+		           nomodule.heartparam[15] = 0.0;
+		        }        
+		      } 
+		      else 
+		      {
+		        nomodule.iheart  = 0;
+		      };  
+
 
      		/**********************************************************
       		***                                                     ***

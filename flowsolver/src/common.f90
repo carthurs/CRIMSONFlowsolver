@@ -50,7 +50,7 @@ module phcommonvars
         tissSuppRingStiffCoeff, &
         tissSuppRingDampCoeff, &
         stateFilterCoeff, &
-        rescontrol,ResCriteria
+        rescontrol, ResCriteria, heartparam(0:15), stabflux_coeff
     integer           icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP(0:MAXSURF),incpfile, &
         numResistSrfs, nsrflistResist(0:MAXSURF), &
@@ -73,7 +73,7 @@ module phcommonvars
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &
-        iuseBET, numBETFields, iestimator
+        iuseBET, numBETFields, iestimator, iheart
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -82,7 +82,8 @@ module phcommonvars
         tissSuppRingStiffCoeff, &
         tissSuppRingDampCoeff, &
         stateFilterCoeff, &
-        rescontrol,ResCriteria, &
+        rescontrol,ResCriteria, heartparam, &
+        stabflux_coeff, &
         icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP,incpfile, &
         numResistSrfs, nsrflistResist, &
@@ -105,7 +106,7 @@ module phcommonvars
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &
-        iuseBET, numBETFields, iestimator
+        iuseBET, numBETFields, iestimator, iheart
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 

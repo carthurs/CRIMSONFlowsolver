@@ -154,6 +154,21 @@
            QHistINCP = zero
            poldINCP = zero
         endif
+
+        ! 
+
+        if (iheart .gt. int(0)) then
+          ! call constructor with heartparam array
+          
+          ! uncomment to add back inputHRandSP - here set to zero
+          ! hrt = hrtconstructor(heartparam,inputHRandSP,lstep)
+
+          ! heart constructor
+          hrt = hrtconstructor(heartparam,int(0),lstep)
+
+        end if
+
+
         if (numCalcSrfs .gt. 0) then !for CalcSurfaces
            allocate (CalcArea(numCalcSrfs))
            CalcArea = zero
@@ -177,11 +192,11 @@
 !
         if (multidomainactive) then         
 
-!         ! add heart surface 
-          !if (iheart .gt. int(0)) then          
-          !  call multidom%addsurfids(int(1),hrt%getsurfids())
-          !  call hrt%setpresspntrs(multidom)
-          !end if
+          ! add heart surface 
+          if (iheart .gt. int(0)) then          
+            call multidom%addsurfids(int(1),hrt%getsurfids())
+            call hrt%setpresspntrs(multidom)
+          end if
 
 !         ! add rcr surfaces
           !if (numRCRSrfs .gt. int(0)) then    

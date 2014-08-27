@@ -475,6 +475,8 @@
          double stateFilterCoeff;
          double rescontrol;
          double ResCriteria;
+         double heartparam[16];
+         double stabflux_coeff;
          int icardio;
          int itvn;
          int ipvsq;
@@ -529,6 +531,7 @@
          int iuseBET;
          int numBETFields;
          int iestimator;
+         int iheart;
       } nomodule;
 
       extern struct {

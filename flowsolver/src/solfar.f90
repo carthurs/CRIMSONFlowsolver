@@ -62,6 +62,8 @@
       use phcommonvars
       use memLS
 
+      use multidomain, only: hrt
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       !include "mpif.h"
       !include "auxmpi.h"
@@ -135,8 +137,32 @@
 !####################################################################
 !     Here calling memLS
 
-      ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
-      CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+      ! *** these allocates are now contained in the section below *** !
+
+      ! ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
+      ! CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+
+      ! ************** !
+      ! if heart model ! 
+      ! ************** !
+
+      IF (iheart .GT. int(0)) THEN 
+        IF (hrt%isavopen()) THEN
+          memLS_nFaces_s = memLS_nFaces + int(1)
+          ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s))
+          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)
+        ELSE
+          ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
+          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+        END IF
+      ! else flow 
+      ELSE
+        ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces)) ! 
+        CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+      END IF
+
+      ! ************** !
+      ! ************** !
 
       incL = 1
       dof = 4

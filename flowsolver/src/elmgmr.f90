@@ -249,6 +249,15 @@
           lhsLagL = zero
        endif
 
+! ******************************************************************** !
+! *** zero stabilisation pressure in multidomain containter before *** !
+! *** looping over the boundary element blocks                         !
+! ******************************************************************** !
+
+       call multidom%resetstb_pres()
+
+! ******************************************************************** !
+! ******************************************************************** !
 !
 !.... -------------------->   boundary elements   <--------------------
 !
@@ -344,6 +353,15 @@
 !
        enddo
 !
+! ************************************************************* ! 
+! *** sum up stabilsation pressures on different processors *** !
+! ************************************************************* ! 
+!
+       call multidom%sumstb_pres()
+!
+! ************************************************************* ! 
+! ************************************************************* ! 
+
        if(Lagrange.gt.zero) then
           LagSwitch = 0
           call CalcNANBLagrange(colm, rowp, y(:,1:3))
@@ -369,11 +387,12 @@
        end if
 
 !
-!      ! use flows at n+alf to set flow dependent implicit coefficients for the heart model       
+       ! use flows at n+alf to set flow dependent implicit coefficients for the heart model       
        !if (iheart .gt. int(0) .and. isystemic .ne. int(1)) then
-       !   call updreducedordermodel(y,hrt,'solve') ! update flow_n1
-       !   call hrt%iterate_hrt(lstep,'solve')
-       !endif
+       if (iheart .gt. int(0)) then       
+          call updreducedordermodel(y,hrt,'solve') ! update flow_n1
+          call hrt%iterate_hrt(lstep,'solve')
+       endif
 
        !if (numCoronarySrfs .gt. int(0)) then
        !   call updreducedordermodel(y,controlledCoronarySurfaces,'solve') !\todo make sure this is necessary
@@ -970,7 +989,7 @@
       use incpBC        !brings in the current part of coef for INCP BC
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
       use boundarymodule, only: GetFlowQ
-      use multidomain, only: nrcractive, nrcr
+      use multidomain, only: nrcractive, nrcr, hrt
 
       use grcrbc ! Nan rcr
 
@@ -983,6 +1002,8 @@
       integer irankCoupled, i, j, k
 
       real*8 :: implicitcoeffs(0:MAXSURF,2)
+      integer :: surfids(0:MAXSURF)
+
 !
 !... get p for the resistance BC
 !
@@ -1187,33 +1208,37 @@
        enddo
 
       endif !end of coupling for Coronary BC
-!
-!.... get p for the coupled inflow BC
-!
-      if (numINCPSrfs .gt. zero) then
-         call GetFlowQ(p, y, nsrflistINCP, numINCPSrfs)
-         do j=1, numINCPSrfs
-            if (sign .lt. zero) then  !RHS so -1
-               p(j)=sign*(INCPCoef(1,j)*p(j)+INCPCoef(2,j))
-            elseif (sign .gt. zero) then
-               p(j)=sign*p(j)*INCPCoef(1,j)
-            endif
-         enddo
+
+      ! ************************** !
+      ! *** couple heart model *** !
+      ! ************************** !
+
+      if (iheart .gt. int(0)) then
+
+        call GetFlowQ(p,y,hrt%getsurfids(),hrt%getsurfnum())
+        implicitcoeffs(1:hrt%getsurfnum(),1:2)  = hrt%getimplicitcoeff()
+        if(sign.lt.zero) then 
+          p(1) = sign*(p(1)*implicitcoeffs(1,1)) 
+          p(1) = p(1) + sign*implicitcoeffs(1,2)
+        elseif(sign.gt.zero) then 
+          p(1) = sign*p(1)*implicitcoeffs(1,1) 
+        endif
 !
 !.... multiply p by integral NA*n_i
 !
-         do i=1, nshg
-            do k=1, numINCPSrfs
-               irankCoupled = 0
-               if (nsrflistINCP(k) .ne. inactive(k)) then
-                  if (nsrflistINCP(k) .eq. ndsurf(i)) then
-                     irankCoupled = k
-                     res(i,1:3)=res(i,1:3)+p(irankCoupled)*NABI(i,1:3)
-                  endif
-               endif
-            enddo
-         enddo
-      endif  !end of coupling for INCP BC
+        do i = 1,nshg
+            if (hrt%isavopen()) then
+              surfids = hrt%getsurfids()
+              if (surfids(1) .eq. ndsurf(i)) then
+                res(i,1:3)=res(i,1:3)+p(1)*NABI(i,1:3)                
+              endif
+            endif
+        enddo
+        
+      endif 
+
+      ! ************************** !
+      ! ************************** !
 !
 !... get p for the Lagrange multipliers
 !
@@ -1483,7 +1508,7 @@
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
 
       use grcrbc
-      use multidomain, only: nrcractive, nrcr
+      use multidomain, only: nrcractive, nrcr, hrt
 
 
       use phcommonvars
@@ -1521,6 +1546,14 @@
               faceRes(faIn) = grcrbc_coeff_1_implicit(k)
             end if 
          END DO
+         IF (iheart .gt. int(0)) THEN
+            faIn = faIn + 1        
+            implicitcoeffs(1:1,1:2) = hrt%getimplicitcoeff()
+            IF (hrt%isavopen()) THEN
+               faceRes(faIn) = implicitcoeffs(1,1)
+            END IF
+         END IF 
+
 
       END IF
       faceRes = faceRes *  alfi * gami * Delt(1)

@@ -645,6 +645,7 @@ subroutine LagAddDiag (flowdiag, tfact)
     use incpBC
     use LagrangeMultipliers
     use pvsQbi
+    use multidomain, only: hrt
 
     use phcommonvars
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -658,8 +659,10 @@ subroutine LagAddDiag (flowdiag, tfact)
         do k = 1,numLagrangeSrfs
             tfactSurf = zero
             tfactSurf = tfact * LagMeanFlow(k)
-            if (numINCPSrfs .gt. zero) then
-                if (nsrflistLagrange(k).eq.inactive(k)) then ! nsrflistLagrange should begin with nsrflistINCP
+!!            if (numINCPSrfs .gt. zero) then
+!!                if (nsrflistLagrange(k).eq.inactive(k)) then ! nsrflistLagrange should begin with nsrflistINCP
+            if (iheart .gt. int(0)) then
+                if (hrt%hassurfid(nsrflistLagrange(k)) .and. hrt%isavopen() .eq. int(0)) then    
                     Lag(k,:) = zero
                     Lagalpha(k,:) = zero
                 else

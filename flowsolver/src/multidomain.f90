@@ -258,6 +258,7 @@
          procedure, public :: write_activation_history_hrt => write_activation_history_hrt
          procedure :: read_activation_history_hrt => read_activation_history_hrt
          procedure, public :: set_sPress              
+         procedure :: assign_ptrs_ext_hrt => assign_ptrs_ext_hrt
       end type numericalheart
 
       interface
@@ -2787,6 +2788,9 @@
       select type (ro)
          class is (numericalrcr)
             call ro%assign_ptrs_ext_rcr()
+         class is (numericalheart)
+            call ro%assign_ptrs_ext_hrt()
+
       end select
       end subroutine
 
@@ -5934,6 +5938,34 @@
 
       return
       end subroutine initialise_hrt
+
+      ! assign pointers for filter
+
+      subroutine assign_ptrs_ext_hrt(a)
+
+      use iso_c_binding
+      use phcommonvars, only: PhAssignPointerDP
+
+      implicit none
+
+      class(numericalheart) :: a
+
+      ! set pointer to EMax, added to map of pointers in SimvascularGlobalArrayTransfer.cxx
+      call PhAssignPointerDP(c_loc(a%emax), c_char_"Heart_EMax"//c_null_char)
+
+      ! set pointer to TMax, added to map of pointers
+      call PhAssignPointerDP(c_loc(a%tmax), c_char_"Heart_TMax"//c_null_char)
+
+      ! set pointer to TRelax, added to map of pointers
+      call PhAssignPointerDP(c_loc(a%trelax), c_char_"Heart_TRel"//c_null_char)
+      
+      ! set pointer to VLV^{t_{n}}, added to map of pointers
+      call PhAssignPointerDP(c_loc(a%vlv_n), c_char_"Heart_LV_Vol"//c_null_char)
+      
+      end subroutine
+
+
+
 !
 ! *** initialise internal variables in the heart model at t_{n}
 !

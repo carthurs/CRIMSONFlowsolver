@@ -313,6 +313,11 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 	configuration.Set("state_reduced_has_wall_parameters",nreduced_has_wall_parameters_);
 	configuration.Set("state_reduced_has_coupled_parameters",nreduced_has_coupled_parameters_);
 
+	/* 
+	   Note that in the *.lua file, the RCR_parameters_info is a block
+       i.e. RCR_parameters_info = {estimate_resistance, ..., ...}
+	*/
+
 	if (nreduced_has_coupled_parameters_) {
 		configuration.Set("RCR_parameters_info.estimate_resistance",cp_rcr_estimate_resistance_);
 		configuration.Set("RCR_parameters_info.estimate_compliance",cp_rcr_estimate_compliance_);
@@ -323,6 +328,11 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 		configuration.Set("RCR_parameters_info.resistance_included",cp_rcr_include_resistance_);
 		configuration.Set("RCR_parameters_info.compliance_included",cp_rcr_include_compliance_);
 		configuration.Set("RCR_parameters_info.prox_resistance_included",cp_rcr_include_prox_resistance_);
+
+        configuration.Set("Heart_parameters_info.estimate_emax",cp_hrt_estimate_emax_);		
+        configuration.Set("Heart_parameters_info.estimate_tmax",cp_hrt_estimate_tmax_);		
+        configuration.Set("Heart_parameters_info.estimate_trel",cp_hrt_estimate_trel_);		                
+        configuration.Set("Heart_parameters_info.estimate_vlv",cp_hrt_estimate_vlv_);		
 	}
 
 	configuration.Set("error_statistics.state_error_variance",state_error_variance_value_);
@@ -465,6 +475,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 
 	// velocity and pressure field
+	// here we are loop through the nodes only on this processor, i.e. unique/not shared
+	// the number of these nodes is nshguniq, this was set-up in partition KDL NAN
 	state_part.Initialize("solution");
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
@@ -553,6 +565,28 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		state_part.Clear();
 	}
 
+
+	// lumped parameter state (for heart model, just VLV)
+	if (nomodule.iheart > 0) {
+		state_part.Initialize("Heart LV Volume");		
+		state_part.addDataPointer(&gat->pointerMapDP_["Heart_LV_Vol"][0]);
+        std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_LV_Vol"][0] << endl;
+
+		// estimating this variable
+		if (cp_hrt_estimate_vlv_){
+			state_part.addIsEstimated(1);
+		} else {
+			state_part.addIsEstimated(0);
+		}
+		shared_parts_.push_back(state_part);
+		state_part.Clear();
+	}
+
+    // ***
+    // *** now come the parameters, above are the variables required to restart the simulation, i.e. P^{t_{n}}, etc.
+    // *** below are the estimated parameters, these have to be collected together
+    // ***
+
 	// for vessel wall regional properties (E)
 	if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0 && nomodule.numWallRegions > 0) {
 		state_part.Initialize("E");
@@ -634,6 +668,60 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			shared_parts_.push_back(state_part);
 			state_part.Clear();
 
+		}
+
+        // for heart model EMax 
+		if (cp_hrt_estimate_emax_) {
+
+			// give it a name
+			state_part.Initialize("Heart EMax");
+
+            // single parameter, will be in the 0 index and print out 
+			state_part.addDataPointer(&gat->pointerMapDP_["Heart_EMax"][0]);           
+			std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_EMax"][0] << endl;
+			
+			// set this parameter to be estimated and add to shared_parts vector
+			state_part.addIsEstimated(1);
+			shared_parts_.push_back(state_part);
+
+			// clear object
+			state_part.Clear();
+		}
+
+        // for heart model TMax 
+		if (cp_hrt_estimate_tmax_) {
+
+			// give it a name
+			state_part.Initialize("Heart TMax");
+
+            // single parameter, will be in the 0 index and print out 
+			state_part.addDataPointer(&gat->pointerMapDP_["Heart_TMax"][0]);           
+			std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_TMax"][0] << endl;
+			
+			// set this parameter to be estimated and add to shared_parts vector
+			state_part.addIsEstimated(1);
+			shared_parts_.push_back(state_part);
+
+			// clear object
+			state_part.Clear();
+		}
+
+        // for heart model TRel 
+		if (cp_hrt_estimate_trel_) {
+
+			// give it a name
+			state_part.Initialize("Heart TRel");
+
+            // single parameter, will be in the 0 index and print out 
+			state_part.addDataPointer(&gat->pointerMapDP_["Heart_TRel"][0]);           
+			std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_TRel"][0] << endl;
+			
+			// set this parameter to be estimated and add to shared_parts vector
+			state_part.addIsEstimated(1);
+			shared_parts_.push_back(state_part);
+
+			// clear object
+			state_part.Clear();
 		}
 
 	}

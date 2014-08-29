@@ -206,9 +206,20 @@ protected:
 	//! Flag to denote that Windkessel-RCR pressure state variables are estimated
 	int cp_rcr_estimate_pstates_;
 
+	//! Flag to denote that Heart model EMax is estimated - KDL
+	int cp_hrt_estimate_emax_;
+
+	//! Flag to denote that Heart model TMax is estimated - KDL
+    int cp_hrt_estimate_tmax_;
+
+	//! Flag to denote that Heart model TRel is estimated - KDL
+    int cp_hrt_estimate_trel_;
+
+    //! Flag to denote that Heart model VLV is estimated - KDL
+	int cp_hrt_estimate_vlv_;
+
     //! MPI communicator
 	MPI_Comm iNewComm_C_;
-
 
 	//! File stream for outputing estimated parameters
 	ofstream Eoutfile_;

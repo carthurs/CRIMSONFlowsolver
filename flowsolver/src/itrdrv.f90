@@ -474,6 +474,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         ! set pressures and flows at 3D/0D interface
         call initreducedordermodel(y,hrt,'multidomain') 
         
+        ! assign pointers for the filter
+        call hrt%assign_ptrs_ext()
+
         ! set internal variables for the left heart     
         ! if (isystemic .ne. int(1)) then
             ! call hrt%initxvars(lstep)                   
@@ -554,6 +557,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             !call initreducedordermodel(y, nrcr, 'legacy')
             call initreducedordermodel(y, nrcr, 'multidomain')
 
+            ! assign pointers for the filter
             call nrcr%assign_ptrs_ext()
 
         end if
@@ -1215,9 +1219,11 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         
         call hrt%iterate_hrt(lstep,'update')
         call updreducedordermodel(y,hrt,'update') 
+        
         ! update internal variables in the heart with new flow at t = t_{n+1}
-        call hrt%updxvars(lstep)
+        call hrt%updxvars(lstep)        
         call hrt%writexvars(lstep)
+        
         ! call hrt%write_activation_history_hrt(lstep) !moved this to avoid missing latest activation value...
 
     end if

@@ -36,6 +36,7 @@ using namespace std;
 #include "vtkConnectivityFilter.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridWriter.h"
+#include "vtkDataSetSurfaceFilter.h"
 
 //class SimvascularObservationType {
 //
@@ -89,6 +90,9 @@ protected:
 
 	//! Number of distance observations
 	int Nobservation_dist_;
+
+	//! Number of area observations
+	int Nobservation_area_;
 
 	//! Number of cross-sectional flow observations
 	int Nobservation_flow_;
@@ -206,16 +210,23 @@ protected:
 
 
 	vtkSmartPointer<vtkPoints> geom_points_;
+	vtkSmartPointer<vtkPoints> geom_points_def_;
 	vtkSmartPointer<vtkIdList> geom_ids_;
 	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
+	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_def_;
+	vtkSmartPointer<vtkDataSetSurfaceFilter> geom_surface_def_;
+
+	vtkSmartPointer<vtkPolyDataWriter> geom_writer_;
 
 	vtkSmartPointer<vtkPlane> geom_plane_;
 	vtkSmartPointer<vtkCutter> geom_cutter_;
-	vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
+	vtkSmartPointer<vtkCutter> geom_cutter_alt_;
+	vtkSmartPointer<vtkPolyDataWriter> geom_writers_;
+	//vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
 
 	vector <vtkSmartPointer<vtkPlane> > geom_planes_;
 	vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
-    vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connec_filters_;
+    //vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connec_filters_;
 
 	vector<vector<double> > distances_fromorigin_;
 

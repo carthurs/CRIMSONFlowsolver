@@ -15,6 +15,7 @@ SimvascularObservationManager::SimvascularObservationManager()
     Nobservation_local_(0),
     Nobservation_nodal_(0),
     Nobservation_dist_(0),
+    Nobservation_area_(0),
     Nobservation_flow_(0),
     Nobservation_avgpressure_(0),
     Nskip_(0),
@@ -245,50 +246,69 @@ void SimvascularObservationManager::Initialize(const Model& model,
     Nobservation_local_ += Nobservation_dist_;
 
     // -----------------------------------------------------
+
+    geom_points_ = vtkSmartPointer<vtkPoints>::New();
+    geom_points_def_ = vtkSmartPointer<vtkPoints>::New();
+    geom_ids_ = vtkSmartPointer<vtkIdList>::New();
+    geom_UGrid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    geom_UGrid_def_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    geom_surface_def_ = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+
+    for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++) {
+
+    	double coordVal[3];
+    	double dispVal[3];
+
+    	for (int kk = 0; kk < 3; kk++)
+    		coordVal[kk] = (gat->pointerMapDP_["coordinates"])[kk * conpar.nshg + unitIdx];
+
+    	for (int kk = 0; kk < 3; kk++)
+    		dispVal[kk] = (gat->pointerMapDP_["displacement"])[kk * conpar.nshg + unitIdx];
+
+    	geom_points_->InsertPoint(unitIdx,coordVal[0],coordVal[1],coordVal[2]);
+    	geom_points_def_->InsertPoint(unitIdx,coordVal[0]+dispVal[0],coordVal[1]+dispVal[1],coordVal[2]+dispVal[2]);
+
+    }
+
+    geom_UGrid_->SetPoints(geom_points_);
+    geom_UGrid_def_->SetPoints(geom_points_def_);
+
+    for (int kk = 0; kk < gat->global_mien.size(); kk++)
+    	for (int jj = 0; jj < gat->global_npro[kk]; jj++) {
+
+    		for (int ii = 0; ii < 4; ii++) {
+    			int nodeIndex = gat->global_mien[kk][ii * gat->global_npro[kk] + jj];
+    			geom_ids_->InsertNextId(--nodeIndex);
+    		}
+
+    		geom_UGrid_->InsertNextCell(VTK_TETRA,geom_ids_);
+
+    		geom_UGrid_def_->InsertNextCell(VTK_TETRA,geom_ids_);
+
+    		geom_ids_->Reset();
+    	}
+
+    geom_surface_def_->SetInput(geom_UGrid_def_);
+
     // 3. set up cross-sectional flow and pressure observation with VTK
 
     if (Nobservation_flow_+Nobservation_avgpressure_ > 0) {
 
-    	geom_points_ = vtkSmartPointer<vtkPoints>::New();
-    	geom_ids_ = vtkSmartPointer<vtkIdList>::New();
-    	geom_UGrid_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
-    	vtkSmartPointer<vtkDoubleArray> geom_vel_array =
-    			vtkSmartPointer<vtkDoubleArray>::New();
-    	vtkSmartPointer<vtkDoubleArray> geom_pres_array =
-    			vtkSmartPointer<vtkDoubleArray>::New();
+    	vtkSmartPointer<vtkDoubleArray> geom_vel_array = vtkSmartPointer<vtkDoubleArray>::New();
+    	vtkSmartPointer<vtkDoubleArray> geom_pres_array = vtkSmartPointer<vtkDoubleArray>::New();
 
     	geom_vel_array->SetNumberOfComponents(3);
 
     	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++) {
 
-    		double coordVal[3];
     		double solVal[4];
-
-    		for (int kk = 0; kk < 3; kk++)
-    			coordVal[kk] = (gat->pointerMapDP_["coordinates"])[kk * conpar.nshg + unitIdx];
 
     		for (int kk = 0; kk < 4; kk++)
     			solVal[kk] = (gat->pointerMapDP_["solution"])[kk * conpar.nshg + unitIdx];
 
-    		geom_points_->InsertPoint(unitIdx,coordVal[0],coordVal[1],coordVal[2]);
     		geom_vel_array->InsertNextTuple3(solVal[0],solVal[1],solVal[2]);
     		geom_pres_array->InsertNextTuple1(solVal[3]);
     	}
-
-    	geom_UGrid_->SetPoints(geom_points_);
-
-    	for (int kk = 0; kk < gat->global_mien.size(); kk++)
-    		for (int jj = 0; jj < gat->global_npro[kk]; jj++) {
-
-    			for (int ii = 0; ii < 4; ii++) {
-    				int nodeIndex = gat->global_mien[kk][ii * gat->global_npro[kk] + jj];
-    				geom_ids_->InsertNextId(--nodeIndex);
-    			}
-
-    			geom_UGrid_->InsertNextCell(VTK_TETRA,geom_ids_);
-
-    			geom_ids_->Reset();
-    		}
 
     	geom_UGrid_->GetPointData()->AddArray(geom_vel_array);
     	geom_UGrid_->GetPointData()->GetArray(0)->SetName("velocity");
@@ -296,10 +316,13 @@ void SimvascularObservationManager::Initialize(const Model& model,
     	geom_UGrid_->GetPointData()->GetArray(1)->SetName("pressure");
     	geom_UGrid_->Update();
 
-    	// here we specify the number of cross-sections we want to observe flow on
-    	// the single slice plane may cut through several parts of the
-    	// mesh and only one part (i.e. the local geometry) is the desired cut.
-    	// the desired cut is not necssarily connected and may not be on the current processor
+    	/* here we specify the number of cross-sections we want to observe flow on
+    	   the single slice plane may cut through several parts of the
+    	   mesh and only one part (i.e. the local geometry) is the desired cut.
+    	   the desired cut is not necssarily connected and may not be on the current processor
+
+    	   By default, vtkCutter generates triangulated surfaces
+    	*/
 
     	for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
 
@@ -314,11 +337,37 @@ void SimvascularObservationManager::Initialize(const Model& model,
     		geom_cutter_->SetInput(geom_UGrid_);
     		geom_cutter_->Update();
 
-    		geom_connectivity_ = vtkSmartPointer<vtkConnectivityFilter>::New();
+    		/* experimental */
+    		geom_cutter_alt_ = vtkSmartPointer<vtkCutter>::New();
+    		geom_cutter_alt_->SetCutFunction(geom_plane_);
+    		geom_cutter_alt_->SetInput(geom_surface_def_->GetOutput());
+    		geom_cutter_alt_->Update();
+    		/*              */
+
+    		/*geom_connectivity_ = vtkSmartPointer<vtkConnectivityFilter>::New();
     		geom_connectivity_->SetInputConnection(geom_cutter_->GetOutputPort());
     		geom_connectivity_->SetExtractionModeToClosestPointRegion();
     		geom_connectivity_->SetClosestPoint(csobs_origins_[kk](0),csobs_origins_[kk](1),csobs_origins_[kk](2));
-    		geom_connectivity_->Update();
+    		geom_connectivity_->Update();*/
+
+    		std::string fn1("obs_cut_"),fn2(".vtk");
+    		std::stringstream s_temp;
+
+    		s_temp << kk;
+    		fn1 = fn1 + s_temp.str() + fn2;
+
+    		geom_writer_ = vtkSmartPointer<vtkPolyDataWriter>::New();
+    		geom_writer_->SetFileName(fn1.c_str());
+            geom_writer_->SetInput(geom_cutter_->GetOutput());
+            geom_writer_->Write();
+
+            /* experimental */
+            fn1 = "obs_cut_surface_";
+            fn1 = fn1 + s_temp.str() + fn2;
+            geom_writer_->SetFileName(fn1.c_str());
+            geom_writer_->SetInput(geom_cutter_alt_->GetOutput());
+            geom_writer_->Write();
+            /*              */
 
     		vector <double> distfromorigin;
     		double testpoint[3];
@@ -359,7 +408,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
     		distances_fromorigin_.push_back(distfromorigin);
 
     		geom_cutters_.push_back(geom_cutter_);
-    		geom_connec_filters_.push_back(geom_connectivity_);
+    		//geom_connec_filters_.push_back(geom_connectivity_);
 
     		//        vtkSmartPointer<vtkPolyDataWriter> writer = vtkPolyDataWriter::New();
     		//        ostream *vtkout;
@@ -947,7 +996,6 @@ void SimvascularObservationManager::ApplyOperatorFlow(const state& x, observatio
 				double tempL;
 
 				geom_cutters_[kk]->GetOutput()->GetCellPoints(jj,ptIds);
-
 
 				for (int ii = 0; ii < 3; ii++) {
 

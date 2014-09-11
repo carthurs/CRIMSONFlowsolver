@@ -5,17 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-using namespace std;
-
-// this brings in the common block global variables
-#include "common_c.h"
-
-// includes for the PHASTA Fortran functions
-#include "cvSolverIO.h"
-#include "distmeas.h"
-#include "elmdist.h"
-
-#include "SimvascularGlobalArrayTransfer.h"
+#include <string>
 
 #include "mpi.h"
 
@@ -38,11 +28,176 @@ using namespace std;
 #include "vtkUnstructuredGridWriter.h"
 #include "vtkDataSetSurfaceFilter.h"
 
-//class SimvascularObservationType {
-//
-//};
+// this brings in the common block global variables
+#include "common_c.h"
+
+// includes for the PHASTA Fortran functions
+#include "cvSolverIO.h"
+#include "distmeas.h"
+#include "elmdist.h"
+
+#include "SimvascularGlobalArrayTransfer.h"
+#include "SimvascularAugStatePart.h"
+
 
 namespace Verdandi {
+
+class SimvascularObservationType {
+
+public:
+
+	//! Type of the observation vector.
+    typedef Vector<double> observation;
+
+    //! Type of the state vector.
+    typedef Vector<double, PETScPar> state;
+
+protected:
+
+	//! Indices for nodal observation operators
+	std::vector<int> state_obs_index_;
+
+	std::vector<double> error_variance_value_;
+
+	std::string name_;
+
+	//! File name for the data file
+	std::string data_file_name_;
+
+	//! Name of directory with data file
+	std::string data_directory_;
+
+	//! Name of file to which observations will be saved
+	std::string saved_obs_file_name_;
+
+	//! Input file stream
+	std::ifstream data_file_in_;
+
+	//! Output file stream
+	std::ofstream data_file_out_;
+
+	//! Pointer to the single instance of SimvascularGlobalArrayTransfer
+	SimvascularGlobalArrayTransfer *gat;
+
+	//! Number of observations on this process
+	int Nobservation_local_;
+
+	//! Rank of MPI Process
+	int rank_;
+
+	//! Number of MPI Processes
+	int numProcs_;
+
+	//! MPI communicator
+	MPI_Comm iNewComm_C_;
+
+	//! Flag for loading data from a .dat file
+	bool load_data_from_datfile_;
+
+	bool isDistributed_;
+
+public:
+	SimvascularObservationType();
+	~SimvascularObservationType();
+
+	virtual void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) = 0;
+
+	virtual void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const = 0;
+
+	void LoadData(int linetoread, Vector<double>& dataarray, int obs_start_index);
+
+	void SaveObservations(const state& x);
+
+	int getNobservation_local() const;
+
+	double getErrorVarianceValue(int ind) const;
+
+	std::string getName() const;
+
+};
+
+class SimvascularNodalSolutionObservation : public SimvascularObservationType {
+protected:
+public:
+	SimvascularNodalSolutionObservation();
+	~SimvascularNodalSolutionObservation();
+
+	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+
+	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
+
+};
+
+class SimvascularNodalDisplacementObservation : public SimvascularObservationType {
+protected:
+public:
+	SimvascularNodalDisplacementObservation();
+	~SimvascularNodalDisplacementObservation();
+
+	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+
+	void ApplyOperator(const state&x, observation& Hx1, observation& Hx2, int obs_start_index) const;
+
+};
+
+class SimvascularDistanceObservation : public SimvascularObservationType {
+protected:
+	std::vector<int> disp_duplicated_state_index_;
+public:
+	SimvascularDistanceObservation();
+	~SimvascularDistanceObservation();
+
+	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+
+	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
+
+};
+
+class SimvascularFlowPressObservation : public SimvascularObservationType {
+protected:
+	//! Origins of the cut planes
+	std::vector<Seldon::Vector<double> > csobs_origins_;
+
+	//! Normals of the cut planes
+	std::vector<Seldon::Vector<double> > csobs_normals_;
+
+	//! Radii associated with the cut planes
+	std::vector<double> csobs_radii_;
+
+
+	std::vector<int> sol_duplicated_state_index_;
+
+	vtkSmartPointer<vtkPoints> geom_points_;
+	vtkSmartPointer<vtkPoints> geom_points_def_;
+	vtkSmartPointer<vtkIdList> geom_ids_;
+	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
+	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_def_;
+	vtkSmartPointer<vtkDataSetSurfaceFilter> geom_surface_def_;
+
+	vtkSmartPointer<vtkPolyDataWriter> geom_writer_;
+
+	vtkSmartPointer<vtkPlane> geom_plane_;
+	vtkSmartPointer<vtkCutter> geom_cutter_;
+	vtkSmartPointer<vtkCutter> geom_cutter_alt_;
+	vtkSmartPointer<vtkPolyDataWriter> geom_writers_;
+
+	std::vector <vtkSmartPointer<vtkPlane> > geom_planes_;
+	std::vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
+	std::vector<std::vector<double> > distances_fromorigin_;
+
+    int Nobservation_flow_;
+
+    int Nobservation_avgpressure_;
+
+public:
+	SimvascularFlowPressObservation();
+	~SimvascularFlowPressObservation();
+
+	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+
+	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
+
+};
 
 ///////////////////////////////////
 // SIMVASCULAROBSERVATIONMANAGER //
@@ -76,8 +231,11 @@ protected:
 
 	/*** Observation file structure ***/
 
+	std::vector <SimvascularObservationType*> observations_dstrb_;
+	std::vector <SimvascularObservationType*> observations_single_;
+
 	//! Directory that stores the forward results.
-	string data_directory_;
+	std::string data_directory_;
 
 	//! Total number of observations at current time.
 	int Nobservation_;
@@ -200,13 +358,13 @@ protected:
 	/*** Cross-sectional flow and pressure observation ***/
 
     //! Origins of the cut planes
-	vector<Seldon::Vector<double> > csobs_origins_;
+	std::vector<Seldon::Vector<double> > csobs_origins_;
 
 	//! Normals of the cut planes
-	vector<Seldon::Vector<double> > csobs_normals_;
+	std::vector<Seldon::Vector<double> > csobs_normals_;
 
 	//! Radii associated with the cut planes
-	vector<double> csobs_radii_;
+	std::vector<double> csobs_radii_;
 
 
 	vtkSmartPointer<vtkPoints> geom_points_;
@@ -224,11 +382,11 @@ protected:
 	vtkSmartPointer<vtkPolyDataWriter> geom_writers_;
 	//vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
 
-	vector <vtkSmartPointer<vtkPlane> > geom_planes_;
-	vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
+	std::vector <vtkSmartPointer<vtkPlane> > geom_planes_;
+	std::vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
     //vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connec_filters_;
 
-	vector<vector<double> > distances_fromorigin_;
+	std::vector<std::vector<double> > distances_fromorigin_;
 
 	/*** File handling ***/
     string obsfilename_part_;

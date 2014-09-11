@@ -6716,7 +6716,7 @@
       class(numericalrcr), intent(inout) :: this
       integer :: surfnum
       integer :: surflist(0:maxsurf)
-      real*8 :: rcrcoeff(3,surfnum)
+      real*8 :: rcrcoeff(surfnum,3)
       integer :: pdmax, hstep
       real*8 :: pdval(pdmax,2,surfnum) ! this array is initialised as zero
 !                                      ! then filled in, therefore values 
@@ -6791,13 +6791,13 @@
       do i = 1, surfnum
 
          ! set rcr parameters
-         this%rcrparams(i)%rp = rcrcoeff(1,i)
-         this%rcrparams(i)%c = rcrcoeff(2,i)
-         this%rcrparams(i)%rd = rcrcoeff(3,i)
+         this%rcrparams(i)%rp = rcrcoeff(i,1)
+         this%rcrparams(i)%c = rcrcoeff(i,2)
+         this%rcrparams(i)%rd = rcrcoeff(i,3)
 
-         this%parameters_RCR(3,i) = rcrcoeff(3,i)
-         this%parameters_RCR(1,i) = rcrcoeff(1,i)
-         this%parameters_RCR(2,i) = rcrcoeff(2,i)
+         this%parameters_RCR(3,i) = rcrcoeff(i,3)
+         this%parameters_RCR(1,i) = rcrcoeff(i,1)
+         this%parameters_RCR(2,i) = rcrcoeff(i,2)
 
          ! count time points 
          k = int(1)

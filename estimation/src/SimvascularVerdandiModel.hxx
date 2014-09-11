@@ -1,19 +1,6 @@
 #ifndef VERDANDI_FILE_MODEL_SimvascularVerdandiModel_HXX
 #define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_HXX
 
-// this brings in the common block global variables
-#include "common_c.h"
-
-// includes for the PHASTA Fortran functions
-#include "partition.h"
-#include "input_fform.h"
-#include "input.h"
-#include "proces.h"
-#include "itrdrv.h"
-#include "estimation_helpers.h"
-
-#include "SimvascularGlobalArrayTransfer.h"
-
 #include "mpi.h"
 
 #ifdef intel
@@ -28,80 +15,21 @@
 #include <vector>
 #include <string>
 
-//! This class organizes the pointers to the PHASTA arrays
-//! into augmented state components
-class SimvascularAugStatePart
-{
-public:
+// this brings in the common block global variables
+#include "common_c.h"
 
-	//! Constructor.
-	SimvascularAugStatePart();
+// includes for the PHASTA Fortran functions
+#include "partition.h"
+#include "input_fform.h"
+#include "input.h"
+#include "proces.h"
+#include "itrdrv.h"
+#include "estimation_helpers.h"
 
-	//! Destructor
-	~SimvascularAugStatePart();
+#include "SimvascularGlobalArrayTransfer.h"
 
-	//! Initialize with a name
-	void Initialize(const std::string& setname);
+#include "SimvascularAugStatePart.h"
 
-	//! Adds a pointer to the array of pointers
-	void addDataPointer(double* data_pointer);
-
-	//! Adds to the array of boolean flags for the estimated variables
-	void addIsEstimated(bool val);
-
-	//! Sets a specific pointer in the array of pointers
-	void setDataPointer(int position, double* data_pointer);
-
-	//! Sets the data for a specific variable.
-	void setData(int position, double val);
-
-	//! Sets the estimated-variable-flag for a specific variable
-	void setIsEstimated(int position, bool val);
-
-	//! Sets the constant that the output of getData is multiplied with
-	void setPremulConstant(double val);
-
-	//! Returns the data pointer to a specific variable
-	double * getDataPointer(int position);
-
-	//! Returns the value of a specific variable
-	double getData(int position);
-
-	//! Returns the constant that the output of getData is multiplied with
-	double getPremulConstant();
-
-	//! Returns the estimated-variable-flag for a specific variable
-	bool getIsEstimated(int position);
-
-	//! Returns the number of variables
-	std::size_t getSize();
-
-	//! Returns the number of estimated variables
-	unsigned int getNumEstimated();
-
-	//! Returns the index of the first estimated variable
-    int getFirstEstimated();
-
-    //! Returns the name
-	std::string getName();
-
-	//! Empty all the arrays and sets the multiplying constant to 1.0
-	void Clear();
-
-protected:
-
-	//! Vector of pointers to PHASTA Fortran data
-	std::vector<double*> pointers_;
-
-	//! Vector of flags denoting if quantity is estimated
-	std::vector<bool> is_estimated_;
-
-	//! Name of the augmented state component
-	std::string name_;
-
-	//! The constant that multiplies the
-	double premulconst_;
-};
 
 namespace Verdandi
 {
@@ -143,6 +71,11 @@ protected:
 	//! Vector of non-distributed augmented state components
 	std::vector<SimvascularAugStatePart> shared_parts_;
 
+	//! Map allowing access to distributed augmented state components by name
+	std::map<std::string,SimvascularAugStatePart*> dstrb_parts_map_;
+
+	//! Map allowing access to non-distributed augmented state components by name
+	std::map<std::string,SimvascularAugStatePart*> shared_parts_map_;
 
 	//! Estimation error covariance diagonal values
 	std::vector<double> state_error_variance_value_;
@@ -305,8 +238,17 @@ public:
 	void GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U);
 
 
+
+	//! Return pointer to vector of distributed augmented state components
+	SimvascularAugStatePart& GetAugStateDstrb(std::string name) const;
+
+	//! Return pointer to vector of shared augmented state components
+	SimvascularAugStatePart& GetAugStateShared(std::string name) const;
+
 	//! Write only the estimated parameters to file
 	void WriteEstimates();
+
+
 
 	//! Returns the name of the class.
 	string GetName() const;

@@ -21,234 +21,6 @@ inline bool exists_test1 (const std::string& name) {
     }
 }
 
-/*!
- *    This is the constructor for SimvascularAugStatePart.
- *    Currently, it sets the multiplying constant to 1.0
- *    and the name to an initial value.
- */
-SimvascularAugStatePart::SimvascularAugStatePart()
-:   premulconst_(1.0)
-{
-	name_ = "undefined";
-}
-
-/*!
- *    This is the destructor for SimvascularAugStatePart.
- *    Currently, nothing is explicitly done here.
- */
-SimvascularAugStatePart::~SimvascularAugStatePart() {
-
-}
-
-
-/*!
-      \param[in] const std::string& setname
-
-      The only task that this function carries
-      out currently is assigning the name of the
-      augmented state part.
- */
-void SimvascularAugStatePart::Initialize(const std::string& setname) {
-	name_ = setname;
-}
-
-
-/*!
-      \param[in] double* data_pointer
-
-      This function adds a pointer to the
-      internal vector of pointers.
- */
-void SimvascularAugStatePart::addDataPointer(double* data_pointer) {
-	pointers_.push_back(data_pointer);
-}
-
-
-/*!
-      \param[in] bool val
-
-      This function adds a boolean flag to
-      the internal array of boolean flags denoting
-      whether or not the associated quantity
-      is included in the estimated portion
-      of the augmented state.
- */
-void SimvascularAugStatePart::addIsEstimated(bool val) {
-	is_estimated_.push_back(val);
-}
-
-
-/*!
-      \param[in] int position
-      \param[in] double* data_pointer
-
-      This function assigns a pointer
-      to a specific location in the internal array of pointers.
- */
-void SimvascularAugStatePart::setDataPointer(int position, double* data_pointer) {
-	pointers_[position] = data_pointer;
-}
-
-
-/*!
-      \param[in] int position
-      \param[in] double val
-
-      This function assings a value to
-      a location that is pointed to
-      at the specified position
-      in the internal array of pointers.
-      Note that if the is_estimated_
-      flag is 1, then, the actual
-      assigned value is pow(2.0,val), i.e.
-      the estimated quantity is re-parameterized.
- */
-void SimvascularAugStatePart::setData(int position, double val) {
-	is_estimated_[position] ? *(pointers_[position]) = pow(2.0,val)/premulconst_ : *(pointers_[position]) = val/premulconst_;
-}
-
-
-
-/*!
-      \param[in] int position
-      \param[in] bool val
-
-      This function assigns the
-      value of the is_estimated_ flag
-      at the specified position.
-
- */
-void SimvascularAugStatePart::setIsEstimated(int position, bool val) {
-	is_estimated_[position] = val;
-}
-
-
-/*!
-      \param[in] double val
-
-      This function assigns the value
-      for the constant that is multiplied
-      to the output of getData().
- */
-void SimvascularAugStatePart::setPremulConstant(double val) {
-	premulconst_ = val;
-}
-
-
-/*!
-      \param[in] int position
-
-      This function returns the pointer
-      at the specified position.
-      Use this function to provide external access
-      to the pointers_ array.
- */
-double * SimvascularAugStatePart::getDataPointer(int position) {
-	return pointers_[position];
-}
-
-
-/*!
-      \param[in] int position
-
-      This function returns the value pointed to
-      at the specified position.
-      If the associated is_estimated_ flag is true
-      then the return value is actually log2 of the internal value.
- */
-double SimvascularAugStatePart::getData(int position) {
-	return is_estimated_[position] ? log2((*pointers_[position])*premulconst_) : (*pointers_[position])*premulconst_;
-}
-
-
-/*!
- *    This function returns
- *    the value of the multiplier constant
- */
-double SimvascularAugStatePart::getPremulConstant() {
-	return premulconst_;
-}
-
-
-/*!
-      \param[in] int position
-
-      This returns the value of the is_estimated_
-      flag at a specified position
- */
-bool SimvascularAugStatePart::getIsEstimated(int position) {
-	return is_estimated_[position];
-}
-
-
-/*!
- *    \return: std::size_t
- *
- *    This function returns the size of the
- *    internal pointers_ vector
- */
-std::size_t SimvascularAugStatePart::getSize() {
-	return pointers_.size();
-}
-
-
-/*!
- *    \return: unsigned int
- *
- *    This function returns the total
- *    number of estimated variables in
- *    the augmented state component
- */
-unsigned int SimvascularAugStatePart::getNumEstimated() {
-	unsigned int sum_of_elems=0;
-	for(std::vector<bool>::iterator j=is_estimated_.begin();j!=is_estimated_.end();++j)
-	    sum_of_elems += *j;
-	return sum_of_elems;
-}
-
-
-/*!
- *    \return: int
- *
- *    Returns the index of the first estimated
- *    variable
- *    in the augmented state component
- */
-int SimvascularAugStatePart::getFirstEstimated() {
-	std::vector<bool>::iterator j;
-	int k;
-	for(j=is_estimated_.begin(), k = 0;j!=is_estimated_.end();j++,k++) {
-		if (*j) {
-			return k;
-		}
-	}
-	return -1;
-}
-
-
-/*!
- *    \return: std::string
- *
- *    Returns the name
- *    of the augmented state component
- */
-std::string SimvascularAugStatePart::getName() {
-    return name_;
-}
-
-
-/*!
- *    This function resets the augmented state component
- *    by clearing the vectors and resetting
- *    the multiplying constant to 1.0
- *
- */
-void SimvascularAugStatePart::Clear() {
-	pointers_.clear();
-	is_estimated_.clear();
-	premulconst_ = 1.0;
-}
-
 namespace Verdandi {
 
 
@@ -399,28 +171,28 @@ void SimvascularVerdandiModel::Initialize() {
 
     std::cout << "at rank " << rank_ << " number of states " << dstrb_parts_.size() << std::endl;
 
-    for (std::size_t kk = 0; kk < dstrb_parts_.size(); kk++) {
-    	std::cout << "at rank " << rank_ << " " << dstrb_parts_[(int)kk].getName().c_str() << " " << dstrb_parts_[(int)kk].getSize() <<  std::endl;
-    	state_total += (int)dstrb_parts_[(int)kk].getSize();
+    for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
+    	std::cout << "at rank " << rank_ << " " << it->getName().c_str() << " " << it->getSize() <<  std::endl;
+    	state_total += (int)it->getSize();
     }
 
     if (rank_ == numProcs_ - 1) {
 
-    	for (std::size_t kk = 0; kk < shared_parts_.size(); kk++) {
-    		std::cout << "at rank " << rank_ << " " << shared_parts_[(int)kk].getName().c_str() << " " << shared_parts_[(int)kk].getSize() << std::endl;
+    	for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
+    		std::cout << "at rank " << rank_ << " " << it->getName().c_str() << " " << it->getSize() << std::endl;
 
-    		int first_estimated = shared_parts_[(int)kk].getFirstEstimated();
+    		int first_estimated = it->getFirstEstimated();
 
     		if (first_estimated >= 0 && state_reduced_start_local_ < 0)
     			state_reduced_start_local_ = (int)state_total+first_estimated;
 
-    		estimated_total += (int)shared_parts_[(int)kk].getNumEstimated();
-    		state_total += (int)shared_parts_[(int)kk].getSize();
+    		estimated_total += (int)it->getNumEstimated();
+    		state_total += (int)it->getSize();
     	}
     }
 
-    for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
-    	shared_parts_size_ += shared_parts_[(int)kk].getSize();
+    for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+    	shared_parts_size_ += it->getSize();
 
     Nstate_local_ = state_total; // the size of the on-proc duplicated_state_
 
@@ -437,9 +209,33 @@ void SimvascularVerdandiModel::Initialize() {
 	// Compute the global state size
 	MPI_Allreduce(&Nstate_local_, &Nstate_, 1, MPI_INT, MPI_SUM, iNewComm_C_);
 
+
+
+
 	// Make sure the state array is distributed with the correct number
 	// of elements per processor that is given by Nstate_local_
 	duplicated_state_.Reallocate(Nstate_, Nstate_local_);
+
+
+	// ***
+	// *** set the indices in duplicated_state_ to get/set
+	// ***
+
+	int state_start, state_end, icounter;
+
+	duplicated_state_.GetProcessorRange(state_start, state_end);
+
+	icounter = state_start;
+
+	for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+		for (std::size_t jj = 0; jj < it->getSize(); jj++)
+			it->addDuplicatedStateIndex(icounter++);
+
+	if (rank_ == numProcs_ - 1)
+		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+			for (std::size_t jj = 0; jj < it->getSize(); jj++)
+				it->addDuplicatedStateIndex(icounter++);
+
 
     // file output for initial step if starting from scratch
     std::string Efilename = "estimated_reduced_state.dat";
@@ -453,7 +249,7 @@ void SimvascularVerdandiModel::Initialize() {
 
     if (rank_ == numProcs_ - 1) {
 
-    	Eoutfile_.open(Efilename.c_str(),ofstream::app);
+    	Eoutfile_.open(Efilename.c_str(),std::ofstream::app);
     	Eoutfile_ << std::scientific << std::setprecision( std::numeric_limits<double>::digits10 );
 
     }
@@ -514,39 +310,6 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		dstrb_parts_.push_back(state_part);
 		state_part.Clear();
 
-		/*
-		if (nomodule.imeasdist > 0) {
-
-			// these distance fields are stored in the state strictly for convenience
-			// distance field
-			state_part.Initialize("distance");
-			for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-				int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
-				for(int varIdx=0; varIdx < 1; varIdx++) {
-					state_part.addDataPointer(&gat->pointerMapDP_["distance"][varIdx * conpar.nshg + actualIdx-1]);
-					state_part.addIsEstimated(0);
-					state_part.setPremulConstant(-1.0);
-				}
-			}
-			dstrb_parts_.push_back(state_part);
-			state_part.Clear();
-
-			// mass matrix multiplied by distance
-			state_part.Initialize("M*distance");
-			for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
-				int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
-				for(int varIdx=0; varIdx < 1; varIdx++) {
-					state_part.addDataPointer(&(gat->pointerMapDP_["M*distance"][varIdx * conpar.nshg + actualIdx-1]));
-					state_part.addIsEstimated(0);
-					state_part.setPremulConstant(-1.0);
-				}
-			}
-			dstrb_parts_.push_back(state_part);
-            state_part.Clear();
-
-		}
-		*/
-
 	}
 
 	// this is where the estimated parts of the augmented state will go
@@ -600,7 +363,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 	// for lumped parameter model parameters
 	// for RCR
-	if (nreduced_has_coupled_parameters_ && grcrbccom.numGRCRSrfs > 0) {
+	if (nreduced_has_coupled_parameters_) {
 
 		// for RCR C
 		if (cp_rcr_estimate_compliance_) {
@@ -610,7 +373,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 				if (cp_rcr_include_compliance_[parIdx]) {
 					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1]);
-					std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1] << endl;
+					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1] << endl;
 					state_part.addIsEstimated(1);
 				}
 
@@ -628,7 +391,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 				if (cp_rcr_include_resistance_[parIdx]) {
 					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2]);
-					std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2] << endl;
+					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2] << endl;
 					state_part.addIsEstimated(1);
 				}
 
@@ -646,7 +409,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 				if (cp_rcr_include_prox_resistance_[parIdx]) {
 					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0]);
-					std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0] << endl;
+					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0] << endl;
 					state_part.addIsEstimated(1);
 				}
 
@@ -725,6 +488,13 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		}
 
 	}
+
+
+	for (auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+		dstrb_parts_map_[it->getName()] = &(*it);
+
+	for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		shared_parts_map_[it->getName()] = &(*it);
 
 }
 
@@ -957,27 +727,23 @@ int SimvascularVerdandiModel::GetLocalReducedStart() const {
  */
 SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
-	int err;
-	double val;
-	int state_start, state_end, icounter;
-
-	int actualIdx;
-
 	if (rank_ == 0)
 		std::cout << "getting state ";
 
-	duplicated_state_.GetProcessorRange(state_start, state_end);
-
-	icounter = state_start;
-
-	for (std::size_t kk = 0; kk < dstrb_parts_.size(); kk++)
-		for (std::size_t jj = 0; jj < dstrb_parts_[(int)kk].getSize(); jj++)
-			duplicated_state_.SetBuffer(icounter++,dstrb_parts_[(int)kk].getData((int)jj));
+	for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
+		//cout << it->getName() << endl;
+		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
+			duplicated_state_.SetBuffer( it->getDuplicatedStateIndex((int)jj),
+					                     it->getData((int)jj) );
+	}
 
 	if (rank_ == numProcs_ - 1)
-		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
-			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
-				duplicated_state_.SetBuffer(icounter++,shared_parts_[(int)kk].getData((int)jj));
+		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
+			//cout << it->getName() << endl;
+			for (std::size_t jj = 0; jj < it->getSize(); ++jj)
+				duplicated_state_.SetBuffer( it->getDuplicatedStateIndex((int)jj),
+						                     it->getData((int)jj) );
+		}
 
 	duplicated_state_.Flush();
 
@@ -998,34 +764,25 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
  */
 void SimvascularVerdandiModel::StateUpdated() {
 
-	int err;
-	double val;
-	int state_start, state_end, icounter;
-
-	int actualIdx;
-
 	if (rank_ == 0)
 		std::cout << "setting state ";
 
-	duplicated_state_.GetProcessorRange(state_start, state_end);
-
-	icounter = state_start;
-
-
-	for (std::size_t kk = 0; kk < dstrb_parts_.size(); kk++)
-		for (std::size_t jj = 0; jj < dstrb_parts_[(int)kk].getSize(); jj++)
-			dstrb_parts_[(int)kk].setData((int)jj,duplicated_state_(icounter++));
+	for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
+			it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
 
 	double* tempArray = new double[shared_parts_size_];
 	int tcounter = 0;
 
 	if (rank_ == numProcs_ - 1) {
-		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
-			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++) {
-				shared_parts_[(int)kk].setData((int)jj,duplicated_state_(icounter++));
-				tempArray[tcounter++] = *shared_parts_[(int)kk].getDataPointer((int)jj);
+		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+			for (std::size_t jj = 0; jj < it->getSize(); jj++) {
+				it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
+
+				tempArray[tcounter++] = *it->getDataPointer((int)jj);
 			}
 
+		// communicate values from the last processor to the other processors
 		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
 	}
 	else {
@@ -1033,9 +790,9 @@ void SimvascularVerdandiModel::StateUpdated() {
 		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
 
 		tcounter = 0;
-		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
-			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
-				*shared_parts_[(int)kk].getDataPointer((int)jj) = tempArray[tcounter++];
+		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+			for (std::size_t jj = 0; jj < it->getSize(); jj++)
+				*it->getDataPointer((int)jj) = tempArray[tcounter++];
 	}
 
 	delete [] tempArray;
@@ -1076,9 +833,9 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 		int ncounter = 0;
 
-		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
-			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
-				if (shared_parts_[(int)kk].getIsEstimated((int)jj)) {
+		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+			for (std::size_t jj = 0; jj < it->getSize(); jj++)
+				if (it->getIsEstimated((int)jj)) {
 					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
 					ncounter++;
 				}
@@ -1115,6 +872,24 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 }
 
+/*!
+      \return The pointer to distributed state parts
+ */
+SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateDstrb(std::string name) const {
+
+    return *dstrb_parts_map_.at(name);
+
+}
+
+/*!
+      \return The pointer to shared state parts
+ */
+SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateShared(std::string name) const {
+
+    return *shared_parts_map_.at(name);
+
+}
+
 
 /*
  *    Here, we write out to file
@@ -1131,10 +906,10 @@ void SimvascularVerdandiModel::WriteEstimates() {
 
 		int ncounter = 0;
 
-		for (std::size_t kk = 0; kk < shared_parts_.size(); kk++)
-			for (std::size_t jj = 0; jj < shared_parts_[(int)kk].getSize(); jj++)
-				if (shared_parts_[(int)kk].getIsEstimated((int)jj)) {
-					Eoutfile_ << *shared_parts_[(int)kk].getDataPointer((int)jj) << " ";
+		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+			for (std::size_t jj = 0; jj < it->getSize(); jj++)
+				if (it->getIsEstimated((int)jj)) {
+					Eoutfile_ << *it->getDataPointer((int)jj) << " ";
 					ncounter++;
 				}
 

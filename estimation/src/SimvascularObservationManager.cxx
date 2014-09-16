@@ -751,9 +751,6 @@ void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation&
 SimvascularObservationManager::SimvascularObservationManager()
 :   Nobservation_(0),
     Nobservation_local_(0),
-    Nobservation_nodal_(0),
-    Nobservation_dist_(0),
-    Nobservation_area_(0),
     Nobservation_flow_(0),
     Nobservation_avgpressure_(0),
     Nskip_(0),
@@ -765,16 +762,7 @@ SimvascularObservationManager::SimvascularObservationManager()
     time_(0),
     data_period_(0),
     discard_observation_(0),
-    error_variance_value_(1),
-    error_variance_value_nodal_(1),
-    error_variance_value_dist_(1),
-    error_variance_value_avgpress_(1),
-    error_variance_value_flow_(1),
     Nstate_model_(0),
-    isize_solution_(0),
-    isize_displacement_(0),
-    isize_nshg_(0),
-    isize_nshguniq_(0),
     rank_(0),
     numProcs_(1),
     current_lower_bound_(-1),
@@ -787,12 +775,6 @@ SimvascularObservationManager::SimvascularObservationManager()
 
 SimvascularObservationManager::~SimvascularObservationManager() {
 	// Operations to be performed when the object is destroyed.
-
-	obs_out_part_.close();
-	obs_out_single_.close();
-
-	obs_in_part_.close();
-	obs_out_single_.close();
 
 }
 

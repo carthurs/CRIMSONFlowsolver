@@ -243,15 +243,6 @@ protected:
 	//! Local number of observations at current time.
 	int Nobservation_local_;
 
-	//! Number of single node observations
-	int Nobservation_nodal_;
-
-	//! Number of distance observations
-	int Nobservation_dist_;
-
-	//! Number of area observations
-	int Nobservation_area_;
-
 	//! Number of cross-sectional flow observations
 	int Nobservation_flow_;
 
@@ -292,28 +283,6 @@ protected:
 	//! Tangent operator matrix (H).
 	tangent_linear_operator tangent_operator_matrix_;
 
-	//! Indices for nodal observation operators
-	Vector<int> StateObsIndex_;
-
-	//! Indices for the data array
-	Vector<int> DataArraysObsIndex_;
-
-	//! Observation error variance.
-	double error_variance_value_;
-
-	//! diagonal error covariance value for nodal observations
-	double error_variance_value_nodal_;
-
-	//! diagonal error covariance value for distance observations
-	double error_variance_value_dist_;
-
-	//! diagonal error covariance value for pressure observations
-	double error_variance_value_avgpress_;
-
-	//! diagonal error covariance value for flow observations
-	double error_variance_value_flow_;
-
-
 	//! Observation error covariance matrix (R).
 	error_variance error_variance_;
 
@@ -321,6 +290,7 @@ protected:
 	//! Inverse of the diagonal observation error covariance matrix
 	Vector<double, PETScPar> error_variance_inverse_diag_;
 #endif
+
 	//! Inverse of the observation error covariance matrix
 	error_variance error_variance_inverse_;
 
@@ -347,56 +317,6 @@ protected:
     //! Arrays for linear interpolation
     Vector<double> dataarrays_upper_;
 
-    int isize_solution_;
-    int isize_displacement_;
-
-    //! Number of global shape functions
-    int isize_nshg_;
-    //! Number of global shape functions only in master images
-    int isize_nshguniq_;
-
-	/*** Cross-sectional flow and pressure observation ***/
-
-    //! Origins of the cut planes
-	std::vector<Seldon::Vector<double> > csobs_origins_;
-
-	//! Normals of the cut planes
-	std::vector<Seldon::Vector<double> > csobs_normals_;
-
-	//! Radii associated with the cut planes
-	std::vector<double> csobs_radii_;
-
-
-	vtkSmartPointer<vtkPoints> geom_points_;
-	vtkSmartPointer<vtkPoints> geom_points_def_;
-	vtkSmartPointer<vtkIdList> geom_ids_;
-	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
-	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_def_;
-	vtkSmartPointer<vtkDataSetSurfaceFilter> geom_surface_def_;
-
-	vtkSmartPointer<vtkPolyDataWriter> geom_writer_;
-
-	vtkSmartPointer<vtkPlane> geom_plane_;
-	vtkSmartPointer<vtkCutter> geom_cutter_;
-	vtkSmartPointer<vtkCutter> geom_cutter_alt_;
-	vtkSmartPointer<vtkPolyDataWriter> geom_writers_;
-	//vtkSmartPointer<vtkConnectivityFilter> geom_connectivity_;
-
-	std::vector <vtkSmartPointer<vtkPlane> > geom_planes_;
-	std::vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
-    //vector <vtkSmartPointer<vtkConnectivityFilter> > geom_connec_filters_;
-
-	std::vector<std::vector<double> > distances_fromorigin_;
-
-	/*** File handling ***/
-    string obsfilename_part_;
-    string obsfilename_single_;
-
-	ifstream obs_in_part_;
-	ifstream obs_in_single_;
-
-	ofstream obs_out_part_;
-	ofstream obs_out_single_;
 
 	/*** MPI ***/
 

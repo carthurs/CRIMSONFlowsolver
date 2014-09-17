@@ -1014,7 +1014,7 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 	//dataarrays_lower_.Print();
 
     // compute the interpolation factors
-    double t_alpha = ((int)time_ - current_lower_bound_)/(current_upper_bound_-current_lower_bound_);
+    double t_alpha = ((int)time_ - current_lower_bound_)/(double)(current_upper_bound_-current_lower_bound_);
     t_alpha = 1 - t_alpha;
 
     observation zHx1,zHx2;

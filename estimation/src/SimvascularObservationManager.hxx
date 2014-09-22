@@ -28,20 +28,13 @@
 #include "vtkUnstructuredGridWriter.h"
 #include "vtkDataSetSurfaceFilter.h"
 
-// this brings in the common block global variables
-#include "common_c.h"
-
 // includes for the PHASTA Fortran functions
-#include "cvSolverIO.h"
 #include "distmeas.h"
 #include "elmdist.h"
 
-#include "SimvascularGlobalArrayTransfer.h"
-#include "SimvascularAugStatePart.h"
-
-
 namespace Verdandi {
 
+//! This is the base class for the different types of observations
 class SimvascularObservationType {
 
 public:
@@ -57,8 +50,10 @@ protected:
 	//! Indices for nodal observation operators
 	std::vector<int> state_obs_index_;
 
+	//! vector of measurement error variances (diagonal entries)
 	std::vector<double> error_variance_value_;
 
+	//! name of the type of observation
 	std::string name_;
 
 	//! File name for the data file
@@ -94,24 +89,36 @@ protected:
 	//! Flag for loading data from a .dat file
 	bool load_data_from_datfile_;
 
+	//! Flag to denote whether or not the observations are distributed among processes
 	bool isDistributed_;
 
 public:
+
+	//! Constructor
 	SimvascularObservationType();
+
+	//! Destructor
 	~SimvascularObservationType();
 
+	//! Initialization
 	virtual void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) = 0;
 
+	//! Apply the observation operator
 	virtual void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const = 0;
 
+	//! Load the measurements from file
 	void LoadData(int linetoread, Vector<double>& dataarray, int obs_start_index);
 
+	//! Save the observations to data
 	void SaveObservations(const state& x);
 
+	//! Get the number of local observations
 	int getNobservation_local() const;
 
+	//! Get a measurement error variance (diagonal entry)
 	double getErrorVarianceValue(int ind) const;
 
+	//! Get the name of the observation type
 	std::string getName() const;
 
 };
@@ -119,11 +126,17 @@ public:
 class SimvascularNodalSolutionObservation : public SimvascularObservationType {
 protected:
 public:
+
+	//! Constructor
 	SimvascularNodalSolutionObservation();
+
+	//! Destructor
 	~SimvascularNodalSolutionObservation();
 
+	//! Initialization
 	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
 
+	//! Apply the observation operator
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
@@ -131,30 +144,45 @@ public:
 class SimvascularNodalDisplacementObservation : public SimvascularObservationType {
 protected:
 public:
+
+	//! Constructor
 	SimvascularNodalDisplacementObservation();
+
+	//! Destructor
 	~SimvascularNodalDisplacementObservation();
 
+	//! Initialization
 	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
 
+	//! Apply the observation operator
 	void ApplyOperator(const state&x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
 
 class SimvascularDistanceObservation : public SimvascularObservationType {
 protected:
+
+	//! Indices in the duplicated state vector for the distance field
 	std::vector<int> disp_duplicated_state_index_;
 public:
+
+	//! Constructor
 	SimvascularDistanceObservation();
+
+	//! Destructor
 	~SimvascularDistanceObservation();
 
+	//! Initialization
 	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
 
+	//! Apply the observation operator
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
 
 class SimvascularFlowPressObservation : public SimvascularObservationType {
 protected:
+
 	//! Origins of the cut planes
 	std::vector<Seldon::Vector<double> > csobs_origins_;
 
@@ -164,37 +192,49 @@ protected:
 	//! Radii associated with the cut planes
 	std::vector<double> csobs_radii_;
 
-
+    //! Indices in the duplicated state for the solution field
 	std::vector<int> sol_duplicated_state_index_;
 
+	// pointers to VTK objects for reslicing and resampling solution field
 	vtkSmartPointer<vtkPoints> geom_points_;
 	vtkSmartPointer<vtkPoints> geom_points_def_;
 	vtkSmartPointer<vtkIdList> geom_ids_;
 	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_;
 	vtkSmartPointer<vtkUnstructuredGrid> geom_UGrid_def_;
 	vtkSmartPointer<vtkDataSetSurfaceFilter> geom_surface_def_;
-
 	vtkSmartPointer<vtkPolyDataWriter> geom_writer_;
-
 	vtkSmartPointer<vtkPlane> geom_plane_;
 	vtkSmartPointer<vtkCutter> geom_cutter_;
 	vtkSmartPointer<vtkCutter> geom_cutter_alt_;
 	vtkSmartPointer<vtkPolyDataWriter> geom_writers_;
 
+	//! vector of pointers to VTK plane objects representing cross-section cuts
 	std::vector <vtkSmartPointer<vtkPlane> > geom_planes_;
+
+	//! vector of pointers to VTK cutter objects for the cross-section cuts
 	std::vector <vtkSmartPointer<vtkCutter> > geom_cutters_;
+
+	//! vector of vectors storing distances from resampled cells to origin points
 	std::vector<std::vector<double> > distances_fromorigin_;
 
+	//! number of flow observations
     int Nobservation_flow_;
 
+    //! number of average pressure observations
     int Nobservation_avgpressure_;
 
 public:
+
+    //! Constructor
 	SimvascularFlowPressObservation();
+
+	//! Destructor
 	~SimvascularFlowPressObservation();
 
+	//! Initialization
 	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
 
+	//! Apply the observation operator
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };

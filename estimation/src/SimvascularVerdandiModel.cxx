@@ -36,6 +36,9 @@ namespace Verdandi {
  */
 SimvascularVerdandiModel::SimvascularVerdandiModel()
 :   gat(NULL),
+    dynamic_start_(0),
+    event_started_(0),
+    time_shifted_(0.0),
  	Nreduced_(0),
  	Nstate_(0),
  	Nstate_local_(0),
@@ -331,6 +334,9 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 	// lumped parameter state (for heart model, just VLV)
 	if (nomodule.iheart > 0) {
+
+		dynamic_start_ = 1;
+
 		state_part.Initialize("Heart LV Volume");		
 		state_part.addDataPointer(&gat->pointerMapDP_["Heart_LV_Vol"][0]);
         std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_LV_Vol"][0] << endl;
@@ -511,10 +517,20 @@ void SimvascularVerdandiModel::InitializeFirstStep() {
 /*
  *    Things that need to be done
  *    to initialize a time step
- *    shoudl go here.
+ *    should go here.
  */
 void SimvascularVerdandiModel::InitializeStep() {
 
+	// if dynamic_start_ is true and event_started_ is false
+	// and the heart valve is opened, event_started_ is set to true
+	// this should occur once the first time the valve opens
+
+	std::cout <<  "event_started_ = " << event_started_   
+	          << " avopen = "         << *gat->pointerMapInt_["Heart_AVopen"] << std::endl;
+
+	if(dynamic_start_ && !event_started_ && *gat->pointerMapInt_["Heart_AVopen"]){
+		event_started_ = 1;
+	}
 }
 
 
@@ -549,7 +565,7 @@ void SimvascularVerdandiModel::Forward() {
 
 	itrdrv_iter_step();
 
-	itrdrv_iter_finalize();
+	//itrdrv_iter_finalize();
 
 }
 
@@ -561,6 +577,14 @@ void SimvascularVerdandiModel::Forward() {
  *    next time step
  */
 void SimvascularVerdandiModel::FinalizeStep() {
+
+	if(dynamic_start_ && event_started_){
+		time_shifted_++;
+	}
+
+	std::cout << "Dynamic Start = " << dynamic_start_ <<
+			    " Event Started = " << event_started_ <<
+			    " Time Shifted = "  << time_shifted_  << std::endl;
 
 	itrdrv_iter_finalize();
 
@@ -668,8 +692,15 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
       \return: The current time in the model.
  */
 double SimvascularVerdandiModel::GetTime() const {
-
-	return (double)(timdat.lstep);
+	if(!dynamic_start_){
+		return (double)(timdat.lstep);
+	} else {
+		if (event_started_){
+			return (double)(time_shifted_);
+		} else {
+			return (double)-1.0;
+		}
+	}
 }
 
 

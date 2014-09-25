@@ -83,6 +83,9 @@ int main(int argc, char** argv)
 
     	driver.GetModel().Forward();
 
+    	// FOR TESTING
+    	driver.GetModel().FinalizeStep();
+
         driver.GetObservationManager().SetTime(driver.GetModel(),driver.GetModel().GetTime());
         driver.GetObservationManager().SaveObservationSingleLocal(driver.GetModel().GetState());
 

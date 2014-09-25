@@ -389,7 +389,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 		throw Error("SimvascularObservationManager::Initialize: number of observation locations does not match listed locations!");
 	}
 
-	int error_variance_value_flow, error_variance_value_avgpress;
+	double error_variance_value_flow, error_variance_value_avgpress;
 
 	configuration.Set("error.variance_flow", "v > 0", error_variance_value_flow);
 	std::cout << "error.variance_flow " << error_variance_value_flow << std::endl;

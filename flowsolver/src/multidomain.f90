@@ -5751,6 +5751,9 @@
       this%c_backflow = parameters(14)                   ! back flow closure
       this%max_backflow = parameters(15)                 ! back flow time
 
+      ! give value to av open, set later in initxvars_hrt
+      this%avopen = int(0)
+
       ! set model variables from parameters
       this%vlv_n = this%edv            
       this%emin = this%patrial/(this%edv - this%vulv)     
@@ -5944,7 +5947,7 @@
       subroutine assign_ptrs_ext_hrt(a)
 
       use iso_c_binding
-      use phcommonvars, only: PhAssignPointerDP
+      use phcommonvars, only: PhAssignPointerDP, PhAssignPointerInt
 
       implicit none
 
@@ -5962,6 +5965,9 @@
       ! set pointer to VLV^{t_{n}}, added to map of pointers
       call PhAssignPointerDP(c_loc(a%vlv_n), c_char_"Heart_LV_Vol"//c_null_char)
       
+      ! set pointer to AVOPEN, added to map of pointers
+      call PhAssignPointerInt(c_loc(a%avopen), c_char_"Heart_AVopen"//c_null_char)
+
       end subroutine
 
 

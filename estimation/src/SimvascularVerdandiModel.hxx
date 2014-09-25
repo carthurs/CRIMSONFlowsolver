@@ -94,6 +94,14 @@ protected:
 	//! Pointer to the singleton instance of SimvascularGlobalArrayTransfer
 	SimvascularGlobalArrayTransfer *gat;
 
+	//! Shifted time
+	double time_shifted_;
+
+	//! Dynamic start
+	int dynamic_start_;
+
+	//! Event started
+	int event_started_;
 
 	//! Size of the estimated portion of duplicated_state_
 	int Nreduced_;

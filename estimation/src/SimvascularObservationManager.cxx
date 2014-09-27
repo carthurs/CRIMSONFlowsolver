@@ -839,10 +839,10 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 
 	// count the number of observations on this processor
-	for (auto it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
+	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
 		Nobservation_local_ += (*it)->getNobservation_local();
 
-	for (auto it = observations_single_.begin(); it != observations_single_.end(); ++it)
+	for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it)
 		Nobservation_local_ += (*it)->getNobservation_local();
 
 	// compute the global number of observation
@@ -865,7 +865,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	int ncounter = 0;
 
-	for (auto it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
+	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
 		for (int kk = 0; kk < (*it)->getNobservation_local(); ++kk) {
 			error_variance_inverse_diag_.SetBuffer( local_start+ncounter, double(1) / (*it)->getErrorVarianceValue(kk)  );
 			ncounter++;
@@ -873,7 +873,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	if (rank_ == numProcs_ - 1) {
 
-		for (auto it = observations_single_.begin(); it != observations_single_.end(); ++it)
+		for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it)
 			for (int kk = 0; kk < (*it)->getNobservation_local(); ++kk) {
 				error_variance_inverse_diag_.SetBuffer( local_start+ncounter, double(1) / (*it)->getErrorVarianceValue(kk)  );
 				ncounter++;
@@ -1184,12 +1184,12 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 	Hx1.Zero();
 	Hx2.Zero();
 
-	for (auto it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
+	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
 		(*it)->ApplyOperator(x,Hx1,Hx2,ncounter);
 		ncounter += (*it)->getNobservation_local();
 	}
 
-	for (auto it = observations_single_.begin(); it != observations_single_.end(); ++it) {
+	for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
 		(*it)->ApplyOperator(x,Hx1,Hx2,ncounter);
 		ncounter += (*it)->getNobservation_local();
 	}
@@ -1235,13 +1235,13 @@ void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, Ve
 	int linetoread = timeindex / Nskip_;
 	int ncounter = 0;
 
-	for (auto it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
+	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
 		(*it)->LoadData(linetoread,dataarray,ncounter);
 		ncounter += (*it)->getNobservation_local();
 	}
 
 	if (rank_ == numProcs_ - 1)
-		for (auto it = observations_single_.begin(); it != observations_single_.end(); ++it) {
+		for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
 			(*it)->LoadData(linetoread,dataarray,ncounter);
 			ncounter += (*it)->getNobservation_local();
 		}
@@ -1264,12 +1264,12 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 		if (rank_ == 0)
 			std::cout << "SAVING OBSERVATIONS" << std::endl;
 
-		for (auto it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
+		for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
 			(*it)->SaveObservations(x);
 			ncounter += (*it)->getNobservation_local();
 		}
 
-		for (auto it = observations_single_.begin(); it != observations_single_.end(); ++it) {
+		for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
 			(*it)->SaveObservations(x);
 			ncounter += (*it)->getNobservation_local();
 		}

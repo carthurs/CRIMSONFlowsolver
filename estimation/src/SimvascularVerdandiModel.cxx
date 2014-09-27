@@ -174,14 +174,14 @@ void SimvascularVerdandiModel::Initialize() {
 
     std::cout << "at rank " << rank_ << " number of states " << dstrb_parts_.size() << std::endl;
 
-    for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
+    for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
     	std::cout << "at rank " << rank_ << " " << it->getName().c_str() << " " << it->getSize() <<  std::endl;
     	state_total += (int)it->getSize();
     }
 
     if (rank_ == numProcs_ - 1) {
 
-    	for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
+    	for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
     		std::cout << "at rank " << rank_ << " " << it->getName().c_str() << " " << it->getSize() << std::endl;
 
     		int first_estimated = it->getFirstEstimated();
@@ -194,7 +194,7 @@ void SimvascularVerdandiModel::Initialize() {
     	}
     }
 
-    for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+    for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
     	shared_parts_size_ += it->getSize();
 
     Nstate_local_ = state_total; // the size of the on-proc duplicated_state_
@@ -230,12 +230,12 @@ void SimvascularVerdandiModel::Initialize() {
 
 	icounter = state_start;
 
-	for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
 		for (std::size_t jj = 0; jj < it->getSize(); jj++)
 			it->addDuplicatedStateIndex(icounter++);
 
 	if (rank_ == numProcs_ - 1)
-		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				it->addDuplicatedStateIndex(icounter++);
 
@@ -496,10 +496,10 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	}
 
 
-	for (auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+	for (std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
 		dstrb_parts_map_[it->getName()] = &(*it);
 
-	for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+	for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 		shared_parts_map_[it->getName()] = &(*it);
 
 }
@@ -761,7 +761,7 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	if (rank_ == 0)
 		std::cout << "getting state ";
 
-	for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
+	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
 		//cout << it->getName() << endl;
 		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
 			duplicated_state_.SetBuffer( it->getDuplicatedStateIndex((int)jj),
@@ -769,7 +769,7 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	}
 
 	if (rank_ == numProcs_ - 1)
-		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
 			//cout << it->getName() << endl;
 			for (std::size_t jj = 0; jj < it->getSize(); ++jj)
 				duplicated_state_.SetBuffer( it->getDuplicatedStateIndex((int)jj),
@@ -798,7 +798,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 	if (rank_ == 0)
 		std::cout << "setting state ";
 
-	for(auto it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
 		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
 			it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
 
@@ -806,7 +806,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 	int tcounter = 0;
 
 	if (rank_ == numProcs_ - 1) {
-		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++) {
 				it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
 
@@ -821,7 +821,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
 
 		tcounter = 0;
-		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				*it->getDataPointer((int)jj) = tempArray[tcounter++];
 	}
@@ -864,7 +864,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 		int ncounter = 0;
 
-		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				if (it->getIsEstimated((int)jj)) {
 					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
@@ -937,7 +937,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 
 		int ncounter = 0;
 
-		for (auto it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				if (it->getIsEstimated((int)jj)) {
 					Eoutfile_ << *it->getDataPointer((int)jj) << " ";

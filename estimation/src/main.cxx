@@ -4,6 +4,7 @@
 #include "mpi.h"
 
 #include <iostream>
+#include <stdio.h>
 #include "common_c.h"
 #include "input.h"
 #include "proces.h"

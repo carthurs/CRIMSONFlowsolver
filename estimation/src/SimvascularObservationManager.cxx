@@ -352,7 +352,9 @@ void SimvascularDistanceObservation::ApplyOperator(const state& x, observation& 
 
 /* */
 /* */
-SimvascularFlowPressObservation::SimvascularFlowPressObservation() {
+SimvascularFlowPressObservation::SimvascularFlowPressObservation()
+:Nobservation_flow_(0),Nobservation_avgpressure_(0),Nobservation_area_(0)
+{
 }
 
 SimvascularFlowPressObservation::~SimvascularFlowPressObservation() {
@@ -374,22 +376,23 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 
 	configuration.Set("Nobservation_flow","",0,Nobservation_flow_);
 	configuration.Set("Nobservation_avgpressure","",0,Nobservation_avgpressure_);
+	configuration.Set("Nobservation_area","",0,Nobservation_area_);
 
-	csobs_origins_.resize(Nobservation_flow_+Nobservation_avgpressure_);
-	csobs_normals_.resize(Nobservation_flow_+Nobservation_avgpressure_);
+	csobs_origins_.resize(Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_);
+	csobs_normals_.resize(Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_);
 
 	configuration.Set("csobs_origins",csobs_origins_);
 	configuration.Set("csobs_normals",csobs_normals_);
 	configuration.Set("csobs_radii",csobs_radii_);
 
-	if ((unsigned int)Nobservation_flow_+Nobservation_avgpressure_ != csobs_origins_.size() ||
-		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_ != csobs_normals_.size() ||
-		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_ != csobs_radii_.size()) {
+	if ((unsigned int)Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_ != csobs_origins_.size() ||
+		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_ != csobs_normals_.size() ||
+		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_ != csobs_radii_.size()) {
 
 		throw Error("SimvascularObservationManager::Initialize: number of observation locations does not match listed locations!");
 	}
 
-	double error_variance_value_flow, error_variance_value_avgpress;
+	double error_variance_value_flow, error_variance_value_avgpress, error_variance_value_area;
 
 	configuration.Set("error.variance_flow", "v > 0", error_variance_value_flow);
 	std::cout << "error.variance_flow " << error_variance_value_flow << std::endl;
@@ -397,8 +400,11 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	configuration.Set("error.variance_avgpress", "v > 0", error_variance_value_avgpress);
 	std::cout << "error.variance_avgpress " << error_variance_value_avgpress << std::endl;
 
+	configuration.Set("error.variance_area", "v > 0", error_variance_value_area);
+	std::cout << "error.variance_area " << error_variance_value_area << std::endl;
+
 	if (rank_ == 0) {
-		for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
+		for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_; kk++) {
 			csobs_origins_[kk].Print();
 			csobs_normals_[kk].Print();
 			std::cout << csobs_radii_[kk] << std::endl;
@@ -416,6 +422,9 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	geom_UGrid_def_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	geom_surface_def_ = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
 
+	// Loop through nodes on this processor and extract the coordinates
+	// Coordinates stored in the arrays coordVal and dispVal
+
 	for (int unitIdx = 0; unitIdx < conpar.nshg; unitIdx++) {
 
 		double coordVal[3];
@@ -431,6 +440,9 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 		geom_points_def_->InsertPoint(unitIdx,coordVal[0]+dispVal[0],coordVal[1]+dispVal[1],coordVal[2]+dispVal[2]);
 
 	}
+
+	// Create VTK unstructured grid and add each element
+	// Here we use the VTK TETRA element (4 nodes)
 
 	geom_UGrid_->SetPoints(geom_points_);
 	geom_UGrid_def_->SetPoints(geom_points_def_);
@@ -453,8 +465,6 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	geom_surface_def_->SetInput(geom_UGrid_def_);
 
 	// set up cross-sectional flow and pressure observation with VTK
-
-
 
 	vtkSmartPointer<vtkDoubleArray> geom_vel_array = vtkSmartPointer<vtkDoubleArray>::New();
 	vtkSmartPointer<vtkDoubleArray> geom_pres_array = vtkSmartPointer<vtkDoubleArray>::New();
@@ -486,7 +496,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	    	   By default, vtkCutter generates triangulated surfaces
 	 */
 
-	for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_; kk++) {
+	for (int kk = 0; kk < Nobservation_flow_ + Nobservation_avgpressure_ + Nobservation_area_ ; kk++) {
 
 		// set the location of the cutting plane
 		geom_plane_ = vtkSmartPointer<vtkPlane>::New();
@@ -525,7 +535,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 
 		/* experimental */
 		fn1 = "obs_cut_surface_";
-		fn1 = fn1 + s_temp.str() + fn2;
+		fn1 = fn1 + s_temp.str() + fn2; // still need to include processor rank in file name, as cut may span multiple procs
 		geom_writer_->SetFileName(fn1.c_str());
 		geom_writer_->SetInput(geom_cutter_alt_->GetOutput());
 		geom_writer_->Write();
@@ -588,6 +598,8 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	}
 
 
+	// All non-distributed observations (i.e. data from cuts) are stored on the last processor
+
 	if (rank_ == numProcs_ - 1) { // note we want Nobservation_local_ to be nonzero on the last process
 		for (int kk = 0; kk < Nobservation_flow_; ++kk) {
 			Nobservation_local_++;
@@ -597,6 +609,11 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 		for (int kk = 0; kk < Nobservation_avgpressure_; ++kk) {
 			Nobservation_local_++;
 			error_variance_value_.push_back(error_variance_value_avgpress);
+		}
+
+		for (int kk = 0; kk < Nobservation_area_; ++kk) {
+			Nobservation_local_++;
+			error_variance_value_.push_back(error_variance_value_area);
 		}
 	}
 
@@ -649,7 +666,7 @@ void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation&
 
 	}
 
-	for (int kk = 0; kk < Nobservation_flow_ + Nobservation_avgpressure_; kk++) {
+	for (int kk = 0; kk < Nobservation_flow_ + Nobservation_avgpressure_ + Nobservation_area_; kk++) {
 
 		double area_local, area, avgFlow_local, avgFlow, avgPres_local, avgPres;
 
@@ -732,8 +749,28 @@ void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation&
 		MPI_Reduce(   &area_local, &area,    1, MPI_DOUBLE, MPI_SUM, numProcs_ - 1,iNewComm_C_);
 
 		if (rank_ == numProcs_ -1) { // note we only write to the observation on the last process
-			(kk < Nobservation_flow_) ?
-					Hx1(kk+obs_start_index) = avgFlow : Hx1(kk+obs_start_index) = avgPres / area;
+
+			// save output in the following order: flows, pressures and areas
+			if (kk < Nobservation_flow_)
+			{
+				Hx1(kk+obs_start_index) = avgFlow;
+			}
+			else if (kk >= Nobservation_flow_ && kk <  Nobservation_flow_ + Nobservation_avgpressure_)
+			{
+				Hx1(kk+obs_start_index) = avgPres / area;
+				std::cout << "Area = " << area << std::endl;
+				std::cout << "Area L = " << area_local << std::endl;
+
+			}
+			else
+			{
+				Hx1(kk+obs_start_index) = area;
+				std::cout << "Area = " << area << std::endl;
+				std::cout << "Area L = " << area_local << std::endl;
+			}
+
+//			(kk < Nobservation_flow_) ?
+//					Hx1(kk+obs_start_index) = avgFlow : Hx1(kk+obs_start_index) = avgPres / area;
 
 			Hx2(kk+obs_start_index) = Hx1(kk+obs_start_index);
 		}

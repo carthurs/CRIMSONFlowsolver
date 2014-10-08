@@ -223,6 +223,9 @@ protected:
     //! number of average pressure observations
     int Nobservation_avgpressure_;
 
+    //! number of area observations
+    int Nobservation_area_;
+
 public:
 
     //! Constructor
@@ -238,11 +241,6 @@ public:
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
-
-
-
-
-
 
 ///////////////////////////////////
 // SIMVASCULAROBSERVATIONMANAGER //

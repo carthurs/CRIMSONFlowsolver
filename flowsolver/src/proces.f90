@@ -97,7 +97,12 @@
 !
 ! *** setup boundary data module 
 !
-        call setupBoundaryModule(x)        
+        call setupBoundaryModule(x)
+
+! *** here the multidom.cxx should be called to set the pointers to the arrays
+
+
+
 !     
 !.... check for execution mode
 !

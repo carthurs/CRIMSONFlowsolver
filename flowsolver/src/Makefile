@@ -20,7 +20,8 @@ HDRS  =   CInput.h \
 
 CXXSRCS = newshape.cxx Cinput.cxx input_fform.cxx \
           partition.cxx \
-          ValType.cxx
+          ValType.cxx \
+          multidom.cxx
 
 CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           Fn.c FnDrv.c getIntPnts.c lestools.c modeShape.c \

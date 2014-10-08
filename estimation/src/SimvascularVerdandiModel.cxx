@@ -525,11 +525,14 @@ void SimvascularVerdandiModel::InitializeStep() {
 	// and the heart valve is opened, event_started_ is set to true
 	// this should occur once the first time the valve opens
 
-	std::cout <<  "event_started_ = " << event_started_   
-	          << " avopen = "         << *gat->pointerMapInt_["Heart_AVopen"] << std::endl;
+	if(dynamic_start_)
+	{
+		std::cout <<  "event_started_ = " << event_started_
+				<< " avopen = "         << *gat->pointerMapInt_["Heart_AVopen"] << std::endl;
 
-	if(dynamic_start_ && !event_started_ && *gat->pointerMapInt_["Heart_AVopen"]){
-		event_started_ = 1;
+		if(!event_started_ && *gat->pointerMapInt_["Heart_AVopen"]){
+			event_started_ = 1;
+		}
 	}
 }
 

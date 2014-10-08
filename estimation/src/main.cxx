@@ -10,6 +10,7 @@
 #include "itrdrv.h"
 #include "partition.h"
 #include "input_fform.h"
+#include "multidom.h"
 
 #ifdef intel
 #include <direct.h>
@@ -70,6 +71,9 @@ int main(int argc, char * argv[]) {
    input(&numProcsTotal, &rank);
    proces();
    itrdrv_init(); // initialize solver
+
+   // initialise reduced order boundary conditions
+   multidom_initialise();
 
    for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
 	   itrdrv_iter_init();

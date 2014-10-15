@@ -9,7 +9,7 @@
       use pointer_data, only: r0d
       use datatypes
       use debuggingTools
-      use iso_c_binding
+      use cpp_interface
 
       implicit none
 !
@@ -57,17 +57,6 @@
                          startmultidomain_int,      &
                          startmultidomain_int_char
       end interface 
-
-      interface
-         subroutine multidom_link_f(a) bind(c,name='multidom_link')
-            use iso_c_binding
-            !integer(c_int), value :: a
-            !integer, pointer :: b(:)
-            integer(c_int)  :: a
-         end subroutine
-      end interface
-
-
 !
 ! --- rcr data types
       type rcr
@@ -2925,6 +2914,7 @@
 ! *** add surfaces ids
 !
       subroutine addsurfids(a,num,ids)
+      use iso_c_binding
       implicit none
 !
       class(multidomaincontainer) :: a      
@@ -2933,15 +2923,7 @@
       integer :: i
       integer :: j
       logical :: addid = .false.
-      ! type(c_ptr), dimension(0:maxsurf) :: surfptrs
 !
-      ! do i = 0,maxsurf
-      !    surfptrs(i) = i
-      ! end do 
-
-      call multidom_link_f(maxsurf)
-
-
 !     ! check if number of surfaces is > 0
       if (num .gt. int(0)) then
 !        ! check to see if the pointer is associated          
@@ -2991,6 +2973,12 @@
             ! allocate flow_nalf array, size 0:maxsurf
             allocate(a%flow(0:maxsurf))     
             a%flow(0:maxsurf) = real(0.0,8)            
+            
+            do i = 1,num
+               call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
+            end do 
+            
+            
 !
             ! allocate flow_nalf derivative array, size 0:maxsurf
             allocate(a%flowderivative(0:maxsurf))     
@@ -3009,9 +2997,6 @@
 !       write(*,*) 'addsurfids: cor info', a%surfids(1:5) !\todo remove
 ! #endif
 !
-
-
-
       end subroutine
 !
 ! *** set flow pointers

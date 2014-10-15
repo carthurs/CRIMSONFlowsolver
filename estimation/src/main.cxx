@@ -12,6 +12,7 @@
 #include "partition.h"
 #include "input_fform.h"
 #include "multidom.h"
+#include "fortranPointerManager.hpp"
 
 #ifdef intel
 #include <direct.h>
@@ -76,10 +77,14 @@ int main(int argc, char * argv[]) {
    // initialise reduced order boundary conditions
    multidom_initialise();
 
+   fortranBoundaryDataPointerManager* pointerManager;
+   pointerManager = fortranBoundaryDataPointerManager::Get();
+
    for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
 	   itrdrv_iter_init();
 	   itrdrv_iter_step();
 	   itrdrv_iter_finalize();
+           std::cout << "C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
    }
 
    itrdrv_finalize();

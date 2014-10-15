@@ -14,6 +14,7 @@
 //
 
 void multidom_initialise();
+extern "C" void multidom_link(int);
 void multidom_iter_initialise();
 void multidom_iter_step();
 void multidom_iter_finalise();

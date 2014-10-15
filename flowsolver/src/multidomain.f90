@@ -9,6 +9,7 @@
       use pointer_data, only: r0d
       use datatypes
       use debuggingTools
+      use iso_c_binding
 
       implicit none
 !
@@ -56,6 +57,17 @@
                          startmultidomain_int,      &
                          startmultidomain_int_char
       end interface 
+
+      interface
+         subroutine multidom_link_f(a) bind(c,name='multidom_link')
+            use iso_c_binding
+            !integer(c_int), value :: a
+            !integer, pointer :: b(:)
+            integer(c_int)  :: a
+         end subroutine
+      end interface
+
+
 !
 ! --- rcr data types
       type rcr
@@ -2921,7 +2933,15 @@
       integer :: i
       integer :: j
       logical :: addid = .false.
+      ! type(c_ptr), dimension(0:maxsurf) :: surfptrs
 !
+      ! do i = 0,maxsurf
+      !    surfptrs(i) = i
+      ! end do 
+
+      call multidom_link_f(maxsurf)
+
+
 !     ! check if number of surfaces is > 0
       if (num .gt. int(0)) then
 !        ! check to see if the pointer is associated          
@@ -2989,6 +3009,9 @@
 !       write(*,*) 'addsurfids: cor info', a%surfids(1:5) !\todo remove
 ! #endif
 !
+
+
+
       end subroutine
 !
 ! *** set flow pointers

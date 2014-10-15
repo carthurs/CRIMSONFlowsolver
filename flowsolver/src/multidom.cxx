@@ -16,7 +16,7 @@ void multidom_initialise(){
 
 	if (grcrbccom.numGRCRSrfs > 0)
 	{
-		for (int i=0; i < grcrbccom.numGRCRSrfs; i++)
+		for (int i=0; i<grcrbccom.numGRCRSrfs; i++)
 		{
 			std::cout << grcrbccom.nsrflistGRCR[i+1] << std::endl;
 		}
@@ -25,6 +25,12 @@ void multidom_initialise(){
 }
 
 //
+extern "C" void multidom_link(int num)
+{
+
+	std::cout << "Index = " << num << std::endl;	
+	    
+}
 
 void multidom_iter_initialise(){
 

@@ -85,6 +85,8 @@
       ! write details to file 
       call outputBoundaryStatistics(ndsurf, nshg, x, numnp, nsd, iprofile, nprofile)
 
+
+
       return
       end subroutine setupboundarymodule
 

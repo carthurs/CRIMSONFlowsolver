@@ -9,6 +9,7 @@
       use pointer_data, only: r0d
       use datatypes
       use debuggingTools
+      use cpp_interface
 
       implicit none
 !
@@ -2350,7 +2351,7 @@
       end subroutine
 !
 
-      subroutine initmultidomain(isys)	  
+      subroutine initmultidomain(isys)   
 !
       implicit none
       integer :: isys ! systemic flag
@@ -2913,6 +2914,7 @@
 ! *** add surfaces ids
 !
       subroutine addsurfids(a,num,ids)
+      use iso_c_binding
       implicit none
 !
       class(multidomaincontainer) :: a      
@@ -2960,7 +2962,7 @@
             ! update surface number (initialised as 0)
             a%surfnum = a%surfnum + num
 !
-            ! allocate area array, size 0:maxsurf
+            ! allocate area array, size z0:maxsurf
             allocate(a%areas(0:maxsurf))     
             a%areas(0:maxsurf) = real(0.0,8)
 !
@@ -2970,7 +2972,13 @@
 !
             ! allocate flow_nalf array, size 0:maxsurf
             allocate(a%flow(0:maxsurf))     
-            a%flow(0:maxsurf) = real(0.0,8)            
+            a%flow(0:maxsurf) = real(0.0,8)     
+            
+            do i = 1,num
+               call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
+            end do 
+            
+            
 !
             ! allocate flow_nalf derivative array, size 0:maxsurf
             allocate(a%flowderivative(0:maxsurf))     
@@ -4532,7 +4540,7 @@
             xiter = xiter + dx   
 !
 !            eval = norm2(dx) 
-			eval = dot_product(dx,dx)
+         eval = dot_product(dx,dx)
             eval = sqrt(eval) 
 !
 !           ! if evaluation is less than tolerance exit
@@ -8244,7 +8252,7 @@
 ! *******************************************
 !
 !     ! matrix matrix multiply
-      function matrixmatrix(amatrix,bmatrix) result(cmatrix)	
+      function matrixmatrix(amatrix,bmatrix) result(cmatrix)   
       implicit none
       real*8, dimension(:,:), intent(in) :: amatrix
       real*8, dimension(:,:), intent(in) :: bmatrix
@@ -8272,7 +8280,7 @@
                   m,       &
                   n,       &
                   p,       &
-                  alpha,	&
+                  alpha,   &
                   amatrix, &
                   m,       &
                   bmatrix, &
@@ -8285,7 +8293,7 @@
       end function matrixmatrix
 !
 !     ! matrix vector multiply
-      function matrixvector(amatrix,bvector) result(cvector)	
+      function matrixvector(amatrix,bvector) result(cvector)   
       implicit none
       real*8, dimension(:,:), intent(in) :: amatrix
       real*8, dimension(:), intent(in)   :: bvector
@@ -8313,7 +8321,7 @@
                   m,       &
                   n,       &
                   p,       &
-                  alpha,	&
+                  alpha,   &
                   amatrix, &
                   m,       &
                   bvector, &
@@ -8327,7 +8335,7 @@
 !
 ! *** wrapper for dgemm to to multiply a matrix with a vector (pointer)
 ! 
-      function matrixvectorpointer(aamatrix,bbvector) result(ccvector)	
+      function matrixvectorpointer(aamatrix,bbvector) result(ccvector)  
       implicit none
       real*8, dimension(:,:), intent(in) :: aamatrix
       type(pntr), dimension(:), intent(in) :: bbvector
@@ -8362,7 +8370,7 @@
                   m,             &
                   n,             &
                   p,             &
-                  alpha,	      &
+                  alpha,         &
                   aamatrix,      &
                   m,             &
                   dummyvector,   &

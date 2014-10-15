@@ -21,7 +21,7 @@ HDRS  =   CInput.h \
 CXXSRCS = newshape.cxx Cinput.cxx input_fform.cxx \
           partition.cxx \
           ValType.cxx \
-          multidom.cxx
+          multidom.cxx fileReaders.cxx fortranPointerManager.cxx  \
 
 CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           Fn.c FnDrv.c getIntPnts.c lestools.c modeShape.c \
@@ -29,7 +29,7 @@ CSRCS   = blend.c blendDrv.c Bn.c BnDrv.c En.c EnDrv.c \
           shptet.c shptri.c symhex.c symline.c sympyr.c symquad.c symquadw.c \
           symtet.c symtri.c symtripyr.c symwdg.c tmrc.c uniformP.c usr.c write_hessian.c
 
-FSRCS   = common.f90 pointer.f90 globalArrays.f90 shapeTable.f90 memLS.f90 \
+FSRCS   = cpp_interface.f90 common.f90 pointer.f90 globalArrays.f90 shapeTable.f90 memLS.f90 \
 		turbsa.f90 \
 		perprep.f90 local_mass.f90 \
 		pvsqbi.f90 \

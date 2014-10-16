@@ -205,10 +205,13 @@ void multidom_initialise(){
 
 
 	std::string temp = "rcrt.dat";
-	rcrtReader rcrtReader_instance(temp,grcrbccom.numGRCRSrfs);
+  rcrtReader rcrtReader_instance = rcrtReader::Instance(temp,1);
 	rcrtReader_instance.readAndSplitMultiSurfaceInputFile();
 
-    std::cout << rcrtReader_instance.getR1()[0] << std::endl;
+  rcrtReader rcrtReader_pointer2 = rcrtReader::Instance();
+
+    std::cout << "inst1" << rcrtReader_instance.getR1()[0] << std::endl;
+    std::cout << "inst2" << rcrtReader_pointer2.getR1()[0] << std::endl;
     std::cout << rcrtReader_instance.getC()[0] << std::endl;
     std::cout << rcrtReader_instance.getR2()[0] << std::endl;
 

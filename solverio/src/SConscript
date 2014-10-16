@@ -1,0 +1,43 @@
+import buildoptions as bop
+import string
+
+
+Import('env')
+
+env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
+env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
+env.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
+
+# HDRS	= cvSolverIO.h
+# CXXSRCS = cvSolverIO.cxx
+
+sources=string.split("""
+	cvSolverIO.cxx
+	""")
+
+object_list=env.Object(source=sources)
+
+# Strip out the .mod files (not needed for linking!)
+object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
+
+
+# Set the source and output file name ("target"):
+default = env.Library(target='libsimvascular_solverio.a', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../../lib/libsimvascular_solverio.a", "./libsimvascular_solverio.a", Copy("$TARGET", "$SOURCE"))
+
+# copy.execute()
+# Define SCons' default action:
+Default(default,copyLibrary)
+
+# SRCS	= $(CSRCS) $(CXXSRCS)
+
+# OBJS	= $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
+
+# TARGET_LIB = libsimvascular_solverio.$(STATICEXT)
+
+# $(TOP)/lib/$(TARGET_LIB) : $(OBJS)
+# 	$(AR)$(TARGET_LIB) $(OBJS)
+# 	mv $(TARGET_LIB) $(TOP)/lib
+	
+# clean:
+# 	-$(RM) $(OBJS) $(TOP)/lib/$(TARGET_LIB) *.pdb *.manifest

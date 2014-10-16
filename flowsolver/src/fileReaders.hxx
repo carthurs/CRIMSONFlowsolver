@@ -30,6 +30,9 @@ public:
 		// delete fileName;
 	}
 protected:
+	abstractFileReader()
+	{
+	}
 	std::ifstream* fileHandle;
 	std::vector<std::string>* currentLineSplitBySpaces;
 	std::string currentLine;
@@ -49,6 +52,10 @@ public:
 	{
 		numberOfSurfacesOfThisType = surfaces;
 	}
+
+	abstractMultipleSurfaceFileReader()
+	{
+	}
 protected:
 	int numberOfSurfacesOfThisType;
 };
@@ -57,10 +64,18 @@ protected:
 class rcrtReader : public abstractMultipleSurfaceFileReader
 {
 public:
-	rcrtReader(std::string filename, int surfaces)
-	: abstractMultipleSurfaceFileReader(filename,surfaces)
+	static rcrtReader& Instance(std::string filename, int surfaces)
 	{
+		static rcrtReader *instance = new rcrtReader(filename, surfaces);
+		return *instance;
 	}
+
+	static rcrtReader& Instance()
+	{
+		static rcrtReader *instance = new rcrtReader();
+		return *instance;
+	}
+
 	void readAndSplitMultiSurfaceInputFile();
 	int getPdmax();
 	std::vector<double> getR1();
@@ -68,6 +83,17 @@ public:
 	std::vector<double> getR2();
 	std::vector<std::vector<std::pair<double,double>>> getTimeDataPdist();
 private:
+	// Make the constructor private; it's only ever called as a static method
+	// via the public Instance().
+	rcrtReader(std::string filename, int surfaces)
+	: abstractMultipleSurfaceFileReader(filename,surfaces)
+	{
+	}
+
+	rcrtReader()
+	{
+	}
+
 	int pdmax;
 	std::vector<int> numDataRCR;
 	std::vector<double> r1;

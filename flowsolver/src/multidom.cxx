@@ -5,8 +5,10 @@
  *      Author: klau, carthurs
  */
 
+#include "common_c.h"
 #include "multidom.h"
-#include "fortranPointerManager.hpp"
+#include "fortranPointerManager.hxx"
+
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
 int boundaryCondition::bcCount = 0;
@@ -106,14 +108,14 @@ void RCR::initialiseModel()
 
     //   ! zero history arrays
     //   this%flowhist(:,:) = real(0.0,8)
-      flowhist = new double [hstep];
-      pressurehist = new double [hstep];
+      // flowhist = new double [hstep];
+      // pressurehist = new double [hstep];
       
       for(int ii=0; ii<hstep; ii++)
       {
           flowhist[ii] = 0.0;
           pressurehist[ii] = 0.0;
-}
+      }
 
     //   this%pressurehist(:,:) = real(0.0,8)
     //   ! set flow and pressure file names
@@ -135,8 +137,8 @@ void RCR::initialiseModel()
     // allocate(this%implicitcoeff(surfnum,2)) 
     // allocate(this%implicitcoeff_n1(surfnum,2)) 
 
-	surfarea = 0.0;
-	flow_n = 0.0;
+	  surfarea = 0.0;
+	  flow_n = 0.0;
     flow_n1 = 0.0;
     pressure_n = 0.0;
     implicitcoeff = 0.0;
@@ -201,11 +203,14 @@ void multidom_initialise(){
     
     
 
-	std::string temp = "rcrt.dat";
 
-	rcrtReader rcrtReader_instance(temp,1);
+	std::string temp = "rcrt.dat";
+	rcrtReader rcrtReader_instance(temp,grcrbccom.numGRCRSrfs);
 	rcrtReader_instance.readAndSplitMultiSurfaceInputFile();
 
+    std::cout << rcrtReader_instance.getR1()[0] << std::endl;
+    std::cout << rcrtReader_instance.getC()[0] << std::endl;
+    std::cout << rcrtReader_instance.getR2()[0] << std::endl;
 
 
 	std::vector<std::pair<int,std::string>> surfaceList;

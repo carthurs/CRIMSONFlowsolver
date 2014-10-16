@@ -1,0 +1,83 @@
+import string
+import os
+import buildoptions as bop
+
+env = Environment(ENV = os.environ)
+env.Replace(SHELL=bop.SHELL)
+env.Replace(CXX=bop.CXX)
+env.Replace(CC=bop.CC)
+env.Replace(F90=bop.F90)
+# env.Replace(F77=bop.F77)
+env.Replace(FORTRAN=bop.F90)
+env.Replace(AR=bop.AR)
+
+
+
+debug = ARGUMENTS.get('debug', 0)
+if int(debug):
+   env.Append(CFLAGS=['-g'])
+   print("Performing debug build...")
+   bop.GLOBAL_CXXFLAGS = bop.BUILDFLAGS+bop.DEBUG_FLAGS
+   bop.GLOBAL_CFLAGS   = bop.BUILDFLAGS+bop.DEBUG_FLAGS
+   bop.GLOBAL_FFLAGS   = bop.BUILDFLAGS+bop.DEBUG_FFLAGS
+else:
+   MAKE_OPTIMIZED = 1
+   print("Performing optimised build...")
+   bop.GLOBAL_CXXFLAGS = bop.BUILDFLAGS+bop.OPT_FLAGS
+   bop.GLOBAL_CFLAGS   = bop.BUILDFLAGS+bop.OPT_FLAGS
+   bop.GLOBAL_FFLAGS   = bop.BUILDFLAGS+bop.OPT_FFLAGS
+
+env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
+env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
+env.Append(FFLAGS=bop.GLOBAL_FFLAGS)
+
+
+env.Append(CPPFLAGS=bop.GLOBAL_DEFINES)
+# env.Append(CPPFLAGS=bop.DEBUG_FLAGS)
+# env.Append(CPPFLAGS=bop.OPT_FLAGS)
+
+env.Append(CFLAGS=bop.GLOBAL_DEFINES)
+# env.Append(CFLAGS=bop.DEBUG_FLAGS)
+# env.Append(CFLAGS=bop.OPT_FLAGS)
+
+env.Append(FFLAGS=bop.GLOBAL_DEFINES)
+# env.Append(FFLAGS=bop.DEBUG_FFLAGS)
+# env.Append(FFLAGS=bop.OPT_FFLAGS)
+
+
+# env.ParseConfig("ldconfig -p")
+
+
+# Tell the C++ compiler the location of the Fortran RTL
+# env.Append(LIBPATH = ['/usr/lib/gcc/x86_64-linux-gnu/4.6.3'])
+# env.Append(LIBS = ['libgfortran'])
+
+SConscript('./solverio/src/SConscript',exports='env')
+if (bop.MAKE_WITH_FLOWSOLVER==1):
+    SConscript('./flowsolver/src/SConscript',exports='env')
+if (bop.MAKE_WITH_ESTIMATOR==1):
+	SConscript('./estimation/src/SConscript',exports='env')
+if (bop.MAKE_WITH_PRESOLVER==1):
+	SConscript('./presolver/src/SConscript',exports='env')
+if (bop.MAKE_WITH_POSTSOLVER==1):
+	SConscript('./postsolver/src/SConscript',exports='env')
+
+# # Give the source files:
+# sources=string.split("""
+# 	main.cpp
+# 	fortranPointerManager.cpp
+# 	boundary.cpp
+# 	fortranData.f90
+# 	cpp_interface.f90
+# 	timestepper.f90
+# 	""")
+# object_list=env.Object(source=sources)
+
+# # Strip out the .mod files (not needed for linking!)
+# object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
+
+# # Set the source and output file name ("target"):
+# default = env.Program(target='objectTester', source=object_list_withoutDotModFiles)
+
+# Define SCons' default action:
+# Default(default)

@@ -1,0 +1,28 @@
+import buildoptions as bop
+import string
+
+Import('env')
+
+env.Append(CPPPATH=bop.SOLVERIO_INCDIR)
+
+env.Append(LIBPATH=bop.SOLVERIO_LIBSDIR)
+env.Append(LIBS=bop.SOLVERIO_LIBSLIST)
+
+sources=string.split("""
+	Reduce.cxx
+	wrtc.cxx
+	""")
+
+object_list=env.Object(source=sources)
+
+# Strip out the .mod files (not needed for linking!)
+object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
+
+
+# Set the source and output file name ("target"):
+default = env.Program(target='postsolver', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../../bin/postsolver", "./postsolver", Copy("$TARGET", "$SOURCE"))
+
+
+# Define SCons' default action:
+Default(default,copyLibrary)

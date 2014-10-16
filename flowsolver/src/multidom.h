@@ -40,11 +40,15 @@ public:
  	boundaryCondition(int surfaceIndex_in)
  	{
  	     hstep = inpdat.nstep[0] + timdat.lstep;
+ 	     flowhist = new double [hstep];
+         pressurehist = new double [hstep];
+         
  	     surfaceIndex = surfaceIndex_in;
  	     dp_dq = 0.0;
     	 Hop = 0.0;
     	 bcCount++;
     	 index = bcCount;
+    	 
  	}
  	~boundaryCondition()
  	{

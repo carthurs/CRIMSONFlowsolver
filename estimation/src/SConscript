@@ -1,0 +1,112 @@
+import buildoptions as bop
+import string
+
+Import('env')
+# TOP = ../..
+
+# env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
+env.Append(CPPPATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR+bop.SOLVERIO_INCDIR+bop.LESLIB_DEFS)
+# env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
+env.Append(CPPPATH=bop.BLASLAPACK_INCDIR+bop.METIS_INCDIR+bop.FLOWSOLVER_INCDIR+bop.VERDANDI_INCDIR+bop.PETSC_INCDIR+bop.BOOSTCPP_INCDIR+bop.VTK_INCDIR+bop.LESLIB_INCDIR)
+# env.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
+env.Append(F90PATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR)
+
+env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.VTK_LIBSDIR+bop.LUA_LIBSDIR+bop.FLOWSOLVER_LIBSDIR+bop.BLASLAPACK_LIBSDIR+bop.MPI_LIBSDIR+bop.SOLVERIO_LIBSDIR+bop.METIS_LIBSDIR+bop.INTEL_LIBSDIR+bop.LESLIB_LIBSDIR)
+env.Append(LIBS=bop.PETSC_LIBSLIST)
+env.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtkCommon','vtksys'])
+env.Append(LIBS=bop.LUA_LIBSLIST)
+env.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
+env.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
+env.Prepend(LIBS=bop.MPI_LIBSLIST)
+env.Prepend(LIBS=bop.LESLIB_LIBSLIST)
+env.Prepend(LIBS=bop.FLOWSOLVER_LIBSLIST)
+env.Prepend(LIBS=bop.F90_LIBS)
+env.Append(LIBS=bop.SOLVERIO_LIBSLIST)
+env.Append(LIBS=bop.METIS_LIBSLIST+bop.INTEL_LIBSLIST)
+
+
+CXXSRCS=string.split("""
+	SimvascularGlobalArrayTransfer.cxx
+	SimvascularAugStatePart.cxx
+	""")
+
+CXXSRCS1 = string.split("""
+	ROUKF_flowsolver.cxx
+	""")
+CXXSRCS1.extend(CXXSRCS)
+
+CXXSRCS2 = string.split("""
+	forwardandobserve.cxx
+	""")
+CXXSRCS2.extend(CXXSRCS)
+
+CXXSRCS3 = string.split("""
+	main.cxx
+	""")
+CXXSRCS3.extend(CXXSRCS)
+
+#CSRCS   = 
+
+#FSRCS   = 
+
+#SRCS  = $(FSRCS) $(CSRCS) $(CXXSRCS)
+
+#OBJS  = $(FSRCS:.f90=.$(OBJECTEXT)) $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
+
+OBJS1=env.Object(source=CXXSRCS1)
+OBJS2=env.Object(source=CXXSRCS2)
+OBJS3=env.Object(source=CXXSRCS3)
+# OBJS1  = $(CXXSRCS1:.cxx=.$(OBJECTEXT))
+# OBJS2  = $(CXXSRCS2:.cxx=.$(OBJECTEXT))
+# OBJS3  = $(CXXSRCS3:.cxx=.$(OBJECTEXT))
+
+# No .mod files to strip out here - if FORTRAN ever needs to be compiled in this folder, you'll need to deal with this (See other SConscript files)
+
+# .PHONY : all
+# .DEFAULT : all
+# all: $(TARGET_ESTIMATOR) $(TARGET_FORWARDANDOBSERVE) $(TARGET_FLOWSOLVER)
+
+estimatorTarget = env.Program(target='estimator', source=OBJS1)
+flowsolver_and_observerTarget = env.Program(target='flowsolver_and_observer', source=OBJS2)
+flowsolverTarget = env.Program(target='flowsolver', source=OBJS3)
+
+copyEstimator = env.Command("../../bin/estimator", "./estimator", Copy("$TARGET", "$SOURCE"))
+copyFlowsolver_and_observer = env.Command("../../bin/flowsolver_and_observer", "./flowsolver_and_observer", Copy("$TARGET", "$SOURCE"))
+copyFlowsolver = env.Command("../../bin/flowsolver", "./flowsolver", Copy("$TARGET", "$SOURCE"))
+
+Default(flowsolverTarget,copyFlowsolver)
+# Default(estimatorTarget,flowsolver_and_observerTarget,flowsolverTarget,copyEstimator,copyFlowsolver_and_observer,copyFlowsolver)
+
+# $(TARGET_ESTIMATOR): $(OBJS1)
+# 	$(LINK_EXE)$(TARGET_ESTIMATOR) $(GLOBAL_LFLAGS) $(OBJS1) \
+# 	$(PETSC_LIBS) $(MPI_LIBS) $(LUA_LIBS) \
+# 	$(FLOWSOLVER_LIBS) $(SOLVERIO_LIBS) $(METIS_LIBS) $(LESLIB_LIBS) $(FLOWSOLVER_LIBS) \
+# 	$(VTK_LIBS) $(BLASLAPACK_LIBS) \
+# 	$(F90_LIBS) $(CXX_LIBS)
+					
+# 	mv $(TARGET_ESTIMATOR) $(TOP)/bin
+	
+# $(TARGET_FORWARDANDOBSERVE): $(OBJS2)
+# 	$(LINK_EXE)$(TARGET_FORWARDANDOBSERVE) $(GLOBAL_LFLAGS) $(OBJS2) \
+# 	$(PETSC_LIBS) $(MPI_LIBS) $(LUA_LIBS) \
+# 	$(FLOWSOLVER_LIBS) $(SOLVERIO_LIBS) $(METIS_LIBS) $(LESLIB_LIBS) $(FLOWSOLVER_LIBS) \
+# 	$(VTK_LIBS) $(BLASLAPACK_LIBS) \
+# 	$(F90_LIBS) $(CXX_LIBS)
+					
+# 	mv $(TARGET_FORWARDANDOBSERVE) $(TOP)/bin
+	
+# $(TARGET_FLOWSOLVER): $(OBJS3)
+# 	$(LINK_EXE)$(TARGET_FLOWSOLVER) $(GLOBAL_LFLAGS) $(OBJS3) \
+# 	$(FLOWSOLVER_LIBS) $(SOLVERIO_LIBS) $(METIS_LIBS) $(LESLIB_LIBS) $(MEMLS_LIBS) $(FLOWSOLVER_LIBS) \
+# 	$(MPI_LIBS) $(BLASLAPACK_LIBS) $(F90_LIBS) $(CXX_LIBS)
+					
+# 	mv $(TARGET_FLOWSOLVER) $(TOP)/bin		
+
+# .PHONY : clean
+# clean : 
+# 	-$(RM) $(OBJS1) $(TARGET_ESTIMATOR) *.mod *.exe *.pdb *.manifest
+# 	-$(RM) $(TOP)/bin/$(TARGET_ESTIMATOR)*
+# 	-$(RM) $(OBJS2) $(TARGET_FORWARDANDOBSERVE) *.mod *.exe *.pdb *.manifest
+# 	-$(RM) $(TOP)/bin/$(TARGET_FORWARDANDOBSERVE)*
+# 	-$(RM) $(OBJS3) $(TARGET_FLOWSOLVER) *.mod *.exe *.pdb *.manifest
+# 	-$(RM) $(TOP)/bin/$(TARGET_FLOWSOLVER)*

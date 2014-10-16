@@ -12,7 +12,7 @@
 #include "partition.h"
 #include "input_fform.h"
 #include "multidom.h"
-#include "fortranPointerManager.hpp"
+#include "fortranPointerManager.hxx"
 
 #ifdef intel
 #include <direct.h>

@@ -1,0 +1,34 @@
+import buildoptions as bop
+import string
+
+Import('env')
+
+env.Append(CPPPATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)
+env.Append(F90PATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)
+
+env.Append(LIBPATH=bop.SPARSE_LIBSDIR+bop.NSPCG_LIBSDIR+bop.ZLIB_LIBSDIR)
+env.Append(LIBS=bop.SPARSE_LIBSLIST+bop.NSPCG_LIBSLIST+bop.ZLIB_LIBSLIST)
+
+sources=string.split("""
+	directsolve.c
+	cmd.cxx
+	displacements.cxx
+	helpers.cxx
+	supre-cmds.cxx
+	supre.cxx
+	stannspcg.f
+	""")
+
+object_list=env.Object(source=sources)
+
+# Strip out the .mod files (not needed for linking!)
+object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
+
+
+# Set the source and output file name ("target"):
+default = env.Program(target='presolver', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../../bin/presolver", "./presolver", Copy("$TARGET", "$SOURCE"))
+
+
+# Define SCons' default action:
+Default(default,copyLibrary)

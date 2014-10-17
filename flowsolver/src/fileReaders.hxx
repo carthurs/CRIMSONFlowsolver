@@ -11,18 +11,24 @@
 class abstractFileReader
 {
 public:
-	abstractFileReader(std::string fileNameIn)
+	abstractFileReader()
 	{
-		fileName = fileNameIn;
-		std::cout << "filename is: " <<fileName << std::endl;
-		fileHandle = new std::ifstream(fileName);
 		currentLineSplitBySpaces = new std::vector<std::string>;
+	}
+	
+	void setFileName(std::string fileNameIn)
+	{
+	    fileName = fileNameIn;
+	    std::cout << "filename is: " <<fileName << std::endl;
+		fileHandle = new std::ifstream(fileName);
+		
 		if (fileHandle->fail())
 		{
 			std::cout << "Failed to open " << fileName << "!" << std::endl;
 			std::exit(1);
 		}
 	}
+	
 	~abstractFileReader()
 	{
 		delete fileHandle;
@@ -30,9 +36,6 @@ public:
 		// delete fileName;
 	}
 protected:
-	abstractFileReader()
-	{
-	}
 	std::ifstream* fileHandle;
 	std::vector<std::string>* currentLineSplitBySpaces;
 	std::string currentLine;
@@ -47,15 +50,16 @@ class abstractMultipleSurfaceFileReader : public abstractFileReader
 {
 public:
 	virtual void readAndSplitMultiSurfaceInputFile() = 0;
-	abstractMultipleSurfaceFileReader(std::string filename, int surfaces)
-	: abstractFileReader(filename)
-	{
-		numberOfSurfacesOfThisType = surfaces;
-	}
-
 	abstractMultipleSurfaceFileReader()
 	{
 	}
+	
+	void setSurfaceCount(int surfaces)
+	{
+        numberOfSurfacesOfThisType = surfaces;	    
+	}
+	
+
 protected:
 	int numberOfSurfacesOfThisType;
 };
@@ -64,17 +68,12 @@ protected:
 class rcrtReader : public abstractMultipleSurfaceFileReader
 {
 public:
-	static rcrtReader& Instance(std::string filename, int surfaces)
+	static rcrtReader* Instance()
 	{
-		static rcrtReader *instance = new rcrtReader(filename, surfaces);
-		return *instance;
+		static rcrtReader* instance = new rcrtReader();
+		return instance;
 	}
 
-	static rcrtReader& Instance()
-	{
-		static rcrtReader *instance = new rcrtReader();
-		return *instance;
-	}
 
 	void readAndSplitMultiSurfaceInputFile();
 	int getPdmax();
@@ -85,11 +84,6 @@ public:
 private:
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Instance().
-	rcrtReader(std::string filename, int surfaces)
-	: abstractMultipleSurfaceFileReader(filename,surfaces)
-	{
-	}
-
 	rcrtReader()
 	{
 	}

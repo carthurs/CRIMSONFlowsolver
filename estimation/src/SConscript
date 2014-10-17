@@ -5,7 +5,7 @@ Import('env')
 # TOP = ../..
 
 # env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
-env.Append(CPPPATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR+bop.SOLVERIO_INCDIR+bop.LESLIB_DEFS)
+env.Append(CPPPATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR+bop.SOLVERIO_INCDIR)
 # env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
 env.Append(CPPPATH=bop.BLASLAPACK_INCDIR+bop.METIS_INCDIR+bop.FLOWSOLVER_INCDIR+bop.VERDANDI_INCDIR+bop.PETSC_INCDIR+bop.BOOSTCPP_INCDIR+bop.VTK_INCDIR+bop.LESLIB_INCDIR)
 # env.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
@@ -13,16 +13,19 @@ env.Append(F90PATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR)
 
 env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.VTK_LIBSDIR+bop.LUA_LIBSDIR+bop.FLOWSOLVER_LIBSDIR+bop.BLASLAPACK_LIBSDIR+bop.MPI_LIBSDIR+bop.SOLVERIO_LIBSDIR+bop.METIS_LIBSDIR+bop.INTEL_LIBSDIR+bop.LESLIB_LIBSDIR)
 env.Append(LIBS=bop.PETSC_LIBSLIST)
-env.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtkCommon','vtksys'])
+env.Append(LIBS=bop.MPI_LIBSLIST)
 env.Append(LIBS=bop.LUA_LIBSLIST)
 env.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
-env.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
-env.Prepend(LIBS=bop.MPI_LIBSLIST)
-env.Prepend(LIBS=bop.LESLIB_LIBSLIST)
-env.Prepend(LIBS=bop.FLOWSOLVER_LIBSLIST)
-env.Prepend(LIBS=bop.F90_LIBS)
 env.Append(LIBS=bop.SOLVERIO_LIBSLIST)
-env.Append(LIBS=bop.METIS_LIBSLIST+bop.INTEL_LIBSLIST)
+env.Append(LIBS=bop.METIS_LIBSLIST)
+env.Append(LIBS=bop.LESLIB_LIBSLIST)
+env.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
+env.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtkCommon','vtksys'])
+env.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
+env.Append(LIBS=bop.F90_LIBS)
+env.Append(LIBS=bop.INTEL_LIBSLIST)
+
+
 
 
 CXXSRCS=string.split("""
@@ -74,8 +77,8 @@ copyEstimator = env.Command("../../bin/estimator", "./estimator", Copy("$TARGET"
 copyFlowsolver_and_observer = env.Command("../../bin/flowsolver_and_observer", "./flowsolver_and_observer", Copy("$TARGET", "$SOURCE"))
 copyFlowsolver = env.Command("../../bin/flowsolver", "./flowsolver", Copy("$TARGET", "$SOURCE"))
 
-Default(flowsolverTarget,copyFlowsolver)
-# Default(estimatorTarget,flowsolver_and_observerTarget,flowsolverTarget,copyEstimator,copyFlowsolver_and_observer,copyFlowsolver)
+#Default(flowsolverTarget,copyFlowsolver)
+Default(estimatorTarget,flowsolver_and_observerTarget,flowsolverTarget,copyEstimator,copyFlowsolver_and_observer,copyFlowsolver)
 
 # $(TARGET_ESTIMATOR): $(OBJS1)
 # 	$(LINK_EXE)$(TARGET_ESTIMATOR) $(GLOBAL_LFLAGS) $(OBJS1) \

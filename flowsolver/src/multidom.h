@@ -50,6 +50,12 @@ public:
     	 index = bcCount;
     	 
  	}
+
+ 	virtual double tempDataTestFunction()
+ 	{
+ 		return -3.14159265;
+ 	}
+
  	~boundaryCondition()
  	{
  	    delete[] flowhist;
@@ -60,9 +66,9 @@ public:
  	virtual void initialiseModel() = 0;
  	double getdp_dq();
  	double getHop();
- 	static int bcCount;
  	int index;
  private:
+ 	static int bcCount;
  };
 
 class boundaryConditionFactory
@@ -80,7 +86,28 @@ public:
 		initialiseModel();
 		updateImplicitCoefficients();
 		Hop = 2.0;
+
+		// Note the index of this RCR (zero-indexed), and count its existance
+		// (the order of these two lines is correct!)
+		indexOfThisRCR = numberOfInitialisedRCRs;
+		numberOfInitialisedRCRs++;
+		
+		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+		r1=rcrtReader_instance->getR1()[indexOfThisRCR];
+		c=rcrtReader_instance->getC()[indexOfThisRCR];
+		r2=rcrtReader_instance->getR2()[indexOfThisRCR];
 	}
+
+	double tempDataTestFunction()
+	{
+		return r1;
+	}
+
+	~RCR()
+	{
+		numberOfInitialisedRCRs--;
+	}
+
 	void updateImplicitCoefficients()
 	{
 		// Do the RCR updating
@@ -89,7 +116,7 @@ public:
 private:
 	void initialiseModel();
 	static int numberOfInitialisedRCRs;
-	static int rcrtDatLinesReadSoFar;
+	int indexOfThisRCR;
 	int pdmax;
 	double r1; // Proximal resistance
 	double c; // Capacitance (compliance)
@@ -116,6 +143,7 @@ public:
 	{
 		std::cout << "netlist Initialisation" << std::endl;
 	}
+
 };
 
 void multidom_initialise();

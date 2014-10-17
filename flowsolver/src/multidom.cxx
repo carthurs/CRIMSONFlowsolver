@@ -11,10 +11,6 @@
 
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
-int boundaryCondition::bcCount = 0;
-int RCR::numberOfInitialisedRCRs = 0;
-int RCR::rcrtDatLinesReadSoFar = 0;
-
 double boundaryCondition::getHop()
 {
 	return Hop;
@@ -197,23 +193,22 @@ void RCR::initialiseModel()
 
 }
 
-
+int boundaryCondition::bcCount = 0;
+int RCR::numberOfInitialisedRCRs = 0;
 
 void multidom_initialise(){
-    
-    
 
+  std::string temp = "rcrt.dat";
+  rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+  rcrtReader_instance->setFileName(temp);
+  rcrtReader_instance->setSurfaceCount(grcrbccom.numGRCRSrfs);
+  rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
 
-	std::string temp = "rcrt.dat";
-  rcrtReader rcrtReader_instance = rcrtReader::Instance(temp,1);
-	rcrtReader_instance.readAndSplitMultiSurfaceInputFile();
+  
 
-  rcrtReader rcrtReader_pointer2 = rcrtReader::Instance();
-
-    std::cout << "inst1" << rcrtReader_instance.getR1()[0] << std::endl;
-    std::cout << "inst2" << rcrtReader_pointer2.getR1()[0] << std::endl;
-    std::cout << rcrtReader_instance.getC()[0] << std::endl;
-    std::cout << rcrtReader_instance.getR2()[0] << std::endl;
+    std::cout << "inst1 " << rcrtReader_instance->getR1()[0] << std::endl;
+    std::cout << rcrtReader_instance->getC()[0] << std::endl;
+    std::cout << rcrtReader_instance->getR2()[0] << std::endl;
 
 
 	std::vector<std::pair<int,std::string>> surfaceList;
@@ -223,7 +218,8 @@ void multidom_initialise(){
     // std::pair <int,std::string> entry(3,"rcr"); 
 
 	surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
-	surfaceList.push_back(std::pair <int,std::string> (44,"netlist"));
+	surfaceList.push_back(std::pair <int,std::string> (4,"rcr"));
+  surfaceList.push_back(std::pair <int,std::string> (44,"netlist")); 
 
 	// Build a factory
 	boundaryConditionFactory factory;
@@ -232,7 +228,10 @@ void multidom_initialise(){
 	for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
 	{
 		boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
-}
+  }
+    
+    std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[0]).tempDataTestFunction() << std::endl;
+    std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[1]).tempDataTestFunction() << std::endl;
 
 	// if (grcrbccom.numGRCRSrfs > 0)
 	// {

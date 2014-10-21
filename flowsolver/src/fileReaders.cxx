@@ -85,3 +85,8 @@ std::vector<std::vector<std::pair<double,double>>> rcrtReader::getTimeDataPdist(
 {
 	return timeDataPdist;
 }
+
+std::vector<int> rcrtReader::getNumDataRCR()
+{
+    return numDataRCR;
+}

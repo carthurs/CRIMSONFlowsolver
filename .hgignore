@@ -1,3 +1,4 @@
+
 # use glob syntax.
 syntax: glob
 
@@ -19,3 +20,17 @@ syntax: glob
 .project
 .cproject
 external/*
+bin/*
+lib/*
+*.floo
+*.flooignore
+buildoptions.mk
+buildoptions.py
+estimation/src/flowsolver
+estimation/src/flowsolver_and_observer
+estimation/src/estimator
+*.pyc
+postsolver/src/postsolver
+presolver/src/presolver
+.sconsign.dblite
+rc

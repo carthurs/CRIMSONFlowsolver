@@ -2351,7 +2351,7 @@
       end subroutine
 !
 
-      subroutine initmultidomain(isys)	  
+      subroutine initmultidomain(isys)   
 !
       implicit none
       integer :: isys ! systemic flag
@@ -2976,6 +2976,7 @@
             
             do i = 1,num
                call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
+               call givepressurepointertocpp(ids(i), c_loc(a%pressure(i)))
             end do 
             
             
@@ -3833,7 +3834,7 @@
 #endif
          do i = 1, this%numberOfControlledCoronaryModelSurfaces
 #if EXTRA_CONSOLE_OUTPUT == 1
-         withrite(*,*) 'flowpntr', this%surfids(i) !\todo remove
+         write(*,*) 'flowpntr', this%surfids(i) !\todo remove
 #endif
              do j = 1, container%surfnum
                 if (this%surfids(i) .eq. container%surfids(j)) then
@@ -4339,7 +4340,7 @@
 !     ! set implicit coefficients in the nrcr object
       call a%setimplicitcoeff_sys(nrcr)    
 !
-      end subroutine       
+      end subroutine solve_sys_open
 !
 ! *** solve systemiccircuit
 !
@@ -4540,7 +4541,7 @@
             xiter = xiter + dx   
 !
 !            eval = norm2(dx) 
-			eval = dot_product(dx,dx)
+         eval = dot_product(dx,dx)
             eval = sqrt(eval) 
 !
 !           ! if evaluation is less than tolerance exit
@@ -6950,10 +6951,13 @@
             coeff(i,1) = rdn_1 + rp*(real(1.0,8) + ((c*rdn_1)/alfi_delt))
 !
             coeff(i,2) = a%pressure_n(i) + pdistn_1 - pdistn - rp*a%flow_n(i)
+            write(*,*) "pressure_n was: ", a%pressure_n(i)
             coeff(i,2) = ((c*rdn_1)/alfi_delt)*coeff(i,2)+ pdistn_1
 !
             coeff(i,1) = coeff(i,1) / denom
             coeff(i,2) = coeff(i,2) / denom
+
+            write(*,*) "Implicit coeffs in Fortran: ", coeff(1,1), coeff(1,2)
 !
          end do
 !
@@ -8252,7 +8256,7 @@
 ! *******************************************
 !
 !     ! matrix matrix multiply
-      function matrixmatrix(amatrix,bmatrix) result(cmatrix)	
+      function matrixmatrix(amatrix,bmatrix) result(cmatrix)   
       implicit none
       real*8, dimension(:,:), intent(in) :: amatrix
       real*8, dimension(:,:), intent(in) :: bmatrix
@@ -8280,7 +8284,7 @@
                   m,       &
                   n,       &
                   p,       &
-                  alpha,	&
+                  alpha,   &
                   amatrix, &
                   m,       &
                   bmatrix, &
@@ -8293,7 +8297,7 @@
       end function matrixmatrix
 !
 !     ! matrix vector multiply
-      function matrixvector(amatrix,bvector) result(cvector)	
+      function matrixvector(amatrix,bvector) result(cvector)   
       implicit none
       real*8, dimension(:,:), intent(in) :: amatrix
       real*8, dimension(:), intent(in)   :: bvector
@@ -8321,7 +8325,7 @@
                   m,       &
                   n,       &
                   p,       &
-                  alpha,	&
+                  alpha,   &
                   amatrix, &
                   m,       &
                   bvector, &
@@ -8335,7 +8339,7 @@
 !
 ! *** wrapper for dgemm to to multiply a matrix with a vector (pointer)
 ! 
-      function matrixvectorpointer(aamatrix,bbvector) result(ccvector)	
+      function matrixvectorpointer(aamatrix,bbvector) result(ccvector)  
       implicit none
       real*8, dimension(:,:), intent(in) :: aamatrix
       type(pntr), dimension(:), intent(in) :: bbvector
@@ -8370,7 +8374,7 @@
                   m,             &
                   n,             &
                   p,             &
-                  alpha,	      &
+                  alpha,         &
                   aamatrix,      &
                   m,             &
                   dummyvector,   &

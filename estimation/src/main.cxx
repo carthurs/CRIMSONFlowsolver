@@ -85,6 +85,8 @@ int main(int argc, char * argv[]) {
 	   itrdrv_iter_step();
 	   itrdrv_iter_finalize();
            std::cout << "C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
+           // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
+           std::cout << "C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
    }
 
    itrdrv_finalize();

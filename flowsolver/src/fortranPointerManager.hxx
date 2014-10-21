@@ -13,7 +13,7 @@ public:
 	}
 
 	std::map<int,double*> boundaryFlows;
-	//std::map<int,double*> boundaryPressures;
+	std::map<int,double*> boundaryPressures;
 private:
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Get().

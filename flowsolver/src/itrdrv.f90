@@ -729,6 +729,7 @@ end subroutine
 subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     use iso_c_binding
+    use cpp_interface
     use shapeTable
     use globalArrays
     use pvsQbi     !gives us splag (the spmass at the end of this run
@@ -810,6 +811,9 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
             call reset_flow_n(yold, nrcr)
             ! calculate the implicit coefficients
             call nrcr%setimplicitcoeff(lstep)
+
+            call callCppComputeAllImplicitCoeff_solve(lstep)
+            call callCppComputeAllImplicitCoeff_update(lstep)
         end if
 
     endif

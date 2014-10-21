@@ -376,6 +376,7 @@
 
 !         ! update flows in the container
           call updmultidomaincontainer(y,multidom,'velocity')
+          call updmultidomaincontainer(y,multidom,'pressure')
 
 ! !         ! solve reduced order model using updated flows
 !           if (sysactive) then
@@ -990,6 +991,7 @@
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
       use boundarymodule, only: GetFlowQ
       use multidomain, only: nrcractive, nrcr, hrt
+      use cpp_interface
 
       use grcrbc ! Nan rcr
 
@@ -1003,7 +1005,6 @@
 
       real*8 :: implicitcoeffs(0:MAXSURF,2)
       integer :: surfids(0:MAXSURF)
-
 !
 !... get p for the resistance BC
 !
@@ -1135,7 +1136,17 @@
               if (nrcractive) then
                 
                 ! get implicit coefficients
-                implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
+                ! THIS IS THE FORTRAN WAY - THE CODE BELOW REPLACES IT WITH THE C++ CALLS!
+                ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
+                
+                ! overwrite the previous line's results with CPP call:
+                ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of
+                ! indefinite (run-time-set) size, we pass a pointer to entry (1,1) of this array,
+                ! and then dereference that manually in the C++ to write the data to the
+                ! correct places in the whole array, so that it can be accessed from FORTRAN.
+                call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
+
+                write(*,*) "implcoeff from c++: ", implicitcoeffs(1:numGRCRSrfs,1:2)
                                   
                 ! if sign -ve, add to the right hand side                                  
                 if (sign .lt. zero) then 

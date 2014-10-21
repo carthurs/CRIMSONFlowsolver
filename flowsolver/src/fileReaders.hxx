@@ -81,6 +81,7 @@ public:
 	std::vector<double> getC();
 	std::vector<double> getR2();
 	std::vector<std::vector<std::pair<double,double>>> getTimeDataPdist();
+	std::vector<int> getNumDataRCR();
 private:
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Instance().
@@ -94,6 +95,7 @@ private:
 	std::vector<double> c;
 	std::vector<double> r2;
 	std::vector<std::vector<std::pair<double,double>>> timeDataPdist;
+	int lengthOfTimeDataPdist;
 };
 
 #endif

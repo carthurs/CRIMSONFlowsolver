@@ -8,33 +8,142 @@
 #include "common_c.h"
 #include "multidom.h"
 #include "fortranPointerManager.hxx"
+#include <typeinfo>
 
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
 double boundaryCondition::getHop()
 {
-	return Hop;
+  return Hop;
+}
+
+double boundaryCondition::getdp_dq()
+{
+  return dp_dq;
 }
 
  std::unique_ptr<boundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
  {
 
- 	if (boundaryType.compare("rcr") == int(0))
-	{
- 		return std::unique_ptr<boundaryCondition> (new RCR(surfaceIndex));
- 	}
- 	else if (boundaryType.compare("netlist") == int(0))
-		{
- 		return std::unique_ptr<boundaryCondition> (new netlist(surfaceIndex));
-		}
- 	else
- 	{
- 		std::cout << "Unknown boundary type. Exiting.\n";
- 		std::exit(1);
-	}
+  if (boundaryType.compare("rcr") == int(0))
+  {
+    return std::unique_ptr<boundaryCondition> (new RCR(surfaceIndex));
+  }
+  else if (boundaryType.compare("netlist") == int(0))
+    {
+    return std::unique_ptr<boundaryCondition> (new netlist(surfaceIndex));
+    }
+  else
+  {
+    std::cout << "Unknown boundary type. Exiting.\n";
+    std::exit(1);
+  }
 
- 	// return returnObject;
+  // return returnObject;
 
+}
+
+double boundaryCondition::linInterpolateTimeData(const std::vector<std::pair<double,double>> &timeData, const double &currentTime, const int timeDataLength)
+{
+  // Linearly interpolates pairs of (Time,Value), in time.
+  // If we've reached a Time past the end of the last value in the array,
+  // this just returns the final value of Value
+
+  if (timeData[timeDataLength].first <= currentTime)
+  {
+    // Case where we're off the final end of the time data series.
+    return timeData[timeDataLength].second;
+  }
+  else if (timeData[0].first >= currentTime)
+  {
+    // Case wehre we're at (or before) the beginning of the time data series.
+    return timeData[0].second;
+  }
+
+  int ii = 0;
+  while (timeData[ii].first < currentTime)
+  {
+    ii++;
+  }
+
+  double distanceThroughTimeInterval;
+  distanceThroughTimeInterval = (currentTime - timeData[ii-1].first) / (timeData[ii].first - timeData[ii-1].first);
+
+  return timeData[ii-1].second*(1.0 - distanceThroughTimeInterval) + timeData[ii].second*distanceThroughTimeInterval;
+
+}
+
+void boundaryConditionManager::getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled)
+{
+  // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
+  // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
+  // dereferencing of that pointer manually to fill the whole array, but with the FORTRAN column-major array structure,
+  // as opposed to the C++ row-major standard.
+  int writeLocation = 0;
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(RCR))
+    {
+      implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
+      // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
+      implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
+      writeLocation++;
+      std::cout.precision(15);
+      std::cout << "set here in C++ hop: " << (*iterator)->getHop() << std::endl;
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppGetImplicitCoeff_rcr(double*& implicitCoeffs_toBeFilled)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getImplicitCoeff_rcr(implicitCoeffs_toBeFilled);
+}
+
+void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList)
+{
+  // Build a factory
+  boundaryConditionFactory factory;
+  
+  for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
+  {
+    boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
+  }
+    
+  std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[0]).tempDataTestFunction() << std::endl;
+}
+
+std::vector<std::unique_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
+{
+    return &boundaryConditions;
+}
+
+void boundaryConditionManager::computeAllImplicitCoeff_solve(int timestepNumber)
+{
+  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    (*iterator)->computeImplicitCoeff_solve(timestepNumber);
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppComputeAllImplicitCoeff_solve(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeAllImplicitCoeff_solve(timestepNumber);
+}
+
+void boundaryConditionManager::computeAllImplicitCoeff_update(int timestepNumber)
+{
+  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    (*iterator)->computeImplicitCoeff_update(timestepNumber);
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeAllImplicitCoeff_update(timestepNumber);
 }
 
 //
@@ -133,10 +242,18 @@ void RCR::initialiseModel()
     // allocate(this%implicitcoeff(surfnum,2)) 
     // allocate(this%implicitcoeff_n1(surfnum,2)) 
 
-	  surfarea = 0.0;
-	  flow_n = 0.0;
+    surfarea = 0.0;
+
+    // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
+    // NB: Need to add a method in fortran to set a value for non-zero restarting!
+    flow_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryFlows.at(surfaceIndex);
+    pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryPressures.at(surfaceIndex);
+    
+    std::cout << "just set pressure and flow: " << *pressure_n_ptr << " " << *flow_n_ptr << std::endl;
+
     flow_n1 = 0.0;
-    pressure_n = 0.0;
+    
+    
     implicitcoeff = 0.0;
     implicitcoeff_n1 = 0.0; 
 
@@ -193,54 +310,122 @@ void RCR::initialiseModel()
 
 }
 
+void RCR::computeImplicitCoeff_solve(int timestepNumber)
+{
+  std::pair<double,double> temp;
+
+  double timeAtStepNplus1 = delt*((double)timestepNumber+timdat.alfi);
+  double alfi_delt = timdat.alfi*delt;
+
+  temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
+
+  dp_dq = temp.first;
+  Hop = temp.second;
+  std::cout << "dp_dq in C++: " << dp_dq << std::endl;
+  std::cout << "Hop in C++: " << Hop << std::endl;
+}
+
+void RCR::computeImplicitCoeff_update(int timestepNumber)
+{
+  std::pair<double,double> temp;
+
+  double timeAtStepNplus1 = delt*((double)timestepNumber+1.0);
+  double alfi_delt = delt;
+
+  temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
+
+  dp_dq_n1 = temp.first;
+  Hop_n1 = temp.second;
+
+  std::cout << "dp_dq_n1 in C++: " << dp_dq_n1 << std::endl;
+  std::cout << "Hop_n1 in C++: " << Hop_n1 << std::endl;
+}
+
+std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt)
+{
+  double temp1;
+  double temp2;
+  std::pair<double,double> returnCoeffs;
+  double timeAtStepN = delt*((double)timestepNumber);
+
+  double rdn_1 = r2;
+  double rp = r1;
+  double compliance = c;
+
+  double pdistn = linInterpolateTimeData(timeDataPdist,timeAtStepN,lengthOftimeDataPdist);
+  double pdistn_1 = linInterpolateTimeData(timeDataPdist,timeAtStepNplus1,lengthOftimeDataPdist);
+
+  // // parameters overwritten
+  // // dirty hack for filtering
+  //  rdn_1 = a%parameters_RCR(3,i)
+  //  rp = a%parameters_RCR(1,i)
+  //  compliance = a%parameters_RCR(2,i)
+
+  //  pdistn = a%parameters_Pd
+  //  pdistn_1 = a%parameters_Pd
+
+  double denom = 1.0 + ((compliance*rdn_1)/alfi_delt);
+
+  temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
+
+  temp2 = (*pressure_n_ptr) + pdistn_1 - pdistn - rp*(*flow_n_ptr);
+  temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
+
+  returnCoeffs.first = temp1 / denom;
+  returnCoeffs.second = temp2 / denom;
+  
+  return returnCoeffs;
+}
+
 int boundaryCondition::bcCount = 0;
 int RCR::numberOfInitialisedRCRs = 0;
 
 void multidom_initialise(){
 
-  std::string temp = "rcrt.dat";
   rcrtReader* rcrtReader_instance = rcrtReader::Instance();
-  rcrtReader_instance->setFileName(temp);
+  rcrtReader_instance->setFileName("rcrt.dat");
   rcrtReader_instance->setSurfaceCount(grcrbccom.numGRCRSrfs);
   rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
+  
+  // std::cout << "inst1 " << rcrtReader_instance->getR1()[0] << std::endl;
+  // std::cout << rcrtReader_instance->getC()[0] << std::endl;
+  // std::cout << rcrtReader_instance->getR2()[0] << std::endl;
 
+  std::vector<std::pair<int,std::string>> surfaceList;
+  // std::pair entry1;
+  // entry1.first=3;
+  // entry1.second="rcr";
+  // std::pair <int,std::string> entry(3,"rcr");
+
+  // loop through rcr boundaries listed in the input file, surface numbers read from the common_c.h
+  for (int i = 0; i < grcrbccom.numGRCRSrfs; i++)
+  {
+    surfaceList.push_back(std::pair <int,std::string> (grcrbccom.nsrflistGRCR[i+1],"rcr"));
+  }
+  // Write loops here for all the other surface types!
+  
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->setSurfaceList(surfaceList);
+  
+  std::vector<std::unique_ptr<boundaryCondition>>* retrievedBoundaryConditions;
+  retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();
   
 
-    std::cout << "inst1 " << rcrtReader_instance->getR1()[0] << std::endl;
-    std::cout << rcrtReader_instance->getC()[0] << std::endl;
-    std::cout << rcrtReader_instance->getR2()[0] << std::endl;
+  // surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
+  // surfaceList.push_back(std::pair <int,std::string> (4,"rcr"));
+  // surfaceList.push_back(std::pair <int,std::string> (44,"netlist")); 
 
 
-	std::vector<std::pair<int,std::string>> surfaceList;
-	// std::pair entry1;
-	// entry1.first=3;
-	// entry1.second="rcr";
-    // std::pair <int,std::string> entry(3,"rcr"); 
+   std::cout << "the boundary condition has an r1 of: " << (*retrievedBoundaryConditions)[0]->tempDataTestFunction() << std::endl;
 
-	surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
-	surfaceList.push_back(std::pair <int,std::string> (4,"rcr"));
-  surfaceList.push_back(std::pair <int,std::string> (44,"netlist")); 
-
-	// Build a factory
-	boundaryConditionFactory factory;
-
-	std::vector<std::unique_ptr<boundaryCondition>> boundaryConditions;
-	for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
-	{
-		boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
-  }
-    
-    std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[0]).tempDataTestFunction() << std::endl;
-    std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[1]).tempDataTestFunction() << std::endl;
-
-	// if (grcrbccom.numGRCRSrfs > 0)
-	// {
-	// 	for (int i=0; i < grcrbccom.numGRCRSrfs; i++)
-	// 	{
-	// 		std::cout << "writing here" << std::endl;
-	// 		std::cout << grcrbccom.nsrflistGRCR[i+1] << std::endl;
-	// 	}
-	// }
+  // if (grcrbccom.numGRCRSrfs > 0)
+  // {
+  //  for (int i=0; i < grcrbccom.numGRCRSrfs; i++)
+  //  {
+  //    std::cout << "writing here" << std::endl;
+  //    std::cout << grcrbccom.nsrflistGRCR[i+1] << std::endl;
+  //  }
+  // }
 
 }
 

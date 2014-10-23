@@ -14,5 +14,5 @@ TEST_F(testMultidom, boundaryConditionsMadeProperly) {
 
   EXPECT_EQ((*retrievedBoundaryConditions)[0]->surfaceIndex,3);
   EXPECT_EQ((*retrievedBoundaryConditions)[1]->surfaceIndex,7);
-  EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,2341);
+  EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,2342);
 }

@@ -34,3 +34,4 @@ postsolver/src/postsolver
 presolver/src/presolver
 .sconsign.dblite
 rc
+testbin/*

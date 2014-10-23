@@ -19,7 +19,6 @@ public:
 	void setFileName(std::string fileNameIn)
 	{
 	    fileName = fileNameIn;
-	    std::cout << "filename is: " <<fileName << std::endl;
 		fileHandle = new std::ifstream(fileName);
 		
 		if (fileHandle->fail())
@@ -53,15 +52,6 @@ public:
 	abstractMultipleSurfaceFileReader()
 	{
 	}
-	
-	void setSurfaceCount(int surfaces)
-	{
-        numberOfSurfacesOfThisType = surfaces;	    
-	}
-	
-
-protected:
-	int numberOfSurfacesOfThisType;
 };
 
 

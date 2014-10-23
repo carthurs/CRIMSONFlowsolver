@@ -1146,7 +1146,7 @@
                 ! correct places in the whole array, so that it can be accessed from FORTRAN.
                 call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
 
-                write(*,*) "implcoeff from c++: ", implicitcoeffs(1:numGRCRSrfs,1:2)
+                ! write(*,*) "implcoeff from c++: ", implicitcoeffs(1:numGRCRSrfs,1:2)
                                   
                 ! if sign -ve, add to the right hand side                                  
                 if (sign .lt. zero) then 

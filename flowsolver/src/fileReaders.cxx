@@ -42,6 +42,8 @@ void rcrtReader::readAndSplitMultiSurfaceInputFile()
 	// Loop over the rest of the file to get the relevant RCR data for this boundary:
 	while(readNextLine())
 	{
+		tempTimeDataPdist.clear();
+
 		numDataRCR.push_back(atoi((*currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
 		r1.push_back(std::stod((*currentLineSplitBySpaces)[0].c_str()));

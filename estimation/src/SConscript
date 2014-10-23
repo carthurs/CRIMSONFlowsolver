@@ -24,6 +24,7 @@ env.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtk
 env.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
 env.Append(LIBS=bop.F90_LIBS)
 env.Append(LIBS=bop.INTEL_LIBSLIST)
+# env.Append(LIBS=bop.GOOGLETEST_LIBSLIST)
 
 
 

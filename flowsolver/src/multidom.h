@@ -17,11 +17,14 @@
 #include <vector>
 #include <utility>
 #include <fstream>
+ #include "gtest/gtest_prod.h"
  
  
  class boundaryCondition
  {
  	friend class boundaryConditionManager;
+ 	friend class testMultidom;
+ 	FRIEND_TEST(testMultidom, boundaryConditionsMadeProperly);
  protected:
  	double dp_dq;
  	double Hop;
@@ -41,6 +44,10 @@
     double implicitcoeff_n1; 
     int hstep;
     double delt;
+    virtual void computeImplicitCoeff_solve(int timestepNumber) = 0;
+ 	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
+	virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
+	double linInterpolateTimeData(const std::vector<std::pair<double,double>> &timeData, const double &currentTime, const int timeDataLength);
 public:
  	boundaryCondition(int surfaceIndex_in)
  	{
@@ -72,12 +79,6 @@ public:
  	double getdp_dq();
  	double getHop();
  	int index;
-protected:
-	virtual void computeImplicitCoeff_solve(int timestepNumber) = 0;
- 	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
-	virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
-	double linInterpolateTimeData(const std::vector<std::pair<double,double>> &timeData, const double &currentTime, const int timeDataLength);
-
 private:
  	static int bcCount;
  };

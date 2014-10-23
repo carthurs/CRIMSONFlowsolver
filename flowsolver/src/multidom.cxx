@@ -88,8 +88,8 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* implicitCoeffs_toBeF
       // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
       writeLocation++;
-      std::cout.precision(15);
-      std::cout << "set here in C++ hop: " << (*iterator)->getHop() << std::endl;
+      // std::cout.precision(15);
+      // std::cout << "set here in C++ hop: " << (*iterator)->getHop() << std::endl;
     }
   }
 }
@@ -110,7 +110,7 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
     boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
   }
     
-  std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[0]).tempDataTestFunction() << std::endl;
+  // std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[0]).tempDataTestFunction() << std::endl;
 }
 
 std::vector<std::unique_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
@@ -384,18 +384,9 @@ void multidom_initialise(){
 
   rcrtReader* rcrtReader_instance = rcrtReader::Instance();
   rcrtReader_instance->setFileName("rcrt.dat");
-  rcrtReader_instance->setSurfaceCount(grcrbccom.numGRCRSrfs);
   rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
-  
-  // std::cout << "inst1 " << rcrtReader_instance->getR1()[0] << std::endl;
-  // std::cout << rcrtReader_instance->getC()[0] << std::endl;
-  // std::cout << rcrtReader_instance->getR2()[0] << std::endl;
 
   std::vector<std::pair<int,std::string>> surfaceList;
-  // std::pair entry1;
-  // entry1.first=3;
-  // entry1.second="rcr";
-  // std::pair <int,std::string> entry(3,"rcr");
 
   // loop through rcr boundaries listed in the input file, surface numbers read from the common_c.h
   for (int i = 0; i < grcrbccom.numGRCRSrfs; i++)

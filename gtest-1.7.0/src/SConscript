@@ -1,0 +1,31 @@
+import buildoptions as bop
+import string
+
+
+Import('env')
+
+env_local = env.Clone()
+
+env_local.Append(CFLAGS=bop.GLOBAL_CFLAGS)
+env_local.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
+env_local.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
+
+env_local.Append(CPPPATH=bop.GOOGLETEST_INCDIR)
+env_local.Append(CPPPATH=[bop.GOOGLETEST_TOP])
+
+env_local.Prepend(LIBS=bop.GOOGLETEST_LIBSLIST)
+env_local.Append(CPPPATH=bop.FLOWSOLVER_INCDIR)
+
+sources=string.split("""
+	gtest_main.cc
+	gtest-all.cc
+	""")
+
+object_list=env_local.Object(source=sources)
+
+# Set the source and output file name ("target"):
+default = env_local.Program(target='test', source=object_list)
+copyLibrary = env_local.Command(bop.HOME_DIR+'/testbin/test', "./test", Copy("$TARGET", "$SOURCE"))
+
+# Define SCons' default action:
+Default(default,copyLibrary)

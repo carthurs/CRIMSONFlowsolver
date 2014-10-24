@@ -17,14 +17,19 @@
 #include <vector>
 #include <utility>
 #include <fstream>
- #include "gtest/gtest_prod.h"
+#include <stdexcept>
+#include "gtest/gtest_prod.h"
  
  
  class boundaryCondition
  {
  	friend class boundaryConditionManager;
  	friend class testMultidom;
- 	FRIEND_TEST(testMultidom, boundaryConditionsMadeProperly);
+ 	FRIEND_TEST(testMultidom, checkBoundaryConditionsMadeProperly);
+ 	FRIEND_TEST(testMultidom, checkRCRLinearInterpolators);
+ 	//FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
+ 	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_solve);
+ 	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
  protected:
  	double dp_dq;
  	double Hop;
@@ -44,10 +49,16 @@
     double implicitcoeff_n1; 
     int hstep;
     double delt;
+    double alfi_local;
     virtual void computeImplicitCoeff_solve(int timestepNumber) = 0;
  	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
 	virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
-	double linInterpolateTimeData(const std::vector<std::pair<double,double>> &timeData, const double &currentTime, const int timeDataLength);
+	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
+	{
+		// std::cout << "Disallowed call to non-overridden (e.g. non-RCR) . Exiting.\n";
+    	throw std::runtime_error("Disallowed call to non-overridden (e.g. non-RCR).");
+    	return 0.0;
+    };
 public:
  	boundaryCondition(int surfaceIndex_in)
  	{
@@ -61,6 +72,8 @@ public:
     	 Hop = 0.0;
     	 bcCount++;
     	 index = bcCount;
+
+    	 alfi_local = timdat.alfi;
     	 
  	}
 
@@ -97,7 +110,6 @@ public:
 	: boundaryCondition(surfaceIndex)
 	{
 		initialiseModel();
-		Hop = 2.0;
 
 		// Note the index of this RCR (zero-indexed), and count its existance
 		// (the order of these two lines is correct!)
@@ -132,6 +144,8 @@ public:
 	{
 		numberOfInitialisedRCRs--;
 	}
+protected:
+	double linInterpolateTimeData(const double &currentTime, const int timeDataLength);
 
 private:
 	void initialiseModel();
@@ -152,7 +166,6 @@ public:
 	: boundaryCondition(surfaceIndex)
 	{
 		initialiseModel();
-		Hop = 3.0;
 	}
 	void computeImplicitCoeff_solve(int timestepNumber)
 	{

@@ -1,6 +1,7 @@
 import string
 import os
 import buildoptions as bop
+from subprocess import call
 
 env = Environment(ENV = os.environ)
 env.Replace(SHELL=bop.SHELL)
@@ -31,7 +32,6 @@ else:
 env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
 env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
 env.Append(FFLAGS=bop.GLOBAL_FFLAGS)
-
 
 env.Append(CPPFLAGS=bop.GLOBAL_DEFINES)
 # env.Append(CPPFLAGS=bop.DEBUG_FLAGS)

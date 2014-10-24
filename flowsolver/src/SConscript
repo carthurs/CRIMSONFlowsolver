@@ -173,13 +173,11 @@ sources=string.split("""
 object_list=env.Object(source=sources)
 
 # Strip out the .mod files (not needed for linking!)
-object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
-
+object_list_withoutDotModFiles = [x for x in object_list if x.get_suffix() == ".o"]
 
 # Set the source and output file name ("target"):
 default = env.Library(target='libsimvascular_flowsolver.a', source=object_list_withoutDotModFiles)
 copyLibrary = env.Command("../../lib/libsimvascular_flowsolver.a", "./libsimvascular_flowsolver.a", Copy("$TARGET", "$SOURCE"))
-
 
 # Define SCons' default action:
 Default(default,copyLibrary)

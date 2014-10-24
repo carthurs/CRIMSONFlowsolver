@@ -43,33 +43,33 @@ double boundaryCondition::getdp_dq()
 
 }
 
-double boundaryCondition::linInterpolateTimeData(const std::vector<std::pair<double,double>> &timeData, const double &currentTime, const int timeDataLength)
+double RCR::linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 {
   // Linearly interpolates pairs of (Time,Value), in time.
   // If we've reached a Time past the end of the last value in the array,
   // this just returns the final value of Value
 
-  if (timeData[timeDataLength].first <= currentTime)
+  if (timeDataPdist[timeDataLength-1].first <= currentTime)
   {
     // Case where we're off the final end of the time data series.
-    return timeData[timeDataLength].second;
+    return timeDataPdist[timeDataLength-1].second;
   }
-  else if (timeData[0].first >= currentTime)
+  else if (timeDataPdist[0].first >= currentTime)
   {
     // Case wehre we're at (or before) the beginning of the time data series.
-    return timeData[0].second;
+    return timeDataPdist[0].second;
   }
 
   int ii = 0;
-  while (timeData[ii].first < currentTime)
+  while (timeDataPdist[ii].first < currentTime)
   {
     ii++;
   }
 
   double distanceThroughTimeInterval;
-  distanceThroughTimeInterval = (currentTime - timeData[ii-1].first) / (timeData[ii].first - timeData[ii-1].first);
+  distanceThroughTimeInterval = (currentTime - timeDataPdist[ii-1].first) / (timeDataPdist[ii].first - timeDataPdist[ii-1].first);
 
-  return timeData[ii-1].second*(1.0 - distanceThroughTimeInterval) + timeData[ii].second*distanceThroughTimeInterval;
+  return timeDataPdist[ii-1].second*(1.0 - distanceThroughTimeInterval) + timeDataPdist[ii].second*distanceThroughTimeInterval;
 
 }
 
@@ -314,8 +314,8 @@ void RCR::computeImplicitCoeff_solve(int timestepNumber)
 {
   std::pair<double,double> temp;
 
-  double timeAtStepNplus1 = delt*((double)timestepNumber+timdat.alfi);
-  double alfi_delt = timdat.alfi*delt;
+  double timeAtStepNplus1 = delt*((double)timestepNumber+alfi_local);
+  double alfi_delt = alfi_local*delt;
 
   temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
 
@@ -352,8 +352,11 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
   double rp = r1;
   double compliance = c;
 
-  double pdistn = linInterpolateTimeData(timeDataPdist,timeAtStepN,lengthOftimeDataPdist);
-  double pdistn_1 = linInterpolateTimeData(timeDataPdist,timeAtStepNplus1,lengthOftimeDataPdist);
+  double pdistn = linInterpolateTimeData(timeAtStepN,lengthOftimeDataPdist);
+  double pdistn_1 = linInterpolateTimeData(timeAtStepNplus1,lengthOftimeDataPdist);
+
+  // double pdistn = linInterpolateTimeData(timeDataPdist,timeAtStepN,lengthOftimeDataPdist);
+  // double pdistn_1 = linInterpolateTimeData(timeDataPdist,timeAtStepNplus1,lengthOftimeDataPdist);
 
   // // parameters overwritten
   // // dirty hack for filtering

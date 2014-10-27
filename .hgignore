@@ -35,3 +35,4 @@ presolver/src/presolver
 .sconsign.dblite
 rc
 testbin/*
+gtest*

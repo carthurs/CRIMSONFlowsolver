@@ -80,7 +80,6 @@
 
 	    // get the boundary condition manager
 		boundaryConditionManager_instance = boundaryConditionManager::Instance();
-		boundaryConditionManager_instance->tearDown();
 		// boundaryConditionManager_instance->boundaryConditions.clear();
 		boundaryConditionManager_instance->setSurfaceList(surfaceList);
 		retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();
@@ -119,6 +118,8 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
+	    boundaryConditionManager_instance->tearDown();
+	    fortranPointerManager_instance->tearDown();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

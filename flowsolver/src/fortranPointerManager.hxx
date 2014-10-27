@@ -4,6 +4,7 @@
 #include <map>
 
 class fortranBoundaryDataPointerManager {
+	friend class testMultidom;
 public:
 
 	static fortranBoundaryDataPointerManager* Get()
@@ -27,6 +28,12 @@ private:
 
 	// Ban (via making private) the destructor:
 	~fortranBoundaryDataPointerManager(){};
+
+	void tearDown()
+    {
+    	boundaryFlows.clear();
+    	boundaryPressures.clear();
+    }
 };
 
 #endif

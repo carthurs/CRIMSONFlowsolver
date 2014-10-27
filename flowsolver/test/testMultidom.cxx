@@ -14,7 +14,7 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
 
   EXPECT_EQ((*retrievedBoundaryConditions)[0]->surfaceIndex,3);
   EXPECT_EQ((*retrievedBoundaryConditions)[1]->surfaceIndex,7);
-  EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,2341);
+  EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,9);
 
   EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->flow_n_ptr),flow1);
   // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->flow_n_ptr),flow2); // uncomment once Netlist initialisation sets this pointer

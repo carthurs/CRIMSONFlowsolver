@@ -109,8 +109,6 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
   {
     boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
   }
-    
-  // std::cout << "the boundary condition has an r1 of: " << (*boundaryConditions[0]).tempDataTestFunction() << std::endl;
 }
 
 std::vector<std::unique_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
@@ -372,6 +370,7 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
   temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
 
   temp2 = (*pressure_n_ptr) + pdistn_1 - pdistn - rp*(*flow_n_ptr);
+  std::cout << *pressure_n_ptr << " press  |  flow " << *flow_n_ptr <<std::endl;
   temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
 
   returnCoeffs.first = temp1 / denom;

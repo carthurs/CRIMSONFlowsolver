@@ -17,11 +17,16 @@ public:
 private:
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Get().
-	fortranBoundaryDataPointerManager()
-	{		
-	}
+	fortranBoundaryDataPointerManager(){};
 
+	// Ban (via making private) the copy constructor
+	fortranBoundaryDataPointerManager(const fortranBoundaryDataPointerManager &old);
 
+	// Ban (via making private) the assignment operator
+	fortranBoundaryDataPointerManager &operator=(const fortranBoundaryDataPointerManager &old);
+
+	// Ban (via making private) the destructor:
+	~fortranBoundaryDataPointerManager(){};
 };
 
 #endif

@@ -14,8 +14,8 @@
 
 	   rcrtReader* rcrtReader_instance;
 	   std::vector<std::unique_ptr<boundaryCondition>>* retrievedBoundaryConditions;
-	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 	   boundaryConditionManager* boundaryConditionManager_instance;
+	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 
 	   double press1;
 	   double press2;
@@ -41,17 +41,29 @@
 	    flow3 = 99;
 
 	    // Create fake (i.e. non-FORTRAN) pointer manager
+	    // fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 	    fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
+
+	    std::cout << "ADDRESS IS: " << &fortranPointerManager_instance << std::endl;
+	    
+	    fortranPointerManager_instance->boundaryFlows.clear();
+	    fortranPointerManager_instance->boundaryPressures.clear();
 	    
 	    // Insert fake pointer data:
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(3,&flow1));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(7,&flow2));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(2341,&flow3));
+	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(9,&flow3));
+	    std::cout << "flow3 A: " << flow3 << " with pointer: " << &flow3 <<  std::endl;
 
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(3,&press1));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(7,&press2));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(2341,&press3));
-
+	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(9,&press3));
+        std::cout << "press3 B: " << press3 << " with pointer: " << &press3  << std::endl;
+        
+        for(auto iterator=fortranPointerManager_instance->boundaryPressures.begin(); iterator!=fortranPointerManager_instance->boundaryPressures.end(); iterator++)
+        {
+            std::cout << iterator->first << " and " << *(iterator->second) << " with pointer " << (iterator->second) << std::endl;
+        }
 
 
 	  	// Setup the file reader for the RCRTs
@@ -64,10 +76,12 @@
 	    // Describe 3 test BCs that we want to construct:
 	    surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
 	    surfaceList.push_back(std::pair <int,std::string> (7,"netlist"));
-	    surfaceList.push_back(std::pair <int,std::string> (2341,"rcr"));
+	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
 
 	    // get the boundary condition manager
 		boundaryConditionManager_instance = boundaryConditionManager::Instance();
+		boundaryConditionManager_instance->tearDown();
+		// boundaryConditionManager_instance->boundaryConditions.clear();
 		boundaryConditionManager_instance->setSurfaceList(surfaceList);
 		retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();
 
@@ -82,6 +96,7 @@
 
 	  virtual ~testMultidom() {
 	    // You can do clean-up work that doesn't throw exceptions here.
+	    // (*fortranPointerManager_instance).~fortranBoundaryDataPointerManager();
 	  }
 
 	  // If the constructor and destructor are not enough for setting up

@@ -27,7 +27,7 @@
  	friend class testMultidom;
  	FRIEND_TEST(testMultidom, checkBoundaryConditionsMadeProperly);
  	FRIEND_TEST(testMultidom, checkRCRLinearInterpolators);
- 	//FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
+ 	// FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_solve);
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
  protected:
@@ -191,6 +191,7 @@ public:
 
  class boundaryConditionManager
  {
+ 	friend class testMultidom;
  public:
  
     static boundaryConditionManager* Instance()
@@ -214,6 +215,15 @@ public:
     std::vector<std::unique_ptr<boundaryCondition>> boundaryConditions;
     std::map<int,std::pair<double,double>> implicitCoefficientMap;
     boundaryConditionFactory factory;
+
+    // For testing purposes, to clear the static class out before the next test begins
+    // Note that you'll have to make the test class a friend in order to use this..
+    // I've made it private on purpose!
+    void tearDown()
+    {
+    	boundaryConditions.clear();
+    	implicitCoefficientMap.clear();
+    }
      
      
  };

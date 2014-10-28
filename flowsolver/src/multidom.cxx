@@ -380,6 +380,7 @@ void RCR::computeImplicitCoeff_solve(int timestepNumber)
 
   dp_dq = temp.first;
   Hop = temp.second;
+  std::cout.precision(15);
   std::cout << "dp_dq in C++: " << dp_dq << std::endl;
   std::cout << "Hop in C++: " << Hop << std::endl;
 }
@@ -430,8 +431,8 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
 
   temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
 
-  temp2 = pressure_n + pdistn_1 - pdistn - rp*flow_n;
-  std::cout << pressure_n << " press  |  flow " << flow_n <<std::endl;
+  temp2 = pressure_n + pdistn_1 - pdistn - rp*(*flow_n_ptr);
+  std::cout << (*pressure_n_ptr) << " press  |  flow " << (*flow_n_ptr) <<std::endl;
   temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
 
   returnCoeffs.first = temp1 / denom;
@@ -442,7 +443,8 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
 
 void RCR::updpressure_n1_withflow()
 {
-  pressure_n = dp_dq_n1*flow_n + Hop_n1;
+  pressure_n = dp_dq_n1*(*flow_n_ptr) + Hop_n1;
+  std::cout << "are these the same? ==========>" << (*flow_n_ptr) << " " << flow_n << " also, flow pressure update: " << pressure_n << std::endl;
   std::cout << dp_dq_n1 << " " << flow_n << " " << Hop_n1 <<std::endl;
 }
 

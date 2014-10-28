@@ -85,15 +85,16 @@ TEST_F(testMultidom, checkImplicitConditionComputation_update)
 
 TEST_F(testMultidom, checkFlowAndPressureSetters)
 {
-	// Set some fake flow data
-	double flows[5] = {10.0, 15.0, 0.0, 0.0, 0.0};
-	boundaryConditionManager_instance->updateAllRCRS_setflow_n(2, flows);
 
 	(*retrievedBoundaryConditions)[0]->dp_dq_n1 = 534.1;
 	(*retrievedBoundaryConditions)[0]->Hop_n1 = 0.001;
+	double fakeFlow1 = 10.0;
+	(*retrievedBoundaryConditions)[0]->flow_n_ptr = &fakeFlow1;
 	
 	(*retrievedBoundaryConditions)[2]->dp_dq_n1 = 534.1;
 	(*retrievedBoundaryConditions)[2]->Hop_n1 = 0.001;
+	double fakeFlow2 = 15.0;
+	(*retrievedBoundaryConditions)[2]->flow_n_ptr = &fakeFlow2;
 
 	boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 
@@ -101,7 +102,12 @@ TEST_F(testMultidom, checkFlowAndPressureSetters)
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[0]->pressure_n, 5341.001);
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[2]->pressure_n, 8011.501);
 
+
 	// Check the n1 setflow works:
+	// Set some fake flow data ( this may be unnecessary now.. )
+	double flows[5] = {10.0, 15.0, 0.0, 0.0, 0.0};
+	boundaryConditionManager_instance->updateAllRCRS_setflow_n(2, flows);
+
 	boundaryConditionManager_instance->updateAllRCRS_setflow_n1(2, flows);
 
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[0]->flow_n1, 10.0);

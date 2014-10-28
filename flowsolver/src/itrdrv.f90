@@ -884,7 +884,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use multidomain, only: nrcr, nrcractive, hrt
+    use multidomain, only: nrcr, nrcractive, hrt, multidom, multidomainactive
     !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
@@ -1095,6 +1095,17 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     endif
 
     call itrUpdate( yold,  acold,   uold,  y,    ac,   u)
+
+    !
+    ! once all non-linear iterations finished, update the container with the final y 
+    ! note this is being done for each particle, it must also be done with the final 
+    ! y in the finalise step after the filter has averaged y
+    !
+    if (multidomainactive) then
+        call updmultidomaincontainer(y,multidom,'velocity')
+        call updmultidomaincontainer(y,multidom,'pressure')
+    end if 
+
 
     ! Nan rcr ----------------------------------
     ! update P,Q variables
@@ -1811,8 +1822,8 @@ subroutine updreducedordermodel(y,rom,varchar)
             ! this is here because it is particle dependent as the WK pressure is part of the state
             ! the pressure_n is a set via the pointer set previously 
             ! if (nrcractive) then ! commented this IF whilst doing the C++ additions - check it's necessary! \todo
-                call callCPPUpdateAllRCRS_setflow_n(nsurf,c_loc(currflow(1)))
-                call callCPPUpdateAllRCRS_setflow_n1(nsurf,c_loc(currflow(1)))
+                ! call callCPPUpdateAllRCRS_setflow_n(nsurf,c_loc(currflow(1)))
+                ! call callCPPUpdateAllRCRS_setflow_n1(nsurf,c_loc(currflow(1)))
             ! end if
 
         endif      
@@ -1842,6 +1853,11 @@ subroutine updreducedordermodel(y,rom,varchar)
             ! update pressure from pressure/flow from saved flow in reduced model
             ! sets it to pressure_n
             call rom%updpressure_n1_withflow()
+
+            !  
+            if (nrcractive) then
+                call callCPPUpdateAllRCRS_Pressure_n1_withflow()
+            end if            
     
         end if
 
@@ -1865,15 +1881,5 @@ subroutine updreducedordermodel(y,rom,varchar)
 
     end if
 
-    if(numGRCRSrfs.gt.0) then
-        !call grcrbc_UpdateInternalState(y)
-
-        ! this is here because it is particle dependent as the WK pressure is part of the state
-        ! the pressure_n is a set via the pointer set previously 
-        if (nrcractive) then
-            call callCPPUpdateAllRCRS_Pressure_n1_withflow()
-        end if
-
-    endif
 
 end subroutine 

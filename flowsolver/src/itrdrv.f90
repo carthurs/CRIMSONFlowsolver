@@ -1650,7 +1650,7 @@ subroutine initreducedordermodel(y, rom, asciiformat)
 
 !       set flows and pressure in reduced order model at step n
         call rom%setflow_n(nsurf,currflow) 
-        call rom%setpressure_n(nsurf,currpress)              
+        call rom%setpressure_n(nsurf,currpress)           
 
     elseif (lstep .gt. zero) then
        
@@ -1770,6 +1770,8 @@ end subroutine
 subroutine updreducedordermodel(y,rom,varchar)
 
     use multidomain
+    use iso_c_binding
+    use cpp_interface
     use boundarymodule, only: GetFlowQ, integrScalar
     use phcommonvars
 
@@ -1800,8 +1802,20 @@ subroutine updreducedordermodel(y,rom,varchar)
   
         ! set flows and pressure at n+1 step to step n in reduced order
         ! model before moving onto next step
-        call rom%setflow_n(nsurf,currflow) 
-        call rom%setflow_n1(nsurf,currflow)         
+        call rom%setflow_n(nsurf,currflow)
+        call rom%setflow_n1(nsurf,currflow)
+
+        if(numGRCRSrfs.gt.0) then
+            !call grcrbc_UpdateInternalState(y)
+
+            ! this is here because it is particle dependent as the WK pressure is part of the state
+            ! the pressure_n is a set via the pointer set previously 
+            ! if (nrcractive) then ! commented this IF whilst doing the C++ additions - check it's necessary! \todo
+                call callCPPUpdateAllRCRS_setflow_n(nsurf,c_loc(currflow(1)))
+                call callCPPUpdateAllRCRS_setflow_n1(nsurf,c_loc(currflow(1)))
+            ! end if
+
+        endif      
 
         ! if flowsolver only then update pressure the normal way
         ! if estimator, do nothing as pressure is set by the filter from the average of all the particles
@@ -1849,6 +1863,17 @@ subroutine updreducedordermodel(y,rom,varchar)
         ! set flows at current n+alf step 
         call rom%setflow_n1(nsurf,currflow) 
 
-    end if 
+    end if
+
+    if(numGRCRSrfs.gt.0) then
+        !call grcrbc_UpdateInternalState(y)
+
+        ! this is here because it is particle dependent as the WK pressure is part of the state
+        ! the pressure_n is a set via the pointer set previously 
+        if (nrcractive) then
+            call callCPPUpdateAllRCRS_Pressure_n1_withflow()
+        end if
+
+    endif
 
 end subroutine 

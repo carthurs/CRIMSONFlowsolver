@@ -88,8 +88,6 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* implicitCoeffs_toBeF
       // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
       writeLocation++;
-      // std::cout.precision(15);
-      // std::cout << "set here in C++ hop: " << (*iterator)->getHop() << std::endl;
     }
   }
 }
@@ -98,6 +96,23 @@ extern "C" void callCppGetImplicitCoeff_rcr(double*& implicitCoeffs_toBeFilled)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->getImplicitCoeff_rcr(implicitCoeffs_toBeFilled);
+}
+
+void boundaryConditionManager::updateAllRCRS_Pressure_n1_withflow()
+{
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(RCR))
+    {
+      (*iterator)->updpressure_n1_withflow();
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 }
 
 void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList)
@@ -118,6 +133,8 @@ std::vector<std::unique_ptr<boundaryCondition>>* boundaryConditionManager::getBo
 
 void boundaryConditionManager::computeAllImplicitCoeff_solve(int timestepNumber)
 {
+  fortranBoundaryDataPointerManager* fortranBoundaryDataPointerManager_instance = fortranBoundaryDataPointerManager::Get();
+  std::cout << "pressure used from multidom container, as seen in C++: " << *(fortranBoundaryDataPointerManager_instance->boundaryPressures.at(3)) << std::endl;
   for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
   {
     (*iterator)->computeImplicitCoeff_solve(timestepNumber);
@@ -144,6 +161,47 @@ extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
   boundaryConditionManager_instance->computeAllImplicitCoeff_update(timestepNumber);
 }
 
+
+void boundaryConditionManager::updateAllRCRS_setflow_n(int numberOfRCRSurfaces, double* flows)
+{
+  int readLocation = 0;
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(RCR))
+    {
+      (*iterator)->flow_n = flows[readLocation];
+      readLocation++;
+    }
+  }
+  std::cout << "these should be equal (B): " << readLocation << " and " << numberOfRCRSurfaces << std::endl;
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPUpdateAllRCRS_setflow_n(int& numberOfRCRSurfaces, double*& flows)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->updateAllRCRS_setflow_n(numberOfRCRSurfaces, flows); 
+}
+
+
+void boundaryConditionManager::updateAllRCRS_setflow_n1(int numberOfRCRSurfaces, double* flows)
+{
+  int readLocation = 0;
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(RCR))
+    {
+      (*iterator)->flow_n1 = flows[readLocation];
+      readLocation++;
+    }
+  }
+  std::cout << "these should be equal (A): " << readLocation << " and " << numberOfRCRSurfaces << std::endl;
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPUpdateAllRCRS_setflow_n1(int& numberOfRCRSurfaces, double*& flows)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->updateAllRCRS_setflow_n1(numberOfRCRSurfaces, flows); 
+}
 //
 /*  >>>>>>>>>>>>>>>>>>>>     RUUUULE BRITANNIAAAA! <<<<<<<<<<<<<<<<<<<<<<<<<<
 ZZZ         888888888888888888888   ZZZZZZZZ  888888888888888888888   ZZZZZZ    
@@ -246,6 +304,9 @@ void RCR::initialiseModel()
     // NB: Need to add a method in fortran to set a value for non-zero restarting!
     flow_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryFlows.at(surfaceIndex);
     pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryPressures.at(surfaceIndex);
+
+    flow_n = *flow_n_ptr;
+    pressure_n = *pressure_n_ptr;
     
     std::cout << "just set pressure and flow: " << *pressure_n_ptr << " " << *flow_n_ptr << std::endl;
 
@@ -369,8 +430,8 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
 
   temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
 
-  temp2 = (*pressure_n_ptr) + pdistn_1 - pdistn - rp*(*flow_n_ptr);
-  std::cout << *pressure_n_ptr << " press  |  flow " << *flow_n_ptr <<std::endl;
+  temp2 = pressure_n + pdistn_1 - pdistn - rp*flow_n;
+  std::cout << pressure_n << " press  |  flow " << flow_n <<std::endl;
   temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
 
   returnCoeffs.first = temp1 / denom;
@@ -378,6 +439,13 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
   
   return returnCoeffs;
 }
+
+void RCR::updpressure_n1_withflow()
+{
+  pressure_n = dp_dq_n1*flow_n + Hop_n1;
+  std::cout << dp_dq_n1 << " " << flow_n << " " << Hop_n1 <<std::endl;
+}
+
 
 int boundaryCondition::bcCount = 0;
 int RCR::numberOfInitialisedRCRs = 0;

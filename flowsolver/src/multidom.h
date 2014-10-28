@@ -30,11 +30,14 @@
  	// FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_solve);
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
+ 	FRIEND_TEST(testMultidom, checkFlowAndPressureSetters);
  protected:
  	double dp_dq;
  	double Hop;
  	double dp_dq_n1;
  	double Hop_n1;
+ 	double pressure_n;
+ 	double flow_n;
  	int surfaceIndex;
  	int isactive;
  	double* flowhist;
@@ -52,6 +55,7 @@
     double alfi_local;
     virtual void computeImplicitCoeff_solve(int timestepNumber) = 0;
  	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
+ 	virtual void updpressure_n1_withflow() = 0;
 	virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{
@@ -127,6 +131,7 @@ public:
 	void computeImplicitCoeff_solve(int timestepNumber);
  	void computeImplicitCoeff_update(int timestepNumber);
  	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt);
+ 	void updpressure_n1_withflow();
 
 	
 //  	procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
@@ -175,6 +180,7 @@ public:
  	{
 
  	}
+ 	void updpressure_n1_withflow(){}
  	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt)
  	{
  		std::pair<double,double> dummyValue;
@@ -207,6 +213,10 @@ public:
 
     void computeAllImplicitCoeff_solve(int timestepNumber);
     void computeAllImplicitCoeff_update(int timestepNumber);
+
+    void updateAllRCRS_Pressure_n1_withflow();
+    void updateAllRCRS_setflow_n(int numberOfRCRSurfaces, double* flows);
+    void updateAllRCRS_setflow_n1(int numberOfRCRSurfaces, double* flows);
  
  private:
     boundaryConditionManager()

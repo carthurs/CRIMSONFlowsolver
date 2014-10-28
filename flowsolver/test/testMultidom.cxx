@@ -82,3 +82,28 @@ TEST_F(testMultidom, checkImplicitConditionComputation_update)
 	// Just trying out a different sort of EXPECT, this time with a tolerance option:
 	EXPECT_NEAR((*retrievedBoundaryConditions)[2]->Hop_n1,-1.368173229374138e+03,1e-12);
 }
+
+TEST_F(testMultidom, checkFlowAndPressureSetters)
+{
+	// Set some fake flow data
+	double flows[5] = {10.0, 15.0, 0.0, 0.0, 0.0};
+	boundaryConditionManager_instance->updateAllRCRS_setflow_n(2, flows);
+
+	(*retrievedBoundaryConditions)[0]->dp_dq_n1 = 534.1;
+	(*retrievedBoundaryConditions)[0]->Hop_n1 = 0.001;
+	
+	(*retrievedBoundaryConditions)[2]->dp_dq_n1 = 534.1;
+	(*retrievedBoundaryConditions)[2]->Hop_n1 = 0.001;
+
+	boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
+
+	// Check the setting and computation worked on the RCRs (these have indices 0 and 2 in the tests)
+	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[0]->pressure_n, 5341.001);
+	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[2]->pressure_n, 8011.501);
+
+	// Check the n1 setflow works:
+	boundaryConditionManager_instance->updateAllRCRS_setflow_n1(2, flows);
+
+	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[0]->flow_n1, 10.0);
+	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[2]->flow_n1, 15.0);
+}

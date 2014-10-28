@@ -2759,7 +2759,7 @@
       implicit none      
       class(reducedorder) :: ro
       integer :: ispressureupdate      
-      ispressureupdate = ro%updatepressure      
+      ispressureupdate = ro%updatepressure
       return
       end function      
 !
@@ -6873,6 +6873,8 @@
       real*8 :: rd,pc_n1
 !      
       integer :: i
+
+      write(*,*) 'pressure_n from itrdrv:', nrcr%pressure_n(1)
 !
 !     ! time at stepn
       timen = delt*real(stepn,8)

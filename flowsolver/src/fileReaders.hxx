@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <map>
 
 class abstractFileReader
 {
@@ -41,6 +42,19 @@ protected:
 	std::string fileName;
 	bool readNextLine();
 private:
+};
+
+class histFileReader : public abstractFileReader
+{
+public:
+	histFileReader()
+	{
+	}
+	void readAndSplitMultiSurfaceRestartFile();
+	// The data as a map of timestep index to vector of all data for that timestep,
+	// for all relevant surfaces, in the order in which they appear in the file.
+	//\todo: this is buggy, because FORTRAN writes three-in-a-row!
+	std::map<int,std::vector<double>> dataReadFromFile;
 };
 
 // This abstract class is desigend for extenntion to classes which read a single file which contains data for multiple boundaries

@@ -28,6 +28,26 @@ bool abstractFileReader::readNextLine()
 	return returnValue;
 }
 
+void histFileReader::readAndSplitMultiSurfaceRestartFile()
+{
+	std::vector<double> tempData;
+	int lineIndex = 0;
+	int colIndex;
+	while(readNextLine());
+	{
+		lineIndex++;
+		tempData.clear();
+
+		for(int ii=0; ii<currentLineSplitBySpaces->size(); ii++)
+		{
+			tempData.push_back(std::stod((*currentLineSplitBySpaces)[colIndex].c_str()));
+		}
+
+		dataReadFromFile.insert(std::pair <int,std::vector<double>> (lineIndex, tempData));
+		std::cout << "wrote line index " << lineIndex << std::endl;
+	}
+}
+
 // The output objects are std::vectors at the top level, with each vector
 // entry corresponding to one surface
 void rcrtReader::readAndSplitMultiSurfaceInputFile()

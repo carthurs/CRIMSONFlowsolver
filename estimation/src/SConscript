@@ -24,6 +24,7 @@ env.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtk
 env.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
 env.Append(LIBS=bop.F90_LIBS)
 env.Append(LIBS=bop.INTEL_LIBSLIST)
+env.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
 # env.Append(LIBS=bop.GOOGLETEST_LIBSLIST)
 
 
@@ -37,17 +38,17 @@ CXXSRCS=string.split("""
 CXXSRCS1 = string.split("""
 	ROUKF_flowsolver.cxx
 	""")
-CXXSRCS1.extend(CXXSRCS)
+# CXXSRCS1.extend(CXXSRCS)
 
 CXXSRCS2 = string.split("""
 	forwardandobserve.cxx
 	""")
-CXXSRCS2.extend(CXXSRCS)
+# CXXSRCS2.extend(CXXSRCS)
 
 CXXSRCS3 = string.split("""
 	main.cxx
 	""")
-CXXSRCS3.extend(CXXSRCS)
+# CXXSRCS3.extend(CXXSRCS)
 
 #CSRCS   = 
 
@@ -56,7 +57,7 @@ CXXSRCS3.extend(CXXSRCS)
 #SRCS  = $(FSRCS) $(CSRCS) $(CXXSRCS)
 
 #OBJS  = $(FSRCS:.f90=.$(OBJECTEXT)) $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
-
+OBJS0=env.Object(source=CXXSRCS)
 OBJS1=env.Object(source=CXXSRCS1)
 OBJS2=env.Object(source=CXXSRCS2)
 OBJS3=env.Object(source=CXXSRCS3)
@@ -70,16 +71,18 @@ OBJS3=env.Object(source=CXXSRCS3)
 # .DEFAULT : all
 # all: $(TARGET_ESTIMATOR) $(TARGET_FORWARDANDOBSERVE) $(TARGET_FLOWSOLVER)
 
+commonLibTarget = env.Library(target='libsimvascular_common.a', source=OBJS0)
 estimatorTarget = env.Program(target='estimator', source=OBJS1)
 flowsolver_and_observerTarget = env.Program(target='flowsolver_and_observer', source=OBJS2)
 flowsolverTarget = env.Program(target='flowsolver', source=OBJS3)
 
+copyCommon = env.Command("../../lib/libsimvascular_common.a", "./libsimvascular_common.a", Copy("$TARGET", "$SOURCE"))
 copyEstimator = env.Command("../../bin/estimator", "./estimator", Copy("$TARGET", "$SOURCE"))
 copyFlowsolver_and_observer = env.Command("../../bin/flowsolver_and_observer", "./flowsolver_and_observer", Copy("$TARGET", "$SOURCE"))
 copyFlowsolver = env.Command("../../bin/flowsolver", "./flowsolver", Copy("$TARGET", "$SOURCE"))
 
 #Default(flowsolverTarget,copyFlowsolver)
-Default(estimatorTarget,flowsolver_and_observerTarget,flowsolverTarget,copyEstimator,copyFlowsolver_and_observer,copyFlowsolver)
+Default(commonLibTarget,copyCommon,estimatorTarget,flowsolver_and_observerTarget,flowsolverTarget,copyEstimator,copyFlowsolver_and_observer,copyFlowsolver)
 
 # $(TARGET_ESTIMATOR): $(OBJS1)
 # 	$(LINK_EXE)$(TARGET_ESTIMATOR) $(GLOBAL_LFLAGS) $(OBJS1) \

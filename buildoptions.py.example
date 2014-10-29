@@ -90,6 +90,8 @@ LESLIB_INCDIR  = [LESLIB_TOP]
 LESLIB_LIBSDIR = [LESLIB_TOP,LESLIB_TOP+'/deps']
 LESLIB_LIBSLIST= ['les','ifcore','ifport','imf','irc'] #-L $(LESLIB_TOP)/deps -lifcore -lifport -limf -lirc
 
+SIMVASCULAR_COMMON_LIBSLIST = ['simvascular_common']
+
 #MEMLS_TOP        = $(HOME_DIR)/memLS
 #MEMLS_INCDIR     = -I $(MEMLS_TOP)/include
 #MEMLS_DEF        =

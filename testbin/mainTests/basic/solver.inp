@@ -1,0 +1,113 @@
+# SOLUTION CONTROL <--- These are for your organizational clarity (not required)
+{                 <---
+    Equation of State: Incompressible     # sets ipress=-1 matflag(1,n)
+    Number of Timesteps: 5      #replaces nsteps(1) (ntseq wired =1)
+    Time Step Size: 0.001          # Delt(1)
+}
+
+# MATERIAL PROPERTIES
+{
+    Viscosity: 0.004      # fills datmat (2 values REQUIRED if iLset=1)
+    Density: 0.00106               # ditto
+}
+
+# OUTPUT CONTROL
+{
+    Number of Timesteps between Restarts: 5 #replaces nout/ntout
+    Print Error Indicators: True
+    Print ybar: True
+}
+
+Global Node Numbering: True
+
+# CARDIOVASCULAR MODELING PARAMETERS
+{
+    Time Varying Boundary Conditions From File: True # F itvn=0 T itvn=1
+    BCT Time Scale Factor : 1.0
+    Number of Coupled Surfaces: 1 # icardio
+    Pressure Coupling: Implicit # Explicit, Implicit, P-Implicit 
+                            # none ipvsq=0, expl ipvsq=1, 
+                            # impl ipvsq=2, P-Imp ipvsq=3                               
+# For Experimental RCR boundary conditions
+    Number of experimental RCR Surfaces: 1 # numGRCRSrfs
+    List of experimental RCR Surfaces: 3 # nsrflistGRCR(j), j=0,MAXSURF
+    experimental RCR Values From File: True #False igrcrfile=0, True igrcrfile=1
+# Output traces
+    Number of Surfaces which Output Pressure and Flow: 2 # numCalcSrfs
+    List of Output Surfaces: 2 3 # nsrflistCalc(j), j=0, MAXSURF
+    Number of Dirichlet Surfaces Which Output Pressure and Flow: 1 # numDirCalcSrfs
+    List of Dirichlet Surfaces: 2 # nsrflistDirCalc(j), j=0,MAXSURF 
+# Residual control
+    Residual Control: True # False ResControl=0, True ResControl=1
+    Residual Criteria: 0.005 # ResCriteria
+    Minimum Required Iterations: 2 # MinNumIter
+# Deformable wall       
+    Deformable Wall: True #False ideformwall=0, True ideformwall=1
+    Density of Vessel Wall: 0.00106 # rhovw
+    Poisson Ratio of Vessel Wall: 0.5 # rnuvw
+    Shear Constant of Vessel Wall: 0.833333 # rshearconstantvw
+  # uniform values    
+    Thickness of Vessel Wall: 0.3 # thicknessvw
+    Young Mod of Vessel Wall: 700000.0 # evw
+  # regional values
+    Number of Wall Regions: 0 # numWallRegions
+    List of Wall Region Surfaces: NODEFAULT # nsrflistWallRegions(j), j=0,MAXSURF
+    Wall Elastic Modulus Values: NODEFAULT 
+    Wall Thickness Values: NODEFAULT # ValueListWallh(j), j=0,MAXSURF
+  # force surfaces
+    Number of Force Surfaces: 1
+    Surface ID's for Force Calculation: 1
+  # general nonuniform values
+    Number of Wall Properties per Node: 10
+    Use SWB File: False # iUseSWB=1
+    Use SWB Wall Thickness Only: False # iUseSWBthickonly
+  # external tissue support
+    Wall Damping Term: True # iwalldamp
+    Wall External Support Term: True # iwallsupp
+    Stiffness Coefficient for Tissue Support: 0.10 # tissSuppStiffCoeff
+    Damping Coefficient for Tissue Support: 0.01 # tissSuppDampCoeff
+    Use TWB File: False # iUseTWB=1
+  # axial tethering/support
+    Axial Tethering Damping Term: True #iringdamp
+    Axial Tethering Stiffness Term: True #iringsupp
+    Axial Tethering Stiffness Coefficient: 5e5 # tissSuppRingStiffCoeff
+    Axial Tethering Damping Coefficient: 0.01 # tissSuppRingDampCoeff
+  # measure distances
+    Measure Distance to Wall Data: False #imeasdist
+  # vessel wall state filter
+    Wall State Filter Term: False # imeasdist
+    Wall State Filter Coefficient: 0 # statefilterCoeff    
+  # reference displacement options
+    Use Reference Displacements: True #iinitialprestress
+    Update Reference Displacements with Average: False #iupdateprestress
+}
+
+# LINEAR SOLVER
+{
+    #Solver Type: ACUSIM with P Projection
+    Solver Type: memLS
+    Number of Solves per Left-hand-side Formation: 1  #nupdat/LHSupd(1)
+    Number of Krylov Vectors per GMRES Sweep: 45
+    Tolerance on Momentum Equations: 0.01                   # epstol(1)
+    Tolerance on Continuity Equations: 0.2                   # epstol(7)
+    Tolerance on memLS NS Solver: 0.4                   # epstol(8)
+}
+
+# DISCRETIZATION CONTROL
+{
+    Basis Function Order: 1                 # ipord
+    Quadrature Rule on Interior: 2           #int(1)
+    Quadrature Rule on Boundary: 2           #intb(1)
+    Include Viscous Correction in Stabilization: True    # if p=1 idiff=1
+                                                           # if p=2 idiff=2  
+    Lumped Mass Fraction on Left-hand-side: 0.0           # flmpl
+    Lumped Mass Fraction on Right-hand-side: 0.0          # flmpr
+    Time Integration Rule: Second Order    # Second Order sets rinf next
+    Time Integration Rho Infinity: 0.0     # rinf(1) Only used for 2nd order
+    Flow Advection Form: Convective        # iconvflow=2
+}
+
+# STEP SEQUENCE 
+{
+     Step Construction  : 0 1 0 1 0 1 0 1 0 1 0 1
+}

@@ -34,5 +34,8 @@ postsolver/src/postsolver
 presolver/src/presolver
 .sconsign.dblite
 rc
-testbin/*
+*1-procs-case*
+testbin/test
+testbin/mytest
+testbin/XML_Report.xml
 gtest*

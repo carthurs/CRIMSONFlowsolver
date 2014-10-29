@@ -4,6 +4,8 @@ import buildoptions as bop
 from subprocess import call
 
 env = Environment(ENV = os.environ)
+env.Replace(PATH = '')
+env.Replace(LD_LIBRARY_PATH = '')
 env.Replace(SHELL=bop.SHELL)
 env.Replace(CXX=bop.CXX)
 env.Replace(CC=bop.CC)

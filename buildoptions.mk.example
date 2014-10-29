@@ -15,6 +15,7 @@ MAKE_WITH_POSTSOLVER = 1
 MAKE_WITH_FLOWSOLVER = 1
 MAKE_WITH_MAIN = 1
 MAKE_WITH_ESTIMATOR = 1
+#MAKE_WITH_MEMLS = 1
 
 TARGET_FLOWSOLVER = flowsolver
 TARGET_ESTIMATOR = estimator
@@ -22,27 +23,27 @@ TARGET_FORWARDANDOBSERVE = flowsolver_and_observer
 TARGET_POSTSOLVER = postsolver
 TARGET_PRESOLVER = presolver
  
-MAKE_OPTIMIZED = 1
+MAKE_OPTIMIZED = 0
 
 # This should be set to zero on the sgi
 EXTRA_CONSOLE_OUTPUT_ON = 0
-
+ 
 ifeq ($(MAKE_OPTIMIZED),1)
    DEBUG_FLAGS     =
    DEBUG_FFLAGS    =
    OPT_FLAGS       = -O3 -std=c++0x
    OPT_FFLAGS      = -O3 -align array64byte -fpp -D'EXTRA_CONSOLE_OUTPUT=$(EXTRA_CONSOLE_OUTPUT_ON)'
-   LINK_EXE        = $(F90) -nofor-main -cxxlib -o
-   #LINK_EXE        = $(CXX) -o
+   LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
+   #LINK_EXE        = $(CXX) -o 
 else
    DEBUG_FLAGS     = -O0 -g -std=c++0x
    DEBUG_FFLAGS    = -O0 -g -align array64byte -traceback -fp-stack-check -fpp -D'EXTRA_CONSOLE_OUTPUT=$(EXTRA_CONSOLE_OUTPUT_ON)'
    OPT_FLAGS       =
    OPT_FFLAGS      =
-   #LINK_EXE        = $(CXX) -o
-   LINK_EXE        = $(F90) -nofor-main -cxxlib -o
+   #LINK_EXE        = $(CXX) -o 
+   LINK_EXE        = $(F90) -nofor-main -cxxlib -o 
 endif
-
+ 
  
 BUILDFLAGS      = $(GLOBAL_DEFINES)
 GLOBAL_CXXFLAGS = $(BUILDFLAGS) $(DEBUG_FLAGS) $(OPT_FLAGS)
@@ -116,25 +117,31 @@ PETSC_BUILD = arch-linux-intel-intelMKL-opt
 PETSC_INCDIR = -I $(PETSC_TOP)/include -I $(PETSC_TOP)/$(PETSC_BUILD)/include
 PETSC_LIBS   = -L $(PETSC_TOP)/$(PETSC_BUILD)/lib -lpetsc
 
-#CGAL_TOP     = $(HOME_DIR)/../CGAL-install
-#CGAL_INCDIR  = -I $(CGAL_TOP)/include
-#CGAL_LIBS    = -L $(CGAL_TOP)/lib -lCGAL -lCGAL_Core -lCGAL_ImageIO
+# CGAL_TOP     = $(HOME_DIR)/../CGAL-install
+# CGAL_INCDIR  = -I $(CGAL_TOP)/include
+# CGAL_LIBS    = -L $(CGAL_TOP)/lib -lCGAL -lCGAL_Core -lCGAL_ImageIO
 
-#BOOSTCPP_TOP    = $(HOME_DIR)/../boost_1_40_0
-#BOOSTCPP_INCDIR = -I $(BOOSTCPP_TOP)
-#BOOSTCPP_LIBS   = -L $(BOOSTCPP_TOP)/stage/lib -lboost_thread
+# BOOSTCPP_TOP    = $(HOME_DIR)/../boost_1_40_0
+# BOOSTCPP_INCDIR = -I $(BOOSTCPP_TOP)
+# BOOSTCPP_LIBS   = -L $(BOOSTCPP_TOP)/stage/lib -lboost_thread
 
-VTK_TOP    = $(HOME_DIR)/../VTK-install
+VTK_TOP    = /usr/local
 VTK_INCDIR = -I $(VTK_TOP)/include/vtk-5.8
 VTK_LIBS   = -L $(VTK_TOP)/lib/vtk-5.8 -lvtkGraphics -lvtkFiltering -lvtkGenericFiltering -lvtkIO -lvtkCommon -lvtksys 
 
-BLASLAPACK_TOP    = /opt/intel/mkl
+MKLROOT = /opt/intel/mkl
+BLASLAPACK_TOP    = $(MKLROOT)
 BLASLAPACK_INCDIR = -I $(BLASLAPACK_TOP)/include
 BLASLAPACK_LIBS   = -L $(BLASLAPACK_TOP)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
 
 #BLASLAPACK_TOP    = /home/nxiao/dev/refblaslapack
 #BLASLAPACK_INCDIR = 
 #BLASLAPACK_LIBS   = -L $(BLASLAPACK_TOP) -llapack -lcblas -lblas
+
+GOOGLETEST_TOP       = $(HOME_DIR)/gtest-1.7.0
+GOOGLETEST_INCDIR    = -I $(GOOGLETEST_TOP)/include
+#GOOGLETEST_SRC       = $(GOOGLETEST_TOP)/src'
+#GOOGLETEST_LIBSLIST = 
 
 
 %.$(OBJECTEXT): %.cxx

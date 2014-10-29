@@ -28,23 +28,46 @@ bool abstractFileReader::readNextLine()
 	return returnValue;
 }
 
+bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
+{
+
+	int index;
+	double value;
+
+	dataReadFromFile_line.clear();
+	
+	// Get all the data entries from a single line of the file.
+	// Return false if the end of file is reached, otherwise, return true.
+	// Read data is sequentially placed in the vector dataReadFromFile_line,
+	// which is newly cleared on each call to this function.
+ 	for (int currentColumn=0; currentColumn<numColumns; currentColumn++)
+ 	{
+ 		value = 0;
+ 		*fileHandle >> value;
+ 		if (fileHandle->eof())
+	 	{
+	 		if (currentColumn>0)
+	 		{
+	 			std::cout << "File terminated early: " << fileName << std::endl;
+	 			std::exit(1);
+	 		}
+	 		return false;
+	 	}
+ 		dataReadFromFile_line.push_back(value);
+ 	}
+
+ 	// return false case is guarded by an if above
+ 	return true;
+
+}
+
 void histFileReader::readAndSplitMultiSurfaceRestartFile()
 {
-	std::vector<double> tempData;
 	int lineIndex = 0;
-	int colIndex;
-	while(readNextLine());
+	while(readNextLineWithKnownNumberOfColumns())
 	{
 		lineIndex++;
-		tempData.clear();
-
-		for(int ii=0; ii<currentLineSplitBySpaces->size(); ii++)
-		{
-			tempData.push_back(std::stod((*currentLineSplitBySpaces)[colIndex].c_str()));
-		}
-
-		dataReadFromFile.insert(std::pair <int,std::vector<double>> (lineIndex, tempData));
-		std::cout << "wrote line index " << lineIndex << std::endl;
+		dataReadFromFile.insert(std::pair <int,std::vector<double>> (lineIndex, dataReadFromFile_line));
 	}
 }
 

@@ -8,9 +8,12 @@
 #include <memory>
 #include <sstream>
 #include <map>
+#include "gtest/gtest_prod.h"
 
 class abstractFileReader
 {
+	friend class testMain;
+ 	FRIEND_TEST(testMain, checkSimpleShortSimulationWithRCRs);
 public:
 	abstractFileReader()
 	{
@@ -28,6 +31,11 @@ public:
 			std::exit(1);
 		}
 	}
+
+	void setNumColumns(int numberOfColumns)
+	{
+		numColumns = numberOfColumns;
+	}
 	
 	~abstractFileReader()
 	{
@@ -40,7 +48,15 @@ protected:
 	std::vector<std::string>* currentLineSplitBySpaces;
 	std::string currentLine;
 	std::string fileName;
+	// The data as a map of timestep index to vector of all data for that timestep,
+	// for all relevant surfaces, in the order in which they appear in the file.
+	//\todo: this is buggy, because FORTRAN writes three-in-a-row!
+	std::map<int,std::vector<double>> dataReadFromFile;
 	bool readNextLine();
+
+	int numColumns;
+	std::vector<double> dataReadFromFile_line;
+	bool readNextLineWithKnownNumberOfColumns();
 private:
 };
 
@@ -51,10 +67,7 @@ public:
 	{
 	}
 	void readAndSplitMultiSurfaceRestartFile();
-	// The data as a map of timestep index to vector of all data for that timestep,
-	// for all relevant surfaces, in the order in which they appear in the file.
-	//\todo: this is buggy, because FORTRAN writes three-in-a-row!
-	std::map<int,std::vector<double>> dataReadFromFile;
+	
 };
 
 // This abstract class is desigend for extenntion to classes which read a single file which contains data for multiple boundaries

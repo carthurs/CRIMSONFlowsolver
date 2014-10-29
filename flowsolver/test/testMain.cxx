@@ -12,6 +12,7 @@ TEST_F(testMain, checkSimpleShortSimulationWithRCRs) {
 
   histFileReader* QHistReader = new histFileReader();
   QHistReader->setFileName("QHistRCR.dat");
+  QHistReader->setNumColumns(2);
   QHistReader->readAndSplitMultiSurfaceRestartFile();
 
   double finalQhistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];

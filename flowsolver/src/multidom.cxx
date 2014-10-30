@@ -8,6 +8,7 @@
 #include "common_c.h"
 #include "multidom.h"
 #include "fortranPointerManager.hxx"
+#include "fileWriters.hxx"
 #include <typeinfo>
 
 
@@ -41,6 +42,14 @@ double boundaryCondition::getdp_dq()
 
   // return returnObject;
 
+}
+
+void boundaryCondition::updatePressureAndFlowHistory()
+{
+  
+  std::cout << "Step :" << timdat.lstep << " P " <<  pressure_n << " Q " << *flow_n_ptr << std::endl;
+  pressurehist[timdat.lstep] = pressure_n;
+  flowhist[timdat.lstep] = *flow_n_ptr;
 }
 
 double RCR::linInterpolateTimeData(const double &currentTime, const int timeDataLength)
@@ -202,6 +211,40 @@ extern "C" void callCPPUpdateAllRCRS_setflow_n1(int& numberOfRCRSurfaces, double
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateAllRCRS_setflow_n1(numberOfRCRSurfaces, flows); 
 }
+
+void boundaryConditionManager::recordPressuresAndFlowsInHistoryArrays()
+{
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    (*iterator)->updatePressureAndFlowHistory();
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPRecordPressuresAndFlowsInHistoryArrays()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->recordPressuresAndFlowsInHistoryArrays();
+}
+
+void boundaryConditionManager::writePHistAndQHistRCR()
+{
+  basicFileWriter phistrcr_writer;
+  phistrcr_writer.setFileName("PHistRCR2.dat");
+  // phistrcr_writer.setArrayToWriteOut(pressurehist);
+  phistrcr_writer.writeHistories_rcr(boundaryConditions);
+
+  // basicFileWriter qhistrcr_writer;
+  // qhistrcr_writer.setFileName("QHistRCR2.dat");
+  // // qhistrcr_writer.setArrayToWriteOut(flowhist);
+  // qhistrcr_writer.writeHistories_rcr(boundaryConditions);
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPWritePHistAndQHistRCR()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->writePHistAndQHistRCR();
+}
+
 //
 /*  >>>>>>>>>>>>>>>>>>>>     RUUUULE BRITANNIAAAA! <<<<<<<<<<<<<<<<<<<<<<<<<<
 ZZZ         888888888888888888888   ZZZZZZZZ  888888888888888888888   ZZZZZZ    

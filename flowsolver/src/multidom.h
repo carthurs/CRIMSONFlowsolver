@@ -25,6 +25,7 @@
  {
  	friend class boundaryConditionManager;
  	friend class testMultidom;
+ 	friend class basicFileWriter;
  	FRIEND_TEST(testMultidom, checkBoundaryConditionsMadeProperly);
  	FRIEND_TEST(testMultidom, checkRCRLinearInterpolators);
  	// FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
@@ -57,6 +58,7 @@
  	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
  	virtual void updpressure_n1_withflow() = 0;
 	virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
+	void updatePressureAndFlowHistory();
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{
 		// std::cout << "Disallowed call to non-overridden (e.g. non-RCR) . Exiting.\n";
@@ -217,6 +219,10 @@ public:
     void updateAllRCRS_Pressure_n1_withflow();
     void updateAllRCRS_setflow_n(int numberOfRCRSurfaces, double* flows);
     void updateAllRCRS_setflow_n1(int numberOfRCRSurfaces, double* flows);
+
+    void recordPressuresAndFlowsInHistoryArrays();
+
+    void writePHistAndQHistRCR();
  
  private:
     boundaryConditionManager()

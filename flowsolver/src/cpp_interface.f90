@@ -58,5 +58,20 @@ module cpp_interface
     			type(c_ptr) :: flows
     		end subroutine callCPPUpdateAllRCRS_setflow_n1
     end interface
+
+    interface
+            subroutine callCPPRecordPressuresAndFlowsInHistoryArrays() bind(c,name="callCPPRecordPressuresAndFlowsInHistoryArrays")
+                use iso_c_binding
+            end subroutine callCPPRecordPressuresAndFlowsInHistoryArrays
+    end interface
+
+    interface
+            subroutine callCPPWritePHistAndQHistRCR() bind(c,name="callCPPWritePHistAndQHistRCR")
+                use iso_c_binding
+            end subroutine callCPPWritePHistAndQHistRCR
+    end interface
+
+    
+    
     
 end module cpp_interface

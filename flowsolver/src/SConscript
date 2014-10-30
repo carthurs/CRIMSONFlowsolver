@@ -33,6 +33,7 @@ sources=string.split("""
 	ValType.cxx
 	multidom.cxx
 	fileReaders.cxx
+	fileWriters.cxx
 	fortranPointerManager.cxx 
 	blend.c
 	blendDrv.c

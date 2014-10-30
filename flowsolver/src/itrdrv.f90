@@ -1138,6 +1138,7 @@ end subroutine itrdrv_iter_step
 subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     use iso_c_binding
+    use cpp_interface
     use shapeTable
     use globalArrays
     use pvsQbi     !gives us splag (the spmass at the end of this run
@@ -1156,7 +1157,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     use deformableWall
     use ResidualControl
 
-    use multidomain, only: nrcr, hrt
+    use multidomain, only: nrcr, hrt, multidomainactive, multidom
 
     use phcommonvars
     use itrDrvVars
@@ -1262,6 +1263,15 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     endif
 
     !
+    ! UPDATE CONTAINER WITH AVERAGE FROM THE PARTICLES
+    ! THIS SHOULD BE MOVED UP, BUT WILL THAT PUSH THE HEART MODEL OUT OF SYNC?!!
+    !
+    if (multidomainactive) then
+        call updmultidomaincontainer(y,multidom,'velocity')
+        call updmultidomaincontainer(y,multidom,'pressure')
+    end if 
+
+    !
     ! *** update flow and pressure history in the numerical RCR
     !
     if(numGRCRSrfs.gt.zero) then        
@@ -1278,6 +1288,13 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
 
     endif
+
+    ! wrt fcns 
+    call callCPPRecordPressuresAndFlowsInHistoryArrays()
+
+    ! wrt dta
+    call callCPPWritePHistAndQHistRCR()
+    !Now the files are in the computer!
 
 
 

@@ -16,7 +16,7 @@ TEST_F(testMain, checkSimpleShortSimulationWithRCRs) {
   QHistReader->readAndSplitMultiSurfaceRestartFile();
 
   double finalQhistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];
-  EXPECT_DOUBLE_EQ(finalQhistRCRValue,0.7149210791E+03);
+  EXPECT_NEAR(finalQhistRCRValue,0.7149210791E+03,1e-7);
 
   delete QHistReader;
 }

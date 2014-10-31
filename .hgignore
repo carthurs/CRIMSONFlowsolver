@@ -39,3 +39,4 @@ testbin/test
 testbin/mytest
 testbin/XML_Report.xml
 gtest*
+.settings/*

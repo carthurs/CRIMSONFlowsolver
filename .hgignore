@@ -35,6 +35,8 @@ presolver/src/presolver
 .sconsign.dblite
 rc
 *1-procs-case*
+*2-procs-case*
+*3-procs-case*
 testbin/test
 testbin/mytest
 testbin/XML_Report.xml

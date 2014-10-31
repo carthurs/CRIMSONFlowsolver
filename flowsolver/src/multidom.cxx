@@ -228,15 +228,33 @@ extern "C" void callCPPRecordPressuresAndFlowsInHistoryArrays()
 
 void boundaryConditionManager::writePHistAndQHistRCR()
 {
+  // Open a file writer to append to Phist
   basicFileWriter phistrcr_writer;
-  phistrcr_writer.setFileName("PHistRCR2.dat");
-  // phistrcr_writer.setArrayToWriteOut(pressurehist);
-  phistrcr_writer.writeHistories_rcr(boundaryConditions);
+  phistrcr_writer.setFileName("PHistRCR.dat");
 
-  // basicFileWriter qhistrcr_writer;
-  // qhistrcr_writer.setFileName("QHistRCR2.dat");
-  // // qhistrcr_writer.setArrayToWriteOut(flowhist);
-  // qhistrcr_writer.writeHistories_rcr(boundaryConditions);
+  // Open a file writer to append to Qhist
+  basicFileWriter qhistrcr_writer;
+  qhistrcr_writer.setFileName("QHistRCR.dat");
+
+  // Loop over all the updates since the last restart was written:
+  for (int i=timdat.lstep-outpar.ntout+int(1); i<timdat.lstep+int(1); i++)
+  {
+    phistrcr_writer.writeStepIndex(i);
+    qhistrcr_writer.writeStepIndex(i);
+
+    // Loop the boundary conditions looking for the RCRs
+    for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+    {
+      if (typeid(**iterator)==typeid(RCR))
+      {
+        // Write the pressure and flow for this timestep (indexed i)
+        phistrcr_writer.writeToFile((*iterator)->pressurehist[i]);
+        qhistrcr_writer.writeToFile((*iterator)->flowhist[i]);
+      }
+    }
+    phistrcr_writer.writeEndLine();
+    qhistrcr_writer.writeEndLine();
+  }
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPWritePHistAndQHistRCR()

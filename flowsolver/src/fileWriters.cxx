@@ -1,21 +1,18 @@
+#include <iomanip>
 #include "fileWriters.hxx"
 
-void basicFileWriter::writeHistories_rcr(std::vector<std::unique_ptr<boundaryCondition>> &boundaryConditions)
+
+void basicFileWriter::writeStepIndex(int stepIndex)
 {
+	(*fileHandle) << std::setw(10) << std::left << stepIndex;
+}
 
+void basicFileWriter::writeToFile(double valueToWrite)
+{
+	(*fileHandle) << " " << std::setw(17) << std::left << valueToWrite;
+}
 
-  (*fileHandle) << timdat.lstep;
-
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
-  {
-    if (typeid(**iterator)==typeid(RCR))
-    {
-
-      // Write the data for the surface
-      (*fileHandle) << " " << (*iterator)->pressurehist[timdat.lstep];
-    }
-  }
-
-  // Write the end-of-line info
-  (*fileHandle) << std::endl;
+void basicFileWriter::writeEndLine()
+{
+	(*fileHandle) << std::endl;
 }

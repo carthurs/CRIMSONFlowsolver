@@ -20,6 +20,8 @@ public:
 	{
 	    fileName = fileNameIn;
 		fileHandle = new std::ofstream(fileName, std::ios::app);
+
+		fileHandle->precision(15);
 		
 		if (!fileHandle->is_open())
 		{
@@ -28,20 +30,13 @@ public:
 		}
 	}
 
-	// void setArrayToWriteOut(double* arrayName)
-	// {
-	// 	arrayToWriteOut = arrayName;
-	// }
-
-	void writeHistories_rcr(std::vector<std::unique_ptr<boundaryCondition>> &boundaryConditions);
-
-	// void setNumColumns(int numberOfColumns)
-	// {
-	// 	numColumns = numberOfColumns;
-	// }
+	void writeStepIndex(int stepIndex);
+	void writeToFile(double valueToWrite);
+	void writeEndLine();
 	
 	~basicFileWriter()
 	{
+		fileHandle->close();
 		delete fileHandle;
 	}
 protected:

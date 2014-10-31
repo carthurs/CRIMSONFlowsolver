@@ -1284,7 +1284,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call nrcr%updxvars(lstep)
 
         ! write pressure and flow history arrays
-        call nrcr%writexvars(lstep)
+        ! call nrcr%writexvars(lstep)
 
 
     endif
@@ -1293,7 +1293,11 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     call callCPPRecordPressuresAndFlowsInHistoryArrays()
 
     ! wrt dta
-    call callCPPWritePHistAndQHistRCR()
+    if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
+        if(myrank.eq.zero) then
+            call callCPPWritePHistAndQHistRCR()
+        endif
+    end if 
     !Now the files are in the computer!
 
 

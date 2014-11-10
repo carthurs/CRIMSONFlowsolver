@@ -3,6 +3,13 @@
 
 // This is a dummy version of this file, in case we're not running SCONS
 // (SCONS does the generation of the real version of this file).
+//
+// Note that you will never see buildNumber or buildTimestamp be anything
+// but "UNKNOWN" here, because scons auto-generates a new version of this
+// file, compiles it, then resets it to the UNKONWN state.
+//
+// This is so that building using Make doesn't cause confusion
+// due to incorrect build info getting placed in the binaries.
 #include <cstdio>
 
 void getBuildNumber(char* buildNumber)

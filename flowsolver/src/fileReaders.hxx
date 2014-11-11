@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <map>
+#include <cstdlib>
 #include "gtest/gtest_prod.h"
 
 class abstractFileReader
@@ -28,7 +29,7 @@ public:
 		if (fileHandle->fail())
 		{
 			std::cout << "Failed to open " << fileName << "!" << std::endl;
-			exit(1);
+			std::exit(1);
 		}
 	}
 

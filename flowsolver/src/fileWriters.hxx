@@ -19,7 +19,7 @@ public:
 	void setFileName(std::string fileNameIn)
 	{
 	    fileName = fileNameIn;
-		fileHandle = new std::ofstream(fileName, std::ios::app);
+		fileHandle = new std::ofstream(fileName.c_str(), std::ios::app);
 
 		fileHandle->precision(15);
 		

@@ -89,17 +89,17 @@ void rcrtReader::readAndSplitMultiSurfaceInputFile()
 
 		numDataRCR.push_back(atoi((*currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
-		r1.push_back(std::stod((*currentLineSplitBySpaces)[0].c_str()));
+		r1.push_back(atof((*currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
-		c.push_back(std::stod((*currentLineSplitBySpaces)[0].c_str()));
+		c.push_back(atof((*currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
-		r2.push_back(std::stod((*currentLineSplitBySpaces)[0].c_str()));
+		r2.push_back(atof((*currentLineSplitBySpaces)[0].c_str()));
 
 		for(int ii=0; ii<numDataRCR.back(); ii++)
 		{
 			readNextLine();
-			tempTimeAndPdistval.first = std::stod((*currentLineSplitBySpaces)[0].c_str());
-			tempTimeAndPdistval.second = std::stod((*currentLineSplitBySpaces)[1].c_str());
+			tempTimeAndPdistval.first = atof((*currentLineSplitBySpaces)[0].c_str());
+			tempTimeAndPdistval.second = atof((*currentLineSplitBySpaces)[1].c_str());
 			tempTimeDataPdist.push_back(tempTimeAndPdistval);
 		}
 		timeDataPdist.push_back(tempTimeDataPdist);

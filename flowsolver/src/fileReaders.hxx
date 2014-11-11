@@ -28,7 +28,7 @@ public:
 		if (fileHandle->fail())
 		{
 			std::cout << "Failed to open " << fileName << "!" << std::endl;
-			std::exit(1);
+			exit(1);
 		}
 	}
 

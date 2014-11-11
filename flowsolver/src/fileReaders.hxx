@@ -23,7 +23,7 @@ public:
 	void setFileName(std::string fileNameIn)
 	{
 	    fileName = fileNameIn;
-		fileHandle = new std::ifstream(fileName);
+		fileHandle = new std::ifstream(fileName.c_str());
 		
 		if (fileHandle->fail())
 		{

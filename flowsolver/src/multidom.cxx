@@ -131,6 +131,7 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
   
   for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
   {
+    // Get the factory to make the boundary conditions, and fill them into the boundaryConditions vector
     boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
   }
 }

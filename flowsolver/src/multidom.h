@@ -106,7 +106,7 @@ private:
 class boundaryConditionFactory
  {
  public:
-	static std::unique_ptr<boundaryCondition> createBoundaryCondition(int surfaceIndex, std::string boundaryType);
+	static std::auto_ptr<boundaryCondition> createBoundaryCondition(int surfaceIndex, std::string boundaryType);
  };
 
 class RCR : public boundaryCondition
@@ -211,7 +211,7 @@ public:
     void setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList);
     
     void getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled);
-    std::vector<std::unique_ptr<boundaryCondition>>* getBoundaryConditions();
+    std::vector<std::auto_ptr<boundaryCondition>>* getBoundaryConditions();
 
     void computeAllImplicitCoeff_solve(int timestepNumber);
     void computeAllImplicitCoeff_update(int timestepNumber);
@@ -228,7 +228,7 @@ public:
     boundaryConditionManager()
     {
     }
-    std::vector<std::unique_ptr<boundaryCondition>> boundaryConditions;
+    std::vector<std::auto_ptr<boundaryCondition>> boundaryConditions;
     std::map<int,std::pair<double,double>> implicitCoefficientMap;
     boundaryConditionFactory factory;
 

@@ -10,6 +10,7 @@
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 #include <typeinfo>
+// #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
@@ -23,16 +24,16 @@ double boundaryCondition::getdp_dq()
   return dp_dq;
 }
 
- std::unique_ptr<boundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
+ std::auto_ptr<boundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
  {
 
   if (boundaryType.compare("rcr") == int(0))
   {
-    return std::unique_ptr<boundaryCondition> (new RCR(surfaceIndex));
+    return std::auto_ptr<boundaryCondition> (new RCR(surfaceIndex));
   }
   else if (boundaryType.compare("netlist") == int(0))
     {
-    return std::unique_ptr<boundaryCondition> (new netlist(surfaceIndex));
+    return std::auto_ptr<boundaryCondition> (new netlist(surfaceIndex));
     }
   else
   {
@@ -136,7 +137,7 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
   }
 }
 
-std::vector<std::unique_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
+std::vector<std::auto_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
 {
     return &boundaryConditions;
 }
@@ -532,7 +533,7 @@ void multidom_initialise(){
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->setSurfaceList(surfaceList);
   
-  std::vector<std::unique_ptr<boundaryCondition>>* retrievedBoundaryConditions;
+  std::vector<std::auto_ptr<boundaryCondition>>* retrievedBoundaryConditions;
   retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();
   
 

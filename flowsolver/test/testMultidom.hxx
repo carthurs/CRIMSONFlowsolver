@@ -13,7 +13,7 @@
 	  // is empty.
 
 	   rcrtReader* rcrtReader_instance;
-	   std::vector<std::unique_ptr<boundaryCondition>>* retrievedBoundaryConditions;
+	   std::vector<std::auto_ptr<boundaryCondition>>* retrievedBoundaryConditions;
 	   boundaryConditionManager* boundaryConditionManager_instance;
 	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 

@@ -14,6 +14,7 @@
 class abstractFileReader
 {
 	friend class testMain;
+	friend class testFileReaders;
  	FRIEND_TEST(testMain, checkSimpleShortSimulationWithRCRs);
 public:
 	abstractFileReader()
@@ -40,6 +41,7 @@ public:
 	
 	~abstractFileReader()
 	{
+		fileHandle->close();
 		delete fileHandle;
 		delete currentLineSplitBySpaces;
 		// delete fileName;
@@ -85,6 +87,8 @@ public:
 
 class rcrtReader : public abstractMultipleSurfaceFileReader
 {
+	friend class testFileReaders;
+	friend class testMultidom;
 public:
 	static rcrtReader* Instance()
 	{
@@ -106,6 +110,21 @@ private:
 	rcrtReader()
 	{
 	}
+
+	// For testing purposes, to clear the static class out before the next test begins
+    // Note that you'll have to make the test class a friend in order to use this..
+    // I've made it private on purpose!
+    void tearDown()
+    {
+    	numDataRCR.clear();
+    	r1.clear();
+    	c.clear();
+    	r2.clear();
+    	timeDataPdist.clear();
+    	currentLineSplitBySpaces->clear();
+    	dataReadFromFile.clear();
+    	dataReadFromFile_line.clear();
+    }
 
 	int pdmax;
 	std::vector<int> numDataRCR;

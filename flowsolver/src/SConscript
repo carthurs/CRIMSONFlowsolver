@@ -34,7 +34,8 @@ sources=string.split("""
 	multidom.cxx
 	fileReaders.cxx
 	fileWriters.cxx
-	fortranPointerManager.cxx 
+	fortranPointerManager.cxx
+	debuggingToolsForCpp.cxx
 	blend.c
 	blendDrv.c
 	Bn.c

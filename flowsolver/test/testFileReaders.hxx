@@ -11,9 +11,10 @@
 	 protected:
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
+	 rcrtReader* rcrtReader_instance;
 
 	  testFileReaders() {
-		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+		rcrtReader_instance = rcrtReader::Instance();
 		rcrtReader_instance->setFileName("rcrt_test.dat");
 		rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
 	  }
@@ -33,6 +34,7 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
+	    rcrtReader_instance->tearDown();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

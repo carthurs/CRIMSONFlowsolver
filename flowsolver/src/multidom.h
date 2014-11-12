@@ -204,8 +204,16 @@ public:
  
     static boundaryConditionManager* Instance()
 	{
-		static boundaryConditionManager* instance = new boundaryConditionManager();
+		if (!instance) {
+			instance = new boundaryConditionManager();
+		}
 		return instance;
+	}
+
+	static void Term()
+	{
+		delete instance;
+		instance = 0;
 	}
 	
     void setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList);
@@ -237,11 +245,10 @@ public:
     // I've made it private on purpose!
     void tearDown()
     {
-    	boundaryConditions.clear();
-    	implicitCoefficientMap.clear();
+		Term();
     }
-     
-     
+
+    static boundaryConditionManager* instance;
  };
 
 void multidom_initialise();

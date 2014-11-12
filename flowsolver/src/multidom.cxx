@@ -10,8 +10,9 @@
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 #include <typeinfo>
-// #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
+// #include <boost/interprocess/smart_ptr/auto_ptr.hpp>
 
+boundaryConditionManager* boundaryConditionManager::instance = 0;
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
 double boundaryCondition::getHop()

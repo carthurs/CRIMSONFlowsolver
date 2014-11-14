@@ -129,9 +129,7 @@ public:
 		r1 = rcrtReader_instance->getR1()[indexOfThisRCR];
 		c = rcrtReader_instance->getC()[indexOfThisRCR];
 		r2 = rcrtReader_instance->getR2()[indexOfThisRCR];
-	MAGICAL_DEBUG();
 		timeDataPdist = rcrtReader_instance->getTimeDataPdist()[indexOfThisRCR];
-	MAGICAL_DEBUG();
 		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[indexOfThisRCR];
 	}
 	

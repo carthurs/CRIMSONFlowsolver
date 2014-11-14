@@ -48,15 +48,13 @@
 
 		void runSimulation()
 		{
-			int fake_argc = 2;
-			char *fake_argv[] = {"testMain","1","solver.inp",NULL};
-
 		   int rank;
 		   int numProcsTotal,numProcs;
 		   int ierr = 0;
 		   char pathToProcsCaseDir[100];
 
-		   MPI_Init(&fake_argc,(char***)&fake_argv);
+		   // Moved this to the gtest_main.cc
+		   // MPI_Init(&fake_argc,(char***)&fake_argv);
 
 		   // save the communicator
 		   MPI_Comm iNewComm_C = MPI_COMM_WORLD;
@@ -65,17 +63,19 @@
 		   MPI_Comm_size(iNewComm_C, &numProcsTotal);
 		   MPI_Comm_rank(iNewComm_C, &rank);
 
-		   if(fake_argc > 2 ){
-			   static volatile int debuggerPresent =0;
-			   while (!debuggerPresent ); // assign debuggerPresent=1
-		   }
+		   // Moved this to the gtest_main.cc
+		   // if(fake_argc > 2 ){
+			  //  static volatile int debuggerPresent =0;
+			  //  while (!debuggerPresent ); // assign debuggerPresent=1
+		   // }
 
-		   if ( fake_argc < 2 ) {
-		      if ( 0 == rank ) {
-		         std::cout << "Usage: " << fake_argv[0] << "<.inp file> <optional debug flag> \n";
-		      }
-		      // return 0;
-		   }
+		   // Dont need this during tests:
+		   // if ( argc < 2 ) {
+		   //    if ( 0 == rank ) {
+		   //       std::cout << "Usage: " << fake_argv[0] << "<.inp file> <optional debug flag> \n";
+		   //    }
+		   //    // return 0;
+		   // }
 
 		   // read configuration file
 		   input_fform();
@@ -116,7 +116,10 @@
 
 		   itrdrv_finalize();
 
-		   MPI_Finalize();
+		   // Moved this to the gtest_main.cc
+		   // MPI_Finalize();
+
+
 		   // return ierr;
 		}
 

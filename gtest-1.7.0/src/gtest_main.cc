@@ -28,7 +28,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
-
+#include "mpi.h"
 #include "gtest/gtest.h"
 
 
@@ -56,7 +56,17 @@ GTEST_API_ int main(int argc, char **argv) {
 	  }
   }
 
+  // Fake command line input for the flowsolver, so we don't have to pass it:
+  int fake_argc = 2;
+  char *fake_argv[] = {"testMain","1","solver.inp",NULL};
+  MPI_Init(&fake_argc,(char***)&fake_argv);
+  
+  int returnValue = 0;
+
   printf("Running main() from gtest_main.cc\n");
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  returnValue = RUN_ALL_TESTS();
+
+  MPI_Finalize();
+  return returnValue;
 }

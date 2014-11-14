@@ -128,8 +128,8 @@ public:
 		r1 = rcrtReader_instance->getR1()[indexOfThisRCR];
 		c = rcrtReader_instance->getC()[indexOfThisRCR];
 		r2 = rcrtReader_instance->getR2()[indexOfThisRCR];
-		timeDataPdist = rcrtReader_instance->rcrtReader::getTimeDataPdist()[indexOfThisRCR];
-		lengthOftimeDataPdist = rcrtReader_instance->rcrtReader::getNumDataRCR()[indexOfThisRCR];
+		timeDataPdist = rcrtReader_instance->getTimeDataPdist()[indexOfThisRCR];
+		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[indexOfThisRCR];
 	}
 	
 	void computeImplicitCoeff_solve(int timestepNumber);

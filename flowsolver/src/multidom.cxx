@@ -575,6 +575,7 @@ void multidom_iter_finalise(){
 }
 
 void multidom_finalise(){
-
+  boundaryConditionManager::Instance()->Term();
+  rcrtReader::Instance()->Term();
 }
 

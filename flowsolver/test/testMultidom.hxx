@@ -138,7 +138,7 @@
 	    
 	    std::cout << "here2" <<std::endl;
 
-	    boundaryConditionManager::Term();
+	    boundaryConditionManager_instance->Term();
 	    fortranPointerManager_instance->tearDown();
 	    rcrtReader_instance->tearDown();
 	    retrievedBoundaryConditions = 0;

@@ -10,7 +10,6 @@
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 #include <typeinfo>
-// #include <boost/interprocess/smart_ptr/auto_ptr.hpp>
 
 boundaryConditionManager* boundaryConditionManager::instance = 0;
 
@@ -25,16 +24,17 @@ double boundaryCondition::getdp_dq()
   return dp_dq;
 }
 
- std::auto_ptr<boundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
+ boost::shared_ptr<boundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
  {
 
   if (boundaryType.compare("rcr") == int(0))
   {
-    return std::auto_ptr<boundaryCondition> (new RCR(surfaceIndex));
+    
+    return boost::shared_ptr<boundaryCondition> (new RCR(surfaceIndex));
   }
   else if (boundaryType.compare("netlist") == int(0))
     {
-    return std::auto_ptr<boundaryCondition> (new netlist(surfaceIndex));
+    return boost::shared_ptr<boundaryCondition> (new netlist(surfaceIndex));
     }
   else
   {
@@ -91,16 +91,21 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* implicitCoeffs_toBeF
   // dereferencing of that pointer manually to fill the whole array, but with the FORTRAN column-major array structure,
   // as opposed to the C++ row-major standard.
   int writeLocation = 0;
+  
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(RCR))
     {
+      
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
       // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
+      
       implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
+      
       writeLocation++;
     }
   }
+  
 }
 // ---WRAPPED BY--->
 extern "C" void callCppGetImplicitCoeff_rcr(double*& implicitCoeffs_toBeFilled)
@@ -130,15 +135,15 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
 {
   // Build a factory
   boundaryConditionFactory factory;
+  boost::shared_ptr<boundaryCondition> tempy;
   
   for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
   {
-    // Get the factory to make the boundary conditions, and fill them into the boundaryConditions vector
     boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
   }
 }
 
-std::vector<std::auto_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
+std::vector<boost::shared_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
 {
     return &boundaryConditions;
 }
@@ -534,7 +539,7 @@ void multidom_initialise(){
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->setSurfaceList(surfaceList);
   
-  std::vector<std::auto_ptr<boundaryCondition>>* retrievedBoundaryConditions;
+  std::vector<boost::shared_ptr<boundaryCondition>>* retrievedBoundaryConditions;
   retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();
   
 

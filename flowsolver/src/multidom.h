@@ -19,6 +19,8 @@
 #include <fstream>
 #include <stdexcept>
 #include "gtest/gtest_prod.h"
+#include "debuggingToolsForCpp.hxx"
+#include <boost/shared_ptr.hpp>
  
  
  class boundaryCondition
@@ -88,7 +90,7 @@ public:
  		return -3.14159265;
  	}
 
- 	~boundaryCondition()
+ 	virtual ~boundaryCondition()
  	{
  	    delete[] flowhist;
  	    delete[] pressurehist;
@@ -106,14 +108,14 @@ private:
 class boundaryConditionFactory
  {
  public:
-	static std::auto_ptr<boundaryCondition> createBoundaryCondition(int surfaceIndex, std::string boundaryType);
+	static boost::shared_ptr<boundaryCondition> createBoundaryCondition(int surfaceIndex_in, std::string boundaryType);
  };
 
 class RCR : public boundaryCondition
 {
 public:
-	RCR(int surfaceIndex)
-	: boundaryCondition(surfaceIndex)
+	RCR(int surfaceIndex_in)
+	: boundaryCondition(surfaceIndex_in)
 	{
 		initialiseModel();
 
@@ -169,8 +171,8 @@ private:
 class netlist : public boundaryCondition
 {
 public:
-	netlist(int surfaceIndex)
-	: boundaryCondition(surfaceIndex)
+	netlist(int surfaceIndex_in)
+	: boundaryCondition(surfaceIndex_in)
 	{
 		initialiseModel();
 	}
@@ -219,7 +221,7 @@ public:
     void setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList);
     
     void getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled);
-    std::vector<std::auto_ptr<boundaryCondition>>* getBoundaryConditions();
+    std::vector<boost::shared_ptr<boundaryCondition>>* getBoundaryConditions();
 
     void computeAllImplicitCoeff_solve(int timestepNumber);
     void computeAllImplicitCoeff_update(int timestepNumber);
@@ -236,7 +238,7 @@ public:
     boundaryConditionManager()
     {
     }
-    std::vector<std::auto_ptr<boundaryCondition>> boundaryConditions;
+    std::vector<boost::shared_ptr<boundaryCondition>> boundaryConditions;
     std::map<int,std::pair<double,double>> implicitCoefficientMap;
     boundaryConditionFactory factory;
 

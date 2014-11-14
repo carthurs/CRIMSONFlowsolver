@@ -6,13 +6,13 @@
 #include <cstdarg>
 
 // Call MAGICAL_DEBUG() on a line to get that linenumber printed to console when the line is reached.
-#define MAGICAL_DEBUG() magicalDebuggingUnicorn.writeToConsoleHere(__LINE__,__FILE__);
+#define MAGICAL_DEBUG() magicalDebuggingUnicorn::Instance()->writeToConsoleHere(__LINE__,__FILE__);
 
 // To use these, call MAGICAL_whatever_PRINTER(4, typeWhatever1, typeWhatever2, typeWhatever3, typeWhatever4)
 // DO NOT MIX TYPES IN ONE CALL - DOUBLES ONLY IN MAGICAL_DOUBLE_PRINTER, INTS ONLY IN MAGICAL_INT_PRINTER
 // -- IF YOU MIX, THEN THE WHOLE CALL BEHAVES IN AN UNDEFINED WAY.
-#define MAGICAL_DOUBLE_PRINTER(...) magicalDebuggingUnicorn.printSomeVariables<double>(__LINE__, __FILE__, __VA_ARGS__)
-#define MAGICAL_INT_PRINTER(...) magicalDebuggingUnicorn.printSomeVariables<int>(__LINE__, __FILE__, __VA_ARGS__)
+#define MAGICAL_DOUBLE_PRINTER(...) magicalDebuggingUnicorn::Instance()->printSomeVariables<double>(__LINE__, __FILE__, __VA_ARGS__);
+#define MAGICAL_INT_PRINTER(...) magicalDebuggingUnicorn::Instance()->printSomeVariables<int>(__LINE__, __FILE__, __VA_ARGS__);
 
 // HOW TO USE:
 //
@@ -24,10 +24,15 @@
 // * or write MAGICAL_INT_PRINTER(numberOfInts,myInt1,myInt2,myInt3, ... , myInt_numberOfInts )
 // * or MAGICAL_DOUBLE_PRINTER(numberOfDoubles,myDouble1, ... , myDouble_numberOfDoubles )
 
-
 class magicalDebuggingUnicorn
 {
 public:
+
+	static magicalDebuggingUnicorn* Instance()
+	{
+		static magicalDebuggingUnicorn* instance = new magicalDebuggingUnicorn();
+		return instance;
+	}
 	
 	// File line is obtained from preprocessor macros
 	void writeToConsoleHere(int fileLine, const char* fileName)

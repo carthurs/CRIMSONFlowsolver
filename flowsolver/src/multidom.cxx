@@ -135,7 +135,6 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
 {
   // Build a factory
   boundaryConditionFactory factory;
-  boost::shared_ptr<boundaryCondition> tempy;
   
   for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
   {

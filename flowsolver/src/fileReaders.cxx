@@ -1,5 +1,8 @@
 #include "fileReaders.hxx"
 
+rcrtReader* rcrtReader::instance = 0;
+
+
 // Reads a file line, returns a successful-read bool.
 // Stores the read data in a member std::vector<std::string>, which is
 // the read line from the file, split by spaces.

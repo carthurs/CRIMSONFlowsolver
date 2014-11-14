@@ -39,7 +39,7 @@ public:
 		numColumns = numberOfColumns;
 	}
 	
-	~abstractFileReader()
+	virtual ~abstractFileReader()
 	{
 		fileHandle->close();
 		delete fileHandle;
@@ -92,10 +92,18 @@ class rcrtReader : public abstractMultipleSurfaceFileReader
 public:
 	static rcrtReader* Instance()
 	{
-		static rcrtReader* instance = new rcrtReader();
+		if (!instance)
+		{
+			instance = new rcrtReader();
+		}
 		return instance;
 	}
 
+	static void Term()
+	{
+		delete instance;
+		instance = 0;
+	}
 
 	void readAndSplitMultiSurfaceInputFile();
 	int getPdmax();
@@ -105,6 +113,7 @@ public:
 	std::vector<std::vector<std::pair<double,double>>> getTimeDataPdist();
 	std::vector<int> getNumDataRCR();
 private:
+	static rcrtReader* instance;
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Instance().
 	rcrtReader()
@@ -116,14 +125,15 @@ private:
     // I've made it private on purpose!
     void tearDown()
     {
-    	numDataRCR.clear();
-    	r1.clear();
-    	c.clear();
-    	r2.clear();
-    	timeDataPdist.clear();
-    	currentLineSplitBySpaces->clear();
-    	dataReadFromFile.clear();
-    	dataReadFromFile_line.clear();
+    	Term();
+    	// numDataRCR.clear();
+    	// r1.clear();
+    	// c.clear();
+    	// r2.clear();
+    	// timeDataPdist.clear();
+    	// currentLineSplitBySpaces->clear();
+    	// dataReadFromFile.clear();
+    	// dataReadFromFile_line.clear();
     }
 
 	int pdmax;

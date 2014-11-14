@@ -86,6 +86,8 @@
 	    surfaceList.push_back(std::pair <int,std::string> (7,"netlist"));
 	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
 
+	    MAGICAL_INT_PRINTER(3,surfaceList.at(0).first,surfaceList.at(1).first,surfaceList.at(2).first);
+
 	    
 
 	    // get the boundary condition manager

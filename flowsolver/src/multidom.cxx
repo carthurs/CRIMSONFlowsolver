@@ -575,7 +575,14 @@ void multidom_iter_finalise(){
 }
 
 void multidom_finalise(){
+  // MAGICAL_DEBUG();
+  // std::vector<boost::shared_ptr<boundaryCondition>>* BCs = boundaryConditionManager::Instance()->getBoundaryConditions();
+  // MAGICAL_DEBUG();
+  // std::cout << "dbl" << BCs->at(0)->tempDataTestFunction() << std::endl;
+  // MAGICAL_DEBUG();
+
   boundaryConditionManager::Instance()->Term();
+  // MAGICAL_DEBUG();
   rcrtReader::Instance()->Term();
 }
 

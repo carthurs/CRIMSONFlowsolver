@@ -72,8 +72,9 @@ public:
  	{
  	     hstep = inpdat.nstep[0] + timdat.lstep;
  	     delt = inpdat.Delt[0];
- 	     flowhist = new double [hstep];
-         pressurehist = new double [hstep];
+ 	     // allocate arrays with +1 to size, in case hstep=0 (that would be undefined behaviour under new double)
+ 	     flowhist = new double [hstep+1];
+         pressurehist = new double [hstep+1];
          
  	     surfaceIndex = surfaceIndex_in;
  	     dp_dq = 0.0;
@@ -247,7 +248,7 @@ public:
     // I've made it private on purpose!
     void tearDown()
     {
-		Term();
+		boundaryConditionManager::Instance()->Term();
     }
 
     static boundaryConditionManager* instance;

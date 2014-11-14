@@ -116,6 +116,8 @@
 
 		   itrdrv_finalize();
 
+		   multidom_finalise();
+
 		   // Moved this to the gtest_main.cc
 		   // MPI_Finalize();
 

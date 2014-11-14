@@ -82,6 +82,10 @@ public:
 	abstractMultipleSurfaceFileReader()
 	{
 	}
+
+	virtual ~abstractMultipleSurfaceFileReader()
+	{
+	}
 };
 
 

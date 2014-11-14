@@ -104,6 +104,8 @@ int main(int argc, char * argv[]) {
 
    itrdrv_finalize();
 
+   multidom_finalise();
+
    MPI_Finalize();
    return ierr;
 }

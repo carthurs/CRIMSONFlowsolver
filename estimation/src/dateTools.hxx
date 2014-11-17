@@ -58,6 +58,8 @@ public:
 		theDate = currentDate();
 	}
 
+	void enableExpiryDate();
+
 	// These friendly functions take ints as they'd appear on a human calendar
 	// (i.e. they hide any zero-indexing from you).
 	void setExpiryDayOfMonth(int day_in);
@@ -68,6 +70,7 @@ public:
 	void writeExpiryDate();
 private:
 	currentDate theDate;
+	int thisBuildHasAnExpiryDate = int(0);
 
 };
 

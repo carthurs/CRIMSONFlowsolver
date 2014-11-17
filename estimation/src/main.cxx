@@ -47,19 +47,15 @@ int main(int argc, char * argv[]) {
    getBuildTime(buildTime);
    std::cout << "This is Simvascular version " << buildNumber << ", built at " << buildTime << "." << std::endl;
 
-   // // UNCOMMENT TO DO A BUILD WITH AN EXPIRY DATE!
-   // // Expiry date check:
-   // expiryDate expiry = expiryDate();
-   // expiry.setExpiryDayOfMonth(14);
-   // expiry.setExpiryMonthOfYear(11);
-   // expiry.setExpiryYear(2014);
-   // expiry.checkWhetherExpiryDatePassed();
-   
+   // Expiry date check (uncomment enableExpiryDate() call below to enable):
+   expiryDate expiry = expiryDate();
+   expiry.setExpiryDayOfMonth(14);
+   expiry.setExpiryMonthOfYear(11);
+   expiry.setExpiryYear(2014);
+   // UNCOMMENT TO DO A BUILD WITH AN EXPIRY DATE!
+   // expiry.enableExpiryDate();
+   expiry.checkWhetherExpiryDatePassed();
 
-   // currentDate theDate = currentDate();
-   // std::cout << "the year is " << theDate.now->tm_year <<std::endl;
-   // std::cout << "the month is " << theDate.now->tm_mon <<std::endl;
-   // std::cout << "the day is " << theDate.now->tm_mday <<std::endl;
 
    if(argc > 2 ){
 	   static volatile int debuggerPresent =0;

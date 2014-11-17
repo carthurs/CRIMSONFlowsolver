@@ -16,17 +16,29 @@ void expiryDate::setExpiryYear(int year_in)
 	year = year_in;
 }
 
+void expiryDate::enableExpiryDate()
+{
+	thisBuildHasAnExpiryDate = int(1);
+}
+
 void expiryDate::checkWhetherExpiryDatePassed()
 {
-	writeExpiryDate();
+	if (thisBuildHasAnExpiryDate)
+	{
+		writeExpiryDate();
 
-	if (theDate.getYear() >= year &&
-		theDate.getMonth() >= month &&
-		theDate.getDay() > day)
-		{
-		    std::cout << "This copy of Simvascular Flowsolver has expired." << std::endl;
-		    std::exit(1);
-	    }
+		if (theDate.getYear() >= year &&
+			theDate.getMonth() >= month &&
+			theDate.getDay() > day)
+			{
+			    std::cout << "This copy of Simvascular Flowsolver has expired." << std::endl;
+			    std::exit(1);
+		    }
+	}
+	else
+	{
+		std::cout << "This Simvascular Flowsolver binary has no built-in expiry date." << std::endl;
+	}
 }
 
 void expiryDate::writeExpiryDate()

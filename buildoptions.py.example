@@ -23,6 +23,8 @@ MAKE_WITH_ESTIMATOR = 1
 #TARGET_POSTSOLVER = postsolver
 #TARGET_PRESOLVER = presolver
 
+WITH_ELECTRIC_FENCE = 0
+
 # This should be set to zero on the sgi
 EXTRA_CONSOLE_OUTPUT_ON = 0
 
@@ -52,7 +54,7 @@ CXX_LIBS    = ''
 CXX_LIBS    = '-lrt'
 F90_LIBS    = ['mpi_f90']
  
-HOME_DIR = '/home/carthurs/workspace/merged_simvascular/simvascular_flowsolver_estimator'
+HOME_DIR = '/home/USERNAME/workspace/merged_simvascular/simvascular_flowsolver_estimator'
 EXTERNAL_LIB_DIR = HOME_DIR+'/external/x64-linux'
  
 SOLVERIO_INCDIR   = [HOME_DIR+'/solverio/src']
@@ -132,7 +134,7 @@ LUA_LIBSDIR = [VERDANDI_TOP+'/include/lua/src/']
 LUA_LIBSLIST = ['lua']
 # LUA_LIBSLIST = 'liblua.a'
 
-PETSC_TOP    = '/home/carthurs/workspace/merged_simvascular/petsc-3.2-p7'
+PETSC_TOP    = '/home/USERNAME/workspace/merged_simvascular/petsc-3.2-p7'
 #PETSC_BUILD = arch-linux-intel-refblaslapack-opt
 PETSC_BUILD = 'arch-linux-intel-intelMKL-opt'
 PETSC_INCDIR = [PETSC_TOP+'/include',PETSC_TOP+'/'+PETSC_BUILD+'/include']
@@ -170,6 +172,15 @@ GOOGLETEST_TOP    = HOME_DIR+'/../../../Software/googleTest/gtest-1.7.0'
 GOOGLETEST_INCDIR = [GOOGLETEST_TOP+'/include']
 GOOGLETEST_SRC    = [GOOGLETEST_TOP+'/src']
 GOOGLETEST_LIBSLIST = ['test_flowsolver']
+
+if WITH_ELECTRIC_FENCE == 1:
+ EFENCE_TOP = '/home/USERNAME/Software/efence/electric-fence-2.1.13'
+ EFENCE_INCDIR = [EFENCE_TOP]
+ EFENCE_LIBSLIST=['efence']
+else:
+ EFENCE_TOP = ''
+ EFENCE_INCDIR = []
+ EFENCE_LIBSLIST=[]
 
 # %.$(OBJECTEXT): %.cxx
 # 	$(CXX) $(CXXFLAGS) -c $<

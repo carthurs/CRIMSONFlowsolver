@@ -2,12 +2,16 @@
 #define DATETOOLS_HXX_
 
 #include <ctime>
+#include <cstdlib>
 
 class date
 {
 public:
 	date()
 	{
+		year = -1;
+		month = -1;
+		day = -1;
 	}
 
 	int getDay()
@@ -27,9 +31,9 @@ public:
 
 protected:
 	time_t time;
-	int year = -1;
-	int month = -1;
-	int day = -1;
+	int year;
+	int month;
+	int day;
 };
 
 class currentDate : public date
@@ -56,6 +60,7 @@ public:
 	expiryDate()
 	{
 		theDate = currentDate();
+		thisBuildHasAnExpiryDate = int(0);
 	}
 
 	void enableExpiryDate();
@@ -70,7 +75,7 @@ public:
 	void writeExpiryDate();
 private:
 	currentDate theDate;
-	int thisBuildHasAnExpiryDate = int(0);
+	int thisBuildHasAnExpiryDate;
 
 };
 

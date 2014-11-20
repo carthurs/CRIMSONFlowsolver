@@ -150,7 +150,7 @@ PETSC_LIBSLIST = ['petsc']
 BOOSTCPP_TOP    = HOME_DIR+'/../boost_1_40_0'
 BOOSTCPP_INCDIR = [BOOSTCPP_TOP]
 BOOSTCPP_LIBSDIR = [BOOSTCPP_TOP+'/boost_build/lib']
-BOOSTCPP_LIBSLIST = ['boost_thread-mt','boost_filesystem-mt']
+BOOSTCPP_LIBSLIST = ['boost_thread-mt','boost_system-mt','boost_filesystem-mt']
 
 VTK_TOP    = '/home/carthurs/workspace/merged_simvascular/vtk-5.8.0-install'
 VTK_INCDIR = [VTK_TOP+'/include/vtk-5.8']

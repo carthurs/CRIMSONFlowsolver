@@ -52,6 +52,7 @@ GTEST_API_ int main(int argc, char **argv) {
 	  if(!strcmp(argv[ii], debuggerFlag))
 	  {
 		   static volatile int debuggerPresent =0;
+       std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
 		   while (!debuggerPresent ); // assign debuggerPresent=1
 	  }
   }
@@ -61,12 +62,15 @@ GTEST_API_ int main(int argc, char **argv) {
   char *fake_argv[] = {"testMain","1","solver.inp",NULL};
   MPI_Init(&fake_argc,(char***)&fake_argv);
   
-  int returnValue = 0;
+  int testSuccess = 0;
 
   printf("Running main() from gtest_main.cc\n");
   testing::InitGoogleTest(&argc, argv);
-  returnValue = RUN_ALL_TESTS();
+
+  // We don't actually use testSuccess, but I'll leave it here in case
+  // we find a use for it later .
+  testSuccess = RUN_ALL_TESTS();
 
   MPI_Finalize();
-  return returnValue;
+  return 0;
 }

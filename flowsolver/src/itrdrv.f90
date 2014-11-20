@@ -157,13 +157,17 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             OPEN(1,FILE=fileName)
             READ(1,*) gnNo
             READ(1,*) nNo
-            ALLOCATE(ltg(nNo))
+            if (.not.allocated(ltg)) then
+              ALLOCATE(ltg(nNo))
+            endif
             READ(1,*) ltg
             CLOSE(1)
         ELSE
             gnNo = nshg
             nNo = nshg
-            ALLOCATE(ltg(nNo))
+            if (.not.allocated(ltg)) then
+              ALLOCATE(ltg(nNo))
+            endif
             DO i=1, nNo
                 ltg(i) = i
             END DO
@@ -286,7 +290,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             DO i=1, nshg
                 IF (IBITS(iBC(i),3,3) .NE. 0)  facenNo = facenNo + 1
             END DO
-            ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
+            if ((.not.allocated(gNodes)).and.(.not.allocated(sV))) then
+              ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
+            endif
             sV = 0D0
             j = 0
             DO i=1, nshg
@@ -340,7 +346,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                         facenNo = facenNo + 1
                     END IF
                 END DO
-                ALLOCATE(gNodes_s(facenNo), sV_s(nsd,facenNo))
+                if ((.not.allocated(gNodes_s)).and.(.not.allocated(sV_s))) then
+                  ALLOCATE(gNodes_s(facenNo), sV_s(nsd,facenNo))
+                endif
                 sV_s = 0D0
 
                 j = 0
@@ -396,10 +404,18 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
         END IF
 
-        allocate (aperm(nshg,nPermDims))
-        allocate (atemp(nshg,nTmpDims))
-        allocate (lhsP(4,nnz_tot))
-        allocate (lhsK(9,nnz_tot))
+        if (.not.allocated(aperm)) then
+          allocate (aperm(nshg,nPermDims))
+        endif
+        if (.not.allocated(atemp)) then
+          allocate (atemp(nshg,nTmpDims))
+        endif
+        if (.not.allocated(lhsP)) then
+          allocate (lhsP(4,nnz_tot))
+        endif
+        if (.not.allocated(lhsK)) then
+          allocate (lhsK(9,nnz_tot))
+        endif
 
         call readLesRestart( lesId,  aperm, nshg, myrank, lstep, nPermDims )
 
@@ -430,9 +446,15 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         !
         !  Assume all scalars have the same size needs
         !
-        allocate (apermS(nshg,nPermDimsS,nsclrsol))
-        allocate (atempS(nshg,nTmpDimsS))  !they can all share this
-        allocate (lhsS(nnz_tot,nsclrsol))
+        if (.not.allocated(apermS)) then
+          allocate (apermS(nshg,nPermDimsS,nsclrsol))
+        endif
+        if (.not.allocated(atempS)) then
+          allocate (atempS(nshg,nTmpDimsS))  !they can all share this
+        endif
+        if (.not.allocated(lhsS)) then
+          allocate (lhsS(nnz_tot,nsclrsol))
+        endif
     !
     ! actually they could even share with atemp but leave that for later
     !
@@ -457,9 +479,13 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     ! make copies of iBC        
     if (iheart .gt. int(0)) then
-        allocate(iBCd(nshg))      
+        if (.not.allocated(iBCd)) then
+          allocate(iBCd(nshg))
+        endif
         iBCd = iBC
-        allocate(iBCs(1,nshg))
+        if (.not.allocated(iBCs)) then
+          allocate(iBCs(1,nshg))
+        endif
         iBCs(1,:) = iBC
         surfids = hrt%getsurfids()
         do i = 1,nshg
@@ -663,7 +689,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         DEALLOCATE(sV_tmp)
     END IF
     
-    ALLOCATE(gNodes_tmp(facenNo), sV_tmp(nsd,facenNo))
+    if ((.not.allocated(gNodes_tmp)).and.(.not.allocated(sV_tmp))) then
+      ALLOCATE(gNodes_tmp(facenNo), sV_tmp(nsd,facenNo))
+    endif
 
     sV_tmp = 0D0
     gNodes_tmp = int(0)
@@ -1500,6 +1528,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
+    use debuggingTools
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -1591,7 +1620,6 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
     endif
 
-
     if ( ( ihessian .eq. 1 ) .and. ( numpe < 2 )  )then
 
         uhess = zero
@@ -1616,12 +1644,36 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         close (ihist)
         close (iforce)
     endif
+
+    IF (memLSflag .eq. 1) THEN
+        call memLS_LS_FREE(memLS_ls)
+        call memLS_COMMU_FREE(communicator)
+        call memLS_LHS_FREE(memLS_lhs)
+        if (iheart .gt. 0) then
+            call memLS_COMMU_FREE(communicator_s)
+            call memLS_LHS_FREE(memLS_lhs_s)
+        endif
+    endif
+
+    if (myrank .eq. master) then
+        close(76)
+    endif
+
+    if(allocated(FlowHist)) then
+        deallocate(FlowHist)
+    endif
+
+    if(allocated(PressHist)) then
+        deallocate(PressHist)
+    endif
+
+
 5   format(1X,F15.10,3X,F15.10,3X,F15.10,3X,F15.10)
 444 format(6(2x,e14.7))
-
+    
     return
 
-end subroutine
+end subroutine itrdrv_finalize
 
 
 !

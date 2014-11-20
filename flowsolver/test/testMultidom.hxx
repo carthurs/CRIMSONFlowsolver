@@ -47,8 +47,6 @@
 	    // Create fake (i.e. non-FORTRAN) pointer manager
 	    // fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 	    fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
-
-	    std::cout << "ADDRESS IS: " << &fortranPointerManager_instance << std::endl;
 	    
 	    fortranPointerManager_instance->boundaryFlows.clear();
 	    fortranPointerManager_instance->boundaryPressures.clear();
@@ -57,18 +55,10 @@
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(3,&flow1));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(7,&flow2));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(9,&flow3));
-	    std::cout << "flow3 A: " << flow3 << " with pointer: " << &flow3 <<  std::endl;
 
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(3,&press1));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(7,&press2));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(9,&press3));
-        std::cout << "press3 B: " << press3 << " with pointer: " << &press3  << std::endl;
-        
-        
-        for(auto iterator=fortranPointerManager_instance->boundaryPressures.begin(); iterator!=fortranPointerManager_instance->boundaryPressures.end(); iterator++)
-        {
-            std::cout << iterator->first << " and " << *(iterator->second) << " with pointer " << (iterator->second) << std::endl;
-        }
         
 
 	  	// Setup the file reader for the RCRTs
@@ -85,8 +75,6 @@
 	    surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
 	    surfaceList.push_back(std::pair <int,std::string> (7,"netlist"));
 	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
-
-	    MAGICAL_INT_PRINTER(3,surfaceList.at(0).first,surfaceList.at(1).first,surfaceList.at(2).first);
 
 	    
 

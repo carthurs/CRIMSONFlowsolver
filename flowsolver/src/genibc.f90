@@ -63,7 +63,9 @@
             endif
           enddo
         endif
-        deallocate(iBCtmp)
+        if (allocated(iBCtmp)) then
+          deallocate(iBCtmp)
+        endif
 !
 !.... return
 !

@@ -20,6 +20,8 @@
 #include "fortranPointerManager.hxx"
 #include "fileReaders.hxx"
 
+#include "debuggingToolsForCpp.hxx"
+
 #ifdef intel
 #include <direct.h>
 #else
@@ -40,9 +42,13 @@
 			dirBinaryCalledFrom = get_current_dir_name();
 		}
 
-		void setSimDirectoryAndClearoutOldFiles(std::string dir)
+		void setSimDirectory(std::string dir)
 		{
 			chdir(dir.c_str());
+		}
+
+		void clearOutOldFiles()
+		{
 			system("rm -rf 1-procs-case");
 		}
 

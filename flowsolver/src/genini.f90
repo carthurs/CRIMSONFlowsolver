@@ -170,7 +170,9 @@
 
 
         if (numCalcSrfs .gt. 0) then !for CalcSurfaces
-           allocate (CalcArea(numCalcSrfs))
+           if (.not.allocated(CalcArea)) then
+             allocate (CalcArea(numCalcSrfs))
+           endif
            CalcArea = zero
            call initCalcSrfst()
         endif

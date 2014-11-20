@@ -1,5 +1,7 @@
 module debuggingTools
 
+	integer :: writeCount = 0
+
 	contains
 
 	subroutine debug_write(variableName,variableValue)
@@ -12,8 +14,10 @@ module debuggingTools
 
 		rank = getProcessorRank_MPI()
 
+		writeCount = writeCount + 1
+
 		if (rank .eq. int(0)) then
-			write(*,*) 'Debug ==> ', variableName, variableValue
+			write(*,*) 'Debug ==> ', variableName, variableValue, ' write-index: ', writeCount
 		end if
 
 	end subroutine debug_write
@@ -60,5 +64,27 @@ module debuggingTools
 		return
 
 	end function getProcessorRank_MPI
+
+	subroutine listOpenFileUnits(rangeToCheck_lowerBound,rangeToCheck_upperBound)
+
+		implicit none
+
+		integer, intent(in) :: rangeToCheck_lowerBound
+		integer, intent(in) :: rangeToCheck_upperBound
+		integer :: ii
+		integer :: iostat
+		logical :: opened
+
+		do ii = rangeToCheck_lowerBound, rangeToCheck_upperBound
+			inquire(unit=ii, opened=opened, iostat=iostat)
+        	if ((iostat.ne.0).or.(opened)) then
+        		write(*,*) 'File unit still open here: ', ii
+        		write(*,*) 'Note that 0, 5 and 6 are reserved, and 100-102 are disallowed.'
+        	endif
+        enddo
+
+        return
+
+	end subroutine listOpenFileUnits
 
 end module debuggingTools

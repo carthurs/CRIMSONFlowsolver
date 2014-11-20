@@ -10,16 +10,19 @@
 #include <map>
 #include <cstdlib>
 #include "gtest/gtest_prod.h"
+#include "debuggingToolsForCpp.hxx"
 
 class abstractFileReader
 {
 	friend class testMain;
 	friend class testFileReaders;
  	FRIEND_TEST(testMain, checkSimpleShortSimulationWithRCRs);
+ 	FRIEND_TEST(testMain, checkRestartWorks_simpleShortSimulationWithRCRs);
 public:
 	abstractFileReader()
 	{
 		currentLineSplitBySpaces = new std::vector<std::string>;
+		std::cout<< "call to abstractFileReader constructor." << std::endl;
 	}
 	
 	void setFileName(std::string fileNameIn)

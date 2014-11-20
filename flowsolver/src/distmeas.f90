@@ -282,7 +282,9 @@ contains
 
             end do
           
-            deallocate(tempQ)
+            if (allocated(tempQ)) then
+              deallocate(tempQ)
+            endif
 
         end do
                           
@@ -1696,6 +1698,8 @@ contains
             allocate(dtfrs(currFr)%toChTri(dtfrs(currFr)%nTris))
           
         end do
+
+        close(2)
 
     !        write(*,*) dummy
     !        write(*,*) numDataFrames

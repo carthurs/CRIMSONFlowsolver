@@ -65,10 +65,18 @@
       Qwtb(1,1:nintb(1))     = tmpQwtb(1:nintb(1))
       
       
-      deallocate (tmpQpt)
-      deallocate (tmpQwt)
-      deallocate (tmpQptb)
-      deallocate (tmpQwtb)
+      if (allocated(tmpQpt)) then
+        deallocate(tmpQpt)
+      endif
+      if (allocated(tmpQwt)) then
+        deallocate(tmpQwt)
+      endif
+      if (allocated(tmpQptb)) then
+        deallocate(tmpQptb)
+      endif
+      if (allocated(tmpQwtb)) then
+        deallocate(tmpQwtb)
+      endif
         
 !
 !.... adjust quadrature weights to be consistent with the
@@ -144,10 +152,20 @@
       Qptb(2,1:4,1:nintb(2)) = tmpQptb(1:4,1:nintb(2))
       Qwtb(2,1:nintb(2)) = tmpQwtb(1:nintb(2))
       
-      deallocate (tmpQpt)
-      deallocate (tmpQwt)
-      deallocate (tmpQptb)
-      deallocate (tmpQwtb)
+      if (allocated(tmpQpt)) then
+      
+        deallocate(tmpQpt)
+      
+      endif
+      if (allocated(tmpQwt)) then
+        deallocate(tmpQwt)
+      endif
+      if (allocated(tmpQptb)) then
+        deallocate(tmpQptb)
+      endif
+      if (allocated(tmpQwtb)) then
+        deallocate(tmpQwtb)
+      endif
       
       if (nen.eq.5) then        ! for pyramid
          
@@ -226,8 +244,14 @@
       Qpt(5,1:4,1:nint(5)) = tmpQpt(1:4,1:nint(5))
       Qwt(5,1:nint(5)) = tmpQwt(1:nint(5))
       
-      deallocate (tmpQpt)
-      deallocate (tmpQwt)
+      if (allocated(tmpQpt)) then
+      
+        deallocate(tmpQpt)
+      
+      endif
+      if (allocated(tmpQwt)) then
+        deallocate(tmpQwt)
+      endif
       
       allocate (tmpQptb(4,nintb(5)))
       allocate (tmpQwtb(nintb(5))) 
@@ -236,8 +260,14 @@
       Qptb(5,1:4,1:nintb(5)) = tmpQptb(1:4,1:nintb(5))
       Qwtb(5,1:nintb(5)) = tmpQwtb(1:nintb(5))    
       
-      deallocate (tmpQptb)
-      deallocate (tmpQwtb)
+      if (allocated(tmpQptb)) then
+      
+        deallocate(tmpQptb)
+      
+      endif
+      if (allocated(tmpQwtb)) then
+        deallocate(tmpQwtb)
+      endif
       
       allocate (tmpQptb(4,nintb(6)))
       allocate (tmpQwtb(nintb(6))) 
@@ -246,8 +276,14 @@
       Qptb(6,1:4,1:nintb(6)) = tmpQptb(1:4,1:nintb(6))
       Qwtb(6,1:nintb(6)) = tmpQwtb(1:nintb(6))    
       
-      deallocate (tmpQptb)
-      deallocate (tmpQwtb)
+      if (allocated(tmpQptb)) then
+      
+        deallocate(tmpQptb)
+      
+      endif
+      if (allocated(tmpQwtb)) then
+        deallocate(tmpQwtb)
+      endif
       
       if (nen.eq.6) then
 !     
@@ -319,8 +355,14 @@
       Qpt(3,1:4,1:nint(3)) = tmpQpt(1:4,1:nint(3))
       Qwt(3,1:nint(3)) = tmpQwt(1:nint(3))
       
-      deallocate (tmpQpt)
-      deallocate (tmpQwt)
+      if (allocated(tmpQpt)) then
+      
+        deallocate(tmpQpt)
+      
+      endif
+      if (allocated(tmpQwt)) then
+        deallocate(tmpQwt)
+      endif
       
       allocate (tmpQptb(4,nintb(3)))           
       allocate (tmpQwtb(nintb(3))) 
@@ -336,8 +378,14 @@
 !$$$  Qptb(3,1:4,1:nintb(3)) = tmpQptb(1:4,1:nintb(3))
       Qwtb(3,1:nintb(3)) = tmpQwtb(1:nintb(3))
       
-      deallocate (tmpQptb)
-      deallocate (tmpQwtb)
+      if (allocated(tmpQptb)) then
+      
+        deallocate(tmpQptb)
+      
+      endif
+      if (allocated(tmpQwtb)) then
+        deallocate(tmpQwtb)
+      endif
       
       allocate (tmpQptb(4,nintb(4)))           
       allocate (tmpQwtb(nintb(4)))
@@ -346,8 +394,14 @@
       Qptb(4,1:4,1:nintb(4)) = tmpQptb(1:4,1:nintb(4))
       Qwtb(4,1:nintb(4)) = tmpQwtb(1:nintb(4))
       
-      deallocate (tmpQptb)
-      deallocate (tmpQwtb)
+      if (allocated(tmpQptb)) then
+      
+        deallocate(tmpQptb)
+      
+      endif
+      if (allocated(tmpQwtb)) then
+        deallocate(tmpQwtb)
+      endif
       
 !     
 !.... return

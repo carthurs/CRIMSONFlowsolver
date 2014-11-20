@@ -123,8 +123,12 @@ c      write(*,'(A,I)') 'before call inw=',inw
 c  Clean up 
 c      write(*,'(A,I)') 'after call nw=',nw
 c      write(*,'(A,I)') 'after call inw=',inw 
-      deallocate(wksp)
-      deallocate(iwksp)
+      if (allocated(wksp)) then
+        deallocate(wksp)
+      endif
+      if (allocated(iwksp)) then
+        deallocate(iwksp)
+      endif
 c
       allocate(wksp(nw))
       allocate(iwksp(inw))
@@ -135,9 +139,15 @@ c      write(*,'(A,I)') 'before 2nd call inw=',inw
 c  Clean up 
 c      write(*,'(A,I)') 'after 2nd call nw=',nw
 c      write(*,'(A,I)') 'after 2nd call inw=',inw 
-      deallocate(wksp)
-      deallocate(iwksp)      
-      deallocate(jcoef)
+      if (allocated(wksp)) then
+        deallocate(wksp)
+      endif
+      if (allocated(iwksp)) then
+        deallocate(iwksp)
+      endif      
+      if (allocated(jcoef)) then
+        deallocate(jcoef)
+      endif
 c
       return
       end

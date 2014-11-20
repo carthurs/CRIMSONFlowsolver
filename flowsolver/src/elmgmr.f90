@@ -180,15 +180,25 @@
                        rowp,                      colm)
           endif
 
-          deallocate ( xKebe )
-          deallocate ( xGoC  )
-          deallocate ( tmpshp )
-          deallocate ( tmpshgl )
+          if (allocated(xKebe)) then
+            deallocate(xKebe)
+          endif
+          if (allocated(xGoC)) then
+            deallocate(xGoC)
+          endif
+          if (allocated(tmpshp)) then
+            deallocate(tmpshp)
+          endif
+          if (allocated(tmpshgl)) then
+            deallocate(tmpshgl)
+          endif
 !
 !..... to calculate inner product for Lagrange Multipliers
 !
        if(Lagrange.gt.zero) then
-          deallocate(loclhsLag)
+          if (allocated(loclhsLag)) then
+            deallocate(loclhsLag)
+          endif
        endif
 !
 !.... end of interior element loop
@@ -341,12 +351,22 @@
           endif
 !
 !
-          deallocate ( xKebe )
-          deallocate ( xGoC )
-          deallocate (tmpshpb)
-          deallocate (tmpshglb)
+          if (allocated(xKebe)) then
+            deallocate(xKebe)
+          endif
+          if (allocated(xGoC)) then
+            deallocate(xGoC)
+          endif
+          if (allocated(tmpshpb)) then
+            deallocate(tmpshpb)
+          endif
+          if (allocated(tmpshglb)) then
+            deallocate(tmpshglb)
+          endif
           if(Lagrange.gt.zero) then
-             deallocate(loclhsLag)
+             if (allocated(loclhsLag)) then
+               deallocate(loclhsLag)
+             endif
           endif
 !
 !.... end of boundary element loop
@@ -584,7 +604,9 @@
                        rowp,              colm)
           endif
 
-          deallocate ( xSebe )
+          if (allocated(xSebe)) then
+            deallocate(xSebe)
+          endif
 !
 !.... end of interior element loop
 !

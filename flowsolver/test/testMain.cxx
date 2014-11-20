@@ -1,4 +1,5 @@
 #include "testMain.hxx"
+#include "debuggingToolsForCpp.hxx"
 
 // Hack to force the compiler to link this test to the relevant main() for testing
 int PullInMyLibraryTestMain() { return 0; }
@@ -6,7 +7,8 @@ int PullInMyLibraryTestMain() { return 0; }
 TEST_F(testMain, checkSimpleShortSimulationWithRCRs) {
   
   std::string simDir = "mainTests/basic";
-  setSimDirectoryAndClearoutOldFiles(simDir);
+  setSimDirectory(simDir);
+  clearOutOldFiles();
 
   runSimulation();
 
@@ -15,8 +17,27 @@ TEST_F(testMain, checkSimpleShortSimulationWithRCRs) {
   QHistReader->setNumColumns(2);
   QHistReader->readAndSplitMultiSurfaceRestartFile();
 
-  double finalQhistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];
-  EXPECT_NEAR(finalQhistRCRValue,0.7149210791E+03,1e-7);
+  double finalQHistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];
+  EXPECT_DOUBLE_EQ(finalQHistRCRValue,714.921079082528);
 
   delete QHistReader;
+}
+
+
+TEST_F(testMain, checkRestartWorks_simpleShortSimulationWithRCRs) {
+
+  std::string simDir = "mainTests/basic";
+  setSimDirectory(simDir);
+
+  runSimulation();
+  histFileReader* PHistReader = new histFileReader();
+  PHistReader->setFileName("PHistRCR.dat");
+  PHistReader->setNumColumns(2);
+  PHistReader->readAndSplitMultiSurfaceRestartFile();
+
+  double finalPHistRCRValue = ((PHistReader->dataReadFromFile).at(10))[1];
+
+  EXPECT_NEAR(finalPHistRCRValue,0.1162541088E+05,10e-5);
+
+  delete PHistReader;
 }

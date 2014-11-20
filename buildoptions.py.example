@@ -143,9 +143,14 @@ PETSC_LIBSLIST = ['petsc']
 #CGAL_INCDIR  = -I $(CGAL_TOP)/include
 #CGAL_LIBS    = -L $(CGAL_TOP)/lib -lCGAL -lCGAL_Core -lCGAL_ImageIO
 
+# BOOSTCPP_TOP    = HOME_DIR+'/../boost_1_40_0'
+# BOOSTCPP_INCDIR = [BOOSTCPP_TOP]
+# BOOSTCPP_LIBS   = '-L '+BOOSTCPP_TOP+'/stage/lib -lboost_thread'
+
 BOOSTCPP_TOP    = HOME_DIR+'/../boost_1_40_0'
 BOOSTCPP_INCDIR = [BOOSTCPP_TOP]
-BOOSTCPP_LIBS   = '-L '+BOOSTCPP_TOP+'/stage/lib -lboost_thread'
+BOOSTCPP_LIBSDIR = [BOOSTCPP_TOP+'/boost_build/lib']
+BOOSTCPP_LIBSLIST = ['boost_thread-mt','boost_filesystem-mt']
 
 VTK_TOP    = '/home/carthurs/workspace/merged_simvascular/vtk-5.8.0-install'
 VTK_INCDIR = [VTK_TOP+'/include/vtk-5.8']

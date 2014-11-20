@@ -54,6 +54,9 @@ env_local.Append(CPPPATH=bop.BLASLAPACK_INCDIR+bop.METIS_INCDIR+bop.FLOWSOLVER_I
 env_local.Append(F90PATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR)
 
 env_local.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.VTK_LIBSDIR+bop.LUA_LIBSDIR+bop.FLOWSOLVER_LIBSDIR+bop.BLASLAPACK_LIBSDIR+bop.MPI_LIBSDIR+bop.SOLVERIO_LIBSDIR+bop.METIS_LIBSDIR+bop.INTEL_LIBSDIR+bop.LESLIB_LIBSDIR)
+env_local.Prepend(LIBPATH=bop.BOOSTCPP_LIBSDIR)
+
+env_local.Prepend(LIBS=bop.BOOSTCPP_LIBSLIST)
 env_local.Append(LIBS=bop.PETSC_LIBSLIST)
 env_local.Append(LIBS=bop.MPI_LIBSLIST)
 env_local.Append(LIBS=bop.LUA_LIBSLIST)
@@ -62,12 +65,11 @@ env_local.Append(LIBS=bop.SOLVERIO_LIBSLIST)
 env_local.Append(LIBS=bop.METIS_LIBSLIST)
 env_local.Append(LIBS=bop.LESLIB_LIBSLIST)
 env_local.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
-env_local.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtkCommon','vtksys'])
+env_local.Append(LIBS=bop.VTK_LIBSLIST)
 env_local.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
 env_local.Append(LIBS=bop.F90_LIBS)
 env_local.Append(LIBS=bop.INTEL_LIBSLIST)
 env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
-
 
 CXXSRCS=string.split("""
 	SimvascularGlobalArrayTransfer.cxx

@@ -1,4 +1,5 @@
 #include "fileReaders.hxx"
+#include "debuggingToolsForCpp.hxx"
 
 rcrtReader* rcrtReader::instance = 0;
 
@@ -38,15 +39,22 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 	double value;
 
 	dataReadFromFile_line.clear();
-	
 	// Get all the data entries from a single line of the file.
 	// Return false if the end of file is reached, otherwise, return true.
 	// Read data is sequentially placed in the vector dataReadFromFile_line,
 	// which is newly cleared on each call to this function.
  	for (int currentColumn=0; currentColumn<numColumns; currentColumn++)
  	{
- 		value = 0;
- 		*fileHandle >> value;
+ 		value = 0.0;
+ 		if (!fileHandle->fail())
+ 		{
+ 			*fileHandle >> value;
+ 		}
+ 		else
+		{
+			std::cout << "File read failed: " << fileName << std::endl;
+	 		std::exit(1);
+ 		}
  		if (fileHandle->eof())
 	 	{
 	 		if (currentColumn>0)

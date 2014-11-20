@@ -88,7 +88,9 @@
               iel=iel+npro
 !
            enddo
-           deallocate(ientp)
+           if (allocated(ientp)) then
+             deallocate(ientp)
+           endif
         enddo
         lcblk(1,nelblk+1) = iel
 !

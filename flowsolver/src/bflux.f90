@@ -161,7 +161,9 @@
                deallocate ( xKebe )
                deallocate ( xGoC  )
                if(Lagrange.gt.zero) then
-                  deallocate(loclhsLag)
+                  if (allocated(loclhsLag)) then
+                    deallocate(loclhsLag)
+                  endif
                endif
             endif
             deallocate ( ien2  )

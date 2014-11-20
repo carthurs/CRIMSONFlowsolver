@@ -13,6 +13,9 @@ env_local.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
 env_local.Append(CPPPATH=bop.GOOGLETEST_INCDIR+bop.FLOWSOLVER_INCDIR)
 # env_local.Append(CPPPATH=[bop.GOOGLETEST_TOP])
 
+env_local.Prepend(LIBPATH=bop.BOOSTCPP_LIBSDIR)
+env_local.Append(LIBS=bop.BOOSTCPP_LIBSLIST)
+
 env_local.Prepend(LIBS=bop.GOOGLETEST_LIBSLIST)
 env_local.Prepend(LIBS=bop.FLOWSOLVER_LIBSLIST)
 env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)

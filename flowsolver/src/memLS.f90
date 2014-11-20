@@ -298,7 +298,9 @@ contains
         lhs%face(faIn)%dof  = dof
         lhs%face(faIn)%bGrp = BC_type
 
-        ALLOCATE(lhs%face(faIn)%glob(nNo), lhs%face(faIn)%val(dof,nNo), lhs%face(faIn)%valM(dof,nNo))
+        if ((.not.allocated(lhs%face(faIn)%glob)).and.(.not.allocated(lhs%face(faIn)%val)).and.(.not.allocated(lhs%face(faIn)%valM))) then
+          ALLOCATE(lhs%face(faIn)%glob(nNo), lhs%face(faIn)%val(dof,nNo), lhs%face(faIn)%valM(dof,nNo))
+        endif
 
         DO a=1, nNo
             Ac = lhs%map(gNodes(a))
@@ -667,7 +669,9 @@ contains
 
         B = C(:,N+1)
 
-        DEALLOCATE(C)
+        if (allocated(C)) then
+          deallocate(C)
+        endif
 
         RETURN
     END SUBROUTINE GE
@@ -1102,7 +1106,9 @@ contains
         comm   = commu%comm
         tF     = commu%tF
 
-        ALLOCATE (lhs%colPtr(nnz), lhs%rowPtr(2,nNo), lhs%diagPtr(nNo), lhs%map(nNo), lhs%cS(nTasks), lhs%face(nFaces))
+        if ((.not.allocated(lhs%colPtr)).and.(.not.allocated(lhs%rowPtr)).and.(.not.allocated(lhs%diagPtr)).and.(.not.allocated(lhs%map)).and.(.not.allocated(lhs%cS)).and.(.not.allocated(lhs%face))) then
+          ALLOCATE (lhs%colPtr(nnz), lhs%rowPtr(2,nNo), lhs%diagPtr(nNo), lhs%map(nNo), lhs%cS(nTasks), lhs%face(nFaces))
+        endif
 
         IF (nTasks .EQ. 1) THEN
             DO i=1, nnz
@@ -1131,7 +1137,9 @@ contains
 
         CALL MPI_ALLREDUCE (nNo, maxnNo, 1, mpint, MPI_MAX, comm, ierr)
 
-        ALLOCATE(aNodes(maxnNo,nTasks), part(maxnNo), sCount(nTasks), disp(nTasks), gtlPtr(gnNo), ltg(nNo))
+        if ((.not.allocated(aNodes)).and.(.not.allocated(part)).and.(.not.allocated(sCount)).and.(.not.allocated(disp)).and.(.not.allocated(gtlPtr)).and.(.not.allocated(ltg))) then
+          ALLOCATE(aNodes(maxnNo,nTasks), part(maxnNo), sCount(nTasks), disp(nTasks), gtlPtr(gnNo), ltg(nNo))
+        endif
 
         part = 0
         part(1:nNo) = gNodes
@@ -1235,7 +1243,9 @@ contains
         IF (tF .NE. 1) THEN
             i = tF - 1
             i = lhs%cS(i)%ptr + lhs%cS(i)%n - 1
-            ALLOCATE(part(i))
+            if (.not.allocated(part)) then
+              ALLOCATE(part(i))
+            endif
         END IF
 
         DO i=1, nTasks
@@ -1257,7 +1267,9 @@ contains
                         END IF
                     END DO
                     a = lhs%cS(i)%nBl
-                    ALLOCATE(lhs%cS(i)%blPtr(a), lhs%cS(i)%blN(a))
+                    if ((.not.allocated(lhs%cS(i)%blPtr)).and.(.not.allocated(lhs%cS(i)%blN))) then
+                      ALLOCATE(lhs%cS(i)%blPtr(a), lhs%cS(i)%blN(a))
+                    endif
 
                     k = 0
                     a = 0
@@ -1283,7 +1295,9 @@ contains
         END DO
 
         IF (ALLOCATED(part)) DEALLOCATE(part)
-        DEALLOCATE(ltg)
+        if (allocated(ltg)) then
+          deallocate(ltg)
+        endif
 
         RETURN
     END SUBROUTINE memLS_LHS_CREATE
@@ -1570,7 +1584,23 @@ contains
         Ri(1:nsd,:) = Rmi
         Ri(dof,:) = Rci
 
-        DEALLOCATE (Rm, Rc, Rmi, Rci, U, P, MU, MP, A, B, mK, mD, mG, mL, Gt)
+        if ((allocated(Rm)).and. &
+            (allocated(Rc)).and. &
+            (allocated(Rmi)).and. &
+            (allocated(Rci)).and. &
+            (allocated(U)).and. &
+            (allocated(P)).and. &
+            (allocated(MU)).and. &
+            (allocated(MP)).and. &
+            (allocated(A)).and. &
+            (allocated(B)).and. &
+            (allocated(mK)).and. &
+            (allocated(mD)).and. &
+            (allocated(mG)).and. &
+            (allocated(mL)).and. &
+            (allocated(Gt))) then
+              DEALLOCATE (Rm, Rc, Rmi, Rci, U, P, MU, MP, A, B, mK, mD, mG, mL, Gt)
+        endif
 
         IF (commu%masF) CALL LOGFILE
 

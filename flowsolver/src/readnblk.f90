@@ -174,15 +174,21 @@
          fname1='ilwork?'
          call readheader(igeom,fname1//c_null_char,nlwork,ione,c_char_"integer"//c_null_char, iotype)
 
-         allocate( ilwork(nlwork) )
-         allocate( ilworkread(nlwork) )
+         if (.not.ALLOCATED(ilwork)) then
+           allocate( ilwork(nlwork) )
+         endif
+         if (.not.ALLOCATED(ilworkread)) then
+           allocate( ilworkread(nlwork) )
+         endif
          call readdatablock(igeom,fname1//c_null_char,ilworkread, &
                             nlwork,c_char_"integer"//c_null_char, iotype)
          ilwork = ilworkread
          call ctypes (ilwork)
       else
            nlwork=1
-           allocate( ilwork(1))
+           if (.not.ALLOCATED(ilwork)) then
+            allocate( ilwork(1)) 
+           endif
       endif
 
 !     
@@ -194,7 +200,9 @@
       numnp=intfromfile(1)
 !      nsd=intfromfile(2)
 !      allocate( x(numnp,nsd) )
-      allocate( xread(numnp,nsd) )
+      if (.not.allocated(xread)) then
+        allocate( xread(numnp,nsd) )
+      endif
       ixsiz=numnp*nsd
       call readdatablock(igeom,fname1//c_null_char,xread,ixsiz, c_char_"double"//c_null_char,iotype)
       x = xread
@@ -206,7 +214,9 @@
       fname1='node tags?'
       call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"integer"//c_null_char, iotype)
       numnp=intfromfile(1)
-      allocate( ntagread(numnp) )
+      if (.not.allocated(ntagread)) then
+        allocate( ntagread(numnp) )
+      endif
       ixsiz=numnp
       call readdatablock(igeom,fname1//c_null_char,ntagread,ixsiz, c_char_"integer"//c_null_char,iotype)
       nodetagfield = ntagread
@@ -222,9 +232,13 @@
       fname1='bc mapping array?'
       call readheader(igeom,fname1//c_null_char,nshg, &
            ione,c_char_"integer"//c_null_char, iotype)
-      allocate( nBC(nshg) )
+      if (.not.ALLOCATED(nBC)) then
+       allocate( nBC(nshg) )
+      endif
 
-      allocate( nBCread(nshg) )
+      if (.not.allocated(nBCread)) then
+        allocate( nBCread(nshg) )
+      endif
       call readdatablock(igeom,fname1//c_null_char,nBCread,nshg,c_char_"integer"//c_null_char,iotype)
       nBC=nBCread
 
@@ -236,14 +250,21 @@
       call readheader(igeom,fname1//c_null_char,numpbc, &
            ione, c_char_"integer"//c_null_char, iotype)
       if ( numpbc > 0 ) then
-         allocate( iBCtmp(numpbc) )
-         allocate( iBCtmpread(numpbc) )
+         if (.not.allocated(iBCtmp)) then
+           allocate( iBCtmp(numpbc) )
+         endif
+
+         if (.not.allocated(iBCtmpread)) then
+           allocate( iBCtmpread(numpbc) )
+         endif
          call readdatablock(igeom,fname1//c_null_char,iBCtmpread,numpbc, &
                             c_char_"integer"//c_null_char,iotype)
          iBCtmp=iBCtmpread
 
       else  ! sometimes a partition has no BC's
-         allocate( iBCtmp(1) )
+         if (.not.allocated(iBCtmp)) then
+           allocate( iBCtmp(1) )
+         endif
          iBCtmp=0
 
       endif
@@ -260,16 +281,22 @@
            warning='WARNING more data in BCinp than needed: keeping 1st'
            write(*,*) warning, ndof+7
          endif
-         allocate( BCinp(numpbc,ndof+7) )
+         if (.not.allocated(BCinp)) then
+           allocate( BCinp(numpbc,ndof+7) )
+         endif
          nsecondrank=intfromfile(1)/numpbc
-         allocate( BCinpread(numpbc,nsecondrank) )
+         if (.not.allocated(BCinpread)) then
+           allocate( BCinpread(numpbc,nsecondrank) )
+         endif
          iBCinpsiz=intfromfile(1)
          call readdatablock(igeom,fname1//c_null_char,BCinpread,iBCinpsiz, &
                             c_char_"double"//c_null_char,iotype)
          BCinp(:,1:(ndof+7))=BCinpread(:,1:(ndof+7))
 
       else  ! sometimes a partition has no BC's
-         allocate( BCinp(1,ndof+7) )
+         if (.not.allocated(BCinp)) then
+           allocate( BCinp(1,ndof+7) )
+         endif
          BCinp=0
 
       endif
@@ -280,7 +307,9 @@
       call readheader(igeom,fname1//c_null_char,nshg, &
            ione, c_char_"integer"//c_null_char, iotype)
       !allocate( iper(nshg) )
-      allocate( iperread(nshg) )
+      if (.not.allocated(iperread)) then
+        allocate( iperread(nshg) )
+      endif
       call readdatablock(igeom,fname1//c_null_char,iperread,nshg, &
                             c_char_"integer"//c_null_char,iotype)
       iper=iperread
@@ -292,12 +321,16 @@
           fname1='local index of unique nodes?'
           call readheader(igeom,fname1//c_null_char,nshguniq, &
           ione, c_char_"integer"//c_null_char, iotype)
-          allocate( inodesuniq(nshguniq) )
+          if (.not.allocated(inodesuniq)) then
+            allocate( inodesuniq(nshguniq) )
+          endif
           call readdatablock(igeom,fname1//c_null_char,inodesuniq,nshguniq, &
           c_char_"integer"//c_null_char,iotype)
 
       else
-          allocate( inodesuniq(nshg) )
+          if (.not.allocated(inodesuniq)) then
+            allocate( inodesuniq(nshg) )
+          endif
 
           nshguniq = nshg
 
@@ -318,7 +351,9 @@
       nshg2=intfromfile(1)
       ndof2=intfromfile(2)
       iisiz=nshg2*ndof2
-      allocate( ilinobsfunc_sol(nshg2,ndof2) )
+      if (.not.allocated(ilinobsfunc_sol)) then
+        allocate( ilinobsfunc_sol(nshg2,ndof2) )
+      endif
       call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_sol,iisiz, &
       c_char_"integer"//c_null_char,iotype)
 
@@ -328,7 +363,9 @@
       nshg2=intfromfile(1)
       ndof2=intfromfile(2)
       iisiz=nshg2*ndof2
-      allocate( ilinobsfunc_acc(nshg2,ndof2) )
+      if (.not.allocated(ilinobsfunc_acc)) then
+        allocate( ilinobsfunc_acc(nshg2,ndof2) )
+      endif
       call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_acc,iisiz, &
       c_char_"integer"//c_null_char,iotype)
 
@@ -339,7 +376,9 @@
           nshg2=intfromfile(1)
           nsd2=intfromfile(2)
           iisiz=nshg2*nsd2
-          allocate( ilinobsfunc_disp(nshg2,nsd2) )
+          if (.not.allocated(ilinobsfunc_disp)) then
+            allocate( ilinobsfunc_disp(nshg2,nsd2) )
+          endif
           call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_disp,iisiz, &
           c_char_"integer"//c_null_char,iotype)
 
@@ -348,7 +387,9 @@
           itwo,c_char_"integer"//c_null_char, iotype)
           nshg2=intfromfile(1)
           iisiz=nshg2
-          allocate( obsfunc_dist(nshg2) )
+          if (.not.allocated(obsfunc_dist)) then
+            allocate( obsfunc_dist(nshg2) )
+          endif
           call readdatablock(igeom,fname1//c_null_char,obsfunc_dist,iisiz, &
           c_char_"integer"//c_null_char,iotype)
 
@@ -436,7 +477,9 @@
 !         allocate (nsons(1))
 !         allocate (ifath(1))
 !      endif
-      allocate (velbar(nfath,ndof))
+      if (.not.allocated(velbar)) then
+        allocate (velbar(nfath,ndof))
+      endif
 !
 !  renumber the master partition for SPEBC
 !
@@ -469,7 +512,9 @@
 !.... read the values of primitive variables into q
 !
       !allocate( qold(nshg,ndof) )
-      allocate( qread(nshg,ndof2) )
+      if (.not.allocated(qread)) then
+        allocate( qread(nshg,ndof2) )
+      endif
 
       iqsiz=nshg*ndof2
       call readdatablock(irstin,fname1//c_null_char,qread,iqsiz, &
@@ -495,8 +540,10 @@
          lstep=intfromfile(3)
          
          if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
-!     
-         allocate( acread(nshg,ndof2) )
+
+         if (.not.allocated(acread)) then
+           allocate( acread(nshg,ndof2) )
+         endif
          acread=zero
 
          iacsiz=nshg*ndof2
@@ -506,7 +553,9 @@
          acold(:,4)=acread(:,1)
          ac = acold ! initialization of ac moved here from genini
          if(ndof.gt.4)  acold(:,5:ndof)=acread(:,5:ndof)
-         deallocate(acread)
+         if (allocated(acread)) then
+           deallocate(acread)
+         endif
       else
          warning='Time derivative of solution is set to zero (SAFE)'
          write(*,*) warning
@@ -536,7 +585,9 @@
 !.... read the values of primitive variables into uold
 !
          !allocate( uold(nshg,nsd) )
-         allocate( uread(nshg,nsd) )
+         if (.not.allocated(uread)) then
+           allocate( uread(nshg,nsd) )
+         endif
          
          iusiz=nshg*nsd
          
@@ -602,16 +653,31 @@
       call closefile( irstin, c_char_"read" )
       call closefile( igeom,  c_char_"read" )
 !
-      deallocate(xread)
-      deallocate(qread)
-      if ( numpbc > 0 )  then
-         deallocate(bcinpread)
-         deallocate(ibctmpread)
+      if (allocated(xread)) then
+        deallocate(xread)
       endif
-      deallocate(iperread)
-      if(numpe.gt.1) &
-           deallocate(ilworkread)
-      deallocate(nbcread)
+      if (allocated(qread)) then
+        deallocate(qread)
+      endif
+      if ( numpbc > 0 )  then
+         if (allocated(bcinpread)) then
+           deallocate(bcinpread)
+         endif
+         if (allocated(ibctmpread)) then
+           deallocate(ibctmpread)
+         endif
+      endif
+      if (allocated(iperread)) then
+        deallocate(iperread)
+      endif
+      if(numpe.gt.1) then
+           if (allocated(ilworkread)) then
+             deallocate(ilworkread)
+           endif
+      endif
+      if (allocated(nbcread)) then
+        deallocate(nbcread)
+      endif
 
       return
 !

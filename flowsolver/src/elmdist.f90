@@ -129,8 +129,12 @@ subroutine ElmDist(u, x, xdist, xdnv, df_fem) bind(C, name="elmdist")
 
         call AsBDist(x, xdist, xdnv, tmpshpb, tmpshglb, mienb(iblk)%p, df_fem)
 
-        deallocate (tmpshpb)
-        deallocate (tmpshglb)
+        if (allocated(tmpshpb)) then
+          deallocate(tmpshpb)
+        endif
+        if (allocated(tmpshglb)) then
+          deallocate(tmpshglb)
+        endif
 
     end do
 

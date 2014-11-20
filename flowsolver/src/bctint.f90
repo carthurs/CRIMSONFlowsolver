@@ -265,9 +265,15 @@
          read (567,'(a80)') card
            read (card,*) ntv, nptsmax
 !        read(567,*) ntv,nptsmax
-         allocate (nBCt(numnp))  
-         allocate (numBCt(ntv))  
-         allocate (BCt(ntv,nptsmax,4))  
+         if(.not.allocated(nBCt)) then
+           allocate (nBCt(numnp))
+         endif
+         if(.not.allocated(numBCt)) then
+           allocate (numBCt(ntv))
+         endif
+         if(.not.allocated(BCt)) then
+           allocate (BCt(ntv,nptsmax,4))
+         endif
          do k=1,ntv
             read(567,*) x1,x2,x3,ntpts
 !
@@ -364,9 +370,13 @@
       use calcFlowPressure
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
-      
-      allocate (FlowHist(lstep+nstep(1)+1,numCalcSrfs)) !for flow history
-      allocate (PressHist(lstep+nstep(1)+1,numCalcSrfs)) !for pressure history
+
+      if (.not.allocated(FlowHist)) then
+        allocate (FlowHist(lstep+nstep(1)+1,numCalcSrfs)) !for flow history
+      endif
+      if (.not.allocated(PressHist)) then
+        allocate (PressHist(lstep+nstep(1)+1,numCalcSrfs)) !for pressure history
+      endif
       FlowHist = zero
       PressHist = zero
       if (lstep .gt. 0) then

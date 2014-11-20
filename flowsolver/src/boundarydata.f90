@@ -127,7 +127,9 @@
       ! if number of surfaces on this processor > 0, then save the surface ids
       if (numSurfID .gt. int(0)) then
         
-        allocate(surfID(numSurfID))
+        if (.not.allocated(surfID)) then
+          allocate(surfID(numSurfID))
+        endif
         curSurfID = 1
         
         ! maxSurfID loop
@@ -144,7 +146,9 @@
       end if
 
       ! set up global surface list and global surface count
-      allocate(lstSurfID(0:MAXSURF))
+      if (.not.allocated(lstSurfID)) then
+        allocate(lstSurfID(0:MAXSURF))
+      endif
       lstSurfID(:) = int(0)
 
       do i = 1, maxSurfID      
@@ -179,7 +183,9 @@
       integer, allocatable :: edgetemp(:,:)
      
       ! allocate an array the size of the total number of nodes 
-      allocate(edsurf(nshg))
+      if (.not.allocated(edsurf)) then
+        allocate(edsurf(nshg))
+      endif
       edsurf(:) = int(0)
 
       ! loop over blocks
@@ -290,7 +296,9 @@
 
       ! here calculate area
 
-      allocate(area(maxSurfID))
+      if (.not.allocated(area)) then
+        allocate(area(maxSurfID))
+      endif
       area(:) = 0.0d0
 
       call MPI_ALLREDUCE(area_integral, area, maxSurfID, &
@@ -309,7 +317,9 @@
                          MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)       
 
 
-      allocate(centroid(maxSurfID,3))
+      if (.not.allocated(centroid)) then
+        allocate(centroid(maxSurfID,3))
+      endif
       centroid(:,:) = 0.0d0
 
       centroid(2:maxSurfID,1) = surf_integral_sum(2:maxSurfID,1) &
@@ -391,7 +401,9 @@
       end do
 
       ! deallocate edgetemp array
-      deallocate(edgetemp)
+      if (allocated(edgetemp)) then
+        deallocate(edgetemp)
+      endif
       
       return
 
@@ -687,7 +699,9 @@
       end do
 
       ! deallocate edpair array
-      deallocate(edpair)
+      if (allocated(edpair)) then
+        deallocate(edpair)
+      endif
 
       return
 

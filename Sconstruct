@@ -9,6 +9,9 @@ env = Environment(ENV = os.environ)
 env.Replace(PATH = '')
 env.Replace(LD_LIBRARY_PATH = '')
 
+env.Prepend(LIBPATH = bop.EFENCE_INCDIR)
+env.Prepend(LIBS = bop.EFENCE_LIBSLIST)
+
 env.Replace(SHELL=bop.SHELL)
 env.Replace(CXX=bop.CXX)
 env.Replace(CC=bop.CC)

@@ -126,6 +126,8 @@
 !      
       integer   aa, b, iblk
 
+      integer logicPassed
+
 
 !
 !.... ------------------->  integration variables  <--------------------
@@ -483,10 +485,18 @@
 
               do iel = 1, npro
 
-
+                  ! the FORTRAN standard does not guarantee short-circuit evaluation
+                  ! of logical statements, so we must guard mBET in this manner to ensure
+                  ! we don't read from uninitialised memory
+                  logicPassed = int(0)
+                  if ((iUseBET .eq. 1) .and. (numWallRegions .gt. 0)) then
+                    if (mBET(icurrentblk)%p(iel,WallETagID).gt.0) then
+                      logicPassed = int(1)
+                    endif
+                  endif
                   ! regional values
                   ! supersedes default values
-                  if (iUseBET.eq.1 .and. numWallRegions .gt. 0 .and. mBET(icurrentblk)%p(iel,WallETagID).gt.0) then
+                  if (logicPassed .eq. int(1)) then
 
                       if (iUseSWBthickonly .eq. 0) then
                           SWB(iel,1) = regionWallProps(mBET(icurrentblk)%p(iel,WallhTagID) ,1)
@@ -903,7 +913,9 @@
 
               end do
 
-              deallocate(rgndslcl)
+              if (allocated(rgndslcl)) then
+                deallocate(rgndslcl)
+              endif
 
           end if
 

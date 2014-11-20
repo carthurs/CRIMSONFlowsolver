@@ -48,8 +48,6 @@ double boundaryCondition::getdp_dq()
 
 void boundaryCondition::updatePressureAndFlowHistory()
 {
-  
-  std::cout << "Step :" << timdat.lstep << " P " <<  pressure_n << " Q " << *flow_n_ptr << std::endl;
   pressurehist[timdat.lstep] = pressure_n;
   flowhist[timdat.lstep] = *flow_n_ptr;
 }
@@ -376,7 +374,6 @@ void RCR::initialiseModel()
     flow_n = *flow_n_ptr;
     pressure_n = *pressure_n_ptr;
     
-    std::cout << "just set pressure and flow: " << *pressure_n_ptr << " " << *flow_n_ptr << std::endl;
 
     flow_n1 = 0.0;
     
@@ -448,9 +445,6 @@ void RCR::computeImplicitCoeff_solve(int timestepNumber)
 
   dp_dq = temp.first;
   Hop = temp.second;
-  std::cout.precision(15);
-  std::cout << "dp_dq in C++: " << dp_dq << std::endl;
-  std::cout << "Hop in C++: " << Hop << std::endl;
 }
 
 void RCR::computeImplicitCoeff_update(int timestepNumber)
@@ -464,11 +458,10 @@ void RCR::computeImplicitCoeff_update(int timestepNumber)
 
   dp_dq_n1 = temp.first;
   Hop_n1 = temp.second;
-
-  std::cout << "dp_dq_n1 in C++: " << dp_dq_n1 << std::endl;
-  std::cout << "Hop_n1 in C++: " << Hop_n1 << std::endl;
 }
 
+
+// Here we step the actual discretised ODE for the RCR:
 std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt)
 {
   double temp1;
@@ -500,7 +493,6 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
   temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
 
   temp2 = pressure_n + pdistn_1 - pdistn - rp*(*flow_n_ptr);
-  std::cout << (*pressure_n_ptr) << " press  |  flow " << (*flow_n_ptr) <<std::endl;
   temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
 
   returnCoeffs.first = temp1 / denom;
@@ -512,8 +504,6 @@ std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, do
 void RCR::updpressure_n1_withflow()
 {
   pressure_n = dp_dq_n1*(*flow_n_ptr) + Hop_n1;
-  std::cout << "are these the same? ==========>" << (*flow_n_ptr) << " " << flow_n << " also, flow pressure update: " << pressure_n << std::endl;
-  std::cout << dp_dq_n1 << " " << flow_n << " " << Hop_n1 <<std::endl;
 }
 
 
@@ -575,14 +565,10 @@ void multidom_iter_finalise(){
 }
 
 void multidom_finalise(){
-  // MAGICAL_DEBUG();
   // std::vector<boost::shared_ptr<boundaryCondition>>* BCs = boundaryConditionManager::Instance()->getBoundaryConditions();
-  // MAGICAL_DEBUG();
   // std::cout << "dbl" << BCs->at(0)->tempDataTestFunction() << std::endl;
-  // MAGICAL_DEBUG();
 
   boundaryConditionManager::Instance()->Term();
-  // MAGICAL_DEBUG();
   rcrtReader::Instance()->Term();
 }
 

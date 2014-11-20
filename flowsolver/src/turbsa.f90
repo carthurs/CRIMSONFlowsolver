@@ -194,8 +194,12 @@
          enddo
          d2wall=sqrt(d2wall)
 !
-         deallocate(xwi)
-         deallocate(xw)
+         if (allocated(xwi)) then
+           deallocate(xwi)
+         endif
+         if (allocated(xw)) then
+           deallocate(xw)
+         endif
 !
 !.... write d2wall to a file so we don't have to do this again
 !

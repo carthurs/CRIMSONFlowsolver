@@ -86,6 +86,7 @@ int main(int argc, char** argv)
 	}
 	else if (argc > 2) {
 		static volatile int debuggerPresent = 0;
+        std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
 		while (!debuggerPresent)
 			; // assign debuggerPresent=1
 	}

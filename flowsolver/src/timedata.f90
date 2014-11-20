@@ -33,8 +33,12 @@
 
       use timedata
 
-      deallocate (ptts)
-      deallocate (varts)
+      if (allocated(ptts)) then
+        deallocate(ptts)
+      endif
+      if (allocated(varts)) then
+        deallocate(varts)
+      endif
 
       return
       end

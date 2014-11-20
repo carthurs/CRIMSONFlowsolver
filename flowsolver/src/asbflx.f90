@@ -122,7 +122,9 @@
         call local (flxnrm, fnrml,  ienb,   nsd,    'scatter ')
 !
         if(Lagrange.gt.zero) then
-           deallocate(loclhsLag)
+           if (allocated(loclhsLag)) then
+             deallocate(loclhsLag)
+           endif
         endif
 !     
 !.... end

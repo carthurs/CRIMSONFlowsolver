@@ -44,9 +44,15 @@
 !
         dimension   shpb(MAXTOP,maxsh,MAXQPT)
         real*8, allocatable :: tmpshpb(:,:)
-        allocate ( NABI(nshg,3) ) 
-        allocate ( NASC(nshg)   )
-        allocate ( ndsurf(nshg) ) 
+        if (.not.allocated(NABI)) then
+          allocate ( NABI(nshg,3) )
+        endif
+        if (.not.allocated(NASC)) then
+          allocate ( NASC(nshg)   )
+        endif
+        if (.not.allocated(ndsurf)) then
+          allocate ( ndsurf(nshg) ) 
+        endif
 
 !
 !....  calculate NABI
@@ -55,8 +61,12 @@
       NASC=zero
       ndsurf=0
         if (Lagrange .gt. 0) then
-           allocate ( PNABI(nshg,3)  )
-           allocate ( NANBIJ(nshg,3,3)  )
+           if (.not.allocated(PNABI)) then
+             allocate ( PNABI(nshg,3)  )
+           endif
+           if (.not.allocated(NANBIJ)) then
+             allocate ( NANBIJ(nshg,3,3)  )
+           endif
            PNABI = zero
            NANBIJ = zero
         endif
@@ -124,7 +134,9 @@
 !.... compute and assemble the residuals corresponding to the 
 !     boundary integral
 !
-          allocate (tmpshpb(nshl,MAXQPT))
+          if (.not.allocated(tmpshpb)) then
+            allocate (tmpshpb(nshl,MAXQPT))
+          endif
           
           tmpshpb(1:nshl,:) = shpb(lcsyst,1:nshl,:)
 
@@ -145,7 +157,9 @@
                        miBCB(iblk)%p) 
           endif    
 
-          deallocate (tmpshpb)
+          if (allocated(tmpshpb)) then
+            deallocate(tmpshpb)
+          endif
 
       enddo 
 

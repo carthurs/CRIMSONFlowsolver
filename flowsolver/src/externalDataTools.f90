@@ -88,6 +88,7 @@ module externalDataTools
 
 					open(unit=112,file='numstart.dat',status='old')
 					read(112,*) globalNumstart
+					close(112)
 					if ((globalNumstart .eq. lastGlobalNumstartPriorToLinkedlistRestartBeingWritten) .and. &
 					     (globalNumstart .gt. int(0))) then
 						! In this case we must subtract 1, because at the time-step where the restart

@@ -130,9 +130,8 @@
 !
 !.... boundary element tags array
 !
-           BETtp = one
-
            if(ideformwall.eq.1 .and. iUseBET.gt.0) then
+               BETtp = one
                !               if (.not.associated(mBET(iblk)%p)) then
                !                   allocate(mBET(iblk)%p(npro,numBETFields))
                !               end if
@@ -216,14 +215,24 @@
            enddo
            
            
-           deallocate(ientp)
-           deallocate(iBCBtp)
-           deallocate(BCBtp)
+           if (allocated(ientp)) then
+             deallocate(ientp)
+           endif
+           if (allocated(iBCBtp)) then
+             deallocate(iBCBtp)
+           endif
+           if (allocated(BCBtp)) then
+             deallocate(BCBtp)
+           endif
            if (ideformwall.eq.1 .and. iUseSWB.gt.0) then
-             deallocate(SWBtp)
+             if (allocated(SWBtp)) then
+               deallocate(SWBtp)
+             endif
            end if
            if (ideformwall.eq.1 .and. iUseBET.gt.0) then
-             deallocate(BETtp)
+             if (allocated(BETtp)) then
+               deallocate(BETtp)
+             endif
            end if
            
            

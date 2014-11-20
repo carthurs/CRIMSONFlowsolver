@@ -2448,7 +2448,7 @@
       end select 
 !      
       return
-      end subroutine
+      end subroutine updxvars
 !
 ! *** write internal variables
 !
@@ -2476,7 +2476,7 @@
       end select 
 !      
       return
-      end subroutine
+      end subroutine writexvars
 !
 ! *** get implicit coefficients
 !

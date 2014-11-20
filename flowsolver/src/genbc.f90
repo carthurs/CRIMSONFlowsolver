@@ -54,13 +54,17 @@
          do i = 1, ndof+7
             where (nBC(:) .ne. 0) BCtmp(:,i) = BCinp(nBC(:),i)
          enddo
-         deallocate(BCinp)
+         if (allocated(BCinp)) then
+           deallocate(BCinp)
+         endif
       endif
             
 !
       if(any(BCtmp(:,12).ne.0)) then
          iabc=1
-         allocate (acs(nshg,2))
+         if (.not.allocated(acs)) then
+           allocate (acs(nshg,2))
+         endif
          where (btest(iBC,10))
             acs(:,1) = cos(BCtmp(:,12)) 
             acs(:,2) = sin(BCtmp(:,12)) 
@@ -112,7 +116,7 @@
         '   Number ',5x,6('BC',i1,:,10x))
  1100 format(1p,2x,i5,3x,6(e12.5,1x))
 !
-      end
+      end subroutine genBC
 
 
 
@@ -165,7 +169,9 @@
 !  modes.  Note that the wall model creates a p.w. linear representation
 !  only at this time.
 !
-      allocate ( wnrm(nshg,3) )
+      if (.not.allocated(wnrm)) then
+        allocate ( wnrm(nshg,3) )
+      endif
 !
 !.... ----------------------> Wall Normals  <--------------------------
 ! (calculate the normal and adjust BCinp to the true normal as needed)
@@ -231,7 +237,9 @@
                      wnrm(nn,:)=wnrm(nn,:)+elnrm
                   enddo         ! loop over elt boundary nodes
                enddo            ! end loop over boundary elements in block
-               deallocate(ienb)
+               if (allocated(ienb)) then
+                 deallocate(ienb)
+               endif
             enddo               ! end loop over boundary element blocks
 ! Now we have all of this surface's contributions to wall normals
 ! for all nodes, along with an indication of how many surfaces
@@ -530,7 +538,7 @@
 ! Since we don't know a priori how many surface ID's there are, 
 ! on-processor or globally, we will store the ID's as an open-ended
 ! link list while we determine the total number of distinct ID's
-      allocate (sidlist) ! allocate the first element of the sid 
+      allocate(sidlist)  ! allocate the first element of the sid 
                          ! linked list and point sidlist to it
       nsidl=0            ! initialize # of sids on this processor
       nsidg=0
@@ -565,7 +573,9 @@
       enddo ! (loop over boundary element blocks)
 ! Copy the data from the linked list to a more easily-used array form
       if(nsidl.gt.0) then
-         allocate( sidmapl(nsidl) )
+         if (.not.allocated(sidmapl)) then
+           allocate( sidmapl(nsidl) )
+         endif
          sidelt => sidlist      !     starting with the first sid
          do j = 1, nsidl
             sidmapl(j)=sidelt%value
@@ -593,7 +603,9 @@
 !
 ! there will be some duplicate surface ID's when we gather, so we
 ! will use a temporary array
-         allocate (temp(nsidt))
+         if (.not.allocated(temp)) then
+           allocate (temp(nsidt))
+         endif
          if (numpe.gt.1) then   ! multiple processors
 ! we will gather surfID's from local on-proc sets to a global set
 ! we will stack each processor's surfID list atop that of the previous 
@@ -644,7 +656,9 @@
                if(temp(j).eq.temp(j-1)) nsidg = nsidg - 1 ! correction
             enddo
 ! create duplicate-free surfID list
-            allocate( sidmapg(nsidg) )
+            if (.not.allocated(sidmapg)) then
+              allocate( sidmapg(nsidg) )
+            endif
             sidmapg(1)=temp(1)
             nsidg = 1
             do j = 2, nsidt
@@ -653,11 +667,15 @@
                   sidmapg(nsidg)=temp(j)
                endif
             enddo
-            deallocate( temp )
+            if (allocated(temp)) then
+              deallocate(temp)
+            endif
          else                   ! single-processor
 ! global data is local data in single processor case
             nsidg=nsidl
-            allocate( sidmapg(nsidg) )
+            if (.not.allocated(sidmapg)) then
+              allocate( sidmapg(nsidg) )
+            endif
             sidmapg=sidmapl
          endif                  ! if-else multiple processor
 !     
@@ -706,7 +724,9 @@
       integer gbits
       integer, allocatable :: ienb(:)
 
-      allocate( otwn(nshg) )
+      if (.not.allocated(otwn)) then
+        allocate( otwn(nshg) )
+      endif
 !
 ! initialize otwn to oneself
 !
@@ -721,7 +741,9 @@
          nenl  = lcblkb(5,iblk)
          nenbl = lcblkb(6,iblk)
          nshl = lcblkb(9,iblk)
-         allocate( ienb(nshl) )
+         if (.not.allocated(ienb)) then
+           allocate( ienb(nshl) )
+         endif
          do i = 1, npro         ! loop over boundary elements
             iBCB1=miBCB(iblk)%p(i,1)
             iBCB2=miBCB(iblk)%p(i,2)
@@ -754,7 +776,9 @@
                enddo            !(loop over wall nodes in current belt)
             endif
          enddo                  !(loop over elts in block)
-         deallocate(ienb)
+         if (allocated(ienb)) then
+           deallocate(ienb)
+         endif
       enddo                     !(loop over boundary element blocks)
       do nn = 1, nshg
          if((otwn(nn).eq.nn).and.(nsurf(nn).ne.0)) then ! if a node on a

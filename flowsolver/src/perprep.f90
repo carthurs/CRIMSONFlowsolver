@@ -6,7 +6,9 @@
        subroutine Dperiodicity
        
        use periodicity
-       deallocate(rcount)
+       if (allocated(rcount)) then
+         deallocate(rcount)
+       endif
        
        return
        end
@@ -16,7 +18,9 @@
        
        use periodicity
 
-       allocate (rcount(nshg))
+       if (.not.allocated(rcount)) then
+         allocate (rcount(nshg))
+       endif
        
        return
        end

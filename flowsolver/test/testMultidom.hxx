@@ -34,6 +34,9 @@
 	   double delt;
 
 	  testMultidom() {
+	  	
+	  	overrideMissingDataForTesting();
+
 	  	boundaryConditionManager_instance = boundaryConditionManager::Instance();
 	  	
 	  	press1 = 1000;
@@ -122,15 +125,23 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
-	  	std::cout << "here1" <<std::endl;
-	    
-	    std::cout << "here2" <<std::endl;
-
 	    boundaryConditionManager_instance->Term();
 	    fortranPointerManager_instance->tearDown();
 	    rcrtReader_instance->tearDown();
 	    retrievedBoundaryConditions = 0;
 	    
+	  }
+
+	  void overrideMissingDataForTesting() {
+	  	// This function is to be used to create fake data to avoid testing problems
+	  	// due to no solver.inp being read prior to testing some of the smaller features.
+	  	//
+	  	// Please document each override very carefully, and write a note to the console!
+
+	  	// This is because timdat.lstep is used to determine whether we're restarting a simulation
+	  	// and we're not doing that during tests.
+	  	std::cout << "Information -- I'm overriding timdat.lstep for this test..." << std::endl;
+	  	timdat.lstep = int(0);
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

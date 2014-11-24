@@ -72,14 +72,27 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 
 }
 
+// The columnIndex refers to the file columns. It's zero-indexed.
+double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
+{
+	if (!fileHasBeenRead)
+	{
+		std::cout << "Attempted to access data in file " << fileName << " before it has been read. Terminating." << std::endl;
+		std::exit(1);
+	}
+
+	return ((dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
+}
+
 void histFileReader::readAndSplitMultiSurfaceRestartFile()
 {
 	int lineIndex = 0;
 	while(readNextLineWithKnownNumberOfColumns())
 	{
 		lineIndex++;
-		dataReadFromFile.insert(std::pair <int,std::vector<double>> (lineIndex, dataReadFromFile_line));
+		dataReadFromFile.insert(std::pair<int,std::vector<double>> (lineIndex, dataReadFromFile_line));
 	}
+	fileHasBeenRead = int(1);
 }
 
 // The output objects are std::vectors at the top level, with each vector
@@ -115,6 +128,7 @@ void rcrtReader::readAndSplitMultiSurfaceInputFile()
 		}
 		timeDataPdist.push_back(tempTimeDataPdist);
 	}
+	fileHasBeenRead = int(1);
 }
 
 int rcrtReader::getPdmax()

@@ -110,9 +110,9 @@ TEST_F(testMultidom, checkFlowAndPressureSetters)
 	// Set some fake flow data ( this may be unnecessary now.. )
 	double flows[5] = {10.0, 15.0, 0.0, 0.0, 0.0};
 	
-	boundaryConditionManager_instance->updateAllRCRS_setflow_n(2, flows);
+	boundaryConditionManager_instance->updateAllRCRS_setflow_n(flows);
 	
-	boundaryConditionManager_instance->updateAllRCRS_setflow_n1(2, flows);
+	boundaryConditionManager_instance->updateAllRCRS_setflow_n1(flows);
 	
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[0]->flow_n1, 10.0);
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[2]->flow_n1, 15.0);

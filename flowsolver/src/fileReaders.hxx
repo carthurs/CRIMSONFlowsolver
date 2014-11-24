@@ -21,6 +21,7 @@ class abstractFileReader
 public:
 	abstractFileReader()
 	{
+		fileHasBeenRead = 0;
 		currentLineSplitBySpaces = new std::vector<std::string>;
 		std::cout<< "call to abstractFileReader constructor." << std::endl;
 	}
@@ -49,6 +50,9 @@ public:
 		delete currentLineSplitBySpaces;
 		// delete fileName;
 	}
+
+	double getReadFileData(int columnIndex, int timestepNumber);
+
 protected:
 	std::ifstream* fileHandle;
 	std::vector<std::string>* currentLineSplitBySpaces;
@@ -62,6 +66,7 @@ protected:
 
 	int numColumns;
 	std::vector<double> dataReadFromFile_line;
+	int fileHasBeenRead;
 	bool readNextLineWithKnownNumberOfColumns();
 private:
 };

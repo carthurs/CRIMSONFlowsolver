@@ -1895,8 +1895,8 @@ subroutine updreducedordermodel(y,rom,varchar)
             ! this is here because it is particle dependent as the WK pressure is part of the state
             ! the pressure_n is a set via the pointer set previously 
             ! if (nrcractive) then ! commented this IF whilst doing the C++ additions - check it's necessary! \todo
-                ! call callCPPUpdateAllRCRS_setflow_n(nsurf,c_loc(currflow(1)))
-                ! call callCPPUpdateAllRCRS_setflow_n1(nsurf,c_loc(currflow(1)))
+                ! call callCPPUpdateAllRCRS_setflow_n(c_loc(currflow(1)))
+                ! call callCPPUpdateAllRCRS_setflow_n1(c_loc(currflow(1)))
             ! end if
 
         endif      

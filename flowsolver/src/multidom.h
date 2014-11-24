@@ -56,6 +56,8 @@
     int hstep;
     double delt;
     double alfi_local;
+    int thisIsARestartedSimulation;
+
     virtual void computeImplicitCoeff_solve(int timestepNumber) = 0;
  	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
  	virtual void updpressure_n1_withflow() = 0;
@@ -83,6 +85,15 @@ public:
     	 index = bcCount;
 
     	 alfi_local = timdat.alfi;
+
+		if (timdat.lstep > 0)
+    	{
+    		thisIsARestartedSimulation = 1;
+    	}
+    	else
+    	{
+    		thisIsARestartedSimulation = 0;
+    	}
     	 
  	}
 
@@ -118,12 +129,12 @@ public:
 	RCR(int surfaceIndex_in)
 	: boundaryCondition(surfaceIndex_in)
 	{
-		initialiseModel();
-
 		// Note the index of this RCR (zero-indexed), and count its existance
 		// (the order of these two lines is correct!)
 		indexOfThisRCR = numberOfInitialisedRCRs;
 		numberOfInitialisedRCRs++;
+
+		initialiseModel();
 		
 		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
 		r1 = rcrtReader_instance->getR1()[indexOfThisRCR];
@@ -204,22 +215,31 @@ public:
  {
  	friend class testMultidom;
  public:
+
+ 	static histFileReader* PHistReader;
  
     static boundaryConditionManager* Instance()
 	{
 		if (!instance) {
 			instance = new boundaryConditionManager();
+    		instance->ifRestartingLoadNecessaryData();
 		}
 		return instance;
 	}
 
 	static void Term()
 	{
+		if (thisIsARestartedSimulation)
+		{
+			delete boundaryConditionManager::PHistReader;
+		}
 		delete instance;
 		instance = 0;
 	}
 	
     void setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList);
+
+    void ifRestartingLoadNecessaryData();
     
     void getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<boundaryCondition>>* getBoundaryConditions();
@@ -228,20 +248,36 @@ public:
     void computeAllImplicitCoeff_update(int timestepNumber);
 
     void updateAllRCRS_Pressure_n1_withflow();
-    void updateAllRCRS_setflow_n(int numberOfRCRSurfaces, double* flows);
-    void updateAllRCRS_setflow_n1(int numberOfRCRSurfaces, double* flows);
+    void updateAllRCRS_setflow_n(double* flows);
+    void updateAllRCRS_setflow_n1(double* flows);
 
     void recordPressuresAndFlowsInHistoryArrays();
 
     void writePHistAndQHistRCR();
+
+    ~boundaryConditionManager()
+    {
+    }
  
  private:
     boundaryConditionManager()
     {
+    	numberOfRCRSurfaces = grcrbccom.numGRCRSrfs;
+    	if (timdat.lstep > 0)
+    	{
+    		thisIsARestartedSimulation = 1;
+    	}
+    	else
+    	{
+    		thisIsARestartedSimulation = 0;
+    	}
     }
     std::vector<boost::shared_ptr<boundaryCondition>> boundaryConditions;
     std::map<int,std::pair<double,double>> implicitCoefficientMap;
     boundaryConditionFactory factory;
+
+    static int thisIsARestartedSimulation;
+    static int numberOfRCRSurfaces;
 
     // For testing purposes, to clear the static class out before the next test begins
     // Note that you'll have to make the test class a friend in order to use this..

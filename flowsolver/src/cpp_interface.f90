@@ -44,17 +44,15 @@ module cpp_interface
     end interface
 
     interface
-    		subroutine callCPPUpdateAllRCRS_setflow_n(numberOfRCRSurfaces, flows) bind(c,name="callCPPUpdateAllRCRS_setflow_n")
+    		subroutine callCPPUpdateAllRCRS_setflow_n(flows) bind(c,name="callCPPUpdateAllRCRS_setflow_n")
     			use iso_c_binding
-    			integer(c_int) :: numberOfRCRSurfaces
     			type(c_ptr) :: flows
     		end subroutine callCPPUpdateAllRCRS_setflow_n
     end interface
 
     interface
-    		subroutine callCPPUpdateAllRCRS_setflow_n1(numberOfRCRSurfaces, flows) bind(c,name="callCPPUpdateAllRCRS_setflow_n1")
+    		subroutine callCPPUpdateAllRCRS_setflow_n1(flows) bind(c,name="callCPPUpdateAllRCRS_setflow_n1")
     			use iso_c_binding
-    			integer(c_int) :: numberOfRCRSurfaces
     			type(c_ptr) :: flows
     		end subroutine callCPPUpdateAllRCRS_setflow_n1
     end interface

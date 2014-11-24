@@ -5,6 +5,7 @@
 
 class fortranBoundaryDataPointerManager {
 	friend class testMultidom;
+	friend class testMain;
 public:
 
 	static fortranBoundaryDataPointerManager* Get()

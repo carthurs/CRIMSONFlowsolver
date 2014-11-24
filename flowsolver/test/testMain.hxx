@@ -113,7 +113,6 @@
 
 		   fortranBoundaryDataPointerManager* pointerManager;
 		   pointerManager = fortranBoundaryDataPointerManager::Get();
-
 		   for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
 			   itrdrv_iter_init();
 			   itrdrv_iter_step();
@@ -147,6 +146,8 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
+	    fortranBoundaryDataPointerManager::Get()->tearDown();
+	    boundaryConditionManager::Instance()->Term();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

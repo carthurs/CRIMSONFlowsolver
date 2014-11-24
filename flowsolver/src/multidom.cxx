@@ -11,7 +11,11 @@
 #include "fileWriters.hxx"
 #include <typeinfo>
 
+// Static class static member variables:
 boundaryConditionManager* boundaryConditionManager::instance = 0;
+histFileReader* boundaryConditionManager::PHistReader = NULL;
+int boundaryConditionManager::numberOfRCRSurfaces = 0;
+int boundaryConditionManager::thisIsARestartedSimulation = 0;
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
 double boundaryCondition::getHop()
@@ -54,7 +58,7 @@ void boundaryCondition::updatePressureAndFlowHistory()
 
 double RCR::linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 {
-  // Linearly interpolates pairs of (Time,Value), in time.
+  // Linearly interpolates between pairs of (Time,Value) pairs, in time.
   // If we've reached a Time past the end of the last value in the array,
   // this just returns the final value of Value
 
@@ -140,6 +144,19 @@ void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::str
   }
 }
 
+void boundaryConditionManager::ifRestartingLoadNecessaryData()
+{
+  if (thisIsARestartedSimulation)
+  {
+    // Load PHistRCR.dat, necessary for setting the pressure data in the 
+    // LPN at the boundary when restarting
+    PHistReader = new histFileReader();
+    PHistReader->setFileName("PHistRCR.dat");
+    PHistReader->setNumColumns(numberOfRCRSurfaces+1);
+    PHistReader->readAndSplitMultiSurfaceRestartFile();
+  }
+}
+
 std::vector<boost::shared_ptr<boundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
 {
     return &boundaryConditions;
@@ -176,7 +193,7 @@ extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 }
 
 
-void boundaryConditionManager::updateAllRCRS_setflow_n(int numberOfRCRSurfaces, double* flows)
+void boundaryConditionManager::updateAllRCRS_setflow_n(double* flows)
 {
   int readLocation = 0;
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
@@ -190,14 +207,14 @@ void boundaryConditionManager::updateAllRCRS_setflow_n(int numberOfRCRSurfaces, 
   std::cout << "these should be equal (B): " << readLocation << " and " << numberOfRCRSurfaces << std::endl;
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPUpdateAllRCRS_setflow_n(int& numberOfRCRSurfaces, double*& flows)
+extern "C" void callCPPUpdateAllRCRS_setflow_n(double*& flows)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->updateAllRCRS_setflow_n(numberOfRCRSurfaces, flows); 
+  boundaryConditionManager_instance->updateAllRCRS_setflow_n(flows); 
 }
 
 
-void boundaryConditionManager::updateAllRCRS_setflow_n1(int numberOfRCRSurfaces, double* flows)
+void boundaryConditionManager::updateAllRCRS_setflow_n1(double* flows)
 {
   int readLocation = 0;
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
@@ -211,10 +228,10 @@ void boundaryConditionManager::updateAllRCRS_setflow_n1(int numberOfRCRSurfaces,
   std::cout << "these should be equal (A): " << readLocation << " and " << numberOfRCRSurfaces << std::endl;
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPUpdateAllRCRS_setflow_n1(int& numberOfRCRSurfaces, double*& flows)
+extern "C" void callCPPUpdateAllRCRS_setflow_n1(double*& flows)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->updateAllRCRS_setflow_n1(numberOfRCRSurfaces, flows); 
+  boundaryConditionManager_instance->updateAllRCRS_setflow_n1(flows); 
 }
 
 void boundaryConditionManager::recordPressuresAndFlowsInHistoryArrays()
@@ -371,8 +388,19 @@ void RCR::initialiseModel()
     flow_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryFlows.at(surfaceIndex);
     pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryPressures.at(surfaceIndex);
 
+    
+    if (thisIsARestartedSimulation)
+    {
+      // Initialise the pressure using the value from the PHistRCR.dat.
+      pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1,timdat.lstep);
+    }
+    else
+    {
+      pressure_n = *pressure_n_ptr;
+    }
+
+
     flow_n = *flow_n_ptr;
-    pressure_n = *pressure_n_ptr;
     
 
     flow_n1 = 0.0;
@@ -464,6 +492,7 @@ void RCR::computeImplicitCoeff_update(int timestepNumber)
 // Here we step the actual discretised ODE for the RCR:
 std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt)
 {
+
   double temp1;
   double temp2;
   std::pair<double,double> returnCoeffs;

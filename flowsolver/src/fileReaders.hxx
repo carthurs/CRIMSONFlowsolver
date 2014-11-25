@@ -23,7 +23,6 @@ public:
 	{
 		fileHasBeenRead = 0;
 		currentLineSplitBySpaces = new std::vector<std::string>;
-		std::cout<< "call to abstractFileReader constructor." << std::endl;
 	}
 	
 	void setFileName(std::string fileNameIn)

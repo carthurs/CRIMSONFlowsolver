@@ -838,7 +838,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
             ! first reset flow for the filter
             call reset_flow_n(yold, nrcr)
             ! calculate the implicit coefficients
-            call nrcr%setimplicitcoeff(lstep)
+            ! call nrcr%setimplicitcoeff(lstep) !\cppHook
 
             call callCppComputeAllImplicitCoeff_solve(lstep)
             call callCppComputeAllImplicitCoeff_update(lstep)

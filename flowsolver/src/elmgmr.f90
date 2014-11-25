@@ -1548,6 +1548,8 @@
       use grcrbc
       use multidomain, only: nrcractive, nrcr, hrt
 
+      use cpp_interface
+
 
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -1578,7 +1580,8 @@
          DO k = 1, numGRCRSrfs
             faIn = faIn + 1
             if (nrcractive) then
-              implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
+              ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
+              call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1))) !\cppHook
               faceRes(faIn) = implicitcoeffs(k,1)
             else  
               faceRes(faIn) = grcrbc_coeff_1_implicit(k)

@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 #include "testMultidom.hxx"
+#include "RCR.hxx"
+#include "netlistBoundaryCondition.hxx"
 
 // Hack to force the compiler to link this test to the relevant main() for testing
 int PullInMyLibraryTestMultidom() { return 0; }

@@ -36,6 +36,11 @@ sources=string.split("""
 	fileWriters.cxx
 	fortranPointerManager.cxx
 	debuggingToolsForCpp.cxx
+	abstractBoundaryCondition.cxx
+	boundaryConditionManager.cxx
+	boundaryConditionFactory.cxx
+	RCR.cxx
+	netlistBoundaryCondition.cxx
 	blend.c
 	blendDrv.c
 	Bn.c

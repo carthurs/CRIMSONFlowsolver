@@ -19,6 +19,7 @@
 #include "multidom.h"
 #include "fortranPointerManager.hxx"
 #include "fileReaders.hxx"
+#include "boundaryConditionManager.hxx"
 
 #include "debuggingToolsForCpp.hxx"
 

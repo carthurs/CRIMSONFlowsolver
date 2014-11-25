@@ -16,7 +16,7 @@
 	  // is empty.
 
 	   rcrtReader* rcrtReader_instance;
-	   std::vector<boost::shared_ptr<boundaryCondition>>* retrievedBoundaryConditions;
+	   std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
 	   boundaryConditionManager* boundaryConditionManager_instance;
 	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 

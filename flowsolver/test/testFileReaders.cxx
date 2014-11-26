@@ -59,3 +59,84 @@ TEST_F(testFileReaders, checkFileReaderGotSecondRCR) {
   EXPECT_DOUBLE_EQ(0.9,timeData2[2].first);
   EXPECT_DOUBLE_EQ(2.3,timeData2[2].second);
 }
+
+TEST_F(testFileReaders, checkControlledCoronaryReader) {
+  controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+  controlledCoronaryReader_instance->setFileName("controlled_coronaries_test.dat");
+  controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
+
+  std::vector<double> returnedVector;
+
+  returnedVector = controlledCoronaryReader_instance->getResistanceNearAorta();
+  EXPECT_DOUBLE_EQ(1.286208e5,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(2.286208e5,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getComplianceNearAorta();
+  EXPECT_DOUBLE_EQ(4.5e-7,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(5.5e-7,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getMidResistance();
+  EXPECT_DOUBLE_EQ(1.286208e5,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(2.286208e5,returnedVector.at(1));
+  
+  returnedVector = controlledCoronaryReader_instance->getIntramyocardialCompliance();
+  EXPECT_DOUBLE_EQ(2.7e-6,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(3.7e-6,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getDistalResistance();
+  EXPECT_DOUBLE_EQ(7.5e5,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(8.5e5,returnedVector.at(1));
+  
+  returnedVector = controlledCoronaryReader_instance->getMinimumAllowedResistance();
+  EXPECT_DOUBLE_EQ(10.0,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(20.0,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getMaximumAllowedResistance();
+  EXPECT_DOUBLE_EQ(1e8,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(2e8,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getPerfusionBedMVO2_previous();
+  EXPECT_DOUBLE_EQ(0.0272,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.0272,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getPerfusionBedMVO2_current();
+  EXPECT_DOUBLE_EQ(0.0273,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.0273,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getProportionOfMyocardiumPerfusedByThisSurface();
+  EXPECT_DOUBLE_EQ(0.1,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.1,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getMetabolicFeedbackGain();
+  EXPECT_DOUBLE_EQ(0.31,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.31,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getAlphaAdrenergicFeedforwardGain();
+  EXPECT_DOUBLE_EQ(0.0,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.0,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getBetaAdrenergicFeedforwardGain();
+  EXPECT_DOUBLE_EQ(0.0,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.0,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getFeedbackDamping();
+  EXPECT_DOUBLE_EQ(0.26,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(1.26,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getO2DemandIntegrationWindow();
+  EXPECT_DOUBLE_EQ(5.0,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(6.0,returnedVector.at(1));
+
+
+  controlledCoronaryReader_instance->Term();
+}
+
+TEST_F(testFileReaders, checkControlledCoronaryReaderMalformedFileDetection) {
+  controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+  controlledCoronaryReader_instance->setFileName("controlled_coronaries_test_malformed.dat");
+  
+  std::cout << "This test expects an error message on the next line:" << std::endl;
+  EXPECT_ANY_THROW(controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile());
+
+  controlledCoronaryReader_instance->Term();
+}

@@ -16,6 +16,7 @@
 	  // is empty.
 
 	   rcrtReader* rcrtReader_instance;
+	   controlledCoronaryReader* controlledCoronaryReader_instance;
 	   std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
 	   boundaryConditionManager* boundaryConditionManager_instance;
 	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
@@ -23,10 +24,12 @@
 	   double press1;
 	   double press2;
 	   double press3;
+	   double press4;
 
 	   double flow1;
 	   double flow2;
 	   double flow3;
+	   double flow4;
 
 	   // A fake timdat for testing
 	   double alfi_local;
@@ -42,10 +45,12 @@
 	  	press1 = 1000;
 	    press2 = 2000;
 	    press3 = 3000;
+	    press4 = 4000;
 
 	    flow1 = 33;
 	    flow2 = 66;
 	    flow3 = 99;
+	    flow4 = 132;
 
 	    // Create fake (i.e. non-FORTRAN) pointer manager
 	    // fortranBoundaryDataPointerManager* fortranPointerManager_instance;
@@ -58,10 +63,12 @@
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(3,&flow1));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(7,&flow2));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(9,&flow3));
+	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(11,&flow4));
 
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(3,&press1));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(7,&press2));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(9,&press3));
+	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(11,&press4));
         
 
 	  	// Setup the file reader for the RCRTs
@@ -69,15 +76,21 @@
 		rcrtReader_instance->setFileName("rcrt_test.dat");
 		rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
 
+		// Setup the file reader for the coronaries:
+		controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+		controlledCoronaryReader_instance->setFileName("controlled_coronaries_test.dat");
+		controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
+
 		
 		std::vector<std::pair<int,std::string>> surfaceList;
 		surfaceList.clear();
 		
 
-	    // Describe 3 test BCs that we want to construct:
+	    // Describe 4 test BCs that we want to construct:
 	    surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
 	    surfaceList.push_back(std::pair <int,std::string> (7,"netlist"));
 	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
+	    surfaceList.push_back(std::pair <int,std::string> (11,"controlledCoronary"));
 
 	    
 
@@ -91,11 +104,13 @@
 		(*retrievedBoundaryConditions)[0]->dp_dq = 1.234;
 		(*retrievedBoundaryConditions)[1]->dp_dq = 2.234;
 		(*retrievedBoundaryConditions)[2]->dp_dq = 3.234;
+		(*retrievedBoundaryConditions)[3]->dp_dq = 4.234;
 		
 
 		(*retrievedBoundaryConditions)[0]->Hop = 1.567;
 		(*retrievedBoundaryConditions)[1]->Hop = 2.567;
 		(*retrievedBoundaryConditions)[2]->Hop = 3.567;
+		(*retrievedBoundaryConditions)[3]->Hop = 4.567;
 	  }
 
 	  virtual ~testMultidom() {
@@ -125,11 +140,9 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
-	    boundaryConditionManager_instance->Term();
+	    multidom_finalise();
 	    fortranPointerManager_instance->tearDown();
-	    rcrtReader_instance->tearDown();
-	    retrievedBoundaryConditions = 0;
-	    
+	    // retrievedBoundaryConditions = 0;
 	  }
 
 	  void overrideMissingDataForTesting() {

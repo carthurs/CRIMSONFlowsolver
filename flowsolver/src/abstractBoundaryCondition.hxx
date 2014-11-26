@@ -80,11 +80,6 @@ public:
     	 
  	}
 
- 	virtual double tempDataTestFunction()
- 	{
- 		return -3.14159265;
- 	}
-
  	virtual ~abstractBoundaryCondition()
  	{
  	    delete[] flowhist;

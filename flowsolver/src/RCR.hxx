@@ -14,9 +14,8 @@ public:
 		// (the order of these two lines is correct!)
 		indexOfThisRCR = numberOfInitialisedRCRs;
 		numberOfInitialisedRCRs++;
-
-		initialiseModel();
 		
+		initialiseModel();
 		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
 		r1 = rcrtReader_instance->getR1()[indexOfThisRCR];
 		c = rcrtReader_instance->getC()[indexOfThisRCR];
@@ -36,11 +35,6 @@ public:
 //     procedure :: updxvars_rcr => updxvars_rcr         
 //     procedure :: writexvars_rcr => writexvars_rcr
 //     procedure :: assign_ptrs_ext_rcr => assign_ptrs_ext_rcr
-
-	double tempDataTestFunction()
-	{
-		return r1;
-	}
 
 	~RCR()
 	{

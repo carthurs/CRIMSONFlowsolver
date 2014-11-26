@@ -15,9 +15,20 @@
 
 void multidom_initialise(){
 
-  rcrtReader* rcrtReader_instance = rcrtReader::Instance();
-  rcrtReader_instance->setFileName("rcrt.dat");
-  rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
+  // Make the file readers for the classes of surface present in this simulation:
+  if (grcrbccom.numGRCRSrfs > 0)
+  {
+    rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+    rcrtReader_instance->setFileName("rcrt.dat");
+    rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
+  }
+
+  if (nomodule.numControlledCoronarySrfs > 0)
+  {
+    controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+    controlledCoronaryReader_instance->setFileName("controlled_coronaries.dat");
+    controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
+  }
 
   std::vector<std::pair<int,std::string>> surfaceList;
 
@@ -25,6 +36,10 @@ void multidom_initialise(){
   for (int i = 0; i < grcrbccom.numGRCRSrfs; i++)
   {
     surfaceList.push_back(std::pair <int,std::string> (grcrbccom.nsrflistGRCR[i+1],"rcr"));
+  }
+  for (int ii = 0; ii < nomodule.numControlledCoronarySrfs; ii++)
+  {
+    surfaceList.push_back(std::pair <int,std::string> (nomodule.indicesOfCoronarySurfaces[ii+1],"controlledCoronary"));
   }
   // Write loops here for all the other surface types!
   
@@ -61,10 +76,8 @@ void multidom_iter_finalise(){
 }
 
 void multidom_finalise(){
-  // std::vector<boost::shared_ptr<abstractBoundaryCondition>>* BCs = boundaryConditionManager::Instance()->getBoundaryConditions();
-  // std::cout << "dbl" << BCs->at(0)->tempDataTestFunction() << std::endl;
-
   boundaryConditionManager::Instance()->Term();
   rcrtReader::Instance()->Term();
+  controlledCoronaryReader::Instance()->Term();
 }
 

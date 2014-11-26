@@ -29,7 +29,7 @@ TEST_F(testMain, checkRestartWorks_simpleShortSimulationWithRCRs) {
   std::string simDir = "mainTests/restart";
   setSimDirectory(simDir);
   clearOutOldFiles();
-  
+
   runSimulation();
   histFileReader* PHistReader = new histFileReader();
   PHistReader->setFileName("PHistRCR.dat");

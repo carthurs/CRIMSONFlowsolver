@@ -1,0 +1,62 @@
+# File contains the coronary model parameters for each outlet.
+# Coronary 1:
+# R_a:
+1.286208e5
+# R_p:
+1.286208e5
+# R_d:
+7.5e5
+#C_a:
+4.5e-7
+# C_im:
+2.7e-6
+# R_min:
+10
+# MVO2 for this outlets perfusion territory on previous time-step
+0.0272
+# MVO2 for this outlets perfusion territory on current time-step
+0.0273
+# Proportion of myocardium perfused by this outlet (decimal between 0 and 1)
+0.1
+# Metabolic feedback control gain:2.5
+0.31
+# Alpha adrenergic feedforward control gain:-0.1
+0
+# Beta adrenergic feedforward control gain:0.25
+0
+# Damping:
+0.26
+# Myocardial O2 demand/supply integration window duration (seconds)
+5
+# Coronary 2:
+# R_a:
+2.286208e5
+# R_p:
+2.286208e5
+# R_d:
+8.5e5
+#C_a:
+5.5e-7
+# C_im:
+3.7e-6
+# R_min:
+20
+# R_max:
+2e8
+# MVO2 for this outlets perfusion territory on previous time-step
+1.0272
+# MVO2 for this outlets perfusion territory on current time-step
+1.0273
+# Proportion of myocardium perfused by this outlet (decimal between 0 and 1)
+1.1
+# Metabolic feedback control gain:2.5
+1.31
+# Alpha adrenergic feedforward control gain:-0.1
+1
+# Beta adrenergic feedforward control gain:0.25
+1
+# Damping:
+1.26
+# Myocardial O2 demand/supply integration window duration (seconds)
+6
+# This line must not be blank (SimVascular expects it when validating this file), must only occur at the end of the file, and there should be no whitespace after this line

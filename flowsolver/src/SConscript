@@ -41,6 +41,7 @@ sources=string.split("""
 	boundaryConditionFactory.cxx
 	RCR.cxx
 	netlistBoundaryCondition.cxx
+	controlledCoronary.cxx
 	blend.c
 	blendDrv.c
 	Bn.c

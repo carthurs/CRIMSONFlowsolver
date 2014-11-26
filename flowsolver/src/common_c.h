@@ -532,7 +532,12 @@
          int numBETFields;
          int iestimator;
          int iheart;
+         int numControlledCoronarySrfs;
+         int indicesOfCoronarySurfaces[MAXSURF+1];
+         int numNetlistLPNSrfs;
+         int netlistSurfaceGlobalIndices[MAXSURF+1];
       } nomodule;
+
 
       extern struct {
     	  int numGRCRSrfs;

@@ -23,12 +23,13 @@ public:
 	{
 		fileHasBeenRead = 0;
 		currentLineSplitBySpaces = new std::vector<std::string>;
+		fileHandle = new std::ifstream();
 	}
 	
 	void setFileName(std::string fileNameIn)
 	{
 	    fileName = fileNameIn;
-		fileHandle = new std::ifstream(fileName.c_str());
+		fileHandle->open(fileName.c_str());
 		
 		if (fileHandle->fail())
 		{
@@ -70,15 +71,6 @@ protected:
 private:
 };
 
-class histFileReader : public abstractFileReader
-{
-public:
-	histFileReader()
-	{
-	}
-	void readAndSplitMultiSurfaceRestartFile();
-	
-};
 
 // This abstract class is desigend for extenntion to classes which read a single file which contains data for multiple boundaries
 // It also acts as a container for the data, from which it can be easily copied to the relevant boundary condition classes
@@ -93,6 +85,17 @@ public:
 	virtual ~abstractMultipleSurfaceFileReader()
 	{
 	}
+};
+
+
+class histFileReader : public abstractFileReader
+{
+public:
+	histFileReader()
+	{
+	}
+	void readAndSplitMultiSurfaceRestartFile();
+	
 };
 
 
@@ -112,8 +115,11 @@ public:
 
 	static void Term()
 	{
-		delete instance;
-		instance = 0;
+		if (instance!=0)
+		{
+			delete instance;
+			instance = 0;
+		}
 	}
 
 	void readAndSplitMultiSurfaceInputFile();
@@ -154,6 +160,71 @@ private:
 	std::vector<double> r2;
 	std::vector<std::vector<std::pair<double,double>>> timeDataPdist;
 	int lengthOfTimeDataPdist;
+};
+
+class controlledCoronaryReader : public abstractMultipleSurfaceFileReader
+{
+public:
+	static controlledCoronaryReader* Instance()
+	{
+		if (!instance)
+		{
+			instance = new controlledCoronaryReader();
+		}
+		return instance;
+	}
+
+	static void Term()
+	{
+		if (instance!=0)
+		{
+			delete instance;
+			instance = 0;
+		}
+	}
+
+	void readAndSplitMultiSurfaceInputFile();
+
+	std::vector<double> getResistanceNearAorta();
+	std::vector<double> getComplianceNearAorta();
+	std::vector<double> getMidResistance();
+	std::vector<double> getIntramyocardialCompliance();
+	std::vector<double> getDistalResistance();
+
+	std::vector<double> getMinimumAllowedResistance();
+	std::vector<double> getMaximumAllowedResistance();
+	std::vector<double> getPerfusionBedMVO2_previous();
+	std::vector<double> getPerfusionBedMVO2_current();
+	std::vector<double> getProportionOfMyocardiumPerfusedByThisSurface(); // Just this ventricle
+	std::vector<double> getMetabolicFeedbackGain();
+	std::vector<double> getAlphaAdrenergicFeedforwardGain();
+	std::vector<double> getBetaAdrenergicFeedforwardGain();
+	std::vector<double> getFeedbackDamping();
+	std::vector<double> getO2DemandIntegrationWindow();
+
+private:
+	controlledCoronaryReader()
+	{
+	}
+
+	static controlledCoronaryReader* instance;
+
+	std::vector<double> resistanceNearAorta;
+	std::vector<double> complianceNearAorta;
+	std::vector<double> midResistance;
+	std::vector<double> intramyocardialCompliance;
+	std::vector<double> distalResistance;
+
+	std::vector<double> minimumAllowedResistance;
+	std::vector<double> maximumAllowedResistance;
+	std::vector<double> perfusionBedMVO2_previous;
+	std::vector<double> perfusionBedMVO2_current;
+	std::vector<double> proportionOfMyocardiumPerfusedByThisSurface; // Just this ventricle
+	std::vector<double> metabolicFeedbackGain;
+	std::vector<double> alphaAdrenergicFeedforwardGain;
+	std::vector<double> betaAdrenergicFeedforwardGain;
+	std::vector<double> feedbackDamping;
+	std::vector<double> O2DemandIntegrationWindow;
 };
 
 #endif

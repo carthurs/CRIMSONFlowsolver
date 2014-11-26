@@ -1,7 +1,9 @@
 #include "fileReaders.hxx"
 #include "debuggingToolsForCpp.hxx"
+#include "common_c.h"
 
 rcrtReader* rcrtReader::instance = 0;
+controlledCoronaryReader* controlledCoronaryReader::instance = 0;
 
 
 // Reads a file line, returns a successful-read bool.
@@ -15,21 +17,40 @@ bool abstractFileReader::readNextLine()
 		std::exit(1);
 	}
 
-	bool returnValue = !(std::getline(*fileHandle,currentLine).eof());
+	// Read the next line from the file
+	currentLine.clear();
+	bool fileNotEnded;
+	fileNotEnded = !(std::getline(*fileHandle,currentLine).eof());
 
-	std::stringstream lineSplitter;
-	lineSplitter << currentLine;
-
-	std::string substring;
-
-	currentLineSplitBySpaces->clear();
-
-	while(std::getline(lineSplitter,substring,' '))
+	// If the end of the file had not been reached before the above read:
+	if (fileNotEnded)
 	{
-		currentLineSplitBySpaces->push_back(substring);
+		// See if we have a hash-commented line.
+		// If we do, try reading the next line
+		while(currentLine.compare(0,1,"#") == int(0))
+		{
+			currentLine.clear();
+			fileNotEnded = !(std::getline(*fileHandle,currentLine).eof());
+		}
+
+		if (fileNotEnded)
+		{
+			// Now we've found a non-commented line, actually read the data from it.
+			std::stringstream lineSplitBuffer;
+			lineSplitBuffer << currentLine;
+
+			std::string substring;
+
+			currentLineSplitBySpaces->clear();
+
+			while(std::getline(lineSplitBuffer,substring,' '))
+			{
+				currentLineSplitBySpaces->push_back(substring);
+			}
+		}
 	}
 
-	return returnValue;
+	return fileNotEnded;
 }
 
 bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
@@ -159,4 +180,141 @@ std::vector<std::vector<std::pair<double,double>>> rcrtReader::getTimeDataPdist(
 std::vector<int> rcrtReader::getNumDataRCR()
 {
     return numDataRCR;
+}
+
+void controlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
+{
+
+	// Loop over the rest of the file to get the relevant RCR data for this boundary:
+	while(readNextLine())
+	{
+		resistanceNearAorta.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		
+		readNextLine();
+		midResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		
+		readNextLine();
+		distalResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		complianceNearAorta.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		intramyocardialCompliance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		minimumAllowedResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		maximumAllowedResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		perfusionBedMVO2_previous.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		perfusionBedMVO2_current.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		proportionOfMyocardiumPerfusedByThisSurface.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		metabolicFeedbackGain.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		alphaAdrenergicFeedforwardGain.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		betaAdrenergicFeedforwardGain.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		feedbackDamping.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		// Check that we havn't prematurely run out of file.. (i.e. check the file wasn't malformed)
+		if (readNextLine())
+		{
+			O2DemandIntegrationWindow.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		}
+		else
+		{
+			std::cout << "File " << fileName << " appears to be malformed." << std::endl;
+			throw std::runtime_error("");
+		}
+	}
+
+	fileHasBeenRead = int(1);
+}
+
+std::vector<double> controlledCoronaryReader::getResistanceNearAorta()
+{
+	return resistanceNearAorta;
+}
+
+std::vector<double> controlledCoronaryReader::getComplianceNearAorta()
+{
+	return complianceNearAorta;
+}
+
+std::vector<double> controlledCoronaryReader::getMidResistance()
+{
+	return midResistance;
+}
+
+std::vector<double> controlledCoronaryReader::getIntramyocardialCompliance()
+{
+	return intramyocardialCompliance;
+}
+
+std::vector<double> controlledCoronaryReader::getDistalResistance()
+{
+	return distalResistance;
+}
+
+std::vector<double> controlledCoronaryReader::getMinimumAllowedResistance()
+{
+	return minimumAllowedResistance;
+}
+
+std::vector<double> controlledCoronaryReader::getMaximumAllowedResistance()
+{
+	return maximumAllowedResistance;
+}
+
+std::vector<double> controlledCoronaryReader::getPerfusionBedMVO2_previous()
+{
+	return perfusionBedMVO2_previous;
+}
+
+std::vector<double> controlledCoronaryReader::getPerfusionBedMVO2_current()
+{
+	return perfusionBedMVO2_current;
+}
+
+std::vector<double> controlledCoronaryReader::getProportionOfMyocardiumPerfusedByThisSurface()
+{
+	return proportionOfMyocardiumPerfusedByThisSurface;
+}
+
+std::vector<double> controlledCoronaryReader::getMetabolicFeedbackGain()
+{
+	return metabolicFeedbackGain;
+}
+
+std::vector<double> controlledCoronaryReader::getAlphaAdrenergicFeedforwardGain()
+{
+	return alphaAdrenergicFeedforwardGain;
+}
+
+std::vector<double> controlledCoronaryReader::getBetaAdrenergicFeedforwardGain()
+{
+	return betaAdrenergicFeedforwardGain;
+}
+
+std::vector<double> controlledCoronaryReader::getFeedbackDamping()
+{
+	return feedbackDamping;
+}
+
+std::vector<double> controlledCoronaryReader::getO2DemandIntegrationWindow()
+{
+	return O2DemandIntegrationWindow;
 }

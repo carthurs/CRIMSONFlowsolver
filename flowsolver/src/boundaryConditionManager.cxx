@@ -129,7 +129,6 @@ void boundaryConditionManager::updateAllRCRS_setflow_n(double* flows)
       readLocation++;
     }
   }
-  std::cout << "these should be equal (B): " << readLocation << " and " << numberOfRCRSurfaces << std::endl;
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllRCRS_setflow_n(double*& flows)
@@ -150,7 +149,6 @@ void boundaryConditionManager::updateAllRCRS_setflow_n1(double* flows)
       readLocation++;
     }
   }
-  std::cout << "these should be equal (A): " << readLocation << " and " << numberOfRCRSurfaces << std::endl;
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllRCRS_setflow_n1(double*& flows)

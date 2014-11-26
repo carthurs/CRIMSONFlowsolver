@@ -106,7 +106,9 @@ module phcommonvars
         iringdamp, iringsupp, &
         imeasdist, idistancenudge, &
         iinitialprestress, iupdateprestress, &
-        iuseBET, numBETFields, iestimator, iheart
+        iuseBET, numBETFields, iestimator, iheart, &
+        numControlledCoronarySrfs, indicesOfCoronarySurfaces, &
+        numNetlistLPNSrfs, netlistSurfaceGlobalIndices
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 

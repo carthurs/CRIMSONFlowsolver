@@ -921,6 +921,38 @@ int input_fform() {
 				else
 					nomodule.icorfile = 0;
 			}
+
+			if(nomodule.numControlledCoronarySrfs=inp.GetValue("Number of Controlled Coronary Surfaces"))
+			{
+				ivec = inp.GetValue("List of Controlled Coronary Surfaces");
+
+				for(i=0; i<MAXSURF+1; i++) 
+				{
+					nomodule.indicesOfCoronarySurfaces[i] = 0;
+				}
+
+				for(i=0; i< nomodule.numControlledCoronarySrfs; i++)
+				{
+					nomodule.indicesOfCoronarySurfaces[i+1]=ivec[i];
+				}
+
+			}
+
+			if (nomodule.numNetlistLPNSrfs = inp.GetValue("Number of Netlist LPN Surfaces"))
+			{
+				ivec = inp.GetValue("List of Netlist LPN Surfaces");
+
+				for (i=0; i<MAXSURF+1; i++)
+				{
+					nomodule.netlistSurfaceGlobalIndices[i] = 0;
+				}
+
+				for (i=0; i<nomodule.numNetlistLPNSrfs; i++)
+				{
+					nomodule.netlistSurfaceGlobalIndices[i+1] = ivec[i];
+				}
+			}
+
 			if (nomodule.numVisFluxSrfs = inp.GetValue(
 					"Number of Surfaces which zero out in-plane tractions")) {
 				ivec = inp.GetValue(

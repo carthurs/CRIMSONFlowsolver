@@ -223,8 +223,8 @@
       call startmultidomain()     
       call startmultidomain(iheart,'heart')       
       !call startmultidomain(isystemic,'systemic')
-      !call startmultidomain(inewcoronary,'coronary')
-      !call startmultidomain(inetlistLPN,'netlist')
+      call startmultidomain(inewcoronary,'coronary')
+      call startmultidomain(inetlistLPN,'netlist')
       
       ! write out status 
       call multidomainstatus()                              

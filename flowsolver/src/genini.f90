@@ -211,8 +211,8 @@
           end if          
 
 !
-          !if (numCoronarySrfs .gt. int(0)) then
-          !  call multidom%addsurfids(numCoronarySrfs,nSrfListCoronary)
+          !if (numControlledCoronarySrfs .gt. int(0)) then
+          !  call multidom%addsurfids(numControlledCoronarySrfs,indicesOfCoronarySurfaces)
           !end if
 !
           !if (numNetlistLPNSrfs .gt. int(0)) then

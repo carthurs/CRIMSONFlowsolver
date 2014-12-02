@@ -4,6 +4,9 @@
 #include <boost/shared_ptr.hpp>
 #include "abstractBoundaryCondition.hxx"
 
+// Forward declarations:
+class abstractBoundaryCondition;
+
 class boundaryConditionFactory
  {
  public:

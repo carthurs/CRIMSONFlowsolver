@@ -2,8 +2,11 @@
 #define BOOUNDARYCONDITIONMANAGER_HXX_
 
 #include "fileReaders.hxx"
-#include "abstractBoundaryCondition.hxx"
 #include "boundaryConditionFactory.hxx"
+#include "abstractBoundaryCondition.hxx"
+
+// Forward declarations:
+class abstractBoundaryCondition;
 
  class boundaryConditionManager
  {
@@ -48,6 +51,9 @@
     void recordPressuresAndFlowsInHistoryArrays();
 
     void writePHistAndQHistRCR();
+
+    void setSurfacePressure_controlledCoronary(double* coronarySurfacePressures);
+    void getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled);
 
     ~boundaryConditionManager()
     {

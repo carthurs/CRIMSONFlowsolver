@@ -1,5 +1,6 @@
 #include "boundaryConditionManager.hxx"
 #include "RCR.hxx"
+#include "controlledCoronary.hxx"
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 
@@ -207,3 +208,56 @@ extern "C" void callCPPWritePHistAndQHistRCR()
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->writePHistAndQHistRCR();
 }
+
+
+// =========== Controlled Coronary Block ===========
+
+void boundaryConditionManager::setSurfacePressure_controlledCoronary(double* coronarySurfacePressures)
+{
+  int readLocation = int(0);
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(controlledCoronary))
+    {
+     (*iterator)->setLPNInflowPressure(coronarySurfacePressures[readLocation]);
+     readLocation++;
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppSetSurfacePressure_controlledCoronary(double*& coronarySurfacePressures)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->setSurfacePressure_controlledCoronary(coronarySurfacePressures);
+}
+
+void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled)
+{
+  // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
+  // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
+  // dereferencing of that pointer manually to fill the whole array, but with the FORTRAN column-major array structure,
+  // as opposed to the C++ row-major standard.
+  int writeLocation = 0;
+  
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(controlledCoronary))
+    {
+      
+      implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
+      // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
+      
+      implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
+      
+      writeLocation++;
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppGetImplicitCoeff_controlledCoronary(double*& implicitCoeffs_toBeFilled) 
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getImplicitCoeff_controlledCoronary(implicitCoeffs_toBeFilled);
+}
+
+// ========== Controlled Coronary Block End =========

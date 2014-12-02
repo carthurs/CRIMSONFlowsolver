@@ -15,6 +15,11 @@ double abstractBoundaryCondition::getdp_dq()
   return dp_dq;
 }
 
+void abstractBoundaryCondition::setLPNInflowPressure(double inflowPressure)
+{
+	// This will not be needed by all subclasses!
+    LPNInflowPressure = inflowPressure;
+}
 
 void abstractBoundaryCondition::updatePressureAndFlowHistory()
 {

@@ -415,7 +415,7 @@
           call hrt%iterate_hrt(lstep,'solve')
        endif
 
-       !if (numCoronarySrfs .gt. int(0)) then
+       !if (numControlledCoronarySrfs .gt. int(0)) then
        !   call updreducedordermodel(y,controlledCoronarySurfaces,'solve') !\todo make sure this is necessary
        !endif
 
@@ -1241,6 +1241,60 @@
        enddo
 
       endif !end of coupling for Coronary BC
+
+!     **************New Controlled Coronary Model**************
+      if(newCoronaryActive) then
+        call GetFlowQ(p,y,indicesOfCoronarySurfaces,numControlledCoronarySrfs)  !Q pushed into p but at this point 
+        ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of
+        ! indefinite (run-time-set) size, we pass a pointer to entry (1,1) of this array,
+        ! and then dereference that manually in the C++ to write the data to the
+        ! correct places in the whole array, so that it can be accessed from FORTRAN.
+        !
+        ! p is just the full Q for each surface
+        call callCppGetImplicitCoeff_controlledCoronary(c_loc(implicitcoeffs(1,1)))
+     !    implicitcoeffs(1:numControlledCoronarySrfs,1:2)  = 
+     ! &       controlledCoronarySurfaces%getimplicitcoeff()
+     !       do j = 1,numControlledCoronarySrfs
+     !          if(sign.lt.zero) then
+     !             p(j)= sign*(p(j)*implicitcoeffs(j,1)) 
+     !             p(j)= p(j) - implicitcoeffs(j,2)
+     !        ! Save the surface pressure for each coronary, for use in the LPN update in multidomain.f90
+     ! !             call controlledCoronarySurfaces% 
+     ! ! &           setSurfacePressure_coronary(p(j),j)
+     !          elseif(sign.gt.zero) then 
+     !             p(j)= sign*p(j)*implicitcoeffs(j,1)
+     !          endif
+     !       enddo
+
+           ! The above logic was super-untidy. This is cleaner,
+           ! and may even be a shade faster, too.
+        if(sign.lt.zero) then
+          do j = 1,numControlledCoronarySrfs
+              p(j)= sign*(p(j)*implicitcoeffs(j,1)) 
+              p(j)= p(j) - implicitcoeffs(j,2)
+          enddo
+          ! Pass the coronary surface pressures to CPP
+          call callCppSetSurfacePressure_controlledCoronary(c_loc(p))
+        elseif(sign.gt.zero) then
+          do j = 1,numControlledCoronarySrfs
+              p(j)= sign*p(j)*implicitcoeffs(j,1)
+          enddo
+        endif
+
+        do i = 1,nshg
+          do k = 1,numControlledCoronarySrfs
+              ! irankCoupled = 0
+              if (indicesOfCoronarySurfaces(k).eq.ndsurf(i)) then 
+                  ! irankCoupled=k <-- seems stupid
+                  ! res(i,1:3)=res(i,1:3) + p(irankCoupled)*NABI(i,1:3)
+                  res(i,1:3)=res(i,1:3) + p(k)*NABI(i,1:3)
+              endif
+          enddo   
+        enddo
+
+      endif
+!     **************END New Controlled Coronary Model**************
+
 
       ! ************************** !
       ! *** couple heart model *** !

@@ -953,6 +953,14 @@ int input_fform() {
 				}
 			}
 
+			if((string)inp.GetValue("Input prescribed HR and peak systolic pressure from file")=="True"){
+		      nomodule.inputHRandSP = int(1);
+		    }
+		    else
+		    {
+		      nomodule.inputHRandSP = int(0);
+		    }
+
 			if (nomodule.numVisFluxSrfs = inp.GetValue(
 					"Number of Surfaces which zero out in-plane tractions")) {
 				ivec = inp.GetValue(

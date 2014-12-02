@@ -2,6 +2,7 @@
 #define CONTROLLEDCORONARY_HXX_
 
 #include "abstractBoundaryCondition.hxx"
+#include "boundaryConditionManager.hxx"
 #include "fileReaders.hxx"
 
 class controlledCoronary : public abstractBoundaryCondition
@@ -27,14 +28,14 @@ public:
 
 		minimumAllowedResistance = controlledCoronaryReader_instance->getMinimumAllowedResistance().at(indexOfThisCoronary);
 		maximumAllowedResistance = controlledCoronaryReader_instance->getMaximumAllowedResistance().at(indexOfThisCoronary);
-		perfusionBedMVO2_previous = controlledCoronaryReader_instance->getPerfusionBedMVO2_previous().at(indexOfThisCoronary);
-		perfusionBedMVO2_current = controlledCoronaryReader_instance->getPerfusionBedMVO2_current().at(indexOfThisCoronary);
+		MVO2previousDt = controlledCoronaryReader_instance->getPerfusionBedMVO2_previous().at(indexOfThisCoronary);
+		MVO2 = controlledCoronaryReader_instance->getPerfusionBedMVO2_current().at(indexOfThisCoronary);
 		proportionOfMyocardiumPerfusedByThisSurface = controlledCoronaryReader_instance->getProportionOfMyocardiumPerfusedByThisSurface().at(indexOfThisCoronary);
 		metabolicFeedbackGain = controlledCoronaryReader_instance->getMetabolicFeedbackGain().at(indexOfThisCoronary);
 		alphaAdrenergicFeedforwardGain = controlledCoronaryReader_instance->getAlphaAdrenergicFeedforwardGain().at(indexOfThisCoronary);
 		betaAdrenergicFeedforwardGain = controlledCoronaryReader_instance->getBetaAdrenergicFeedforwardGain().at(indexOfThisCoronary);
 		feedbackDamping = controlledCoronaryReader_instance->getFeedbackDamping().at(indexOfThisCoronary);
-		O2DemandIntegrationWindow = controlledCoronaryReader_instance->getO2DemandIntegrationWindow().at(indexOfThisCoronary);
+		O2supplyDemandHistoryWindowLength_seconds = controlledCoronaryReader_instance->getO2DemandIntegrationWindow().at(indexOfThisCoronary);
 
 	}
 
@@ -42,6 +43,8 @@ public:
  	void computeImplicitCoeff_update(int timestepNumber);
  	void updpressure_n1_withflow();
 	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt);
+
+	void updateLPN();
 
 	~controlledCoronary()
 	{
@@ -59,14 +62,35 @@ private:
 	double distalResistance;
 	double minimumAllowedResistance;
 	double maximumAllowedResistance;
-	double perfusionBedMVO2_previous;
-	double perfusionBedMVO2_current;
+	double MVO2previousDt;
+	double MVO2;
 	double proportionOfMyocardiumPerfusedByThisSurface;
 	double metabolicFeedbackGain;
 	double alphaAdrenergicFeedforwardGain;
 	double betaAdrenergicFeedforwardGain;
 	double feedbackDamping;
-	double O2DemandIntegrationWindow;
+	double O2supplyDemandHistoryWindowLength_seconds;
+	int O2supplyDemandHistoryWindowLength_timesteps;
+
+	double arterialO2VolumeProportion;
+	std::vector<double> O2supplyDemandHistory;
+	double currentMyocardialHungerSignal;
+	double oneOverTotalResistance;
+	double intramyocardialPressureToLVScaling;
+
+	double inflowPressureInLPN; //\todo why do you store this? Surely you have it in another variable somewhere...
+	double capacitorNearAortaTopPressure;
+	double intramyocardialCapacitorTopPressure;
+
+	double hungerDelta;
+
+	double P_IM_mid;
+	double P_IM_mid_lasttimestep;	
+
+	double deltaMVO2PerTimestepOverPreviousBeat;
+
+	double MVO2computedAtEndOfBeatPreviousToPreviousBeat;
+	double MVO2computedAtEndOfPreviousBeat;
 };
 
 #endif

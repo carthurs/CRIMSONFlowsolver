@@ -131,14 +131,6 @@ void RCR::initialiseModel()
     // allocate(this%pressure_n(surfnum))      
     // allocate(this%implicitcoeff(surfnum,2)) 
     // allocate(this%implicitcoeff_n1(surfnum,2)) 
-
-    surfarea = 0.0;
-
-    // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
-    // NB: Need to add a method in fortran to set a value for non-zero restarting!
-    flow_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryFlows.at(surfaceIndex);
-    pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryPressures.at(surfaceIndex);
-
     
     if (thisIsARestartedSimulation)
     {
@@ -150,15 +142,9 @@ void RCR::initialiseModel()
       pressure_n = *pressure_n_ptr;
     }
 
-
-    flow_n = *flow_n_ptr;
-    
-
-    flow_n1 = 0.0;
-    
-    
-    implicitcoeff = 0.0;
-    implicitcoeff_n1 = 0.0; 
+    // These are Hop and dp_dq now.
+    // implicitcoeff = 0.0;
+    // implicitcoeff_n1 = 0.0; 
 
     // ! initialise reservoir pressure  
     // if (initrcr) then

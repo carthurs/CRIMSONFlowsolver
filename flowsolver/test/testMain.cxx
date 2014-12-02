@@ -42,3 +42,21 @@ TEST_F(testMain, checkRestartWorks_simpleShortSimulationWithRCRs) {
 
   delete PHistReader;
 }
+
+TEST_F(testMain, checkSimpleShortSimulationWithCoronaries) {
+  std::string simDir = "mainTests/coronary";
+  setSimDirectory(simDir);
+  clearOutOldFiles();
+
+  runSimulation();
+
+  // histFileReader* QHistReader = new histFileReader();
+  // QHistReader->setFileName("QHistRCR.dat");
+  // QHistReader->setNumColumns(2);
+  // QHistReader->readAndSplitMultiSurfaceRestartFile();
+
+  // double finalQHistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];
+  // EXPECT_DOUBLE_EQ(finalQHistRCRValue,714.921079082528);
+
+  // delete QHistReader;
+}

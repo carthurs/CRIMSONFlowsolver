@@ -60,15 +60,19 @@ private:
 	double midResistance;
 	double intramyocardialCompliance;
 	double distalResistance;
+
 	double minimumAllowedResistance;
 	double maximumAllowedResistance;
+
 	double MVO2previousDt;
 	double MVO2;
 	double proportionOfMyocardiumPerfusedByThisSurface;
+	
 	double metabolicFeedbackGain;
 	double alphaAdrenergicFeedforwardGain;
 	double betaAdrenergicFeedforwardGain;
 	double feedbackDamping;
+	
 	double O2supplyDemandHistoryWindowLength_seconds;
 	int O2supplyDemandHistoryWindowLength_timesteps;
 

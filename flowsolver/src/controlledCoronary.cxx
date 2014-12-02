@@ -4,22 +4,53 @@
 // Statics
 int controlledCoronary::numberOfInitialisedCoronaries = 0;
 
-void controlledCoronary::computeImplicitCoeff_solve(int timestepNumber)
+std::pair<double,double> controlledCoronary::computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt)
 {
+    // Get the intramyocardial pressure for the previous time-step and previous-previous time-step
+    // note that these should both really be evaluated one time-step later, but to avoid the need
+    // for a simultaneous solve of the heart and coronaries, we do it this way for now
+    // \todo fix this
+    if ((timestepNumber == int(0)) && (timestepNumber == int(1))) // treat case with no known IM pressure yet
+    {
+        P_IM_mid_lasttimestep = 5000.0; // \todo find a better way of doing this; maybe input this value from file...
+        P_IM_mid = 5000.0; // ... or set it based on the aortic valve state at simulation start
+    }
+    else if (timestepNumber == int(2)) // treat case where only one IM pressure history point is known
+    {
+        std::cout << "heart model needed for this!" << std::endl;
+        // P_IM_mid_lasttimestep = this%intramyocardialPressureToLVScaling * hrt%plv_hist(timestepNumber-1)
+        // P_IM_mid = this%intramyocardialPressureToLVScaling * hrt%plv_hist(timestepNumber)
+    }
+    else // get the previous intramyocardial pressure in the case where we have enough doata for this (see comment before start of "if" block)
+    {
+        std::cout << "heart model needed for this!" << std::endl;
+        // P_IM_mid_lasttimestep = this%intramyocardialPressureToLVScaling * hrt%plv_hist(timestepNumber-1) //\todo check these actually exist on first iteration
+        // // Get IM pressure for now (this will be adjusted in a moment if we're on, according to alpha in gen alpha method)
+        // P_IM_mid = this%intramyocardialPressureToLVScaling * hrt%plv_hist(timestepNumber) //\todo check these actually exist on first iteration
+    }
 
-}
+    // we need these a couple of times to compute coeff, so precompute them for convenience.
+    double m11 = 1.0 + resistanceNearAorta*complianceNearAorta/alfi_delt;
+    double m12 = resistanceNearAorta * (1.0/distalResistance + intramyocardialCompliance/alfi_delt);
+    double m22 = midResistance * (intramyocardialCompliance/alfi_delt + 1.0/distalResistance) + 1.0;
+    double temporary_variable = m22/(m11*m22-m22+m12);
 
-void controlledCoronary::computeImplicitCoeff_update(int timestepNumber)
-{
+    // The actual differential equation "solve" - here we obtain the operators
+    // which describe the boundary condtion from the ODE.
+    double temp1 = (m11 + m12/m22) * resistanceNearAorta * temporary_variable;
+    double temp2 = ((capacitorNearAortaTopPressure*complianceNearAorta + capacitorNearAortaTopPressure*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
+                   *intramyocardialCompliance)*resistanceNearAorta/alfi_delt - m12/m22*midResistance*intramyocardialCompliance/alfi_delt
+                   *(capacitorNearAortaTopPressure+P_IM_mid-P_IM_mid_lasttimestep))*temporary_variable;
 
+
+    std::pair<double,double> returnCoeffs;
+    returnCoeffs.first = temp1;
+    returnCoeffs.second = temp2;
+
+    return returnCoeffs;
 }
 
 void controlledCoronary::updpressure_n1_withflow()
-{
-
-}
-
-std::pair<double,double> controlledCoronary::computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt)
 {
 
 }

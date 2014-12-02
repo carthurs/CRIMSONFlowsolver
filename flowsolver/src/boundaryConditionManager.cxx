@@ -260,4 +260,38 @@ extern "C" void callCppGetImplicitCoeff_controlledCoronary(double*& implicitCoef
   boundaryConditionManager_instance->getImplicitCoeff_controlledCoronary(implicitCoeffs_toBeFilled);
 }
 
+void boundaryConditionManager::updateAllControlledCoronaryLPNs()
+{
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(controlledCoronary))
+    {
+      (*iterator)->updateLPN();
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppUpdateAllControlledCoronaryLPNs()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->updateAllControlledCoronaryLPNs();
+}
+
+void boundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+{
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(controlledCoronary))
+    {
+      (*iterator)->updpressure_n1_withflow();
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
+}
+
 // ========== Controlled Coronary Block End =========

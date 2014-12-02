@@ -924,6 +924,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use phcommonvars
     use itrDrvVars
 
+    use cpp_interface
+
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
@@ -1148,6 +1150,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
     endif
     ! ------------------------------------------
+
+    if(numControlledCoronarySrfs .gt. 0) then
+        call callCppUpdateAllControlledCoronaryLPNs()
+    endif
 
     ! interface to compute distances to observed wall motion
 !    if (imeasdist.eq.1) then
@@ -1811,7 +1817,7 @@ subroutine initmultidomaincontainer(y,mdc)
       end if 
 
       return
-      end subroutine
+      end subroutine initmultidomaincontainer
 
 ! ********************************************************
 ! *** subroutine to reset flow at time step n using the fluid solution y
@@ -1843,7 +1849,7 @@ subroutine reset_flow_n(y,rom)
     ! reset flow at step n in reduced order model
     call rom%setflow_n(nsurf,currflow) 
 
-end subroutine 
+end subroutine reset_flow_n
 
 
 !      
@@ -1930,9 +1936,16 @@ subroutine updreducedordermodel(y,rom,varchar)
             !  
             if (nrcractive) then
                 call callCPPUpdateAllRCRS_Pressure_n1_withflow()
-            end if            
+            end if
+
+            if (newCoronaryActive) then
+                call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+            end if
     
         end if
+
+        ! These old calls are on specific classes, so for the c++ implementation
+        ! I'm going to move them outside this function.
 
         ! if (rom%classNameString .eq. 'controlledCoronaryModel') then
         !   !Update coronary internal pressures, now we're done with this timestep:
@@ -1955,4 +1968,4 @@ subroutine updreducedordermodel(y,rom,varchar)
     end if
 
 
-end subroutine 
+end subroutine updreducedordermodel

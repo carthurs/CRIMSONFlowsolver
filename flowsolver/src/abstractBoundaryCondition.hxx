@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include "common_c.h"
 #include "fortranPointerManager.hxx"
+#include "debuggingToolsForCpp.hxx"
 
 // Forward declarations:
 class boundaryConditionManager;
@@ -71,6 +72,7 @@ class abstractBoundaryCondition
     int index;
 
     void setLPNInflowPressure(double inflowPressure);
+    void updpressure_n1_withflow();
  protected:
  	double dp_dq;
  	double Hop;
@@ -97,11 +99,12 @@ class abstractBoundaryCondition
 
     double LPNInflowPressure;
 
-    virtual void computeImplicitCoeff_solve(int timestepNumber) = 0;
- 	virtual void computeImplicitCoeff_update(int timestepNumber) = 0;
- 	virtual void updpressure_n1_withflow() = 0;
-	virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
+    void computeImplicitCoeff_solve(int timestepNumber);
+ 	void computeImplicitCoeff_update(int timestepNumber);
+    virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
+
 	void updatePressureAndFlowHistory();
+    virtual void updateLPN();
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{
 		// std::cout << "Disallowed call to non-overridden (e.g. non-RCR) . Exiting.\n";

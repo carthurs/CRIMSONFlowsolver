@@ -86,6 +86,19 @@ module cpp_interface
                 type(c_ptr) :: implicitCoeffs_toBeFilled_ptr
             end subroutine callCppGetImplicitCoeff_controlledCoronary
     end interface
+
+    interface
+            subroutine callCppUpdateAllControlledCoronaryLPNs() bind(c,name="callCppUpdateAllControlledCoronaryLPNs")
+                use iso_c_binding
+            end subroutine callCppUpdateAllControlledCoronaryLPNs
+    end interface
+
+    interface
+            subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow() bind(c,name="callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow")
+                use iso_c_binding
+            end subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow
+    end interface
+    
 !   ============= Controlled Coronary Block End =============
     
 end module cpp_interface

@@ -24,10 +24,7 @@ public:
 		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[indexOfThisRCR];
 	}
 	
-	void computeImplicitCoeff_solve(int timestepNumber);
- 	void computeImplicitCoeff_update(int timestepNumber);
  	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt);
- 	void updpressure_n1_withflow();
 
 	
 //  	procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr

@@ -153,8 +153,11 @@
 
 	  	// This is because timdat.lstep is used to determine whether we're restarting a simulation
 	  	// and we're not doing that during tests.
-	  	std::cout << "Information -- I'm overriding timdat.lstep for this test..." << std::endl;
+	  	std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
+	  	std::cout << " timdat.lstep" << std::endl;
 	  	timdat.lstep = int(0);
+	  	std::cout << " inpdat.Delt[0]" << std::endl;
+	  	inpdat.Delt[0] = 0.01;
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

@@ -140,3 +140,18 @@ TEST_F(testFileReaders, checkControlledCoronaryReaderMalformedFileDetection) {
 
   controlledCoronaryReader_instance->Term();
 }
+
+TEST_F(testFileReaders, checkHistFileReader) {
+  
+  histFileReader histFileReader_instance = histFileReader();
+
+  histFileReader_instance.setFileName("PressHist.dat");
+  histFileReader_instance.setNumColumns(2);
+  histFileReader_instance.readFileInternalMetadata();
+  histFileReader_instance.readAndSplitMultiSurfaceRestartFile();
+
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double readResult = histFileReader_instance.getReadFileData(1,5);
+
+  EXPECT_EQ(10645.5858581080,readResult);
+}

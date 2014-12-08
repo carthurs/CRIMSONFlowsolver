@@ -1012,7 +1012,7 @@
       use incpBC        !brings in the current part of coef for INCP BC
       use LagrangeMultipliers !brings in the current part of coef for Lagrange Multipliers
       use boundarymodule, only: GetFlowQ
-      use multidomain, only: nrcractive, nrcr, hrt
+      use multidomain, only: nrcractive, nrcr, hrt, newCoronaryActive
       use cpp_interface
 
       use grcrbc ! Nan rcr
@@ -1141,6 +1141,7 @@
       !
       if(numGRCRSrfs.gt.zero) then
           call GetFlowQ(p, y, nsrflistGRCR, numGRCRSrfs) ! now p is the flow rate
+          write(*,*) "flows just got:", p(1)
           !          do j = 1, numGRCRSrfs
           !              if(sign.lt.zero) then ! RHS so -1
           !                  p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
@@ -1245,12 +1246,13 @@
 !     **************New Controlled Coronary Model**************
       if(newCoronaryActive) then
         call GetFlowQ(p,y,indicesOfCoronarySurfaces,numControlledCoronarySrfs)  !Q pushed into p but at this point 
+        ! p is just the full Q for each surface
+
         ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of
         ! indefinite (run-time-set) size, we pass a pointer to entry (1,1) of this array,
         ! and then dereference that manually in the C++ to write the data to the
         ! correct places in the whole array, so that it can be accessed from FORTRAN.
         !
-        ! p is just the full Q for each surface
         call callCppGetImplicitCoeff_controlledCoronary(c_loc(implicitcoeffs(1,1)))
      !    implicitcoeffs(1:numControlledCoronarySrfs,1:2)  = 
      ! &       controlledCoronarySurfaces%getimplicitcoeff()
@@ -1635,12 +1637,18 @@
             faIn = faIn + 1
             if (nrcractive) then
               ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
-              call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1))) !\cppHook
+              call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
               faceRes(faIn) = implicitcoeffs(k,1)
+              write(*,*) "RCR implicitcoeffs from C++ in Fortran: ", implicitcoeffs(1,1), implicitcoeffs(2,1)
             else  
               faceRes(faIn) = grcrbc_coeff_1_implicit(k)
             end if 
          END DO
+         do k=1, numControlledCoronarySrfs
+            faIn = faIn + 1
+            call callCppGetImplicitCoeff_controlledCoronary(c_loc(implicitcoeffs(1,1)))
+            faceRes(faIn) = implicitcoeffs(k,1)
+         end do
          IF (iheart .gt. int(0)) THEN
             faIn = faIn + 1        
             implicitcoeffs(1:1,1:2) = hrt%getimplicitcoeff()

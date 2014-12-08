@@ -223,8 +223,12 @@
       call startmultidomain()     
       call startmultidomain(iheart,'heart')       
       !call startmultidomain(isystemic,'systemic')
-      call startmultidomain(inewcoronary,'coronary')
-      call startmultidomain(inetlistLPN,'netlist')
+      if (numControlledCoronarySrfs .gt. int(0)) then
+        call startmultidomain(inewcoronary,'coronary')
+      endif
+      if (numNetlistLPNSrfs .gt. int(0)) then
+        call startmultidomain(inetlistLPN,'netlist')
+      endif
       
       ! write out status 
       call multidomainstatus()                              

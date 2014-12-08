@@ -146,7 +146,7 @@
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
 	    fortranBoundaryDataPointerManager::Get()->tearDown();
-	    boundaryConditionManager::Instance()->Term();
+	    // boundaryConditionManager::Instance()->Term();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

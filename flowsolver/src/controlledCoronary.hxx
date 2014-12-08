@@ -41,10 +41,11 @@ public:
 
 	void computeImplicitCoeff_solve(int timestepNumber);
  	void computeImplicitCoeff_update(int timestepNumber);
- 	void updpressure_n1_withflow();
 	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt);
 
 	void updateLPN();
+
+	void finalizeLPNAtEndOfTimestep();
 
 	~controlledCoronary()
 	{
@@ -82,9 +83,12 @@ private:
 	double oneOverTotalResistance;
 	double intramyocardialPressureToLVScaling;
 
-	double inflowPressureInLPN; //\todo why do you store this? Surely you have it in another variable somewhere...
+	// double inflowPressureInLPN; //\todo why do you store this? Surely you have it in another variable somewhere...
 	double capacitorNearAortaTopPressure;
 	double intramyocardialCapacitorTopPressure;
+
+	double capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep;
+	double intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep;
 
 	double hungerDelta;
 

@@ -16,8 +16,8 @@ class abstractFileReader
 {
 	friend class testMain;
 	friend class testFileReaders;
- 	FRIEND_TEST(testMain, checkSimpleShortSimulationWithRCRs);
- 	FRIEND_TEST(testMain, checkRestartWorks_simpleShortSimulationWithRCRs);
+ 	FRIEND_TEST(testMain, checkRCRSimpleShortSimulation);
+ 	FRIEND_TEST(testMain, checkRestartWorks_RCRSimpleShortSimulation);
 public:
 	abstractFileReader()
 	{
@@ -53,6 +53,8 @@ public:
 
 	double getReadFileData(int columnIndex, int timestepNumber);
 
+	void readFileInternalMetadata();
+
 protected:
 	std::ifstream* fileHandle;
 	std::vector<std::string>* currentLineSplitBySpaces;
@@ -68,6 +70,9 @@ protected:
 	std::vector<double> dataReadFromFile_line;
 	int fileHasBeenRead;
 	bool readNextLineWithKnownNumberOfColumns();
+
+	int expectedNumberOfLinesInFile;
+	bool metadataOnNumberOfLinesInFileAvailable = false;
 private:
 };
 
@@ -95,7 +100,6 @@ public:
 	{
 	}
 	void readAndSplitMultiSurfaceRestartFile();
-	
 };
 
 

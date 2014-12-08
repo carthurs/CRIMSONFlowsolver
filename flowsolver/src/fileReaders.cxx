@@ -105,6 +105,22 @@ double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 	return ((dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
 }
 
+void abstractFileReader::readFileInternalMetadata()
+{
+	if (!metadataOnNumberOfLinesInFileAvailable)
+	{
+		// e.g. hist files start with a single integer on the first line, giving the length of the file.
+		// We read this first, as a special case
+		*fileHandle >> expectedNumberOfLinesInFile;
+		metadataOnNumberOfLinesInFileAvailable = true;
+	}
+	else
+	{
+		std::cout << "Attempted to read metadata from file " << fileName << " twice. Don't do this. Exiting" << std ::endl;
+		std::exit(1);
+	}
+}
+
 void histFileReader::readAndSplitMultiSurfaceRestartFile()
 {
 	int lineIndex = 0;
@@ -113,6 +129,11 @@ void histFileReader::readAndSplitMultiSurfaceRestartFile()
 		lineIndex++;
 		dataReadFromFile.insert(std::pair<int,std::vector<double>> (lineIndex, dataReadFromFile_line));
 	}
+	if (metadataOnNumberOfLinesInFileAvailable && (lineIndex != expectedNumberOfLinesInFile))
+	{
+		std::cout << "WARNING: Failed to read as many lines from  " << fileName << " as the integer on its first line suggests it should have!" << std::endl;
+	}
+
 	fileHasBeenRead = int(1);
 }
 

@@ -1161,7 +1161,6 @@
 ! note we only need the first three entries (u) from y
 
       if (numSrfs .eq. 0) return
-
       qsurfProc=zero
       do i = 1, nshg          
         do k = 1, numSrfs            

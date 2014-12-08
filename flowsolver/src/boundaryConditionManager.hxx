@@ -55,6 +55,7 @@ class abstractBoundaryCondition;
     void setSurfacePressure_controlledCoronary(double* coronarySurfacePressures);
     void getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled);
     void updateAllControlledCoronaryLPNs();
+    void finalizeLPNAtEndOfTimestep_controlledCoronary();
 
     void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 

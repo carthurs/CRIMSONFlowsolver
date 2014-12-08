@@ -63,3 +63,9 @@ void abstractBoundaryCondition::updpressure_n1_withflow()
 {
   pressure_n = dp_dq_n1*(*flow_n_ptr) + Hop_n1;
 }
+
+void abstractBoundaryCondition::finalizeLPNAtEndOfTimestep()
+{
+	std::cout << "Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed." << std::endl;
+	std::exit(1);
+}

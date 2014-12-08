@@ -73,6 +73,7 @@ class abstractBoundaryCondition
 
     void setLPNInflowPressure(double inflowPressure);
     void updpressure_n1_withflow();
+    virtual void finalizeLPNAtEndOfTimestep();
  protected:
  	double dp_dq;
  	double Hop;

@@ -277,6 +277,25 @@ extern "C" void callCppUpdateAllControlledCoronaryLPNs()
   boundaryConditionManager_instance->updateAllControlledCoronaryLPNs();
 }
 
+
+void boundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
+{
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(controlledCoronary))
+    {
+      (*iterator)->finalizeLPNAtEndOfTimestep();
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_controlledCoronary();
+}
+
+
 void boundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
 {
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)

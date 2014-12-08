@@ -278,7 +278,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         !     pointers
         IF (memLSFlag .EQ. 1) THEN
             IF  (ipvsq .GE. 2) THEN
-                memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs
+                memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs
             ELSE
                 memLS_nFaces = 1
             END IF
@@ -323,6 +323,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                     faIn = faIn + 1
                     CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs)
                 END DO
+                do k=1, numControlledCoronarySrfs
+                    faIn = faIn + 1
+                    call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs)
+                end do
             END IF
 
             ! create systolic memLS_lhs
@@ -383,6 +387,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                         faIn = faIn + 1
                         CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs_s)
                     END DO
+                    do k=1, numControlledCoronarySrfs
+                        faIn = faIn + 1
+                        call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs_s)
+                    end do
                     ! here we add the heart model surface
                     faIn = faIn + 1 ! add one to skip to next surface
                     CALL AddNeumannBCTomemLS(surfids(1), faIn, memLS_lhs_s)  
@@ -840,11 +848,16 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
             ! calculate the implicit coefficients
             ! call nrcr%setimplicitcoeff(lstep) !\cppHook
 
-            call callCppComputeAllImplicitCoeff_solve(lstep)
-            call callCppComputeAllImplicitCoeff_update(lstep)
+            ! call callCppComputeAllImplicitCoeff_solve(lstep)
+            ! call callCppComputeAllImplicitCoeff_update(lstep)
         end if
 
     endif
+
+    ! Moved here from above - it's a generic update for everything,
+    ! so shouldn't need guarding
+    call callCppComputeAllImplicitCoeff_solve(lstep)
+    call callCppComputeAllImplicitCoeff_update(lstep)
     ! ------------------------------------------
 
     !
@@ -912,7 +925,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use convolRCRFlow !for RCR bc
     use convolTRCRFlow !for time-varying RCR bc
 
-    use multidomain, only: nrcr, nrcractive, hrt, multidom, multidomainactive
+    use multidomain, only: nrcr, nrcractive, hrt, multidom, multidomainactive, newCoronaryActive
     !use grcrbc ! Nan rcr
 
     use convolCORFlow !for Coronary bc
@@ -1145,10 +1158,16 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         ! this is here because it is particle dependent as the WK pressure is part of the state
         ! the pressure_n is a set via the pointer set previously 
         if (nrcractive) then
-            call updreducedordermodel(y,nrcr,'update')
+            ! call updreducedordermodel(y,nrcr,'update') !\todo add this back in maybe when you do the Kalman filter?
+            !
+            ! At least when the kalman filter is off, this only needs to be done
+            ! at the end of the time-step, so I moved it to itrdrv_iter_finalize()
+            ! call callCPPUpdateAllRCRS_Pressure_n1_withflow()
         end if
 
     endif
+
+    
     ! ------------------------------------------
 
     if(numControlledCoronarySrfs .gt. 0) then
@@ -1191,7 +1210,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     use deformableWall
     use ResidualControl
 
-    use multidomain, only: nrcr, hrt, multidomainactive, multidom
+    use multidomain, only: nrcr, hrt, multidomainactive, multidom, newCoronaryActive, nrcractive
 
     use phcommonvars
     use itrDrvVars
@@ -1201,6 +1220,20 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     integer jj
     integer ifail
+
+    ! Update boundary conditions to the final pressure, conforming to the final flow:
+    if (nrcractive) then
+        call callCPPUpdateAllRCRS_Pressure_n1_withflow()
+    end if
+
+    if (newCoronaryActive) then
+        call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+
+        ! One final update of the internal pressures in the LPN to conform to the 
+        ! end-of-timestep flow, and
+        ! save the LPN internal pressures.
+        call callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
+    end if
 
     call itrBC (yold, acold,  iBC,  BC,  iper,ilwork)
 
@@ -1506,7 +1539,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
 
 
-end subroutine
+end subroutine itrdrv_iter_finalize
 
 
 !
@@ -1895,7 +1928,7 @@ subroutine updreducedordermodel(y,rom,varchar)
         call rom%setflow_n(nsurf,currflow)
         call rom%setflow_n1(nsurf,currflow)
 
-        if(numGRCRSrfs.gt.0) then
+        ! if(numGRCRSrfs.gt.0) then
             !call grcrbc_UpdateInternalState(y)
 
             ! this is here because it is particle dependent as the WK pressure is part of the state
@@ -1905,7 +1938,7 @@ subroutine updreducedordermodel(y,rom,varchar)
                 ! call callCPPUpdateAllRCRS_setflow_n1(c_loc(currflow(1)))
             ! end if
 
-        endif      
+        ! endif      
 
         ! if flowsolver only then update pressure the normal way
         ! if estimator, do nothing as pressure is set by the filter from the average of all the particles
@@ -1931,16 +1964,7 @@ subroutine updreducedordermodel(y,rom,varchar)
 
             ! update pressure from pressure/flow from saved flow in reduced model
             ! sets it to pressure_n
-            call rom%updpressure_n1_withflow()
-
-            !  
-            if (nrcractive) then
-                call callCPPUpdateAllRCRS_Pressure_n1_withflow()
-            end if
-
-            if (newCoronaryActive) then
-                call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
-            end if
+            call rom%updpressure_n1_withflow()     
     
         end if
 

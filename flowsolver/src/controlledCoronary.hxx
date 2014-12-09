@@ -15,8 +15,6 @@ public:
 		// (the order of these two lines is correct!)
 		indexOfThisCoronary = numberOfInitialisedCoronaries;
 		numberOfInitialisedCoronaries++;
-
-		initialiseModel();
 		
 		controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
 
@@ -37,6 +35,11 @@ public:
 		feedbackDamping = controlledCoronaryReader_instance->getFeedbackDamping().at(indexOfThisCoronary);
 		O2supplyDemandHistoryWindowLength_seconds = controlledCoronaryReader_instance->getO2DemandIntegrationWindow().at(indexOfThisCoronary);
 
+		capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep = controlledCoronaryReader_instance->getCapacitorNearAortaTopPressure().at(indexOfThisCoronary);
+		intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep = controlledCoronaryReader_instance->getIntramyocardialCapacitorTopPressure().at(indexOfThisCoronary);
+
+		initialiseModel();
+
 	}
 
 	void computeImplicitCoeff_solve(int timestepNumber);
@@ -55,6 +58,8 @@ private:
 	void initialiseModel();
 	int indexOfThisCoronary;
 	static int numberOfInitialisedCoronaries;
+
+	void computeCapacitorsTopPressures(double inflowPressure, double alfi_delt);
 
 	double resistanceNearAorta;
 	double complianceNearAorta;

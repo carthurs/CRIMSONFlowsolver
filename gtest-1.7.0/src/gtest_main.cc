@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include "mpi.h"
+#include "petscsys.h"
 #include "gtest/gtest.h"
 
 
@@ -40,6 +41,7 @@ static int dummy2 = PullInMyLibraryTestMultidom();
 int PullInMyLibraryTestMain();
 static int dummy3 = PullInMyLibraryTestMain();
 
+static char help[] = "Google test, modified to work with CRIMSON.\n\n";
 
 GTEST_API_ int main(int argc, char **argv) {
 
@@ -60,7 +62,10 @@ GTEST_API_ int main(int argc, char **argv) {
   // Fake command line input for the flowsolver, so we don't have to pass it:
   int fake_argc = 2;
   char *fake_argv[] = {"testMain","1","solver.inp",NULL};
-  MPI_Init(&fake_argc,(char***)&fake_argv);
+  // MPI_Init(&fake_argc,(char***)&fake_argv);
+  PetscInitialize(&fake_argc, (char***)&fake_argv, (char *)0, help);
+
+  
   
   int testSuccess = 0;
 
@@ -71,6 +76,8 @@ GTEST_API_ int main(int argc, char **argv) {
   // we find a use for it later .
   testSuccess = RUN_ALL_TESTS();
 
-  MPI_Finalize();
+  int ierr;
+  ierr = PetscFinalize();
+  CHKERRQ(ierr);
   return 0;
 }

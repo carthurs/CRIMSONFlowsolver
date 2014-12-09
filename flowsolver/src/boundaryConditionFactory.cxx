@@ -13,7 +13,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
   }
   else if (boundaryType.compare("netlist") == int(0))
   {
-    return boost::shared_ptr<abstractBoundaryCondition> (new netlist(surfaceIndex));
+    return boost::shared_ptr<abstractBoundaryCondition> (new netlistBoundaryCondition(surfaceIndex));
   }
   else if (boundaryType.compare("controlledCoronary") == int(0))
   {

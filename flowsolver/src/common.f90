@@ -75,7 +75,7 @@ module phcommonvars
         iinitialprestress, iupdateprestress, &
         iuseBET, numBETFields, iestimator, iheart, &
         numControlledCoronarySrfs, indicesOfCoronarySurfaces(0:MAXSURF), &
-        numNetlistLPNSrfs, netlistSurfaceGlobalIndices(0:MAXSURF), &
+        numNetlistLPNSrfs, indicesOfNetlistSurfaces(0:MAXSURF), &
         inputHRandSP
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
@@ -111,7 +111,7 @@ module phcommonvars
         iinitialprestress, iupdateprestress, &
         iuseBET, numBETFields, iestimator, iheart, &
         numControlledCoronarySrfs, indicesOfCoronarySurfaces, &
-        numNetlistLPNSrfs, netlistSurfaceGlobalIndices, &
+        numNetlistLPNSrfs, indicesOfNetlistSurfaces, &
         inputHRandSP
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------

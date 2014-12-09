@@ -34,7 +34,7 @@ public:
 		if (fileHandle->fail())
 		{
 			std::cout << "Failed to open " << fileName << "!" << std::endl;
-			std::exit(1);
+			throw std::runtime_error("Failed to open file.");
 		}
 	}
 
@@ -206,6 +206,9 @@ public:
 	std::vector<double> getFeedbackDamping();
 	std::vector<double> getO2DemandIntegrationWindow();
 
+	std::vector<double> getCapacitorNearAortaTopPressure();
+	std::vector<double> getIntramyocardialCapacitorTopPressure();
+
 private:
 	controlledCoronaryReader()
 	{
@@ -229,6 +232,79 @@ private:
 	std::vector<double> betaAdrenergicFeedforwardGain;
 	std::vector<double> feedbackDamping;
 	std::vector<double> O2DemandIntegrationWindow;
+
+	std::vector<double> capacitorNearAortaTopPressure;
+	std::vector<double> intramyocardialCapacitorTopPressure;
+};
+
+class netlistReader : public abstractMultipleSurfaceFileReader
+{
+public:
+	static netlistReader* Instance()
+	{
+		if (!instance)
+		{
+			instance = new netlistReader();
+		}
+		return instance;
+	}
+
+	static void Term()
+	{
+		if (instance!=0)
+		{
+			delete instance;
+			instance = 0;
+		}
+	}
+
+	void readAndSplitMultiSurfaceInputFile();
+
+	std::vector<std::vector<char>> getComponentTypes();
+	std::vector<std::vector<int>> getComponentStartNodes();
+	std::vector<std::vector<int>> getComponentEndNodes();
+	std::vector<std::vector<double>> getComponentParameterValues();
+	std::vector<int> getNumberOfComponents();
+	std::vector<int> getNumberOfPrescribedPressures();
+	std::vector<int> getNumberOfPrescribedFlows();
+	std::vector<std::vector<int>> getListOfPrescribedPressures();
+	std::vector<std::vector<int>> getListOfPrescribedFlows();
+	std::vector<std::vector<int>> getListOfHistoryPressures();
+	std::vector<std::vector<int>> getListOfHistoryFlows();
+	std::vector<std::vector<double>> getValueOfPrescribedPressures();
+	std::vector<std::vector<double>> getValueOfPrescribedFlows();
+	std::vector<std::vector<char>> getTypeOfPrescribedPressures();
+	std::vector<std::vector<char>> getTypeOfPrescribedFlows();
+	std::vector<int> getNumberOfPressureNodes();
+	std::vector<std::vector<double>> getInitialPressures();
+protected:
+private:
+	netlistReader()
+	{
+	}
+
+	static netlistReader* instance;
+
+	std::vector<std::vector<char>> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
+	std::vector<std::vector<int>> componentStartNodes;
+	std::vector<std::vector<int>> componentEndNodes;
+	std::vector<std::vector<double>> componentParameterValues;
+
+	std::vector<int> numberOfComponents;
+	std::vector<int> numberOfPrescribedPressures;
+	std::vector<int> numberOfPrescribedFlows;
+
+	std::vector<std::vector<int>> listOfPrescribedPressures;
+	std::vector<std::vector<int>> listOfPrescribedFlows;
+
+	std::vector<std::vector<double>> valueOfPrescribedPressures;
+	std::vector<std::vector<double>> valueOfPrescribedFlows;
+	std::vector<std::vector<char>> typeOfPrescribedPressures;
+	std::vector<std::vector<char>> typeOfPrescribedFlows;
+
+	std::vector<int> numberOfPressureNodes;
+	std::vector<std::vector<double>> initialPressures;
+
 };
 
 #endif

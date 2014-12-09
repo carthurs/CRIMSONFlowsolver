@@ -8,8 +8,9 @@
 // Static class static member variables:
 boundaryConditionManager* boundaryConditionManager::instance = 0;
 histFileReader* boundaryConditionManager::PHistReader = NULL;
-int boundaryConditionManager::numberOfRCRSurfaces = 0;
+// int boundaryConditionManager::numberOfRCRSurfaces = 0;
 int boundaryConditionManager::thisIsARestartedSimulation = 0;
+// int boundaryConditionManager::numberOfNetlistSurfaces = 0;
 
 
 void boundaryConditionManager::getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled)

@@ -57,7 +57,6 @@ env_local.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.VTK_LIBSDIR+bop.LUA_LIBSDIR+bop.F
 env_local.Prepend(LIBPATH=bop.BOOSTCPP_LIBSDIR)
 
 env_local.Prepend(LIBS=bop.BOOSTCPP_LIBSLIST)
-env_local.Append(LIBS=bop.PETSC_LIBSLIST)
 env_local.Append(LIBS=bop.MPI_LIBSLIST)
 env_local.Append(LIBS=bop.LUA_LIBSLIST)
 env_local.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
@@ -70,6 +69,7 @@ env_local.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
 env_local.Append(LIBS=bop.F90_LIBS)
 env_local.Append(LIBS=bop.INTEL_LIBSLIST)
 env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
+env_local.Append(LIBS=bop.PETSC_LIBSLIST)
 
 CXXSRCS=string.split("""
 	SimvascularGlobalArrayTransfer.cxx

@@ -69,11 +69,12 @@ void controlledCoronary::initialiseModel()
     currentMyocardialHungerSignal = 0.0;
     hungerDelta = 0.0;
 
-	// inflowPressureInLPN = 10585.0000000000;//10000.0; 
-	capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep = 10585.0000000000;//10000.0; //\todo make these settable for mmgs and cmgs
+	// These are currently set to match the RCR test. Probably it'd be better
+    // to set these manually!
+	// capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep = 10585.0000000000;//10000.0; //\todo make these settable for mmgs and cmgs
     capacitorNearAortaTopPressure = capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep;
 
-	intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep = 6.080839425964667e+03;//10000.0;
+	// intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep = 6.080839425964667e+03;//10000.0;
     intramyocardialCapacitorTopPressure = intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep;
 
 
@@ -171,48 +172,8 @@ void controlledCoronary::initialiseModel()
          // endif
 }
 
-// std::pair<double,double> controlledCoronary::capacitorsTopPressures(inflowPressure)
-// {
-    
-// }
-
-//    The coronary system-solve in setimplicitcoeff_controlledCoronary relies on knowing the 
-//    values of the pressure at various points throughout the LPN model. These need updating
-//    each step; this is done by the subroutine updateLPN_coronary.
-void controlledCoronary::updateLPN()
+void controlledCoronary::computeCapacitorsTopPressures(double inflowPressure, double alfi_delt)
 {
-	double alfi_delt = alfi_local*delt;
-
-	// We're now going to solve the 2x2 system m*[P_1;P_2] = rhs.
-	// Define the LPN system matrix:
-	double m11 = 1.0 + resistanceNearAorta*complianceNearAorta/alfi_delt;
-	double m12 = resistanceNearAorta * (1.0/distalResistance + intramyocardialCompliance/alfi_delt);
-	double m22 = midResistance * (intramyocardialCompliance/alfi_delt + 1.0/distalResistance) + 1.0;
-	//the m21 entry of this matrix is just -1.
-	double determinant = m11*m22 + m12;
-
-    // The minus sign in -LPNInflowPressure is correct.
-	double rhs_1 = -LPNInflowPressure + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
-	         *intramyocardialCompliance) * resistanceNearAorta/alfi_delt;
-	double rhs_2 = midResistance*intramyocardialCompliance/alfi_delt * (intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep + P_IM_mid - P_IM_mid_lasttimestep);
-
-	// Find the inverse of this matrix
-	double inverseM_11 = m22 / determinant;
-	double inverseM_12 = -m12 / determinant;
-	double inverseM_21 = 1.0 / determinant;
-	double inverseM_22 = m11 / determinant;
-
-	// Solve the system for the pressures within the LPN that we need to know:
-	capacitorNearAortaTopPressure = inverseM_11 * rhs_1 + inverseM_12 * rhs_2;
-	intramyocardialCapacitorTopPressure = inverseM_21 * rhs_1 + inverseM_22 * rhs_2;
-    MAGICAL_DOUBLE_PRINTER(2,capacitorNearAortaTopPressure,intramyocardialCapacitorTopPressure);
-
-}
-
-void controlledCoronary::finalizeLPNAtEndOfTimestep()
-{
-    double alfi_delt = delt;
-
     // We're now going to solve the 2x2 system m*[P_1;P_2] = rhs.
     // Define the LPN system matrix:
     double m11 = 1.0 + resistanceNearAorta*complianceNearAorta/alfi_delt;
@@ -221,7 +182,8 @@ void controlledCoronary::finalizeLPNAtEndOfTimestep()
     //the m21 entry of this matrix is just -1.
     double determinant = m11*m22 + m12;
 
-    double rhs_1 = pressure_n + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
+    // The minus sign in -LPNInflowPressure is correct.
+    double rhs_1 = inflowPressure + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
              *intramyocardialCompliance) * resistanceNearAorta/alfi_delt;
     double rhs_2 = midResistance*intramyocardialCompliance/alfi_delt * (intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep + P_IM_mid - P_IM_mid_lasttimestep);
 
@@ -234,7 +196,22 @@ void controlledCoronary::finalizeLPNAtEndOfTimestep()
     // Solve the system for the pressures within the LPN that we need to know:
     capacitorNearAortaTopPressure = inverseM_11 * rhs_1 + inverseM_12 * rhs_2;
     intramyocardialCapacitorTopPressure = inverseM_21 * rhs_1 + inverseM_22 * rhs_2;
+}
 
+//    The coronary system-solve in setimplicitcoeff_controlledCoronary relies on knowing the 
+//    values of the pressure at various points throughout the LPN model. These need updating
+//    each step; this is done by the subroutine updateLPN_coronary.
+void controlledCoronary::updateLPN()
+{
+	double alfi_delt = alfi_local*delt;
+	computeCapacitorsTopPressures(-LPNInflowPressure,alfi_delt);
+}
+
+void controlledCoronary::finalizeLPNAtEndOfTimestep()
+{
+    double alfi_delt = delt;
+
+    computeCapacitorsTopPressures(pressure_n,alfi_delt);
 
     capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep = capacitorNearAortaTopPressure;
     intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep = intramyocardialCapacitorTopPressure;

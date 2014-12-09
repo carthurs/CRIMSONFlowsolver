@@ -127,6 +127,14 @@ TEST_F(testFileReaders, checkControlledCoronaryReader) {
   EXPECT_DOUBLE_EQ(5.0,returnedVector.at(0));
   EXPECT_DOUBLE_EQ(6.0,returnedVector.at(1));
 
+  returnedVector = controlledCoronaryReader_instance->getCapacitorNearAortaTopPressure();
+  EXPECT_DOUBLE_EQ(10000.0,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(20000.0,returnedVector.at(1));
+
+  returnedVector = controlledCoronaryReader_instance->getIntramyocardialCapacitorTopPressure();
+  EXPECT_DOUBLE_EQ(11000.0,returnedVector.at(0));
+  EXPECT_DOUBLE_EQ(21000.0,returnedVector.at(1));
+
 
   controlledCoronaryReader_instance->Term();
 }
@@ -135,7 +143,6 @@ TEST_F(testFileReaders, checkControlledCoronaryReaderMalformedFileDetection) {
   controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
   controlledCoronaryReader_instance->setFileName("controlled_coronaries_test_malformed.dat");
   
-  std::cout << "This test expects an error message on the next line:" << std::endl;
   EXPECT_ANY_THROW(controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile());
 
   controlledCoronaryReader_instance->Term();
@@ -154,4 +161,114 @@ TEST_F(testFileReaders, checkHistFileReader) {
   double readResult = histFileReader_instance.getReadFileData(1,5);
 
   EXPECT_EQ(10645.5858581080,readResult);
+}
+
+TEST_F(testFileReaders, checkNetlistReader) {
+  netlistReader* netlistReader_instance = netlistReader::Instance();
+  netlistReader_instance->setFileName("netlist_surfaces.dat");
+  netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+
+  std::vector<std::vector<double>> returnedVectorOfDoubleVectors;
+  returnedVectorOfDoubleVectors = netlistReader_instance->getComponentParameterValues();
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),58.43089e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.001278473e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(2),1600.0e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),0.001278473e1);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(1),60.43089e1);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(2),1600.0e1);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(3),1e-4);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(4),1e2);
+
+  returnedVectorOfDoubleVectors = netlistReader_instance->getValueOfPrescribedPressures();
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),0.01e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.11e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),1.1e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(1),1.2e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(2),1.3e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(3),1.4e0);
+
+  returnedVectorOfDoubleVectors = netlistReader_instance->getValueOfPrescribedFlows();
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),-1.0e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),-1.1e0);
+
+  returnedVectorOfDoubleVectors = netlistReader_instance->getInitialPressures();
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),206663.0e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),206663.1e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(2),0.0e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(3),0.1e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),106663.0e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(1),106663.1e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(2),106663.2e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(3),1.0e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(4),1.1e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(5),1.2e0);
+
+
+  std::vector<int> returnedVectorOfInts;
+  returnedVectorOfInts = netlistReader_instance->getNumberOfPressureNodes();
+  EXPECT_EQ(returnedVectorOfInts.at(0),4);
+  EXPECT_EQ(returnedVectorOfInts.at(1),6);
+
+  returnedVectorOfInts = netlistReader_instance->getNumberOfComponents();
+  EXPECT_EQ(returnedVectorOfInts.at(0),3);
+  EXPECT_EQ(returnedVectorOfInts.at(1),5);
+
+  returnedVectorOfInts = netlistReader_instance->getNumberOfPrescribedPressures();
+  EXPECT_EQ(returnedVectorOfInts.at(0),2);
+  EXPECT_EQ(returnedVectorOfInts.at(1),4);
+
+  returnedVectorOfInts = netlistReader_instance->getNumberOfPrescribedFlows();
+  EXPECT_EQ(returnedVectorOfInts.at(0),1);
+  EXPECT_EQ(returnedVectorOfInts.at(1),1);
+  
+  std::vector<std::vector<int>> returnedVectorOfIntVectors;
+  returnedVectorOfIntVectors = netlistReader_instance->getComponentStartNodes();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(1),1);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(2),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(3),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(4),4);
+
+  returnedVectorOfIntVectors = netlistReader_instance->getComponentEndNodes();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),3);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),3);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(1),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(2),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(3),5);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(4),6);
+
+  returnedVectorOfIntVectors = netlistReader_instance->getListOfPrescribedPressures();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),3);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),3);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(1),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(2),5);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(3),6);
+
+  returnedVectorOfIntVectors = netlistReader_instance->getListOfPrescribedFlows();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),1);
+
+
+  
+  // std::vector<std::vector<char>> returnedVectorOfCharVectors;
+  // returnedVectorOfCharVectors = netlistReader_instance->getTypeOfPrescribedPressures();
+  // char just_f[1];
+  // just_f[0] = 'f';
+  // EXPECT_STREQ(returnedVectorOfCharVectors.at(0).at(0)+"\0",just_f);
+
+  // returnedVectorOfCharVectors = netlistReader_instance->getTypeOfPrescribedFlows();
+
+
+  // returnedVectorOfCharVectors = netlistReader_instance->getComponentTypes();
+
+
+
+
+  netlistReader_instance->Term();
 }

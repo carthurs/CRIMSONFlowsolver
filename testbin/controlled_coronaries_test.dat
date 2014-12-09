@@ -30,6 +30,10 @@
 0.26
 # Myocardial O2 demand/supply integration window duration (seconds)
 5
+# capacitorNearAortaTopPressure
+10000.0
+# intramyocardialCapacitorTopPressure
+11000.0
 # Coronary 2:
 # R_a:
 2.286208e5
@@ -61,4 +65,8 @@
 1.26
 # Myocardial O2 demand/supply integration window duration (seconds)
 6
+# capacitorNearAortaTopPressure
+20000.0
+# intramyocardialCapacitorTopPressure
+21000.0
 # This line must not be blank (SimVascular expects it when validating this file), must only occur at the end of the file, and there should be no whitespace after this line

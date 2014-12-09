@@ -944,12 +944,12 @@ int input_fform() {
 
 				for (i=0; i<MAXSURF+1; i++)
 				{
-					nomodule.netlistSurfaceGlobalIndices[i] = 0;
+					nomodule.indicesOfNetlistSurfaces[i] = 0;
 				}
 
 				for (i=0; i<nomodule.numNetlistLPNSrfs; i++)
 				{
-					nomodule.netlistSurfaceGlobalIndices[i+1] = ivec[i];
+					nomodule.indicesOfNetlistSurfaces[i+1] = ivec[i];
 				}
 			}
 

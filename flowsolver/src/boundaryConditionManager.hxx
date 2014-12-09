@@ -59,6 +59,10 @@ class abstractBoundaryCondition;
 
     void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 
+    int getNumberOfRCRSurfaces(){return numberOfRCRSurfaces;}
+    int getNumberOfNetlistSurfaces(){return numberOfNetlistSurfaces;}
+    int getNumberOfControlledCoronarySurfaces(){return numberOfControlledCoronarySurfaces;}
+
     ~boundaryConditionManager()
     {
     }
@@ -67,6 +71,8 @@ class abstractBoundaryCondition;
     boundaryConditionManager()
     {
     	numberOfRCRSurfaces = grcrbccom.numGRCRSrfs;
+        numberOfNetlistSurfaces = nomodule.numNetlistLPNSrfs;
+        numberOfControlledCoronarySurfaces = nomodule.numControlledCoronarySrfs;
     	if (timdat.lstep > 0)
     	{
     		thisIsARestartedSimulation = 1;
@@ -81,7 +87,9 @@ class abstractBoundaryCondition;
     boundaryConditionFactory factory;
 
     static int thisIsARestartedSimulation;
-    static int numberOfRCRSurfaces;
+    int numberOfRCRSurfaces;
+    int numberOfNetlistSurfaces;
+    int numberOfControlledCoronarySurfaces;
 
     // For testing purposes, to clear the static class out before the next test begins
     // Note that you'll have to make the test class a friend in order to use this..

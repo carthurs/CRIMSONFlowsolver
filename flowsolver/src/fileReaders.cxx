@@ -4,6 +4,7 @@
 
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
+netlistReader* netlistReader::instance = 0;
 
 
 // Reads a file line, returns a successful-read bool.
@@ -13,8 +14,9 @@ bool abstractFileReader::readNextLine()
 {
 	if (fileHandle->fail())
 	{
-		std::cout << "Failed to open " << fileName << "!" << std::endl;
-		std::exit(1);
+		std::stringstream error;
+		error << "File " << fileName << " appears to be malformed.";
+		throw std::runtime_error(error.str());
 	}
 
 	// Read the next line from the file
@@ -73,15 +75,17 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
  		}
  		else
 		{
-			std::cout << "File read failed: " << fileName << std::endl;
-	 		std::exit(1);
+			std::stringstream error;
+			error << "File " << fileName << " appears to be malformed.";
+			throw std::runtime_error(error.str());
  		}
  		if (fileHandle->eof())
 	 	{
 	 		if (currentColumn>0)
 	 		{
-	 			std::cout << "File terminated early: " << fileName << std::endl;
-	 			std::exit(1);
+	 			std::stringstream error;
+	 			error << "File " << fileName << " terminated early.";
+				throw std::runtime_error(error.str());
 	 		}
 	 		return false;
 	 	}
@@ -98,8 +102,9 @@ double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 {
 	if (!fileHasBeenRead)
 	{
-		std::cout << "Attempted to access data in file " << fileName << " before it has been read. Terminating." << std::endl;
-		std::exit(1);
+		std::stringstream error;
+		error << "Attempted to access data in file " << fileName << " before it has been read. Terminating.";
+		throw std::runtime_error(error.str());
 	}
 
 	return ((dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
@@ -116,8 +121,9 @@ void abstractFileReader::readFileInternalMetadata()
 	}
 	else
 	{
-		std::cout << "Attempted to read metadata from file " << fileName << " twice. Don't do this. Exiting" << std ::endl;
-		std::exit(1);
+		std::stringstream error;
+		error << "Attempted to read metadata from file " << fileName << " twice. Don't do this. Exiting";
+		throw std::runtime_error(error.str());
 	}
 }
 
@@ -250,16 +256,14 @@ void controlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
 		readNextLine();
 		feedbackDamping.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
 
-		// Check that we havn't prematurely run out of file.. (i.e. check the file wasn't malformed)
-		if (readNextLine())
-		{
-			O2DemandIntegrationWindow.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
-		}
-		else
-		{
-			std::cout << "File " << fileName << " appears to be malformed." << std::endl;
-			throw std::runtime_error("");
-		}
+		readNextLine();
+		O2DemandIntegrationWindow.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		capacitorNearAortaTopPressure.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		intramyocardialCapacitorTopPressure.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
 	}
 
 	fileHasBeenRead = int(1);
@@ -338,4 +342,191 @@ std::vector<double> controlledCoronaryReader::getFeedbackDamping()
 std::vector<double> controlledCoronaryReader::getO2DemandIntegrationWindow()
 {
 	return O2DemandIntegrationWindow;
+}
+
+std::vector<double> controlledCoronaryReader::getCapacitorNearAortaTopPressure()
+{
+	return capacitorNearAortaTopPressure;
+}
+
+std::vector<double> controlledCoronaryReader::getIntramyocardialCapacitorTopPressure()
+{
+	return intramyocardialCapacitorTopPressure;
+}
+
+void netlistReader::readAndSplitMultiSurfaceInputFile()
+{
+
+	std::vector<char> tempComponentTypes;
+	std::vector<int> tempComponentStartNodes;
+	std::vector<int> tempComponentEndNodes;
+	std::vector<double> tempComponentParameterValues;
+	std::vector<int> tempListOfPrescribedPressures;
+	std::vector<double> tempValueOfPrescribedPressures;
+	std::vector<double> tempValueOfPrescribedFlows;
+	std::vector<char> tempTypeOfPrescribedPressures;
+	std::vector<int> tempListOfPrescribedFlows;
+	std::vector<char> tempTypeOfPrescribedFlows;
+	std::vector<double> tempInitialPressures;
+
+	while(readNextLine())
+	{
+		tempComponentTypes.clear();
+		tempComponentStartNodes.clear();
+		tempComponentEndNodes.clear();
+		tempComponentParameterValues.clear();
+		tempListOfPrescribedPressures.clear();
+		tempValueOfPrescribedPressures.clear();
+		tempValueOfPrescribedFlows.clear();
+		tempTypeOfPrescribedPressures.clear();
+		tempListOfPrescribedFlows.clear();
+		tempTypeOfPrescribedFlows.clear();
+		tempInitialPressures.clear();
+
+		numberOfComponents.push_back(atoi((*currentLineSplitBySpaces).at(0).c_str()));
+
+		// Get the netlist-format-style data for each component in the circuit:
+		for (int componentIndex=0; componentIndex < numberOfComponents.back(); componentIndex++)
+		{
+			readNextLine();
+			tempComponentTypes.push_back((currentLineSplitBySpaces->at(0)).at(0));
+
+			readNextLine();
+			tempComponentStartNodes.push_back(atoi((*currentLineSplitBySpaces).at(0).c_str()));
+
+			readNextLine();
+			tempComponentEndNodes.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+
+			readNextLine();
+			tempComponentParameterValues.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
+		}
+		componentTypes.push_back(tempComponentTypes);
+		componentStartNodes.push_back(tempComponentStartNodes);
+		componentEndNodes.push_back(tempComponentEndNodes);
+		componentParameterValues.push_back(tempComponentParameterValues);
+
+		readNextLine();
+		numberOfPrescribedPressures.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+
+		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
+		{
+			readNextLine();
+			tempListOfPrescribedPressures.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+		}
+		listOfPrescribedPressures.push_back(tempListOfPrescribedPressures);
+
+		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
+		{
+			readNextLine();
+			tempValueOfPrescribedPressures.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
+		}
+		valueOfPrescribedPressures.push_back(tempValueOfPrescribedPressures);
+
+
+		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
+		{
+			readNextLine();
+			tempTypeOfPrescribedPressures.push_back(currentLineSplitBySpaces->at(0).at(0));
+		}
+		typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
+		
+
+		readNextLine();
+		numberOfPrescribedFlows.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+
+		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
+		{
+			readNextLine();
+			tempListOfPrescribedFlows.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+		}
+		listOfPrescribedFlows.push_back(tempListOfPrescribedFlows);
+
+		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
+		{
+			readNextLine();
+			tempValueOfPrescribedFlows.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
+		}
+		valueOfPrescribedFlows.push_back(tempValueOfPrescribedFlows);
+
+		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
+		{
+			readNextLine();
+			tempTypeOfPrescribedFlows.push_back(currentLineSplitBySpaces->at(0).at(0));
+		}
+		typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
+
+		readNextLine();
+		numberOfPressureNodes.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+		for (int pressureNode=0; pressureNode < numberOfPressureNodes.back(); pressureNode++)
+		{
+			readNextLine();
+			tempInitialPressures.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
+		}
+		initialPressures.push_back(tempInitialPressures);
+
+
+	}
+
+	fileHasBeenRead = int(1);
+}
+
+std::vector<std::vector<char>> netlistReader::getComponentTypes()
+{
+	return componentTypes;
+}
+std::vector<std::vector<int>> netlistReader::getComponentStartNodes()
+{
+	return componentStartNodes;
+}
+std::vector<std::vector<int>> netlistReader::getComponentEndNodes()
+{
+	return componentEndNodes;
+}
+std::vector<std::vector<double>> netlistReader::getComponentParameterValues()
+{
+	return componentParameterValues;
+}
+std::vector<int> netlistReader::getNumberOfComponents()
+{
+	return numberOfComponents;
+}
+std::vector<int> netlistReader::getNumberOfPrescribedPressures()
+{
+	return numberOfPrescribedPressures;
+}
+std::vector<int> netlistReader::getNumberOfPrescribedFlows()
+{
+	return numberOfPrescribedFlows;
+}
+std::vector<std::vector<int>> netlistReader::getListOfPrescribedPressures()
+{
+	return listOfPrescribedPressures;
+}
+std::vector<std::vector<int>> netlistReader::getListOfPrescribedFlows()
+{
+	return listOfPrescribedFlows;
+}
+std::vector<std::vector<double>> netlistReader::getValueOfPrescribedPressures()
+{
+	return valueOfPrescribedPressures;
+}
+std::vector<std::vector<double>> netlistReader::getValueOfPrescribedFlows()
+{
+	return valueOfPrescribedFlows;
+}
+std::vector<std::vector<char>> netlistReader::getTypeOfPrescribedPressures()
+{
+	return typeOfPrescribedPressures;
+}
+std::vector<std::vector<char>> netlistReader::getTypeOfPrescribedFlows()
+{
+	return typeOfPrescribedFlows;
+}
+std::vector<int> netlistReader::getNumberOfPressureNodes()
+{
+	return numberOfPressureNodes;
+}
+std::vector<std::vector<double>> netlistReader::getInitialPressures()
+{
+	return initialPressures;
 }

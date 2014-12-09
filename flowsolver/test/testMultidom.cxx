@@ -11,7 +11,7 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
   // Check we got the right boundary conditions
 	// EXPECT_TRUE(1==1);
   EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[0])==typeid(RCR));
-  EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[1])==typeid(netlist));
+  EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[1])==typeid(netlistBoundaryCondition));
   EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[2])==typeid(RCR));
 
   EXPECT_EQ((*retrievedBoundaryConditions)[0]->surfaceIndex,3);

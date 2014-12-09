@@ -535,7 +535,7 @@
          int numControlledCoronarySrfs;
          int indicesOfCoronarySurfaces[MAXSURF+1];
          int numNetlistLPNSrfs;
-         int netlistSurfaceGlobalIndices[MAXSURF+1];
+         int indicesOfNetlistSurfaces[MAXSURF+1];
          int inputHRandSP;
       } nomodule;
 

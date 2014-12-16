@@ -33,8 +33,9 @@ public:
 		
 		if (fileHandle->fail())
 		{
-			std::cout << "Failed to open " << fileName << "!" << std::endl;
-			throw std::runtime_error("Failed to open file.");
+			std::stringstream error;
+			error << "Failed to open " << fileName << "!" << std::endl;
+			throw std::runtime_error(error.str());
 		}
 	}
 
@@ -260,7 +261,7 @@ public:
 
 	void readAndSplitMultiSurfaceInputFile();
 
-	std::vector<std::vector<char>> getComponentTypes();
+	std::vector<std::vector<std::string>> getComponentTypes();
 	std::vector<std::vector<int>> getComponentStartNodes();
 	std::vector<std::vector<int>> getComponentEndNodes();
 	std::vector<std::vector<double>> getComponentParameterValues();
@@ -269,12 +270,10 @@ public:
 	std::vector<int> getNumberOfPrescribedFlows();
 	std::vector<std::vector<int>> getListOfPrescribedPressures();
 	std::vector<std::vector<int>> getListOfPrescribedFlows();
-	std::vector<std::vector<int>> getListOfHistoryPressures();
-	std::vector<std::vector<int>> getListOfHistoryFlows();
 	std::vector<std::vector<double>> getValueOfPrescribedPressures();
 	std::vector<std::vector<double>> getValueOfPrescribedFlows();
-	std::vector<std::vector<char>> getTypeOfPrescribedPressures();
-	std::vector<std::vector<char>> getTypeOfPrescribedFlows();
+	std::vector<std::vector<std::string>> getTypeOfPrescribedPressures();
+	std::vector<std::vector<std::string>> getTypeOfPrescribedFlows();
 	std::vector<int> getNumberOfPressureNodes();
 	std::vector<std::vector<double>> getInitialPressures();
 protected:
@@ -285,7 +284,7 @@ private:
 
 	static netlistReader* instance;
 
-	std::vector<std::vector<char>> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
+	std::vector<std::vector<std::string>> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
 	std::vector<std::vector<int>> componentStartNodes;
 	std::vector<std::vector<int>> componentEndNodes;
 	std::vector<std::vector<double>> componentParameterValues;
@@ -299,8 +298,8 @@ private:
 
 	std::vector<std::vector<double>> valueOfPrescribedPressures;
 	std::vector<std::vector<double>> valueOfPrescribedFlows;
-	std::vector<std::vector<char>> typeOfPrescribedPressures;
-	std::vector<std::vector<char>> typeOfPrescribedFlows;
+	std::vector<std::vector<std::string>> typeOfPrescribedPressures;
+	std::vector<std::vector<std::string>> typeOfPrescribedFlows;
 
 	std::vector<int> numberOfPressureNodes;
 	std::vector<std::vector<double>> initialPressures;

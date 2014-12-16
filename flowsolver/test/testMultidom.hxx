@@ -20,6 +20,7 @@
 	   std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
 	   boundaryConditionManager* boundaryConditionManager_instance;
 	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
+	   netlistReader* netlistReader_instance;
 
 	   double press1;
 	   double press2;
@@ -80,6 +81,11 @@
 		controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
 		controlledCoronaryReader_instance->setFileName("controlled_coronaries_test.dat");
 		controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
+
+		// Setup the netlist reader:
+		netlistReader_instance = netlistReader::Instance();
+	    netlistReader_instance->setFileName("netlist_surfaces.dat");
+	    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
 		
 		std::vector<std::pair<int,std::string>> surfaceList;
@@ -158,6 +164,10 @@
 	  	timdat.lstep = int(0);
 	  	std::cout << " inpdat.Delt[0]" << std::endl;
 	  	inpdat.Delt[0] = 0.01;
+	  	// grcrbccom.numGRCRSrfs;
+	  	// std::cout << "nomodule.numNetlistLPNSrfs" << std::endl;
+    //     nomodule.numNetlistLPNSrfs = int(1);
+        // nomodule.numControlledCoronarySrfs;
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

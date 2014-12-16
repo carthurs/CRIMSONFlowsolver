@@ -255,20 +255,29 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),1);
 
 
-  
-  // std::vector<std::vector<char>> returnedVectorOfCharVectors;
-  // returnedVectorOfCharVectors = netlistReader_instance->getTypeOfPrescribedPressures();
-  // char just_f[1];
-  // just_f[0] = 'f';
-  // EXPECT_STREQ(returnedVectorOfCharVectors.at(0).at(0)+"\0",just_f);
+  // 
+  std::vector<std::vector<std::string>> returnedVectorOfStringVectors;
+  returnedVectorOfStringVectors = netlistReader_instance->getTypeOfPrescribedPressures();
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(0).c_str(),"f");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(1).c_str(),"f");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(0).c_str(),"f");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(1).c_str(),"f");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(2).c_str(),"f");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(3).c_str(),"f");
 
-  // returnedVectorOfCharVectors = netlistReader_instance->getTypeOfPrescribedFlows();
+  returnedVectorOfStringVectors = netlistReader_instance->getTypeOfPrescribedFlows();
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(0).c_str(),"t");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(0).c_str(),"t");
 
-
-  // returnedVectorOfCharVectors = netlistReader_instance->getComponentTypes();
-
-
-
+  returnedVectorOfStringVectors = netlistReader_instance->getComponentTypes();
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(0).c_str(),"r");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(1).c_str(),"c");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(2).c_str(),"r");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(0).c_str(),"r");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(1).c_str(),"c");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(2).c_str(),"r");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(3).c_str(),"i");
+  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(4).c_str(),"r");
 
   netlistReader_instance->Term();
 }

@@ -357,16 +357,16 @@ std::vector<double> controlledCoronaryReader::getIntramyocardialCapacitorTopPres
 void netlistReader::readAndSplitMultiSurfaceInputFile()
 {
 
-	std::vector<char> tempComponentTypes;
+	std::vector<std::string> tempComponentTypes;
 	std::vector<int> tempComponentStartNodes;
 	std::vector<int> tempComponentEndNodes;
 	std::vector<double> tempComponentParameterValues;
 	std::vector<int> tempListOfPrescribedPressures;
 	std::vector<double> tempValueOfPrescribedPressures;
 	std::vector<double> tempValueOfPrescribedFlows;
-	std::vector<char> tempTypeOfPrescribedPressures;
+	std::vector<std::string> tempTypeOfPrescribedPressures;
 	std::vector<int> tempListOfPrescribedFlows;
-	std::vector<char> tempTypeOfPrescribedFlows;
+	std::vector<std::string> tempTypeOfPrescribedFlows;
 	std::vector<double> tempInitialPressures;
 
 	while(readNextLine())
@@ -389,7 +389,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int componentIndex=0; componentIndex < numberOfComponents.back(); componentIndex++)
 		{
 			readNextLine();
-			tempComponentTypes.push_back((currentLineSplitBySpaces->at(0)).at(0));
+			tempComponentTypes.push_back(currentLineSplitBySpaces->at(0));
 
 			readNextLine();
 			tempComponentStartNodes.push_back(atoi((*currentLineSplitBySpaces).at(0).c_str()));
@@ -426,7 +426,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
 		{
 			readNextLine();
-			tempTypeOfPrescribedPressures.push_back(currentLineSplitBySpaces->at(0).at(0));
+			tempTypeOfPrescribedPressures.push_back(currentLineSplitBySpaces->at(0));
 		}
 		typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
 		
@@ -451,7 +451,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
 		{
 			readNextLine();
-			tempTypeOfPrescribedFlows.push_back(currentLineSplitBySpaces->at(0).at(0));
+			tempTypeOfPrescribedFlows.push_back(currentLineSplitBySpaces->at(0));
 		}
 		typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
 
@@ -470,7 +470,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 	fileHasBeenRead = int(1);
 }
 
-std::vector<std::vector<char>> netlistReader::getComponentTypes()
+std::vector<std::vector<std::string>> netlistReader::getComponentTypes()
 {
 	return componentTypes;
 }
@@ -514,11 +514,11 @@ std::vector<std::vector<double>> netlistReader::getValueOfPrescribedFlows()
 {
 	return valueOfPrescribedFlows;
 }
-std::vector<std::vector<char>> netlistReader::getTypeOfPrescribedPressures()
+std::vector<std::vector<std::string>> netlistReader::getTypeOfPrescribedPressures()
 {
 	return typeOfPrescribedPressures;
 }
-std::vector<std::vector<char>> netlistReader::getTypeOfPrescribedFlows()
+std::vector<std::vector<std::string>> netlistReader::getTypeOfPrescribedFlows()
 {
 	return typeOfPrescribedFlows;
 }

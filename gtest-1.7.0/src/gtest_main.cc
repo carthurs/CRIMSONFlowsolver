@@ -61,9 +61,11 @@ GTEST_API_ int main(int argc, char **argv) {
 
   // Fake command line input for the flowsolver, so we don't have to pass it:
   int fake_argc = 2;
-  char *fake_argv[] = {"testMain","1","solver.inp",NULL};
+  char *fake_argv_temp[4] = {"testMain","1","solver.inp",NULL};
+  char** fake_argv= (char**) fake_argv_temp;
+
   // MPI_Init(&fake_argc,(char***)&fake_argv);
-  PetscInitialize(&fake_argc, (char***)&fake_argv, (char *)0, help);
+  PetscInitialize(&fake_argc, &fake_argv, (char *)0, help);
 
   
   

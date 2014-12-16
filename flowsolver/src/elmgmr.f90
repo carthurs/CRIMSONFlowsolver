@@ -1141,7 +1141,7 @@
       !
       if(numGRCRSrfs.gt.zero) then
           call GetFlowQ(p, y, nsrflistGRCR, numGRCRSrfs) ! now p is the flow rate
-          write(*,*) "flows just got:", p(1)
+          ! write(*,*) "flows just got:", p(1)
           !          do j = 1, numGRCRSrfs
           !              if(sign.lt.zero) then ! RHS so -1
           !                  p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta

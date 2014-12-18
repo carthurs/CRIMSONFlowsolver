@@ -106,5 +106,28 @@ module cpp_interface
     end interface
     
 !   ============= Controlled Coronary Block End =============
+!   ============= Netlist LPN Block Start =============
+
+
+    interface
+            subroutine callCPPUpdateAllNetlistLPNs() bind(c,name="callCPPUpdateAllNetlistLPNs")
+                use iso_c_binding
+            end subroutine callCPPUpdateAllNetlistLPNs
+    end interface
+
+    interface
+            subroutine callCPPGetImplicitCoeff_netlistLPNs(implicitCoeffs_toBeFilled_ptr) bind(c,name="callCPPGetImplicitCoeff_netlistLPNs")
+                use iso_c_binding
+                type(c_ptr) :: implicitCoeffs_toBeFilled_ptr
+            end subroutine callCPPGetImplicitCoeff_netlistLPNs
+    end interface
+
+    interface
+            subroutine callCppSetSurfacePressure_netlistLPNs(netlistSurfacePressures) bind(c,name="callCppSetSurfacePressure_netlistLPNs")
+                use iso_c_binding
+                type(c_ptr) :: netlistSurfacePressures
+            end subroutine callCppSetSurfacePressure_netlistLPNs
+    end interface
     
+
 end module cpp_interface

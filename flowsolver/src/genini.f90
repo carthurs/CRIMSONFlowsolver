@@ -215,9 +215,9 @@
            call multidom%addsurfids(numControlledCoronarySrfs,indicesOfCoronarySurfaces)
           end if
 !
-          ! if (numNetlistLPNSrfs .gt. int(0)) then
-          !  call multidom%addsurfids(numNetlistLPNSrfs,nSrfListNetlist)
-          ! end if
+          if (numNetlistLPNSrfs .gt. int(0)) then
+           call multidom%addsurfids(numNetlistLPNSrfs,indicesOfNetlistSurfaces)
+          end if
         end if
 !
 !.... satisfy the boundary conditions

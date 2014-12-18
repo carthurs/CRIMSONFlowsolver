@@ -88,3 +88,31 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
   readResult = FlowHistReader.getReadFileData(1,5);
   EXPECT_NEAR(478.116982120136,readResult,0.3);
 }
+
+TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
+  std::string simDir = "mainTests/netlist/emulateRCR";
+  setSimDirectory(simDir);
+  clearOutOldFiles();
+
+  runSimulation();
+
+  // Check PressHist.dat
+  histFileReader PressHistReader = histFileReader();
+  PressHistReader.setFileName("PressHist.dat");
+  PressHistReader.setNumColumns(2);
+  PressHistReader.readFileInternalMetadata();
+  PressHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double readResult = PressHistReader.getReadFileData(1,5);
+  EXPECT_NEAR(10645.5858581080,readResult,1e-8);
+
+  // Check FlowHist.dat
+  histFileReader FlowHistReader = histFileReader();
+  FlowHistReader.setFileName("FlowHist.dat");
+  FlowHistReader.setNumColumns(2);
+  FlowHistReader.readFileInternalMetadata();
+  FlowHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  readResult = FlowHistReader.getReadFileData(1,5);
+  EXPECT_NEAR(478.116982120136,readResult,1e-7);
+}

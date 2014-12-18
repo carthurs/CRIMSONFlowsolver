@@ -26,21 +26,22 @@ public:
 		numberOfInitialisedNetlistLPNs++;
 		initialiseModel();
 	}
-	void computeImplicitCoeff_solve(int timestepNumber)
-	{
 
-	}
- 	void computeImplicitCoeff_update(int timestepNumber)
- 	{
-
- 	}
  	void updpressure_n1_withflow(){}
  	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt);
 	void initialiseModel();
 
+	void updateLPN();
+
 	~netlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;
+		PetscErrorCode errFlag;
+		errFlag = VecDestroy(&RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = VecDestroy(&solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = MatDestroy(&systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = MatDestroy(&inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = MatDestroy(&identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	}
 
 private:
@@ -50,18 +51,17 @@ private:
 	void getMapOfPressHistoriesToCorrectPressNodes();
 	void getMapOfFlowHistoriesToCorrectComponents();
 	void getListOfNodesWithMultipleIncidentCurrents();
-	void computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt);
 	void generateLinearSystemFromPrescribedCircuit(double alfi_delt);
-	void assembleRHS_netlistLPN(int stepn);
+	void assembleRHS_netlistLPN(int timestepNumber);
 
 	Mat systemMatrix;
 	Mat inverseOfSystemMatrix;
 	Mat identityMatrixForPetscInversionHack;
 	Vec RHS;
+	Vec solutionVector;
 	std::vector<double> pressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
 	std::vector<double> historyPressuresInLPN;                // As pressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used
 	std::vector<double> flowsInLPN;                           // Flow through each component in the LPN, in the order they appear in the netlist
-	Vec solutionVector;
 	int numberOfComponents;
 	int numberOfPressureNodes;
 	// integer, allocatable :: localToGlobalSurfaceIndexMap(:)
@@ -87,7 +87,7 @@ private:
 	std::vector<int> columnMap;
 	double P_a;
 	int columnIndexOf3DInterfaceFlowInLinearSystem;
-	std::vector<double> initialPressures;
+	// std::vector<double> initialPressures;
 	int columnMapSize;//\todo check this is used
 
 };

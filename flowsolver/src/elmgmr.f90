@@ -1298,6 +1298,47 @@
 !     **************END New Controlled Coronary Model**************
 
 
+!     **************Netlist LPNs **************
+      if(numNetlistLPNSrfs .gt. 0) then
+        call GetFlowQ(p,y,indicesOfNetlistSurfaces,numNetlistLPNSrfs)  !Q pushed into p but at this point 
+        ! p is just the full Q for each surface
+
+
+        ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of
+        ! indefinite (run-time-set) size, we pass a pointer to entry (1,1) of this array,
+        ! and then dereference that manually in the C++ to write the data to the
+        ! correct places in the whole array, so that it can be accessed from FORTRAN.
+        !
+        call callCPPGetImplicitCoeff_netlistLPNs(c_loc(implicitcoeffs(1,1)))
+
+        if(sign.lt.zero) then
+          do j = 1,numNetlistLPNSrfs
+              p(j)= sign*(p(j)*implicitcoeffs(j,1)) 
+              p(j)= p(j) - implicitcoeffs(j,2)
+          enddo
+          ! Pass the netlist surface pressures to CPP
+          call callCppSetSurfacePressure_netlistLPNs(c_loc(p))
+        elseif(sign.gt.zero) then
+          do j = 1,numNetlistLPNSrfs
+              p(j)= sign*p(j)*implicitcoeffs(j,1)
+          enddo
+        endif
+
+        do i = 1,nshg
+          do k = 1,numNetlistLPNSrfs
+              ! irankCoupled = 0
+              if (indicesOfNetlistSurfaces(k).eq.ndsurf(i)) then 
+                  ! irankCoupled=k <-- seems stupid
+                  ! res(i,1:3)=res(i,1:3) + p(irankCoupled)*NABI(i,1:3)
+                  res(i,1:3)=res(i,1:3) + p(k)*NABI(i,1:3)
+              endif
+          enddo   
+        enddo
+
+      endif
+!     **************END Netlist LPNs **************
+
+
       ! ************************** !
       ! *** couple heart model *** !
       ! ************************** !
@@ -1647,6 +1688,12 @@
          do k=1, numControlledCoronarySrfs
             faIn = faIn + 1
             call callCppGetImplicitCoeff_controlledCoronary(c_loc(implicitcoeffs(1,1)))
+            faceRes(faIn) = implicitcoeffs(k,1)
+         end do
+         do k=1, numNetlistLPNSrfs
+            faIn = faIn + 1
+            call callCPPGetImplicitCoeff_netlistLPNs(c_loc(implicitcoeffs(1,1)))
+            write(*,*) "Netlist implicitcoeffs from C++ in Fortran: ", implicitcoeffs(1,1), implicitcoeffs(2,1)
             faceRes(faIn) = implicitcoeffs(k,1)
          end do
          IF (iheart .gt. int(0)) THEN

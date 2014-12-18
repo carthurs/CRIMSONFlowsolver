@@ -95,7 +95,7 @@ int main(int argc, char * argv[]) {
    cout << "changing directory to " << pathToProcsCaseDir << endl;
 
    input(&numProcsTotal, &rank);
-   proces();
+   proces(); // Includes the call to set up fortranBoundaryDataPointerManager pointerManager
    itrdrv_init(); // initialize solver
 
    // initialise reduced order boundary conditions

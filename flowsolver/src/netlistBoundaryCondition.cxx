@@ -25,8 +25,9 @@ void netlistBoundaryCondition::initialiseModel()
 	valueOfPrescribedFlows = netlistReader_instance->getValueOfPrescribedFlows().at(indexOfThisNetlistLPN);
 	typeOfPrescribedPressures = netlistReader_instance->getTypeOfPrescribedPressures().at(indexOfThisNetlistLPN);
 	typeOfPrescribedFlows = netlistReader_instance->getTypeOfPrescribedFlows().at(indexOfThisNetlistLPN);
-	initialPressures = netlistReader_instance->getInitialPressures().at(indexOfThisNetlistLPN);
-	
+	pressuresInLPN = netlistReader_instance->getInitialPressures().at(indexOfThisNetlistLPN);
+
+
 	// integer :: rank
 	// integer :: err
 
@@ -205,24 +206,23 @@ void netlistBoundaryCondition::initialiseModel()
     }
     errFlag = MatAssemblyBegin(identityMatrixForPetscInversionHack,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = MatAssemblyEnd(identityMatrixForPetscInversionHack,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-	
+
 	errFlag = VecCreate(PETSC_COMM_SELF,&RHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	errFlag = VecSetType(RHS,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make RHS a VECSEQ sequential vector
+    errFlag = VecSetSizes(RHS,systemSize,systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecZeroEntries(RHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyBegin(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
 	errFlag = VecCreate(PETSC_COMM_SELF,&solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	errFlag = VecSetType(solutionVector,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make solutionVector a VECSEQ sequential vector
+    errFlag = VecSetSizes(solutionVector,systemSize,systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecZeroEntries(solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyBegin(solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-
     columnMapSize = numberOfHistoryPressures + numberOfHistoryFlows + numberOfPrescribedPressures + numberOfPrescribedFlows;
-
     getListOfNodesWithMultipleIncidentCurrents();
-
 //        Populate the map which converts LPN surface indices (local) to surface indices (global) - for FlowHist etc.
      // do ii=1, this%numberOfLPNSurfaces
      //    do jj=1, numCalcSrfs
@@ -243,10 +243,10 @@ void netlistBoundaryCondition::getMapOfPressHistoriesToCorrectPressNodes()
     for (int ii=0; ii<numberOfComponents; ii++)
     {
        // Check for capacitor, as these need pressure "histories" (pressure from the previous time-step) at their end-nodes (for dP/dt term).
-       if (strcmp(circuitInputData.componentTypes.at(ii).compare("c") == 0))
+       if (circuitInputData.componentTypes.at(ii).compare("c") == 0)
        {
        		listOfHistoryPressures.insert(circuitInputData.componentStartNodes.at(ii));
-       		listOfHistoryPressures.insert(circuitInputData.componentStartNodes.at(ii));
+       		listOfHistoryPressures.insert(circuitInputData.componentEndNodes.at(ii));
        }
     }
 
@@ -480,7 +480,7 @@ void netlistBoundaryCondition::getListOfNodesWithMultipleIncidentCurrents()
 std::pair<double,double> netlistBoundaryCondition::computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt)
 {
     generateLinearSystemFromPrescribedCircuit(alfi_delt);
-    assembleRHS_netlistLPN(stepn);
+    assembleRHS_netlistLPN(timestepNumber);
 
     PetscErrorCode errFlag;
 
@@ -489,6 +489,7 @@ std::pair<double,double> netlistBoundaryCondition::computeImplicitCoefficients(i
 
     // get the inverse of the system matrix:
     errFlag = MatMatSolve(systemMatrix,identityMatrixForPetscInversionHack,inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = MatSetUnfactored(systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
     // solutionVector(1:this%systemSize(kk),kk) =                              &
     //   matmul(this%inverseOfSystemMatrix(1:this%systemSize(kk),1:this%systemSize(kk),kk), this%RHS(1:this%systemSize(kk),kk))
@@ -501,17 +502,19 @@ std::pair<double,double> netlistBoundaryCondition::computeImplicitCoefficients(i
     // coeff(kk,2) = this%solutionVector(1,kk) -                                                             &
     //                 this%inverseOfSystemMatrix(1,this%columnIndexOf3DInterfaceFlowInLinearSystem(kk),kk)* &
     //                 this%RHS(this%columnIndexOf3DInterfaceFlowInLinearSystem(kk),kk) //\todo make dynamic
-    
+
     std::pair<double,double> returnValue;
     PetscScalar valueFromInverseOfSystemMatrix;
     PetscScalar valueFromRHS;
     PetscScalar valueFromSolutionVector;
-    
-    errFlag = MatGetValues(inverseOfSystemMatrix,1,0,1,columnIndexOf3DInterfaceFlowInLinearSystem--MAKETHISZEROINDEXED!,valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    int rowIndex[] = {0};
+    int numberOfValuesToGet=1;
+    errFlag = MatGetValues(inverseOfSystemMatrix,numberOfValuesToGet,rowIndex,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem,&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     returnValue.first = valueFromInverseOfSystemMatrix;
 
-    errFlag = VecGetValues(RHS,1,columnIndexOf3DInterfaceFlowInLinearSystem,valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    errFlag = VecGetValues(solutionVector,1,0,valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecGetValues(RHS,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem,&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecGetValues(solutionVector,numberOfValuesToGet,rowIndex,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     returnValue.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
 
     return returnValue;
@@ -523,14 +526,16 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
 
     PetscErrorCode errFlag;
 
+    errFlag = MatZeroEntries(systemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
     for(int ll=0; ll<numberOfComponents; ll++)
     {
         if (circuitInputData.componentTypes.at(ll).compare("r") == 0)
         {
           // insert resistor relationship into equation system
-          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll)-1,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
-          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentEndNodes.at(ll),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentEndNodes.at(ll)-1,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)
           errFlag = MatSetValue(systemMatrix,ll,ll+numberOfPressureNodes+numberOfHistoryPressures,-circuitInputData.componentParameterValues.at(ll),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         }
@@ -538,9 +543,9 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
         {
           // insert capacitor relationship into equation system
           // this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
-          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll)-1,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
-          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentEndNodes.at(ll),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentEndNodes.at(ll)-1,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -alfi_delt/this%circuitData(ll,3,kk)
           errFlag = MatSetValue(systemMatrix,ll,ll+numberOfPressureNodes+numberOfHistoryPressures,-alfi_delt/circuitInputData.componentParameterValues.at(ll),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,1,kk)),kk) + this%numberOfPressureNodes(kk),kk) = -1.0d0
@@ -548,13 +553,13 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
           // this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,2,kk)),kk) + this%numberOfPressureNodes(kk),kk) = 1.0d0
           errFlag = MatSetValue(systemMatrix,ll,nodeIndexToPressureHistoryNodeOrderingMap[circuitInputData.componentEndNodes.at(ll)]+numberOfPressureNodes,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         }
-        else if (circuitInputData.componentTypes.at(ll).compare("i") == 0))
+        else if (circuitInputData.componentTypes.at(ll).compare("i") == 0)
         {
           // insert inductor relationship into equation system
           // this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
-          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll)-1,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
-          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentEndNodes.at(ll),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentEndNodes.at(ll)-1,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)/alfi_delt
           errFlag = MatSetValue(systemMatrix,ll,ll+numberOfPressureNodes+numberOfHistoryPressures,-circuitInputData.componentParameterValues.at(ll)/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           // this%systemMatrix(ll,this%componentIndexToFlowHistoryComponentOrderingMap(ll,kk) + this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + this%numberOfComponents(kk),kk) = this%circuitData(ll,3,kk)/alfi_delt
@@ -576,7 +581,7 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
              // this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = 1.0d0
             errFlag = MatSetValue(systemMatrix,mm+numberOfComponents,ll+numberOfPressureNodes+numberOfHistoryPressures,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           }
-          if (int(this%circuitData(ll,1,kk)) .eq. this%listOfNodesWithMultipleIncidentCurrents(mm,kk))
+          if (circuitInputData.componentStartNodes.at(ll) == listOfNodesWithMultipleIncidentCurrents.at(mm))
           {
              // this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = -1.0d0
             errFlag = MatSetValue(systemMatrix,mm+numberOfComponents,ll+numberOfPressureNodes+numberOfHistoryPressures,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -587,7 +592,7 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
      int rowsDoneSoFar = numberOfComponents + numberOfMultipleIncidentCurrentNodes;
 
      // create the columnMap which tells us which system column each of the prescribed pressure, pressure-history or flow values belong to
-     int tempUnknownVariableIndexWithinLinearSystem = 0 // just an indexing shift to keep track of where we need to write next
+     int tempUnknownVariableIndexWithinLinearSystem = 0; // just an indexing shift to keep track of where we need to write next
      for (int ll=0; ll<numberOfPrescribedPressures; ll++)
      {
        columnMap.push_back(listOfPrescribedPressures.at(ll) - 1 + tempUnknownVariableIndexWithinLinearSystem); // -1 to convert to zero-indexing (listOfPrescribedPressures is 1-indexed)
@@ -600,13 +605,13 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
      }
 
      tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + numberOfHistoryPressures;
-     for (int ll=0, ll<numberOfPrescribedFlows; ll++)
+     for (int ll=0; ll<numberOfPrescribedFlows; ll++)
      {
        columnMap.push_back(listOfPrescribedFlows.at(ll) - 1 + tempUnknownVariableIndexWithinLinearSystem); // -1 to convert listOfPrescribedFlows to zero-indexing
      }
 
      tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + numberOfComponents;
-     for (int ll=0, ll<numberOfHistoryFlows; ll++)
+     for (int ll=0; ll<numberOfHistoryFlows; ll++)
      {
        columnMap.push_back(ll + tempUnknownVariableIndexWithinLinearSystem);
      }
@@ -619,22 +624,14 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
 
     errFlag = MatAssemblyBegin(systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = MatAssemblyEnd(systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    errFlag = MatLUFactor(systemMatrix,NULL,NULL,NULL);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
-void netlistBoundaryCondition::assembleRHS_netlistLPN(int stepn)
+void netlistBoundaryCondition::assembleRHS_netlistLPN(int timestepNumber)
 {
- use calcFlowPressure, only: FlowHist
- implicit none
-
- integer :: tempIndexingShift
- integer :: ll
- integer :: kk
- integer :: nn
- real*8 :: P_IM_mid_lasttimestep
- real*8 :: P_IM_mid
 
     PetscErrorCode errFlag;
-
     errFlag = VecZeroEntries(RHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
     historyPressuresInLPN = pressuresInLPN;
@@ -653,57 +650,103 @@ void netlistBoundaryCondition::assembleRHS_netlistLPN(int stepn)
        {
           std::cout << "this requires heartmodel. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
           std::exit(1);
-          // if ((stepn == 0) || (stepn == 1)) // treat case with no known IM pressure yet
+          // if ((timestepNumber == 0) || (timestepNumber == 1)) // treat case with no known IM pressure yet
           // {
           //    P_IM_mid_lasttimestep = 5000; // \todo find a better way of doing this; maybe input this value from file...
           //    P_IM_mid = 5000; // ... or set it based on the aortic valve state at simulation start
           // }
-          // elseif (stepn .eq. int(2)) then // treat case where only one IM pressure history point is known
-          //    P_IM_mid_lasttimestep = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(stepn-1)
-          //    P_IM_mid = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(stepn)
+          // elseif (timestepNumber .eq. int(2)) then // treat case where only one IM pressure history point is known
+          //    P_IM_mid_lasttimestep = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber-1)
+          //    P_IM_mid = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber)
           // else // get the previous intramyocardial pressure in the case where we have enough doata for this (see comment before start of "if" block)
-          //    P_IM_mid_lasttimestep = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(stepn-1)
-          //    P_IM_mid = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(stepn)
+          //    P_IM_mid_lasttimestep = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber-1)
+          //    P_IM_mid = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber)
           // end if
 
-          errFlag = VecSetValue(RHS,ll + tempIndexingShift,P_IM_mid,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-          int nn=0;
-          for (auto iterator=listOfHistoryPressures.begin(); iterator!=listOfHistoryPressures.end(); iterator++, nn++)
-          {
-             if (*iterator == listOfPrescribedPressures.at(ll))
-             {
-                historyPressuresInLPN.at(*iterator) = P_IM_mid_lasttimestep;
-             }
-          }
+          // errFlag = VecSetValue(RHS,ll + tempIndexingShift,P_IM_mid,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+          // int nn=0;
+          // for (auto iterator=listOfHistoryPressures.begin(); iterator!=listOfHistoryPressures.end(); iterator++, nn++)
+          // {
+          //    if (*iterator == listOfPrescribedPressures.at(ll))
+          //    {
+          //       historyPressuresInLPN.at(*iterator) = P_IM_mid_lasttimestep;
+          //    }
+          // }
        }
     }
     // History Pressures
-    tempIndexingShift = tempIndexingShift + this%numberOfPrescribedPressures(kk)
-    do ll=1,this%numberOfHistoryPressures(kk)
-       this%RHS(ll + tempIndexingShift,kk) = this%historyPressuresInLPN(this%listOfHistoryPressures(ll,kk),kk)
-    end do
-
+    tempIndexingShift = tempIndexingShift + numberOfPrescribedPressures;
+    // for(int ll=0; ll<numberOfHistoryPressures; ll++)
+    int lll=0;
+    for (auto iterator=listOfHistoryPressures.begin(); iterator!=listOfHistoryPressures.end(); iterator++, lll++)
+    {
+       // this%RHS(ll + tempIndexingShift,kk) = this%historyPressuresInLPN(this%listOfHistoryPressures(ll,kk),kk)
+        errFlag = VecSetValue(RHS,lll+tempIndexingShift,historyPressuresInLPN.at(*iterator - 1),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
     // Prescribed Flows
-    tempIndexingShift = tempIndexingShift + this%numberOfHistoryPressures(kk)
-    do ll=1,this%numberOfPrescribedFlows(kk)
+    tempIndexingShift = tempIndexingShift + numberOfHistoryPressures;
+    for(int ll=0; ll<numberOfPrescribedFlows; ll++)
+    {
        // 't 'three-D interface'
-       if (this%typeOfPrescribedFlows(ll,kk) .eq. 't') then
-          this%columnIndexOf3DInterfaceFlowInLinearSystem(kk) = ll + tempIndexingShift
-          this%RHS(ll + tempIndexingShift,kk) = this%flowpntr(kk)%p
+       if (typeOfPrescribedFlows.at(ll).compare("t") == 0)
+       {
+          columnIndexOf3DInterfaceFlowInLinearSystem = ll + tempIndexingShift;
+          errFlag = VecSetValue(RHS,ll + tempIndexingShift,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+       }
        // 'f' for 'fixed'
-       else if (this%typeOfPrescribedFlows(ll,kk) .eq. 'f') then
-          this%RHS(ll + tempIndexingShift,kk) = this%valueOfPrescribedFlows(ll,kk)
-       end if
-    end do
-
+       else if (typeOfPrescribedFlows.at(ll).compare("f") == 0)
+       {
+          errFlag = VecSetValue(RHS,ll + tempIndexingShift,valueOfPrescribedFlows.at(ll), INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+       }
+    }
     // History Flows
-    tempIndexingShift = tempIndexingShift + this%numberOfPrescribedFlows(kk)
-    do ll=1,this%numberOfHistoryFlows(kk)
-       this%RHS(ll + tempIndexingShift,kk) = this%flowsInLPN(this%listOfHistoryFlows(ll,kk),kk)
-    end do
+    tempIndexingShift = tempIndexingShift + numberOfPrescribedFlows;
+    lll=0;
+    // for(int ll=0; ll<numberOfHistoryFlows; ll++)
+    for (auto iterator=listOfHistoryFlows.begin(); iterator!=listOfHistoryFlows.end(); iterator++, lll++)
+    {
+       // this%RHS(ll + tempIndexingShift,kk) = this%flowsInLPN(this%listOfHistoryFlows(ll,kk),kk)
+       errFlag = VecSetValue(RHS,lll + tempIndexingShift,flowsInLPN.at(*iterator - 1), INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
  
-
     errFlag = VecAssemblyBegin(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
 }
+
+// void netlistBoundaryCondition::updateLPN_netlistLPN()
+void netlistBoundaryCondition::updateLPN()
+{
+    PetscErrorCode errFlag;
+
+    errFlag = VecSetValue(RHS,columnIndexOf3DInterfaceFlowInLinearSystem,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag); //\todo make this write to the correct entry of RHS, dynamically, and read the correct pointer when there are multiple netlist LPNs
+    errFlag = MatMult(inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // this%solutionVector(1:this%systemSize(kk),kk) = matmul(this%inverseOfSystemMatrix(1:this%systemSize(kk),1:this%systemSize(kk),kk), this%RHS(1:this%systemSize(kk),kk))
+
+    int getSingleValue=1;
+    for (int ll=0; ll<numberOfPressureNodes; ll++)
+    {
+        errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&pressuresInLPN[ll]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+       // pressuresInLPN.at(ll) = solutionVector(ll,kk)
+    }
+
+    int indexShift = numberOfPressureNodes + numberOfHistoryPressures;
+    for (int ll=indexShift; ll<numberOfComponents+indexShift; ll++)
+    {
+        errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&flowsInLPN[ll-indexShift]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+       // this%flowsInLPN(ll,kk) = this%solutionVector(ll+indexShift,kk)
+    }
+
+    // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInLPN(2))/1.2862d5 - this%flowsInLPN(1)
+
+}
+
+
+// Sorth this out (probably for netlist surface update!)
+// LPNInflowPressure
+// LPNInflowPressure
+// LPNInflowPressure
+// LPNInflowPressure
+// LPNInflowPressure
+// LPNInflowPressure
+// LPNInflowPressure

@@ -278,7 +278,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         !     pointers
         IF (memLSFlag .EQ. 1) THEN
             IF  (ipvsq .GE. 2) THEN
-                memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs
+                memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs + numNetlistLPNSrfs
             ELSE
                 memLS_nFaces = 1
             END IF
@@ -326,6 +326,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                 do k=1, numControlledCoronarySrfs
                     faIn = faIn + 1
                     call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs)
+                end do
+                do k=1, numNetlistLPNSrfs
+                    faIn = faIn + 1
+                    call AddNeumannBCTomemLS(indicesOfNetlistSurfaces(k),faIn,memLS_lhs)
                 end do
             END IF
 
@@ -856,8 +860,11 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     ! Moved here from above - it's a generic update for everything,
     ! so shouldn't need guarding
+    write(*,*) "got here 1"
     call callCppComputeAllImplicitCoeff_solve(lstep)
+    write(*,*) "got here 2"
     call callCppComputeAllImplicitCoeff_update(lstep)
+    write(*,*) "got here 3"
     ! ------------------------------------------
 
     !
@@ -908,7 +915,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 !        iper,   ilwork,  ifath,  velbar)
 !    endif
 
-end subroutine
+end subroutine itrdrv_iter_init
 
 !
 !.... ---------------> a single time step <---------------
@@ -1174,6 +1181,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         call callCppUpdateAllControlledCoronaryLPNs()
     endif
 
+    if(numNetlistLPNSrfs .gt. 0) then
+        call callCPPUpdateAllNetlistLPNs()
+    endif
+
     ! interface to compute distances to observed wall motion
 !    if (imeasdist.eq.1) then
 !        if (myrank.eq.zero) then
@@ -1234,6 +1245,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         ! save the LPN internal pressures.
         call callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
     end if
+
+    if(numNetlistLPNSrfs .gt. 0) then
+        call callCPPUpdateAllNetlistLPNs()
+    endif
 
     call itrBC (yold, acold,  iBC,  BC,  iper,ilwork)
 

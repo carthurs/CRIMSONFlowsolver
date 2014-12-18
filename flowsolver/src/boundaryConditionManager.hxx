@@ -59,6 +59,10 @@ class abstractBoundaryCondition;
 
     void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 
+    void setSurfacePressure_netlistLPNs(double* netlistSurfacePressures);
+    void updateAllNetlistLPNs();
+    void getImplicitCoeff_netlistLPNs(double* implicitCoeffs_toBeFilled);
+
     int getNumberOfRCRSurfaces(){return numberOfRCRSurfaces;}
     int getNumberOfNetlistSurfaces(){return numberOfNetlistSurfaces;}
     int getNumberOfControlledCoronarySurfaces(){return numberOfControlledCoronarySurfaces;}

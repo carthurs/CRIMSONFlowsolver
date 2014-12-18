@@ -22,6 +22,7 @@ public:
 	abstractFileReader()
 	{
 		fileHasBeenRead = 0;
+		metadataOnNumberOfLinesInFileAvailable = false;
 		currentLineSplitBySpaces = new std::vector<std::string>;
 		fileHandle = new std::ifstream();
 	}
@@ -73,7 +74,7 @@ protected:
 	bool readNextLineWithKnownNumberOfColumns();
 
 	int expectedNumberOfLinesInFile;
-	bool metadataOnNumberOfLinesInFileAvailable = false;
+	bool metadataOnNumberOfLinesInFileAvailable;
 private:
 };
 

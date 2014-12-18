@@ -6,6 +6,7 @@
 #include "petscmat.h"
 #include "petscvec.h"
 #include <set>
+#include <vector>
 
 class circuitData
 {

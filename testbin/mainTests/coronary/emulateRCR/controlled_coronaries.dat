@@ -1,0 +1,36 @@
+# File contains the coronary model parameters for each outlet.
+# Coronary 1:
+# R_a:
+3.815889462107935e-01
+# R_p:
+0.740713618386789e+00
+# R_d:
+1e0
+#C_a: 
+1.885526988247284e-01
+# C_im: 
+0e0
+# R_min:
+10
+# R_max:
+1e8
+# MVO2 for this outlets perfusion territory on previous time-step
+0.0272
+# MVO2 for this outlets perfusion territory on current time-step
+0.0273
+# Proportion of myocardium perfused by this outlet (decimal between 0 and 1)
+0.1
+# Metabolic feedback control gain:2.5
+0.0
+# Alpha adrenergic feedforward control gain:-0.1
+0
+# Beta adrenergic feedforward control gain:0.25
+0
+# Damping:
+0.0
+# Myocardial O2 demand/supply integration window duration (seconds)
+5
+# Near-aortic capacitor top pressure
+10585.0
+# intramyocardial capacitor top pressure
+6.080839425964667e+03

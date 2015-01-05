@@ -1,5 +1,7 @@
 #include "netlistBoundaryCondition.hxx"
 #include "fileReaders.hxx"
+#include "datatypesInCpp.hxx"
+#include <assert.h>
 
 // Statics:
 int netlistBoundaryCondition::numberOfInitialisedNetlistLPNs = 0;
@@ -23,8 +25,8 @@ void netlistBoundaryCondition::initialiseModel()
 	listOfPrescribedFlows = netlistReader_instance->getListOfPrescribedFlows().at(indexOfThisNetlistLPN);
 	valueOfPrescribedPressures = netlistReader_instance->getValueOfPrescribedPressures().at(indexOfThisNetlistLPN);
 	valueOfPrescribedFlows = netlistReader_instance->getValueOfPrescribedFlows().at(indexOfThisNetlistLPN);
-	typeOfPrescribedPressures = netlistReader_instance->getTypeOfPrescribedPressures().at(indexOfThisNetlistLPN);
-	typeOfPrescribedFlows = netlistReader_instance->getTypeOfPrescribedFlows().at(indexOfThisNetlistLPN);
+	circuitInputData.typeOfPrescribedPressures = netlistReader_instance->getTypeOfPrescribedPressures().at(indexOfThisNetlistLPN);
+	circuitInputData.typeOfPrescribedFlows = netlistReader_instance->getTypeOfPrescribedFlows().at(indexOfThisNetlistLPN);
 	pressuresInLPN = netlistReader_instance->getInitialPressures().at(indexOfThisNetlistLPN);
 
 
@@ -243,7 +245,7 @@ void netlistBoundaryCondition::getMapOfPressHistoriesToCorrectPressNodes()
     for (int ii=0; ii<numberOfComponents; ii++)
     {
        // Check for capacitor, as these need pressure "histories" (pressure from the previous time-step) at their end-nodes (for dP/dt term).
-       if (circuitInputData.componentTypes.at(ii).compare("c") == 0)
+       if (circuitInputData.componentTypes.at(ii) == Component_Capacitor)
        {
        		listOfHistoryPressures.insert(circuitInputData.componentStartNodes.at(ii));
        		listOfHistoryPressures.insert(circuitInputData.componentEndNodes.at(ii));
@@ -331,7 +333,7 @@ void netlistBoundaryCondition::getMapOfFlowHistoriesToCorrectComponents()
 	for (int ii=0; ii<numberOfComponents; ii++)
 	{
 	   // Check for capacitor, as these need pressure "histories" (pressure from the previous time-step) at their end-nodes (for dP/dt term).
-        if(circuitInputData.componentTypes.at(ii).compare("i")==0)
+        if(circuitInputData.componentTypes.at(ii) == Component_Inductor)
 	   {
 	   		listOfHistoryFlows.insert(ii);
 	   }
@@ -530,7 +532,7 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
 
     for(int ll=0; ll<numberOfComponents; ll++)
     {
-        if (circuitInputData.componentTypes.at(ll).compare("r") == 0)
+        if (circuitInputData.componentTypes.at(ll) == Component_Resistor)
         {
           // insert resistor relationship into equation system
           errFlag = MatSetValue(systemMatrix,ll,circuitInputData.componentStartNodes.at(ll)-1,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -539,7 +541,7 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
           // this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)
           errFlag = MatSetValue(systemMatrix,ll,ll+numberOfPressureNodes+numberOfHistoryPressures,-circuitInputData.componentParameterValues.at(ll),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         }
-        else if (circuitInputData.componentTypes.at(ll).compare("c") == 0)
+        else if (circuitInputData.componentTypes.at(ll) == Component_Capacitor)
         {
           // insert capacitor relationship into equation system
           // this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
@@ -553,7 +555,7 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
           // this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,2,kk)),kk) + this%numberOfPressureNodes(kk),kk) = 1.0d0
           errFlag = MatSetValue(systemMatrix,ll,nodeIndexToPressureHistoryNodeOrderingMap[circuitInputData.componentEndNodes.at(ll)]+numberOfPressureNodes,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         }
-        else if (circuitInputData.componentTypes.at(ll).compare("i") == 0)
+        else if (circuitInputData.componentTypes.at(ll) == Component_Inductor)
         {
           // insert inductor relationship into equation system
           // this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
@@ -641,12 +643,12 @@ void netlistBoundaryCondition::assembleRHS_netlistLPN(int timestepNumber)
     for (int ll=0; ll<numberOfPrescribedPressures; ll++)
     {
        // 'f' for 'fixed'
-       if (circuitInputData.componentTypes.at(ll).compare("f") == 0)
+       if (circuitInputData.typeOfPrescribedPressures.at(ll) == Pressure_Fixed)
        {
           errFlag = VecSetValue(RHS,ll + tempIndexingShift,valueOfPrescribedPressures.at(ll),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
        }
        // 'l' for 'leftVentricular'
-       else if (circuitInputData.componentTypes.at(ll).compare("l") == 0)
+       else if (circuitInputData.typeOfPrescribedPressures.at(ll) == Pressure_LeftVentricular)
        {
           std::cout << "this requires heartmodel. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
           std::exit(1);
@@ -673,6 +675,10 @@ void netlistBoundaryCondition::assembleRHS_netlistLPN(int timestepNumber)
           //    }
           // }
        }
+       else
+       {
+            throw std::runtime_error("Unknown pressure prescription value in Netlist.");
+       }
     }
     // History Pressures
     tempIndexingShift = tempIndexingShift + numberOfPrescribedPressures;
@@ -687,16 +693,18 @@ void netlistBoundaryCondition::assembleRHS_netlistLPN(int timestepNumber)
     tempIndexingShift = tempIndexingShift + numberOfHistoryPressures;
     for(int ll=0; ll<numberOfPrescribedFlows; ll++)
     {
-       // 't 'three-D interface'
-       if (typeOfPrescribedFlows.at(ll).compare("t") == 0)
+       if (circuitInputData.typeOfPrescribedFlows.at(ll) == Flow_3DInterface)
        {
           columnIndexOf3DInterfaceFlowInLinearSystem = ll + tempIndexingShift;
           errFlag = VecSetValue(RHS,ll + tempIndexingShift,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
        }
-       // 'f' for 'fixed'
-       else if (typeOfPrescribedFlows.at(ll).compare("f") == 0)
+       else if (circuitInputData.typeOfPrescribedFlows.at(ll) == Flow_Fixed)
        {
           errFlag = VecSetValue(RHS,ll + tempIndexingShift,valueOfPrescribedFlows.at(ll), INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+       }
+       else
+       {
+            throw std::runtime_error("Unknown flow prescription value in Netlist.");
        }
     }
     // History Flows
@@ -723,18 +731,20 @@ void netlistBoundaryCondition::updateLPN()
     errFlag = MatMult(inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     // this%solutionVector(1:this%systemSize(kk),kk) = matmul(this%inverseOfSystemMatrix(1:this%systemSize(kk),1:this%systemSize(kk),kk), this%RHS(1:this%systemSize(kk),kk))
 
+    // A self-documenting name for the request given to VecGetValues():
     int getSingleValue=1;
+
+    // Get the updated nodal pressures:
     for (int ll=0; ll<numberOfPressureNodes; ll++)
     {
         errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&pressuresInLPN[ll]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-       // pressuresInLPN.at(ll) = solutionVector(ll,kk)
     }
 
+    // Get the updated component flows:
     int indexShift = numberOfPressureNodes + numberOfHistoryPressures;
     for (int ll=indexShift; ll<numberOfComponents+indexShift; ll++)
     {
         errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&flowsInLPN[ll-indexShift]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-       // this%flowsInLPN(ll,kk) = this%solutionVector(ll+indexShift,kk)
     }
 
     // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInLPN(2))/1.2862d5 - this%flowsInLPN(1)
@@ -742,7 +752,7 @@ void netlistBoundaryCondition::updateLPN()
 }
 
 
-// Sorth this out (probably for netlist surface update!)
+// Sort this out (probably for netlist surface update!)
 // LPNInflowPressure
 // LPNInflowPressure
 // LPNInflowPressure

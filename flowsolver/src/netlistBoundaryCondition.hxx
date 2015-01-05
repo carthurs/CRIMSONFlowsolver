@@ -7,14 +7,16 @@
 #include "petscvec.h"
 #include <set>
 #include <vector>
+#include "datatypesInCpp.hxx"
 
-class circuitData
+struct circuitData
 {
-public:
-	std::vector<std::string> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
+	std::vector<circuit_component_t> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
 	std::vector<int> componentStartNodes;
 	std::vector<int> componentEndNodes;
 	std::vector<double> componentParameterValues;
+	std::vector<circuit_nodal_pressure_prescription_t> typeOfPrescribedPressures;
+	std::vector<circuit_component_flow_prescription_t> typeOfPrescribedFlows;
 };
 
 class netlistBoundaryCondition : public abstractBoundaryCondition
@@ -79,9 +81,7 @@ private:
 	int numberOfPrescribedPressures;
 	std::vector<double> valueOfPrescribedPressures;
 	std::vector<double> valueOfPrescribedFlows;
-	std::vector<std::string> typeOfPrescribedPressures;
 	int numberOfPrescribedFlows;
-	std::vector<std::string> typeOfPrescribedFlows;
 	int numberOfPrescribedPressuresAndFlows;           // Just the sum of the previous two declared integers
 	int numberOfHistoryPressures;
 	int numberOfHistoryFlows;

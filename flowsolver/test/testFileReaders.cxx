@@ -1,5 +1,6 @@
 #include "testFileReaders.hxx"
 #include "gtest/gtest.h"
+#include "datatypesInCpp.hxx"
 
 // Hack to force the compiler to link this test to the relevant main() for testing
 int PullInMyLibrary() { return 0; }
@@ -255,29 +256,30 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),1);
 
 
-  // 
-  std::vector<std::vector<std::string>> returnedVectorOfStringVectors;
-  returnedVectorOfStringVectors = netlistReader_instance->getTypeOfPrescribedPressures();
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(0).c_str(),"f");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(1).c_str(),"f");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(0).c_str(),"f");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(1).c_str(),"f");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(2).c_str(),"f");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(3).c_str(),"f");
+  std::vector<std::vector<circuit_nodal_pressure_prescription_t>> returnedVectorOfPressurePrescriptions;
+  returnedVectorOfPressurePrescriptions = netlistReader_instance->getTypeOfPrescribedPressures();
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(0).at(0) == Pressure_Fixed);
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(0).at(1) == Pressure_Fixed);
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(1).at(0) == Pressure_Fixed);
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(1).at(1) == Pressure_Fixed);
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(1).at(2) == Pressure_Fixed);
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(1).at(3) == Pressure_Fixed);
 
-  returnedVectorOfStringVectors = netlistReader_instance->getTypeOfPrescribedFlows();
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(0).c_str(),"t");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(0).c_str(),"t");
+  std::vector<std::vector<circuit_component_flow_prescription_t>> returnedVectorOfFlowPrescriptions;
+  returnedVectorOfFlowPrescriptions = netlistReader_instance->getTypeOfPrescribedFlows();
+  EXPECT_TRUE(returnedVectorOfFlowPrescriptions.at(0).at(0) == Flow_3DInterface);
+  EXPECT_TRUE(returnedVectorOfFlowPrescriptions.at(1).at(0) == Flow_3DInterface);
 
-  returnedVectorOfStringVectors = netlistReader_instance->getComponentTypes();
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(0).c_str(),"r");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(1).c_str(),"c");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(0).at(2).c_str(),"r");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(0).c_str(),"r");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(1).c_str(),"c");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(2).c_str(),"r");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(3).c_str(),"i");
-  EXPECT_STREQ(returnedVectorOfStringVectors.at(1).at(4).c_str(),"r");
+  std::vector<std::vector<circuit_component_t>> returnedVectorOfComponentTypes;
+  returnedVectorOfComponentTypes = netlistReader_instance->getComponentTypes();
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(0) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(1) == Component_Capacitor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(2) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(0) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(1) == Component_Capacitor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(2) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(3) == Component_Inductor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(4) == Component_Resistor);
 
   netlistReader_instance->Term();
 }

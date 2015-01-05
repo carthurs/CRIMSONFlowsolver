@@ -1,6 +1,7 @@
 #include "fileReaders.hxx"
 #include "debuggingToolsForCpp.hxx"
 #include "common_c.h"
+#include "datatypesInCpp.hxx"
 
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
@@ -357,16 +358,16 @@ std::vector<double> controlledCoronaryReader::getIntramyocardialCapacitorTopPres
 void netlistReader::readAndSplitMultiSurfaceInputFile()
 {
 
-	std::vector<std::string> tempComponentTypes;
+	std::vector<circuit_component_t> tempComponentTypes;
 	std::vector<int> tempComponentStartNodes;
 	std::vector<int> tempComponentEndNodes;
 	std::vector<double> tempComponentParameterValues;
 	std::vector<int> tempListOfPrescribedPressures;
 	std::vector<double> tempValueOfPrescribedPressures;
 	std::vector<double> tempValueOfPrescribedFlows;
-	std::vector<std::string> tempTypeOfPrescribedPressures;
+	std::vector<circuit_nodal_pressure_prescription_t> tempTypeOfPrescribedPressures;
 	std::vector<int> tempListOfPrescribedFlows;
-	std::vector<std::string> tempTypeOfPrescribedFlows;
+	std::vector<circuit_component_flow_prescription_t> tempTypeOfPrescribedFlows;
 	std::vector<double> tempInitialPressures;
 
 	while(readNextLine())
@@ -389,7 +390,22 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int componentIndex=0; componentIndex < numberOfComponents.back(); componentIndex++)
 		{
 			readNextLine();
-			tempComponentTypes.push_back(currentLineSplitBySpaces->at(0));
+			if (currentLineSplitBySpaces->at(0).compare("r") == 0)
+			{
+				tempComponentTypes.push_back(Component_Resistor);
+			}
+			else if (currentLineSplitBySpaces->at(0).compare("c") == 0)
+			{
+				tempComponentTypes.push_back(Component_Capacitor);
+			}
+			else if (currentLineSplitBySpaces->at(0).compare("i") == 0)
+			{
+				tempComponentTypes.push_back(Component_Inductor);
+			}
+			else
+			{
+				throw std::runtime_error("ERROR: Unknown netlist component type.\n");
+			}
 
 			readNextLine();
 			tempComponentStartNodes.push_back(atoi((*currentLineSplitBySpaces).at(0).c_str()));
@@ -426,7 +442,18 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
 		{
 			readNextLine();
-			tempTypeOfPrescribedPressures.push_back(currentLineSplitBySpaces->at(0));
+			if (currentLineSplitBySpaces->at(0).compare("f") == 0)
+			{
+				tempTypeOfPrescribedPressures.push_back(Pressure_Fixed);
+			}
+			else if (currentLineSplitBySpaces->at(0).compare("l") == 0)
+			{
+				tempTypeOfPrescribedPressures.push_back(Pressure_LeftVentricular);
+			}
+			else
+			{
+				throw std::runtime_error("ERROR: Unknown netlist nodal pressure prescription.");
+			}
 		}
 		typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
 		
@@ -451,7 +478,18 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
 		{
 			readNextLine();
-			tempTypeOfPrescribedFlows.push_back(currentLineSplitBySpaces->at(0));
+			if (currentLineSplitBySpaces->at(0).compare("f") == 0)
+			{
+				tempTypeOfPrescribedFlows.push_back(Flow_Fixed);
+			}
+			else if (currentLineSplitBySpaces->at(0).compare("t") == 0)
+			{
+				tempTypeOfPrescribedFlows.push_back(Flow_3DInterface);
+			}
+			else
+			{
+				throw std::runtime_error("ERROR: Unknown netlist component flow prescription.");
+			}
 		}
 		typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
 
@@ -470,7 +508,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 	fileHasBeenRead = int(1);
 }
 
-std::vector<std::vector<std::string>> netlistReader::getComponentTypes()
+std::vector<std::vector<circuit_component_t>> netlistReader::getComponentTypes()
 {
 	return componentTypes;
 }
@@ -514,11 +552,11 @@ std::vector<std::vector<double>> netlistReader::getValueOfPrescribedFlows()
 {
 	return valueOfPrescribedFlows;
 }
-std::vector<std::vector<std::string>> netlistReader::getTypeOfPrescribedPressures()
+std::vector<std::vector<circuit_nodal_pressure_prescription_t>> netlistReader::getTypeOfPrescribedPressures()
 {
 	return typeOfPrescribedPressures;
 }
-std::vector<std::vector<std::string>> netlistReader::getTypeOfPrescribedFlows()
+std::vector<std::vector<circuit_component_flow_prescription_t>> netlistReader::getTypeOfPrescribedFlows()
 {
 	return typeOfPrescribedFlows;
 }

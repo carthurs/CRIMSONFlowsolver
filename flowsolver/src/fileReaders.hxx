@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include "gtest/gtest_prod.h"
 #include "debuggingToolsForCpp.hxx"
+#include "datatypesInCpp.hxx"
 
 class abstractFileReader
 {
@@ -262,7 +263,7 @@ public:
 
 	void readAndSplitMultiSurfaceInputFile();
 
-	std::vector<std::vector<std::string>> getComponentTypes();
+	std::vector<std::vector<circuit_component_t>> getComponentTypes();
 	std::vector<std::vector<int>> getComponentStartNodes();
 	std::vector<std::vector<int>> getComponentEndNodes();
 	std::vector<std::vector<double>> getComponentParameterValues();
@@ -273,8 +274,8 @@ public:
 	std::vector<std::vector<int>> getListOfPrescribedFlows();
 	std::vector<std::vector<double>> getValueOfPrescribedPressures();
 	std::vector<std::vector<double>> getValueOfPrescribedFlows();
-	std::vector<std::vector<std::string>> getTypeOfPrescribedPressures();
-	std::vector<std::vector<std::string>> getTypeOfPrescribedFlows();
+	std::vector<std::vector<circuit_nodal_pressure_prescription_t>> getTypeOfPrescribedPressures();
+	std::vector<std::vector<circuit_component_flow_prescription_t>> getTypeOfPrescribedFlows();
 	std::vector<int> getNumberOfPressureNodes();
 	std::vector<std::vector<double>> getInitialPressures();
 protected:
@@ -285,7 +286,7 @@ private:
 
 	static netlistReader* instance;
 
-	std::vector<std::vector<std::string>> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
+	std::vector<std::vector<circuit_component_t>> componentTypes; // the data in here will be the stripped first column of the netilst, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
 	std::vector<std::vector<int>> componentStartNodes;
 	std::vector<std::vector<int>> componentEndNodes;
 	std::vector<std::vector<double>> componentParameterValues;
@@ -299,8 +300,8 @@ private:
 
 	std::vector<std::vector<double>> valueOfPrescribedPressures;
 	std::vector<std::vector<double>> valueOfPrescribedFlows;
-	std::vector<std::vector<std::string>> typeOfPrescribedPressures;
-	std::vector<std::vector<std::string>> typeOfPrescribedFlows;
+	std::vector<std::vector<circuit_nodal_pressure_prescription_t>> typeOfPrescribedPressures;
+	std::vector<std::vector<circuit_component_flow_prescription_t>> typeOfPrescribedFlows;
 
 	std::vector<int> numberOfPressureNodes;
 	std::vector<std::vector<double>> initialPressures;

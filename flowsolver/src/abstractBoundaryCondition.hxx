@@ -71,7 +71,7 @@ class abstractBoundaryCondition
     double getHop();
     int index;
 
-    void setLPNInflowPressure(double inflowPressure);
+    // void setLPNInflowPressure(double inflowPressure);
     void updpressure_n1_withflow();
     virtual void finalizeLPNAtEndOfTimestep();
  protected:
@@ -98,7 +98,7 @@ class abstractBoundaryCondition
     double alfi_local;
     int thisIsARestartedSimulation;
 
-    double LPNInflowPressure;
+    // double LPNInflowPressure;
 
     void computeImplicitCoeff_solve(int timestepNumber);
  	void computeImplicitCoeff_update(int timestepNumber);

@@ -172,18 +172,17 @@ void controlledCoronary::initialiseModel()
          // endif
 }
 
-void controlledCoronary::computeCapacitorsTopPressures(double inflowPressure, double alfi_delt)
+void controlledCoronary::computeCapacitorsTopPressures(double alfi_delt)
 {
     // We're now going to solve the 2x2 system m*[P_1;P_2] = rhs.
     // Define the LPN system matrix:
-    double m11 = 1.0 + resistanceNearAorta*complianceNearAorta/alfi_delt;
+    double m11 = resistanceNearAorta*complianceNearAorta/alfi_delt;
     double m12 = resistanceNearAorta * (1.0/distalResistance + intramyocardialCompliance/alfi_delt);
     double m22 = midResistance * (intramyocardialCompliance/alfi_delt + 1.0/distalResistance) + 1.0;
     //the m21 entry of this matrix is just -1.
     double determinant = m11*m22 + m12;
 
-    // The minus sign in -LPNInflowPressure is correct.
-    double rhs_1 = inflowPressure + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
+    double rhs_1 = *flow_n_ptr * resistanceNearAorta + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
              *intramyocardialCompliance) * resistanceNearAorta/alfi_delt;
     double rhs_2 = midResistance*intramyocardialCompliance/alfi_delt * (intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep + P_IM_mid - P_IM_mid_lasttimestep);
 
@@ -204,14 +203,14 @@ void controlledCoronary::computeCapacitorsTopPressures(double inflowPressure, do
 void controlledCoronary::updateLPN()
 {
 	double alfi_delt = alfi_local*delt;
-	computeCapacitorsTopPressures(-LPNInflowPressure,alfi_delt);
+	computeCapacitorsTopPressures(alfi_delt);
 }
 
 void controlledCoronary::finalizeLPNAtEndOfTimestep()
 {
     double alfi_delt = delt;
 
-    computeCapacitorsTopPressures(pressure_n,alfi_delt);
+    computeCapacitorsTopPressures(alfi_delt);
 
     capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep = capacitorNearAortaTopPressure;
     intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep = intramyocardialCapacitorTopPressure;

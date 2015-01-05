@@ -52,14 +52,14 @@ class abstractBoundaryCondition;
 
     void writePHistAndQHistRCR();
 
-    void setSurfacePressure_controlledCoronary(double* coronarySurfacePressures);
+    // void setSurfacePressure_controlledCoronary(double* coronarySurfacePressures);
     void getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled);
     void updateAllControlledCoronaryLPNs();
     void finalizeLPNAtEndOfTimestep_controlledCoronary();
 
-    void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
+    // void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 
-    void setSurfacePressure_netlistLPNs(double* netlistSurfacePressures);
+    // void setSurfacePressure_netlistLPNs(double* netlistSurfacePressures);
     void updateAllNetlistLPNs();
     void getImplicitCoeff_netlistLPNs(double* implicitCoeffs_toBeFilled);
 

@@ -750,13 +750,3 @@ void netlistBoundaryCondition::updateLPN()
     // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInLPN(2))/1.2862d5 - this%flowsInLPN(1)
 
 }
-
-
-// Sort this out (probably for netlist surface update!)
-// LPNInflowPressure
-// LPNInflowPressure
-// LPNInflowPressure
-// LPNInflowPressure
-// LPNInflowPressure
-// LPNInflowPressure
-// LPNInflowPressure

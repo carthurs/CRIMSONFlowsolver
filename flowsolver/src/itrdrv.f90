@@ -1238,7 +1238,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     end if
 
     if (newCoronaryActive) then
-        call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+        ! call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
 
         ! One final update of the internal pressures in the LPN to conform to the 
         ! end-of-timestep flow, and

@@ -1276,7 +1276,7 @@
               p(j)= p(j) - implicitcoeffs(j,2)
           enddo
           ! Pass the coronary surface pressures to CPP
-          call callCppSetSurfacePressure_controlledCoronary(c_loc(p))
+          ! call callCppSetSurfacePressure_controlledCoronary(c_loc(p))
         elseif(sign.gt.zero) then
           do j = 1,numControlledCoronarySrfs
               p(j)= sign*p(j)*implicitcoeffs(j,1)
@@ -1317,7 +1317,7 @@
               p(j)= p(j) - implicitcoeffs(j,2)
           enddo
           ! Pass the netlist surface pressures to CPP
-          call callCppSetSurfacePressure_netlistLPNs(c_loc(p))
+          ! call callCppSetSurfacePressure_netlistLPNs(c_loc(p))
         elseif(sign.gt.zero) then
           do j = 1,numNetlistLPNSrfs
               p(j)= sign*p(j)*implicitcoeffs(j,1)

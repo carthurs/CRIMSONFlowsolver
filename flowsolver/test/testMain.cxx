@@ -76,7 +76,7 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
   PressHistReader.readAndSplitMultiSurfaceRestartFile();
   // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
   double readResult = PressHistReader.getReadFileData(1,5);
-  EXPECT_NEAR(10645.5858581080,readResult,0.1);
+  EXPECT_NEAR(10645.5858581080,readResult,1e-9);
 
   // Check FlowHist.dat
   histFileReader FlowHistReader = histFileReader();
@@ -86,7 +86,7 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
   FlowHistReader.readAndSplitMultiSurfaceRestartFile();
   // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
   readResult = FlowHistReader.getReadFileData(1,5);
-  EXPECT_NEAR(478.116982120136,readResult,0.3);
+  EXPECT_NEAR(478.116982120136,readResult,1e-10);
 }
 
 TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {

@@ -73,12 +73,12 @@ module cpp_interface
     end interface
 
 !   =============== Controlled Coronary Block ===============
-    interface
-            subroutine callCppSetSurfacePressure_controlledCoronary(coronarySurfacePressures) bind(c,name="callCppSetSurfacePressure_controlledCoronary")
-                use iso_c_binding
-                type(c_ptr) :: coronarySurfacePressures
-            end subroutine callCppSetSurfacePressure_controlledCoronary
-    end interface
+    ! interface
+    !         subroutine callCppSetSurfacePressure_controlledCoronary(coronarySurfacePressures) bind(c,name="callCppSetSurfacePressure_controlledCoronary")
+    !             use iso_c_binding
+    !             type(c_ptr) :: coronarySurfacePressures
+    !         end subroutine callCppSetSurfacePressure_controlledCoronary
+    ! end interface
 
     interface
             subroutine callCppGetImplicitCoeff_controlledCoronary(implicitCoeffs_toBeFilled_ptr) bind(c,name="callCppGetImplicitCoeff_controlledCoronary")
@@ -99,11 +99,11 @@ module cpp_interface
             end subroutine callCppfinalizeLPNAtEndOfTimestep_controlledCoronary
     end interface
 
-    interface
-            subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow() bind(c,name="callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow")
-                use iso_c_binding
-            end subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow
-    end interface
+    ! interface
+    !         subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow() bind(c,name="callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow")
+    !             use iso_c_binding
+    !         end subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow
+    ! end interface
     
 !   ============= Controlled Coronary Block End =============
 !   ============= Netlist LPN Block Start =============
@@ -122,12 +122,12 @@ module cpp_interface
             end subroutine callCPPGetImplicitCoeff_netlistLPNs
     end interface
 
-    interface
-            subroutine callCppSetSurfacePressure_netlistLPNs(netlistSurfacePressures) bind(c,name="callCppSetSurfacePressure_netlistLPNs")
-                use iso_c_binding
-                type(c_ptr) :: netlistSurfacePressures
-            end subroutine callCppSetSurfacePressure_netlistLPNs
-    end interface
+    ! interface
+    !         subroutine callCppSetSurfacePressure_netlistLPNs(netlistSurfacePressures) bind(c,name="callCppSetSurfacePressure_netlistLPNs")
+    !             use iso_c_binding
+    !             type(c_ptr) :: netlistSurfacePressures
+    !         end subroutine callCppSetSurfacePressure_netlistLPNs
+    ! end interface
     
 
 end module cpp_interface

@@ -59,7 +59,7 @@ private:
 	int indexOfThisCoronary;
 	static int numberOfInitialisedCoronaries;
 
-	void computeCapacitorsTopPressures(double inflowPressure, double alfi_delt);
+	void computeCapacitorsTopPressures(double alfi_delt);
 
 	double resistanceNearAorta;
 	double complianceNearAorta;

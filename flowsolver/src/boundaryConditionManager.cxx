@@ -213,24 +213,24 @@ extern "C" void callCPPWritePHistAndQHistRCR()
 
 // =========== Controlled Coronary Block ===========
 
-void boundaryConditionManager::setSurfacePressure_controlledCoronary(double* coronarySurfacePressures)
-{
-  int readLocation = int(0);
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
-  {
-    if (typeid(**iterator)==typeid(controlledCoronary))
-    {
-     (*iterator)->setLPNInflowPressure(coronarySurfacePressures[readLocation]);
-     readLocation++;
-    }
-  }
-}
-// ---WRAPPED BY--->
-extern "C" void callCppSetSurfacePressure_controlledCoronary(double*& coronarySurfacePressures)
-{
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->setSurfacePressure_controlledCoronary(coronarySurfacePressures);
-}
+// void boundaryConditionManager::setSurfacePressure_controlledCoronary(double* coronarySurfacePressures)
+// {
+//   int readLocation = int(0);
+//   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+//   {
+//     if (typeid(**iterator)==typeid(controlledCoronary))
+//     {
+//      (*iterator)->setLPNInflowPressure(coronarySurfacePressures[readLocation]);
+//      readLocation++;
+//     }
+//   }
+// }
+// // ---WRAPPED BY--->
+// extern "C" void callCppSetSurfacePressure_controlledCoronary(double*& coronarySurfacePressures)
+// {
+//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   boundaryConditionManager_instance->setSurfacePressure_controlledCoronary(coronarySurfacePressures);
+// }
 
 void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled)
 {
@@ -297,22 +297,22 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
 }
 
 
-void boundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
-{
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
-  {
-    if (typeid(**iterator)==typeid(controlledCoronary))
-    {
-      (*iterator)->updpressure_n1_withflow();
-    }
-  }
-}
-// ---WRAPPED BY--->
-extern "C" void callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
-{
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
-}
+// void boundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+// {
+//   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+//   {
+//     if (typeid(**iterator)==typeid(controlledCoronary))
+//     {
+//       (*iterator)->updpressure_n1_withflow();
+//     }
+//   }
+// }
+// // ---WRAPPED BY--->
+// extern "C" void callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+// {
+//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
+// }
 
 // ========== Controlled Coronary Block End =========
 
@@ -363,21 +363,21 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
   boundaryConditionManager_instance->getImplicitCoeff_netlistLPNs(implicitCoeffs_toBeFilled);
 }
 
-void boundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)
-{
-  int readLocation = int(0);
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
-  {
-    if (typeid(**iterator)==typeid(netlistBoundaryCondition))
-    {
-     (*iterator)->setLPNInflowPressure(netlistSurfacePressures[readLocation]);
-     readLocation++;
-    }
-  }
-}
-// ---WRAPPED BY--->
-extern "C" void callCppSetSurfacePressure_netlistLPNs(double*& netlistSurfacePressures)
-{
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->setSurfacePressure_netlistLPNs(netlistSurfacePressures);
-}
+// void boundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)
+// {
+//   int readLocation = int(0);
+//   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+//   {
+//     if (typeid(**iterator)==typeid(netlistBoundaryCondition))
+//     {
+//      (*iterator)->setLPNInflowPressure(netlistSurfacePressures[readLocation]);
+//      readLocation++;
+//     }
+//   }
+// }
+// // ---WRAPPED BY--->
+// extern "C" void callCppSetSurfacePressure_netlistLPNs(double*& netlistSurfacePressures)
+// {
+//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   boundaryConditionManager_instance->setSurfacePressure_netlistLPNs(netlistSurfacePressures);
+// }

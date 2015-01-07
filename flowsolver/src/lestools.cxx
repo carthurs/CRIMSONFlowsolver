@@ -6,118 +6,124 @@
  *
  *======================================================================
  */
-#include "usr.h"
-#include "les.h"
+#include "usr.hxx"
+ extern "C"
+ {
+  #include "les.h"
+ }
 
-#ifdef intel
-void  DRVSCLRDIAG(	double *sclrDiag,	int *ilwork,	int *iBC,
-                                double *BC,		int *iper,	int *rowp,
-                                int *colm,	        double *lhsS);
+#if defined intel || defined __ICC
+extern "C"
+{
+  void  drvsclrDiag(	double *sclrDiag,	int *ilwork,	int *iBC,
+                                  double *BC,		int *iper,	int *rowp,
+                                  int *colm,	        double *lhsS);
 
-void  FMTXBLKDAXPY(double *srcpnt, double *dstpnt,	double *coef,
-                            int *mDims,			int *dim);
+  void  fMtxBlkDaxpy(double *srcpnt, double *dstpnt,	double *coef,
+                              int *mDims,			int *dim);
 
-void  FMTXBLKDYEAX(double *srcpnt,		double *dstpnt,	double *coef,
-							int *mDims,			int *dim);
+  void  fMtxBlkDyeax(double *srcpnt,		double *dstpnt,	double *coef,
+  							int *mDims,			int *dim);
 
-void  FMTXBLKDMAXPY(double *srcpnt,		double *dstpnt,	double *coef,
-							int *mDims,				int *dim);
+  void  fMtxBlkDmaxpy(double *srcpnt,		double *dstpnt,	double *coef,
+  							int *mDims,				int *dim);
 
-void  FMTXVDIMVECCP(double *srcpnt,		double *dstpnt,	int *nSrcDims,
-							 int *nDstDims,			int *nDims,		int *nNodes );
+  void  fMtxVdimVecCp(double *srcpnt,		double *dstpnt,	int *nSrcDims,
+  							 int *nDstDims,			int *nDims,		int *nNodes );
 
-void  DRVLESPREPDIAG(	double *flowDiag,	int *ilwork,	int *iBC,
-								double *BC,			int *iper,		int *rowp,
-								int *colm,			double *lhsK,   double *lhsP) ;
+  void  drvlesPrepDiag(	double *flowDiag,	int *ilwork,	int *iBC,
+  								double *BC,			int *iper,		int *rowp,
+  								int *colm,			double *lhsK,   double *lhsP) ;
 
-void  FMTXVDIMVECMULT(	double* ,			double*,
-								double *dstpnt,		int *nSrcDims,
-								int *nDofs,			int *nDstDims,
-								int *nDims,			int *nNodes);
+  void  fMtxVdimVecMult(	double* ,			double*,
+  								double *dstpnt,		int *nSrcDims,
+  								int *nDofs,			int *nDstDims,
+  								int *nDims,			int *nNodes);
 
-void  FLESZERO(		double *dstpnt,		int *nDims,		int *nNodes);
+  void  flesZero(		double *dstpnt,		int *nDims,		int *nNodes);
 
-void  FLESCP(			double *srcpnt,		double *dstpnt, int *nDims, 
-								int *dim ) ;
+  void  flesCp(			double *srcpnt,		double *dstpnt, int *nDims, 
+  								int *dim ) ;
 
-void  FLESSCALE(		double *dstpnt,
-								double *coef,
-								int *nDims,
-								int *dim ) ;
+  void  flesScale(		double *dstpnt,
+  								double *coef,
+  								int *nDims,
+  								int *dim ) ;
 
-void  FLESSCALECP(		double *srcpnt, 
-								double *dstpnt,
-								double *coef,
-								int *nDims,
-								int *dim ) ;
+  void  flesScaleCp(		double *srcpnt, 
+  								double *dstpnt,
+  								double *coef,
+  								int *nDims,
+  								int *dim ) ;
 
-void  FLESADD(			double *srcpnt, 
-								double *dstpnt,
-								int *nDims,
-								int *dim ) ;
+  void  flesAdd(			double *srcpnt, 
+  								double *dstpnt,
+  								int *nDims,
+  								int *dim ) ;
 
-void  FLESSUB(			double *srcpnt, 
-								double *dstpnt,
-								int *nDims,
-								int *dim ) ;
+  void  flesSub(			double *srcpnt, 
+  								double *dstpnt,
+  								int *nDims,
+  								int *dim ) ;
 
-void  DRVALLREDUCESCLR(double *tmpp, double *tmp);
+  void  drvAllreducesclr(double *tmpp, double *tmp);
 
-void   DRVALLREDUCE(double *valuesp, double *values, int* mDims);
+  void   drvAllreduce(double *valuesp, double *values, int* mDims);
 
-double   FLESDOT1( double *srcpnt, int* nDims, int* dim );
+  double   flesDot1( double *srcpnt, int* nDims, int* dim );
 
-double   FLESDOT2(double *src1pnt, double *src2pnt, int* nDims, int* dim );
+  double   flesDot2(double *src1pnt, double *src2pnt, int* nDims, int* dim );
 
-void  FLESDAXPY(	double *srcpnt, double *lesP,		double *sclrRegFct,
-							int *nDstDims,	int *nNodes);
+  void  flesDaxpy(	double *srcpnt, double *lesP,		double *sclrRegFct,
+  							int *nDstDims,	int *nNodes);
 
-void  FLESDXPAY(	double *srcpnt, double *dstpnt,		double *coef,
-							int *nDims,		int *dim);
+  void  flesDxpay(	double *srcpnt, double *dstpnt,		double *coef,
+  							int *nDims,		int *dim);
 
-void  FLESINV(		double *dstpnt, int *nDims,			int *dim ) ;
+  void  flesInv(		double *dstpnt, int *nDims,			int *dim ) ;
 
 
 
-void  FMTXBLKDOT2 (double *src1pnt,  double *src2pnt, double *valuesp, 
-	                          int* mDims, int* dim);
+  void  fMtxBlkDot2 (double *src1pnt,  double *src2pnt, double *valuesp, 
+  	                          int* mDims, int* dim);
 
-void  COMMIN(	double *lesQ,		int *ilwork,		int *nPs,
-						int *iper,			int *iBC,			double *BC);
+  void  commIn(	double *lesQ,		int *ilwork,		int *nPs,
+  						int *iper,			int *iBC,			double *BC);
 
-void  COMMOUT(	double *lesP,		int *ilwork,		int *nQs,
-						int *iper,			int *iBC,			double *BC);
+  void  commOut(	double *lesP,		int *ilwork,		int *nQs,
+  						int *iper,			int *iBC,			double *BC);
 
-void  FLESSPARSEAPFULL(int *colm,		int *rowp,		double *lhsK,
-								double *lhsP,	double *lesP,	double *lesQ,
-								int *nNodes,	int *nnz);
+  void  fLesSparseApFull(int *colm,		int *rowp,		double *lhsK,
+  								double *lhsP,	double *lesP,	double *lesQ,
+  								int *nNodes,	int *nnz);
 
-void  FLESSPARSEAPSCLR(int *colm,		int *rowp,
-								double *lhsS,	double *lesP,	double *lesQ,
-								int *nNodes,	int *nnz);
+  void  fLesSparseApSclr(int *colm,		int *rowp,
+  								double *lhsS,	double *lesP,	double *lesQ,
+  								int *nNodes,	int *nnz);
 
-void  FMTXVDIMVECDOT2 (double *src1pnt, double *src2pnt, double *coefp,
-						int *nSrc1Dims,int *nSrc2Dims, int *nDims, int *nNodes);
+  void  fMtxVdimVecDot2 (double *src1pnt, double *src2pnt, double *coefp,
+  						int *nSrc1Dims,int *nSrc2Dims, int *nDims, int *nNodes);
 
-void  FMTXVDIMVECDAXPY (	double *srcpnt, double *dstpnt, double *coef,
-								int *nSrcDims, int *nDstDims,	int *nDims,
-								int *nNodes);
+  void  fMtxVdimVecDaxpy (	double *srcpnt, double *dstpnt, double *coef,
+  								int *nSrcDims, int *nDstDims,	int *nDims,
+  								int *nNodes);
 
-void  FLESSPARSEAPG	(	int *colm,		int *rowp,
-								double *lhsP,	double *lesP,	double *lesQ,
-								int *nNodes,	int *nnz);
+  void  fLesSparseApG	(	int *colm,		int *rowp,
+  								double *lhsP,	double *lesP,	double *lesQ,
+  								int *nNodes,	int *nnz);
 
-void  FLESSPARSEAPNGT	(	int *colm,		int *rowp,
-								double *lhsP,	double *lesP,	double *lesQ,
-								int *nNodes,	int *nnz);
-	
-void  FLESSPARSEAPNGTC (	int *colm,		int *rowp,
-								double *lhsP,	double *lesP,	double *lesQ,
-								int *nNodes,	int *nnz);
+  void  fLesSparseApNGt	(	int *colm,		int *rowp,
+  								double *lhsP,	double *lesP,	double *lesQ,
+  								int *nNodes,	int *nnz);
+  	
+  void  fLesSparseApNGtC (	int *colm,		int *rowp,
+  								double *lhsP,	double *lesP,	double *lesQ,
+  								int *nNodes,	int *nnz);
 
-void  FLESSPARSEAPKG (	int *colm,		int *rowp,		double *lhsK,
-								double *lhsP,	double *lesP,	double *lesQ,
-								int *nNodes,	int *nnz);
+  void  fLesSparseApKG (	int *colm,		int *rowp,		double *lhsK,
+  								double *lhsP,	double *lesP,	double *lesQ,
+  								int *nNodes,	int *nnz);
+}
 #endif
 /*----------------------------------------------------------------------
  *
@@ -127,28 +133,31 @@ void  FLESSPARSEAPKG (	int *colm,		int *rowp,		double *lhsK,
  *
  *----------------------------------------------------------------------
  */
-void lesPrepDiag( UsrHd  usrHd  )
-{
-    char*   funcName = "lesPrepDiag" ; /* function name */
+ extern "C"
+ {
+  void lesPrepDiag( UsrHd  usrHd  )
+  {
+      char*   funcName = "lesPrepDiag" ; /* function name */
 
-    if ( (usrHd->eqnType) == 1 ) {  /* continuity & momentum */
+      if ( (usrHd->eqnType) == 1 ) {  /* continuity & momentum */
 
-      drvlesPrepDiag( usrHd->flowDiag,
-                      usrHd->ilwork,  usrHd->iBC,
-		      usrHd->BC,      usrHd->iper,
-		      usrHd->rowp,    usrHd->colm,
-		      usrHd->lhsK,    usrHd->lhsP) ;
-    }
+        drvlesPrepDiag( usrHd->flowDiag,
+                        usrHd->ilwork,  usrHd->iBC,
+  		      usrHd->BC,      usrHd->iper,
+  		      usrHd->rowp,    usrHd->colm,
+  		      usrHd->lhsK,    usrHd->lhsP) ;
+      }
 
-    if ( (usrHd->eqnType) == 2 ) { /* temperature or scalar variable */
- 
-      drvsclrDiag ( usrHd->sclrDiag, usrHd->ilwork,
-		    usrHd->iBC,      usrHd->BC,
-		    usrHd->iper,     usrHd->rowp,
-		    usrHd->colm,     usrHd->lhsS ) ;
-		    
-    }
+      if ( (usrHd->eqnType) == 2 ) { /* temperature or scalar variable */
+   
+        drvsclrDiag ( usrHd->sclrDiag, usrHd->ilwork,
+  		    usrHd->iBC,      usrHd->BC,
+  		    usrHd->iper,     usrHd->rowp,
+  		    usrHd->colm,     usrHd->lhsS ) ;
+  		    
+      }
 
+  }
 }
 	
 /*----------------------------------------------------------------------

@@ -7,7 +7,7 @@ F90             = 'mpif90'
 F77             = 'mpif90'
 AR              = 'xiar'# 'xiar cr' no longer necessary, as scons deals with this automatically
  
-GLOBAL_DEFINES = ['-DUNIX']
+GLOBAL_DEFINES = ['-Dunix']
  
 #STATICEXT = a
 #OBJECTEXT = o

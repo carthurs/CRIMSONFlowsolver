@@ -2,6 +2,7 @@
 /* Interpolation points for a tet based on the Chen - Babuska paper.  */
 /**********************************************************************/
 #include <stdio.h>
+#include <stdexcept>
 
 typedef double DARR4[4];
 
@@ -245,44 +246,47 @@ static double pts84[][4] =
 };
 
 /* return the requested number of interpolation points */
-void getIntPnts(double points[][3], int npts)
+extern "C"
 {
-  int   i, j;
-  DARR4 *pnts;
-  
-  switch (npts){
-  case 4:
-    pnts = pts4;
-    break;
-  case 10:
-    pnts = pts10;
-    break;
-  case 20:
-    pnts = pts20;
-    break;
-  case 35:
-    pnts = pts35;
-    break;
-  case 56:
-    pnts = pts56;
-    break;
-  case 84:
-    pnts = pts84;
-    break;
-  default:
-    fprintf(stderr,"\n%d interpolation points not supported...\n",npts);
-    fprintf(stderr,"\ngive {4,10,20,35,56,84}\nexiting...\n");
-    exit(-1);
-  }
-
-  /* copy points to the fortran array */
-  for (i=0; i < npts; i++) {
-    for (j=0; j < 3; j++) {
-      points[i][j] = pnts[i][j];
+  void getIntPnts(double points[][3], int npts)
+  {
+    int   i, j;
+    DARR4 *pnts;
+    
+    switch (npts){
+    case 4:
+      pnts = pts4;
+      break;
+    case 10:
+      pnts = pts10;
+      break;
+    case 20:
+      pnts = pts20;
+      break;
+    case 35:
+      pnts = pts35;
+      break;
+    case 56:
+      pnts = pts56;
+      break;
+    case 84:
+      pnts = pts84;
+      break;
+    default:
+      fprintf(stderr,"\n%d interpolation points not supported...\n",npts);
+      fprintf(stderr,"\ngive {4,10,20,35,56,84}\nexiting...\n");
+      throw std::runtime_error("EE: Interpolation points not supported.");
     }
+
+    /* copy points to the fortran array */
+    for (i=0; i < npts; i++) {
+      for (j=0; j < 3; j++) {
+        points[i][j] = pnts[i][j];
+      }
+    }
+    
+    return;
   }
-  
-  return;
 }
 
     

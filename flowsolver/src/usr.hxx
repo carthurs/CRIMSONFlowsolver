@@ -166,7 +166,7 @@ typedef struct _Usr* UsrHd ;
 
 #define ramg_interface  RAMG_INTERFACE
 
-#elif unix  /* unix world */
+#elif unix // && defined __ICC /* unix world */
 
 #define	usrNew		usrnew_		/* for SGI			*/
 #define getSol          getsol_         /* extract Dy from usrHd        */
@@ -275,61 +275,67 @@ typedef struct _Usr* UsrHd ;
 
 #ifdef ACUSIM_LESLIB_VER_1_4
 
-void 		usrNew(			UsrHd		usrHd,
-                                    int*            eqnType,
-                                    double*		aperm,
-                                    double*		atemp,
-                                    double*         resf,
-                                    double*         solinc,
-                                    double*         flowDiag,
-                                    double*         sclrDiag,
-                                    double*         lesP,
-                                    double*         lesQ,
-                                    int*            iBC,
-                                    double*         BC,
-                                    int*            iper,
-                                    int*            ilwork,
-                                    int*            numpe,
-                                    int*		nNodes,
-                                    int*            nenl,
-                                    int*		nPermDims,
-                                    int*		nTmpDims,
-                                    int*		rowp,
-                                    int*		colm,
-                                    double*		lhsK,
-                                    double*		lhsP,
-                                    double*         lhsS,
-                                    int             nnz  ) ;	
+extern "C"
+{
+    void 		usrNew(			UsrHd		usrHd,
+                                        int*            eqnType,
+                                        double*		aperm,
+                                        double*		atemp,
+                                        double*         resf,
+                                        double*         solinc,
+                                        double*         flowDiag,
+                                        double*         sclrDiag,
+                                        double*         lesP,
+                                        double*         lesQ,
+                                        int*            iBC,
+                                        double*         BC,
+                                        int*            iper,
+                                        int*            ilwork,
+                                        int*            numpe,
+                                        int*		nNodes,
+                                        int*            nenl,
+                                        int*		nPermDims,
+                                        int*		nTmpDims,
+                                        int*		rowp,
+                                        int*		colm,
+                                        double*		lhsK,
+                                        double*		lhsP,
+                                        double*         lhsS,
+                                        int             nnz  ) ;
+}	
 
 #else
 
-void   usrNew(	UsrHd	  usrHd,
-                        int*      eqnType,
-                        double*	  aperm,
-                        double*	  atemp,
-                        double*   resf,
-                        double*   solinc,
-                        double*   flowDiag,
-                        double*   sclrDiag,
-                        double*   lesP,
-                        double*   lesQ,
-                        int*      iBC,
-                        double*   BC,
-                        int*      iper,
-                        int*      ilwork,
-                        int*      numpe,
-                        int*      nNodes,
-                        int*      nenl,
-                        int*	  nPermDims,
-                        int*	  nTmpDims,
-                        int*	  rowp,
-                        int*	  colm,
-                        double*   lhsK,
-                        double*   lhsP,
-                        double*   lhsS,
-                        int       nnz_tot,
-                        double*   CGsol
-    ) ;
+extern "C"
+{
+    void   usrNew(	UsrHd	  usrHd,
+                            int*      eqnType,
+                            double*	  aperm,
+                            double*	  atemp,
+                            double*   resf,
+                            double*   solinc,
+                            double*   flowDiag,
+                            double*   sclrDiag,
+                            double*   lesP,
+                            double*   lesQ,
+                            int*      iBC,
+                            double*   BC,
+                            int*      iper,
+                            int*      ilwork,
+                            int*      numpe,
+                            int*      nNodes,
+                            int*      nenl,
+                            int*	  nPermDims,
+                            int*	  nTmpDims,
+                            int*	  rowp,
+                            int*	  colm,
+                            double*   lhsK,
+                            double*   lhsP,
+                            double*   lhsS,
+                            int       nnz_tot,
+                            double*   CGsol
+        ) ;
+}
 
 #endif
 
@@ -338,8 +344,10 @@ double*	usrPointer(			UsrHd   usrHd,
                             int	offset,
                             int	nDims ) ;
 
-void              getSol(      UsrHd            usrHd,
-                                        double*          Dy		) ;
+extern "C"
+{
+    void getSol(UsrHd usrHd, double* Dy);
+}
 
 /*===========================================================================
  *
@@ -347,13 +355,19 @@ void              getSol(      UsrHd            usrHd,
  *
  *===========================================================================
  */
-double    flesDot1(		double*		a,
-                                    int*		m,
-                                    int*		n		) ;
-double	  flesDot2(		double*		a,
-                                    double*		b,
-                                    int*		m,
-                                    int*		n		) ;
+ extern "C"
+ {
+    double    flesDot1(		double*		a,
+                                        int*		m,
+                                        int*		n		) ;
+ }
+ extern "C"
+ {
+    double	  flesDot2(		double*		a,
+                                        double*		b,
+                                        int*		m,
+                                        int*		n		) ;
+}
 
 /*===========================================================================
  *

@@ -479,10 +479,10 @@ void netlistBoundaryCondition::getListOfNodesWithMultipleIncidentCurrents()
          // end do
 }
 
-std::pair<double,double> netlistBoundaryCondition::computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt)
+std::pair<double,double> netlistBoundaryCondition::computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt)
 {
     generateLinearSystemFromPrescribedCircuit(alfi_delt);
-    assembleRHS_netlistLPN(timestepNumber);
+    assembleRHS(timestepNumber);
 
     PetscErrorCode errFlag;
 
@@ -522,7 +522,7 @@ std::pair<double,double> netlistBoundaryCondition::computeImplicitCoefficients(i
     return returnValue;
 }
 
-void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double alfi_delt)
+void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(const double alfi_delt)
 {
     // This function assembles the system of (time-discretised) linear algebraic equations for the LPN.
 
@@ -630,7 +630,7 @@ void netlistBoundaryCondition::generateLinearSystemFromPrescribedCircuit(double 
     errFlag = MatLUFactor(systemMatrix,NULL,NULL,NULL);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
-void netlistBoundaryCondition::assembleRHS_netlistLPN(int timestepNumber)
+void netlistBoundaryCondition::assembleRHS(const int timestepNumber)
 {
 
     PetscErrorCode errFlag;

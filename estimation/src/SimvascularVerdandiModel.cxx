@@ -144,7 +144,11 @@ void SimvascularVerdandiModel::Initialize() {
 	MPI_Comm_rank(iNewComm_C_, &rank_);
 
 	// read configuration file
-	input_fform();
+	int errFlag = input_fform();
+	if (errFlag != 0)
+	{
+		throw std::runtime_error("EE: Failed during parsing of input files.");
+	}
 
 	// set iestimator to 1, i.e. estimator 
 	// int exists in the common block

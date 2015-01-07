@@ -12,7 +12,7 @@
 #include "SCField.h"
 #include "input_fform.h"
 
-#ifdef intel
+#ifdef __ICC
 #include <direct.h>
 #else
 #include <unistd.h>
@@ -49,7 +49,11 @@ int main(int argc, char * argv[]) {
    }
 
    // read configuration file
-   input_fform();
+   int errFlag = input_fform();
+   if (errFlag != 0)
+   {
+      throw std::runtime_error("EE: Failed during parsing of input files.");
+   }
 
    // Preprocess data and run the problem
    // Partition the problem to the correct number of processors

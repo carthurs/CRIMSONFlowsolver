@@ -49,7 +49,7 @@ DAMAGE.
 #include "itrdrv.h"
 #include "input_fform.h"
 
-#ifdef intel
+#ifdef __ICC
 #include <direct.h>
 //#define input INPUT
 //#define proces PROCES

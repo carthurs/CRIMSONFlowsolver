@@ -4,7 +4,7 @@
 // Statics
 int controlledCoronary::numberOfInitialisedCoronaries = 0;
 
-std::pair<double,double> controlledCoronary::computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt)
+std::pair<double,double> controlledCoronary::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
     // Get the intramyocardial pressure for the previous time-step and previous-previous time-step
     // note that these should both really be evaluated one time-step later, but to avoid the need
@@ -172,7 +172,7 @@ void controlledCoronary::initialiseModel()
          // endif
 }
 
-void controlledCoronary::computeCapacitorsTopPressures(double alfi_delt)
+void controlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
 {
     // We're now going to solve the 2x2 system m*[P_1;P_2] = rhs.
     // Define the LPN system matrix:

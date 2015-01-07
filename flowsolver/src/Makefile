@@ -16,7 +16,7 @@ HDRS  =   CInput.h \
           common_c.h globalArrays.h input.h input_fform.h itrdrv.h \
           partition.h phSolver.h proces.h \
           shapeFuncInternals.h solverFields.h topo_shapedefs.h\
-          usr.h ValType.h
+          usr.hxx ValType.h
 
 CXXSRCS = newshape.cxx Cinput.cxx input_fform.cxx \
           partition.cxx \

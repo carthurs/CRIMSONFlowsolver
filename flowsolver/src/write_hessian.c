@@ -4,8 +4,7 @@
 #define write_hessian_ WRITE_HESSIAN
 #endif
 
-void
-write_hessian_( double* hessian, double* gradian, int* nshg ) {
+void write_hessian_( double* hessian, double* gradian, int* nshg ) {
 
     FILE* idmap = fopen( "lihessmap.dat","r");
     int* map = ( int* )malloc( (*nshg)*sizeof( int ) );

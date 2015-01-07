@@ -2,7 +2,7 @@
 
 
 // Statics
-int abstractBoundaryCondition::bcCount = 0;
+int abstractBoundaryCondition::numberOfConstructedBoundaryConditions = 0;
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
 double abstractBoundaryCondition::getHop()
@@ -21,7 +21,7 @@ double abstractBoundaryCondition::getdp_dq()
 //     LPNInflowPressure = inflowPressure;
 // }
 
-void abstractBoundaryCondition::computeImplicitCoeff_solve(int timestepNumber)
+void abstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNumber)
 {
   std::pair<double,double> temp;
 
@@ -34,7 +34,7 @@ void abstractBoundaryCondition::computeImplicitCoeff_solve(int timestepNumber)
   Hop = temp.second;
 }
 
-void abstractBoundaryCondition::computeImplicitCoeff_update(int timestepNumber)
+void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNumber)
 {
   std::pair<double,double> temp;
 

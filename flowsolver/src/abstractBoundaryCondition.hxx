@@ -37,8 +37,8 @@ class abstractBoundaryCondition
         Hop = 0.0;
         dp_dq_n1 = 0.0;
         Hop_n1 = 0.0;
-        bcCount++;
-        index = bcCount;
+        numberOfConstructedBoundaryConditions++;
+        index = numberOfConstructedBoundaryConditions;
 
         alfi_local = timdat.alfi;
 
@@ -64,7 +64,7 @@ class abstractBoundaryCondition
     {
         delete[] flowhist;
         delete[] pressurehist;
-        bcCount--;
+        numberOfConstructedBoundaryConditions--;
     }
     virtual void initialiseModel() = 0;
     double getdp_dq();
@@ -100,20 +100,19 @@ class abstractBoundaryCondition
 
     // double LPNInflowPressure;
 
-    void computeImplicitCoeff_solve(int timestepNumber);
- 	void computeImplicitCoeff_update(int timestepNumber);
-    virtual std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt) = 0;
+    void computeImplicitCoeff_solve(const int timestepNumber);
+ 	void computeImplicitCoeff_update(const int timestepNumber);
+    virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
 
 	void updatePressureAndFlowHistory();
     virtual void updateLPN();
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{
-		// std::cout << "Disallowed call to non-overridden (e.g. non-RCR) . Exiting.\n";
     	throw std::runtime_error("Disallowed call to non-overridden (e.g. non-RCR).");
     	return 0.0;
     };
  private:
- 	static int bcCount;
+ 	static int numberOfConstructedBoundaryConditions;
  };
 
 #endif

@@ -35,16 +35,15 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
 **********************************************************************/
+#include "cvSolverIO.h"
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <vector>
-#include <string>
+#include <sstream>
 #include <iostream>
+#include <stdexcept>
+#include <string>
 #include <ctype.h>
-
-#include "cvSolverIO.h"
 
 
 #define INT 1
@@ -79,6 +78,9 @@ phastaIO::~phastaIO () {
 //
 
 int phastaIO::openFile (const char *filename, const char *mode) {
+
+    // Store the file name as a member variable:
+    fileName_.append(filename);
 
     filePointer_=NULL ;
     fname_ = StringStripper( filename );
@@ -132,6 +134,8 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
    int i,skip_size,integer_value;
    int rewinded = 0;
 
+   int lengthOfToken;
+
    isBinary( iotype );
 
    LastHeaderKey_[0] = '\0';
@@ -155,6 +159,23 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
          }
          //fprintf(stdout,"Line_: %s",Line_);
          char* token = strtok ( Line_, ":" );
+         
+         // Get a copy of this key token, so that we can report it to terminal
+         // in event of a read error...
+         //
+         // First, cycle back to save the previous token, too:
+         previousOriginalPreColonTokenOnLine_ = originalPreColonTokenOnLine_;
+         originalPreColonTokenOnLine_.erase();
+         if (token != NULL)
+         {
+            originalPreColonTokenOnLine_.append(token);
+            // std::cout << "just read" << originalPreColonTokenOnLine_ << std::endl;
+         }
+         else
+         {
+            originalPreColonTokenOnLine_.append("token was null");
+         }
+
          //fprintf(stdout,"token: %s\n",token);
          if( cscompare( keyphrase , token ) ) {
             LastHeaderKey_[0] = '\0';
@@ -193,7 +214,19 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
 
          // skip to next header
          token = strtok( NULL, " ,;<>" );
+         // Make sure that a token was actually found:
+        if (token == NULL)
+        {
+            std::stringstream error;
+            error << "EE: Failure whilst reading input file " << fileName_.c_str() << "." << std::endl;
+            std::cerr << "EE: Failure whilst reading input file. Failing token info (probably not helpful!):" << std::endl;
+            std::cerr << originalPreColonTokenOnLine_ << std::endl;
+            std::cerr << "Perhaps more useful, the previous token that worked was:" << std::endl;
+            std::cerr << previousOriginalPreColonTokenOnLine_ << std::endl;
+            throw std::runtime_error(error.str());
+        }
          skip_size = atoi( token );
+         // std::cout<< "skipping a distance " << skip_size<< std::endl;
          if ( binary_format_ ) {
              fseek(filePointer_,skip_size,SEEK_CUR);
          } else {

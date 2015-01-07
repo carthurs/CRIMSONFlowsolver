@@ -14,7 +14,7 @@ int boundaryConditionManager::thisIsARestartedSimulation = 0;
 // int boundaryConditionManager::numberOfNetlistSurfaces = 0;
 
 
-void boundaryConditionManager::getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled)
+void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
   // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
@@ -61,7 +61,7 @@ extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
   boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 }
 
-void boundaryConditionManager::setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList)
+void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList)
 {
   // Build a factory
   boundaryConditionFactory factory;
@@ -90,7 +90,7 @@ std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionMana
     return &boundaryConditions;
 }
 
-void boundaryConditionManager::computeAllImplicitCoeff_solve(int timestepNumber)
+void boundaryConditionManager::computeAllImplicitCoeff_solve(const int timestepNumber)
 {
   fortranBoundaryDataPointerManager* fortranBoundaryDataPointerManager_instance = fortranBoundaryDataPointerManager::Get();
   for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
@@ -105,7 +105,7 @@ extern "C" void callCppComputeAllImplicitCoeff_solve(int& timestepNumber)
   boundaryConditionManager_instance->computeAllImplicitCoeff_solve(timestepNumber);
 }
 
-void boundaryConditionManager::computeAllImplicitCoeff_update(int timestepNumber)
+void boundaryConditionManager::computeAllImplicitCoeff_update(const int timestepNumber)
 {
   for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
   {
@@ -120,7 +120,7 @@ extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 }
 
 
-void boundaryConditionManager::updateAllRCRS_setflow_n(double* flows)
+void boundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows)
 {
   int readLocation = 0;
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
@@ -140,7 +140,7 @@ extern "C" void callCPPUpdateAllRCRS_setflow_n(double*& flows)
 }
 
 
-void boundaryConditionManager::updateAllRCRS_setflow_n1(double* flows)
+void boundaryConditionManager::updateAllRCRS_setflow_n1(const double* const flows)
 {
   int readLocation = 0;
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
@@ -232,7 +232,7 @@ extern "C" void callCPPWritePHistAndQHistRCR()
 //   boundaryConditionManager_instance->setSurfacePressure_controlledCoronary(coronarySurfacePressures);
 // }
 
-void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled)
+void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
   // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
@@ -334,7 +334,7 @@ extern "C" void callCPPUpdateAllNetlistLPNs()
   boundaryConditionManager_instance->updateAllNetlistLPNs();
 }
 
-void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* implicitCoeffs_toBeFilled)
+void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
   // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage

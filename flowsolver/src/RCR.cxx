@@ -200,7 +200,7 @@ void RCR::initialiseModel()
 }
 
 // Here we step the actual discretised ODE for the RCR:
-std::pair<double,double> RCR::computeImplicitCoefficients(int timestepNumber, double timeAtStepNplus1, double alfi_delt)
+std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt)
 {
 
   double temp1;

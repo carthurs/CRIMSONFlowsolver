@@ -50,15 +50,25 @@ TEST_F(testMain, checkCoronarySimpleShortSimulation) {
 
   runSimulation();
 
-  // histFileReader* QHistReader = new histFileReader();
-  // QHistReader->setFileName("QHistRCR.dat");
-  // QHistReader->setNumColumns(2);
-  // QHistReader->readAndSplitMultiSurfaceRestartFile();
+  // Check a value in FlowHist.dat
+  histFileReader FlowHistReader = histFileReader();
+  FlowHistReader.setFileName("FlowHist.dat");
+  FlowHistReader.setNumColumns(2);
+  FlowHistReader.readFileInternalMetadata();
+  FlowHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double finalFlowHistValue = FlowHistReader.getReadFileData(1,5);
+  EXPECT_NEAR(finalFlowHistValue,3.628656482154824E-003,1e-10);
 
-  // double finalQHistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];
-  // EXPECT_DOUBLE_EQ(finalQHistRCRValue,714.921079082528);
-
-  // delete QHistReader;
+  // Check a value in PressHist.dat
+  histFileReader PressHistReader = histFileReader();
+  PressHistReader.setFileName("PressHist.dat");
+  PressHistReader.setNumColumns(2);
+  PressHistReader.readFileInternalMetadata();
+  PressHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double finalPressHistValue = PressHistReader.getReadFileData(1,5);
+  EXPECT_NEAR(finalPressHistValue,10772.5198465269,1e-10);
 }
 
 TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {

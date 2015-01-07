@@ -34,26 +34,26 @@ class abstractBoundaryCondition;
 		instance = 0;
 	}
 	
-    void setSurfaceList(std::vector<std::pair<int,std::string>> surfaceList);
+    void setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList);
 
     void ifRestartingLoadNecessaryData();
     
-    void getImplicitCoeff_rcr(double* implicitCoeffs_toBeFilled);
+    void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<abstractBoundaryCondition>>* getBoundaryConditions();
 
-    void computeAllImplicitCoeff_solve(int timestepNumber);
-    void computeAllImplicitCoeff_update(int timestepNumber);
+    void computeAllImplicitCoeff_solve(const int timestepNumber);
+    void computeAllImplicitCoeff_update(const int timestepNumber);
 
     void updateAllRCRS_Pressure_n1_withflow();
-    void updateAllRCRS_setflow_n(double* flows);
-    void updateAllRCRS_setflow_n1(double* flows);
+    void updateAllRCRS_setflow_n(const double* const flows);
+    void updateAllRCRS_setflow_n1(const double* const flows);
 
     void recordPressuresAndFlowsInHistoryArrays();
 
     void writePHistAndQHistRCR();
 
     // void setSurfacePressure_controlledCoronary(double* coronarySurfacePressures);
-    void getImplicitCoeff_controlledCoronary(double* implicitCoeffs_toBeFilled);
+    void getImplicitCoeff_controlledCoronary(double* const implicitCoeffs_toBeFilled);
     void updateAllControlledCoronaryLPNs();
     void finalizeLPNAtEndOfTimestep_controlledCoronary();
 
@@ -61,7 +61,7 @@ class abstractBoundaryCondition;
 
     // void setSurfacePressure_netlistLPNs(double* netlistSurfacePressures);
     void updateAllNetlistLPNs();
-    void getImplicitCoeff_netlistLPNs(double* implicitCoeffs_toBeFilled);
+    void getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled);
 
     int getNumberOfRCRSurfaces(){return numberOfRCRSurfaces;}
     int getNumberOfNetlistSurfaces(){return numberOfNetlistSurfaces;}
@@ -87,7 +87,7 @@ class abstractBoundaryCondition;
     	}
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> boundaryConditions;
-    std::map<int,std::pair<double,double>> implicitCoefficientMap;
+    // std::map<int,std::pair<double,double>> implicitCoefficientMap;
     boundaryConditionFactory factory;
 
     static int thisIsARestartedSimulation;

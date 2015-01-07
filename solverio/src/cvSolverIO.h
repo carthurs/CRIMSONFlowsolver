@@ -40,6 +40,8 @@ DAMAGE.
 #define CVSOLVERIO_H
 
 #include <stdio.h>
+#include <string>
+#include <cstring>
 
 #ifdef WIN32
 
@@ -106,6 +108,10 @@ public:
 private:
 
     FILE *filePointer_;
+
+    std::string fileName_;
+    std::string originalPreColonTokenOnLine_;
+    std::string previousOriginalPreColonTokenOnLine_;
 
     bool byte_order_;
     int type_of_data_  ;

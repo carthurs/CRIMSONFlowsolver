@@ -42,9 +42,7 @@ public:
 
 	}
 
-	void computeImplicitCoeff_solve(int timestepNumber);
- 	void computeImplicitCoeff_update(int timestepNumber);
-	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt);
+	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 
 	void updateLPN();
 
@@ -59,7 +57,7 @@ private:
 	int indexOfThisCoronary;
 	static int numberOfInitialisedCoronaries;
 
-	void computeCapacitorsTopPressures(double alfi_delt);
+	void computeCapacitorsTopPressures(const double alfi_delt);
 
 	double resistanceNearAorta;
 	double complianceNearAorta;

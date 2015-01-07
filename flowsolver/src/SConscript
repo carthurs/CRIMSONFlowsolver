@@ -44,27 +44,27 @@ sources=string.split("""
 	RCR.cxx
 	netlistBoundaryCondition.cxx
 	controlledCoronary.cxx
-	blend.c
-	blendDrv.c
-	Bn.c
-	BnDrv.c
-	En.c
-	EnDrv.c
-	Fn.c
-	FnDrv.c
-	getIntPnts.c
-	lestools.c
-	modeShape.c
-	modeShapeDrv.c
-	new_interface.c
-	parDrv.c
+	blend.cxx
+	blendDrv.cxx
+	Bn.cxx
+	BnDrv.cxx
+	En.cxx
+	EnDrv.cxx
+	Fn.cxx
+	FnDrv.cxx
+	getIntPnts.cxx
+	lestools.cxx
+	modeShape.cxx
+	modeShapeDrv.cxx
+	new_interface.cxx
+	parDrv.cxx
 	shp6w.c
 	shphex.c
 	shppyr.c
 	shptet.c
-	shptri.c
+	shptri.cxx
 	symhex.c
-	symline.c
+	symline.cxx
 	sympyr.c
 	symquad.c
 	symquadw.c
@@ -72,9 +72,9 @@ sources=string.split("""
 	symtri.c
 	symtripyr.c
 	symwdg.c
-	tmrc.c
+	tmrc.cxx
 	uniformP.c
-	usr.c
+	usr.cxx
 	write_hessian.c
 	cpp_interface.f90
 	common.f90

@@ -31,7 +31,7 @@ public:
 	}
 
  	void updpressure_n1_withflow(){}
- 	std::pair<double,double> computeImplicitCoefficients(int timestepNumber, double timen_1, double alfi_delt);
+ 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 	void initialiseModel();
 
 	void updateLPN();
@@ -54,8 +54,8 @@ private:
 	void getMapOfPressHistoriesToCorrectPressNodes();
 	void getMapOfFlowHistoriesToCorrectComponents();
 	void getListOfNodesWithMultipleIncidentCurrents();
-	void generateLinearSystemFromPrescribedCircuit(double alfi_delt);
-	void assembleRHS_netlistLPN(int timestepNumber);
+	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
+	void assembleRHS(const int timestepNumber);
 
 	Mat systemMatrix;
 	Mat inverseOfSystemMatrix;

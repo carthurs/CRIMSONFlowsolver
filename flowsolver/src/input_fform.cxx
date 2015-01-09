@@ -759,6 +759,18 @@ int input_fform() {
           		nomodule.indsurf = int(1);
       		}
 
+      		nomodule.geombcHasObservaionFields = int(1);
+      		if ((string) inp.GetValue("Geombc Has Observation Fields") == "False")
+      		{
+      			nomodule.geombcHasObservaionFields = int(0);
+      		}
+
+      		nomodule.geombcHasNodeTags = int(1);
+	      	if ((string) inp.GetValue("Geombc Has Node Tags") == "False")
+	      	{
+	      		nomodule.geombcHasNodeTags = int(0);
+	      	}
+
 		    /**********************************************************
 		     ***               Heart Model Parameters               ***
 		     **********************************************************/

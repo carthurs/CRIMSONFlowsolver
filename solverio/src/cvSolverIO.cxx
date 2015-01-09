@@ -135,6 +135,10 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
    int rewinded = 0;
 
    int lengthOfToken;
+   originalPreColonTokenOnLine_.erase();
+   originalPreColonTokenOnLine_.append("Not a token - reset at start of call to readHeader.");
+   previousOriginalPreColonTokenOnLine_.erase();
+   previousOriginalPreColonTokenOnLine_.append("Not a token - reset at start of call to readHeader.");
 
    isBinary( iotype );
 
@@ -169,7 +173,6 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
          if (token != NULL)
          {
             originalPreColonTokenOnLine_.append(token);
-            // std::cout << "just read" << originalPreColonTokenOnLine_ << std::endl;
          }
          else
          {
@@ -218,15 +221,14 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
         if (token == NULL)
         {
             std::stringstream error;
-            error << "EE: Failure whilst reading input file " << fileName_.c_str() << "." << std::endl;
-            std::cerr << "EE: Failure whilst reading input file. Failing token info (probably not helpful!):" << std::endl;
+            error << "EE: Failure whilst reading input file " << fileName_ << ", looking for key " << keyphrase << std::endl;
+            std::cerr << "EE: Failure whilst reading input file. Failing looking for token: (probably not helpful!):" << std::endl;
             std::cerr << originalPreColonTokenOnLine_ << std::endl;
-            std::cerr << "Perhaps more useful, the previous token that worked was:" << std::endl;
+            std::cerr << "Perhaps more useful, the previous token that was found in the file was:" << std::endl;
             std::cerr << previousOriginalPreColonTokenOnLine_ << std::endl;
             throw std::runtime_error(error.str());
         }
          skip_size = atoi( token );
-         // std::cout<< "skipping a distance " << skip_size<< std::endl;
          if ( binary_format_ ) {
              fseek(filePointer_,skip_size,SEEK_CUR);
          } else {
@@ -237,12 +239,44 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
 
      } // end inner while
 
+     previousOriginalPreColonTokenOnLine_ = originalPreColonTokenOnLine_;
+     originalPreColonTokenOnLine_.erase();
+     originalPreColonTokenOnLine_.append("Not a token - the file was rewound.");
+
      rewind(filePointer_);
+     if (ferror(filePointer_) != 0)
+     {
+        std::stringstream error;
+        error << "EE: Failure after attempting to rewind " << fileName_ << ". ferror() detected error code " << ferror(filePointer_) << std::endl;
+        throw std::runtime_error(error.str());
+     }
      clearerr(filePointer_);
      rewinded++;
 
    }  // end outer while
 
+   // std::cout << "Performing final (non-looping) rewind, having not found " << keyphrase << " in " << fileName_ << std::endl;
+   // rewind(filePointer_);
+   // if (ferror(filePointer_) != 0)
+   // {
+   //    std::stringstream error;
+   //    error << "EE: Failure after attempting to rewind " << fileName_ << ". ferror() detected error code " << ferror(filePointer_) << std::endl;
+   //    throw std::runtime_error(error.str());
+   // }
+   // clearerr(filePointer_);
+
+   // std::cout << "final rewind allowed just occurred." << std::endl;
+
+   // std::stringstream error;
+   // error << "EE: Failure when attempting to read key " << keyphrase << " from file " << fileName_ << std::endl;
+   // throw std::runtime_error(error.str());
+
+   // This never gets returned if the error throw is still on the previous line!
+
+   // WARNING - the above code for error throwing is something I added, then removed, when I discovered
+   // that PHASTA_ERROR (returned here) sometimes means the simulation is OK to continue, and sometimes
+   // means that it should terminate because the error is fatal. That's a real mess which should
+   // be untangled some day, but it's a non-trivial job and there isn't time right now. CA 2015/1/9.
    return PHASTA_ERROR;
 
 }

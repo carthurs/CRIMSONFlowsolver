@@ -120,9 +120,11 @@
       call readheader(igeom,fname1//c_null_char,numpbc,ione,c_char_"integer"//c_null_char, iotype)
            
       fname1='number of shape functions?'
+      ! write(*,*) '*2' !, ntopsh
       call readheader(igeom,fname1//c_null_char,ntopsh,ione,c_char_"integer"//c_null_char, iotype)
 
       fname1='number of boundary element tag IDs?'
+      ! write(*,*) '*1' !, numBETFields
       call readheader(igeom,fname1//c_null_char,numBETFields,ione,c_char_"integer"//c_null_char, iotype)
 
 !
@@ -210,16 +212,18 @@
 !
 !.... read the node tags
 !
-      itwo=2
-      fname1='node tags?'
-      call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"integer"//c_null_char, iotype)
-      numnp=intfromfile(1)
-      if (.not.allocated(ntagread)) then
-        allocate( ntagread(numnp) )
+      if (geombcHasNodeTags) then
+        itwo=2
+        fname1='node tags?'
+        call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"integer"//c_null_char, iotype)
+        numnp=intfromfile(1)
+        if (.not.allocated(ntagread)) then
+          allocate( ntagread(numnp) )
+        endif
+        ixsiz=numnp
+        call readdatablock(igeom,fname1//c_null_char,ntagread,ixsiz, c_char_"integer"//c_null_char,iotype)
+        nodetagfield = ntagread
       endif
-      ixsiz=numnp
-      call readdatablock(igeom,fname1//c_null_char,ntagread,ixsiz, c_char_"integer"//c_null_char,iotype)
-      nodetagfield = ntagread
 
 !
 !.... read in and block out the connectivity
@@ -343,56 +347,57 @@
       !
       !.... read in the simple observation function arrays
       !
+      if (geombcHasObservaionFields) then
+        itwo=2
+        fname1='observation function solution?'
+        call readheader(igeom,fname1//c_null_char,intfromfile, &
+        itwo,c_char_"integer"//c_null_char, iotype)
+        nshg2=intfromfile(1)
+        ndof2=intfromfile(2)
+        iisiz=nshg2*ndof2
+        if (.not.allocated(ilinobsfunc_sol)) then
+          allocate( ilinobsfunc_sol(nshg2,ndof2) )
+        endif
+        call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_sol,iisiz, &
+        c_char_"integer"//c_null_char,iotype)
 
-      itwo=2
-      fname1='observation function solution?'
-      call readheader(igeom,fname1//c_null_char,intfromfile, &
-      itwo,c_char_"integer"//c_null_char, iotype)
-      nshg2=intfromfile(1)
-      ndof2=intfromfile(2)
-      iisiz=nshg2*ndof2
-      if (.not.allocated(ilinobsfunc_sol)) then
-        allocate( ilinobsfunc_sol(nshg2,ndof2) )
-      endif
-      call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_sol,iisiz, &
-      c_char_"integer"//c_null_char,iotype)
+        fname1='observation function time derivative of solution?'
+        call readheader(igeom,fname1//c_null_char,intfromfile, &
+        itwo,c_char_"integer"//c_null_char, iotype)
+        nshg2=intfromfile(1)
+        ndof2=intfromfile(2)
+        iisiz=nshg2*ndof2
+        if (.not.allocated(ilinobsfunc_acc)) then
+          allocate( ilinobsfunc_acc(nshg2,ndof2) )
+        endif
+        call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_acc,iisiz, &
+        c_char_"integer"//c_null_char,iotype)
 
-      fname1='observation function time derivative of solution?'
-      call readheader(igeom,fname1//c_null_char,intfromfile, &
-      itwo,c_char_"integer"//c_null_char, iotype)
-      nshg2=intfromfile(1)
-      ndof2=intfromfile(2)
-      iisiz=nshg2*ndof2
-      if (.not.allocated(ilinobsfunc_acc)) then
-        allocate( ilinobsfunc_acc(nshg2,ndof2) )
-      endif
-      call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_acc,iisiz, &
-      c_char_"integer"//c_null_char,iotype)
+        if (ideformwall.eq.1) then
+            fname1='observation function displacement?'
+            call readheader(igeom,fname1//c_null_char,intfromfile, &
+            itwo,c_char_"integer"//c_null_char, iotype)
+            nshg2=intfromfile(1)
+            nsd2=intfromfile(2)
+            iisiz=nshg2*nsd2
+            if (.not.allocated(ilinobsfunc_disp)) then
+              allocate( ilinobsfunc_disp(nshg2,nsd2) )
+            endif
+            call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_disp,iisiz, &
+            c_char_"integer"//c_null_char,iotype)
 
-      if (ideformwall.eq.1) then
-          fname1='observation function displacement?'
-          call readheader(igeom,fname1//c_null_char,intfromfile, &
-          itwo,c_char_"integer"//c_null_char, iotype)
-          nshg2=intfromfile(1)
-          nsd2=intfromfile(2)
-          iisiz=nshg2*nsd2
-          if (.not.allocated(ilinobsfunc_disp)) then
-            allocate( ilinobsfunc_disp(nshg2,nsd2) )
-          endif
-          call readdatablock(igeom,fname1//c_null_char,ilinobsfunc_disp,iisiz, &
-          c_char_"integer"//c_null_char,iotype)
+            fname1='observation function distance?'
+            call readheader(igeom,fname1//c_null_char,intfromfile, &
+            itwo,c_char_"integer"//c_null_char, iotype)
+            nshg2=intfromfile(1)
+            iisiz=nshg2
+            if (.not.allocated(obsfunc_dist)) then
+              allocate( obsfunc_dist(nshg2) )
+            endif
+            call readdatablock(igeom,fname1//c_null_char,obsfunc_dist,iisiz, &
+            c_char_"integer"//c_null_char,iotype)
 
-          fname1='observation function distance?'
-          call readheader(igeom,fname1//c_null_char,intfromfile, &
-          itwo,c_char_"integer"//c_null_char, iotype)
-          nshg2=intfromfile(1)
-          iisiz=nshg2
-          if (.not.allocated(obsfunc_dist)) then
-            allocate( obsfunc_dist(nshg2) )
-          endif
-          call readdatablock(igeom,fname1//c_null_char,obsfunc_dist,iisiz, &
-          c_char_"integer"//c_null_char,iotype)
-
+        endif
       endif
 
 

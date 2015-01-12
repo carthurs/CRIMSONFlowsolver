@@ -292,7 +292,8 @@
           dkei = (u1(:)-dkei)**2 +u2(:)**2  ! u'^2+v'^2
           dkei = dkei*WdetJ  ! mult function*W*det of jacobian to
 !                              get this quadrature point contribution
-          dke  = dke+sum(dkei) ! we move the sum over elements inside of the
+          ! \todo-binary I removed this, together with all other lines in the code for dke or dkesum commented with the random string sdiunbgjtnz as it didnt seem to be doing anything, and was causing memory errors with strict ifort checks
+          ! dke  = dke+sum(dkei) ! we move the sum over elements inside of the
 !                              sum over quadrature to save memory (we want
 !                              a scalar only)
        endif

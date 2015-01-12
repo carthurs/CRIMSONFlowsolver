@@ -870,6 +870,7 @@ int input_fform() {
 				else
 					nomodule.impfile = 0;
 			}
+			nomodule.ircrfile = 0; // value remains if RCR Values From File == False; changed below if True
 			if (nomodule.numRCRSrfs = inp.GetValue("Number of RCR Surfaces")) {
 				ivec = inp.GetValue("List of RCR Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
@@ -878,9 +879,9 @@ int input_fform() {
 					nomodule.nsrflistRCR[i + 1] = ivec[i];
 				}
 				if ((string) inp.GetValue("RCR Values From File") == "True")
+				{
 					nomodule.ircrfile = 1;
-				else
-					nomodule.ircrfile = 0;
+				}
 			}
 //			if(nomodule.numTRCRSrfs=inp.GetValue("Number of Time-varying RCR Surfaces")){
 //				ivec = inp.GetValue("List of Time-varying RCR Surfaces");

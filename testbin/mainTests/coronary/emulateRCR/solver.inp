@@ -87,7 +87,7 @@ Global Node Numbering: True
 
 # LINEAR SOLVER
 {
-    #Solver Type: ACUSIM with P Projection
+#    Solver Type: ACUSIM with P Projection
     Solver Type: memLS
     Number of Solves per Left-hand-side Formation: 1  #nupdat/LHSupd(1)
     Number of Krylov Vectors per GMRES Sweep: 45

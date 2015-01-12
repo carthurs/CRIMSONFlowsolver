@@ -34,7 +34,7 @@ Global Node Numbering: True
 # For Experimental RCR boundary conditions
     Number of experimental RCR Surfaces: 0 # numGRCRSrfs
     List of experimental RCR Surfaces: # nsrflistGRCR(j), j=0,MAXSURF
-    experimental RCR Values From File: True #False igrcrfile=0, True igrcrfile=1
+    experimental RCR Values From File: False #False igrcrfile=0, True igrcrfile=1
 # Output traces
     Number of Surfaces which Output Pressure and Flow: 2 # numCalcSrfs
     List of Output Surfaces: 2 3 # nsrflistCalc(j), j=0, MAXSURF

@@ -265,15 +265,18 @@
          read (567,'(a80)') card
            read (card,*) ntv, nptsmax
 !        read(567,*) ntv,nptsmax
-         if(.not.allocated(nBCt)) then
-           allocate (nBCt(numnp))
+         if(allocated(nBCt)) then
+           deallocate (nBCt)
          endif
-         if(.not.allocated(numBCt)) then
-           allocate (numBCt(ntv))
+         allocate (nBCt(numnp))
+         if(allocated(numBCt)) then
+           deallocate (numBCt)
          endif
-         if(.not.allocated(BCt)) then
-           allocate (BCt(ntv,nptsmax,4))
+         allocate (numBCt(ntv))
+         if(allocated(BCt)) then
+           deallocate (BCt)
          endif
+         allocate (BCt(ntv,nptsmax,4))
          do k=1,ntv
             read(567,*) x1,x2,x3,ntpts
 !
@@ -371,12 +374,14 @@
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-      if (.not.allocated(FlowHist)) then
-        allocate (FlowHist(lstep+nstep(1)+1,numCalcSrfs)) !for flow history
+      if (allocated(FlowHist)) then
+        deallocate (FlowHist) !for flow history
       endif
-      if (.not.allocated(PressHist)) then
-        allocate (PressHist(lstep+nstep(1)+1,numCalcSrfs)) !for pressure history
+      allocate (FlowHist(lstep+nstep(1)+1,numCalcSrfs)) !for flow history
+      if (allocated(PressHist)) then
+        deallocate (PressHist) !for pressure history
       endif
+      allocate (PressHist(lstep+nstep(1)+1,numCalcSrfs)) !for pressure history
       FlowHist = zero
       PressHist = zero
       if (lstep .gt. 0) then

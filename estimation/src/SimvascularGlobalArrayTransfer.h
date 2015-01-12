@@ -16,8 +16,6 @@ public:
 		return &instance;
 	}
 
-	~SimvascularGlobalArrayTransfer() {}
-
 	//! vector storing the block sizes for each element block
 	std::vector <int> global_npro;
 
@@ -33,8 +31,18 @@ public:
 	//! map between string name and double pointer
 	std::map<std::string, double*> pointerMapDP_;
 
+	void tearDown()
+	{
+		global_npro.clear();
+		global_nshl.clear();
+		global_mien.clear();
+		pointerMapInt_.clear();
+		pointerMapDP_.clear();
+	}
+
 private:
 	SimvascularGlobalArrayTransfer() {}
+	~SimvascularGlobalArrayTransfer() {}
 	SimvascularGlobalArrayTransfer(const SimvascularGlobalArrayTransfer &) { }
 	SimvascularGlobalArrayTransfer &operator=(const SimvascularGlobalArrayTransfer &) { return *this; }
 

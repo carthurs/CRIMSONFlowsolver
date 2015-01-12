@@ -52,7 +52,6 @@ subroutine gensvbDef (ientmp, iBCBtmp, BCBtmp, &
     do i = 1, nProps
         SWB(:,i) = SWBtmp(:,i)
     enddo
-
         
     ! note that due to a legacy compatibility issue,
     ! the expected entries for prestress in SWB are not consistent with

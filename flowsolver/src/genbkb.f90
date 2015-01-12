@@ -54,6 +54,8 @@
 
            if (ideformwall.eq.1 .and. iUseBET.gt.0) then
              allocate (BETtp(neltp,numBETFields))
+           elseif (ideformwall .eq. 1) then !\todo-binary this wasadded to prevent memory errors when BETtp is read without iUseBET=1 (needs deeper fix really..)
+             allocate(BETtp(neltp,1))
            end if
 
            iientpsiz=neltp*nshl
@@ -100,6 +102,7 @@
               BCBtp(:,5)=zero
            endwhere
 
+
 !
 !.... Special arrays for deformable wall
 !
@@ -108,9 +111,10 @@
 !.... read the temporary SWB array 
 !
 
-           SWBtp = zero
+           
            
            if(ideformwall.eq.1 .and. iUseSWB.gt.0) then
+              SWBtp = zero
                itwo=2
                fname1='SWB array?'
                call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"double"//c_null_char, &
@@ -126,6 +130,7 @@
                call readdatablock(igeom,fname1//c_null_char,SWBtp,numelb*nProps, &
                    c_char_"double"//c_null_char,iotype)
            endif
+
 
 !
 !.... boundary element tags array
@@ -149,7 +154,6 @@
                call readdatablock(igeom,fname1//c_null_char,BETtp,numelb*numBETFields,c_char_"integer"//c_null_char,iotype)
 
            endif
-
 
            do n=1,neltp,ibksz 
               nelblb=nelblb+1
@@ -187,13 +191,14 @@
 
               if (ideformwall.eq.1 .and. iUseBET.gt.0) then
                 allocate (mBET(nelblb)%p(npro,numBETFields))
+              elseif (ideformwall .eq. 1) then !\todo-binary this was added to prpevent memory issues when mBET is read below, but not actually used!
+                allocate(mBET(nelblb)%p(npro,1))
               end if
 !
               allocate (mmatb(nelblb)%p(npro))
 !
 !.... save the boundary element block
 !
-
               if (ideformwall.eq.1) then
                 call gensvbDef (ientp(n1:n2,1:nshl), &
                                 iBCBtp(n1:n2,:),      BCBtp(n1:n2,:),  &

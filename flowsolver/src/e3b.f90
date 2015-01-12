@@ -511,8 +511,9 @@
 !
 !.... -------------------->  Aerodynamic Forces  <---------------------
 !
-        if (((ires .ne. 2) .and. (iter .eq. nitr)) &
-                           .and. (abs(itwmod).eq.1)) then
+          if (((ires .ne. 2) .and. (iter .eq. nitr))) then ! \todo-binary i removed the itwmod line as it is never initialised
+        ! if (((ires .ne. 2) .and. (iter .eq. nitr)) &
+        !                    .and. (abs(itwmod).eq.1)) then
 !
 !.... compute the forces on the body
 !

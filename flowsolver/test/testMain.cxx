@@ -126,3 +126,31 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
   readResult = FlowHistReader.getReadFileData(1,5);
   EXPECT_NEAR(478.116982120136,readResult,1e-7);
 }
+
+TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
+  std::string simDir = "mainTests/legacy/preKalmanPreGlobalNodenumbering";
+  setSimDirectory(simDir);
+  clearOutOldFiles();
+
+  runSimulation();
+
+  // Check PressHist.dat
+  histFileReader PressHistReader = histFileReader();
+  PressHistReader.setFileName("PressHist.dat");
+  PressHistReader.setNumColumns(2);
+  PressHistReader.readFileInternalMetadata();
+  PressHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double pressHistResult = PressHistReader.getReadFileData(1,5);
+  EXPECT_NEAR(106420.076723820,pressHistResult,1e-8);
+
+  // Check FlowHist.dat
+  histFileReader FlowHistReader = histFileReader();
+  FlowHistReader.setFileName("FlowHist.dat");
+  FlowHistReader.setNumColumns(2);
+  FlowHistReader.readFileInternalMetadata();
+  FlowHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double flowHistResult = FlowHistReader.getReadFileData(1,5);
+  EXPECT_NEAR(1.077519395498929e-2,flowHistResult,1e-7);
+}

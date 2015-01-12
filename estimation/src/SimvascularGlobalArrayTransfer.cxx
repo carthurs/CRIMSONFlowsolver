@@ -13,11 +13,8 @@ extern "C" void PhAssignPointerInt(int* ptrInt, char* fieldName) {
 }
 
 extern "C" void PhAssignPointerDP(double* ptrDP, char* fieldName) {
-	//std::cout << *ptrDP << " ";
-
 	std::string tempName(fieldName);
-	SimvascularGlobalArrayTransfer::Get()->pointerMapDP_.insert(std::pair<std::string, double*>(tempName, ptrDP));
-
-	//std::cout << *SimvascularGlobalArrayTransfer::Get()->pointerMapDP_[tempName] << std::endl;
+	// std::cout << "data: " << SimvascularGlobalArrayTransfer::Get()->pointerMapDP_.at(tempName) << std::endl;
 	
+	SimvascularGlobalArrayTransfer::Get()->pointerMapDP_.insert(std::pair<std::string, double*>(tempName, ptrDP));	
 }

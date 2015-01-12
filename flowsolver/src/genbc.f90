@@ -62,9 +62,10 @@
 !
       if(any(BCtmp(:,12).ne.0)) then
          iabc=1
-         if (.not.allocated(acs)) then
-           allocate (acs(nshg,2))
+         if (allocated(acs)) then
+           deallocate (acs)
          endif
+         allocate (acs(nshg,2))
          where (btest(iBC,10))
             acs(:,1) = cos(BCtmp(:,12)) 
             acs(:,2) = sin(BCtmp(:,12)) 
@@ -169,9 +170,10 @@
 !  modes.  Note that the wall model creates a p.w. linear representation
 !  only at this time.
 !
-      if (.not.allocated(wnrm)) then
-        allocate ( wnrm(nshg,3) )
+      if (allocated(wnrm)) then
+        deallocate ( wnrm )
       endif
+      allocate ( wnrm(nshg,3) )
 !
 !.... ----------------------> Wall Normals  <--------------------------
 ! (calculate the normal and adjust BCinp to the true normal as needed)
@@ -188,7 +190,6 @@
 !
 ! Count out the number of surface ID's on-processor, and map them
       call gensidcount(nsidg)
-
 ! 
       if(nsidg.gt.0) then       ! if there are any surfID's
          nsurf(:) = 0
@@ -573,9 +574,10 @@
       enddo ! (loop over boundary element blocks)
 ! Copy the data from the linked list to a more easily-used array form
       if(nsidl.gt.0) then
-         if (.not.allocated(sidmapl)) then
-           allocate( sidmapl(nsidl) )
+         if (allocated(sidmapl)) then
+           deallocate( sidmapl )
          endif
+         allocate( sidmapl(nsidl) )
          sidelt => sidlist      !     starting with the first sid
          do j = 1, nsidl
             sidmapl(j)=sidelt%value
@@ -603,9 +605,10 @@
 !
 ! there will be some duplicate surface ID's when we gather, so we
 ! will use a temporary array
-         if (.not.allocated(temp)) then
-           allocate (temp(nsidt))
+         if (allocated(temp)) then
+           deallocate (temp)
          endif
+         allocate (temp(nsidt))
          if (numpe.gt.1) then   ! multiple processors
 ! we will gather surfID's from local on-proc sets to a global set
 ! we will stack each processor's surfID list atop that of the previous 
@@ -656,9 +659,10 @@
                if(temp(j).eq.temp(j-1)) nsidg = nsidg - 1 ! correction
             enddo
 ! create duplicate-free surfID list
-            if (.not.allocated(sidmapg)) then
-              allocate( sidmapg(nsidg) )
+            if (allocated(sidmapg)) then
+              deallocate( sidmapg )
             endif
+            allocate( sidmapg(nsidg) )
             sidmapg(1)=temp(1)
             nsidg = 1
             do j = 2, nsidt
@@ -673,9 +677,10 @@
          else                   ! single-processor
 ! global data is local data in single processor case
             nsidg=nsidl
-            if (.not.allocated(sidmapg)) then
-              allocate( sidmapg(nsidg) )
+            if (allocated(sidmapg)) then
+              deallocate( sidmapg )
             endif
+            allocate( sidmapg(nsidg) )
             sidmapg=sidmapl
          endif                  ! if-else multiple processor
 !     
@@ -724,9 +729,10 @@
       integer gbits
       integer, allocatable :: ienb(:)
 
-      if (.not.allocated(otwn)) then
-        allocate( otwn(nshg) )
+      if (allocated(otwn)) then
+        deallocate( otwn )
       endif
+      allocate( otwn(nshg) )
 !
 ! initialize otwn to oneself
 !
@@ -741,9 +747,10 @@
          nenl  = lcblkb(5,iblk)
          nenbl = lcblkb(6,iblk)
          nshl = lcblkb(9,iblk)
-         if (.not.allocated(ienb)) then
-           allocate( ienb(nshl) )
+         if (allocated(ienb)) then
+           deallocate( ienb )
          endif
+         allocate( ienb(nshl) )
          do i = 1, npro         ! loop over boundary elements
             iBCB1=miBCB(iblk)%p(i,1)
             iBCB2=miBCB(iblk)%p(i,2)

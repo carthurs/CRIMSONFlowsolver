@@ -168,7 +168,6 @@
       wnodestp = 0
 
       call getbnodes(lnode)
-
       do iblk = 1, nelblb
          iel = lcblkb(1,iblk)
          npro = lcblkb(1,iblk+1) - iel
@@ -180,7 +179,6 @@
                   n = lnode(j)
                
                   wnodefnd = 0
-               
                   do k=1,nwnp
                      if (wnodestp(k).eq.mienb(iblk)%p(i,n)) then
                         wnodefnd = 1  
@@ -207,7 +205,9 @@
 !    
 ! Copy to the global array
 !          
-      allocate(mWNodes%p(nwnp))
+      if (nwnp .gt. 0) then
+        allocate(mWNodes%p(nwnp))
+      endif
       allocate(mWNodes_gtlmap%p(nshg))
       
       do i=1,nwnp
@@ -224,10 +224,10 @@
       call startmultidomain(iheart,'heart')       
       !call startmultidomain(isystemic,'systemic')
       if (numControlledCoronarySrfs .gt. int(0)) then
-        call startmultidomain(inewcoronary,'coronary')
+        call startmultidomain(numControlledCoronarySrfs,'coronary')
       endif
       if (numNetlistLPNSrfs .gt. int(0)) then
-        call startmultidomain(inetlistLPN,'netlist')
+        call startmultidomain(numNetlistLPNSrfs,'netlist')
       endif
       
       ! write out status 
@@ -275,7 +275,7 @@
         '   index          Node          ')
 2100    format(1x,i5,5x,i10)
 !
-        end
+        end subroutine gendat
 
 
         subroutine xyzbound(x)

@@ -60,12 +60,19 @@
 !     
 !.... generate the geometry and boundary conditions data
 !
+        allocate(ifath(numpe)) ! \todo-binary WARNING - remove if you ever want to actually use ifath -this is an empty dummy to avoid memory issues for now
+        allocate(nsons(nfath)) ! \todo-binary WARNING - remove if you ever want to actually use nsons -this is an empty dummy to avoid memory issues for now
+        write(*,*) "Got here AA-1"
         call gendat (y,              ac,             x, &
                      iBC,            BC, &
                      iper,     ilwork,   shp, &
                      shgl,           shpb,           shglb, &
                      ifath,    velbar,         nsons )
-        
+        write(*,*) "Got here AA0"        
+        deallocate(ifath) ! \todo-binary WARNING - remove if you ever want to actually use ifath -this is an empty dummy to avoid memory issues for now
+        deallocate(nsons) ! \todo-binary WARNING - remove if you ever want to actually use nsons -this is an empty dummy to avoid memory issues for now
+
+        write(*,*) "Got here AA1"
         call setper(nshg)
         
         call perprep(iBC,iper,nshg)
@@ -116,7 +123,6 @@
 !
 !.... adjust BC's to interpolate from file
 !
-        
         inquire(file="inlet.dat",exist=exlog)
         if(exlog) then
            open (unit=654,file="inlet.dat",status="old")
@@ -213,6 +219,7 @@
 !           deallocate(nsons)
 !           deallocate(ifath)
 !        endif
+        write(*,*) "Got here AA3"
         return
         end
 

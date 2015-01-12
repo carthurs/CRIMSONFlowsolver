@@ -134,4 +134,46 @@ subroutine initGlobalArrays
         if (.not. allocated(gradu)) allocate (gradu(nshg,9))
     endif
 
-end
+end subroutine initGlobalArrays
+
+subroutine destroyGlobalArrays
+    !
+    use globalArrays
+    use phcommonvars
+    IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+    if (allocated(nodetagfield)) deallocate (nodetagfield)
+    if (allocated(y)) deallocate (y)
+    if (allocated(ac)) deallocate (ac)
+    if (allocated(yold)) deallocate (yold) !
+    if (allocated(acold)) deallocate (acold) !
+    if (allocated(temporary_array)) deallocate(temporary_array) !
+    if (allocated(ibc)) deallocate (ibc)
+    if (allocated(BC)) deallocate (BC)
+    if (allocated(solinc)) deallocate (solinc)
+    if (allocated(rowp)) deallocate (rowp)
+    if (allocated(colm)) deallocate (colm)
+    if (allocated(x)) deallocate (x) !
+    if (allocated(iper)) deallocate (iper)
+    if (allocated(res)) deallocate (res)
+    if (allocated(u)) deallocate (u)
+    if (allocated(uold)) deallocate (uold)!
+    if (allocated(uref)) deallocate (uref)
+    if (allocated(ubar)) deallocate (ubar)
+    if (allocated(xdist)) deallocate (xdist)
+    if (allocated(xdnv)) deallocate (xdnv)
+    if (allocated(df_fem)) deallocate (df_fem)
+    if (allocated(rerr)) deallocate (rerr)
+    if(ierrcalc.ne.0) then       ! these only live at itrdrv level and thus
+                                  ! safe to conditional allocate
+        if (allocated(ybar)) deallocate (ybar)
+        if (allocated(dummyVar)) deallocate (dummyVar)
+    endif
+    if(ihessian.ne.0) then
+        if (allocated(uhess)) deallocate (uhess)
+        if (allocated(gradu)) deallocate (gradu)
+    endif
+
+end subroutine destroyGlobalArrays
+!
+    ! note that ilwork, ifath, nsons and velbar are all allocated in readnblk.f
+    ! destructor will need to kill these.  Same is true for

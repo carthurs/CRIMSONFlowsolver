@@ -157,17 +157,19 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             OPEN(1,FILE=fileName)
             READ(1,*) gnNo
             READ(1,*) nNo
-            if (.not.allocated(ltg)) then
-              ALLOCATE(ltg(nNo))
+            if (allocated(ltg)) then
+              DEALLOCATE(ltg)
             endif
+            ALLOCATE(ltg(nNo))
             READ(1,*) ltg
             CLOSE(1)
         ELSE
             gnNo = nshg
             nNo = nshg
-            if (.not.allocated(ltg)) then
-              ALLOCATE(ltg(nNo))
+            if (allocated(ltg)) then
+              DEALLOCATE(ltg)
             endif
+            ALLOCATE(ltg(nNo))
             DO i=1, nNo
                 ltg(i) = i
             END DO
@@ -395,6 +397,11 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                         faIn = faIn + 1
                         call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs_s)
                     end do
+                    do k=1, numNetlistLPNSrfs
+                        faIn = faIn + 1
+                        call AddNeumannBCTomemLS(indicesOfNetlistSurfaces(k), faIn, memLS_lhs_s)
+                    end do
+
                     ! here we add the heart model surface
                     faIn = faIn + 1 ! add one to skip to next surface
                     CALL AddNeumannBCTomemLS(surfids(1), faIn, memLS_lhs_s)  
@@ -1584,6 +1591,13 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     use itrDrvVars
     use debuggingTools
 
+    use multidomain
+
+    ! For deallocation:
+    use readarrays, only: nBC, BCinp, iBCtmp
+    use turbSA, only: wnrm, otwn
+    use periodicity, only: rcount
+
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
@@ -1713,6 +1727,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         close(76)
     endif
 
+
     if(allocated(FlowHist)) then
         deallocate(FlowHist)
     endif
@@ -1720,6 +1735,159 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     if(allocated(PressHist)) then
         deallocate(PressHist)
     endif
+
+    ! if (associated(mBET%p)) then
+    !     nullify(mBET%p)
+    ! endif
+    if (allocated(nBC)) then
+        deallocate(nBC)
+    endif
+    if (allocated(wnrm)) then
+        deallocate(wnrm)
+    endif
+    if (allocated(otwn)) then
+        deallocate(otwn)
+    endif
+    if (allocated(iper)) then
+        deallocate(iper)
+    endif
+    if (associated(mWNodes%p)) then
+        deallocate(mWNodes%p)
+        nullify(mWNodes%p)
+    endif
+    if (associated(mWNodes_gtlmap%p)) then
+        deallocate(mWNodes_gtlmap%p)
+        nullify(mWNodes_gtlmap%p)
+    endif
+    if(allocated(gNodes)) then
+        deallocate(gNodes)
+    endif
+    if(allocated(sV)) then
+        deallocate(sV)
+    endif
+    if(allocated(gNodes_s)) then
+        deallocate(gNodes_s)
+    endif
+    if(allocated(sV_s)) then
+        deallocate(sV_s)
+    endif
+    if (allocated(aperm)) then
+        deallocate(aperm)
+    endif
+    if (allocated(atemp)) then
+        deallocate(atemp)
+    endif
+    if (allocated(lhsP)) then
+        deallocate(lhsP)
+    endif
+    if (allocated(lhsK)) then
+        deallocate(lhsK)
+    endif
+    if(allocated(apermS)) then
+        deallocate(apermS)
+    endif
+    if(allocated(atempS)) then
+        deallocate(atempS)
+    endif    
+    if(allocated(lhsS)) then
+        deallocate(lhsS)
+    endif
+    if(allocated(iBCd)) then
+        deallocate(iBCd)
+    endif
+    if(allocated(iBCs)) then
+        deallocate(iBCs)
+    endif    
+    ! if(allocated(gNodes_tmp)) then
+    !     deallocate(gNodes_tmp)
+    ! endif
+    ! if(allocated(sV_tmp)) then
+    !     deallocate(sV_tmp)
+    ! endif
+    if(allocated(rcount)) then
+        deallocate(rcount)
+    endif
+    if(allocated(NABI)) then
+        deallocate(NABI)
+    endif
+    if(allocated(NASC)) then
+        deallocate(NASC)
+    endif
+    if(allocated(ndsurf)) then
+        deallocate(ndsurf)
+    endif
+    if(Lagrange .gt. 0) then
+        if(allocated(PNABI)) then
+            deallocate(PNABI)
+        endif
+        if(allocated(NANBIJ)) then
+            deallocate(NANBIJ)
+        endif
+    endif
+    ! if(allocated(tmpshpb)) then
+    !     deallocate(tmpshpb)
+    ! endif
+    ! if(allocated(Res4)) then
+    !     deallocate(Res4)
+    ! endif
+    if(allocated(ilwork)) then
+        deallocate(ilwork)
+    endif
+    ! if(allocated(ilworkread)) then
+    !     deallocate(ilworkread)
+    ! endif
+    ! if(allocated(xread)) then
+    !     deallocate(xread)
+    ! endif
+    ! if(allocated(ntagread)) then
+    !     deallocate(ntagread)
+    ! endif
+    ! if(allocated(nBC)) then
+    !     deallocate(nBC)
+    ! endif
+    ! if(allocated(nBCread)) then
+    !     deallocate(nBCread)
+    ! endif
+    if(allocated(iBCtmp)) then
+        deallocate(iBCtmp)
+    endif
+    ! if(allocated(iBCtmpread)) then
+    !     deallocate(iBCtmpread)
+    ! endif
+    if(allocated(BCinp)) then
+        deallocate(BCinp)
+    endif
+    ! if(allocated(BCinpread)) then
+    !     deallocate(BCinpread)
+    ! endif
+    ! if(allocated(iperread)) then
+    !     deallocate(iperread)
+    ! endif
+    if(allocated(inodesuniq)) then
+        deallocate(inodesuniq) ! Valgrind thinks this is already free'd by now
+    endif
+    if(allocated(ilinobsfunc_sol)) then
+        deallocate(ilinobsfunc_sol)
+    endif
+    if(allocated(ilinobsfunc_acc)) then
+        deallocate(ilinobsfunc_acc)
+    endif
+    if(allocated(ilinobsfunc_disp)) then
+        deallocate(ilinobsfunc_disp)
+    endif
+    if(allocated(obsfunc_dist)) then
+        deallocate(obsfunc_dist)
+    endif
+    !
+    ! if(allocated(acread)) then
+    !     deallocate(acread)
+    ! endif
+    ! if(allocated(uread)) then
+    !     deallocate(uread)
+    ! endif
+    call destroyGlobalArrays()
+
+    call tearDownMultidomain()
 
 
 5   format(1X,F15.10,3X,F15.10,3X,F15.10,3X,F15.10)

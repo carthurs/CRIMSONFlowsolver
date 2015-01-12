@@ -120,11 +120,9 @@
       call readheader(igeom,fname1//c_null_char,numpbc,ione,c_char_"integer"//c_null_char, iotype)
            
       fname1='number of shape functions?'
-      ! write(*,*) '*2' !, ntopsh
       call readheader(igeom,fname1//c_null_char,ntopsh,ione,c_char_"integer"//c_null_char, iotype)
 
       fname1='number of boundary element tag IDs?'
-      ! write(*,*) '*1' !, numBETFields
       call readheader(igeom,fname1//c_null_char,numBETFields,ione,c_char_"integer"//c_null_char, iotype)
 
 !
@@ -158,7 +156,6 @@
       ndBCB  = ndof + 1         ! dimension of BCB array
 !     
       nsymdf = (ndof*(ndof + 1)) / 2 ! symm. d.o.f.'s
-      
 !
 ! now that we have all of the constants set, initialize all of the
 ! arrays
@@ -246,6 +243,7 @@
       call readdatablock(igeom,fname1//c_null_char,nBCread,nshg,c_char_"integer"//c_null_char,iotype)
       nBC=nBCread
 
+
 !
 !.... read the temporary iBC array
 !
@@ -304,6 +302,7 @@
          BCinp=0
 
       endif
+
 !
 !.... read periodic boundary conditions
 !
@@ -317,6 +316,7 @@
       call readdatablock(igeom,fname1//c_null_char,iperread,nshg, &
                             c_char_"integer"//c_null_char,iotype)
       iper=iperread
+
 
       !
       !.... read in the local index of unique nodes
@@ -332,17 +332,22 @@
           c_char_"integer"//c_null_char,iotype)
 
       else
-          if (.not.allocated(inodesuniq)) then
+          ! if (.not.allocated(inodesuniq)) then
+          !   allocate( inodesuniq(nshg) )
+          ! endif
+          if (allocated(inodesuniq)) then
+            deallocate(inodesuniq)
+            allocate( inodesuniq(nshg) )
+          else
             allocate( inodesuniq(nshg) )
           endif
-
           nshguniq = nshg
-
           do ii=1,nshg
               inodesuniq(ii) = ii
           end do
 
       endif
+
 
       !
       !.... read in the simple observation function arrays
@@ -400,11 +405,11 @@
         endif
       endif
 
-
 !
 !.... generate the boundary element blocks
 !
       call genbkb (ibksiz)
+
 
 !
 !  Read in the nsons and ifath arrays if needed
@@ -482,9 +487,12 @@
 !         allocate (nsons(1))
 !         allocate (ifath(1))
 !      endif
-      if (.not.allocated(velbar)) then
-        allocate (velbar(nfath,ndof))
+      if (allocated(velbar)) then
+        deallocate (velbar)
       endif
+      allocate (velbar(nfath,ndof))
+
+
 !
 !  renumber the master partition for SPEBC
 !
@@ -497,7 +505,6 @@
 !
 !.... read the header and check it against the run data
 !
-
       ithree=3
 !      call creadlist(irstin,ithree,nshg2,ndof2,lstep)
       fname1='solution?'
@@ -517,9 +524,10 @@
 !.... read the values of primitive variables into q
 !
       !allocate( qold(nshg,ndof) )
-      if (.not.allocated(qread)) then
-        allocate( qread(nshg,ndof2) )
+      if (allocated(qread)) then
+        deallocate( qread )
       endif
+      allocate( qread(nshg,ndof2) )
 
       iqsiz=nshg*ndof2
       call readdatablock(irstin,fname1//c_null_char,qread,iqsiz, &
@@ -637,10 +645,12 @@
       temporary_array = zero
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)
-      call PhAssignPointerInt(c_loc(ilinobsfunc_sol), c_char_"observation function solution"//c_null_char)
-      call PhAssignPointerInt(c_loc(ilinobsfunc_acc), c_char_"observation function time derivative of solution"//c_null_char)
-      call PhAssignPointerInt(c_loc(ilinobsfunc_disp), c_char_"observation function displacement"//c_null_char)
-      call PhAssignPointerInt(c_loc(obsfunc_dist), c_char_"observation function distance"//c_null_char)
+      if (geombcHasObservaionFields) then
+        call PhAssignPointerInt(c_loc(ilinobsfunc_sol), c_char_"observation function solution"//c_null_char)
+        call PhAssignPointerInt(c_loc(ilinobsfunc_acc), c_char_"observation function time derivative of solution"//c_null_char)
+        call PhAssignPointerInt(c_loc(ilinobsfunc_disp), c_char_"observation function displacement"//c_null_char)
+        call PhAssignPointerInt(c_loc(obsfunc_dist), c_char_"observation function distance"//c_null_char)
+      endif
 
       call PhAssignPointerDP(c_loc(yold), c_char_"solution"//c_null_char)
       call PhAssignPointerDP(c_loc(acold), c_char_"time derivative of solution"//c_null_char)
@@ -683,6 +693,7 @@
       if (allocated(nbcread)) then
         deallocate(nbcread)
       endif
+
 
       return
 !

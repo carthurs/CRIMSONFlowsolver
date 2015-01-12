@@ -39,8 +39,10 @@
       ! include "common.h"
       use phcommonvars
 
+      integer iprofile
       real*8  :: x(numnp,nsd) ! xyz coordinates
 
+      iprofile = 0! Spotted that this was uninitialised, but passed below to outputBoundaryStatistics() - which uses it. Thankfully inconsequential, but fix it here to give deterministic behaviour. Change if needed.
 
       ! find max surf IDs
       call findSurfIDs(ndsurf, nshg, MAXSURF)
@@ -127,9 +129,10 @@
       ! if number of surfaces on this processor > 0, then save the surface ids
       if (numSurfID .gt. int(0)) then
         
-        if (.not.allocated(surfID)) then
-          allocate(surfID(numSurfID))
+        if (allocated(surfID)) then
+          deallocate(surfID)
         endif
+        allocate(surfID(numSurfID))
         curSurfID = 1
         
         ! maxSurfID loop
@@ -146,9 +149,10 @@
       end if
 
       ! set up global surface list and global surface count
-      if (.not.allocated(lstSurfID)) then
-        allocate(lstSurfID(0:MAXSURF))
+      if (allocated(lstSurfID)) then
+        deallocate(lstSurfID)
       endif
+      allocate(lstSurfID(0:MAXSURF))
       lstSurfID(:) = int(0)
 
       do i = 1, maxSurfID      
@@ -183,9 +187,10 @@
       integer, allocatable :: edgetemp(:,:)
      
       ! allocate an array the size of the total number of nodes 
-      if (.not.allocated(edsurf)) then
-        allocate(edsurf(nshg))
+      if (allocated(edsurf)) then
+        deallocate(edsurf)
       endif
+      allocate(edsurf(nshg))
       edsurf(:) = int(0)
 
       ! loop over blocks
@@ -296,9 +301,10 @@
 
       ! here calculate area
 
-      if (.not.allocated(area)) then
-        allocate(area(maxSurfID))
+      if (allocated(area)) then
+        deallocate(area)
       endif
+      allocate(area(maxSurfID))
       area(:) = 0.0d0
 
       call MPI_ALLREDUCE(area_integral, area, maxSurfID, &
@@ -317,9 +323,10 @@
                          MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)       
 
 
-      if (.not.allocated(centroid)) then
-        allocate(centroid(maxSurfID,3))
+      if (allocated(centroid)) then
+        deallocate(centroid)
       endif
+      allocate(centroid(maxSurfID,3))
       centroid(:,:) = 0.0d0
 
       centroid(2:maxSurfID,1) = surf_integral_sum(2:maxSurfID,1) &

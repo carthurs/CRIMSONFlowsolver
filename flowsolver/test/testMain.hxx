@@ -150,6 +150,7 @@
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
 	    fortranBoundaryDataPointerManager::Get()->tearDown();
+	    // SimvascularGlobalArrayTransfer::Get()->tearDown();
 	    // boundaryConditionManager::Instance()->Term();
 	  }
 

@@ -20,23 +20,24 @@
 !  START OF DISTURBANCE BLOCK
 !
       dimension diste(1), distesum(1)
-        if(iter.eq.nitr) then  ! we have completed the last iteration
-          if (numpe > 1) then
-          call MPI_REDUCE (dke,dkesum,1,MPI_DOUBLE_PRECISION, &
-                           MPI_SUM, master, INEWCOMM,ierr)
-          endif
-          if (numpe.eq.1) &
-            write (76,1000) lstep+1, dke,dke
+      ! \todo-binary I removed this, together with all other lines in the code for dke or dkesum commented with the random string sdiunbgjtnz as it didnt seem to be doing anything, and was causing memory errors with strict ifort checks
+!         if(iter.eq.nitr) then  ! we have completed the last iteration
+!           if (numpe > 1) then
+!           call MPI_REDUCE (dke,dkesum,1,MPI_DOUBLE_PRECISION, &
+!                            MPI_SUM, master, INEWCOMM,ierr)
+!           endif
+!           if (numpe.eq.1) &
+!             write (76,1000) lstep+1, dke,dke
 
-          if ((myrank .eq. master).and.(numpe > 1)) then 
-             write (76,1000) lstep+1, dkesum,dkesum
-!
-             call flush(76)
-!     
-          endif
-          dke=0.0               ! we must zero it back out for next step
+!           if ((myrank .eq. master).and.(numpe > 1)) then 
+!              write (76,1000) lstep+1, dkesum,dkesum
+! !
+!              call flush(76)
+! !     
+!           endif
+!           dke=0.0               ! we must zero it back out for next step
 
-       endif
+!        endif
 
 !
 ! END OF DISTURBANCE BLOCK

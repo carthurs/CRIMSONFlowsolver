@@ -143,6 +143,7 @@
          procedure, public :: setpresspntrs => setpresspntrs_ro
 
          procedure, public :: assign_ptrs_ext => assign_ptrs_ext
+
       end type reducedorder
 
       
@@ -7283,9 +7284,7 @@
             R_a = this%ra(ii)
             R_p = this%rp(ii)
             R_d = this%rd(ii)
-#if EXTRA_CONSOLE_OUTPUT == 1
-            write(*,*) 'R_d from within setimplicitcoeff_controlledCoronary', R_d, ii !\todo remove
-#endif
+
             C_a = this%c_a(ii)
             C_im = this%c_im(ii)
 
@@ -8554,7 +8553,24 @@
 
       end function invertSquareMatrix
 !
-      end module multidomain   
+      end module multidomain
 !
+
+      subroutine tearDownMultidomain()
+         ! This subroutine tidies up after the multidomain module is no longer needed.
+         ! This is primarily useful for batch testing, to stop sequential tests
+         ! from interfering with each others data
+
+         use multidomain
+
+         ! Reset the active component flags to zero:
+         multidomainactive = int(0)
+         nrcractive = int(0)
+         ntrcractive = int(0)
+         sysactive = int(0)
+         hrtactive = int(0)
+         newCoronaryActive = int(0)
+         netlistActive = int(0)
+      end subroutine tearDownMultidomain
 
 

@@ -135,7 +135,7 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
    int rewinded = 0;
 
    int lengthOfToken;
-   originalPreColonTokenOnLine_.erase();
+   originalPreColonTokenOnLine_.clear();
    originalPreColonTokenOnLine_.append("Not a token - reset at start of call to readHeader.");
    previousOriginalPreColonTokenOnLine_.erase();
    previousOriginalPreColonTokenOnLine_.append("Not a token - reset at start of call to readHeader.");

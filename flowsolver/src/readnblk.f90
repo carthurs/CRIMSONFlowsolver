@@ -352,7 +352,7 @@
       !
       !.... read in the simple observation function arrays
       !
-      if (geombcHasObservaionFields) then
+      if (geombcHasObservationFields) then
         itwo=2
         fname1='observation function solution?'
         call readheader(igeom,fname1//c_null_char,intfromfile, &
@@ -645,7 +645,7 @@
       temporary_array = zero
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)
-      if (geombcHasObservaionFields) then
+      if (geombcHasObservationFields) then
         call PhAssignPointerInt(c_loc(ilinobsfunc_sol), c_char_"observation function solution"//c_null_char)
         call PhAssignPointerInt(c_loc(ilinobsfunc_acc), c_char_"observation function time derivative of solution"//c_null_char)
         call PhAssignPointerInt(c_loc(ilinobsfunc_disp), c_char_"observation function displacement"//c_null_char)

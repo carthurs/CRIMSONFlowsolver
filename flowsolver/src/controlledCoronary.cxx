@@ -51,9 +51,6 @@ std::pair<double,double> controlledCoronary::computeImplicitCoefficients(const i
     returnCoeffs.first = temp1;
     returnCoeffs.second = temp2;
 
-    std::cout << "Coefficient 1: " << temp1 << std::endl;
-    std::cout << "Coefficient 2: " << temp2 << std::endl;
-
     return returnCoeffs;
 }
 
@@ -95,9 +92,6 @@ void controlledCoronary::initialiseModel()
     else
     {
 		pressure_n = *pressure_n_ptr;
-
-        std::cout << "press pointer " << pressure_n_ptr << " " << *pressure_n_ptr << std::endl;
-        std::cout << "flow ptr " << flow_n_ptr << " " << *flow_n_ptr << std::endl;
     }
 	
 	intramyocardialPressureToLVScaling = 1.0; // \todo try other values here (0.4 in MATLAB)

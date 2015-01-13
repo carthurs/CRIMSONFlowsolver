@@ -62,17 +62,14 @@
 !
         allocate(ifath(numpe)) ! \todo-binary WARNING - remove if you ever want to actually use ifath -this is an empty dummy to avoid memory issues for now
         allocate(nsons(nfath)) ! \todo-binary WARNING - remove if you ever want to actually use nsons -this is an empty dummy to avoid memory issues for now
-        write(*,*) "Got here AA-1"
         call gendat (y,              ac,             x, &
                      iBC,            BC, &
                      iper,     ilwork,   shp, &
                      shgl,           shpb,           shglb, &
-                     ifath,    velbar,         nsons )
-        write(*,*) "Got here AA0"        
+                     ifath,    velbar,         nsons )      
         deallocate(ifath) ! \todo-binary WARNING - remove if you ever want to actually use ifath -this is an empty dummy to avoid memory issues for now
         deallocate(nsons) ! \todo-binary WARNING - remove if you ever want to actually use nsons -this is an empty dummy to avoid memory issues for now
 
-        write(*,*) "Got here AA1"
         call setper(nshg)
         
         call perprep(iBC,iper,nshg)
@@ -219,7 +216,6 @@
 !           deallocate(nsons)
 !           deallocate(ifath)
 !        endif
-        write(*,*) "Got here AA3"
         return
         end
 

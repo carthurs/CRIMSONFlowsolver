@@ -50,7 +50,9 @@
 
 		void clearOutOldFiles()
 		{
-			system("rm -rf 1-procs-case");
+			// Warning - this has the potential to delete multiple folders due to the *
+			system("rm -rf *-procs-case");
+			MPI_Barrier(MPI_COMM_WORLD);
 		}
 
 		void runSimulation()

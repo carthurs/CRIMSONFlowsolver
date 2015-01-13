@@ -23,6 +23,8 @@
 #include <strings.h>
 #endif
 
+#include "debuggingToolsForCpp.hxx"
+
 //using namespace PHSOLVER;
 
 char keyphrase[100];
@@ -479,6 +481,7 @@ void Partition_Problem(int numProcs) {
 				&nitems, "integer", oformat);
 
 		bzero_old((void*) filename, 255);
+
 		sprintf(filename, "number of interior tpblocks : < 0 > %d \n",
 				(int) ien[p].size());
 		writestring_(&fgeom, filename);
@@ -499,7 +502,6 @@ void Partition_Problem(int numProcs) {
 			fascii << endl;
 			fascii << "********************"<< endl;
 #endif
-
 			int xct = 1;
 			for (block::iterator ibtr = CurrentBlock.begin();
 					ibtr != CurrentBlock.end(); ibtr++) {
@@ -577,22 +579,26 @@ void Partition_Problem(int numProcs) {
 	delete[] xloc;
 
 	/* node tags */
-	readheader_(&igeombc, "node tags", (void*) iarray, &itwo, "integer",
-			iformat);
-	isize = iarray[0] * iarray[1];
-	int* ntagsloc = new int[isize];
-	readdatablock_(&igeombc, "node tags", (void*) ntagsloc, &isize, "integer",
-			iformat);
+	// Begin with declarations outside the scope of the "if", so they're available later, too.
 	vector < map<int, vector<int> > > ntagspart(numProcs);
+	if (nomodule.geombcHasNodeTags)
+	{
+		readheader_(&igeombc, "node tags", (void*) iarray, &itwo, "integer",
+				iformat);
+		isize = iarray[0] * iarray[1];
+		int* ntagsloc = new int[isize];
+		readdatablock_(&igeombc, "node tags", (void*) ntagsloc, &isize, "integer",
+				iformat);
 
-	for (int x = 1; x < iarray[0] + 1; x++) {
-		for (map<int, int>::iterator iter = ParallelData[x].begin();
-				iter != ParallelData[x].end(); iter++) {
-			ntagspart[(*iter).first][(*iter).second].push_back(
-					ntagsloc[x - 1]);
+		for (int x = 1; x < iarray[0] + 1; x++) {
+			for (map<int, int>::iterator iter = ParallelData[x].begin();
+					iter != ParallelData[x].end(); iter++) {
+				ntagspart[(*iter).first][(*iter).second].push_back(
+						ntagsloc[x - 1]);
+			}
 		}
+		delete[] ntagsloc;
 	}
-	delete[] ntagsloc;
 
     /* ndsurf global */
 
@@ -620,7 +626,6 @@ void Partition_Problem(int numProcs) {
 
         delete[] ndsurfgloc;
     }
-
 	// if we need to calculate sonfath later we will need to have vnumnp[i]
 //	int* vnumnp;
 //	if (SONFATH_VAR > 0)
@@ -678,24 +683,27 @@ void Partition_Problem(int numProcs) {
 		delete[] xf;
 		Xpart[p].clear();
 
-		int* ntagsf = new int[ntagspart[p].size()];
-		for (map<int, vector<int> >::iterator mIter = ntagspart[p].begin();
-				mIter != ntagspart[p].end(); mIter++)
-			ntagsf[(*mIter).first - 1] = (*mIter).second[0];
+		if (nomodule.geombcHasNodeTags)
+		{
+			int* ntagsf = new int[ntagspart[p].size()];
+			for (map<int, vector<int> >::iterator mIter = ntagspart[p].begin();
+					mIter != ntagspart[p].end(); mIter++)
+				ntagsf[(*mIter).first - 1] = (*mIter).second[0];
 
-		isize = ntagspart[p].size();
-		nitems = 2;
-		iarray[0] = ntagspart[p].size();
-		iarray[1] = 1;
-		writeheader_(&fgeom, "node tags", (void*) iarray, &nitems, &isize,
-				"integer", oformat);
+			isize = ntagspart[p].size();
+			nitems = 2;
+			iarray[0] = ntagspart[p].size();
+			iarray[1] = 1;
+			writeheader_(&fgeom, "node tags", (void*) iarray, &nitems, &isize,
+					"integer", oformat);
 
-		nitems = ntagspart[p].size();
-		writedatablock_(&fgeom, "node tags", (void*) (ntagsf), &nitems, "integer",
-				oformat);
+			nitems = ntagspart[p].size();
+			writedatablock_(&fgeom, "node tags", (void*) (ntagsf), &nitems, "integer",
+					oformat);
 
-		delete[] ntagsf;
-		ntagspart[p].clear();
+			delete[] ntagsf;
+			ntagspart[p].clear();
+		}
 
         /* partition of global node surface numbers */
 
@@ -729,8 +737,6 @@ void Partition_Problem(int numProcs) {
 	Xpart.clear();
 	ntagspart.clear();
     ndsurfgpart.clear();
-
-
 	/* let us take care of Essential BCs.*/
 	// BCs are in the indirect numbering of nBC so only nBC needs to be sorted
 	// according to nshg
@@ -749,7 +755,6 @@ void Partition_Problem(int numProcs) {
 	int* iBC = new int[numpbc];
 	readdatablock_(&igeombc, "bc codes array", (void*) iBC, &numpbc, "integer",
 			iformat);
-
 	readheader_(&igeombc, "boundary condition array", (void*) iarray, &ione,
 			"double", iformat);
 	double* BC = new double[numpbc * numEBC];
@@ -1607,109 +1612,113 @@ void Partition_Problem(int numProcs) {
 	//
 	// generate the partitioned structure for the simple observation functions
 	//
-	int* linobs_soln;
+	// Begin with declarations external to the "if" scope so they're available elsewhere.
 	vector < map<int, vector<int> > > linobs_soln_Part(numProcs);
-
-	readheader_(&igeombc, "observation function solution?", (void*) iarray, &itwo, "integer",
-			iformat);
-
-	isize = nshg * ndof;
-
-	linobs_soln = new int[isize];
-
-	readdatablock_(&igeombc, "observation function solution?", (void*) linobs_soln, &isize,
-			"integer", iformat);
-
-	for (int x = 1; x < nshg + 1; x++) {
-		for (map<int, int>::iterator pIter = ParallelData[x].begin();
-				pIter != ParallelData[x].end(); pIter++) {
-			for (int v = 0; v < ndof; v++)
-				linobs_soln_Part[(*pIter).first][(*pIter).second].push_back(
-						linobs_soln[v * nshg + x - 1]);
-		}
-	}
-
-	delete[] linobs_soln;
-
-	int* linobs_acc;
 	vector < map<int, vector<int> > > linobs_acc_Part(numProcs);
-
-	readheader_(&igeombc, "observation function time derivative of solution?", (void*) iarray,
-			&itwo, "integer", iformat);
-
-	isize = nshg * ndof;
-
-	linobs_acc = new int[isize];
-
-	readdatablock_(&igeombc, "observation function time derivative of solution?",
-			(void*) linobs_acc, &isize, "integer", iformat);
-
-	for (int x = 1; x < nshg + 1; x++) {
-		for (map<int, int>::iterator pIter = ParallelData[x].begin();
-				pIter != ParallelData[x].end(); pIter++) {
-			for (int v = 0; v < ndof; v++)
-				linobs_acc_Part[(*pIter).first][(*pIter).second].push_back(
-						linobs_acc[v * nshg + x - 1]);
-		}
-	}
-
-	delete[] linobs_acc;
-
 	vector < map<int, vector<int> > > linobs_disp_Part(numProcs);
 	vector < map<int, vector<int> > > obs_dist_Part(numProcs);
+	if (nomodule.geombcHasObservationFields)
+	{
+		int* linobs_soln;
 
-	if (nomodule.ideformwall != 0) {
-		int* linobs_disp;
+		readheader_(&igeombc, "observation function solution?", (void*) iarray, &itwo, "integer",
+				iformat);
 
-		readheader_(&igeombc, "observation function displacement?",
-				(void*) iarray, &itwo, "integer", iformat);
+		isize = nshg * ndof;
 
-		isize = nshg * 3;
+		linobs_soln = new int[isize];
 
-		linobs_disp = new int[isize];
-
-		readdatablock_(&igeombc,
-				"observation function displacement?",
-				(void*) linobs_disp, &isize, "integer", iformat);
+		readdatablock_(&igeombc, "observation function solution?", (void*) linobs_soln, &isize,
+				"integer", iformat);
 
 		for (int x = 1; x < nshg + 1; x++) {
 			for (map<int, int>::iterator pIter = ParallelData[x].begin();
 					pIter != ParallelData[x].end(); pIter++) {
-				for (int v = 0; v < 3; v++) {
-					linobs_disp_Part[(*pIter).first][(*pIter).second].push_back(
-							linobs_disp[v * nshg + x - 1]);
+				for (int v = 0; v < ndof; v++)
+					linobs_soln_Part[(*pIter).first][(*pIter).second].push_back(
+							linobs_soln[v * nshg + x - 1]);
+			}
+		}
 
-					//cout << (*pIter).first << " " << (*pIter).second << " " << linobs_disp[v * nshg + x - 1] << endl;
+		delete[] linobs_soln;
+
+		int* linobs_acc;
+
+		readheader_(&igeombc, "observation function time derivative of solution?", (void*) iarray,
+				&itwo, "integer", iformat);
+
+		isize = nshg * ndof;
+
+		linobs_acc = new int[isize];
+
+		readdatablock_(&igeombc, "observation function time derivative of solution?",
+				(void*) linobs_acc, &isize, "integer", iformat);
+
+		for (int x = 1; x < nshg + 1; x++) {
+			for (map<int, int>::iterator pIter = ParallelData[x].begin();
+					pIter != ParallelData[x].end(); pIter++) {
+				for (int v = 0; v < ndof; v++)
+					linobs_acc_Part[(*pIter).first][(*pIter).second].push_back(
+							linobs_acc[v * nshg + x - 1]);
+			}
+		}
+
+		delete[] linobs_acc;
+
+
+		if (nomodule.ideformwall != 0) {
+			int* linobs_disp;
+
+			readheader_(&igeombc, "observation function displacement?",
+					(void*) iarray, &itwo, "integer", iformat);
+
+			isize = nshg * 3;
+
+			linobs_disp = new int[isize];
+
+			readdatablock_(&igeombc,
+					"observation function displacement?",
+					(void*) linobs_disp, &isize, "integer", iformat);
+
+			for (int x = 1; x < nshg + 1; x++) {
+				for (map<int, int>::iterator pIter = ParallelData[x].begin();
+						pIter != ParallelData[x].end(); pIter++) {
+					for (int v = 0; v < 3; v++) {
+						linobs_disp_Part[(*pIter).first][(*pIter).second].push_back(
+								linobs_disp[v * nshg + x - 1]);
+
+						//cout << (*pIter).first << " " << (*pIter).second << " " << linobs_disp[v * nshg + x - 1] << endl;
+					}
 				}
 			}
-		}
 
-		delete[] linobs_disp;
+			delete[] linobs_disp;
 
-		int* obs_dist;
+			int* obs_dist;
 
-		readheader_(&igeombc, "observation function distance?",
-				(void*) iarray, &itwo, "integer", iformat);
+			readheader_(&igeombc, "observation function distance?",
+					(void*) iarray, &itwo, "integer", iformat);
 
-		isize = nshg;
+			isize = nshg;
 
-		obs_dist = new int[isize];
+			obs_dist = new int[isize];
 
-		readdatablock_(&igeombc,
-				"observation function distance?",
-				(void*) obs_dist, &isize, "integer", iformat);
+			readdatablock_(&igeombc,
+					"observation function distance?",
+					(void*) obs_dist, &isize, "integer", iformat);
 
-		for (int x = 1; x < nshg + 1; x++) {
-			for (map<int, int>::iterator pIter = ParallelData[x].begin();
-					pIter != ParallelData[x].end(); pIter++) {
+			for (int x = 1; x < nshg + 1; x++) {
+				for (map<int, int>::iterator pIter = ParallelData[x].begin();
+						pIter != ParallelData[x].end(); pIter++) {
 
-				obs_dist_Part[(*pIter).first][(*pIter).second].push_back(
-						obs_dist[x - 1]);
+					obs_dist_Part[(*pIter).first][(*pIter).second].push_back(
+							obs_dist[x - 1]);
 
+				}
 			}
-		}
 
-		delete[] obs_dist;
+			delete[] obs_dist;
+		}
 
 
 	}
@@ -1836,95 +1845,97 @@ void Partition_Problem(int numProcs) {
 
 		delete[] fNodesUnique;
 
+		if (nomodule.geombcHasObservationFields)
+		{
+			int nshgLocal = linobs_soln_Part[a].size();
+			int nsd = 3;
 
-		int nshgLocal = linobs_soln_Part[a].size();
-		int nsd = 3;
-
-		//
-		isize = nshgLocal * ndof;
-		nitems = 2;
-		iarray[0] = nshgLocal;
-		iarray[1] = ndof;
-
-		writeheader_(&fgeom, "observation function solution", (void*) iarray, &nitems, &isize,
-				"integer", oformat);
-
-		int* flinobs_soln = new int[isize];
-		for (int w = 0; w < ndof; w++)
-			for (int y = 1; y < nshgLocal + 1; y++) {
-				flinobs_soln[w * nshgLocal + (y - 1)] =
-						linobs_soln_Part[a][y][w];
-			}
-
-		nitems = isize;
-		writedatablock_(&fgeom, "observation function solution", (void*) (flinobs_soln),
-				&nitems, "integer", oformat);
-		delete[] flinobs_soln;
-
-        //
-		isize = nshgLocal * ndof;
-		nitems = 2;
-		iarray[0] = nshgLocal;
-		iarray[1] = ndof;
-
-		writeheader_(&fgeom, "observation function time derivative of solution", (void*) iarray,
-				&nitems, &isize, "integer", oformat);
-
-		int* flinobs_acc = new int[isize];
-		for (int w = 0; w < ndof; w++)
-			for (int y = 1; y < nshgLocal + 1; y++) {
-				flinobs_acc[w * nshgLocal + (y - 1)] =
-						linobs_acc_Part[a][y][w];
-			}
-
-		nitems = isize;
-		writedatablock_(&fgeom, "observation function time derivative of solution",
-				(void*) (flinobs_acc), &nitems, "integer", oformat);
-		delete[] flinobs_acc;
-
-		//
-
-		if (nomodule.ideformwall != 0) {
-
-			isize = nshgLocal * nsd;
+			//
+			isize = nshgLocal * ndof;
 			nitems = 2;
 			iarray[0] = nshgLocal;
-			iarray[1] = nsd;
+			iarray[1] = ndof;
 
-			writeheader_(&fgeom, "observation function displacement",
-					(void*) iarray, &nitems, &isize, "integer", oformat);
+			writeheader_(&fgeom, "observation function solution", (void*) iarray, &nitems, &isize,
+					"integer", oformat);
 
-			int* flinobs_disp = new int[isize];
-			for (int w = 0; w < nsd; w++)
+			int* flinobs_soln = new int[isize];
+			for (int w = 0; w < ndof; w++)
 				for (int y = 1; y < nshgLocal + 1; y++) {
-					flinobs_disp[w * nshgLocal + (y - 1)] = linobs_disp_Part[a][y][w];
+					flinobs_soln[w * nshgLocal + (y - 1)] =
+							linobs_soln_Part[a][y][w];
 				}
 
 			nitems = isize;
-			writedatablock_(&fgeom,
-					"observation function displacement",
-					(void*) (flinobs_disp), &nitems, "integer", oformat);
-			delete[] flinobs_disp;
+			writedatablock_(&fgeom, "observation function solution", (void*) (flinobs_soln),
+					&nitems, "integer", oformat);
+			delete[] flinobs_soln;
 
-			isize = nshgLocal;
-			nitems = 1;
+	        //
+			isize = nshgLocal * ndof;
+			nitems = 2;
 			iarray[0] = nshgLocal;
+			iarray[1] = ndof;
 
-			writeheader_(&fgeom, "observation function distance",
-					(void*) iarray, &nitems, &isize, "integer", oformat);
+			writeheader_(&fgeom, "observation function time derivative of solution", (void*) iarray,
+					&nitems, &isize, "integer", oformat);
 
-			int* fobs_dist = new int[isize];
-
-			for (int y = 1; y < nshgLocal + 1; y++) {
-				fobs_dist[(y - 1)] = obs_dist_Part[a][y][0];
-			}
+			int* flinobs_acc = new int[isize];
+			for (int w = 0; w < ndof; w++)
+				for (int y = 1; y < nshgLocal + 1; y++) {
+					flinobs_acc[w * nshgLocal + (y - 1)] =
+							linobs_acc_Part[a][y][w];
+				}
 
 			nitems = isize;
-			writedatablock_(&fgeom,
-					"observation function distance",
-					(void*) (fobs_dist), &nitems, "integer", oformat);
-			delete[] fobs_dist;
+			writedatablock_(&fgeom, "observation function time derivative of solution",
+					(void*) (flinobs_acc), &nitems, "integer", oformat);
+			delete[] flinobs_acc;
 
+			//
+
+			if (nomodule.ideformwall != 0) {
+
+				isize = nshgLocal * nsd;
+				nitems = 2;
+				iarray[0] = nshgLocal;
+				iarray[1] = nsd;
+
+				writeheader_(&fgeom, "observation function displacement",
+						(void*) iarray, &nitems, &isize, "integer", oformat);
+
+				int* flinobs_disp = new int[isize];
+				for (int w = 0; w < nsd; w++)
+					for (int y = 1; y < nshgLocal + 1; y++) {
+						flinobs_disp[w * nshgLocal + (y - 1)] = linobs_disp_Part[a][y][w];
+					}
+
+				nitems = isize;
+				writedatablock_(&fgeom,
+						"observation function displacement",
+						(void*) (flinobs_disp), &nitems, "integer", oformat);
+				delete[] flinobs_disp;
+
+				isize = nshgLocal;
+				nitems = 1;
+				iarray[0] = nshgLocal;
+
+				writeheader_(&fgeom, "observation function distance",
+						(void*) iarray, &nitems, &isize, "integer", oformat);
+
+				int* fobs_dist = new int[isize];
+
+				for (int y = 1; y < nshgLocal + 1; y++) {
+					fobs_dist[(y - 1)] = obs_dist_Part[a][y][0];
+				}
+
+				nitems = isize;
+				writedatablock_(&fgeom,
+						"observation function distance",
+						(void*) (fobs_dist), &nitems, "integer", oformat);
+				delete[] fobs_dist;
+
+			}
 		}
 
 

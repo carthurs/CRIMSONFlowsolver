@@ -1680,7 +1680,6 @@
               ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
               call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
               faceRes(faIn) = implicitcoeffs(k,1)
-              write(*,*) "RCR implicitcoeffs from C++ in Fortran: ", implicitcoeffs(1,1), implicitcoeffs(1,2)
             else  
               faceRes(faIn) = grcrbc_coeff_1_implicit(k)
             end if 
@@ -1688,14 +1687,11 @@
          do k=1, numControlledCoronarySrfs
             faIn = faIn + 1
             call callCppGetImplicitCoeff_controlledCoronary(c_loc(implicitcoeffs(1,1)))
-            write(*,*) "controlled coronary implicitcoeffs from C++ in Fortran: ", implicitcoeffs(1,1), implicitcoeffs(1,2)
-            write(*,*) "there are ", numControlledCoronarySrfs, " coronary surfaces."
             faceRes(faIn) = implicitcoeffs(k,1)
          end do
          do k=1, numNetlistLPNSrfs
             faIn = faIn + 1
             call callCPPGetImplicitCoeff_netlistLPNs(c_loc(implicitcoeffs(1,1)))
-            write(*,*) "Netlist implicitcoeffs from C++ in Fortran: ", implicitcoeffs(1,1), implicitcoeffs(1,2)
             faceRes(faIn) = implicitcoeffs(k,1)
          end do
          IF (iheart .gt. int(0)) THEN

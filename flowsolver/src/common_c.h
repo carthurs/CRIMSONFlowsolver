@@ -537,7 +537,7 @@
          int numNetlistLPNSrfs;
          int indicesOfNetlistSurfaces[MAXSURF+1];
          int inputHRandSP;
-         int geombcHasObservaionFields;
+         int geombcHasObservationFields;
          int geombcHasNodeTags;
       } nomodule;
 

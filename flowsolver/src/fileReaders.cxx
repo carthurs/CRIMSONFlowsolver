@@ -368,7 +368,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 	std::vector<circuit_nodal_pressure_prescription_t> tempTypeOfPrescribedPressures;
 	std::vector<int> tempListOfPrescribedFlows;
 	std::vector<circuit_component_flow_prescription_t> tempTypeOfPrescribedFlows;
-	std::vector<double> tempInitialPressures;
+	std::map<int,double> tempInitialPressures;
 
 	while(readNextLine())
 	{
@@ -498,10 +498,9 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		for (int pressureNode=0; pressureNode < numberOfPressureNodes.back(); pressureNode++)
 		{
 			readNextLine();
-			tempInitialPressures.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
+			tempInitialPressures.insert( std::pair<int,double> (atoi(currentLineSplitBySpaces->at(0).c_str()), atof(currentLineSplitBySpaces->at(1).c_str()))  );
 		}
 		initialPressures.push_back(tempInitialPressures);
-
 
 	}
 
@@ -564,7 +563,7 @@ std::vector<int> netlistReader::getNumberOfPressureNodes()
 {
 	return numberOfPressureNodes;
 }
-std::vector<std::vector<double>> netlistReader::getInitialPressures()
+std::vector<std::map<int,double>> netlistReader::getInitialPressures()
 {
 	return initialPressures;
 }

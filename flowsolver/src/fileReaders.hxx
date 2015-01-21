@@ -277,7 +277,7 @@ public:
 	std::vector<std::vector<circuit_nodal_pressure_prescription_t>> getTypeOfPrescribedPressures();
 	std::vector<std::vector<circuit_component_flow_prescription_t>> getTypeOfPrescribedFlows();
 	std::vector<int> getNumberOfPressureNodes();
-	std::vector<std::vector<double>> getInitialPressures();
+	std::vector<std::map<int,double>> getInitialPressures();
 protected:
 private:
 	netlistReader()
@@ -304,7 +304,7 @@ private:
 	std::vector<std::vector<circuit_component_flow_prescription_t>> typeOfPrescribedFlows;
 
 	std::vector<int> numberOfPressureNodes;
-	std::vector<std::vector<double>> initialPressures;
+	std::vector<std::map<int,double>> initialPressures;
 
 };
 

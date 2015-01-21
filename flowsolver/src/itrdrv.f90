@@ -867,11 +867,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     ! Moved here from above - it's a generic update for everything,
     ! so shouldn't need guarding
-    write(*,*) "got here 1"
     call callCppComputeAllImplicitCoeff_solve(lstep)
-    write(*,*) "got here 2"
     call callCppComputeAllImplicitCoeff_update(lstep)
-    write(*,*) "got here 3"
     ! ------------------------------------------
 
     !

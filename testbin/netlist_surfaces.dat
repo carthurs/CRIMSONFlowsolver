@@ -43,10 +43,10 @@ t
 # Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
 4
 # Initial pressures at the pressure nodes:
-206663.0e0
-206663.1e0
-0.0e0
-0.1e0
+1 206663.0e0
+2 206663.1e0
+3 0.0e0
+4 0.1e0
 ######
 ### Begin second netlist boundary condition model
 ######
@@ -110,10 +110,10 @@ t
 # Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
 6
 # Initial pressures at the pressure nodes:
-106663.0e0
-106663.1e0
-106663.2e0
-1.0e0
-1.1e0
-1.2e0
+1 106663.0e0
+2 106663.1e0
+3 106663.2e0
+4 1.0e0
+5 1.1e0
+6 1.2e0
 ### End second netlist boundary condition model

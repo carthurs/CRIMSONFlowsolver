@@ -33,23 +33,20 @@ std::pair<double,double> controlledCoronary::computeImplicitCoefficients(const i
         // P_IM_mid = this%intramyocardialPressureToLVScaling * hrt%plv_hist(timestepNumber) //\todo check these actually exist on first iteration
     }
 
-    // we need these a couple of times to compute coeff, so precompute them for convenience.
+    // The system of ODEs for the coronaries has a 2x2 system matrix.
+    // Call this m, compute the non-trivial matrix entriels m(row)(column) - m11, m12, m22:
     double m11 = 1.0 + resistanceNearAorta*complianceNearAorta/alfi_delt;
     double m12 = resistanceNearAorta * (1.0/distalResistance + intramyocardialCompliance/alfi_delt);
     double m22 = midResistance * (intramyocardialCompliance/alfi_delt + 1.0/distalResistance) + 1.0;
-    double temporary_variable = m22/(m11*m22-m22+m12);
+    double commonMultiplicand = m22/(m11*m22-m22+m12);
 
     // The actual differential equation "solve" - here we obtain the operators
     // which describe the boundary condtion from the ODE.
-    double temp1 = (m11 + m12/m22) * resistanceNearAorta * temporary_variable;
-    double temp2 = ((capacitorNearAortaTopPressure*complianceNearAorta + intramyocardialCapacitorTopPressure*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
-                   *intramyocardialCompliance)*resistanceNearAorta/alfi_delt - m12/m22*midResistance*intramyocardialCompliance/alfi_delt
-                   *(intramyocardialCapacitorTopPressure+P_IM_mid-P_IM_mid_lasttimestep))*temporary_variable;
-
-
     std::pair<double,double> returnCoeffs;
-    returnCoeffs.first = temp1;
-    returnCoeffs.second = temp2;
+    returnCoeffs.first = (m11 + m12/m22) * resistanceNearAorta * commonMultiplicand;
+    returnCoeffs.second = ((capacitorNearAortaTopPressure*complianceNearAorta + intramyocardialCapacitorTopPressure*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
+                   *intramyocardialCompliance)*resistanceNearAorta/alfi_delt - m12/m22*midResistance*intramyocardialCompliance/alfi_delt
+                   *(intramyocardialCapacitorTopPressure+P_IM_mid-P_IM_mid_lasttimestep))*commonMultiplicand;
 
     return returnCoeffs;
 }
@@ -179,7 +176,7 @@ void controlledCoronary::initialiseModel()
 void controlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
 {
     // We're now going to solve the 2x2 system m*[P_1;P_2] = rhs.
-    // Define the LPN system matrix:
+    // Define the LPN system matrix by its components (name format: m(row)(column)):
     double m11 = resistanceNearAorta*complianceNearAorta/alfi_delt;
     double m12 = resistanceNearAorta * (1.0/distalResistance + intramyocardialCompliance/alfi_delt);
     double m22 = midResistance * (intramyocardialCompliance/alfi_delt + 1.0/distalResistance) + 1.0;

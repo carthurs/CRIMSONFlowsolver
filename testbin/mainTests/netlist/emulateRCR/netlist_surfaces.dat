@@ -43,7 +43,7 @@ t
 # Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
 4
 # Initial pressures at the pressure nodes:
-10585.0
-10585.0
-0.0e0
-0.0e0
+1 10585.0
+2 10585.0
+3 0.0e0
+4 0.0e0

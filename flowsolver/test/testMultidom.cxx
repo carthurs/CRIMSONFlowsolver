@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "testMultidom.hxx"
 #include "RCR.hxx"
-#include "netlistBoundaryCondition.hxx"
+#include "NetlistBoundaryCondition.hxx"
 
 // Hack to force the compiler to link this test to the relevant main() for testing
 int PullInMyLibraryTestMultidom() { return 0; }
@@ -11,7 +11,7 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
   // Check we got the right boundary conditions
 	// EXPECT_TRUE(1==1);
   EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[0])==typeid(RCR));
-  EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[1])==typeid(netlistBoundaryCondition));
+  EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[1])==typeid(NetlistBoundaryCondition));
   EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[2])==typeid(RCR));
 
   EXPECT_EQ((*retrievedBoundaryConditions)[0]->surfaceIndex,3);

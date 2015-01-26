@@ -1181,7 +1181,7 @@ int input_fform() {
 			sequence.stepseq[i] = ivec[i];
 
 	} catch (exception &e) {
-		cout << endl << "Input exception: " << e.what() << endl << endl;
+		cerr << endl << "Input exception: " << e.what() << endl << endl;
 		ierr = 001;
 		print_error_code(ierr);
 		return ierr;

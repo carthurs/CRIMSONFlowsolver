@@ -1,6 +1,6 @@
 #include "boundaryConditionFactory.hxx"
 #include "RCR.hxx"
-#include "netlistBoundaryCondition.hxx"
+#include "NetlistBoundaryCondition.hxx"
 #include "controlledCoronary.hxx"
 
 boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
@@ -13,7 +13,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
   }
   else if (boundaryType.compare("netlist") == 0)
   {
-    return boost::shared_ptr<abstractBoundaryCondition> (new netlistBoundaryCondition(surfaceIndex));
+    return boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex));
   }
   else if (boundaryType.compare("controlledCoronary") == 0)
   {

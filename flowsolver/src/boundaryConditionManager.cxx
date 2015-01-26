@@ -1,7 +1,7 @@
 #include "boundaryConditionManager.hxx"
 #include "RCR.hxx"
 #include "controlledCoronary.hxx"
-#include "netlistBoundaryCondition.hxx"
+#include "NetlistBoundaryCondition.hxx"
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 
@@ -317,11 +317,23 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
 // ========== Controlled Coronary Block End =========
 
 // ========== Netlist LPN Block Start =========
+void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
+{
+  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    {
+      (*iterator)->initialiseAtStartOfTimestep();
+    }
+  }
+}
+
+
 void boundaryConditionManager::updateAllNetlistLPNs()
 {
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
   {
-    if (typeid(**iterator)==typeid(netlistBoundaryCondition))
+    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
     {
       (*iterator)->updateLPN();
     }
@@ -344,7 +356,7 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
   
   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
   {
-    if (typeid(**iterator)==typeid(netlistBoundaryCondition))
+    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
     {
       
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
@@ -368,7 +380,7 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
 //   int readLocation = int(0);
 //   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
 //   {
-//     if (typeid(**iterator)==typeid(netlistBoundaryCondition))
+//     if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
 //     {
 //      (*iterator)->setLPNInflowPressure(netlistSurfacePressures[readLocation]);
 //      readLocation++;

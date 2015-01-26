@@ -1,4 +1,5 @@
 #include "abstractBoundaryCondition.hxx"
+#include <stdexcept>
 
 
 // Statics
@@ -53,10 +54,14 @@ void abstractBoundaryCondition::updatePressureAndFlowHistory()
   flowhist[timdat.lstep] = *flow_n_ptr;
 }
 
+void abstractBoundaryCondition::initialiseAtStartOfTimestep()
+{
+  throw std::logic_error("EE: Call to initialiseAtStartOfTimestep as a member of abstractBoundaryCondition. This is not allowed.");
+}
+
 void abstractBoundaryCondition::updateLPN()
 {
-	std::cout << "Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed." << std::endl;
-	std::exit(1);
+	throw std::logic_error("Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed.");
 }
 
 void abstractBoundaryCondition::updpressure_n1_withflow()
@@ -66,6 +71,5 @@ void abstractBoundaryCondition::updpressure_n1_withflow()
 
 void abstractBoundaryCondition::finalizeLPNAtEndOfTimestep()
 {
-	std::cout << "Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed." << std::endl;
-	std::exit(1);
+	throw std::logic_error("Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed.");
 }

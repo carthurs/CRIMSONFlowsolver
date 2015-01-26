@@ -67,6 +67,7 @@ class abstractBoundaryCondition
         numberOfConstructedBoundaryConditions--;
     }
     virtual void initialiseModel() = 0;
+    virtual void initialiseAtStartOfTimestep();
     double getdp_dq();
     double getHop();
     int index;

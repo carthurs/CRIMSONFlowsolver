@@ -193,16 +193,16 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),-1.1e0);
 
   std::vector<std::map<int,double>> returnedVectorOfIntToDoubleMaps = netlistReader_instance->getInitialPressures();
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).find(1),206663.0e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).find(2),206663.1e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).find(3),0.0e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).find(4),0.1e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).find(1),106663.0e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).find(2),106663.1e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).find(3),106663.2e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).find(4),1.0e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).find(5),1.1e0);
-  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).find(6),1.2e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(1),206663.0e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(2),206663.1e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(3),0.0e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(4),0.1e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).at(1),106663.0e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).at(2),106663.1e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).at(3),106663.2e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).at(4),1.0e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).at(5),1.1e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(1).at(6),1.2e0);
 
 
   std::vector<int> returnedVectorOfInts;

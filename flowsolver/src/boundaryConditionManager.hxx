@@ -60,6 +60,7 @@ class abstractBoundaryCondition;
     // void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 
     // void setSurfacePressure_netlistLPNs(double* netlistSurfacePressures);
+    void initialiseLPNAtStartOfTimestep_netlist();
     void updateAllNetlistLPNs();
     void getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled);
 

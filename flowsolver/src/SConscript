@@ -42,7 +42,10 @@ sources=string.split("""
 	boundaryConditionManager.cxx
 	boundaryConditionFactory.cxx
 	RCR.cxx
-	netlistBoundaryCondition.cxx
+	NetlistBoundaryCondition.cxx
+	NetlistSubcircuit.cxx
+	CircuitData.cxx
+	AtomicSubcircuitConnectionManager.cxx
 	controlledCoronary.cxx
 	blend.cxx
 	blendDrv.cxx

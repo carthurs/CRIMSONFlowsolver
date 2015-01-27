@@ -1577,8 +1577,6 @@
       character(len=*), parameter :: accelchar = 'acceleration'
       character(len=*), parameter :: presschar = 'pressure'
 
-      write(*,*) '=============>call to updmultidomaincontainer<================'
-
 !     ! get number of surfaces 
       nsurf = mdc%getsurfnum()      
 
@@ -1610,9 +1608,6 @@
 !         ! if velocities, set flows at step n_{alf_{i}}
           if (varchar .eq. velocchar) then
             call mdc%setflow(nsurf,currflow)    
-            do i = 1, nsurf
-              write(*,*) 'Container Flow in ',i,' is ', currflow(i)
-            end do
           end if
 
 !         ! if accelerations, set dflows at step n_{alf_{i}}

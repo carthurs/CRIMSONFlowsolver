@@ -108,6 +108,11 @@ module cpp_interface
 !   ============= Controlled Coronary Block End =============
 !   ============= Netlist LPN Block Start =============
 
+    interface
+            subroutine callCPPInitialiseLPNAtStartOfTimestep_netlist() bind(c,name="callCPPInitialiseLPNAtStartOfTimestep_netlist")
+                use iso_c_binding
+            end subroutine callCPPInitialiseLPNAtStartOfTimestep_netlist
+    end interface
 
     interface
             subroutine callCPPUpdateAllNetlistLPNs() bind(c,name="callCPPUpdateAllNetlistLPNs")

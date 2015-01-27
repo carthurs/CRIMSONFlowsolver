@@ -39,9 +39,9 @@ public:
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
-	CircuitComponent() :
-		startNode(new CircuitPressureNode),
-		endNode(new CircuitPressureNode)
+	CircuitComponent() //:
+		// startNode(new CircuitPressureNode),
+		// endNode(new CircuitPressureNode)
 	{
 		type = Component_Null;
 		prescribedFlowType = Flow_Null;
@@ -74,9 +74,11 @@ public:
 	bool connectsTo3DDomain() const;
 
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
+
+	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in);
 private:
 	int toOneIndexing(const int oneIndexedValue);
-
+	void rebuildCircuitPressureNodeMap();
 };
 
 #endif

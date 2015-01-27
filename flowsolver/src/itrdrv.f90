@@ -801,6 +801,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
+    call callCPPInitialiseLPNAtStartOfTimestep_netlist()
+
 ! ********************************************* !
 ! *** heart model boundary condition switch *** !
 ! ********************************************* !

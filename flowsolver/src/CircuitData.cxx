@@ -7,7 +7,7 @@ void CircuitData::rebuildCircuitMetadata()
 
 	numberOfPrescribedFlows = 0;
 
-	mapOfPressureNodes.clear();
+	// mapOfPressureNodes.clear();
 	mapOfComponents.clear();
 	mapOfPrescribedPressureNodes.clear();
 	for (auto component = components.begin(); component!=components.end(); component++)
@@ -17,14 +17,14 @@ void CircuitData::rebuildCircuitMetadata()
 		{
 			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
 		}
-		mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
+		// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
 
 		assert((*component)->endNode->prescribedPressureType!=Pressure_Null);
 		if((*component)->endNode->prescribedPressureType != Pressure_NotPrescribed)
 		{
 			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
 		}
-		mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
+		// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
 
 		mapOfComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> ((*component)->indexInInputData,(*component)));
 
@@ -36,9 +36,45 @@ void CircuitData::rebuildCircuitMetadata()
 		}
 	}
 
-	numberOfPressureNodes = mapOfPressureNodes.size();
+	rebuildCircuitPressureNodeMap();
+
+	// numberOfPressureNodes = mapOfPressureNodes.size();
 	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();
 	numberOfComponents = mapOfComponents.size();
+
+}
+
+void CircuitData::rebuildCircuitPressureNodeMap()
+{
+	mapOfPressureNodes.clear();
+	for (auto component = components.begin(); component!=components.end(); component++)
+	{
+		if ((*component)->startNode) // ensure the pointer startNode is not null 
+		{
+			mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
+		}
+		if ((*component)->endNode) // ensure the pointer endNode is not null
+		{
+			mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
+		}
+	}
+	numberOfPressureNodes = mapOfPressureNodes.size();
+}
+
+boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in)
+{
+	rebuildCircuitPressureNodeMap();
+
+	bool nodeAlreadyConstructed = (mapOfPressureNodes.count(indexInInputData_in) == 1);
+	if (nodeAlreadyConstructed)
+	{
+		return mapOfPressureNodes.at(indexInInputData_in);
+	}
+	else // node not already constructed
+	{
+		CircuitPressureNode* ptrToMakeShared = new CircuitPressureNode;
+		return boost::shared_ptr<CircuitPressureNode> (ptrToMakeShared);
+	}
 
 }
 

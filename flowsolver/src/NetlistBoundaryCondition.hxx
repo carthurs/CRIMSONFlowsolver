@@ -50,7 +50,6 @@ private:
 	void initialiseModel();
 	void createCircuitDescription();
 	void identifySubciruits();
-	void passPressuresAndFlowsToAllSubcircuits();
 	void selectAndBuildActiveSubcircuits();
 	void createInitialCircuitDescriptionWithoutDiodes();
 	void assignComponentsToAtomicSubcircuits();

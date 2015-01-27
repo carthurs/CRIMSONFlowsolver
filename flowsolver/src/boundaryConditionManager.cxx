@@ -327,6 +327,12 @@ void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
     }
   }
 }
+// ---WRAPPED BY--->
+extern "C" void callCPPInitialiseLPNAtStartOfTimestep_netlist()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->initialiseLPNAtStartOfTimestep_netlist();
+}
 
 
 void boundaryConditionManager::updateAllNetlistLPNs()

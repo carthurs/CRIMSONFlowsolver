@@ -2,6 +2,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
+#include "debuggingToolsForCpp.hxx"
 
 void NetlistSubcircuit::initialiseSubcircuit()
 {
@@ -101,7 +102,9 @@ void NetlistSubcircuit::getMapOfPressHistoriesToCorrectPressNodes()
        if (m_circuitData.components.at(ii)->type == Component_Capacitor)
        {
        		listOfHistoryPressures.insert(m_circuitData.components.at(ii)->startNode->indexInInputData);
+          m_circuitData.components.at(ii)->startNode->hasHistoryPressure = true;
        		listOfHistoryPressures.insert(m_circuitData.components.at(ii)->endNode->indexInInputData);
+          m_circuitData.components.at(ii)->endNode->hasHistoryPressure = true;
        }
     }
 
@@ -122,9 +125,10 @@ void NetlistSubcircuit::getMapOfFlowHistoriesToCorrectComponents()
 	for (int ii=0; ii<m_circuitData.numberOfComponents; ii++)
 	{
 	   // Check for capacitor, as these need pressure "histories" (pressure from the previous time-step) at their end-nodes (for dP/dt term).
-        if(m_circuitData.components.at(ii)->type == Component_Inductor)
+     if(m_circuitData.components.at(ii)->type == Component_Inductor)
 	   {
 	   		listOfHistoryFlows.insert(ii);
+        m_circuitData.components.at(ii)->hasHistoryFlow = true;
 	   }
 	}
 
@@ -226,7 +230,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      // }
      for (auto prescribedPressureNode=m_circuitData.mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=m_circuitData.mapOfPrescribedPressureNodes.end(); prescribedPressureNode++)
      {
-     	columnMap.push_back(prescribedPressureNode->second->indexLocalToSubcircuit);
+     	columnMap.push_back(toZeroIndexing(prescribedPressureNode->second->indexLocalToSubcircuit));
      }
 
      tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + m_circuitData.numberOfPressureNodes; // tempUnknownVariableIndexWithinLinearSystem is zero before this line; I'm doing it like this for clarity & consistency
@@ -242,7 +246,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      // }
      for (auto prescribedFlowComponent=m_circuitData.mapOfPrescribedFlowComponents.begin(); prescribedFlowComponent!=m_circuitData.mapOfPrescribedFlowComponents.end(); prescribedFlowComponent++)
      {
-     	columnMap.push_back(prescribedFlowComponent->second->indexLocalToSubcircuit);
+     	columnMap.push_back(toZeroIndexing(prescribedFlowComponent->second->indexLocalToSubcircuit)+tempUnknownVariableIndexWithinLinearSystem);
      }
 
      tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + m_circuitData.numberOfComponents;
@@ -259,7 +263,9 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
 
     errFlag = MatAssemblyBegin(systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = MatAssemblyEnd(systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-
+    
+    errFlag = MatView(systemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    
     errFlag = MatLUFactor(systemMatrix,NULL,NULL,NULL);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
@@ -418,6 +424,8 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
  
     errFlag = VecAssemblyBegin(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    errFlag = VecView(RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
 }
 

@@ -138,7 +138,8 @@ void histFileReader::readAndSplitMultiSurfaceRestartFile()
 	}
 	if (metadataOnNumberOfLinesInFileAvailable && (lineIndex != expectedNumberOfLinesInFile))
 	{
-		std::cout << "WARNING: Failed to read as many lines from  " << fileName << " as the integer on its first line suggests it should have!" << std::endl;
+		std::cerr << "WARNING: Failed to read as many lines from  " << fileName << " as the integer on its first line suggests it should have!" << std::endl;
+		std::cerr << "Expected " << expectedNumberOfLinesInFile << " but read " << lineIndex << " lines!" << std::endl;
 	}
 
 	fileHasBeenRead = int(1);

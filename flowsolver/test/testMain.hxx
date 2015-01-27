@@ -51,6 +51,7 @@
 		void clearOutOldFiles()
 		{
 			// Warning - this has the potential to delete multiple folders due to the *
+			MPI_Barrier(MPI_COMM_WORLD);
 			system("rm -rf *-procs-case");
 			MPI_Barrier(MPI_COMM_WORLD);
 		}
@@ -128,6 +129,7 @@
 
 		   itrdrv_finalize();
 		   multidom_finalise();
+	           MPI_Barrier(MPI_COMM_WORLD);
 		   // Moved this to the gtest_main.cc
 		   // MPI_Finalize();
 

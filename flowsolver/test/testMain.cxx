@@ -5,11 +5,11 @@
 int PullInMyLibraryTestMain() { return 0; }
 
 TEST_F(testMain, checkRCRSimpleShortSimulation) {
-  
+
+  getRank();  
   std::string simDir = "mainTests/basic";
   setSimDirectory(simDir);
   clearOutOldFiles();
-
   runSimulation();
 
   histFileReader* QHistReader = new histFileReader();
@@ -25,6 +25,8 @@ TEST_F(testMain, checkRCRSimpleShortSimulation) {
 
 
 TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
+
+  getRank();
 
   std::string simDir = "mainTests/restart";
   setSimDirectory(simDir);
@@ -44,6 +46,8 @@ TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
 }
 
 TEST_F(testMain, checkCoronarySimpleShortSimulation) {
+  getRank();
+
   std::string simDir = "mainTests/coronary/completeLPN";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -72,6 +76,8 @@ TEST_F(testMain, checkCoronarySimpleShortSimulation) {
 }
 
 TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
+  getRank();
+
   std::string simDir = "mainTests/coronary/emulateRCR";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -100,6 +106,7 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
 }
 
 TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
+  getRank();
   std::string simDir = "mainTests/netlist/emulateRCR";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -128,6 +135,7 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
 }
 
 TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
+  getRank();
   std::string simDir = "mainTests/legacy/preKalmanPreGlobalNodenumbering";
   setSimDirectory(simDir);
   clearOutOldFiles();

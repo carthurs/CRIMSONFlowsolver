@@ -97,6 +97,7 @@ int phastaIO::openFile (const char *filename, const char *mode) {
     //delete [] imode;
 
     if (filePointer_ == NULL) {
+	perror("ERROR");
         fprintf(stderr,"ERROR opening file [%s].\n",fname_);
         return PHASTA_ERROR;
     }

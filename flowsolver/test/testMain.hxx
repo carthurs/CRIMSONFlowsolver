@@ -22,6 +22,7 @@
 #include "boundaryConditionManager.hxx"
 
 #include "debuggingToolsForCpp.hxx"
+#include <boost/filesystem/path.hpp>
 
 #ifdef intel
 #include <direct.h>
@@ -33,6 +34,10 @@
 
 // The fixture for testing class Foo.
 	class testMain : public ::testing::Test {
+	 public:
+		int rank;
+	        int numProcsTotal;
+     	        MPI_Comm iNewComm_C;
 	 protected:
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
@@ -40,38 +45,54 @@
 
 	 	// This constructor should just do exactly what main.cxx does in estimation/src/main.cxx
 		testMain() {
+			MPI_Barrier(MPI_COMM_WORLD);
 			dirBinaryCalledFrom = get_current_dir_name();
 		}
 
 		void setSimDirectory(std::string dir)
 		{
-			chdir(dir.c_str());
+			int success = chdir(dir.c_str());
+			if (success==0)
+			{
+				std::cout << "II: Changed to dir: " << dir << " rank was: " << rank << std::endl;
+			}
+			else
+			{
+				std::cout << "EE: Failed to change to dir: " << dir << " rank was: " << rank << " success was: " << success << std::endl;
+				perror("EEEE: Failed to change dir in test");
+			}
+		}
+
+		void getRank()
+		{
+		   // save the communicator
+		   iNewComm_C = MPI_COMM_WORLD;
+		   newcom.iNewComm = MPI_Comm_c2f(iNewComm_C); // modifies newcom in fortran common block
+	           MPI_Barrier(iNewComm_C);
+
+		   MPI_Comm_size(iNewComm_C, &numProcsTotal);
+		   MPI_Comm_rank(iNewComm_C, &rank);
 		}
 
 		void clearOutOldFiles()
 		{
-			// Warning - this has the potential to delete multiple folders due to the *
-			MPI_Barrier(MPI_COMM_WORLD);
-			system("rm -rf *-procs-case");
-			MPI_Barrier(MPI_COMM_WORLD);
+			MPI_Barrier(iNewComm_C);
+			if (rank == 0)
+			{
+				// Warning - this has the potential to delete multiple folders due to the *
+				system("rm -rf *-procs-case");
+			}
+			MPI_Barrier(iNewComm_C);
 		}
 
 		void runSimulation()
 		{
-		   int rank;
-		   int numProcsTotal,numProcs;
+		   int numProcs;
 		   int ierr = 0;
 		   char pathToProcsCaseDir[100];
 
 		   // Moved this to the gtest_main.cc
 		   // MPI_Init(&fake_argc,(char***)&fake_argv);
-
-		   // save the communicator
-		   MPI_Comm iNewComm_C = MPI_COMM_WORLD;
-		   newcom.iNewComm = MPI_Comm_c2f(iNewComm_C); // modifies newcom in fortran common block
-
-		   MPI_Comm_size(iNewComm_C, &numProcsTotal);
-		   MPI_Comm_rank(iNewComm_C, &rank);
 
 		   // Moved this to the gtest_main.cc
 		   // if(fake_argc > 2 ){
@@ -103,13 +124,22 @@
 		      Partition_Problem( numProcsTotal );
 		   }
 
-		   MPI_Barrier(MPI_COMM_WORLD);
-
+		   MPI_Barrier(iNewComm_C);
+			
 		   sprintf(pathToProcsCaseDir,"%d-procs-case",numProcsTotal);
-		   chdir(pathToProcsCaseDir);
-		   //sprintf(inpfilename,"%d-procs-case",numprocs_perparticle);
+		   boost::filesystem::path thisDir = boost::filesystem::current_path<boost::filesystem::path>();
+		   int errStat = chdir(pathToProcsCaseDir);
 
-		   std::cout << "changing directory to " << pathToProcsCaseDir << std::endl;
+                   if (errStat != 0)
+		   {
+			std::cerr << "Failed to change to directory " << pathToProcsCaseDir << ". Rank is: " << rank << std::endl;
+			perror("EEE");
+			throw std::runtime_error("EEEEE");
+	    	   }
+		   else
+		   {
+			   std::cout << "changing directory to " << pathToProcsCaseDir << std::endl;			
+		   }
 
 		   input(&numProcsTotal, &rank);
 		   proces();
@@ -129,10 +159,9 @@
 
 		   itrdrv_finalize();
 		   multidom_finalise();
-	           MPI_Barrier(MPI_COMM_WORLD);
+	           MPI_Barrier(iNewComm_C);
 		   // Moved this to the gtest_main.cc
 		   // MPI_Finalize();
-
 
 		   // return ierr;
 		}
@@ -154,8 +183,8 @@
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
 	    fortranBoundaryDataPointerManager::Get()->tearDown();
-	    // SimvascularGlobalArrayTransfer::Get()->tearDown();
-	    // boundaryConditionManager::Instance()->Term();
+	    //SimvascularGlobalArrayTransfer::Get()->tearDown();
+	    boundaryConditionManager::Instance()->Term();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

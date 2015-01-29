@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <iostream>
 #include <boost/shared_ptr.hpp>
 #include "datatypesInCpp.hxx"
 
@@ -21,6 +22,8 @@ public:
 	{
 		prescribedPressureType = Pressure_Null;
 		hasHistoryPressure = false;
+		std::cout << "3d domain connection here needs sorting out!!!" << std::endl; //\todo fixme
+	        m_connectsTo3DDomain = true;
 	}
 };
 

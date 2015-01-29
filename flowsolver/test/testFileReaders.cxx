@@ -227,7 +227,7 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
   EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),2);
   EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),2);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),3);
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(1),1);
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(2),2);
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(3),4);
@@ -237,7 +237,7 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),2);
   EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),3);
   EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),4);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),3);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(0),2);
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(1),2);
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(2),4);
   EXPECT_EQ(returnedVectorOfIntVectors.at(1).at(3),5);

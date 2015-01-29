@@ -16,7 +16,7 @@
 #include "itrdrv.h"
 #include "partition.h"
 #include "input_fform.h"
-#include "multidom.h"
+#include "multidom.hxx"
 #include "fortranPointerManager.hxx"
 #include "fileReaders.hxx"
 #include "boundaryConditionManager.hxx"

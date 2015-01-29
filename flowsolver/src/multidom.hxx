@@ -1,5 +1,5 @@
 /*
- * multidom.h
+ * multidom.hxx
  *
  *  Created on: Oct 7, 2014
  *      Author: klau, carthurs

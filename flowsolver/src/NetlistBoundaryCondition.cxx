@@ -326,7 +326,8 @@ void NetlistBoundaryCondition::createCircuitDescription()
     // a problem that it also re-writes some of the existing metadata
     // (rewrites - but does not change - the values are identical!)
     m_CircuitDescription.rebuildCircuitMetadata();
-    
+
+    m_CircuitDescription.tagNodeAt3DInterface();    
 
     // // Component indices are just consecutive integers by default, but sometimes non-consecutive numbering
     // // is needed; componentIndices allows for this.

@@ -27,6 +27,7 @@ sources=string.split("""
 	testMultidom.cxx
 	testFileReaders.cxx
 	testMain.cxx
+	testOrphans.cxx
 	""")
 
 object_list=env_local.Object(source=sources)

@@ -6,7 +6,7 @@
  */
 
 #include "common_c.h"
-#include "multidom.h"
+#include "multidom.hxx"
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 #include <typeinfo>

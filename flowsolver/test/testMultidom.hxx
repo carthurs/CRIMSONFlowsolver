@@ -1,7 +1,11 @@
 #ifndef TESTMULTIDOM_HPP_
 #define TESTMULTIDOM_HPP_
 
-#include "multidom.cxx"
+#include "multidom.hxx"
+#include "fileReaders.hxx"
+#include "abstractBoundaryCondition.hxx"
+#include "fortranPointerManager.hxx"
+#include "boundaryConditionManager.hxx"
 #include "gtest/gtest.h"
 #include "common_c.h"
 #include <typeinfo>
@@ -38,7 +42,19 @@
 	   double delt;
 
 	  testMultidom() {
-	  	
+	  }
+
+	  virtual ~testMultidom() {
+	    // You can do clean-up work that doesn't throw exceptions here.
+	    // (*fortranPointerManager_instance).~fortranBoundaryDataPointerManager();
+	  }
+
+	  // If the constructor and destructor are not enough for setting up
+	  // and cleaning up each test, you can define the following methods:
+
+	  virtual void SetUp() {
+	    // Code here will be called immediately after the constructor (right
+	    // before each test).
 	  	overrideMissingDataForTesting();
 
 	  	boundaryConditionManager_instance = boundaryConditionManager::Instance();
@@ -98,8 +114,6 @@
 	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
 	    surfaceList.push_back(std::pair <int,std::string> (11,"controlledCoronary"));
 
-	    
-
 	    // get the boundary condition manager
 		// boundaryConditionManager_instance->boundaryConditions.clear();
 		boundaryConditionManager_instance->setSurfaceList(surfaceList);
@@ -117,19 +131,7 @@
 		(*retrievedBoundaryConditions)[1]->Hop = 2.567;
 		(*retrievedBoundaryConditions)[2]->Hop = 3.567;
 		(*retrievedBoundaryConditions)[3]->Hop = 4.567;
-	  }
 
-	  virtual ~testMultidom() {
-	    // You can do clean-up work that doesn't throw exceptions here.
-	    // (*fortranPointerManager_instance).~fortranBoundaryDataPointerManager();
-	  }
-
-	  // If the constructor and destructor are not enough for setting up
-	  // and cleaning up each test, you can define the following methods:
-
-	  virtual void SetUp() {
-	    // Code here will be called immediately after the constructor (right
-	    // before each test).
 	    alfi_local = 0.5;
 	    delt = 0.001;
 	    (*retrievedBoundaryConditions)[0]->delt = delt;

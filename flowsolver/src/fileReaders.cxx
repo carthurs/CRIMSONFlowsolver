@@ -405,7 +405,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			}
 			else
 			{
-				throw std::runtime_error("ERROR: Unknown netlist component type.\n");
+				throw std::runtime_error("ERROR: Unknown netlist component type. This often indicates a malformed netlist_surfaces.dat.\n");
 			}
 
 			readNextLine();
@@ -453,7 +453,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			}
 			else
 			{
-				throw std::runtime_error("ERROR: Unknown netlist nodal pressure prescription.");
+				throw std::runtime_error("ERROR: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
 			}
 		}
 		typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
@@ -489,7 +489,7 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			}
 			else
 			{
-				throw std::runtime_error("ERROR: Unknown netlist component flow prescription.");
+				throw std::runtime_error("ERROR: Unknown netlist component flow prescription. This often indicates a malformed netlist_surfaces.dat.");
 			}
 		}
 		typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);

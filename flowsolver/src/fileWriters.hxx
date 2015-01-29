@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <memory>
-#include "multidom.h"
+#include "multidom.hxx"
 
 
 class basicFileWriter

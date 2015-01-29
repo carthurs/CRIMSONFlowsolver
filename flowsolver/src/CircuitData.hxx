@@ -22,8 +22,7 @@ public:
 	{
 		prescribedPressureType = Pressure_Null;
 		hasHistoryPressure = false;
-		std::cout << "3d domain connection here needs sorting out!!!" << std::endl; //\todo fixme
-	        m_connectsTo3DDomain = true;
+	    m_connectsTo3DDomain = false;
 	}
 };
 
@@ -73,10 +72,9 @@ public:
 	// End of medatata
 	
 	void rebuildCircuitMetadata();
-
 	bool connectsTo3DDomain() const;
-
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
+	void tagNodeAt3DInterface();
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in);
 private:

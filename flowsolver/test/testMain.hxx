@@ -127,7 +127,7 @@
 		   MPI_Barrier(iNewComm_C);
 			
 		   sprintf(pathToProcsCaseDir,"%d-procs-case",numProcsTotal);
-		   boost::filesystem::path thisDir = boost::filesystem::current_path<boost::filesystem::path>();
+		   boost::filesystem::path thisDir = boost::filesystem::current_path();
 		   int errStat = chdir(pathToProcsCaseDir);
 
                    if (errStat != 0)

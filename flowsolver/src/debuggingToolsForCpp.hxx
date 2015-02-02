@@ -86,7 +86,7 @@ public:
 	{
 		this->writeToConsoleHere(fileLine,fileName);
 
-		boost::filesystem::path thisDir = boost::filesystem::current_path<boost::filesystem::path>();
+		boost::filesystem::path thisDir = boost::filesystem::current_path();
 		std::cout<< "The path is " << thisDir.string() << std::endl;
 	}
 

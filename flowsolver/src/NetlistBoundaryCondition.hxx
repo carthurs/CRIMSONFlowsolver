@@ -22,8 +22,8 @@ public:
 	: abstractBoundaryCondition(surfaceIndex_in)
 	{
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
-		numberOfInitialisedNetlistLPNs++;
 		initialiseModel();
+		numberOfInitialisedNetlistLPNs++;
 	}
 
  	void updpressure_n1_withflow(){}

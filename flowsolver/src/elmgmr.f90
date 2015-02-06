@@ -1326,11 +1326,15 @@
 
         do i = 1,nshg
           do k = 1,numNetlistLPNSrfs
-              ! irankCoupled = 0
-              if (indicesOfNetlistSurfaces(k).eq.ndsurf(i)) then 
-                  ! irankCoupled=k <-- seems stupid
-                  ! res(i,1:3)=res(i,1:3) + p(irankCoupled)*NABI(i,1:3)
-                  res(i,1:3)=res(i,1:3) + p(k)*NABI(i,1:3)
+              ! Check for Netlist boundary which is currently in a state which stops flow
+              ! across the boundary, due to closed diodes.
+              if (.not. thisIsASurfaceWithBannedFlow)
+                ! irankCoupled = 0
+                if (indicesOfNetlistSurfaces(k).eq.ndsurf(i)) then 
+                    ! irankCoupled=k <-- seems stupid
+                    ! res(i,1:3)=res(i,1:3) + p(irankCoupled)*NABI(i,1:3)
+                    res(i,1:3)=res(i,1:3) + p(k)*NABI(i,1:3)
+                endif
               endif
           enddo   
         enddo
@@ -1687,7 +1691,11 @@
          do k=1, numNetlistLPNSrfs
             faIn = faIn + 1
             call callCPPGetImplicitCoeff_netlistLPNs(c_loc(implicitcoeffs(1,1)))
-            faceRes(faIn) = implicitcoeffs(k,1)
+            ! Check for Netlist boundary which is currently in a state which stops flow
+            ! across the boundary, due to closed diodes
+            if (.not. thisIsASurfaceWithBannedFlow) then
+              faceRes(faIn) = implicitcoeffs(k,1)
+            endif
          end do
          IF (iheart .gt. int(0)) THEN
             faIn = faIn + 1        

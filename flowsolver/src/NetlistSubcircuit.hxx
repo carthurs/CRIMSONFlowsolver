@@ -8,6 +8,7 @@
 #include <vector>
 #include <set>
 #include "CircuitData.hxx"
+#include "indexShifters.hxx"
 
 class NetlistSubcircuit
 {
@@ -41,8 +42,6 @@ private:
 	void getMapOfFlowHistoriesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
-	int toZeroIndexing(const int oneIndexedValue);
-	int toOneIndexing(const int zeroIndexedValue);
 	double* const flow_n_ptr;
 
 	const int indexOfThisSubcircuit;

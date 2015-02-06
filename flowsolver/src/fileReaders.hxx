@@ -9,6 +9,7 @@
 #include <sstream>
 #include <map>
 #include <cstdlib>
+#include <algorithm>
 #include "gtest/gtest_prod.h"
 #include "debuggingToolsForCpp.hxx"
 #include "datatypesInCpp.hxx"
@@ -39,6 +40,8 @@ public:
 			error << "Failed to open " << fileName << "!" << std::endl;
 			throw std::runtime_error(error.str());
 		}
+		fileHandle->clear(); // reset error state flags
+		fileHandle->seekg(0,fileHandle->beg); // ensure the file is rewound
 	}
 
 	void setNumColumns(int numberOfColumns)
@@ -95,6 +98,39 @@ public:
 	}
 };
 
+class SimpleFileReader : public abstractFileReader
+{
+public:
+	SimpleFileReader(std::string fileNameIn)
+	{
+		setFileName(fileNameIn);
+	}
+
+	std::string getNextDataSplitBySpacesOrEndOfLine(bool& success)
+	{
+		success = false;
+		// If there's no data left on the current line from the file, get a new line:
+		if (currentLineSplitBySpaces->size()==0)
+		{
+			success = readNextLine();
+			if (!success)
+			{
+				return std::string("fail");
+			}
+			// Reverse so we can pop off from the end of the vector in the order
+			// that the data appears on the line in the file
+			std::reverse(currentLineSplitBySpaces->begin(), currentLineSplitBySpaces->end());
+		}
+
+		std::string returnValue = currentLineSplitBySpaces->back();
+		currentLineSplitBySpaces->pop_back();
+		
+		success = true;
+		return returnValue;
+	}
+private:
+
+};
 
 class histFileReader : public abstractFileReader
 {

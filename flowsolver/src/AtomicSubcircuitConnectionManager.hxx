@@ -45,6 +45,8 @@ public:
 	int getNumberOfDiodes();
 	bool diodeIsOpen(int diodeIdx);
 	void setDiodeOpen(int diodeIdx, bool isOpen);
+	bool diodeStartNodeConnectsCircuit(int diodeIdx);
+	bool diodeEndNodeConnectsCircuit(int diodeIdx);
 private:
 	int m_numberOfDiodes;
 	std::vector<circuit_diode_node_t> m_startNodeType;

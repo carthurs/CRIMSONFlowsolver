@@ -20,9 +20,17 @@ bool abstractFileReader::readNextLine()
 		throw std::runtime_error(error.str());
 	}
 
+	if(!fileHandle->is_open())
+	{
+		std::stringstream error;
+		error << "File " << fileName << " was not opened properly.";
+		throw std::runtime_error(error.str());	
+	}
+
 	// Read the next line from the file
 	currentLine.clear();
 	bool fileNotEnded;
+
 	fileNotEnded = !(std::getline(*fileHandle,currentLine).eof());
 
 	// If the end of the file had not been reached before the above read:
@@ -48,6 +56,11 @@ bool abstractFileReader::readNextLine()
 
 			while(std::getline(lineSplitBuffer,substring,' '))
 			{
+				// ignore whitespace:
+				if (substring.empty())
+				{
+					continue;
+				}
 				currentLineSplitBySpaces->push_back(substring);
 			}
 		}
@@ -402,6 +415,10 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			else if (currentLineSplitBySpaces->at(0).compare("i") == 0)
 			{
 				tempComponentTypes.push_back(Component_Inductor);
+			}
+			else if (currentLineSplitBySpaces->at(0).compare("d") == 0)
+			{
+				tempComponentTypes.push_back(Component_Diode);
 			}
 			else
 			{

@@ -1,5 +1,9 @@
 #include "CircuitData.hxx"
+#include "indexShifters.hxx"
 #include <stdexcept>
+#include <float.h>
+#include <algorithm>
+#include <stack>
 
 void CircuitData::rebuildCircuitMetadata()
 {
@@ -11,6 +15,7 @@ void CircuitData::rebuildCircuitMetadata()
 	// mapOfPressureNodes.clear();
 	mapOfComponents.clear();
 	mapOfPrescribedPressureNodes.clear();
+	mapOfPrescribedFlowComponents.clear();
 	for (auto component = components.begin(); component!=components.end(); component++)
 	{
 		assert((*component)->startNode->prescribedPressureType!=Pressure_Null);
@@ -30,7 +35,9 @@ void CircuitData::rebuildCircuitMetadata()
 		mapOfComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> ((*component)->indexInInputData,(*component)));
 
 		assert((*component)->prescribedFlowType != Flow_Null);
-		if((*component)->prescribedFlowType != Flow_NotPrescribed)
+		// bool isDiode = ((*component)->type == Component_Diode);
+		// bool diodeIsClosedSoPrescribeZeroFlow = !((*component)->hasNonnegativePressureGradientAndNoBackflow());
+		if((*component)->prescribedFlowType != Flow_NotPrescribed) // || (diodeIsClosedSoPrescribeZeroFlow && isDiode))
 		{
 			numberOfPrescribedFlows++;
 			mapOfPrescribedFlowComponents.insert(std::pair<int, boost::shared_ptr<CircuitComponent>> ((*component)->indexInInputData, *component));
@@ -39,10 +46,58 @@ void CircuitData::rebuildCircuitMetadata()
 
 	rebuildCircuitPressureNodeMap();
 
+	setupComponentNeighbourPointers();
+
 	// numberOfPressureNodes = mapOfPressureNodes.size();
 	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();
 	numberOfComponents = mapOfComponents.size();
 
+}
+
+void CircuitData::setupComponentNeighbourPointers()
+{
+	for(auto component = components.begin(); component!=components.end(); component++)
+	{
+		(*component)->neighbouringComponentsAtStartNode.clear();
+		(*component)->neighbouringComponentsAtEndNode.clear();
+
+		int startNodeIdx = (*component)->startNode->indexInInputData;
+		int endNodeIdx = (*component)->endNode->indexInInputData;
+		for (auto possibleNeighbouringComponent=components.begin(); possibleNeighbouringComponent!=components.end(); possibleNeighbouringComponent++)
+		{
+			// Avoid giving a component itself as a neighbour:
+			if (component!=possibleNeighbouringComponent)
+			{
+				int neighbourStartNodeIdx = (*possibleNeighbouringComponent)->startNode->indexInInputData;
+				int neighbourEndNodeIdx = (*possibleNeighbouringComponent)->endNode->indexInInputData;
+				// check whether these nodes match, if so, give the component a pointer to its newly-discovered neighbour
+				
+				bool isANeighbourViaComponentStartNode = (neighbourStartNodeIdx == startNodeIdx ||
+														    neighbourEndNodeIdx == startNodeIdx );
+
+				bool isANeighbourViaComponentEndNode = (neighbourStartNodeIdx == endNodeIdx ||
+														  neighbourEndNodeIdx == endNodeIdx );
+
+				if(isANeighbourViaComponentStartNode)
+				{
+					boost::weak_ptr<CircuitComponent> toPushBack(*possibleNeighbouringComponent);
+					(*component)->neighbouringComponentsAtStartNode.push_back(toPushBack);
+				}
+
+				if(isANeighbourViaComponentEndNode)
+				{
+					boost::weak_ptr<CircuitComponent> toPushBack(*possibleNeighbouringComponent);
+					(*component)->neighbouringComponentsAtEndNode.push_back(toPushBack);
+				}
+			}
+
+		}
+
+		// Reverse the neighbour vectors so that components are listed in the same order as they appear in the input data netlist_surfaces.dat
+		// This keeps things consistent.
+		std::reverse((*component)->neighbouringComponentsAtStartNode.begin(),(*component)->neighbouringComponentsAtStartNode.end());
+		std::reverse((*component)->neighbouringComponentsAtEndNode.begin(),(*component)->neighbouringComponentsAtEndNode.end());
+	}
 }
 
 void CircuitData::tagNodeAt3DInterface()
@@ -129,7 +184,7 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseCons
 	}
 	else // node not already constructed
 	{
-		CircuitPressureNode* ptrToMakeShared = new CircuitPressureNode;
+		CircuitPressureNode* ptrToMakeShared = new CircuitPressureNode(m_hstep);
 		return boost::shared_ptr<CircuitPressureNode> (ptrToMakeShared);
 	}
 
@@ -195,6 +250,92 @@ void CircuitData::generateNodeAndComponentIndicesLocalToSubcircuit()
 
 }
 
+void CircuitData::switchDiodeStatesIfNecessary()
+{
+	for (auto component=components.begin(); component!=components.end(); component++)
+	{
+		if ((*component)->type == Component_Diode)
+		{
+			// (*component)->prescribedFlowType = Flow_Diode_FixedWhenClosed;
+			// (*component)->valueOfPrescribedFlow = 0.0; // For enforcing zero flow when the diode is closed
+			bool diodeIsOpen = (*component)->hasNonnegativePressureGradientAndNoBackflow();
+			if (diodeIsOpen)
+			{
+				(*component)->currentParameterValue = (*component)->parameterValueFromInputData; // For enforcing zero resistance when the diode is open
+				(*component)->permitsFlow = true;
+			}
+			else
+			{
+				(*component)->currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
+				(*component)->permitsFlow = false;
+			}
+		}
+	}
+}
+
+void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
+{
+	m_flowPermittedAcross3DInterface = false;
+	// Find the index of the component connected to the 3D domain, so we can use it as a starting point for walking the component tree::
+	int indexOfComponentAt3DInterface = -1;
+	for (auto component = components.begin(); component!= components.end(); component++)
+	{
+		if ((*component)->prescribedFlowType == Flow_3DInterface)
+		{
+			indexOfComponentAt3DInterface = (*component)->indexInInputData;
+		}
+	}
+
+	assert(indexOfComponentAt3DInterface != -1);
+
+	std::stack<boost::weak_ptr<CircuitComponent>> componentsNeedingChecking;
+	boost::weak_ptr<CircuitComponent> toPushOntoStack(mapOfComponents.at(indexOfComponentAt3DInterface));
+	componentsNeedingChecking.push(toPushOntoStack);
+	// To keep track of which components have been already checked:
+	std::vector<bool> componentsWhichHaveBeenChecked(components.size(),false);
+	while(!componentsNeedingChecking.empty())
+	{
+		// pop the stack to set the current component:
+		boost::weak_ptr<CircuitComponent> currentComponent(componentsNeedingChecking.top());
+		componentsNeedingChecking.pop();
+		// For the current component:
+		// Ensure we've not done this component yet (avoids circular problems)
+		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) == false)
+		{
+			// note that we're checking this component:
+			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) = true;
+
+			// Don't parse the neighbours if flow is banned (i.e. if there's a closed diode)
+			if (currentComponent.lock()->permitsFlow)
+			{
+				// Discover whether currentComponent has no neighbours at one end (i.e. it's a flow sink), so there is
+				// somewhere for flow coming in at the 3D domain to go (i.e. it's OK for the surface to have a Dirichlet boundary condition).
+				// We also ensure that we haven't accidentally detected the 3D interface node itself, using the bools.
+				int numberOfStartNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtStartNode.size();
+				bool startNodeNotAt3DInterface = !(currentComponent.lock()->startNode->m_connectsTo3DDomain);
+				int numberOfEndNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtEndNode.size();
+				bool endNodeNotAt3DInterface = !(currentComponent.lock()->endNode->m_connectsTo3DDomain);
+				if ((numberOfStartNodeNeighbours == 0 && startNodeNotAt3DInterface) || (numberOfEndNodeNeighbours == 0 && endNodeNotAt3DInterface))
+				{
+					m_flowPermittedAcross3DInterface = true;
+					// we've found  what we were looking for, so break out
+					break;
+				}
+
+				// Put all the neighbours on a stack
+				for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtEndNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtEndNode.end(); neighbouringComponent++)
+				{
+					componentsNeedingChecking.push(*neighbouringComponent);
+				}
+				for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtStartNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtStartNode.end(); neighbouringComponent++)
+				{
+					componentsNeedingChecking.push(*neighbouringComponent);
+				}
+			}
+		}
+	}
+}
+
 bool CircuitData::connectsTo3DDomain() const
 {
 	for (auto component=components.begin(); component!=components.end(); component++)
@@ -211,8 +352,13 @@ bool CircuitData::connectsTo3DDomain() const
 	return false;
 }
 
-inline int CircuitData::toOneIndexing(const int zeroIndexedValue)
+bool CircuitData::flowPermittedAcross3DInterface()
 {
-	int oneIndexedValue = zeroIndexedValue + 1;
-	return oneIndexedValue;
+	return m_flowPermittedAcross3DInterface;
 }
+
+// inline int CircuitData::toOneIndexing(const int zeroIndexedValue)
+// {
+// 	int oneIndexedValue = zeroIndexedValue + 1;
+// 	return oneIndexedValue;
+// }

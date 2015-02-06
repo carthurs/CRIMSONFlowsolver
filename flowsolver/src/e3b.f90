@@ -271,15 +271,21 @@
 
           ! bit test for zero pressure boundary 
           if (btest(iBCB(iel,1),1)) then
+            ! Check for Netlist boundary which is currently in a state which stops flow
+            ! across the boundary, due to closed diodes
+            if (thisIsASurfaceWithBannedFlow)
 
-            ! zero element pressure            
-            pres(iel) = zero
-            
-            ! apply BCB value, as this is zero pressure is this required?!
-            do n = 1, nshlb
-              nodlcl = lnode(n)
-              pres(iel) = pres(iel) + shapeVar(iel,nodlcl) * BCB(iel,n,2)
-            end do
+            ! else zero apply zero pressure boundary condition              
+            else
+              ! zero element pressure            
+              pres(iel) = zero
+              
+              ! apply BCB value, as this is zero pressure is this required?!
+              do n = 1, nshlb
+                nodlcl = lnode(n)
+                pres(iel) = pres(iel) + shapeVar(iel,nodlcl) * BCB(iel,n,2)
+              end do
+            end if
           
           end if
         

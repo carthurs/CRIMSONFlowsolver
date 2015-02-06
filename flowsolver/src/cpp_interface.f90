@@ -127,6 +127,12 @@ module cpp_interface
             end subroutine callCPPGetImplicitCoeff_netlistLPNs
     end interface
 
+    interface
+            subroutine callCPPWriteAllNetlistComponentFlowsAndNodalPressures() bind(c,name="callCPPWriteAllNetlistComponentFlowsAndNodalPressures")
+                use iso_c_binding
+            end subroutine callCPPWriteAllNetlistComponentFlowsAndNodalPressures
+    end interface
+
     ! interface
     !         subroutine callCppSetSurfacePressure_netlistLPNs(netlistSurfacePressures) bind(c,name="callCppSetSurfacePressure_netlistLPNs")
     !             use iso_c_binding

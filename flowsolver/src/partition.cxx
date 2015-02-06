@@ -2252,7 +2252,7 @@ void Partition_Problem(int numProcs) {
 	filename[0] = '\0';
 	sprintf(filename, "%snumstart.dat", _directory_name);
 	ofstream nstart(filename);
-	nstart << stepno;
+	nstart << stepno << std::endl;
 	nstart.close();
 
 	closefile_(&igeombc, "read");

@@ -8,7 +8,6 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 
   if (boundaryType.compare("rcr") == 0)
   {
-    
     return boost::shared_ptr<abstractBoundaryCondition> (new RCR(surfaceIndex));
   }
   else if (boundaryType.compare("netlist") == 0)

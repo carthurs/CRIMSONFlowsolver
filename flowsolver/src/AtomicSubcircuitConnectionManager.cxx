@@ -1,5 +1,6 @@
 #include "AtomicSubcircuitConnectionManager.hxx"
 #include "datatypesInCpp.hxx"
+#include <stdexcept>
 
 circuit_diode_node_t AtomicSubcircuitConnectionManager::getStartNodeType(int diodeIndex)
 {
@@ -91,5 +92,39 @@ void AtomicSubcircuitConnectionManager::discoverAtomicSubcircuitsJoinedByEachDio
         }
 
         setDiodeInfo(diodeIdx,startNodeSubcircuitType,endNodeSubcircuitType,adjoiningAtomicSubcircuitsPair.first,adjoiningAtomicSubcircuitsPair.second);
+    }
+}
+
+bool AtomicSubcircuitConnectionManager::diodeStartNodeConnectsCircuit(int diodeIdx)
+{
+    if (m_startNodeType.at(diodeIdx) == Node_ConnectsCircuit)   
+    {
+        assert(m_circuitConnectedToStartNode.at(diodeIdx) != NULL);
+        return true;
+    }
+    else if(m_startNodeType.at(diodeIdx) == Node_IsMonopolar)
+    {
+        return false;
+    }
+    else
+    {
+        throw std::logic_error("EE: Unknown diode node type.");
+    }
+}
+
+bool AtomicSubcircuitConnectionManager::diodeEndNodeConnectsCircuit(int diodeIdx)
+{
+    if (m_endNodeType.at(diodeIdx) == Node_ConnectsCircuit)   
+    {
+        assert(m_circuitConnectedToEndNode.at(diodeIdx) != NULL);
+        return true;
+    }
+    else if(m_endNodeType.at(diodeIdx) == Node_IsMonopolar)
+    {
+        return false;
+    }
+    else
+    {
+        throw std::logic_error("EE: Unknown diode node type.");
     }
 }

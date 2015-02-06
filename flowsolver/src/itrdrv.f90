@@ -1384,6 +1384,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
         if(myrank.eq.zero) then
             call callCPPWritePHistAndQHistRCR()
+            call callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
         endif
     end if 
     !Now the files are in the computer!

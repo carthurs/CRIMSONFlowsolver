@@ -50,6 +50,7 @@ sources=string.split("""
 	CircuitData.cxx
 	AtomicSubcircuitConnectionManager.cxx
 	controlledCoronary.cxx
+	indexShifters.cxx
 	blend.cxx
 	blendDrv.cxx
 	Bn.cxx

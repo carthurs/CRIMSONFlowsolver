@@ -2,6 +2,9 @@
 #include "testMultidom.hxx"
 #include "RCR.hxx"
 #include "NetlistBoundaryCondition.hxx"
+#include "indexShifters.hxx"
+#include <stack>
+#include <boost/weak_ptr.hpp>
 
 // Hack to force the compiler to link this test to the relevant main() for testing
 int PullInMyLibraryTestMultidom() { return 0; }
@@ -118,4 +121,80 @@ TEST_F(testMultidom, checkFlowAndPressureSetters)
 	
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[0]->flow_n1, 10.0);
 	EXPECT_DOUBLE_EQ((*retrievedBoundaryConditions)[2]->flow_n1, 15.0);
+}
+
+TEST_F(testMultidom, checkNetlistComponentNeighbourPointers)
+{
+	// Get the netlist boundary condition
+	NetlistBoundaryCondition* netlistBC = dynamic_cast<NetlistBoundaryCondition*>((*retrievedBoundaryConditions).at(1).get());
+
+	// Find the index of the component connected to the 3D domain, so we can use it as a starting point for walking the component tree::
+	int indexOfComponentAt3DInterface;
+	for (auto component = netlistBC->m_CircuitDescription.components.begin(); component!= netlistBC->m_CircuitDescription.components.end(); component++)
+	{
+		if ((*component)->prescribedFlowType == Flow_3DInterface)
+		{
+			indexOfComponentAt3DInterface = (*component)->indexInInputData;
+		}
+	}
+
+	// Beginning from the component at the 3D interface, walk the component tree.
+	// First, some data to check against:
+	std::stack<circuit_component_t> expectedComponentTypes;
+	expectedComponentTypes.push(Component_Resistor);
+	expectedComponentTypes.push(Component_Capacitor);
+	expectedComponentTypes.push(Component_Resistor);
+	std::stack<int> expectedEndNodeNeighbourCounts;
+	expectedEndNodeNeighbourCounts.push(0);
+	expectedEndNodeNeighbourCounts.push(0);
+	expectedEndNodeNeighbourCounts.push(2);
+	std::stack<double> expectedParameterValues;
+	expectedParameterValues.push(1600.0);
+	expectedParameterValues.push(0.001278473);
+	expectedParameterValues.push(58.43089);
+
+	// Put the 3D interface component on a stack of components that need walking from:
+	std::stack<boost::weak_ptr<CircuitComponent>> componentsNeedingChecking;
+	boost::weak_ptr<CircuitComponent> toPushOntoStack(netlistBC->m_CircuitDescription.mapOfComponents.at(indexOfComponentAt3DInterface));
+	componentsNeedingChecking.push(toPushOntoStack);
+	// To keep track of which components have been already checked:
+	std::vector<bool> componentsWhichHaveBeenChecked(netlistBC->m_CircuitDescription.components.size(),false);
+	while(!componentsNeedingChecking.empty())
+	{
+		// pop the stack to set the current component:
+		boost::weak_ptr<CircuitComponent> currentComponent(componentsNeedingChecking.top());
+		componentsNeedingChecking.pop();
+		// For the current component:
+		// Ensure we've not done this component yet (avoids circular problems)
+		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) == false)
+		{
+			// note that we're checking this component:
+			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) = true;
+			// check the type is as expected
+			EXPECT_TRUE(currentComponent.lock()->type == expectedComponentTypes.top());
+			expectedComponentTypes.pop();
+			// check the number of neighbours is as expected
+			EXPECT_EQ(currentComponent.lock()->neighbouringComponentsAtEndNode.size(), expectedEndNodeNeighbourCounts.top());
+			expectedEndNodeNeighbourCounts.pop();
+			// Put all the neighbours on a stack
+			for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtEndNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtEndNode.end(); neighbouringComponent++)
+			{
+				componentsNeedingChecking.push(*neighbouringComponent);
+			}
+		}
+	}
+}
+
+TEST_F(testMultidom, checkClosedDiodeWithRemainingOpenPathDetected)
+{
+	// Get the netlist boundary condition
+	NetlistBoundaryCondition* netlistBC_thirdNetlist = dynamic_cast<NetlistBoundaryCondition*>((*retrievedBoundaryConditions).at(5).get());
+	EXPECT_TRUE(netlistBC_thirdNetlist->m_CircuitDescription.m_flowPermittedAcross3DInterface);
+}
+
+TEST_F(testMultidom, checkClosedDiodeWithoutRemainingOpenPathDetected)
+{
+	// Get the netlist boundary condition
+	NetlistBoundaryCondition* netlistBC_fourthNetlist = dynamic_cast<NetlistBoundaryCondition*>((*retrievedBoundaryConditions).at(6).get());
+	EXPECT_FALSE(netlistBC_fourthNetlist->m_CircuitDescription.m_flowPermittedAcross3DInterface);
 }

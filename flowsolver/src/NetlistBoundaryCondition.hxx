@@ -17,9 +17,15 @@
 // needn't concern itself with the fine details.
 class NetlistBoundaryCondition : public abstractBoundaryCondition
 {
+	friend class testMultidom;
+	FRIEND_TEST(testMultidom,checkNetlistComponentNeighbourPointers);
+	FRIEND_TEST(testMultidom,checkClosedDiodeWithRemainingOpenPathDetected);
+	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
 	NetlistBoundaryCondition(int surfaceIndex_in)
-	: abstractBoundaryCondition(surfaceIndex_in)
+	: abstractBoundaryCondition(surfaceIndex_in),
+	  m_CircuitDescription(hstep),
+	  m_CircuitDescriptionWithoutDiodes(hstep)
 	{
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
 		initialiseModel();
@@ -30,8 +36,9 @@ public:
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 
 	void updateLPN();
-
 	void initialiseAtStartOfTimestep();
+
+	CircuitData& getCircuitDescription();
 
 	~NetlistBoundaryCondition()
 	{
@@ -45,7 +52,7 @@ private:
 	int m_NumberOfAtomicSubcircuits; // These are what you get with all valves closed: no subcircuit divides an atomic subcircuit.
 	int m_NumberOfSubcircuits;
 
-	boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
+	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
 
 	void initialiseModel();
 	void createCircuitDescription();

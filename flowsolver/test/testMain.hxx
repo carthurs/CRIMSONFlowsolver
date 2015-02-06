@@ -184,7 +184,7 @@
 	    // before the destructor).
 	    fortranBoundaryDataPointerManager::Get()->tearDown();
 	    //SimvascularGlobalArrayTransfer::Get()->tearDown();
-	    boundaryConditionManager::Instance()->Term();
+	    // boundaryConditionManager::Instance()->Term();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

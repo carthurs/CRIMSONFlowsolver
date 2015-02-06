@@ -399,3 +399,59 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
 //   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
 //   boundaryConditionManager_instance->setSurfacePressure_netlistLPNs(netlistSurfacePressures);
 // }
+
+void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
+{
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
+    {
+      {
+        // Write the netlistPressures_surface_X.dat
+        basicFileWriter boundaryConditionPressureHistoryWriter;
+        std::stringstream filenameForThisBoundary;
+        filenameForThisBoundary << "netlistPressures_surface_" << (*boundaryCondition)->surfaceIndex << ".dat";
+        boundaryConditionPressureHistoryWriter.setFileName(filenameForThisBoundary.str());
+
+        NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+        m_nextTimestepWrite_end = netlistBoundaryCondition->getCircuitDescription().components.at(0)->m_entireFlowHistory.size();
+        for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
+        {
+          boundaryConditionPressureHistoryWriter.writeStepIndex(stepToWrite);
+          for (auto node=netlistBoundaryCondition->getCircuitDescription().mapOfPressureNodes.begin(); node!=netlistBoundaryCondition->getCircuitDescription().mapOfPressureNodes.end(); node++)
+          {
+            boundaryConditionPressureHistoryWriter.writeToFile(node->second->m_entirePressureHistory.at(stepToWrite));
+          }
+          boundaryConditionPressureHistoryWriter.writeEndLine();
+        }
+      }
+
+      {
+        // Write the netlistFlows_surface_X.dat
+        basicFileWriter boundaryConditionFlowHistoryWriter;
+        std::stringstream filenameForThisBoundary;
+        filenameForThisBoundary << "netlistFlows_surface_" << (*boundaryCondition)->surfaceIndex << ".dat";
+        boundaryConditionFlowHistoryWriter.setFileName(filenameForThisBoundary.str());
+
+        NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+        for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
+        {
+          boundaryConditionFlowHistoryWriter.writeStepIndex(stepToWrite);
+          for (auto component=netlistBoundaryCondition->getCircuitDescription().components.begin(); component!=netlistBoundaryCondition->getCircuitDescription().components.end(); component++)
+          {
+            boundaryConditionFlowHistoryWriter.writeToFile((*component)->m_entireFlowHistory.at(stepToWrite));
+          }
+          boundaryConditionFlowHistoryWriter.writeEndLine();
+        }
+      }
+
+    }
+  }
+  m_nextTimestepWrite_start = m_nextTimestepWrite_end;
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
+}

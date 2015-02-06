@@ -81,12 +81,17 @@
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(7,&flow2));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(9,&flow3));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(11,&flow4));
+	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(12,&flow4));
+	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(13,&flow4));
+	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(14,&flow4));
 
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(3,&press1));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(7,&press2));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(9,&press3));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(11,&press4));
-        
+	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(12,&press4));
+	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(13,&press4));
+	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(14,&press4));        
 
 	  	// Setup the file reader for the RCRTs
 		rcrtReader_instance = rcrtReader::Instance();
@@ -113,6 +118,9 @@
 	    surfaceList.push_back(std::pair <int,std::string> (7,"netlist"));
 	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
 	    surfaceList.push_back(std::pair <int,std::string> (11,"controlledCoronary"));
+	    surfaceList.push_back(std::pair <int,std::string> (12,"netlist"));
+	    surfaceList.push_back(std::pair <int,std::string> (13,"netlist"));
+	    surfaceList.push_back(std::pair <int,std::string> (14,"netlist"));
 
 	    // get the boundary condition manager
 		// boundaryConditionManager_instance->boundaryConditions.clear();
@@ -137,11 +145,19 @@
 	    (*retrievedBoundaryConditions)[0]->delt = delt;
 		(*retrievedBoundaryConditions)[1]->delt = delt;
 		(*retrievedBoundaryConditions)[2]->delt = delt;
+		(*retrievedBoundaryConditions)[3]->delt = delt;
+		(*retrievedBoundaryConditions)[4]->delt = delt;
+		(*retrievedBoundaryConditions)[5]->delt = delt;
+		(*retrievedBoundaryConditions)[6]->delt = delt;
 		
 
 		(*retrievedBoundaryConditions)[0]->alfi_local = alfi_local;
 		(*retrievedBoundaryConditions)[1]->alfi_local = alfi_local;
 		(*retrievedBoundaryConditions)[2]->alfi_local = alfi_local;
+		(*retrievedBoundaryConditions)[3]->alfi_local = alfi_local;
+		(*retrievedBoundaryConditions)[4]->alfi_local = alfi_local;
+		(*retrievedBoundaryConditions)[5]->alfi_local = alfi_local;
+		(*retrievedBoundaryConditions)[6]->alfi_local = alfi_local;
 		
 	  }
 

@@ -5,7 +5,9 @@
 #include <vector>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include "datatypesInCpp.hxx"
+#include "gtest/gtest_prod.h"
 
 class CircuitPressureNode
 {
@@ -18,12 +20,17 @@ public:
 	int indexInInputData;
 	int indexLocalToSubcircuit;
 	bool m_connectsTo3DDomain;
-	CircuitPressureNode()
+	std::vector<double> m_entirePressureHistory;
+	CircuitPressureNode(const int hstep)
+	: m_hstep(hstep)
 	{
 		prescribedPressureType = Pressure_Null;
 		hasHistoryPressure = false;
 	    m_connectsTo3DDomain = false;
+	    m_entirePressureHistory.reserve(m_hstep);
 	}
+private:
+	const int m_hstep;
 };
 
 
@@ -32,8 +39,18 @@ class CircuitComponent
 public:
 	circuit_component_t type;
 	boost::shared_ptr<CircuitPressureNode> startNode;
+	// bool m_startNodeConnectsToDiode;
+	// boost::shared_ptr<CircuitPressureNode> startNodeIfNeighbouringDiodeExistsAndIsOpen;
+
 	boost::shared_ptr<CircuitPressureNode> endNode;
-	double parameterValue; // resistance or compliance or inductance etc.
+	// bool m_endNodeConnectsToDiode;
+	// boost::shared_ptr<CircuitPressureNode> endNodeIfNeighbouringDiodeExistsAndIsOpen;
+
+	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtStartNode;
+	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtEndNode;
+	
+	double currentParameterValue; // resistance or compliance or inductance etc.
+	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
 	int indexInInputData;
 	int indexLocalToSubcircuit;
 	circuit_component_flow_prescription_t prescribedFlowType;
@@ -41,21 +58,76 @@ public:
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
-	CircuitComponent() //:
-		// startNode(new CircuitPressureNode),
-		// endNode(new CircuitPressureNode)
+	bool permitsFlow; // for diodes in particular
+	std::vector<double> m_entireFlowHistory;
+	CircuitComponent(const int hstep, const bool thisIsARestartedSimulation)
+	: m_hstep(hstep),
+	  m_thisIsARestartedSimulation(thisIsARestartedSimulation)
 	{
 		type = Component_Null;
 		prescribedFlowType = Flow_Null;
 		hasHistoryFlow = false;
+		m_entireFlowHistory.reserve(m_hstep);
+		if (m_thisIsARestartedSimulation)
+		{
+			bool fixThisForRestart=false;
+            assert(fixThisForRestart);
+            flow = -1.0;
+            permitsFlow = true;
+		}
+		else
+		{
+			flow = 0.0;
+			permitsFlow = true;
+		}
 	}
+
+	bool hasNonnegativePressureGradientAndNoBackflow() // whether the diode should be open
+	{
+		bool hasNonnegativePressureGradient = (startNode->pressure >= endNode->pressure);
+		bool hasNoBackflow = (flow >= 0);
+		return (hasNonnegativePressureGradient && hasNoBackflow);
+	}
+private:
+	const int m_hstep;
+	const bool m_thisIsARestartedSimulation;
 };
 
 class CircuitData
 {
+	friend class testMultidom;
+	FRIEND_TEST(testMultidom,checkClosedDiodeWithRemainingOpenPathDetected);
+	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
+	CircuitData(const int hstep)
+	: m_hstep(hstep)
+	{
+		m_flowPermittedAcross3DInterface = true;
+	}
 	std::vector<boost::shared_ptr<CircuitComponent>> components;
 	int index;
+
+	// // copy constructor
+	// CircuitData(const CircuitData &sourceCircuitData)
+	// : m_hstep(sourceCircuitData.m_hstep),
+	// components(sourceCircuitData.components),
+	// index(sourceCircuitData.index),
+	// numberOfPrescribedPressures(sourceCircuitData.numberOfPrescribedPressures),
+	// numberOfPrescribedFlows(sourceCircuitData.numberOfPrescribedFlows),
+	// numberOfPressureNodes(sourceCircuitData.numberOfPressureNodes),
+	// numberOfComponents(sourceCircuitData.numberOfComponents),
+	// mapOfPressureNodes(sourceCircuitData.mapOfPressureNodes),
+	// mapOfPrescribedPressureNodes(sourceCircuitData.mapOfPrescribedPressureNodes),
+	// mapOfComponents(sourceCircuitData.mapOfComponents),
+	// mapOfPrescribedFlowComponents(sourceCircuitData.mapOfPrescribedFlowComponents)
+	// {
+	// }
+
+	// // assignment operator
+	// CircuitData operator=(CircuitData rhs)
+	// {
+	// 	return CircuitData(rhs);
+	// }
 	
 	// Begin metadata, updated with rebuildCircuitMetadata.
 	int numberOfPrescribedPressures;
@@ -75,11 +147,17 @@ public:
 	bool connectsTo3DDomain() const;
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
 	void tagNodeAt3DInterface();
+	void setupComponentNeighbourPointers();
+	void switchDiodeStatesIfNecessary();
+	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+	bool flowPermittedAcross3DInterface();
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in);
 private:
 	int toOneIndexing(const int oneIndexedValue);
 	void rebuildCircuitPressureNodeMap();
+	int m_hstep;
+	bool m_flowPermittedAcross3DInterface;
 };
 
 #endif

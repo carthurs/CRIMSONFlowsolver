@@ -73,3 +73,15 @@ void abstractBoundaryCondition::finalizeLPNAtEndOfTimestep()
 {
 	throw std::logic_error("Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed.");
 }
+
+void abstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
+{
+  for (int node=0; node<lengthOfNodeToBoundaryAssociationArray; node++)
+  {
+    if (ndsurf_nodeToBoundaryAssociationArray[node] == surfaceIndex)
+    {
+      listOfMeshNodesAtThisBoundary.push_back(node);
+    }
+  }
+  hasListOfMeshNodesAtThisBoundary = true;   
+}

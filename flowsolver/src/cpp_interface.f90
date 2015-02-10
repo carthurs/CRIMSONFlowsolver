@@ -16,6 +16,23 @@ module cpp_interface
     end interface
 
     interface
+            subroutine callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(ndsurf_nodeToBoundaryAssociationArray, lengthOfNodeToBoundaryAssociationArray) bind(c,name="callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes")
+                use iso_c_binding
+                type(c_ptr) :: ndsurf_nodeToBoundaryAssociationArray
+                integer(c_int) :: lengthOfNodeToBoundaryAssociationArray
+            end subroutine callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes
+    end interface
+
+
+    interface
+            subroutine callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(binaryMask, binaryMaskLength) bind(c,name="callCPPGetBinaryMaskToAdjustNodalBoundaryConditions")
+                use iso_c_binding
+                type(c_ptr) :: binaryMask
+                integer(c_int) :: binaryMaskLength
+            end subroutine callCPPGetBinaryMaskToAdjustNodalBoundaryConditions
+    end interface
+
+    interface
     		subroutine callCppComputeAllImplicitCoeff_solve(timestepNumber) bind(c,name="callCppComputeAllImplicitCoeff_solve")
     			use iso_c_binding
     			integer(c_int) :: timestepNumber

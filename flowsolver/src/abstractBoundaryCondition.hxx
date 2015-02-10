@@ -25,6 +25,7 @@ class abstractBoundaryCondition
  public:
     abstractBoundaryCondition(int surfaceIndex_in)
     {
+        hasListOfMeshNodesAtThisBoundary = false; // flag to be used to guard against using the list when it hasn't been provided by Fortran.
         std::cout <<"is surfarea set yet in c++?" << surfarea << std::endl;
         hstep = inpdat.nstep[0] + timdat.lstep;
         delt = inpdat.Delt[0];
@@ -98,9 +99,12 @@ class abstractBoundaryCondition
     double delt;
     double alfi_local;
     int thisIsARestartedSimulation;
+    std::vector<int> listOfMeshNodesAtThisBoundary;
+    bool hasListOfMeshNodesAtThisBoundary;
 
     // double LPNInflowPressure;
 
+    void setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray);
     void computeImplicitCoeff_solve(const int timestepNumber);
  	void computeImplicitCoeff_update(const int timestepNumber);
     virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;

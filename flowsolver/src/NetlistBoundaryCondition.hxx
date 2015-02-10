@@ -40,6 +40,8 @@ public:
 
 	CircuitData& getCircuitDescription();
 
+	void setDirichletConditionsIfNecessary(int* const binaryMask);
+
 	~NetlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;

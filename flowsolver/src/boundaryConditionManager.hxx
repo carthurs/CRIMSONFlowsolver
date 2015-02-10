@@ -38,6 +38,9 @@ class abstractBoundaryCondition;
     void setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList);
 
     void ifRestartingLoadNecessaryData();
+
+    void giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray);
+    void getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength);
     
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<abstractBoundaryCondition>>* getBoundaryConditions();

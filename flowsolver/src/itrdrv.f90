@@ -80,6 +80,7 @@ end module
 subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     use iso_c_binding
+    use cpp_interface
     use shapeTable
     use globalArrays
     use pvsQbi     !gives us splag (the spmass at the end of this run
@@ -118,6 +119,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     integer lstep0
 
     integer :: surfids(0:MAXSURF)
+
+    integer, dimension(nshg) :: binaryMask
+    integer, dimension(nshg) :: iBC_original
 
     !
     !.... For linear solver Library
@@ -513,6 +517,38 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             end if
         end do
     end if
+
+    ! If there are netlist boundary conditions, we will get CPP to provide the
+    ! details on how iBC should be edited in order to implement Dirichlet
+    ! or Neumann boundary conditions on a surface, dependent on whether
+    ! flow is permitted (or prescribed!) across that surface.
+    !
+    ! The major reason for this functionality is for netlists which have valves;
+    ! in this case there will be a switching of the boundary condition type
+    ! if the valves block the flow across the 3D interface.
+    if (numNetlistLPNSrfs .gt. int(0)) then
+        iBC_original = iBC
+    endif
+
+    ! Tell the boundary condition objects which boundary nodes belong to their surface:
+    call callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(c_loc(ndsurf), nshg)
+
+    ! Get the correct boundary condition type flag array iBC for the current valve state
+    ! in the netlists:
+    if (numNetlistLPNSrfs .gt. int(0)) then
+        ! Fill out the array with ones
+        binaryMask = 1
+        ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions shouldbe applied:
+        call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
+        ! Reset iBC, so we work with a clean copy
+        iBC = iBC_original
+        ! zero out the entries of iBC where the boundary condition type has become
+        ! Dirichlet at that node, as annotated by binaryMask from the CPP boundary
+        ! condition objects.
+        where(binaryMask .eq. int(0))
+            iBC = int(0)
+        end where
+    endif
    
     if(iheart .gt. int(0)) then
         
@@ -767,7 +803,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
 
 
-end subroutine
+end subroutine itrdrv_init
 
 
 !
@@ -801,6 +837,9 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
+    integer, dimension(nshg) :: binaryMask
+    integer, dimension(nshg) :: iBC_original
+
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
 ! ********************************************* !
@@ -814,6 +853,25 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
               iBC = iBCd
             end if
           end if
+
+        ! Get the correct boundary condition type flag array iBC for the current valve state
+        ! in the netlists:
+        if (numNetlistLPNSrfs .gt. int(0)) then
+            ! Fill out the array with ones
+            binaryMask = 1
+            ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions shouldbe applied:
+            call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
+            ! Reset iBC, so we work with a clean copy
+            ! iBC = iBC_original
+            ! ! zero out the entries of iBC where the boundary condition type has become
+            ! ! Dirichlet at that node, as annotated by binaryMask from the CPP boundary
+            ! ! condition objects.
+            ! where(binaryMask .eq. int(0))
+            !     iBC = int(0)
+            ! end where
+        endif
+
+        write(*,*) binaryMask
 
 ! ********************************************* c
 ! ********************************************* c

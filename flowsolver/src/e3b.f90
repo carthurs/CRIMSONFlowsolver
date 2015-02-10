@@ -273,7 +273,7 @@
           if (btest(iBCB(iel,1),1)) then
             ! Check for Netlist boundary which is currently in a state which stops flow
             ! across the boundary, due to closed diodes
-            if (thisIsASurfaceWithBannedFlow)
+            if (.false.) then!thisIsASurfaceWithBannedFlow)
 
             ! else zero apply zero pressure boundary condition              
             else

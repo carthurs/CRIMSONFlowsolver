@@ -5,6 +5,17 @@
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 
+// This file contains (and should continue to contain) all the tools needed to control the boundary conditions.
+//
+// This includes functions which can be called from Fortran, and should be the sole point of interface between Fortran and C++
+// for the boundary conditions, as far as is possible.
+//
+// One thing that might be though of as an exception to this rule is the fortranBoundaryDataPointerManager class, but this
+// is really a way of setting up the link between Fortran and C++, not so much a way of allowing Fortran to control the BCs.
+//
+// Another exception is that some of the global data is accessed directly by the C++ classes, such as in the constructor
+// for the abstractBoundaryCondition. This is not ideal, and should be phased out slowly so that we have fewer points
+// of interface between the two languages.
 
 // Static class static member variables:
 boundaryConditionManager* boundaryConditionManager::instance = 0;
@@ -13,7 +24,23 @@ histFileReader* boundaryConditionManager::PHistReader = NULL;
 int boundaryConditionManager::thisIsARestartedSimulation = 0;
 // int boundaryConditionManager::numberOfNetlistSurfaces = 0;
 
+// Functions which affect features of the abstract class:
+void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
+{
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    (*boundaryCondition)->setListOfMeshNodesAtThisBoundary(ndsurf_nodeToBoundaryAssociationArray, lengthOfNodeToBoundaryAssociationArray);
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int*& ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(ndsurf_nodeToBoundaryAssociationArray, lengthOfNodeToBoundaryAssociationArray);
+}
 
+
+// RCR Boundary condition specific functions
 void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
@@ -379,6 +406,36 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->getImplicitCoeff_netlistLPNs(implicitCoeffs_toBeFilled);
+}
+
+// The purpose of this function is to detect when flow across the 3D interface is blocked due
+// to diode closure (or due to flows being prescribed).
+// It provides the Fortran code with an array of zeros and ones, one for each boundary node in the mesh;
+// a 1 indicates that the boundary should be left as-is from the initial input data state (meaning flow is allowed, and the BC is Neumann),
+// whereas a 0 indicates that it should be switched to Dirichlet.
+void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength)
+{
+  // Begin by setting the binary mask to all ones (i.e. flagging to keep the Neumann boundary conditions at all nodes)
+  // ... we will set zeros where we want Dirichlet conditions in a moment...
+  for (int maskLocation=0; maskLocation<binaryMaskLength; maskLocation++)
+  {
+    binaryMask[maskLocation] = 1;
+  }
+  // Ask the boundary conditions to set zeros where they want Dirichlet conditions
+  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    {
+      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(iterator->get());
+      downcastNetlist->setDirichletConditionsIfNecessary(binaryMask);
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(int*& binaryMask, const int& binaryMaskLength)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getBinaryMaskToAdjustNodalBoundaryConditions(binaryMask, binaryMaskLength);
 }
 
 // void boundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)

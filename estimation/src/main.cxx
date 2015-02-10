@@ -109,10 +109,11 @@ int main(int argc, char * argv[]) {
 
    input(&numProcsTotal, &rank);
    proces(); // Includes the call to set up fortranBoundaryDataPointerManager pointerManager
-   itrdrv_init(); // initialize solver
 
    // initialise reduced order boundary conditions
    multidom_initialise();
+   
+   itrdrv_init(); // initialize solver
 
    fortranBoundaryDataPointerManager* pointerManager;
    pointerManager = fortranBoundaryDataPointerManager::Get();

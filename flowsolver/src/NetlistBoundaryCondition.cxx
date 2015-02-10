@@ -536,3 +536,20 @@ CircuitData& NetlistBoundaryCondition::getCircuitDescription()
 {
     return m_CircuitDescription;
 }
+
+// Processes the binaryMask for setting Dirichlet conditions.
+// This boundary condition knows which mesh nodes lie at its surface (checked by the assert),
+// and it sets zero in binaryMask at the appropriate location for these nodes, if the boundary
+// condition type is currently Dirichlet.
+void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
+{
+  if(!m_CircuitDescription.flowPermittedAcross3DInterface())
+  {
+    assert(hasListOfMeshNodesAtThisBoundary);
+    // Zero out the binaryMask at the locations necessary to impose Dirichlet at this surface
+    for (auto node=listOfMeshNodesAtThisBoundary.begin(); node!=listOfMeshNodesAtThisBoundary.end(); node++)
+    {
+      binaryMask[*node] = 0;
+    }
+  }
+}

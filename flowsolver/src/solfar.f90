@@ -159,7 +159,7 @@
       ELSE
         ! Check for Netlist boundary which is currently in a state which stops flow
         ! across the boundary, due to closed diodes
-        if (.not. thisIsASurfaceWithBannedFlow) then
+        if (.true.) then!.not. thisIsASurfaceWithBannedFlow) then
           ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces)) ! 
           CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
         else

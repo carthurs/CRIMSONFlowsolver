@@ -409,19 +409,19 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
 }
 
 // The purpose of this function is to detect when flow across the 3D interface is blocked due
-// to diode closure (or due to flows being prescribed).
+// to diode closure (or due to flows being prescribed -- still \todo).
 // It provides the Fortran code with an array of zeros and ones, one for each boundary node in the mesh;
 // a 1 indicates that the boundary should be left as-is from the initial input data state (meaning flow is allowed, and the BC is Neumann),
 // whereas a 0 indicates that it should be switched to Dirichlet.
 void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength)
 {
-  // Begin by setting the binary mask to all ones (i.e. flagging to keep the Neumann boundary conditions at all nodes)
-  // ... we will set zeros where we want Dirichlet conditions in a moment...
+  // Begin by setting the binary mask to all ones (i.e. flagging 1 to set Dirichlet boundary conditions at all nodes)
+  // ... we will set zeros where we want Neumann conditions in a moment...
   for (int maskLocation=0; maskLocation<binaryMaskLength; maskLocation++)
   {
     binaryMask[maskLocation] = 1;
   }
-  // Ask the boundary conditions to set zeros where they want Dirichlet conditions
+  // Ask the boundary conditions to set zeros where they want Neumann conditions
   for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
@@ -436,6 +436,107 @@ extern "C" void callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(int*& binary
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->getBinaryMaskToAdjustNodalBoundaryConditions(binaryMask, binaryMaskLength);
+}
+
+void boundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(int& numBCsWhichDisallowFlow)
+{
+  // Ensure we start from zero, before we count the surfaces which disallow flow due to closed valves (so we have to switch to Dirichlet)
+  numBCsWhichDisallowFlow = 0;
+  // ...do the counting (currently only netlists have valves...)
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
+    {
+      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+      if (!downcastNetlist->getCircuitDescription().flowPermittedAcross3DInterface())
+      {
+        numBCsWhichDisallowFlow++;
+      }
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(int& numBCsWhichDisallowFlow)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow);
+}
+
+void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(int& numBCsWhichAllowFlow)
+{
+  // Ensure we start from zero, before we count the surfaces which allow flow due to closed valves (so we have to switch to Dirichlet)
+  numBCsWhichAllowFlow = 0;
+  // ...do the counting (currently only netlists have valves...)
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
+    {
+      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+      if (downcastNetlist->getCircuitDescription().flowPermittedAcross3DInterface())
+      {
+        numBCsWhichAllowFlow++;
+      }
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow(int& numBCsWhichAllowFlow)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(numBCsWhichAllowFlow);
+}
+
+// Takes a surface index and a reference to an int - if flow is allowed across this surface,
+// returns 1 in the referenced int, otherwise returns zero in that int.
+void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted)
+{
+  // Begin by assuming flow is permitted; this will be changed below if flow is not permitted.
+  flowIsPermitted = 1;
+  // find the queried surface:
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    bool thisIsANetlist = typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition);
+    if ((*boundaryCondition)->surfaceIndex == queriedSurfaceIndex && thisIsANetlist)
+    {
+      // Discover whether we should report that flow is permitted or not:
+      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+      if (!(downcastNetlist->getCircuitDescription().flowPermittedAcross3DInterface()))
+      {
+        flowIsPermitted = 0;
+      }
+    }
+  }
+}
+//---WRAPPED BY--->
+extern "C" void callCPPDiscoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->discoverWhetherFlowPermittedAcrossSurface(queriedSurfaceIndex, flowIsPermitted);
+}
+
+void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged)
+{
+  // Begin by assuming boundary conditions are as they were on the previous time-step; this will be changed below if the assumption is false.
+  boundaryConditionTypesHaveChanged = 0;
+  // find netlists
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
+    {
+      // Discover whether we should report a change in boundary condition type (Neumann/Dirichlet):
+      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+      if (downcastNetlist->getCircuitDescription().boundaryConditionTypeHasJustChanged())
+      {
+        boundaryConditionTypesHaveChanged = 1;
+      }
+    }
+  }
+}
+//---WRAPPED BY--->
+extern "C" void callCPPHaveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->haveBoundaryConditionTypesChanged(boundaryConditionTypesHaveChanged);
 }
 
 // void boundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)

@@ -121,7 +121,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     integer :: surfids(0:MAXSURF)
 
     integer, dimension(nshg) :: binaryMask
-    integer, dimension(nshg) :: iBC_original
 
     !
     !.... For linear solver Library
@@ -283,61 +282,74 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         !     Rest of configuration of memLS is added here, where we have LHS
         !     pointers
         IF (memLSFlag .EQ. 1) THEN
-            IF  (ipvsq .GE. 2) THEN
-                memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs + numNetlistLPNSrfs
-            ELSE
-                memLS_nFaces = 1
-            END IF
 
-            CALL memLS_LHS_CREATE(memLS_lhs, communicator, gnNo, nNo, nnz_tot, ltg, colm, rowp, memLS_nFaces)
+            ! This big commented block has been moved to the function rebuildMemLS_lhs, so that we can call it whenever
+            ! the state of the netlist valves changes.
+            !
+            ! This approach replaces the "two memLS" approach previously used for the heart model; instead of
+            ! pre-constructing a systole and a diastole version of memLS, we'll just poll the boundary conditions
+            ! to ask them if their valve state has changed since the last time-step, in such a way to cause the 
+            ! flow to be newly permitted / banned across one of the netlist surfaces. In that case,
+            ! we rebuild memLS for the new state.
 
-            faIn = 1
-            facenNo = 0
-            DO i=1, nshg
-                IF (IBITS(iBC(i),3,3) .NE. 0)  facenNo = facenNo + 1
-            END DO
-            if ((.not.allocated(gNodes)).and.(.not.allocated(sV))) then
-              ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
-            endif
-            sV = 0D0
-            j = 0
-            DO i=1, nshg
-                IF (IBITS(iBC(i),3,3) .NE. 0) THEN
-                    j = j + 1
-                    gNodes(j) = i
-                    IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0
-                    IF (.NOT.BTEST(iBC(i),4)) sV(2,j) = 1D0
-                    IF (.NOT.BTEST(iBC(i),5)) sV(3,j) = 1D0
-                END IF
-            END DO
-            CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Dir, gNodes, sV)
+            call rebuildMemLS_lhs()
 
-            IF  (ipvsq .GE. 2) THEN
-                DO k = 1, numResistSrfs
-                    faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn, memLS_lhs)
-                END DO
-                DO k = 1, numImpSrfs
-                    faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn, memLS_lhs)
-                END DO
-                DO k = 1, numRCRSrfs
-                    faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn, memLS_lhs)
-                END DO
-                DO k = 1, numGRCRSrfs
-                    faIn = faIn + 1
-                    CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs)
-                END DO
-                do k=1, numControlledCoronarySrfs
-                    faIn = faIn + 1
-                    call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs)
-                end do
-                do k=1, numNetlistLPNSrfs
-                    faIn = faIn + 1
-                    call AddNeumannBCTomemLS(indicesOfNetlistSurfaces(k),faIn,memLS_lhs)
-                end do
-            END IF
+
+            ! IF  (ipvsq .GE. 2) THEN
+            !     memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs + numNetlistLPNSrfs
+            ! ELSE
+            !     memLS_nFaces = 1
+            ! END IF
+
+            ! CALL memLS_LHS_CREATE(memLS_lhs, communicator, gnNo, nNo, nnz_tot, ltg, colm, rowp, memLS_nFaces)
+
+            ! faIn = 1
+            ! facenNo = 0
+            ! DO i=1, nshg
+            !     IF (IBITS(iBC(i),3,3) .NE. 0)  facenNo = facenNo + 1
+            ! END DO
+            ! if ((.not.allocated(gNodes)).and.(.not.allocated(sV))) then
+            !   ALLOCATE(gNodes(facenNo), sV(nsd,facenNo))
+            ! endif
+            ! sV = 0D0
+            ! j = 0
+            ! DO i=1, nshg
+            !     IF (IBITS(iBC(i),3,3) .NE. 0) THEN
+            !         j = j + 1
+            !         gNodes(j) = i
+            !         IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0
+            !         IF (.NOT.BTEST(iBC(i),4)) sV(2,j) = 1D0
+            !         IF (.NOT.BTEST(iBC(i),5)) sV(3,j) = 1D0
+            !     END IF
+            ! END DO
+            ! CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Dir, gNodes, sV)
+
+            ! IF  (ipvsq .GE. 2) THEN
+            !     DO k = 1, numResistSrfs
+            !         faIn = faIn + 1
+            !         CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn, memLS_lhs)
+            !     END DO
+            !     DO k = 1, numImpSrfs
+            !         faIn = faIn + 1
+            !         CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn, memLS_lhs)
+            !     END DO
+            !     DO k = 1, numRCRSrfs
+            !         faIn = faIn + 1
+            !         CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn, memLS_lhs)
+            !     END DO
+            !     DO k = 1, numGRCRSrfs
+            !         faIn = faIn + 1
+            !         CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs)
+            !     END DO
+            !     do k=1, numControlledCoronarySrfs
+            !         faIn = faIn + 1
+            !         call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs)
+            !     end do
+            !     do k=1, numNetlistLPNSrfs
+            !         faIn = faIn + 1
+            !         call AddNeumannBCTomemLS(indicesOfNetlistSurfaces(k),faIn,memLS_lhs)
+            !     end do
+            ! END IF
 
             ! create systolic memLS_lhs
             IF (iheart .gt. int(0)) THEN
@@ -527,6 +539,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! in this case there will be a switching of the boundary condition type
     ! if the valves block the flow across the 3D interface.
     if (numNetlistLPNSrfs .gt. int(0)) then
+        if (.not. allocated(iBC_original)) then
+            allocate(iBC_original(nshg))
+        endif
         iBC_original = iBC
     endif
 
@@ -543,12 +558,16 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         ! Reset iBC, so we work with a clean copy
         iBC = iBC_original
         ! zero out the entries of iBC where the boundary condition type has become
-        ! Dirichlet at that node, as annotated by binaryMask from the CPP boundary
+        ! Neuman at that node, as annotated by binaryMask from the CPP boundary
         ! condition objects.
         where(binaryMask .eq. int(0))
             iBC = int(0)
         end where
     endif
+
+    ! write(*,*) "ibc:", iBC
+    ! call sleep(2)
+    ! stop
    
     if(iheart .gt. int(0)) then
         
@@ -717,54 +736,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     CONTAINS
 
-    !
-    ! replacement subroutine for systolic/diastolic copies
-    !
-
-    SUBROUTINE AddNeumannBCTomemLS(srfID, faIn, memLS_lhs_inout)
-    
-    INTEGER, INTENT(IN) :: srfID, faIn
-      
-    INTEGER facenNo, i, j
-
-    TYPE(memLS_lhsType), INTENT(INOUT) :: memLS_lhs_inout
-    INTEGER, ALLOCATABLE :: gNodes_tmp(:)
-    REAL*8, ALLOCATABLE :: sV_tmp(:,:)
-
-    facenNo = 0
-    DO i = 1, nshg
-        IF (srfID .EQ. ndsurf(i)) THEN
-            facenNo = facenNo + 1
-        END IF
-    END DO
-    IF (ALLOCATED(gNodes_tmp)) THEN
-        DEALLOCATE(gNodes_tmp)
-    END IF
-    IF (ALLOCATED(sV_tmp)) THEN      
-        DEALLOCATE(sV_tmp)
-    END IF
-    
-    if ((.not.allocated(gNodes_tmp)).and.(.not.allocated(sV_tmp))) then
-      ALLOCATE(gNodes_tmp(facenNo), sV_tmp(nsd,facenNo))
-    endif
-
-    sV_tmp = 0D0
-    gNodes_tmp = int(0)
-    j = 0
-    DO i = 1, nshg
-        IF (srfID .EQ. ndsurf(i)) THEN
-            j = j + 1
-            gNodes_tmp(j) = i
-            sV_tmp(:,j) = NABI(i,1:3)
-        END IF
-    END DO
-
-    CALL memLS_BC_CREATE(memLS_lhs_inout, faIn, facenNo, nsd, BC_TYPE_Neu, gNodes_tmp, sV_tmp)      
-
-
-    RETURN
-    END SUBROUTINE AddNeumannBCTomemLS
-
     ! SUBROUTINE AddNeumannBCTomemLS(srfID, faIn)
 
     ! INTEGER, INTENT(IN) :: srfID, faIn
@@ -804,6 +775,212 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
 
 end subroutine itrdrv_init
+!
+! replacement subroutine for systolic/diastolic copies
+!
+
+SUBROUTINE AddNeumannBCTomemLS(srfID, faIn, memLS_lhs_inout)
+    use iso_c_binding
+    use cpp_interface
+    use shapeTable
+    use globalArrays
+    use pvsQbi     !gives us splag (the spmass at the end of this run
+    use specialBC !gives us itvn
+    use timedata   !allows collection of time series
+    use convolImpFlow !for Imp bc
+    use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    !use grcrbc ! Nan rcr
+
+    use convolCORFlow !for Coronary bc
+    use incpBC        !for INCP bc
+    use calcFlowPressure !to save history of flow and pressure of bc surfaces
+    use LagrangeMultipliers
+    use deformableWall
+    use ResidualControl
+    use phcommonvars
+    use itrDrvVars, only : facenNo
+    use memLS
+    use multidomain
+
+    implicit none
+
+    INTEGER, INTENT(IN) :: srfID, faIn
+      
+    INTEGER i, j
+
+    TYPE(memLS_lhsType), INTENT(INOUT) :: memLS_lhs_inout
+    INTEGER, ALLOCATABLE :: gNodes_tmp(:)
+    REAL*8, ALLOCATABLE :: sV_tmp(:,:)
+
+    facenNo = 0
+    DO i = 1, nshg
+        IF (srfID .EQ. ndsurf(i)) THEN
+            facenNo = facenNo + 1
+        END IF
+    END DO
+    IF (ALLOCATED(gNodes_tmp)) THEN
+        DEALLOCATE(gNodes_tmp)
+    END IF
+    IF (ALLOCATED(sV_tmp)) THEN      
+        DEALLOCATE(sV_tmp)
+    END IF
+
+    if ((.not.allocated(gNodes_tmp)).and.(.not.allocated(sV_tmp))) then
+      ALLOCATE(gNodes_tmp(facenNo), sV_tmp(nsd,facenNo))
+    endif
+
+    sV_tmp = 0D0
+    gNodes_tmp = int(0)
+    j = 0
+    DO i = 1, nshg
+        IF (srfID .EQ. ndsurf(i)) THEN
+            j = j + 1
+            gNodes_tmp(j) = i
+            sV_tmp(:,j) = NABI(i,1:3)
+        END IF
+    END DO
+
+    CALL memLS_BC_CREATE(memLS_lhs_inout, faIn, facenNo, nsd, BC_TYPE_Neu, gNodes_tmp, sV_tmp)      
+
+
+    RETURN
+END SUBROUTINE AddNeumannBCTomemLS
+
+subroutine rebuildMemLS_lhs()
+        use iso_c_binding
+        use cpp_interface
+        use shapeTable
+        use globalArrays
+        use pvsQbi     !gives us splag (the spmass at the end of this run
+        use specialBC !gives us itvn
+        use timedata   !allows collection of time series
+        use convolImpFlow !for Imp bc
+        use convolRCRFlow !for RCR bc
+        use convolTRCRFlow !for time-varying RCR bc
+
+        !use grcrbc ! Nan rcr
+
+        use convolCORFlow !for Coronary bc
+        use incpBC        !for INCP bc
+        use calcFlowPressure !to save history of flow and pressure of bc surfaces
+        use LagrangeMultipliers
+        use deformableWall
+        use ResidualControl
+        use phcommonvars
+        use itrDrvVars
+        use multidomain
+
+        implicit none
+
+        integer numBCsWhichDisallowFlow
+        integer flowIsPermitted
+        integer i, j, k
+        integer thisIsNotANetlistSurface
+        integer surface
+
+        IF  (ipvsq .GE. 2) THEN
+            call callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow)
+            memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs + numNetlistLPNSrfs - numBCsWhichDisallowFlow
+            write(*,*) "numBCsWhichDisallowFlow:", numBCsWhichDisallowFlow
+        ELSE
+            memLS_nFaces = 1
+        END IF
+
+        ! Free the LHS, but first:
+        ! check whether LHS has been created (so we don't attempt to free a non-existent LHS):
+        if (memLS_lhs%foC) then
+            call memLS_LHS_FREE(memLS_lhs)
+        endif
+
+        CALL memLS_LHS_CREATE(memLS_lhs, communicator, gnNo, nNo, nnz_tot, ltg, colm, rowp, memLS_nFaces)
+
+        ! here we are counting the number of dirchlet nodes excluding the Netlists
+        faIn = 1
+        facenNo = 0
+        DO i=1, nshg
+            IF (IBITS(iBC(i),3,3) .NE. 0)  then
+                ! Check whether this node is on one a surface belonging to a Netlist boundary condition:
+                thisIsNotANetlistSurface = int(1)
+                do surface = 1, numNetlistLPNSrfs
+                    if (indicesOfNetlistSurfaces(surface) .eq. ndsurf(i)) then
+                        thisIsNotANetlistSurface = int(0)
+                    end if
+                end do
+
+                ! If this is not a netlist surface:
+                if(thisIsNotANetlistSurface .eq. int(1)) then
+                    facenNo = facenNo + 1
+                endif
+            ENDIF
+        END DO
+        if (allocated(gNodes)) then
+            deallocate(gNodes)
+        endif
+        ALLOCATE(gNodes(facenNo))
+
+        if (allocated(sV)) then
+            deallocate(sV)
+        endif
+        allocate(sV(nsd,facenNo))
+
+
+        sV = 0D0
+        j = 0
+        DO i=1, nshg
+            IF (IBITS(iBC(i),3,3) .NE. 0) THEN
+                ! Check whether this node is on one a surface belonging to a Netlist boundary condition:
+                thisIsNotANetlistSurface = int(1)
+                do surface = 1, numNetlistLPNSrfs
+                    if (indicesOfNetlistSurfaces(surface) .eq. ndsurf(i)) then
+                        thisIsNotANetlistSurface = int(0)
+                    end if
+                end do
+
+                ! If this is not a netlist surface:
+                if(thisIsNotANetlistSurface .eq. int(1)) then
+                    j = j + 1
+                    gNodes(j) = i
+                    IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0
+                    IF (.NOT.BTEST(iBC(i),4)) sV(2,j) = 1D0
+                    IF (.NOT.BTEST(iBC(i),5)) sV(3,j) = 1D0
+                endif
+            END IF
+        END DO
+        CALL memLS_BC_CREATE(memLS_lhs, faIn, facenNo, nsd, BC_TYPE_Dir, gNodes, sV)
+
+        IF  (ipvsq .GE. 2) THEN
+            DO k = 1, numResistSrfs
+                faIn = faIn + 1
+                CALL AddNeumannBCTomemLS(nsrflistResist(k), faIn, memLS_lhs)
+            END DO
+            DO k = 1, numImpSrfs
+                faIn = faIn + 1
+                CALL AddNeumannBCTomemLS(nsrflistImp(k), faIn, memLS_lhs)
+            END DO
+            DO k = 1, numRCRSrfs
+                faIn = faIn + 1
+                CALL AddNeumannBCTomemLS(nsrflistRCR(k), faIn, memLS_lhs)
+            END DO
+            DO k = 1, numGRCRSrfs
+                faIn = faIn + 1
+                CALL AddNeumannBCTomemLS(nsrflistGRCR(k), faIn, memLS_lhs)
+            END DO
+            do k=1, numControlledCoronarySrfs
+                faIn = faIn + 1
+                call AddNeumannBCTomemLS(indicesOfCoronarySurfaces(k), faIn, memLS_lhs)
+            end do
+            do k=1, numNetlistLPNSrfs
+                call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(k),flowIsPermitted)
+                if (flowIsPermitted .eq. int(1)) then
+                    write(*,*) "Adding netlist", k, "to memLS_lhs in itrdrv.f90."
+                    faIn = faIn + 1
+                    call AddNeumannBCTomemLS(indicesOfNetlistSurfaces(k),faIn,memLS_lhs)
+                endif
+            end do
+        END IF
+    end subroutine rebuildMemLS_lhs
 
 
 !
@@ -838,7 +1015,6 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer, dimension(nshg) :: binaryMask
-    integer, dimension(nshg) :: iBC_original
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
@@ -857,21 +1033,20 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
         ! Get the correct boundary condition type flag array iBC for the current valve state
         ! in the netlists:
         if (numNetlistLPNSrfs .gt. int(0)) then
-            ! Fill out the array with ones
-            binaryMask = 1
-            ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions shouldbe applied:
+            ! Fill out the array with zeros
+            binaryMask = 0
+            ! Set the apprporiate zeros for the nodes where where the Neumann conditions should be applied:
             call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
             ! Reset iBC, so we work with a clean copy
-            ! iBC = iBC_original
-            ! ! zero out the entries of iBC where the boundary condition type has become
-            ! ! Dirichlet at that node, as annotated by binaryMask from the CPP boundary
-            ! ! condition objects.
-            ! where(binaryMask .eq. int(0))
-            !     iBC = int(0)
-            ! end where
+            iBC = iBC_original
+            ! zero out the entries of iBC where the boundary condition type is
+            ! Neumann at that node, as annotated by binaryMask from the CPP boundary
+            ! condition objects.
+            where(binaryMask .eq. int(0))
+                iBC = int(0)
+            end where
         endif
 
-        write(*,*) binaryMask
 
 ! ********************************************* c
 ! ********************************************* c
@@ -1014,6 +1189,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer j
+    integer boundaryConditionRebuildNeeded
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !.... -----------------------> predictor phase <-----------------------
@@ -1064,7 +1240,22 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                         memLS_lhs = memLS_lhs_d
                         memLS_ls = memLS_ls_d
                     end if
-                end if 
+                end if
+
+                ! If we have netlists, check if a change in valve state within the netlists
+                ! means that we need to change boundary condition type (i.e. rebuild memLS_lhs)
+                ! ...
+                ! This replaces the old method used for the stand-alone heart model, which worked
+                ! with two memLS systems, one for systole, and one for diastole.
+                if (numNetlistLPNSrfs .gt. int(0)) then
+                    ! if a rebuild is needed:
+                    ! call callCPPHaveBoundaryConditionTypesChanged(boundaryConditionRebuildNeeded)
+                    ! write(*,*) "BC state change flag: ", boundaryConditionRebuildNeeded
+                    ! if (boundaryConditionRebuildNeeded .eq. int(1)) then
+                        write(*,*) "rebuilding linear system..."
+                        call rebuildMemLS_lhs()
+                    ! endif
+                endif
 
                 ! ************************************ !                    
                 ! ************************************ !
@@ -1943,6 +2134,9 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     ! if(allocated(uread)) then
     !     deallocate(uread)
     ! endif
+    if (allocated(iBC_original)) then
+        deallocate(iBC_original)
+    endif
     call destroyGlobalArrays()
 
     call tearDownMultidomain()

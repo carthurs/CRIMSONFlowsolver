@@ -56,6 +56,7 @@
         use incpBC
         use LagrangeMultipliers 
         use multidomain, only: hrt, multidom
+        use cpp_interface
 !
         use phcommonvars  
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -97,6 +98,7 @@
         real*8    s_pres          ! added by KD Lau 13/08/13 
 
         real*8    xmudmi(npro,ngauss),         dwl(npro,nshl)
+        integer flowIsPermitted
 !
       	dimension xKebe(npro,9,nshl,nshl)
 
@@ -273,7 +275,8 @@
           if (btest(iBCB(iel,1),1)) then
             ! Check for Netlist boundary which is currently in a state which stops flow
             ! across the boundary, due to closed diodes
-            if (.false.) then!thisIsASurfaceWithBannedFlow)
+            call callCPPDiscoverWhetherFlowPermittedAcrossSurface(iBCB(iel,2),flowIsPermitted)
+            if (flowIsPermitted .eq. int(0)) then
 
             ! else zero apply zero pressure boundary condition              
             else

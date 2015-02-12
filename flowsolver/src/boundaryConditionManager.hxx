@@ -41,6 +41,10 @@ class abstractBoundaryCondition;
 
     void giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray);
     void getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength);
+    void getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(int& numBCsWhichDisallowFlow);
+    void getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(int& numBCsWhichDisallowFlow);
+    void discoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted);
+    void haveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged);
     
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<abstractBoundaryCondition>>* getBoundaryConditions();

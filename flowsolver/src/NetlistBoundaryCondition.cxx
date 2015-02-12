@@ -231,7 +231,7 @@ void NetlistBoundaryCondition::selectAndBuildActiveSubcircuits()
     m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
     m_activeSubcircuits.clear();
-    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr));
+    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr, pressure_n_ptr));
     m_activeSubcircuits.push_back(toPushBack);
 
 }
@@ -356,7 +356,7 @@ void NetlistBoundaryCondition::createCircuitDescription()
     // (rewrites - but does not change - the values are identical!)
     m_CircuitDescription.rebuildCircuitMetadata();
 
-    m_CircuitDescription.tagNodeAt3DInterface();    
+    m_CircuitDescription.tagNodeAndComponentAt3DInterface();    
 
     m_CircuitDescription.switchDiodeStatesIfNecessary();
     m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
@@ -539,14 +539,14 @@ CircuitData& NetlistBoundaryCondition::getCircuitDescription()
 
 // Processes the binaryMask for setting Dirichlet conditions.
 // This boundary condition knows which mesh nodes lie at its surface (checked by the assert),
-// and it sets zero in binaryMask at the appropriate location for these nodes, if the boundary
+// and it sets 1 in binaryMask at the appropriate location for these nodes, if the boundary
 // condition type is currently Dirichlet.
 void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
 {
-  if(!m_CircuitDescription.flowPermittedAcross3DInterface())
+  if(m_CircuitDescription.flowPermittedAcross3DInterface())
   {
     assert(hasListOfMeshNodesAtThisBoundary);
-    // Zero out the binaryMask at the locations necessary to impose Dirichlet at this surface
+    // set ones in the binaryMask at the locations necessary to impose Dirichlet at this surface
     for (auto node=listOfMeshNodesAtThisBoundary.begin(); node!=listOfMeshNodesAtThisBoundary.end(); node++)
     {
       binaryMask[*node] = 0;

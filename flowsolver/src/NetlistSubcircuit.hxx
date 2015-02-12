@@ -13,12 +13,14 @@
 class NetlistSubcircuit
 {
 public:
-	NetlistSubcircuit(const int indexOfThisSubcircuit, const CircuitData& circuitData, double* const flow_n_ptr)
+	NetlistSubcircuit(const int indexOfThisSubcircuit, const CircuitData& circuitData, double* const flow_n_ptr, double* const pressure_n_ptr)
 	: indexOfThisSubcircuit(indexOfThisSubcircuit),
 	 m_circuitData(circuitData),
-	 flow_n_ptr(flow_n_ptr)
+	 flow_n_ptr(flow_n_ptr),
+	 pressure_n_ptr(pressure_n_ptr)
 	{
 		initialiseSubcircuit();
+		columnIndexOf3DInterfaceFlowInLinearSystem = 0;
 	}
 
 	~NetlistSubcircuit()
@@ -43,6 +45,7 @@ private:
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
 	double* const flow_n_ptr;
+	double* const pressure_n_ptr;
 
 	const int indexOfThisSubcircuit;
 
@@ -70,6 +73,7 @@ private:
 	std::vector<int> columnMap;
 	// int columnMapSize;//\todo check this is used
 	int columnIndexOf3DInterfaceFlowInLinearSystem;
+	int columnIndexOf3DInterfacePressureInLinearSystem;
 
 };
 

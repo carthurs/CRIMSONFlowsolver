@@ -100,7 +100,7 @@ void CircuitData::setupComponentNeighbourPointers()
 	}
 }
 
-void CircuitData::tagNodeAt3DInterface()
+void CircuitData::tagNodeAndComponentAt3DInterface()
 {
 	int numberOfComponentsTaggedFor3DFlow = 0; //a counter to verify there exists a unique 3D flow-tagged component
 	for (auto component=components.begin(); component!=components.end(); component++)
@@ -149,7 +149,9 @@ void CircuitData::tagNodeAt3DInterface()
 			else // actually tag the 3D interface node, now we've checked for errors...
 			{
 				assert(numberOfTimesComponentStartNodeAppearsInCircuit==1);
-				(*component)->startNode->m_connectsTo3DDomain = true; // Setting this bool tag here is the point of the whole subroutine!
+				// Setting these two bool tags here is the purpose of the whole subroutine!
+				(*component)->startNode->m_connectsTo3DDomain = true;
+				(*component)->setConnectsToNodeAt3DInterface();
 			}
 		}
 	}
@@ -258,7 +260,7 @@ void CircuitData::switchDiodeStatesIfNecessary()
 		{
 			// (*component)->prescribedFlowType = Flow_Diode_FixedWhenClosed;
 			// (*component)->valueOfPrescribedFlow = 0.0; // For enforcing zero flow when the diode is closed
-			bool diodeIsOpen = (*component)->hasNonnegativePressureGradientAndNoBackflow();
+			bool diodeIsOpen = (*component)->hasNonnegativePressureGradientOrForwardFlow();
 			if (diodeIsOpen)
 			{
 				(*component)->currentParameterValue = (*component)->parameterValueFromInputData; // For enforcing zero resistance when the diode is open
@@ -275,12 +277,13 @@ void CircuitData::switchDiodeStatesIfNecessary()
 
 void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 {
+	bool previousStateOf_m_flowPermittedAcross3DInterface = m_flowPermittedAcross3DInterface;
 	m_flowPermittedAcross3DInterface = false;
 	// Find the index of the component connected to the 3D domain, so we can use it as a starting point for walking the component tree::
 	int indexOfComponentAt3DInterface = -1;
 	for (auto component = components.begin(); component!= components.end(); component++)
 	{
-		if ((*component)->prescribedFlowType == Flow_3DInterface)
+		if ((*component)->connectsToNodeAt3DInterface())
 		{
 			indexOfComponentAt3DInterface = (*component)->indexInInputData;
 		}
@@ -334,6 +337,84 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 			}
 		}
 	}
+	// Check whether flow has just become possible across this boundary (or vice-versa), when compared to the previous time-step.
+	// If this is the case, the boolean will reach the linear system to tell it that it needs rebuilding
+	// for the new boundary condition type (Dirichlet/Neumann).
+	if (previousStateOf_m_flowPermittedAcross3DInterface != m_flowPermittedAcross3DInterface)
+	{
+		m_boundaryConditionTypeHasJustChanged = true;
+	}
+
+	// If necessary, adjust the circuit data as appropriate for a change in boundary condition type
+	// between Neumann and Dirichlet.
+	if (m_boundaryConditionTypeHasJustChanged)
+	{
+		switchBetweenDirichletAndNeumannCircuitDesign();
+	}
+}
+
+// Adjusts the circuit data as appropriate for a change in boundary condition type
+// between Neumann and Dirichlet.
+void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
+{
+	if (m_flowPermittedAcross3DInterface) // The condition we have just changed to is Neumann from Dirichlet:
+	{
+		std::cout << "Switching to Neumann in CircuitData.cxx!" << std::endl;
+		// Remove the node at the 3D interface from the list of those with prescribed pressure:
+		for (auto node=mapOfPrescribedPressureNodes.begin(); node!=mapOfPrescribedPressureNodes.end(); node++)
+		{
+			if (node->second->m_connectsTo3DDomain)
+			{
+				node->second->prescribedPressureType=Pressure_NotPrescribed;
+				mapOfPrescribedPressureNodes.erase(node);
+				break;
+			}
+		}
+
+		// Add the component at the 3D interface to the list of those with prescribed flow:
+		for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
+		{
+			if (component->second->connectsToNodeAt3DInterface())
+			{
+				component->second->prescribedFlowType=Flow_3DInterface;
+				mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->indexInInputData,component->second));
+				break;
+			}
+		}
+
+		// Update the counts of each type of prescription:
+		numberOfPrescribedPressures--;
+		numberOfPrescribedFlows++;
+	}
+	else // Else we have just changed to a Dirichlet condition
+	{
+		std::cout << "Switching to Dirichlet in CircuitData.cxx!" << std::endl;
+		// Add the node at the 3D interface to the list of those with prescribed pressure:
+		for (auto node=mapOfPressureNodes.begin(); node!=mapOfPressureNodes.end(); node++)
+		{
+			if (node->second->m_connectsTo3DDomain)
+			{
+				node->second->prescribedPressureType=Pressure_3DInterface;
+				mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->indexInInputData,node->second));
+				break;
+			}
+		}
+
+		// Remove the component at the 3D interface from the list of those with prescribed flow:
+		for (auto component=mapOfPrescribedFlowComponents.begin(); component!=mapOfPrescribedFlowComponents.end(); component++)
+		{
+			if (component->second->connectsToNodeAt3DInterface())
+			{
+				component->second->prescribedFlowType=Flow_NotPrescribed;
+				mapOfPrescribedFlowComponents.erase(component);
+				break;
+			}
+		}
+
+		// Update the counts of each type of prescription:
+		numberOfPrescribedPressures++;
+		numberOfPrescribedFlows--;
+	}	
 }
 
 bool CircuitData::connectsTo3DDomain() const
@@ -352,9 +433,27 @@ bool CircuitData::connectsTo3DDomain() const
 	return false;
 }
 
-bool CircuitData::flowPermittedAcross3DInterface()
+bool CircuitData::flowPermittedAcross3DInterface() const
 {
 	return m_flowPermittedAcross3DInterface;
+}
+
+bool CircuitData::boundaryConditionTypeHasJustChanged()
+{
+	bool returnVal = m_boundaryConditionTypeHasJustChanged;
+	// Reset m_boundaryConditionTypeHasJustChanged before returning:
+	m_boundaryConditionTypeHasJustChanged = false;
+	return m_boundaryConditionTypeHasJustChanged;
+}
+
+bool CircuitComponent::connectsToNodeAt3DInterface()
+{
+	return m_connectsToNodeAt3DInterface;
+}
+
+void CircuitComponent::setConnectsToNodeAt3DInterface()
+{
+	m_connectsToNodeAt3DInterface = true;
 }
 
 // inline int CircuitData::toOneIndexing(const int zeroIndexedValue)
@@ -362,3 +461,4 @@ bool CircuitData::flowPermittedAcross3DInterface()
 // 	int oneIndexedValue = zeroIndexedValue + 1;
 // 	return oneIndexedValue;
 // }
+

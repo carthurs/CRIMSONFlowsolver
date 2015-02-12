@@ -74,23 +74,28 @@ public:
             assert(fixThisForRestart);
             flow = -1.0;
             permitsFlow = true;
+            m_connectsToNodeAt3DInterface = false;
 		}
 		else
 		{
 			flow = 0.0;
 			permitsFlow = true;
+			m_connectsToNodeAt3DInterface = false;
 		}
 	}
 
-	bool hasNonnegativePressureGradientAndNoBackflow() // whether the diode should be open
+	bool hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
 	{
 		bool hasNonnegativePressureGradient = (startNode->pressure >= endNode->pressure);
-		bool hasNoBackflow = (flow >= 0);
-		return (hasNonnegativePressureGradient && hasNoBackflow);
+		bool hasForwardFlow = (flow >= 1e-16); // We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
+		return (hasNonnegativePressureGradient || hasForwardFlow);
 	}
+	bool connectsToNodeAt3DInterface();
+	void setConnectsToNodeAt3DInterface();
 private:
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
+	bool m_connectsToNodeAt3DInterface;
 };
 
 class CircuitData
@@ -103,6 +108,7 @@ public:
 	: m_hstep(hstep)
 	{
 		m_flowPermittedAcross3DInterface = true;
+		m_boundaryConditionTypeHasJustChanged = false;
 	}
 	std::vector<boost::shared_ptr<CircuitComponent>> components;
 	int index;
@@ -146,18 +152,21 @@ public:
 	void rebuildCircuitMetadata();
 	bool connectsTo3DDomain() const;
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
-	void tagNodeAt3DInterface();
+	void tagNodeAndComponentAt3DInterface();
 	void setupComponentNeighbourPointers();
 	void switchDiodeStatesIfNecessary();
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
-	bool flowPermittedAcross3DInterface();
+	bool flowPermittedAcross3DInterface() const;
+	bool boundaryConditionTypeHasJustChanged();
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in);
 private:
 	int toOneIndexing(const int oneIndexedValue);
 	void rebuildCircuitPressureNodeMap();
+	void switchBetweenDirichletAndNeumannCircuitDesign();
 	int m_hstep;
 	bool m_flowPermittedAcross3DInterface;
+	bool m_boundaryConditionTypeHasJustChanged;
 };
 
 #endif

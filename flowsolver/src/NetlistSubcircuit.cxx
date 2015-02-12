@@ -146,6 +146,8 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
 {
     // This function assembles the system of (time-discretised) linear algebraic equations for the LPN.
 
+    // First, we check whether 
+
     PetscErrorCode errFlag;
 
     errFlag = MatZeroEntries(systemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -290,17 +292,26 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
         // Coming from 'f' for 'fixed' in the input data:
         if (prescribedPressureNode->second->prescribedPressureType == Pressure_Fixed)
         {
-        	errFlag = VecSetValue(RHS,ll + tempIndexingShift,prescribedPressureNode->second->valueOfPrescribedPressure,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);	
+            errFlag = VecSetValue(RHS,ll + tempIndexingShift,prescribedPressureNode->second->valueOfPrescribedPressure,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);	
         }
         // Coming from 'l' for 'left-ventricular' in the input data:
         else if (prescribedPressureNode->second->prescribedPressureType == Pressure_LeftVentricular)
         {
-        	std::cerr << "this requires heart model. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
-            	std::exit(1);
+          	std::cerr << "this requires heart model. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
+            std::exit(1);
+        }
+        else if (prescribedPressureNode->second->prescribedPressureType == Pressure_3DInterface)
+        {
+            // We only do this if the netlist is in Dirichlet BC mode:
+            if (!m_circuitData.flowPermittedAcross3DInterface())
+            {
+              columnIndexOf3DInterfacePressureInLinearSystem = ll + tempIndexingShift;
+              errFlag = VecSetValue(RHS,ll + tempIndexingShift,*pressure_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            }
         }
         else
         {
-        	throw std::runtime_error("Unknown pressure prescription value in Netlist.");
+        	  throw std::runtime_error("Unknown pressure prescription value in Netlist.");
         }
         ll++;
       }
@@ -375,9 +386,12 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
 	    {
 	       if (prescribedFlowComponent->second->prescribedFlowType == Flow_3DInterface)
 	       {
-	          columnIndexOf3DInterfaceFlowInLinearSystem = ll + tempIndexingShift;
-            std::cout << "column index was set to: " << columnIndexOf3DInterfaceFlowInLinearSystem << std::endl;
-	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // We only do this if the netlist is in Neumann BC mode:
+            if (m_circuitData.flowPermittedAcross3DInterface())
+            {
+  	          columnIndexOf3DInterfaceFlowInLinearSystem = ll + tempIndexingShift;
+  	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            }
 	       }
 	       else if (prescribedFlowComponent->second->prescribedFlowType == Flow_Fixed)
 	       {
@@ -447,7 +461,14 @@ void NetlistSubcircuit::updateInternalPressuresAndFlows()
 
     if (m_circuitData.connectsTo3DDomain())
     {
-    	errFlag = VecSetValue(RHS,columnIndexOf3DInterfaceFlowInLinearSystem,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag); //\todo make this write to the correct entry of RHS, dynamically, and read the correct pointer when there are multiple netlist LPNs
+      if (m_circuitData.flowPermittedAcross3DInterface()) // Neumann condition
+      {
+    	   errFlag = VecSetValue(RHS,columnIndexOf3DInterfaceFlowInLinearSystem,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag); //\todo make this write to the correct entry of RHS, dynamically, and read the correct pointer when there are multiple netlist LPNs
+      }
+      else // Dirichlet condition
+      {
+         errFlag = VecSetValue(RHS,columnIndexOf3DInterfacePressureInLinearSystem,*pressure_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      }
     }
     errFlag = MatMult(inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
@@ -502,6 +523,8 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
     PetscScalar valueFromSolutionVector;
     errFlag = VecGetValues(solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     returnValue.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
+
+    std::cout << "implicit coefficients: " << returnValue.first << " " << returnValue.second << std::endl;
 
     return returnValue;
 }

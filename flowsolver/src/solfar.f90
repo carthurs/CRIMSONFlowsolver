@@ -58,6 +58,7 @@
 !
       use pointer_data
       use LagrangeMultipliers
+      use cpp_interface
 !
       use phcommonvars
       use memLS
@@ -104,6 +105,8 @@
       INTEGER dof, memLS_nFaces, i, j, k, l
       INTEGER, ALLOCATABLE :: incL(:)
       REAL*8, ALLOCATABLE :: faceRes(:), Res4(:,:), Val4(:,:)
+
+      integer numBCsWhichAllowFlow
 !
 !.... *******************>> Element Data Formation <<******************
 !
@@ -157,15 +160,14 @@
         END IF
       ! else flow 
       ELSE
-        ! Check for Netlist boundary which is currently in a state which stops flow
+        ! Count any Netlist boundary which is currently in a state which stops flow
         ! across the boundary, due to closed diodes
-        if (.true.) then!.not. thisIsASurfaceWithBannedFlow) then
-          ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces)) ! 
-          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
-        else
-          ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces)) ! 
-          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
-        endif
+        ! numBCsWhichAllowFlow = int(0)
+        ! call callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow(numBCsWhichAllowFlow)
+
+        memLS_nFaces_s = memLS_nFaces! + numBCsWhichAllowFlow
+        ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s)) ! 
+        CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)
       END IF
 
       ! ************** !

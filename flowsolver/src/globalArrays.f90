@@ -24,6 +24,7 @@ module globalArrays
     real (c_double), allocatable :: temporary_array(:,:)
 
     integer (c_int), target, allocatable :: iBC(:)
+    integer (c_int), target, allocatable :: iBC_original(:)
     real*8, allocatable :: BC(:,:)
     real*8, allocatable :: solinc(:,:)
     real*8, allocatable :: res(:,:)

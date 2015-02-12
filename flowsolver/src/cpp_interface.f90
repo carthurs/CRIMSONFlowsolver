@@ -33,6 +33,35 @@ module cpp_interface
     end interface
 
     interface
+            subroutine callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow) bind(c,name="callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow")
+                use iso_c_binding
+                integer(c_int) :: numBCsWhichDisallowFlow
+            end subroutine callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow
+    end interface
+
+    interface
+            subroutine callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow(numBCsWhichAllowFlow) bind(c,name="callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow")
+                use iso_c_binding
+                integer(c_int) :: numBCsWhichAllowFlow
+            end subroutine callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow
+    end interface
+
+    interface
+            subroutine callCPPDiscoverWhetherFlowPermittedAcrossSurface(queriedSurfaceIndex,flowIsPermitted) bind(c,name="callCPPDiscoverWhetherFlowPermittedAcrossSurface")
+                use iso_c_binding
+                integer(c_int) :: queriedSurfaceIndex
+                integer(c_int) :: flowIsPermitted
+            end subroutine callCPPDiscoverWhetherFlowPermittedAcrossSurface
+    end interface
+
+    interface
+            subroutine callCPPHaveBoundaryConditionTypesChanged(boundaryConditionTypesHaveChanged) bind(c,name="callCPPHaveBoundaryConditionTypesChanged")
+                use iso_c_binding
+                integer(c_int) :: boundaryConditionTypesHaveChanged
+            end subroutine callCPPHaveBoundaryConditionTypesChanged
+    end interface
+
+    interface
     		subroutine callCppComputeAllImplicitCoeff_solve(timestepNumber) bind(c,name="callCppComputeAllImplicitCoeff_solve")
     			use iso_c_binding
     			integer(c_int) :: timestepNumber

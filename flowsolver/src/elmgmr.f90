@@ -1027,6 +1027,7 @@
 
       real*8 :: implicitcoeffs(0:MAXSURF,2)
       integer :: surfids(0:MAXSURF)
+      integer flowIsPermitted
 !
 !... get p for the resistance BC
 !
@@ -1302,6 +1303,8 @@
       if(numNetlistLPNSrfs .gt. 0) then
         call GetFlowQ(p,y,indicesOfNetlistSurfaces,numNetlistLPNSrfs)  !Q pushed into p but at this point 
         ! p is just the full Q for each surface
+        write(*,*) "elmgmr.f90 netlist 1 flow:", p(1)
+        write(*,*) "elmgmr.f90 netlist 2 flow:", p(2)
 
 
         ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of
@@ -1328,7 +1331,8 @@
           do k = 1,numNetlistLPNSrfs
               ! Check for Netlist boundary which is currently in a state which stops flow
               ! across the boundary, due to closed diodes.
-              if (.true.) then!.not. thisIsASurfaceWithBannedFlow)
+              call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(k),flowIsPermitted)
+              if (flowIsPermitted .eq. int(1)) then
                 ! irankCoupled = 0
                 if (indicesOfNetlistSurfaces(k).eq.ndsurf(i)) then 
                     ! irankCoupled=k <-- seems stupid
@@ -1656,6 +1660,7 @@
       REAL*8 :: implicitcoeffs(0:MAXSURF,2)
 
       INTEGER faIn, k
+      integer flowIsPermitted
 
       faIn = 1 ! First element is reserved for Dirichlet BC
       faceRes = 0D0
@@ -1672,6 +1677,7 @@
          DO k = 1, numRCRSrfs
             faIn = faIn + 1
             faceRes(faIn) = RCRConvCoef(lstep+2,k)
+            write(*,*) "implicit coeffs RCR in elmgmr.f90", RCRConvCoef(lstep+2,k)
          END DO
          DO k = 1, numGRCRSrfs
             faIn = faIn + 1
@@ -1679,6 +1685,7 @@
               ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
               call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
               faceRes(faIn) = implicitcoeffs(k,1)
+              write(*,*) "implicit coeffs GRCR in elmgmr.f90", implicitcoeffs(k,1)
             else  
               faceRes(faIn) = grcrbc_coeff_1_implicit(k)
             end if 
@@ -1689,12 +1696,16 @@
             faceRes(faIn) = implicitcoeffs(k,1)
          end do
          do k=1, numNetlistLPNSrfs
-            faIn = faIn + 1
+            ! faIn = faIn + 1
             call callCPPGetImplicitCoeff_netlistLPNs(c_loc(implicitcoeffs(1,1)))
             ! Check for Netlist boundary which is currently in a state which stops flow
-            ! across the boundary, due to closed diodes
-            if (.true.) then!.not. thisIsASurfaceWithBannedFlow) then
+            ! across the boundary, due to closed diodes.
+            call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(k),flowIsPermitted)
+            if (flowIsPermitted .eq. int(1)) then
+              write(*,*) "flow permitted:", k
+              faIn = faIn + 1
               faceRes(faIn) = implicitcoeffs(k,1)
+              write(*,*) "implicit coeffs Netlist in elmgmr.f90", implicitcoeffs(k,1)
             endif
          end do
          IF (iheart .gt. int(0)) THEN

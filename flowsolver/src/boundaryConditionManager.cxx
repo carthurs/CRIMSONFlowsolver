@@ -41,6 +41,25 @@ extern "C" void callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(con
 
 
 // RCR Boundary condition specific functions
+void boundaryConditionManager::setPressureFromFortran()
+{
+  // see the called funciton setPressureFromFortran comments for details of what this does.
+  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition)==typeid(RCR))
+    {
+      RCR* downcastRCR = dynamic_cast<RCR*>(boundaryCondition->get());
+      downcastRCR->setPressureFromFortran();
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPSetPressureFromFortran()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->setPressureFromFortran();
+}
+
 void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
@@ -516,6 +535,8 @@ extern "C" void callCPPDiscoverWhetherFlowPermittedAcrossSurface(const int& quer
 
 void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged)
 {
+  // Warning: This thing is broken: the booleans it checks for are not reset correctly currently. Do not use without fixing first!
+  assert(false);
   // Begin by assuming boundary conditions are as they were on the previous time-step; this will be changed below if the assumption is false.
   boundaryConditionTypesHaveChanged = 0;
   // find netlists

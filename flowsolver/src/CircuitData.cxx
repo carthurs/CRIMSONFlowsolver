@@ -4,6 +4,7 @@
 #include <float.h>
 #include <algorithm>
 #include <stack>
+#include <sstream>
 
 void CircuitData::rebuildCircuitMetadata()
 {
@@ -100,8 +101,12 @@ void CircuitData::setupComponentNeighbourPointers()
 	}
 }
 
-void CircuitData::tagNodeAndComponentAt3DInterface()
+void CircuitData::initialiseNodeAndComponentAt3DInterface(int threeDInterfaceNodeIndex)
 {
+	setIndexOfNodeAt3DInterface(threeDInterfaceNodeIndex);
+	// tag the node at the 3D interface:
+    mapOfPressureNodes.at(threeDInterfaceNodeIndex)->m_connectsTo3DDomain = true;
+
 	int numberOfComponentsTaggedFor3DFlow = 0; //a counter to verify there exists a unique 3D flow-tagged component
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
@@ -109,53 +114,115 @@ void CircuitData::tagNodeAndComponentAt3DInterface()
 		if ((*component)->prescribedFlowType == Flow_3DInterface)
 		{
 			numberOfComponentsTaggedFor3DFlow++;
-			// Find which end of the component doesn't link to any other components (and so therefore is at the 3D interface)
-			int baseComponentStartNodeIdx=(*component)->startNode->indexInInputData;
-			int baseComponentEndNodeIdx=(*component)->endNode->indexInInputData;
-			int numberOfTimesComponentStartNodeAppearsInCircuit = 0;
-			int numberOfTimesComponentEndNodeAppearsInCircuit = 0;
-			for (auto otherComponent=components.begin(); otherComponent!=components.end(); otherComponent++)
+			// Ensure one of this component's nodes is the one at the 3D interface
+			bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  m_indexOfNodeAt3DInterface);
+			bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  m_indexOfNodeAt3DInterface);
+			if (startNodeIsAt3Dinterface || endNodeIsAt3Dinterface)
 			{
-				if ((*otherComponent)->startNode->indexInInputData == baseComponentStartNodeIdx)
-				{
-					numberOfTimesComponentStartNodeAppearsInCircuit++;
-				}
-				if ((*otherComponent)->endNode->indexInInputData == baseComponentStartNodeIdx)
-				{
-					numberOfTimesComponentStartNodeAppearsInCircuit++;
-				}
-				if ((*otherComponent)->startNode->indexInInputData == baseComponentEndNodeIdx)
-				{
-					numberOfTimesComponentEndNodeAppearsInCircuit++;
-				}
-				if ((*otherComponent)->endNode->indexInInputData == baseComponentEndNodeIdx)
-				{
-					numberOfTimesComponentEndNodeAppearsInCircuit++;
-				}
-			}
-
-			// Make sure both the start and end nodes were actually found in the circuit (or else something has gone badly wrong!)
-			assert(numberOfTimesComponentStartNodeAppearsInCircuit>=1);
-			assert(numberOfTimesComponentEndNodeAppearsInCircuit>=1);
-
-			if (numberOfTimesComponentStartNodeAppearsInCircuit>1 && numberOfTimesComponentEndNodeAppearsInCircuit>1)
-			{
-				throw std::runtime_error("EE: Only one component may be directly connected to the 3D interface in the Netlist.");
-			}
-			else if (numberOfTimesComponentStartNodeAppearsInCircuit>1)
-			{
-				throw std::runtime_error("EE: The netlist component at the 3D interface must be connected to it via its start node, not its end node.");
-			}
-			else // actually tag the 3D interface node, now we've checked for errors...
-			{
-				assert(numberOfTimesComponentStartNodeAppearsInCircuit==1);
-				// Setting these two bool tags here is the purpose of the whole subroutine!
-				(*component)->startNode->m_connectsTo3DDomain = true;
+				// tag the component as being at the 3D interface
 				(*component)->setConnectsToNodeAt3DInterface();
 			}
+			else
+			{
+				throw std::runtime_error("EE: Component with prescribed flow from the 3D domain does not have a node tagged as being at the 3D interface.");
+			}
+
+			// Set up the sign for the flow prescription, depending on whether it's the start or end node of the
+			// component which is at the 3D interface (if the user has listed the end node before the start node for
+			// the component at the 3D interface in the netlist_surfaces.dat, we need to flip the sign of the flow
+			// coming from the 3D interface. This affects all component types, but is needed for diodes in particular,
+			// where the user has a legitimate reason to want to reverse those nodes, depending on the orientation they
+			// want to give to the diode.)
+			if (startNodeIsAt3Dinterface)
+			{
+				(*component)->signForPrescribed3DInterfaceFlow = 1.0;
+			}
+			else if (endNodeIsAt3Dinterface)
+			{
+				(*component)->signForPrescribed3DInterfaceFlow = -1.0;
+			}
+			else
+			{
+				throw std::runtime_error("EE: Component with prescribed flow from the 3D domain does not have a node tagged as being at the 3D interface.");
+			}
+
+			// // Find which end of the component doesn't link to any other components (and so therefore is at the 3D interface)
+			// int baseComponentStartNodeIdx=(*component)->startNode->indexInInputData;
+			// int baseComponentEndNodeIdx=(*component)->endNode->indexInInputData;
+			// int numberOfTimesComponentStartNodeAppearsInCircuit = 0;
+			// int numberOfTimesComponentEndNodeAppearsInCircuit = 0;
+			// for (auto otherComponent=components.begin(); otherComponent!=components.end(); otherComponent++)
+			// {
+			// 	if ((*otherComponent)->startNode->indexInInputData == baseComponentStartNodeIdx)
+			// 	{
+			// 		numberOfTimesComponentStartNodeAppearsInCircuit++;
+			// 	}
+			// 	if ((*otherComponent)->endNode->indexInInputData == baseComponentStartNodeIdx)
+			// 	{
+			// 		numberOfTimesComponentStartNodeAppearsInCircuit++;
+			// 	}
+			// 	if ((*otherComponent)->startNode->indexInInputData == baseComponentEndNodeIdx)
+			// 	{
+			// 		numberOfTimesComponentEndNodeAppearsInCircuit++;
+			// 	}
+			// 	if ((*otherComponent)->endNode->indexInInputData == baseComponentEndNodeIdx)
+			// 	{
+			// 		numberOfTimesComponentEndNodeAppearsInCircuit++;
+			// 	}
+			// }
+
+			// // Make sure both the start and end nodes were actually found in the circuit (or else something has gone badly wrong!)
+			// assert(numberOfTimesComponentStartNodeAppearsInCircuit>=1);
+			// assert(numberOfTimesComponentEndNodeAppearsInCircuit>=1);
+
+			// if (numberOfTimesComponentStartNodeAppearsInCircuit>1 && numberOfTimesComponentEndNodeAppearsInCircuit>1)
+			// {
+			// 	throw std::runtime_error("EE: Only one component may be directly connected to the 3D interface in the Netlist.");
+			// }
+			// else if (numberOfTimesComponentStartNodeAppearsInCircuit>1)
+			// {
+			// 	throw std::runtime_error("EE: The netlist component at the 3D interface must be connected to it via its start node, not its end node.");
+			// }
+			// else // actually tag the 3D interface node, now we've checked for errors...
+			// {
+			// 	assert(numberOfTimesComponentStartNodeAppearsInCircuit==1);
+			// 	// Setting these two bool tags here is the purpose of the whole subroutine!
+			// 	// (*component)->startNode->m_connectsTo3DDomain = true;
+			// 	(*component)->setConnectsToNodeAt3DInterface();
+			// }
 		}
 	}
-	assert(numberOfComponentsTaggedFor3DFlow==1); // May fail if this subroutine gets called on a subcircuit, instead of the whole input data circuit, if the subcircuit doesn't have the 3D flow interface component. Don't call it in this case!
+	if (numberOfComponentsTaggedFor3DFlow!=1)
+	{
+		// May fail if this subroutine gets called on a subcircuit, instead of the whole input data circuit, if the subcircuit doesn't have the 3D flow interface component. Don't call it in this case!
+		std::stringstream errorMessage;
+		errorMessage << "EE: Expected exactly one component at the 3D interface, but found " << numberOfComponentsTaggedFor3DFlow << "." << std::endl;
+		throw std::runtime_error(errorMessage.str());
+	}
+
+	// Ensure that the 3D interface node belongs to a unique component:
+	int numberOfComponentsConnectingTo3DInterfaceNode = 0; //a counter to verify there exists a unique component connecting to the 3D interface node
+	for (auto component=components.begin(); component!=components.end(); component++)
+	{
+		bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  m_indexOfNodeAt3DInterface);
+		bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  m_indexOfNodeAt3DInterface);
+		if (startNodeIsAt3Dinterface)
+		{
+			numberOfComponentsConnectingTo3DInterfaceNode++;
+		}
+		if (endNodeIsAt3Dinterface)
+		{
+			numberOfComponentsConnectingTo3DInterfaceNode++;
+		}
+	}
+	if (numberOfComponentsConnectingTo3DInterfaceNode!=1)
+	{
+		// May fail if this subroutine gets called on a subcircuit, instead of the whole input data circuit, if the subcircuit doesn't have the 3D flow interface component. Don't call it in this case!
+		std::stringstream errorMessage;
+		errorMessage << "EE: Expected exactly one appearance of the 3D interface node in the circuit data, but found " << numberOfComponentsConnectingTo3DInterfaceNode << "." << std::endl;
+		throw std::runtime_error(errorMessage.str());
+	}
+
 }
 
 void CircuitData::rebuildCircuitPressureNodeMap()
@@ -350,6 +417,7 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 	if (m_boundaryConditionTypeHasJustChanged)
 	{
 		switchBetweenDirichletAndNeumannCircuitDesign();
+		m_boundaryConditionTypeHasJustChanged = false;
 	}
 }
 
@@ -444,6 +512,16 @@ bool CircuitData::boundaryConditionTypeHasJustChanged()
 	// Reset m_boundaryConditionTypeHasJustChanged before returning:
 	m_boundaryConditionTypeHasJustChanged = false;
 	return m_boundaryConditionTypeHasJustChanged;
+}
+
+void CircuitData::setIndexOfNodeAt3DInterface(int indexToSet)
+{
+	m_indexOfNodeAt3DInterface = indexToSet;
+}
+
+int CircuitData::getIndexOfNodeAt3DInterface()
+{
+	return m_indexOfNodeAt3DInterface;
 }
 
 bool CircuitComponent::connectsToNodeAt3DInterface()

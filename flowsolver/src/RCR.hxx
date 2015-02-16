@@ -14,6 +14,7 @@ public:
 		// (the order of these two lines is correct!)
 		indexOfThisRCR = numberOfInitialisedRCRs;
 		numberOfInitialisedRCRs++;
+		m_needsPressureToBeInitialisedFromFortran = false;
 		
 		initialiseModel();
 		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
@@ -25,6 +26,8 @@ public:
 	}
 	
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
+
+ 	void setPressureFromFortran();
 
 	
 //  	procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
@@ -50,6 +53,7 @@ private:
 	double r2; // Distal Resistance
 	std::vector<std::pair<double,double>> timeDataPdist; // Time-varying disal pressure data
 	int lengthOftimeDataPdist;
+	bool m_needsPressureToBeInitialisedFromFortran;
 };
 
 #endif

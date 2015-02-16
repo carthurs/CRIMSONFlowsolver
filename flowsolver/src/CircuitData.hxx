@@ -8,6 +8,7 @@
 #include <boost/weak_ptr.hpp>
 #include "datatypesInCpp.hxx"
 #include "gtest/gtest_prod.h"
+#include "debuggingToolsForCpp.hxx"
 
 class CircuitPressureNode
 {
@@ -55,6 +56,7 @@ public:
 	int indexLocalToSubcircuit;
 	circuit_component_flow_prescription_t prescribedFlowType;
 	double valueOfPrescribedFlow;
+	double signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by its end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
@@ -87,7 +89,7 @@ public:
 	bool hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
 	{
 		bool hasNonnegativePressureGradient = (startNode->pressure >= endNode->pressure);
-		bool hasForwardFlow = (flow >= 1e-16); // We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
+		bool hasForwardFlow = (signForPrescribed3DInterfaceFlow*flow >= 1e-16); // We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
 		return (hasNonnegativePressureGradient || hasForwardFlow);
 	}
 	bool connectsToNodeAt3DInterface();
@@ -152,12 +154,15 @@ public:
 	void rebuildCircuitMetadata();
 	bool connectsTo3DDomain() const;
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
-	void tagNodeAndComponentAt3DInterface();
+	void initialiseNodeAndComponentAt3DInterface(int threeDInterfaceNodeIndex);
 	void setupComponentNeighbourPointers();
 	void switchDiodeStatesIfNecessary();
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
+
+	void setIndexOfNodeAt3DInterface(int indexToSet);
+	int getIndexOfNodeAt3DInterface();
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in);
 private:
@@ -167,6 +172,7 @@ private:
 	int m_hstep;
 	bool m_flowPermittedAcross3DInterface;
 	bool m_boundaryConditionTypeHasJustChanged;
+	int m_indexOfNodeAt3DInterface;
 };
 
 #endif

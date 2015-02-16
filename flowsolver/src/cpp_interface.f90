@@ -78,6 +78,12 @@ module cpp_interface
 
 !   =============== Numerical RCR Block ===============
     interface
+            subroutine callCPPSetPressureFromFortran() bind(c,name="callCPPSetPressureFromFortran")
+                use iso_c_binding
+            end subroutine callCPPSetPressureFromFortran
+    end interface
+
+    interface
     		subroutine callCppGetImplicitCoeff_rcr(implicitCoeffs_toBeFilled_ptr) bind(c,name="callCppGetImplicitCoeff_rcr")
     			use iso_c_binding
     			type(c_ptr) :: implicitCoeffs_toBeFilled_ptr

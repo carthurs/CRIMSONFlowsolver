@@ -520,6 +520,10 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		}
 		initialPressures.push_back(tempInitialPressures);
 
+		// Get the tag for the node at the 3D interface:
+		readNextLine();
+		indicesOfNodesAt3DInterface.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+
 	}
 
 	fileHasBeenRead = int(1);
@@ -584,4 +588,8 @@ std::vector<int> netlistReader::getNumberOfPressureNodes()
 std::vector<std::map<int,double>> netlistReader::getInitialPressures()
 {
 	return initialPressures;
+}
+std::vector<int> netlistReader::getIndicesOfNodesAt3DInterface()
+{
+	return indicesOfNodesAt3DInterface;
 }

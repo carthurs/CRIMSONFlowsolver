@@ -139,7 +139,8 @@ void RCR::initialiseModel()
     }
     else
     {
-      pressure_n = *pressure_n_ptr;
+      // pressure_n = *pressure_n_ptr;
+      m_needsPressureToBeInitialisedFromFortran = true;
     }
 
     // These are Hop and dp_dq now.
@@ -238,4 +239,18 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
   returnCoeffs.second = temp2 / denom;
   
   return returnCoeffs;
+}
+
+// This function exists because I can't untangle the itrdrv_init in itrdrv.f90 in
+// such a way that this gets set up naturally. The Fortran side of things needs
+// some major refactoring, but for now, we have to make do with this hack to
+// initialise the pressure.
+void RCR::setPressureFromFortran()
+{
+  // This is only called if this is a new simulation (the bool sees to that).
+  // If it's a restarted sim, the pressure should be loaded properly anyway.
+  if (m_needsPressureToBeInitialisedFromFortran)
+  {
+    pressure_n = *pressure_n_ptr;
+  }
 }

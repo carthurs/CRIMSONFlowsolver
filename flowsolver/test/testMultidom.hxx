@@ -84,6 +84,8 @@
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(12,&flow4));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(13,&flow4));
 	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(14,&flow4));
+	    
+		fortranPointerManager_instance->hasBoundaryFlows = true;
 
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(3,&press1));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(7,&press2));
@@ -92,6 +94,8 @@
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(12,&press4));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(13,&press4));
 	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(14,&press4));        
+
+	    fortranPointerManager_instance->hasBoundaryPressures = true;
 
 	  	// Setup the file reader for the RCRTs
 		rcrtReader_instance = rcrtReader::Instance();
@@ -139,6 +143,20 @@
 		(*retrievedBoundaryConditions)[1]->Hop = 2.567;
 		(*retrievedBoundaryConditions)[2]->Hop = 3.567;
 		(*retrievedBoundaryConditions)[3]->Hop = 4.567;
+
+		// Force an update of the pressure_n in the boundary conditions
+		// (this was introduced as a least-bad hack to deal with order or initialisation,
+		// which has a knock-on effect that we must use it here, too...
+		// as a bonus, this acts as a test of setPressureFromFortran.)
+		boundaryConditionManager_instance->setPressureFromFortran();
+
+		// (*retrievedBoundaryConditions)[0]->pressure_n = *((*retrievedBoundaryConditions)[0]->pressure_n_ptr);
+		// (*retrievedBoundaryConditions)[1]->pressure_n = *((*retrievedBoundaryConditions)[1]->pressure_n_ptr);
+		// (*retrievedBoundaryConditions)[2]->pressure_n = *((*retrievedBoundaryConditions)[2]->pressure_n_ptr);
+		// (*retrievedBoundaryConditions)[3]->pressure_n = *((*retrievedBoundaryConditions)[3]->pressure_n_ptr);
+		// (*retrievedBoundaryConditions)[4]->pressure_n = *((*retrievedBoundaryConditions)[4]->pressure_n_ptr);
+		// (*retrievedBoundaryConditions)[5]->pressure_n = *((*retrievedBoundaryConditions)[5]->pressure_n_ptr);
+		// (*retrievedBoundaryConditions)[6]->pressure_n = *((*retrievedBoundaryConditions)[6]->pressure_n_ptr);
 
 	    alfi_local = 0.5;
 	    delt = 0.001;

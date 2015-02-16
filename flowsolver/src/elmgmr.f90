@@ -1677,7 +1677,6 @@
          DO k = 1, numRCRSrfs
             faIn = faIn + 1
             faceRes(faIn) = RCRConvCoef(lstep+2,k)
-            write(*,*) "implicit coeffs RCR in elmgmr.f90", RCRConvCoef(lstep+2,k)
          END DO
          DO k = 1, numGRCRSrfs
             faIn = faIn + 1
@@ -1685,7 +1684,6 @@
               ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
               call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
               faceRes(faIn) = implicitcoeffs(k,1)
-              write(*,*) "implicit coeffs GRCR in elmgmr.f90", implicitcoeffs(k,1)
             else  
               faceRes(faIn) = grcrbc_coeff_1_implicit(k)
             end if 
@@ -1702,10 +1700,8 @@
             ! across the boundary, due to closed diodes.
             call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(k),flowIsPermitted)
             if (flowIsPermitted .eq. int(1)) then
-              write(*,*) "flow permitted:", k
               faIn = faIn + 1
               faceRes(faIn) = implicitcoeffs(k,1)
-              write(*,*) "implicit coeffs Netlist in elmgmr.f90", implicitcoeffs(k,1)
             endif
          end do
          IF (iheart .gt. int(0)) THEN

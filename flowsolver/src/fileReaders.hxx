@@ -314,6 +314,7 @@ public:
 	std::vector<std::vector<circuit_component_flow_prescription_t>> getTypeOfPrescribedFlows();
 	std::vector<int> getNumberOfPressureNodes();
 	std::vector<std::map<int,double>> getInitialPressures();
+	std::vector<int> getIndicesOfNodesAt3DInterface();
 protected:
 private:
 	netlistReader()
@@ -341,6 +342,8 @@ private:
 
 	std::vector<int> numberOfPressureNodes;
 	std::vector<std::map<int,double>> initialPressures;
+
+	std::vector<int> indicesOfNodesAt3DInterface;
 
 };
 

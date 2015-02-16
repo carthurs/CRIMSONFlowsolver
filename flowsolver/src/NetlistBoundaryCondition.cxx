@@ -356,7 +356,11 @@ void NetlistBoundaryCondition::createCircuitDescription()
     // (rewrites - but does not change - the values are identical!)
     m_CircuitDescription.rebuildCircuitMetadata();
 
-    m_CircuitDescription.tagNodeAndComponentAt3DInterface();    
+    // Tell the node at the 3D interface that it connects to the 3D domain:
+    {
+        int threeDNodeIndex = netlistReader_instance->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPN);
+        m_CircuitDescription.initialiseNodeAndComponentAt3DInterface(threeDNodeIndex);
+    }
 
     m_CircuitDescription.switchDiodeStatesIfNecessary();
     m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
@@ -386,6 +390,23 @@ void NetlistBoundaryCondition::createInitialCircuitDescriptionWithoutDiodes()
             component--; // decrement the returned iterator, so the for loop incrememnts it back to the correct (next) element.
         }
     }
+
+    // A tidier (and untested!) version of the above, without the ugly "component --" line:
+    // auto component=m_CircuitDescriptionWithoutDiodes.components.begin();
+    // while (component!=m_CircuitDescriptionWithoutDiodes.components.end())
+    // {
+    //     // both branches of this if guard result in an iterator to the next component after the one just checked (whether or not an erasing occurs)
+    //     bool componentNotADiode = !((*component)->type == Component_Diode);
+    //     if(componentNotADiode)
+    //     {
+    //         component++
+    //     }
+    //     else
+    //     {
+    //         // erase the diode:
+    //         component = m_CircuitDescriptionWithoutDiodes.components.erase(component); // returns an iterator pointing to the new location of the element after the one that just got erased            
+    //     }
+    // }
 
     m_CircuitDescriptionWithoutDiodes.rebuildCircuitMetadata();
 

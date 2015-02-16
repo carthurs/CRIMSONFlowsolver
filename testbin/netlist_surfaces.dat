@@ -47,6 +47,8 @@ t
 2 206663.1e0
 3 0.0e0
 4 0.1e0
+# Index of node at 3D interface:
+1
 ######
 ### Begin second netlist boundary condition model
 ######
@@ -116,6 +118,8 @@ t
 4 1.0e0
 5 1.1e0
 6 1.2e0
+# Index of node at 3D interface:
+3
 ### End second netlist boundary condition model
 ######
 ### Begin third netlist boundary condition model
@@ -166,6 +170,8 @@ t
 2 106663.1e0
 3 0.0
 4 1000000.0
+# Index of node at 3D interface:
+1
 ### End third netlist boundary condition model
 ######
 ### Begin fourth netlist boundary condition model
@@ -199,4 +205,6 @@ t
 # Initial pressures at the pressure nodes:
 1 106663.0e0
 2 1000000.0
+# Index of node at 3D interface:
+1
 ### End fourth netlist boundary condition model

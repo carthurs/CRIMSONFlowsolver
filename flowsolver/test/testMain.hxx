@@ -14,6 +14,7 @@
 #include "input.h"
 #include "proces.h"
 #include "itrdrv.h"
+#include "itrPC.h"
 #include "partition.h"
 #include "input_fform.h"
 #include "multidom.hxx"
@@ -144,10 +145,18 @@
 		   input(&numProcsTotal, &rank);
 		   proces();
 
-		   itrdrv_init(); // initialize solver
+		   {
+		   	   // just initialise the time values that the abstractBoundaryCondition needs (when it's called in multidom_initialise).
+		   	   // This will be called again during itrdrv_init.
+		   	   // This is really ugly, but a proper fix will take days - it's a BIG refactor.
+			   int dummyInitialItseqValue=1;
+			   callFortranSetupTimeParameters(dummyInitialItseqValue);
+		   }
 
 		   // initialise reduced order boundary conditions
 		   multidom_initialise();
+
+		   itrdrv_init(); // initialize solver
 
 		   fortranBoundaryDataPointerManager* pointerManager;
 		   pointerManager = fortranBoundaryDataPointerManager::Get();

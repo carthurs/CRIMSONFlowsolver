@@ -564,10 +564,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
             iBC = int(0)
         end where
     endif
-
-    ! write(*,*) "ibc:", iBC
-    ! call sleep(2)
-    ! stop
    
     if(iheart .gt. int(0)) then
         
@@ -620,12 +616,12 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     LCtime = loctim(itseq)
     dtol(:)= deltol(itseq,:)
 
-    call itrSetup ( y, acold )
+    call itrSetup ( y, acold ) ! sets up alfi
     
     !
     ! *** set \alpha_{i} in multidomain module
     !
-         call setsimv_alfi(alfi)
+    call setsimv_alfi(alfi)
 
     !...initialize the coefficients for the impedance convolution,
     !   which are functions of alphaf so need to do it after itrSetup
@@ -734,6 +730,18 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         rmue=datmat(1,2,1) ! keep constant
     !endif
 
+    ! This function is needed to poke the RCRs to get them to re-read
+    ! the pressure pointer (pressure_n_ptr) to initialise with the 3D
+    ! domain pressure at the surface.
+    ! 
+    ! This is only done if this is not a restarted simulation (its internal)
+    ! logic guards this.
+    !
+    ! It's a least-bad hack to get around the chicken-and-egg initialisation
+    ! order issues for the 3D and multidomain. If we want to avoid this,
+    ! the Fortran code needs refactoring.
+    call callCPPSetPressureFromFortran()
+
     CONTAINS
 
     ! SUBROUTINE AddNeumannBCTomemLS(srfID, faIn)
@@ -763,16 +771,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     ! RETURN
     ! END SUBROUTINE AddNeumannBCTomemLS
-
-
-
-
-
-
-
-
-
-
 
 end subroutine itrdrv_init
 !
@@ -848,6 +846,12 @@ SUBROUTINE AddNeumannBCTomemLS(srfID, faIn, memLS_lhs_inout)
     RETURN
 END SUBROUTINE AddNeumannBCTomemLS
 
+! This subroutine is the place for initialisation calls which require that the CPP
+! boundary conditions have already been initialised
+subroutine initialiseInfoForCPPBoundaryConditions()
+    implicit none
+end subroutine initialiseInfoForCPPBoundaryConditions
+
 subroutine rebuildMemLS_lhs()
         use iso_c_binding
         use cpp_interface
@@ -877,7 +881,8 @@ subroutine rebuildMemLS_lhs()
         integer numBCsWhichDisallowFlow
         integer flowIsPermitted
         integer i, j, k
-        integer thisIsNotANetlistSurface
+        integer thisIsANetlistSurface
+        integer thisSurfacePermitsFlow
         integer surface
 
         IF  (ipvsq .GE. 2) THEN
@@ -902,15 +907,17 @@ subroutine rebuildMemLS_lhs()
         DO i=1, nshg
             IF (IBITS(iBC(i),3,3) .NE. 0)  then
                 ! Check whether this node is on one a surface belonging to a Netlist boundary condition:
-                thisIsNotANetlistSurface = int(1)
+                thisIsANetlistSurface = int(0)
+                thisSurfacePermitsFlow = int(1)
                 do surface = 1, numNetlistLPNSrfs
                     if (indicesOfNetlistSurfaces(surface) .eq. ndsurf(i)) then
-                        thisIsNotANetlistSurface = int(0)
+                        thisIsANetlistSurface = int(1)
+                        call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(surface),thisSurfacePermitsFlow)
                     end if
                 end do
 
                 ! If this is not a netlist surface:
-                if(thisIsNotANetlistSurface .eq. int(1)) then
+                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(0))) then
                     facenNo = facenNo + 1
                 endif
             ENDIF
@@ -931,15 +938,17 @@ subroutine rebuildMemLS_lhs()
         DO i=1, nshg
             IF (IBITS(iBC(i),3,3) .NE. 0) THEN
                 ! Check whether this node is on one a surface belonging to a Netlist boundary condition:
-                thisIsNotANetlistSurface = int(1)
+                thisIsANetlistSurface = int(0)
+                thisSurfacePermitsFlow = int(1)
                 do surface = 1, numNetlistLPNSrfs
                     if (indicesOfNetlistSurfaces(surface) .eq. ndsurf(i)) then
-                        thisIsNotANetlistSurface = int(0)
+                        thisIsANetlistSurface = int(1)
+                        call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(surface),thisSurfacePermitsFlow)
                     end if
                 end do
 
                 ! If this is not a netlist surface:
-                if(thisIsNotANetlistSurface .eq. int(1)) then
+                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(0))) then
                     j = j + 1
                     gNodes(j) = i
                     IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0
@@ -1034,7 +1043,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
         ! in the netlists:
         if (numNetlistLPNSrfs .gt. int(0)) then
             ! Fill out the array with zeros
-            binaryMask = 0
+            binaryMask = 1
             ! Set the apprporiate zeros for the nodes where where the Neumann conditions should be applied:
             call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
             ! Reset iBC, so we work with a clean copy

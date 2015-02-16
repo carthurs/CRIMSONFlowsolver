@@ -140,7 +140,7 @@ TEST_F(testMain, checkNetlistSimpleDiode) {
   setSimDirectory(simDir);
   clearOutOldFiles();
 
-  runSimulation();
+  // runSimulation();
 
   // Check PressHist.dat
   // histFileReader PressHistReader = histFileReader();

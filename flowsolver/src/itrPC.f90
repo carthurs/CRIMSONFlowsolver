@@ -4,10 +4,40 @@
 !
 !    Modified by Alberto Figueroa.  Winter 2004
 !-----------------------------------------------------------------------
-      subroutine itrSetup ( y,  acold ) 
-      
+
+      subroutine callFortranSetupTimeParameters(itseq_passedIn) bind(C, name="callFortranSetupTimeParameters")
+        implicit none
+        integer, intent(in) :: itseq_passedIn
+        
+        call setupTimeParameters(itseq_passedIn)
+
+      end subroutine callFortranSetupTimeParameters
+
+      subroutine setupTimeParameters(itseq_passedIn)
+        use phcommonvars
+        implicit none
+
+        integer, intent(in) :: itseq_passedIn
+
+        if( rhoinf(itseq_passedIn).lt.0.or.rhoinf(itseq_passedIn).gt.1) then ! backward Euler
+           almi   = one
+           alfi   = one
+           gami   = one
+           ipred  = 1
+        else           !second order family
+           almi   = (three-rhoinf(itseq_passedIn))/(one+rhoinf(itseq_passedIn))/two
+           alfi   = one/(one+rhoinf(itseq_passedIn))
+           gami   = pt5+almi-alfi
+           if(ideformwall.eq.1) then
+              betai=1.0
+           else
+              betai=0.0
+           end if
+        end if
+      end subroutine setupTimeParameters
+
+      subroutine itrSetup ( y,  acold )
       use deformableWall
-      
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
@@ -17,21 +47,7 @@
 !  Define the Hulbert parameters
 !  second order if between (and including) 0 and 1 otherwise backward Euler
 !
-      if( rhoinf(itseq).lt.0.or.rhoinf(itseq).gt.1) then ! backward Euler
-         almi   = one
-         alfi   = one
-         gami   = one
-         ipred  = 1
-      else           !second order family
-         almi   = (three-rhoinf(itseq))/(one+rhoinf(itseq))/two
-         alfi   = one/(one+rhoinf(itseq))
-         gami   = pt5+almi-alfi
-         if(ideformwall.eq.1) then
-            betai=1.0
-         else
-            betai=0.0
-         end if
-      end if
+      call setupTimeParameters(itseq)
 !     
 !.... set the jacobian type
 !     
@@ -57,8 +73,7 @@
       CFLsld = CFLsl(itseq)
       
       return
-      end
-
+      end subroutine itrSetup
 
 !-----------------------------------------------------------------------
 !

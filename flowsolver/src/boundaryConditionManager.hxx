@@ -46,6 +46,7 @@ class abstractBoundaryCondition;
     void discoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted);
     void haveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged);
     
+    void setPressureFromFortran();
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<abstractBoundaryCondition>>* getBoundaryConditions();
 

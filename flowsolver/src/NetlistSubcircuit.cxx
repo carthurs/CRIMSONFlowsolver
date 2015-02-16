@@ -390,7 +390,10 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
             if (m_circuitData.flowPermittedAcross3DInterface())
             {
   	          columnIndexOf3DInterfaceFlowInLinearSystem = ll + tempIndexingShift;
-  	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,*flow_n_ptr,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+              // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
+              double threeDFlowValue = *flow_n_ptr * prescribedFlowComponent->second->signForPrescribed3DInterfaceFlow;
+              // Give the (possibly sign-corrected) flow to the linear system:
+  	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
 	       }
 	       else if (prescribedFlowComponent->second->prescribedFlowType == Flow_Fixed)
@@ -451,7 +454,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
     errFlag = VecAssemblyBegin(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-//    errFlag = VecView(RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+   // errFlag = VecView(RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
 }
 
@@ -524,7 +527,6 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
     errFlag = VecGetValues(solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     returnValue.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
 
-    std::cout << "implicit coefficients: " << returnValue.first << " " << returnValue.second << std::endl;
 
     return returnValue;
 }

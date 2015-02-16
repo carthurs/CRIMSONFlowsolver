@@ -54,8 +54,8 @@ class abstractBoundaryCondition
 
         // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
         // NB: Need to add a method in fortran to set a value for non-zero restarting!
-        flow_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryFlows.at(surfaceIndex);
-        pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->boundaryPressures.at(surfaceIndex);
+        flow_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
+        pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex);
 
         flow_n = *flow_n_ptr;
         flow_n1 = 0.0;

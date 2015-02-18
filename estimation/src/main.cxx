@@ -17,6 +17,7 @@
 #include "dateTools.hxx"
 #include "petscsys.h"
 #include "SimvascularGlobalArrayTransfer.h"
+#include "itrPC.h"
 
 #ifdef intel
 #include <direct.h>
@@ -110,9 +111,17 @@ int main(int argc, char * argv[]) {
    input(&numProcsTotal, &rank);
    proces(); // Includes the call to set up fortranBoundaryDataPointerManager pointerManager
 
+   {
+       // just initialise the time values that the abstractBoundaryCondition needs (when it's called in multidom_initialise).
+       // This will be called again during itrdrv_init.
+       // This is really ugly, but a proper fix will take days - it's a BIG refactor.
+     int dummyInitialItseqValue=1;
+     callFortranSetupTimeParameters(dummyInitialItseqValue);
+   }
+
    // initialise reduced order boundary conditions
    multidom_initialise();
-   
+
    itrdrv_init(); // initialize solver
 
    fortranBoundaryDataPointerManager* pointerManager;

@@ -464,6 +464,10 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			{
 				tempTypeOfPrescribedPressures.push_back(Pressure_Fixed);
 			}
+			else if (currentLineSplitBySpaces->at(0).compare("v") == 0)
+			{
+				tempTypeOfPrescribedPressures.push_back(Pressure_VolumeDependent); // the node is really a pressure chamber, with the pressure computed from the volume and the elastance or compliance.
+			}
 			else if (currentLineSplitBySpaces->at(0).compare("l") == 0)
 			{
 				tempTypeOfPrescribedPressures.push_back(Pressure_LeftVentricular);

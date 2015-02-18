@@ -242,19 +242,50 @@ void CircuitData::rebuildCircuitPressureNodeMap()
 	numberOfPressureNodes = mapOfPressureNodes.size();
 }
 
-boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in)
+boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
 {
 	rebuildCircuitPressureNodeMap();
 
 	bool nodeAlreadyConstructed = (mapOfPressureNodes.count(indexInInputData_in) == 1);
 	if (nodeAlreadyConstructed)
 	{
+		// add the pressure node to the list of neighbours, so the node knows which components are attached to it:
+		boost::weak_ptr<CircuitComponent> componentToPushBack(componentNeighbouringThisNode);
+		mapOfPressureNodes.at(indexInInputData_in)->listOfComponentstAttachedToThisNode.push_back(componentToPushBack);
+		// Return this existing node:
 		return mapOfPressureNodes.at(indexInInputData_in);
 	}
 	else // node not already constructed
 	{
-		CircuitPressureNode* ptrToMakeShared = new CircuitPressureNode(m_hstep);
-		return boost::shared_ptr<CircuitPressureNode> (ptrToMakeShared);
+		// Check for a non-set pressure type first:
+		if (typeOfPrescribedPressure == Pressure_Null)
+		{
+			std::stringstream message;
+			message << "Invalid pressure prescription for netlist circuit node number " <<  indexInInputData_in << std::endl;
+			throw std::runtime_error(message.str());
+		}
+
+		// Build the correct sort of node:
+		CircuitPressureNode* ptrToNewNode;
+		if (typeOfPrescribedPressure != Pressure_VolumeDependent)
+		{
+			ptrToNewNode = new CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, m_hstep);
+		}
+		else if (typeOfPrescribedPressure == Pressure_VolumeDependent)
+		{
+			ptrToNewNode = new VolumeTrackingPressureChamber(indexInInputData_in, typeOfPrescribedPressure, m_hstep);
+		}
+		else
+		{
+			throw std::logic_error("Internal logic error. Please contact the developers.");
+		}
+
+		// add the pressure node to the list of neighbours, so the node knows which components are attached to it:
+		boost::weak_ptr<CircuitComponent> componentToPushBack(componentNeighbouringThisNode);
+		ptrToNewNode->listOfComponentstAttachedToThisNode.push_back(componentToPushBack);
+
+		// Finally, make a shared pointer to the new node and return it.
+		return boost::shared_ptr<CircuitPressureNode> (ptrToNewNode);
 	}
 
 }

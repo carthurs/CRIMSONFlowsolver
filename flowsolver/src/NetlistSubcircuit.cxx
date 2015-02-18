@@ -212,12 +212,23 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      {
        for (int ll=0; ll<m_circuitData.numberOfComponents; ll++)
        {
-          if (m_circuitData.components.at(ll)->endNode->indexInInputData == listOfNodesWithMultipleIncidentCurrents.at(mm))
+          bool endNodeIsNotAPressureChamber = (dynamic_cast<VolumeTrackingPressureChamber*> (m_circuitData.components.at(ll)->endNode.get()) == NULL);
+          bool foundMultipleIncidentCurrentsForEndNode = (m_circuitData.components.at(ll)->endNode->indexInInputData == listOfNodesWithMultipleIncidentCurrents.at(mm)); 
+          // in the case where the node is a pressure chamber, we don't apply Kirchoff's laws here (hence the endNodeIsNotAPressureChamber bool)
+          // ...for pressure chambers, we apply the pressure at the node based upon the current stored volume in the chamber, and any excess
+          // flow from neighbouring components will be added to (or subtracted from) the stored volume in the chamber.
+          if (foundMultipleIncidentCurrentsForEndNode && endNodeIsNotAPressureChamber)
           {
              // this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = 1.0d0
             errFlag = MatSetValue(systemMatrix,mm+m_circuitData.numberOfComponents,ll+m_circuitData.numberOfPressureNodes+numberOfHistoryPressures,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           }
-          if (m_circuitData.components.at(ll)->startNode->indexInInputData == listOfNodesWithMultipleIncidentCurrents.at(mm))
+
+          bool startNodeIsNotAPressureChamber = (dynamic_cast<VolumeTrackingPressureChamber*> (m_circuitData.components.at(ll)->startNode.get()) == NULL);
+          bool foundMultipleIncidentCurrentsForStartNode = (m_circuitData.components.at(ll)->startNode->indexInInputData == listOfNodesWithMultipleIncidentCurrents.at(mm));
+          // in the case where the node is a pressure chamber, we don't apply Kirchoff's laws here (hence the startNodeIsNotAPressureChamber bool)
+          // ...for pressure chambers, we apply the pressure at the node based upon the current stored volume in the chamber, and any excess
+          // flow from neighbouring components will be added to (or subtracted from) the stored volume in the chamber.
+          if (foundMultipleIncidentCurrentsForStartNode && startNodeIsNotAPressureChamber)
           {
              // this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = -1.0d0
             errFlag = MatSetValue(systemMatrix,mm+m_circuitData.numberOfComponents,ll+m_circuitData.numberOfPressureNodes+numberOfHistoryPressures,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);

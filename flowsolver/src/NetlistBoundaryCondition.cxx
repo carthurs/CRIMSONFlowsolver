@@ -283,10 +283,6 @@ void NetlistBoundaryCondition::createCircuitDescription()
     std::vector<double> retrievedComponentParameterValues = netlistReader_instance->getComponentParameterValues().at(m_IndexOfThisNetlistLPN);
     std::reverse(retrievedComponentParameterValues.begin(), retrievedComponentParameterValues.end());
 
-    std::vector<int> retrievedListOfPrescribedPressures = netlistReader_instance->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
-    std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = netlistReader_instance->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
-    std::vector<double> retrievedValueOfPrescribedPressures = netlistReader_instance->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
-
     std::vector<int> retrievedListOfPrescribedFlows = netlistReader_instance->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
     std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = netlistReader_instance->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
     std::vector<double> retrievedValueOfPrescribedFlows = netlistReader_instance->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
@@ -300,34 +296,46 @@ void NetlistBoundaryCondition::createCircuitDescription()
 
         int indexOfStartNodeInInputData = retrievedComponentStartNodes.back();
         retrievedComponentStartNodes.pop_back();
-        (*component)->startNode = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfStartNodeInInputData);
-        (*component)->startNode->indexInInputData = indexOfStartNodeInInputData;
+        
+        // note that we're passing a boost::shared_ptr to the startNode here; if this is currently NULL, it will
+        // be constructed during the call to setupPressureNode.
+        setupPressureNode(indexOfStartNodeInInputData, (*component)->startNode, *component);
 
-        (*component)->startNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
-        for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
-        {
-            if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->indexInInputData)
-            {
-                (*component)->startNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
-                (*component)->startNode->valueOfPrescribedPressure =retrievedValueOfPrescribedPressures.at(prescribedPressure);
-                (*component)->startNode->pressure = (*component)->startNode->valueOfPrescribedPressure;
-            }
-        }
+        // (*component)->startNode = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfStartNodeInInputData);
+        // (*component)->startNode->indexInInputData = indexOfStartNodeInInputData;
+
+        // (*component)->startNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
+        // for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
+        // {
+        //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->indexInInputData)
+        //     {
+        //         (*component)->startNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
+        //         (*component)->startNode->valueOfPrescribedPressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
+        //         (*component)->startNode->pressure = (*component)->startNode->valueOfPrescribedPressure;
+        //     }
+        // }
 
         int indexOfEndNodeInInputData = retrievedComponentEndNodes.back();
         retrievedComponentEndNodes.pop_back();
-        (*component)->endNode = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfEndNodeInInputData);
-        (*component)->endNode->indexInInputData = indexOfEndNodeInInputData;
-        (*component)->endNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
-        for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
-        {
-            if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->indexInInputData)
-            {
-                (*component)->endNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
-                (*component)->endNode->valueOfPrescribedPressure =retrievedValueOfPrescribedPressures.at(prescribedPressure);
-                (*component)->endNode->pressure = (*component)->endNode->valueOfPrescribedPressure;
-            }
-        }
+
+        // note that we're passing a boost::shared_ptr to the endNode here; if this is currently NULL, it will
+        // be constructed during the call to setupPressureNode.
+        setupPressureNode(indexOfEndNodeInInputData, (*component)->endNode, *component);
+
+        // int indexOfEndNodeInInputData = retrievedComponentEndNodes.back();
+        // retrievedComponentEndNodes.pop_back();
+        // (*component)->endNode = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfEndNodeInInputData);
+        // (*component)->endNode->indexInInputData = indexOfEndNodeInInputData;
+        // (*component)->endNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
+        // for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
+        // {
+        //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->indexInInputData)
+        //     {
+        //         (*component)->endNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
+        //         (*component)->endNode->valueOfPrescribedPressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
+        //         (*component)->endNode->pressure = (*component)->endNode->valueOfPrescribedPressure;
+        //     }
+        // }
 
         (*component)->prescribedFlowType = Flow_NotPrescribed;  // initialise as a default, before replacing as necessary
         for (int prescribedFlow=0; prescribedFlow<m_CircuitDescription.numberOfPrescribedFlows; prescribedFlow++)
@@ -372,6 +380,46 @@ void NetlistBoundaryCondition::createCircuitDescription()
     // {
     //     m_CircuitDescription.componentIndices.push_back(ii);
     // }
+}
+
+
+// This function gets a pointer to, or creates anew, a pressure node (dependent on whether the node already has been
+// constructed, for example because a node is shared by more than one component, and another component has already
+// set up the node). It includes the code which decides whether to set up a volume tracking or a simple pressure node.
+//
+// It also adds the passed-in componentNeighbouringThisNode to the list of components attached to this node, whether or
+// not the node is constructed on this call.
+//
+// Note that the pressure node is not fully set-up until this function has been called once for each component that
+// neighbours the node.
+void NetlistBoundaryCondition::setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
+{
+    // Access the read-in file data:
+    netlistReader* netlistReader_instance = netlistReader::Instance();
+    std::vector<int> retrievedListOfPrescribedPressures = netlistReader_instance->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
+    std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = netlistReader_instance->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
+    std::vector<double> retrievedValueOfPrescribedPressures = netlistReader_instance->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
+
+    // Discover whether this node has a prescribed pressure, and if so, what type:
+    circuit_nodal_pressure_prescription_t typeOfPrescribedPressure = Pressure_NotPrescribed; // initialise, but chnage later if pressure is actually prescribed
+    int indexOfPrescribedPressure = -1; // initialise to a nonsense value to detect errors
+    for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
+    {
+        if (retrievedListOfPrescribedPressures.at(prescribedPressure) == indexOfNodeInInputData)
+        {
+            typeOfPrescribedPressure = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
+            indexOfPrescribedPressure = prescribedPressure;
+        }
+    }
+    // Get the node (or create a new node if this one hasn't been made yet)
+    node = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
+    // node->indexInInputData = indexOfNodeInInputData;
+    // node->prescribedPressureType = typeOfPrescribedPressure;
+    if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
+    {
+        node->valueOfPrescribedPressure = retrievedValueOfPrescribedPressures.at(indexOfPrescribedPressure);
+        node->pressure = node->valueOfPrescribedPressure;
+    }
 }
 
 void NetlistBoundaryCondition::createInitialCircuitDescriptionWithoutDiodes()

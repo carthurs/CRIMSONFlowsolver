@@ -10,6 +10,9 @@
 #include "gtest/gtest_prod.h"
 #include "debuggingToolsForCpp.hxx"
 
+// Forward declaration:
+class CircuitComponent;
+
 class CircuitPressureNode
 {
 public:
@@ -22,16 +25,56 @@ public:
 	int indexLocalToSubcircuit;
 	bool m_connectsTo3DDomain;
 	std::vector<double> m_entirePressureHistory;
-	CircuitPressureNode(const int hstep)
-	: m_hstep(hstep)
+
+	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
+	CircuitPressureNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
+	: indexInInputData(indexInInputData_in),
+	prescribedPressureType(typeOfPrescribedPressure),
+	m_hstep(hstep)
 	{
-		prescribedPressureType = Pressure_Null;
 		hasHistoryPressure = false;
 	    m_connectsTo3DDomain = false;
 	    m_entirePressureHistory.reserve(m_hstep);
 	}
+	virtual ~CircuitPressureNode()
+	{
+	}
+
+	virtual double getPressure()
+	{
+		return pressure;
+	}
 private:
 	const int m_hstep;
+};
+
+// A slightly more complicated class of node, which prescribes its pressure
+// in the circuit depending on its compliance and its stored volume.
+// Think of it more as a chamber than as a node.
+class VolumeTrackingPressureChamber : public CircuitPressureNode
+{
+public:
+	VolumeTrackingPressureChamber(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
+	: CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, hstep)
+	{
+		prescribedPressureType = Pressure_VolumeDependent;
+		storedVolume = 0.0; // default; can be changed later if necessary
+		unstressedVolume = 0.0; // default; can be changed later if necessary
+	}
+
+	void addToStoredVolume(double volumeChange)
+	{
+		storedVolume = storedVolume + volumeChange;
+	}
+	double getPressure()
+	{
+		pressure = (storedVolume - unstressedVolume)/compliance;
+		return pressure;
+	}
+private:
+	double storedVolume;
+	double compliance;
+	double unstressedVolume;
 };
 
 
@@ -164,7 +207,7 @@ public:
 	void setIndexOfNodeAt3DInterface(int indexToSet);
 	int getIndexOfNodeAt3DInterface();
 
-	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in);
+	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 private:
 	int toOneIndexing(const int oneIndexedValue);
 	void rebuildCircuitPressureNodeMap();

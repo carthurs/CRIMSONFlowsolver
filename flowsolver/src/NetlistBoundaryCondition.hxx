@@ -67,6 +67,7 @@ private:
 	void netlistBoundaryCondition();
 	void createAtomicSubcircuitDescriptions();
 	void identifyAtomicSubcircuits();
+	void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 
 	CircuitData m_CircuitDescription;
 	CircuitData m_CircuitDescriptionWithoutDiodes;

@@ -6,6 +6,13 @@
 #include <stack>
 #include <sstream>
 
+bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
+{
+	bool hasNonnegativePressureGradient = (startNode->getPressure() >= endNode->getPressure());
+	bool hasForwardFlow = (signForPrescribed3DInterfaceFlow*flow >= 1e-16); // We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
+	return (hasNonnegativePressureGradient || hasForwardFlow);
+}
+
 void CircuitData::rebuildCircuitMetadata()
 {
 	// This subroutine builds everything in the CircuitData class that isn't the CircuitComponents themselves.
@@ -48,6 +55,16 @@ void CircuitData::rebuildCircuitMetadata()
 	rebuildCircuitPressureNodeMap();
 
 	setupComponentNeighbourPointers();
+
+	// Get the number of VolumeTrackingPressureChambers:
+	m_numberOfVolumeTrackingPressureChambers = 0;
+	for (auto node=mapOfPrescribedPressureNodes.begin(); node!=mapOfPrescribedPressureNodes.end(); node++)
+	{
+		if (node->second->prescribedPressureType == Pressure_VolumeDependent)
+		{
+			m_numberOfVolumeTrackingPressureChambers++;
+		}
+	}
 
 	// numberOfPressureNodes = mapOfPressureNodes.size();
 	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();

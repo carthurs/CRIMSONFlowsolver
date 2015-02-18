@@ -29,7 +29,7 @@ void NetlistBoundaryCondition::initialiseAtStartOfTimestep()
     // Idetify and construct the appropriate subcircuits for this timestep
     selectAndBuildActiveSubcircuits();
 
-    cycleToSetHistoryPressuresAndFlows();
+    cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
 std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt)
@@ -63,7 +63,7 @@ void NetlistBoundaryCondition::updateLPN()
 {
     for (auto activeSubcircuit = m_activeSubcircuits.begin(); activeSubcircuit != m_activeSubcircuits.end(); activeSubcircuit++)
     {
-        (*activeSubcircuit)->updateInternalPressuresAndFlows();
+        (*activeSubcircuit)->updateInternalPressuresVolumesAndFlows();
     }
 }
 
@@ -231,7 +231,8 @@ void NetlistBoundaryCondition::selectAndBuildActiveSubcircuits()
     m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
     m_activeSubcircuits.clear();
-    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr, pressure_n_ptr));
+    double alfi_delt_in = alfi_local*delt;
+    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr, pressure_n_ptr,alfi_delt_in));
     m_activeSubcircuits.push_back(toPushBack);
 
 }
@@ -310,8 +311,8 @@ void NetlistBoundaryCondition::createCircuitDescription()
         //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->indexInInputData)
         //     {
         //         (*component)->startNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
-        //         (*component)->startNode->valueOfPrescribedPressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
-        //         (*component)->startNode->pressure = (*component)->startNode->valueOfPrescribedPressure;
+        //         (*component)->startNode->pressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
+        //         (*component)->startNode->pressure = (*component)->startNode->pressure;
         //     }
         // }
 
@@ -332,8 +333,8 @@ void NetlistBoundaryCondition::createCircuitDescription()
         //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->indexInInputData)
         //     {
         //         (*component)->endNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
-        //         (*component)->endNode->valueOfPrescribedPressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
-        //         (*component)->endNode->pressure = (*component)->endNode->valueOfPrescribedPressure;
+        //         (*component)->endNode->pressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
+        //         (*component)->endNode->pressure = (*component)->endNode->pressure;
         //     }
         // }
 
@@ -352,8 +353,8 @@ void NetlistBoundaryCondition::createCircuitDescription()
         (*component)->parameterValueFromInputData = (*component)->currentParameterValue;
         retrievedComponentParameterValues.pop_back();
 
-        (*component)->startNode->pressure = retrievedInitialPressures.at((*component)->startNode->indexInInputData);
-        (*component)->endNode->pressure = retrievedInitialPressures.at((*component)->endNode->indexInInputData);
+        (*component)->startNode->setPressure(retrievedInitialPressures.at((*component)->startNode->indexInInputData));
+        (*component)->endNode->setPressure(retrievedInitialPressures.at((*component)->endNode->indexInInputData));
 
 
     }
@@ -417,8 +418,7 @@ void NetlistBoundaryCondition::setupPressureNode(const int indexOfNodeInInputDat
     // node->prescribedPressureType = typeOfPrescribedPressure;
     if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
     {
-        node->valueOfPrescribedPressure = retrievedValueOfPrescribedPressures.at(indexOfPrescribedPressure);
-        node->pressure = node->valueOfPrescribedPressure;
+        node->setPressure(retrievedValueOfPrescribedPressures.at(indexOfPrescribedPressure));
     }
 }
 
@@ -574,21 +574,23 @@ void NetlistBoundaryCondition::createAtomicSubcircuitDescriptions()
     // can easily be mapped to the actual active circuits themselves.
 }
 
-void NetlistBoundaryCondition::cycleToSetHistoryPressuresAndFlows()
+void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
 {
     // for (auto node=m_CircuitDescriptionWithoutDiodes.mapOfPressureNodes.begin(); node!=m_CircuitDescriptionWithoutDiodes.mapOfPressureNodes.end(); node++)
+    // Cycle and store the history pressures
     for (auto node=m_CircuitDescription.mapOfPressureNodes.begin(); node!=m_CircuitDescription.mapOfPressureNodes.end(); node++)
     {
         // Store the pressure for writing to output file:
-        node->second->m_entirePressureHistory.push_back(node->second->pressure);
+        node->second->m_entirePressureHistory.push_back(node->second->getPressure());
 
         if (node->second->hasHistoryPressure)
         {
-            node->second->historyPressure = node->second->pressure;
+            node->second->historyPressure = node->second->getPressure();
         }
     }
 
     // for (auto component=m_CircuitDescriptionWithoutDiodes.mapOfComponents.begin(); component!=m_CircuitDescriptionWithoutDiodes.mapOfComponents.end(); component++)
+    // Cycle and store the history flows
     for (auto component=m_CircuitDescription.mapOfComponents.begin(); component!=m_CircuitDescription.mapOfComponents.end(); component++)
     {
         // Store the flow for writing to output file:
@@ -597,6 +599,18 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresAndFlows()
         if (component->second->hasHistoryFlow)
         {
             component->second->historyFlow = component->second->flow;
+        }
+    }
+
+    // Store the volumes:
+    for (auto node=m_CircuitDescription.mapOfPressureNodes.begin(); node!=m_CircuitDescription.mapOfPressureNodes.end(); node++)
+    {
+        VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (node->second.get());
+        // Ensure this actually is a VolumeTrackingPressureChamber before going further:
+        if (pressureChamber != NULL)
+        {
+            // Store the volume for writing to output file:
+            pressureChamber->m_entireVolumeHistory.push_back(pressureChamber->getVolume());
         }
     }
 }

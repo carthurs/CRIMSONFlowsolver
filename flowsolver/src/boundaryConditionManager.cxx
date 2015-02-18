@@ -585,6 +585,10 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
   {
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
+      NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+      // All the following writes can use the same m_nextTimestepWrite_end to determine how far to go when looking for data to write to the file:
+      m_nextTimestepWrite_end = netlistBoundaryCondition->getCircuitDescription().components.at(0)->m_entireFlowHistory.size();
+      
       {
         // Write the netlistPressures_surface_X.dat
         basicFileWriter boundaryConditionPressureHistoryWriter;
@@ -592,8 +596,6 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
         filenameForThisBoundary << "netlistPressures_surface_" << (*boundaryCondition)->surfaceIndex << ".dat";
         boundaryConditionPressureHistoryWriter.setFileName(filenameForThisBoundary.str());
 
-        NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-        m_nextTimestepWrite_end = netlistBoundaryCondition->getCircuitDescription().components.at(0)->m_entireFlowHistory.size();
         for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
         {
           boundaryConditionPressureHistoryWriter.writeStepIndex(stepToWrite);
@@ -612,7 +614,6 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
         filenameForThisBoundary << "netlistFlows_surface_" << (*boundaryCondition)->surfaceIndex << ".dat";
         boundaryConditionFlowHistoryWriter.setFileName(filenameForThisBoundary.str());
 
-        NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
         for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
         {
           boundaryConditionFlowHistoryWriter.writeStepIndex(stepToWrite);
@@ -623,6 +624,31 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
           boundaryConditionFlowHistoryWriter.writeEndLine();
         }
       }
+
+
+      {
+        // Write the volumes of the pressure chambers, as netlistVolumes_surface_X.dat
+        basicFileWriter boundaryConditionVolumeHistoryWriter;
+        std::stringstream filenameForThisBoundary;
+        filenameForThisBoundary << "netlistVolumes_surface_" << (*boundaryCondition)->surfaceIndex << ".dat";
+        boundaryConditionVolumeHistoryWriter.setFileName(filenameForThisBoundary.str());
+
+        for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
+        {
+          boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
+          for (auto node=netlistBoundaryCondition->getCircuitDescription().mapOfPrescribedPressureNodes.begin(); node!=netlistBoundaryCondition->getCircuitDescription().mapOfPrescribedPressureNodes.end(); node++)
+          {
+            VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (node->second.get());
+            // If this node is actually a volume chamber, so it actually has a volume history we can write to the file:
+            if (pressureChamber != NULL)
+            {
+              boundaryConditionVolumeHistoryWriter.writeToFile(pressureChamber->m_entireVolumeHistory.at(stepToWrite));
+            }
+          }
+          boundaryConditionVolumeHistoryWriter.writeEndLine();
+        }
+      }
+
 
     }
   }

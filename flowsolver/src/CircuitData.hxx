@@ -11,72 +11,7 @@
 #include "debuggingToolsForCpp.hxx"
 
 // Forward declaration:
-class CircuitComponent;
-
-class CircuitPressureNode
-{
-public:
-	double valueOfPrescribedPressure;
-	double pressure;
-	double historyPressure;
-	bool hasHistoryPressure;
-	circuit_nodal_pressure_prescription_t prescribedPressureType;
-	int indexInInputData;
-	int indexLocalToSubcircuit;
-	bool m_connectsTo3DDomain;
-	std::vector<double> m_entirePressureHistory;
-
-	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
-	CircuitPressureNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
-	: indexInInputData(indexInInputData_in),
-	prescribedPressureType(typeOfPrescribedPressure),
-	m_hstep(hstep)
-	{
-		hasHistoryPressure = false;
-	    m_connectsTo3DDomain = false;
-	    m_entirePressureHistory.reserve(m_hstep);
-	}
-	virtual ~CircuitPressureNode()
-	{
-	}
-
-	virtual double getPressure()
-	{
-		return pressure;
-	}
-private:
-	const int m_hstep;
-};
-
-// A slightly more complicated class of node, which prescribes its pressure
-// in the circuit depending on its compliance and its stored volume.
-// Think of it more as a chamber than as a node.
-class VolumeTrackingPressureChamber : public CircuitPressureNode
-{
-public:
-	VolumeTrackingPressureChamber(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
-	: CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, hstep)
-	{
-		prescribedPressureType = Pressure_VolumeDependent;
-		storedVolume = 0.0; // default; can be changed later if necessary
-		unstressedVolume = 0.0; // default; can be changed later if necessary
-	}
-
-	void addToStoredVolume(double volumeChange)
-	{
-		storedVolume = storedVolume + volumeChange;
-	}
-	double getPressure()
-	{
-		pressure = (storedVolume - unstressedVolume)/compliance;
-		return pressure;
-	}
-private:
-	double storedVolume;
-	double compliance;
-	double unstressedVolume;
-};
-
+class CircuitPressureNode;
 
 class CircuitComponent
 {
@@ -129,18 +64,112 @@ public:
 		}
 	}
 
-	bool hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
-	{
-		bool hasNonnegativePressureGradient = (startNode->pressure >= endNode->pressure);
-		bool hasForwardFlow = (signForPrescribed3DInterfaceFlow*flow >= 1e-16); // We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
-		return (hasNonnegativePressureGradient || hasForwardFlow);
-	}
+	bool hasNonnegativePressureGradientOrForwardFlow(); // whether the diode should be open
 	bool connectsToNodeAt3DInterface();
 	void setConnectsToNodeAt3DInterface();
 private:
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
 	bool m_connectsToNodeAt3DInterface;
+};
+
+class CircuitPressureNode
+{
+public:
+	double historyPressure;
+	bool hasHistoryPressure;
+	circuit_nodal_pressure_prescription_t prescribedPressureType;
+	int indexInInputData;
+	int indexLocalToSubcircuit;
+	bool m_connectsTo3DDomain;
+	std::vector<double> m_entirePressureHistory;
+
+	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
+	CircuitPressureNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
+	: indexInInputData(indexInInputData_in),
+	prescribedPressureType(typeOfPrescribedPressure),
+	m_hstep(hstep)
+	{
+		hasHistoryPressure = false;
+	    m_connectsTo3DDomain = false;
+	    m_entirePressureHistory.reserve(m_hstep);
+	}
+	virtual ~CircuitPressureNode()
+	{
+	}
+
+	virtual double getPressure()
+	{
+		return pressure;
+	}
+	void setPressure(const double pressure_in)
+	{
+		pressure = pressure_in;
+	}
+protected:
+	double pressure;
+	const int m_hstep;
+private:
+};
+
+// A slightly more complicated class of node, which prescribes its pressure
+// in the circuit depending on its compliance and its stored volume.
+// Think of it more as a chamber than as a node.
+class VolumeTrackingPressureChamber : public CircuitPressureNode
+{
+public:
+	VolumeTrackingPressureChamber(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
+	: CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, hstep)
+	{
+		prescribedPressureType = Pressure_VolumeDependent;
+		storedVolume = 0.0; // default; can be changed later if necessary
+		unstressedVolume = 0.0; // default; can be changed later if necessary
+		compliance = 1.0;
+		m_entireVolumeHistory.reserve(m_hstep);
+	}
+
+	std::vector<double> m_entireVolumeHistory;
+
+	void updateStoredVolume(const double delt)
+	{
+		double volumeChange = 0.0;
+
+		// Find the attached components and add their flow contributions to the volume in the VolumeTrackingPressureChamber:
+		for (auto attachedComponent=listOfComponentstAttachedToThisNode.begin(); attachedComponent!=listOfComponentstAttachedToThisNode.end(); attachedComponent++)
+		{
+			// If the VolumeTrackingPressureChamber is the startNode of the current component, the flow
+			// is /out/ of the chamber:
+			if ((*attachedComponent).lock()->startNode->indexInInputData == indexInInputData)
+			{
+				volumeChange -= (*attachedComponent).lock()->flow * delt;
+				std::cout << "just did start node flow " << (*attachedComponent).lock()->flow * delt << std::endl;
+			}
+			else if ((*attachedComponent).lock()->endNode->indexInInputData == indexInInputData) // If VolumeTrackingPressureChamber is the current component's endNode, then the flow is into the chamber.
+			{
+				volumeChange += (*attachedComponent).lock()->flow * delt;
+				std::cout << "just did end node flow " << (*attachedComponent).lock()->flow * delt << std::endl;
+			}
+			else
+			{
+				throw std::logic_error("EE: Reached an impossible internal location. Please contact the developers.");
+			}
+		}
+
+		storedVolume = storedVolume + volumeChange;
+	}
+	double getVolume()
+	{
+		return storedVolume;
+	}
+	double getPressure()
+	{
+		pressure = (storedVolume - unstressedVolume)/compliance;
+		return pressure;
+	}
+private:
+	double storedVolume;
+	double compliance;
+	double unstressedVolume;
 };
 
 class CircuitData
@@ -185,6 +214,7 @@ public:
 	int numberOfPrescribedFlows;
 	int numberOfPressureNodes;
 	int numberOfComponents;
+	int m_numberOfVolumeTrackingPressureChambers;
 
 	// These maps have indexInInputData as the key, and a shared_ptr to the relevant node/circuit as the mapped value.
 	// Although this provides useful random access by indexInInputData, it is often useful to just use the std::map iterator to process them all.

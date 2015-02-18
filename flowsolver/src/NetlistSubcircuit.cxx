@@ -236,7 +236,10 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
        }
      }
 
-     int rowsDoneSoFar = m_circuitData.numberOfComponents + numberOfMultipleIncidentCurrentNodes;
+     // Here, we subtract off the m_numberOfVolumeTrackingPressureChambers, because VolumeTrackingPressureChamber nodes do not have
+     // the Kirchoff's law application (and so because numberOfMultipleIncidentCurrentNodes counts Kirchoff nodes, but doesn't
+     // account for those which are VolumeTrackingPressureChambers, we need to correct this here.)
+     int rowsDoneSoFar = m_circuitData.numberOfComponents + numberOfMultipleIncidentCurrentNodes - m_circuitData.m_numberOfVolumeTrackingPressureChambers;
 
      // create the columnMap which tells us which system column each of the prescribed pressure, pressure-history or flow values belong to
      int tempUnknownVariableIndexWithinLinearSystem = 0; // just an indexing shift to keep track of where we need to write next
@@ -295,7 +298,11 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
     historyFlowsInSubcircuit = flowsInSubcircuit;
 
     // Prescribed pressures
-    int tempIndexingShift = m_circuitData.numberOfComponents + numberOfMultipleIncidentCurrentNodes;
+    //
+    // Here, we subtract off the m_numberOfVolumeTrackingPressureChambers, because VolumeTrackingPressureChamber nodes do not have
+    // the Kirchoff's law application (and so because numberOfMultipleIncidentCurrentNodes counts Kirchoff nodes, but doesn't
+    // account for those which are VolumeTrackingPressureChambers, we need to correct this here.)
+    int tempIndexingShift = m_circuitData.numberOfComponents + numberOfMultipleIncidentCurrentNodes - m_circuitData.m_numberOfVolumeTrackingPressureChambers;
     {
       int ll=0;
       for (auto prescribedPressureNode=m_circuitData.mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=m_circuitData.mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
@@ -303,7 +310,12 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
         // Coming from 'f' for 'fixed' in the input data:
         if (prescribedPressureNode->second->prescribedPressureType == Pressure_Fixed)
         {
-            errFlag = VecSetValue(RHS,ll + tempIndexingShift,prescribedPressureNode->second->valueOfPrescribedPressure,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);	
+            errFlag = VecSetValue(RHS,ll + tempIndexingShift,prescribedPressureNode->second->getPressure(),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);	
+        }
+        // Coming from 'v' for 'volume-dependent' in the input data:
+        else if (prescribedPressureNode->second->prescribedPressureType == Pressure_VolumeDependent)
+        {
+            errFlag = VecSetValue(RHS,ll + tempIndexingShift,prescribedPressureNode->second->getPressure(),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);  
         }
         // Coming from 'l' for 'left-ventricular' in the input data:
         else if (prescribedPressureNode->second->prescribedPressureType == Pressure_LeftVentricular)
@@ -469,7 +481,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
 
 }
 
-void NetlistSubcircuit::updateInternalPressuresAndFlows()
+void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows()
 {
     PetscErrorCode errFlag;
 
@@ -493,7 +505,7 @@ void NetlistSubcircuit::updateInternalPressuresAndFlows()
     for (int ll=0; ll<m_circuitData.numberOfPressureNodes; ll++)
     {
         errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&pressuresInSubcircuit[ll]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        m_circuitData.mapOfPressureNodes.at(toOneIndexing(ll))->pressure = pressuresInSubcircuit[ll];
+        m_circuitData.mapOfPressureNodes.at(toOneIndexing(ll))->setPressure(pressuresInSubcircuit[ll]);
     }
 
     // Get the updated component flows:
@@ -502,6 +514,18 @@ void NetlistSubcircuit::updateInternalPressuresAndFlows()
     {
         errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&flowsInSubcircuit[ll-indexShift]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         m_circuitData.mapOfComponents.at(toOneIndexing(ll-indexShift))->flow = flowsInSubcircuit[ll-indexShift];
+        std::cout << "just set flow: " << ll << " " << m_circuitData.mapOfComponents.at(toOneIndexing(ll-indexShift))->flow <<std::endl;
+    }
+
+    // Update the volumes in each VolumeTrackingPressureChamber
+    for (auto node=m_circuitData.mapOfPrescribedPressureNodes.begin(); node!=m_circuitData.mapOfPrescribedPressureNodes.end(); node++)
+    {
+      // detect the VolumeTrackingPressureChambers:
+      if ((*node).second->prescribedPressureType == Pressure_VolumeDependent)
+      {
+        VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> ((*node).second.get());
+        currentPressureChamber->updateStoredVolume(alfi_delt);
+      }
     }
 
     // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInSubcircuit(2))/1.2862d5 - this%flowsInSubcircuit(1)

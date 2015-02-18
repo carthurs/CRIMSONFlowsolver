@@ -13,11 +13,12 @@
 class NetlistSubcircuit
 {
 public:
-	NetlistSubcircuit(const int indexOfThisSubcircuit, const CircuitData& circuitData, double* const flow_n_ptr, double* const pressure_n_ptr)
+	NetlistSubcircuit(const int indexOfThisSubcircuit, const CircuitData& circuitData, double* const flow_n_ptr, double* const pressure_n_ptr, double const alfi_delt_in)
 	: indexOfThisSubcircuit(indexOfThisSubcircuit),
 	 m_circuitData(circuitData),
 	 flow_n_ptr(flow_n_ptr),
-	 pressure_n_ptr(pressure_n_ptr)
+	 pressure_n_ptr(pressure_n_ptr),
+	 alfi_delt(alfi_delt_in)
 	{
 		initialiseSubcircuit();
 		columnIndexOf3DInterfaceFlowInLinearSystem = 0;
@@ -33,7 +34,7 @@ public:
 		errFlag = MatDestroy(&identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	}
 
-	void updateInternalPressuresAndFlows();
+	void updateInternalPressuresVolumesAndFlows();
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 	
 	const CircuitData m_circuitData;
@@ -46,6 +47,7 @@ private:
 	void assembleRHS(const int timestepNumber);
 	double* const flow_n_ptr;
 	double* const pressure_n_ptr;
+	double const alfi_delt;
 
 	const int indexOfThisSubcircuit;
 

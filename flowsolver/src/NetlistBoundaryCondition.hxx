@@ -63,7 +63,7 @@ private:
 	void createInitialCircuitDescriptionWithoutDiodes();
 	void assignComponentsToAtomicSubcircuits();
 	void createSubcircuitDescriptions();
-	void cycleToSetHistoryPressuresAndFlows();
+	void cycleToSetHistoryPressuresFlowsAndVolumes();
 	void netlistBoundaryCondition();
 	void createAtomicSubcircuitDescriptions();
 	void identifyAtomicSubcircuits();

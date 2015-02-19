@@ -1441,13 +1441,13 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     
     ! ------------------------------------------
 
-    if(numControlledCoronarySrfs .gt. 0) then
-        call callCppUpdateAllControlledCoronaryLPNs()
-    endif
+    ! if(numControlledCoronarySrfs .gt. 0) then
+    !     call callCppUpdateAllControlledCoronaryLPNs()
+    ! endif
 
-    if(numNetlistLPNSrfs .gt. 0) then
-        call callCPPUpdateAllNetlistLPNs()
-    endif
+    ! if(numNetlistLPNSrfs .gt. 0) then
+    !     call callCPPUpdateAllNetlistLPNs()
+    ! endif
 
     ! interface to compute distances to observed wall motion
 !    if (imeasdist.eq.1) then

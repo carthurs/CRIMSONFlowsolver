@@ -485,6 +485,8 @@ void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows()
 {
     PetscErrorCode errFlag;
 
+    std::cout << "entering updateInternalPressuresVolumesAndFlows" << std::endl;
+
     if (m_circuitData.connectsTo3DDomain())
     {
       if (m_circuitData.flowPermittedAcross3DInterface()) // Neumann condition
@@ -521,9 +523,9 @@ void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows()
     for (auto node=m_circuitData.mapOfPrescribedPressureNodes.begin(); node!=m_circuitData.mapOfPrescribedPressureNodes.end(); node++)
     {
       // detect the VolumeTrackingPressureChambers:
-      if ((*node).second->prescribedPressureType == Pressure_VolumeDependent)
+      if (node->second->prescribedPressureType == Pressure_VolumeDependent)
       {
-        VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> ((*node).second.get());
+        VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (node->second.get());
         currentPressureChamber->updateStoredVolume(alfi_delt);
       }
     }

@@ -498,7 +498,11 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 			}
 		}
 
-		// Update the counts of each type of prescription:
+		// Update the counts of each type of prescription (in switching to a Neumann condition, we're now
+		// giving a prescribed pressure to the 3D domain, which means this boundary condition will be
+		// receiving a flow back from the 3D domain to prescribe at the LPN interface, instead of the
+		// pressure it was previously receiving under Dirichlet conditions. These counters therefore
+		// need updating.)
 		numberOfPrescribedPressures--;
 		numberOfPrescribedFlows++;
 	}
@@ -527,7 +531,11 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 			}
 		}
 
-		// Update the counts of each type of prescription:
+		// Update the counts of each type of prescription (in switching to a Neumann condition, we're now
+		// giving a prescribed flow to the 3D domain, which means this boundary condition will be
+		// receiving a pressure back from the 3D domain to prescribe at the LPN interface, instead of the
+		// flow it was previously receiving under Neumann conditions. These counters therefore
+		// need updating.)
 		numberOfPrescribedPressures++;
 		numberOfPrescribedFlows--;
 	}	

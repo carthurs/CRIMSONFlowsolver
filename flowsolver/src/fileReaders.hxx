@@ -315,6 +315,13 @@ public:
 	std::vector<int> getNumberOfPressureNodes();
 	std::vector<std::map<int,double>> getInitialPressures();
 	std::vector<int> getIndicesOfNodesAt3DInterface();
+	
+	std::vector<int>& getNumberOfComponentsWithControl();
+	std::vector<std::map<int,parameter_controller_t>>& getMapsOfComponentControlTypesForEachSurface();
+	std::vector<int>& getNumberOfNodesWithControl();
+	std::vector<std::map<int,parameter_controller_t>>& getMapsOfNodalControlTypesForEachSurface();
+
+
 protected:
 private:
 	netlistReader()
@@ -344,6 +351,12 @@ private:
 	std::vector<std::map<int,double>> initialPressures;
 
 	std::vector<int> indicesOfNodesAt3DInterface;
+
+	std::vector<int> numberOfComponentsWithControl;
+	std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypesForEachSurface;
+
+	std::vector<int> numberOfNodesWithControl;
+	std::vector<std::map<int,parameter_controller_t>> mapsOfNodalControlTypesForEachSurface;
 
 };
 

@@ -384,8 +384,12 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 	std::vector<circuit_component_flow_prescription_t> tempTypeOfPrescribedFlows;
 	std::map<int,double> tempInitialPressures;
 
+	int indexOfNetlistCurrentlyBeingReadInFile = 0;
 	while(readNextLine())
 	{
+		// This is for error reporting purposes, to inform the user of errors in particular netlists during the read.
+		indexOfNetlistCurrentlyBeingReadInFile++;
+
 		tempComponentTypes.clear();
 		tempComponentStartNodes.clear();
 		tempComponentEndNodes.clear();
@@ -419,6 +423,10 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			else if (currentLineSplitBySpaces->at(0).compare("d") == 0)
 			{
 				tempComponentTypes.push_back(Component_Diode);
+			}
+			else if (currentLineSplitBySpaces->at(0).compare("v") == 0)
+			{
+				tempComponentTypes.push_back(Component_VolumeTrackingPressureChamber);
 			}
 			else
 			{
@@ -464,17 +472,13 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 			{
 				tempTypeOfPrescribedPressures.push_back(Pressure_Fixed);
 			}
-			else if (currentLineSplitBySpaces->at(0).compare("v") == 0)
-			{
-				tempTypeOfPrescribedPressures.push_back(Pressure_VolumeDependent); // the node is really a pressure chamber, with the pressure computed from the volume and the elastance or compliance.
-			}
 			else if (currentLineSplitBySpaces->at(0).compare("l") == 0)
 			{
 				tempTypeOfPrescribedPressures.push_back(Pressure_LeftVentricular);
 			}
 			else
 			{
-				throw std::runtime_error("ERROR: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
+				throw std::runtime_error("EE: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
 			}
 		}
 		typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
@@ -527,6 +531,61 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 		// Get the tag for the node at the 3D interface:
 		readNextLine();
 		indicesOfNodesAt3DInterface.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+
+		// Get the number, list and control types of components which have attached control systems:
+		readNextLine();
+		numberOfComponentsWithControl.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+		std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
+		for (int controlledComponent=0; controlledComponent<numberOfComponentsWithControl.back(); controlledComponent++)
+		{
+			parameter_controller_t controlType;
+			readNextLine();
+			// Work out what sort of control is required for this component:
+			if (currentLineSplitBySpaces->at(1).compare("pc") == 0) // proximal coronary resistor control
+			{
+				throw std::logic_error("EE: This control hasn't been implemented yet!"); // need to do the push_backs below, too.
+				// controlType = 
+			}
+			else if (currentLineSplitBySpaces->at(1).compare("l") == 0)
+			{
+				controlType = Controller_LeftVentricularElastance;
+			}
+			else
+			{
+				std::stringstream error;
+				error << "EE: Unknown component control type found during read of netlist surface " << indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
+				error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+				throw std::runtime_error(error.str());
+			}
+			int componentIndex = atoi(currentLineSplitBySpaces->at(0).c_str());
+			componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
+		}
+		mapsOfComponentControlTypesForEachSurface.push_back(componentControlTypesForThisSurface);
+
+		// Get the number, list and control types of nodes which have attached control systems:
+		readNextLine();
+		numberOfNodesWithControl.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
+		std::map<int,parameter_controller_t> nodalControlTypesForThisSurface;
+		for (int controlledNode=0; controlledNode < numberOfNodesWithControl.back(); controlledNode++)
+		{
+			parameter_controller_t controlType;
+			readNextLine();
+			// Work out what sort of control is required for this component:
+			if (true) // proximal coronary resistor control
+			{
+				throw std::runtime_error("EE: No nodal control is implemented yet. This is not an input data problem; coding is needed! - fileReaders.cxx");
+			}
+			else
+			{
+				std::stringstream error;
+				error << "EE: Unknown node control type found during read of netlist surface " << indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
+				error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+				throw std::runtime_error(error.str());
+			}
+			int nodeIndex = atoi(currentLineSplitBySpaces->at(0).c_str());
+			nodalControlTypesForThisSurface.insert( std::make_pair(nodeIndex,controlType) );
+		}
+		mapsOfNodalControlTypesForEachSurface.push_back(nodalControlTypesForThisSurface);
 
 	}
 
@@ -596,4 +655,20 @@ std::vector<std::map<int,double>> netlistReader::getInitialPressures()
 std::vector<int> netlistReader::getIndicesOfNodesAt3DInterface()
 {
 	return indicesOfNodesAt3DInterface;
+}
+std::vector<int>& netlistReader::getNumberOfComponentsWithControl()
+{
+	return numberOfComponentsWithControl;
+}
+std::vector<std::map<int,parameter_controller_t>>& netlistReader::getMapsOfComponentControlTypesForEachSurface()
+{
+	return mapsOfComponentControlTypesForEachSurface;
+}
+std::vector<int>& netlistReader::getNumberOfNodesWithControl()
+{
+	return numberOfNodesWithControl;
+}
+std::vector<std::map<int,parameter_controller_t>>& netlistReader::getMapsOfNodalControlTypesForEachSurface()
+{
+	return mapsOfNodalControlTypesForEachSurface;
 }

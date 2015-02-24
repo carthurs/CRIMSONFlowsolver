@@ -1261,7 +1261,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                     ! call callCPPHaveBoundaryConditionTypesChanged(boundaryConditionRebuildNeeded)
                     ! write(*,*) "BC state change flag: ", boundaryConditionRebuildNeeded
                     ! if (boundaryConditionRebuildNeeded .eq. int(1)) then
-                        write(*,*) "rebuilding linear system..."
+                        write(*,*) "rebuilding memLS linear system..."
                         call rebuildMemLS_lhs()
                     ! endif
                 endif
@@ -1812,6 +1812,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         rerr(:, 9)=rerr(:, 9)+(yold(:,3)-ybar(:,3))**2
         rerr(:,10)=rerr(:,10)+(yold(:,4)-ybar(:,4))**2
     endif
+
+    call callCPPUpdateAllControlSystems()
 
  !if(istop.eq.1000) exit ! stop when delta small (see rstatic)
 

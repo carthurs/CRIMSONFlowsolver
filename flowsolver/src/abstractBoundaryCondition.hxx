@@ -76,6 +76,7 @@ class abstractBoundaryCondition
     // void setLPNInflowPressure(double inflowPressure);
     void updpressure_n1_withflow();
     virtual void finalizeLPNAtEndOfTimestep();
+    double getSurfaceIndex() const {return surfaceIndex;}
  protected:
  	double dp_dq;
  	double Hop;

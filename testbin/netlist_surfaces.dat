@@ -49,6 +49,12 @@ t
 4 0.1e0
 # Index of node at 3D interface:
 1
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
 ######
 ### Begin second netlist boundary condition model
 ######
@@ -120,6 +126,12 @@ t
 6 1.2e0
 # Index of node at 3D interface:
 3
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
 ### End second netlist boundary condition model
 ######
 ### Begin third netlist boundary condition model
@@ -172,6 +184,12 @@ t
 4 1000000.0
 # Index of node at 3D interface:
 1
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
 ### End third netlist boundary condition model
 ######
 ### Begin fourth netlist boundary condition model
@@ -207,4 +225,10 @@ t
 2 1000000.0
 # Index of node at 3D interface:
 1
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
 ### End fourth netlist boundary condition model

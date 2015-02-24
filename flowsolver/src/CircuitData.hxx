@@ -38,6 +38,8 @@ public:
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
+	bool hasTrackedVolume;
+	bool hasHistoryVolume;
 	bool permitsFlow; // for diodes in particular
 	std::vector<double> m_entireFlowHistory;
 	CircuitComponent(const int hstep, const bool thisIsARestartedSimulation)
@@ -55,13 +57,21 @@ public:
             flow = -1.0;
             permitsFlow = true;
             m_connectsToNodeAt3DInterface = false;
+            hasTrackedVolume = false;
+			hasHistoryVolume = false;
 		}
 		else
 		{
 			flow = 0.0;
 			permitsFlow = true;
 			m_connectsToNodeAt3DInterface = false;
+			hasTrackedVolume = false;
+			hasHistoryVolume = false;
 		}
+	}
+
+	virtual ~CircuitComponent()
+	{
 	}
 
 	bool hasNonnegativePressureGradientOrForwardFlow(); // whether the diode should be open
@@ -71,6 +81,86 @@ private:
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
 	bool m_connectsToNodeAt3DInterface;
+};
+
+// A slightly more complicated class of component, which prescribes its pressure
+// in the circuit depending on its compliance and its stored volume.
+// Think of it more as a chamber than as a node.
+class VolumeTrackingPressureChamber : public CircuitComponent
+{
+public:
+	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation)
+	: CircuitComponent(hstep, thisIsARestartedSimulation)
+	{
+		assert(!thisIsARestartedSimulation);
+		m_storedVolume = 0.0; // default; can be changed later if necessary
+		m_unstressedVolume = 0.0; // default; can be changed later if necessary
+		m_entireVolumeHistory.reserve(hstep);
+		m_enforceZeroVolumePrescription = false;
+	}
+
+	std::vector<double> m_entireVolumeHistory;
+
+	void setStoredVolume(const double newVolume)
+	{
+		m_storedVolume = newVolume;
+	}
+	// The /proposed/ volume is the one which gets checked for negative (invalid) values
+	// so that we can detect such invalid cases, and take steps to remedy.
+	void setProposedVolume(const double proposedVolume)
+	{
+		m_proposedVolume = proposedVolume;
+	}
+	double getVolume()
+	{
+		return m_storedVolume;
+	}
+	double getProposedVolume()
+	{
+		std::cout<<"proposed volume was: " << m_proposedVolume << std::endl;
+		return m_proposedVolume;	
+	}
+	double getHistoryVolume()
+	{
+		return m_historyVolume;
+	}
+	void cycleHistoryVolume()
+	{
+		m_historyVolume = m_storedVolume;
+	}
+	void passPressureToStartNode();
+
+	double* getPointerToCompliance()
+	{
+		return &currentParameterValue;
+	}
+
+	double getCompliance()
+	{
+		return currentParameterValue;
+	}
+
+	bool zeroVolumeShouldBePrescribed()
+	{
+		return m_enforceZeroVolumePrescription;
+	}
+
+	void enforceZeroVolumePrescription()
+	{
+		m_enforceZeroVolumePrescription = true;
+	}
+
+	void resetZeroVolumePrescription()
+	{
+		m_enforceZeroVolumePrescription = false;
+	}
+private:
+	double m_pressure;
+	double m_storedVolume;
+	double m_proposedVolume; // this holds volumes temporarily, so that we can check them for invalid negative values & do something about it if necessary
+	double m_unstressedVolume;
+	double m_historyVolume;
+	bool m_enforceZeroVolumePrescription;
 };
 
 class CircuitPressureNode
@@ -94,9 +184,6 @@ public:
 	    m_connectsTo3DDomain = false;
 	    m_entirePressureHistory.reserve(m_hstep);
 	}
-	virtual ~CircuitPressureNode()
-	{
-	}
 
 	virtual double getPressure()
 	{
@@ -110,66 +197,6 @@ protected:
 	double pressure;
 	const int m_hstep;
 private:
-};
-
-// A slightly more complicated class of node, which prescribes its pressure
-// in the circuit depending on its compliance and its stored volume.
-// Think of it more as a chamber than as a node.
-class VolumeTrackingPressureChamber : public CircuitPressureNode
-{
-public:
-	VolumeTrackingPressureChamber(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
-	: CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, hstep)
-	{
-		prescribedPressureType = Pressure_VolumeDependent;
-		storedVolume = 0.0; // default; can be changed later if necessary
-		unstressedVolume = 0.0; // default; can be changed later if necessary
-		compliance = 1.0;
-		m_entireVolumeHistory.reserve(m_hstep);
-	}
-
-	std::vector<double> m_entireVolumeHistory;
-
-	void updateStoredVolume(const double delt)
-	{
-		double volumeChange = 0.0;
-
-		// Find the attached components and add their flow contributions to the volume in the VolumeTrackingPressureChamber:
-		for (auto attachedComponent=listOfComponentstAttachedToThisNode.begin(); attachedComponent!=listOfComponentstAttachedToThisNode.end(); attachedComponent++)
-		{
-			// If the VolumeTrackingPressureChamber is the startNode of the current component, the flow
-			// is /out/ of the chamber:
-			if ((*attachedComponent).lock()->startNode->indexInInputData == indexInInputData)
-			{
-				volumeChange -= (*attachedComponent).lock()->flow * delt;
-				std::cout << "just did start node flow " << (*attachedComponent).lock()->flow * delt << std::endl;
-			}
-			else if ((*attachedComponent).lock()->endNode->indexInInputData == indexInInputData) // If VolumeTrackingPressureChamber is the current component's endNode, then the flow is into the chamber.
-			{
-				volumeChange += (*attachedComponent).lock()->flow * delt;
-				std::cout << "just did end node flow " << (*attachedComponent).lock()->flow * delt << std::endl;
-			}
-			else
-			{
-				throw std::logic_error("EE: Reached an impossible internal location. Please contact the developers.");
-			}
-		}
-
-		storedVolume = storedVolume + volumeChange;
-	}
-	double getVolume()
-	{
-		return storedVolume;
-	}
-	double getPressure()
-	{
-		pressure = (storedVolume - unstressedVolume)/compliance;
-		return pressure;
-	}
-private:
-	double storedVolume;
-	double compliance;
-	double unstressedVolume;
 };
 
 class CircuitData
@@ -222,6 +249,8 @@ public:
 	std::map<int,boost::shared_ptr<CircuitPressureNode>> mapOfPrescribedPressureNodes;
 	std::map<int,boost::shared_ptr<CircuitComponent>> mapOfComponents; // Utility data structure containing all the component indices of the circuit, exactly once each.
 	std::map<int,boost::shared_ptr<CircuitComponent>> mapOfPrescribedFlowComponents;
+	std::map<int,boost::shared_ptr<CircuitComponent>> mapOfVolumeTrackingComponents;
+	std::map<int,boost::shared_ptr<CircuitComponent>> mapOfPrescribedVolumeTrackingComponents;
 	// End of medatata
 	
 	void rebuildCircuitMetadata();

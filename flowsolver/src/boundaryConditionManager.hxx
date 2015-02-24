@@ -4,6 +4,7 @@
 #include "fileReaders.hxx"
 #include "boundaryConditionFactory.hxx"
 #include "abstractBoundaryCondition.hxx"
+#include "ControlSystemsManager.hxx"
 #include <boost/lexical_cast.hpp>
 
 // Forward declarations:
@@ -20,7 +21,6 @@ class abstractBoundaryCondition;
 	{
 		if (!instance) {
 			instance = new boundaryConditionManager();
-    		instance->ifRestartingLoadNecessaryData();
 		}
 		return instance;
 	}
@@ -74,9 +74,17 @@ class abstractBoundaryCondition;
     void getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled);
     void writeAllNetlistComponentFlowsAndNodalPressures();
 
-    int getNumberOfRCRSurfaces(){return numberOfRCRSurfaces;}
-    int getNumberOfNetlistSurfaces(){return numberOfNetlistSurfaces;}
-    int getNumberOfControlledCoronarySurfaces(){return numberOfControlledCoronarySurfaces;}
+    int getNumberOfRCRSurfaces(){return m_NumberOfRCRSurfaces;}
+    int getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
+    int getNumberOfControlledCoronarySurfaces(){return m_NumberOfControlledCoronarySurfaces;}
+
+    void setNumberOfRCRSurfaces(const int numGRCRSrfs);
+    void setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs);
+    void setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs);
+    void setDelt(const double delt);
+
+    void createControlSystems();
+    void updateAllControlSystems();
 
     ~boundaryConditionManager()
     {
@@ -85,9 +93,6 @@ class abstractBoundaryCondition;
  private:
     boundaryConditionManager()
     {
-    	numberOfRCRSurfaces = grcrbccom.numGRCRSrfs;
-        numberOfNetlistSurfaces = nomodule.numNetlistLPNSrfs;
-        numberOfControlledCoronarySurfaces = nomodule.numControlledCoronarySrfs;
     	if (timdat.lstep > 0)
     	{
     		thisIsARestartedSimulation = 1;
@@ -109,10 +114,13 @@ class abstractBoundaryCondition;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
     boundaryConditionFactory factory;
 
+    std::unique_ptr<ControlSystemsManager> mp_controlSystemsManager;
+
     static int thisIsARestartedSimulation;
-    int numberOfRCRSurfaces;
-    int numberOfNetlistSurfaces;
-    int numberOfControlledCoronarySurfaces;
+    int m_NumberOfRCRSurfaces;
+    int m_NumberOfNetlistSurfaces;
+    int m_NumberOfControlledCoronarySurfaces;
+    double m_delt;
 
     int m_nextTimestepWrite_start;
     int m_nextTimestepWrite_end;

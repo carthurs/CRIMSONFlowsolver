@@ -48,6 +48,8 @@ sources=string.split("""
 	NetlistBoundaryCondition.cxx
 	NetlistSubcircuit.cxx
 	CircuitData.cxx
+	ControlSystemsManager.cxx
+	ParameterController.cxx
 	AtomicSubcircuitConnectionManager.cxx
 	controlledCoronary.cxx
 	indexShifters.cxx

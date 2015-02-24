@@ -32,6 +32,8 @@ public:
 		numberOfInitialisedNetlistLPNs++;
 	}
 
+	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPN;}
+
  	void updpressure_n1_withflow(){}
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 

@@ -20,11 +20,26 @@
 // Static class static member variables:
 boundaryConditionManager* boundaryConditionManager::instance = 0;
 histFileReader* boundaryConditionManager::PHistReader = NULL;
-// int boundaryConditionManager::numberOfRCRSurfaces = 0;
 int boundaryConditionManager::thisIsARestartedSimulation = 0;
-// int boundaryConditionManager::numberOfNetlistSurfaces = 0;
 
 // Functions which affect features of the abstract class:
+void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
+{
+  m_NumberOfRCRSurfaces = numGRCRSrfs;
+}
+void boundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)
+{
+  m_NumberOfControlledCoronarySurfaces = numControlledCoronarySrfs;
+}
+void boundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs)
+{
+  m_NumberOfNetlistSurfaces = numNetlistLPNSrfs;
+}
+void boundaryConditionManager::setDelt(const double delt)
+{
+  m_delt = delt;
+}
+
 void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
   for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
@@ -126,7 +141,7 @@ void boundaryConditionManager::ifRestartingLoadNecessaryData()
     // LPN at the boundary when restarting
     PHistReader = new histFileReader();
     PHistReader->setFileName("PHistRCR.dat");
-    PHistReader->setNumColumns(numberOfRCRSurfaces+1);
+    PHistReader->setNumColumns(m_NumberOfRCRSurfaces+1);
     PHistReader->readAndSplitMultiSurfaceRestartFile();
   }
 }
@@ -636,10 +651,10 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
         for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
         {
           boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
-          for (auto node=netlistBoundaryCondition->getCircuitDescription().mapOfPrescribedPressureNodes.begin(); node!=netlistBoundaryCondition->getCircuitDescription().mapOfPrescribedPressureNodes.end(); node++)
+          for (auto component=netlistBoundaryCondition->getCircuitDescription().mapOfComponents.begin(); component!=netlistBoundaryCondition->getCircuitDescription().mapOfComponents.end(); component++)
           {
-            VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (node->second.get());
-            // If this node is actually a volume chamber, so it actually has a volume history we can write to the file:
+            VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+            // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
             if (pressureChamber != NULL)
             {
               boundaryConditionVolumeHistoryWriter.writeToFile(pressureChamber->m_entireVolumeHistory.at(stepToWrite));
@@ -659,4 +674,58 @@ extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
+}
+
+// Control systems specific functions
+void boundaryConditionManager::updateAllControlSystems()
+{
+  mp_controlSystemsManager->updateAllControlSystems();
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPUpdateAllControlSystems()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->updateAllControlSystems();
+}
+
+void boundaryConditionManager::createControlSystems()
+{
+  // Instantiate the manager
+  mp_controlSystemsManager = std::unique_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt));
+  
+  // Get the reader class for the netlist data file, and ask it for the control description data:
+  netlistReader* netlistReader_instance = netlistReader::Instance();
+  
+  // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
+  // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
+  std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypes = netlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
+
+  // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
+  // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();
+  std::vector<std::map<int,parameter_controller_t>> mapsOfNodeControlTypes = netlistReader_instance->getMapsOfNodalControlTypesForEachSurface();
+
+
+  // Check for the existence of netlists with input data setting up control of any of 
+  // the components. If any are found, initialise the control appropriately.
+  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition) == typeid(NetlistBoundaryCondition))
+    {
+      // Downcast to a shared_ptr to a Netlist:
+      boost::shared_ptr<NetlistBoundaryCondition> currentNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+      // We now initialise all the controls which affect this netlist...
+      int netlistIndex = currentNetlist->getIndexAmongstNetlists();
+      // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+      for (auto componentIndexAndControlType = mapsOfComponentControlTypes.at(netlistIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes.at(netlistIndex).end(); componentIndexAndControlType++)
+      {
+        mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlist, componentIndexAndControlType->first);
+      }
+      // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+      for (auto nodeIndexAndControlType = mapsOfNodeControlTypes.at(netlistIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes.at(netlistIndex).end(); nodeIndexAndControlType++)
+      {
+        mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlist, nodeIndexAndControlType->first);
+      }
+    }
+  }
+
 }

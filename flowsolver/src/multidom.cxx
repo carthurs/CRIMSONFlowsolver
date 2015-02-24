@@ -18,6 +18,18 @@ void multidom_initialise(){
 
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
 
+  // Global data is a terrible idea, so we turn int into class data instead.
+  // Pass the necessary variables in to the boundary condition manager
+  // ...please try not to access anything in the common block at any level
+  // lower than the boundaryConditionManager - if you need something from 
+  // the common block to use in a boundary condition, make a set method here
+  // and pass it in explicitly to the BC. It's much easier to keep track of this way.
+  boundaryConditionManager_instance->setDelt(inpdat.Delt[0]);
+  boundaryConditionManager_instance->setNumberOfRCRSurfaces(grcrbccom.numGRCRSrfs);
+  boundaryConditionManager_instance->setNumberOfControlledCoronarySurfaces(nomodule.numControlledCoronarySrfs);
+  boundaryConditionManager_instance->setNumberOfNetlistSurfaces(nomodule.numNetlistLPNSrfs);
+  boundaryConditionManager_instance->ifRestartingLoadNecessaryData();
+
   // Make the file readers for the classes of surface present in this simulation,
   // and make them read their files:
   if (boundaryConditionManager_instance->getNumberOfRCRSurfaces() > 0)
@@ -59,6 +71,8 @@ void multidom_initialise(){
   // Write loops here for all the other surface types!
 
   boundaryConditionManager_instance->setSurfaceList(surfaceList);
+
+  boundaryConditionManager_instance->createControlSystems();
   
   // std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
   // retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();

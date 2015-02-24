@@ -9,7 +9,7 @@ void basicFileWriter::writeStepIndex(int stepIndex)
 
 void basicFileWriter::writeToFile(double valueToWrite)
 {
-	(*fileHandle) << " " << std::setw(17) << std::left << valueToWrite;
+	(*fileHandle) << " " << std::setw(23) << std::left << valueToWrite;
 }
 
 void basicFileWriter::writeEndLine()

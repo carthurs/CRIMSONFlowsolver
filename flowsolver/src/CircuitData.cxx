@@ -6,6 +6,14 @@
 #include <stack>
 #include <sstream>
 
+void VolumeTrackingPressureChamber::passPressureToStartNode()
+{
+	m_pressure = (m_storedVolume - m_unstressedVolume)/currentParameterValue;
+	std::cout << "compliance set to: " << currentParameterValue << std::endl;
+	std::cout << "pressure: " << m_pressure << std::endl;
+	startNode->setPressure(m_pressure);
+}
+
 bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
 {
 	bool hasNonnegativePressureGradient = (startNode->getPressure() >= endNode->getPressure());
@@ -24,6 +32,8 @@ void CircuitData::rebuildCircuitMetadata()
 	mapOfComponents.clear();
 	mapOfPrescribedPressureNodes.clear();
 	mapOfPrescribedFlowComponents.clear();
+	mapOfVolumeTrackingComponents.clear();
+	mapOfPrescribedVolumeTrackingComponents.clear();
 	for (auto component = components.begin(); component!=components.end(); component++)
 	{
 		assert((*component)->startNode->prescribedPressureType!=Pressure_Null);
@@ -56,19 +66,30 @@ void CircuitData::rebuildCircuitMetadata()
 
 	setupComponentNeighbourPointers();
 
-	// Get the number of VolumeTrackingPressureChambers:
+	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();
+	numberOfComponents = mapOfComponents.size();
+
+	// Get the number of VolumeTrackingPressureChambers,
+	// and generate mapOfVolumeTrackingComponents:
 	m_numberOfVolumeTrackingPressureChambers = 0;
-	for (auto node=mapOfPrescribedPressureNodes.begin(); node!=mapOfPrescribedPressureNodes.end(); node++)
+	for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 	{
-		if (node->second->prescribedPressureType == Pressure_VolumeDependent)
+		if (component->second->type == Component_VolumeTrackingPressureChamber)
 		{
+			mapOfVolumeTrackingComponents.insert(std::make_pair(component->first,component->second));
 			m_numberOfVolumeTrackingPressureChambers++;
 		}
 	}
 
-	// numberOfPressureNodes = mapOfPressureNodes.size();
-	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();
-	numberOfComponents = mapOfComponents.size();
+	// mapOfPrescribedVolumeTrackingComponents
+	// for (auto component=components.begin(); component!=components.end(); component++)
+	// {
+	// 	if ((*component)->type == Component_VolumeTrackingPressureChamber)
+	// 	{
+	// 		VolumeTrackingPressureChamber* volumeTrackingPressureChamber = dynamic_cast<VolumeTrackingPressureChamber> ((*component).get());
+	// 		if (volumeTrackingPressureChamber->
+	// 	}
+	// }
 
 }
 
@@ -284,18 +305,7 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseCons
 
 		// Build the correct sort of node:
 		CircuitPressureNode* ptrToNewNode;
-		if (typeOfPrescribedPressure != Pressure_VolumeDependent)
-		{
-			ptrToNewNode = new CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, m_hstep);
-		}
-		else if (typeOfPrescribedPressure == Pressure_VolumeDependent)
-		{
-			ptrToNewNode = new VolumeTrackingPressureChamber(indexInInputData_in, typeOfPrescribedPressure, m_hstep);
-		}
-		else
-		{
-			throw std::logic_error("Internal logic error. Please contact the developers.");
-		}
+		ptrToNewNode = new CircuitPressureNode(indexInInputData_in, typeOfPrescribedPressure, m_hstep);
 
 		// add the pressure node to the list of neighbours, so the node knows which components are attached to it:
 		boost::weak_ptr<CircuitComponent> componentToPushBack(componentNeighbouringThisNode);

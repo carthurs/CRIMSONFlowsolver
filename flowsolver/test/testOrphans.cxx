@@ -24,8 +24,10 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
   double fakePressure = 0.0;
   // Insert fake pointer data:
   fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(2,&fakeFlow));
+  fortranPointerManager_instance->hasBoundaryFlows = true;
 
   fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(2,&fakePressure));
+  fortranPointerManager_instance->hasBoundaryPressures = true;
 
   // Setup the netlist reader:
   netlistReader_instance = netlistReader::Instance();
@@ -59,8 +61,10 @@ TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
   double fakePressure = 0.0;
   // Insert fake pointer data:
   fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(2,&fakeFlow));
+  fortranPointerManager_instance->hasBoundaryFlows = true;
 
   fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(2,&fakePressure));
+  fortranPointerManager_instance->hasBoundaryPressures = true;
 
   // Setup the netlist reader:
   netlistReader_instance = netlistReader::Instance();

@@ -191,6 +191,15 @@ module cpp_interface
     !             type(c_ptr) :: netlistSurfacePressures
     !         end subroutine callCppSetSurfacePressure_netlistLPNs
     ! end interface
+
+!   ============= Netlist LPN Block End ===================
+!   ============= Control Systems Block Start =============
+
+    interface
+            subroutine callCPPUpdateAllControlSystems() bind(c,name="callCPPUpdateAllControlSystems")
+                use iso_c_binding
+            end subroutine callCPPUpdateAllControlSystems
+    end interface
     
 
 end module cpp_interface

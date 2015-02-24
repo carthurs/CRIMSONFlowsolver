@@ -55,7 +55,7 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
     //     implicitCoefficients.second=0.0;
     // }
 
-
+    std::cout << "setting implicit coeffs in NetlistBoundaryCondition.cxx: " << implicitCoefficients.first << " " << implicitCoefficients.second << std::endl;
     return implicitCoefficients;
 }
 
@@ -232,7 +232,7 @@ void NetlistBoundaryCondition::selectAndBuildActiveSubcircuits()
     // Actually build the active NetlistSubcircuit classes:
     m_activeSubcircuits.clear();
     double alfi_delt_in = alfi_local*delt;
-    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr, pressure_n_ptr,alfi_delt_in));
+    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr, pressure_n_ptr,alfi_delt_in,surfaceIndex));
     m_activeSubcircuits.push_back(toPushBack);
 
 }
@@ -262,18 +262,28 @@ void NetlistBoundaryCondition::createCircuitDescription()
     m_CircuitDescription.numberOfPrescribedPressures = netlistReader_instance->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
     m_CircuitDescription.numberOfPrescribedFlows = netlistReader_instance->getNumberOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
 
+    std::vector<circuit_component_t> retrievedComponentTypes = netlistReader_instance->getComponentTypes().at(m_IndexOfThisNetlistLPN);
+
     // Prepare space for the components in the circuit:
     assert(m_CircuitDescription.components.empty());
     for (int ii=0; ii<m_CircuitDescription.numberOfComponents; ii++)
     {
-        boost::shared_ptr<CircuitComponent> toPushBack(new CircuitComponent(hstep,thisIsARestartedSimulation));
-        m_CircuitDescription.components.push_back(toPushBack);
+        CircuitComponent* toPushBack;
+        if (retrievedComponentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
+        {
+            toPushBack = new VolumeTrackingPressureChamber(hstep,thisIsARestartedSimulation);
+        }
+        else
+        {
+            toPushBack = new CircuitComponent(hstep,thisIsARestartedSimulation);
+        }
+
+        m_CircuitDescription.components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
         m_CircuitDescription.components.back()->indexInInputData = ii+1; // This uses input data indexing, which is one-indexed. We add 1 to achieve this here.
     }
 
 
     // Obtain the component- and node-level data for the circuit, for moving into the appropriate data structure CircuitData
-    std::vector<circuit_component_t> retrievedComponentTypes = netlistReader_instance->getComponentTypes().at(m_IndexOfThisNetlistLPN);
     // We want to pop off the component types as we use them, but starting from the beginning of the vector. To do this, we reverse
     // the vector and then pop from the new end.
     std::reverse(retrievedComponentTypes.begin(), retrievedComponentTypes.end());
@@ -602,15 +612,19 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
         }
     }
 
-    // Store the volumes:
-    for (auto node=m_CircuitDescription.mapOfPressureNodes.begin(); node!=m_CircuitDescription.mapOfPressureNodes.end(); node++)
+    // Store the volumes (currently just for VolumeTrackingPressureChambers. Make this more generic if new volume-tracking components are added later
+    // - recommed using the hasHistoryVolume bool).
+    for (auto component=m_CircuitDescription.mapOfComponents.begin(); component!=m_CircuitDescription.mapOfComponents.end(); component++)
     {
-        VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (node->second.get());
+        VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
         // Ensure this actually is a VolumeTrackingPressureChamber before going further:
         if (pressureChamber != NULL)
         {
             // Store the volume for writing to output file:
             pressureChamber->m_entireVolumeHistory.push_back(pressureChamber->getVolume());
+
+            // Make the current volume into the new history volume:
+            pressureChamber->cycleHistoryVolume();
         }
     }
 }

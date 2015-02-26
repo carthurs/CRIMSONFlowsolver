@@ -149,10 +149,17 @@ PETSC_LIBSLIST = ['petsc']
 # BOOSTCPP_INCDIR = [BOOSTCPP_TOP]
 # BOOSTCPP_LIBS   = '-L '+BOOSTCPP_TOP+'/stage/lib -lboost_thread'
 
+# For Boost 1.40:
 BOOSTCPP_TOP    = HOME_DIR+'/../boost_1_40_0'
 BOOSTCPP_INCDIR = [BOOSTCPP_TOP]
 BOOSTCPP_LIBSDIR = [BOOSTCPP_TOP+'/boost_build/lib']
 BOOSTCPP_LIBSLIST = ['boost_thread-mt','boost_system-mt','boost_filesystem-mt']
+
+# For Boost 1.57:
+# BOOSTCPP_TOP    = HOME_DIR+'/../boost/boost_1_57_0-install'
+# BOOSTCPP_INCDIR = [BOOSTCPP_TOP+'/include']
+# BOOSTCPP_LIBSDIR = [BOOSTCPP_TOP+'/lib']
+# BOOSTCPP_LIBSLIST = ['boost_thread','boost_filesystem','boost_system']
 
 VTK_TOP    = '/home/carthurs/workspace/merged_simvascular/vtk-5.8.0-install'
 VTK_INCDIR = [VTK_TOP+'/include/vtk-5.8']

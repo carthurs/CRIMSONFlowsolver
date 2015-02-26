@@ -44,10 +44,14 @@ public:
 
 	void setDirichletConditionsIfNecessary(int* const binaryMask);
 
+	void finalizeLPNAtEndOfTimestep();
+
 	~NetlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;
 	}
+
+
 
 private:
 	static int numberOfInitialisedNetlistLPNs;

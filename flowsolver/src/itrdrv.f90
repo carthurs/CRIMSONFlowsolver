@@ -1512,6 +1512,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     if(numNetlistLPNSrfs .gt. 0) then
         call callCPPUpdateAllNetlistLPNs()
+        call callCppfinalizeLPNAtEndOfTimestep_netlists()
     endif
 
     call itrBC (yold, acold,  iBC,  BC,  iper,ilwork)

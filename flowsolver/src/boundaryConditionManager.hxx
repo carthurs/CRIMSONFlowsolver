@@ -29,7 +29,11 @@ class abstractBoundaryCondition;
 	{
 		if (thisIsARestartedSimulation)
 		{
-			delete boundaryConditionManager::PHistReader;
+            if (boundaryConditionManager::PHistReader != NULL)
+            {
+			     delete boundaryConditionManager::PHistReader;
+                 boundaryConditionManager::PHistReader = NULL;
+            }
 		}
 		delete instance;
 		instance = 0;
@@ -65,6 +69,7 @@ class abstractBoundaryCondition;
     void getImplicitCoeff_controlledCoronary(double* const implicitCoeffs_toBeFilled);
     void updateAllControlledCoronaryLPNs();
     void finalizeLPNAtEndOfTimestep_controlledCoronary();
+    void finalizeLPNAtEndOfTimestep_netlists();
 
     // void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 

@@ -6,9 +6,11 @@
 #include <stack>
 #include <sstream>
 
+#include "common_c.h"
+
 void VolumeTrackingPressureChamber::passPressureToStartNode()
 {
-	m_pressure = (m_storedVolume - m_unstressedVolume)/currentParameterValue;
+	m_pressure = (m_storedVolume - m_unstressedVolume)*currentParameterValue;
 	std::cout << "compliance set to: " << currentParameterValue << std::endl;
 	std::cout << "pressure: " << m_pressure << std::endl;
 	startNode->setPressure(m_pressure);
@@ -388,14 +390,38 @@ void CircuitData::switchDiodeStatesIfNecessary()
 			bool diodeIsOpen = (*component)->hasNonnegativePressureGradientOrForwardFlow();
 			if (diodeIsOpen)
 			{
-				(*component)->currentParameterValue = (*component)->parameterValueFromInputData; // For enforcing zero resistance when the diode is open
-				(*component)->permitsFlow = true;
+				(*component)->enableDiodeFlow();
 			}
 			else
 			{
-				(*component)->currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
-				(*component)->permitsFlow = false;
+				(*component)->disableDiodeFlow();
 			}
+		}
+	}
+}
+
+void CircuitComponent::enableDiodeFlow()
+{
+	assert(type == Component_Diode);
+	currentParameterValue = parameterValueFromInputData; // For enforcing zero resistance when the diode is open
+	permitsFlow = true;
+}
+
+void CircuitComponent::disableDiodeFlow()
+{
+	assert(type == Component_Diode);
+	currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
+	permitsFlow = false;
+}
+
+// In particular, this is for starting a simulation with all diodes shut, for stability.
+void CircuitData::closeAllDiodes()
+{
+	for (auto component=components.begin(); component!=components.end(); component++)
+	{
+		if ((*component)->type == Component_Diode)
+		{
+			(*component)->disableDiodeFlow();
 		}
 	}
 }

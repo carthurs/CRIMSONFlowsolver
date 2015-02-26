@@ -17,11 +17,21 @@ void NetlistBoundaryCondition::initialiseModel()
 
     // chop up the Circuitdata into subcircuits (including removing all mention of diodes from that data now)
     createAtomicSubcircuitDescriptions();
+
+    // Initialise all diodes to their closed state, for stability
+    //\todo change this if you're restarting and the diodes need to be open at restart!
+    m_CircuitDescription.closeAllDiodes();
+    m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     
     // count the diodes, and set up the AtomicSubcircuitConnectionManager, which is used it working out
     // what connections should be made when a diode/valve opens.
     // AtomicSubcircuitConnectionManager* toPassToSharedPtr = new AtomicSubcircuitConnectionManager(m_CircuitDescription,m_CircuitDataForAtomicSubcircuits);
     // m_atomicSubcircuitConnectionManager = boost::shared_ptr<AtomicSubcircuitConnectionManager>( toPassToSharedPtr );
+}
+
+void NetlistBoundaryCondition::finalizeLPNAtEndOfTimestep()
+{
+    m_CircuitDescription.switchDiodeStatesIfNecessary();
 }
 
 void NetlistBoundaryCondition::initialiseAtStartOfTimestep()
@@ -227,7 +237,7 @@ void NetlistBoundaryCondition::selectAndBuildActiveSubcircuits()
     // }
     m_CircuitDescription.rebuildCircuitMetadata();
     m_CircuitDescription.generateNodeAndComponentIndicesLocalToSubcircuit();
-    m_CircuitDescription.switchDiodeStatesIfNecessary();
+    // m_CircuitDescription.switchDiodeStatesIfNecessary();
     m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
     m_activeSubcircuits.clear();
@@ -381,8 +391,8 @@ void NetlistBoundaryCondition::createCircuitDescription()
         m_CircuitDescription.initialiseNodeAndComponentAt3DInterface(threeDNodeIndex);
     }
 
-    m_CircuitDescription.switchDiodeStatesIfNecessary();
-    m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+    // m_CircuitDescription.switchDiodeStatesIfNecessary();
+    // m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 
     // // Component indices are just consecutive integers by default, but sometimes non-consecutive numbering
     // // is needed; componentIndices allows for this.

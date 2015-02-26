@@ -151,6 +151,13 @@ module cpp_interface
             end subroutine callCppfinalizeLPNAtEndOfTimestep_controlledCoronary
     end interface
 
+    interface
+            subroutine callCppfinalizeLPNAtEndOfTimestep_netlists() bind(c,name="callCppfinalizeLPNAtEndOfTimestep_netlists")
+                use iso_c_binding
+            end subroutine callCppfinalizeLPNAtEndOfTimestep_netlists
+    end interface
+    
+
     ! interface
     !         subroutine callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow() bind(c,name="callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow")
     !             use iso_c_binding

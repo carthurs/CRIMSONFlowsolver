@@ -139,10 +139,13 @@ void boundaryConditionManager::ifRestartingLoadNecessaryData()
   {
     // Load PHistRCR.dat, necessary for setting the pressure data in the 
     // LPN at the boundary when restarting
-    PHistReader = new histFileReader();
-    PHistReader->setFileName("PHistRCR.dat");
-    PHistReader->setNumColumns(m_NumberOfRCRSurfaces+1);
-    PHistReader->readAndSplitMultiSurfaceRestartFile();
+    if (m_NumberOfRCRSurfaces > 0)
+    {
+      PHistReader = new histFileReader();
+      PHistReader->setFileName("PHistRCR.dat");
+      PHistReader->setNumColumns(m_NumberOfRCRSurfaces+1);
+      PHistReader->readAndSplitMultiSurfaceRestartFile();
+    }
   }
 }
 
@@ -355,6 +358,23 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_controlledCoronary();
+}
+
+void boundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
+{
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    {
+      (*iterator)->finalizeLPNAtEndOfTimestep();
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_netlists();
 }
 
 

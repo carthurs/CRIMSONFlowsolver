@@ -288,7 +288,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             {
               {
                 int columnIndex = toZeroIndexing((*component)->startNode->indexInInputData);
-                double valueToInsert = volumeTrackingPressureChamber->getCompliance();
+                double valueToInsert = 1.0/(volumeTrackingPressureChamber->getElastance());
                 errFlag = MatSetValue(systemMatrix,row,columnIndex,valueToInsert,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               }
               // Do the volume term:

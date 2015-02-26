@@ -28,7 +28,7 @@ public:
 	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtStartNode;
 	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtEndNode;
 	
-	double currentParameterValue; // resistance or compliance or inductance etc.
+	double currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
 	int indexInInputData;
 	int indexLocalToSubcircuit;
@@ -77,6 +77,8 @@ public:
 	bool hasNonnegativePressureGradientOrForwardFlow(); // whether the diode should be open
 	bool connectsToNodeAt3DInterface();
 	void setConnectsToNodeAt3DInterface();
+	void enableDiodeFlow();
+	void disableDiodeFlow();
 private:
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
@@ -84,7 +86,7 @@ private:
 };
 
 // A slightly more complicated class of component, which prescribes its pressure
-// in the circuit depending on its compliance and its stored volume.
+// in the circuit depending on its elastance and its stored volume.
 // Think of it more as a chamber than as a node.
 class VolumeTrackingPressureChamber : public CircuitComponent
 {
@@ -93,7 +95,7 @@ public:
 	: CircuitComponent(hstep, thisIsARestartedSimulation)
 	{
 		assert(!thisIsARestartedSimulation);
-		m_storedVolume = 0.0; // default; can be changed later if necessary
+		m_storedVolume = 130000.0; // default; can be changed later if necessary
 		m_unstressedVolume = 0.0; // default; can be changed later if necessary
 		m_entireVolumeHistory.reserve(hstep);
 		m_enforceZeroVolumePrescription = false;
@@ -130,12 +132,12 @@ public:
 	}
 	void passPressureToStartNode();
 
-	double* getPointerToCompliance()
+	double* getPointerToElastance()
 	{
 		return &currentParameterValue;
 	}
 
-	double getCompliance()
+	double getElastance()
 	{
 		return currentParameterValue;
 	}
@@ -265,6 +267,8 @@ public:
 
 	void setIndexOfNodeAt3DInterface(int indexToSet);
 	int getIndexOfNodeAt3DInterface();
+
+	void closeAllDiodes();
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 private:

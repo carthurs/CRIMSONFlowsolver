@@ -22,7 +22,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 		// Make sure the dynamic cast was successful:
 		assert(downcastVolumeComponent!=NULL);
 
-		double* parameterToControl = downcastVolumeComponent->getPointerToCompliance();
+		double* parameterToControl = downcastVolumeComponent->getPointerToElastance();
 
 		boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl,m_delt));
 		m_controlSystems.push_back(controllerToPushBack);

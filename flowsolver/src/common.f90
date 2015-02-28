@@ -77,7 +77,7 @@ module phcommonvars
         numControlledCoronarySrfs, indicesOfCoronarySurfaces(0:MAXSURF), &
         numNetlistLPNSrfs, indicesOfNetlistSurfaces(0:MAXSURF), &
         inputHRandSP, geombcHasObservationFields, &
-        geombcHasNodeTags
+        geombcHasNodeTags, pureZeroDSimulation
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -114,7 +114,7 @@ module phcommonvars
         numControlledCoronarySrfs, indicesOfCoronarySurfaces, &
         numNetlistLPNSrfs, indicesOfNetlistSurfaces, &
         inputHRandSP, geombcHasObservationFields, &
-        geombcHasNodeTags
+        geombcHasNodeTags, pureZeroDSimulation
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 

@@ -20,18 +20,18 @@ void NetlistBoundaryCondition::initialiseModel()
 
     // Initialise all diodes to their closed state, for stability
     //\todo change this if you're restarting and the diodes need to be open at restart!
-    m_CircuitDescription.closeAllDiodes();
-    m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+    mp_CircuitDescription->closeAllDiodes();
+    mp_CircuitDescription->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     
     // count the diodes, and set up the AtomicSubcircuitConnectionManager, which is used it working out
     // what connections should be made when a diode/valve opens.
-    // AtomicSubcircuitConnectionManager* toPassToSharedPtr = new AtomicSubcircuitConnectionManager(m_CircuitDescription,m_CircuitDataForAtomicSubcircuits);
+    // AtomicSubcircuitConnectionManager* toPassToSharedPtr = new AtomicSubcircuitConnectionManager(mp_CircuitDescription,m_CircuitDataForAtomicSubcircuits);
     // m_atomicSubcircuitConnectionManager = boost::shared_ptr<AtomicSubcircuitConnectionManager>( toPassToSharedPtr );
 }
 
 void NetlistBoundaryCondition::finalizeLPNAtEndOfTimestep()
 {
-    m_CircuitDescription.switchDiodeStatesIfNecessary();
+    mp_CircuitDescription->switchDiodeStatesIfNecessary();
 }
 
 void NetlistBoundaryCondition::initialiseAtStartOfTimestep()
@@ -46,7 +46,7 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
 {
     // Get the implicit coefficients from the identified subcircuit
     std::pair<double,double> implicitCoefficients;
-    // if (m_CircuitDescription.flowPermittedAcross3DInterface())
+    // if (mp_CircuitDescription.flowPermittedAcross3DInterface())
     // {
         int numberOfCircuitsClaimingToConnectToHaveA3DInterface = 0;
         for (auto subcircuit=m_activeSubcircuits.begin(); subcircuit!=m_activeSubcircuits.end(); subcircuit++)
@@ -235,14 +235,14 @@ void NetlistBoundaryCondition::selectAndBuildActiveSubcircuits()
     //     boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(subcircuitIdx, *(m_activeSubcircuitCircuitData.at(subcircuitIdx)), flow_n_ptr));
     //     m_activeSubcircuits.push_back(toPushBack);
     // }
-    m_CircuitDescription.rebuildCircuitMetadata();
-    m_CircuitDescription.generateNodeAndComponentIndicesLocalToSubcircuit();
-    // m_CircuitDescription.switchDiodeStatesIfNecessary();
-    m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+    mp_CircuitDescription->rebuildCircuitMetadata();
+    mp_CircuitDescription->generateNodeAndComponentIndicesLocalToSubcircuit();
+    // mp_CircuitDescription.switchDiodeStatesIfNecessary();
+    mp_CircuitDescription->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
     m_activeSubcircuits.clear();
     double alfi_delt_in = alfi_local*delt;
-    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, m_CircuitDescription, flow_n_ptr, pressure_n_ptr,alfi_delt_in,surfaceIndex));
+    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, *mp_CircuitDescription, flow_n_ptr, pressure_n_ptr,alfi_delt_in,surfaceIndex));
     m_activeSubcircuits.push_back(toPushBack);
 
 }
@@ -267,16 +267,16 @@ void NetlistBoundaryCondition::createCircuitDescription()
 
     // Get the reader class for the netlist data file, and ask it for the circuit description data:
     netlistReader* netlistReader_instance = netlistReader::Instance();
-    m_CircuitDescription.numberOfComponents = netlistReader_instance->getNumberOfComponents().at(m_IndexOfThisNetlistLPN);
-    m_CircuitDescription.numberOfPressureNodes = netlistReader_instance->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPN);
-    m_CircuitDescription.numberOfPrescribedPressures = netlistReader_instance->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
-    m_CircuitDescription.numberOfPrescribedFlows = netlistReader_instance->getNumberOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
+    mp_CircuitDescription->numberOfComponents = netlistReader_instance->getNumberOfComponents().at(m_IndexOfThisNetlistLPN);
+    mp_CircuitDescription->numberOfPressureNodes = netlistReader_instance->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPN);
+    mp_CircuitDescription->numberOfPrescribedPressures = netlistReader_instance->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
+    mp_CircuitDescription->numberOfPrescribedFlows = netlistReader_instance->getNumberOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
 
     std::vector<circuit_component_t> retrievedComponentTypes = netlistReader_instance->getComponentTypes().at(m_IndexOfThisNetlistLPN);
 
     // Prepare space for the components in the circuit:
-    assert(m_CircuitDescription.components.empty());
-    for (int ii=0; ii<m_CircuitDescription.numberOfComponents; ii++)
+    assert(mp_CircuitDescription->components.empty());
+    for (int ii=0; ii<mp_CircuitDescription->numberOfComponents; ii++)
     {
         CircuitComponent* toPushBack;
         if (retrievedComponentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
@@ -288,8 +288,8 @@ void NetlistBoundaryCondition::createCircuitDescription()
             toPushBack = new CircuitComponent(hstep,thisIsARestartedSimulation);
         }
 
-        m_CircuitDescription.components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
-        m_CircuitDescription.components.back()->indexInInputData = ii+1; // This uses input data indexing, which is one-indexed. We add 1 to achieve this here.
+        mp_CircuitDescription->components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
+        mp_CircuitDescription->components.back()->indexInInputData = ii+1; // This uses input data indexing, which is one-indexed. We add 1 to achieve this here.
     }
 
 
@@ -310,7 +310,7 @@ void NetlistBoundaryCondition::createCircuitDescription()
     std::map<int,double> retrievedInitialPressures = netlistReader_instance->getInitialPressures().at(m_IndexOfThisNetlistLPN);
     
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
-    for (auto component = m_CircuitDescription.components.begin(); component != m_CircuitDescription.components.end(); component++)
+    for (auto component = mp_CircuitDescription->components.begin(); component != mp_CircuitDescription->components.end(); component++)
     {
         (*component)->type = retrievedComponentTypes.back();
         retrievedComponentTypes.pop_back();
@@ -322,11 +322,11 @@ void NetlistBoundaryCondition::createCircuitDescription()
         // be constructed during the call to setupPressureNode.
         setupPressureNode(indexOfStartNodeInInputData, (*component)->startNode, *component);
 
-        // (*component)->startNode = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfStartNodeInInputData);
+        // (*component)->startNode = mp_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfStartNodeInInputData);
         // (*component)->startNode->indexInInputData = indexOfStartNodeInInputData;
 
         // (*component)->startNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
-        // for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
+        // for (int prescribedPressure=0; prescribedPressure<mp_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
         // {
         //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->indexInInputData)
         //     {
@@ -345,10 +345,10 @@ void NetlistBoundaryCondition::createCircuitDescription()
 
         // int indexOfEndNodeInInputData = retrievedComponentEndNodes.back();
         // retrievedComponentEndNodes.pop_back();
-        // (*component)->endNode = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfEndNodeInInputData);
+        // (*component)->endNode = mp_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfEndNodeInInputData);
         // (*component)->endNode->indexInInputData = indexOfEndNodeInInputData;
         // (*component)->endNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
-        // for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
+        // for (int prescribedPressure=0; prescribedPressure<mp_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
         // {
         //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->indexInInputData)
         //     {
@@ -359,7 +359,7 @@ void NetlistBoundaryCondition::createCircuitDescription()
         // }
 
         (*component)->prescribedFlowType = Flow_NotPrescribed;  // initialise as a default, before replacing as necessary
-        for (int prescribedFlow=0; prescribedFlow<m_CircuitDescription.numberOfPrescribedFlows; prescribedFlow++)
+        for (int prescribedFlow=0; prescribedFlow<mp_CircuitDescription->numberOfPrescribedFlows; prescribedFlow++)
         {
             if (retrievedListOfPrescribedFlows.at(prescribedFlow) == (*component)->indexInInputData)
             {
@@ -383,23 +383,23 @@ void NetlistBoundaryCondition::createCircuitDescription()
     // of the above construction. This call completes the metadata; it's not
     // a problem that it also re-writes some of the existing metadata
     // (rewrites - but does not change - the values are identical!)
-    m_CircuitDescription.rebuildCircuitMetadata();
+    mp_CircuitDescription->rebuildCircuitMetadata();
 
     // Tell the node at the 3D interface that it connects to the 3D domain:
     {
         int threeDNodeIndex = netlistReader_instance->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPN);
-        m_CircuitDescription.initialiseNodeAndComponentAt3DInterface(threeDNodeIndex);
+        mp_CircuitDescription->initialiseNodeAndComponentAtInterface(threeDNodeIndex);
     }
 
-    // m_CircuitDescription.switchDiodeStatesIfNecessary();
-    // m_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+    // mp_CircuitDescription.switchDiodeStatesIfNecessary();
+    // mp_CircuitDescription.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 
     // // Component indices are just consecutive integers by default, but sometimes non-consecutive numbering
     // // is needed; componentIndices allows for this.
     // // We initialise it now for the default case.
-    // for (int ii=1; ii < m_CircuitDescription.numberOfComponents + 1; ii++)
+    // for (int ii=1; ii < mp_CircuitDescription.numberOfComponents + 1; ii++)
     // {
-    //     m_CircuitDescription.componentIndices.push_back(ii);
+    //     mp_CircuitDescription.componentIndices.push_back(ii);
     // }
 }
 
@@ -424,7 +424,7 @@ void NetlistBoundaryCondition::setupPressureNode(const int indexOfNodeInInputDat
     // Discover whether this node has a prescribed pressure, and if so, what type:
     circuit_nodal_pressure_prescription_t typeOfPrescribedPressure = Pressure_NotPrescribed; // initialise, but chnage later if pressure is actually prescribed
     int indexOfPrescribedPressure = -1; // initialise to a nonsense value to detect errors
-    for (int prescribedPressure=0; prescribedPressure<m_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
+    for (int prescribedPressure=0; prescribedPressure<mp_CircuitDescription->numberOfPrescribedPressures; prescribedPressure++)
     {
         if (retrievedListOfPrescribedPressures.at(prescribedPressure) == indexOfNodeInInputData)
         {
@@ -433,7 +433,7 @@ void NetlistBoundaryCondition::setupPressureNode(const int indexOfNodeInInputDat
         }
     }
     // Get the node (or create a new node if this one hasn't been made yet)
-    node = m_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
+    node = mp_CircuitDescription->ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
     // node->indexInInputData = indexOfNodeInInputData;
     // node->prescribedPressureType = typeOfPrescribedPressure;
     if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
@@ -445,23 +445,23 @@ void NetlistBoundaryCondition::setupPressureNode(const int indexOfNodeInInputDat
 void NetlistBoundaryCondition::createInitialCircuitDescriptionWithoutDiodes()
 {
     // Copy the data as a base for modification (i.e. the removal of the diode data)
-    m_CircuitDescriptionWithoutDiodes = m_CircuitDescription;
+    mp_CircuitDescriptionWithoutDiodes = mp_CircuitDescription;
     // Prepare for diode removal by clearing the data that will be rebuilt:
-    // m_CircuitDescriptionWithoutDiodes.deleteSubcircuitSpecificData();
+    // mp_CircuitDescriptionWithoutDiodes->deleteSubcircuitSpecificData();
     // Rebuild the cleared vectors, but without the diodes:
     int numberOfDiodes = 0;
-    for (auto component=m_CircuitDescriptionWithoutDiodes.components.begin(); component!=m_CircuitDescriptionWithoutDiodes.components.end(); component++)
+    for (auto component=mp_CircuitDescriptionWithoutDiodes->components.begin(); component!=mp_CircuitDescriptionWithoutDiodes->components.end(); component++)
     {
         if((*component)->type == Component_Diode)
         {
-            component = m_CircuitDescriptionWithoutDiodes.components.erase(component); // returns an iterator pointing to the new location of the element after the one that just got erased
+            component = mp_CircuitDescriptionWithoutDiodes->components.erase(component); // returns an iterator pointing to the new location of the element after the one that just got erased
             component--; // decrement the returned iterator, so the for loop incrememnts it back to the correct (next) element.
         }
     }
 
     // A tidier (and untested!) version of the above, without the ugly "component --" line:
-    // auto component=m_CircuitDescriptionWithoutDiodes.components.begin();
-    // while (component!=m_CircuitDescriptionWithoutDiodes.components.end())
+    // auto component=mp_CircuitDescriptionWithoutDiodes.components.begin();
+    // while (component!=mp_CircuitDescriptionWithoutDiodes.components.end())
     // {
     //     // both branches of this if guard result in an iterator to the next component after the one just checked (whether or not an erasing occurs)
     //     bool componentNotADiode = !((*component)->type == Component_Diode);
@@ -472,24 +472,24 @@ void NetlistBoundaryCondition::createInitialCircuitDescriptionWithoutDiodes()
     //     else
     //     {
     //         // erase the diode:
-    //         component = m_CircuitDescriptionWithoutDiodes.components.erase(component); // returns an iterator pointing to the new location of the element after the one that just got erased            
+    //         component = mp_CircuitDescriptionWithoutDiodes.components.erase(component); // returns an iterator pointing to the new location of the element after the one that just got erased            
     //     }
     // }
 
-    m_CircuitDescriptionWithoutDiodes.rebuildCircuitMetadata();
+    mp_CircuitDescriptionWithoutDiodes->rebuildCircuitMetadata();
 
 }
 
 void NetlistBoundaryCondition::assignComponentsToAtomicSubcircuits()
 {
-    // This subroutine builds m_AtomicSubcircuitsComponentsBelongsTo, which is indexed by component, as they appear in m_CircuitDescriptionWithoutDiodes.
+    // This subroutine builds m_AtomicSubcircuitsComponentsBelongsTo, which is indexed by component, as they appear in mp_CircuitDescriptionWithoutDiodes.
 
     // Group the components by partitioning the node indices into connected subcircuits (with diodes removed).
     // We do this by parsing the circuit to discover the topology.
-    std::vector<bool> componentAssignedToASubcircuit(m_CircuitDescriptionWithoutDiodes.numberOfComponents, false);
-    m_AtomicSubcircuitsComponentsBelongsTo.insert(m_AtomicSubcircuitsComponentsBelongsTo.begin(), m_CircuitDescriptionWithoutDiodes.numberOfComponents, -1); // initialise with nonsense value
+    std::vector<bool> componentAssignedToASubcircuit(mp_CircuitDescriptionWithoutDiodes->numberOfComponents, false);
+    m_AtomicSubcircuitsComponentsBelongsTo.insert(m_AtomicSubcircuitsComponentsBelongsTo.begin(), mp_CircuitDescriptionWithoutDiodes->numberOfComponents, -1); // initialise with nonsense value
     int subcircuitIndex = 0;
-    for (int startingComponent = 0; startingComponent < m_CircuitDescriptionWithoutDiodes.numberOfComponents; startingComponent++)
+    for (int startingComponent = 0; startingComponent < mp_CircuitDescriptionWithoutDiodes->numberOfComponents; startingComponent++)
     {
         // Only assign the startingComponent to a subcircuit if it doesn't yet belong to a subcircuit
         if (!componentAssignedToASubcircuit.at(startingComponent))
@@ -502,21 +502,21 @@ void NetlistBoundaryCondition::assignComponentsToAtomicSubcircuits()
             // search the rest of the list for the remaining components belonging to this subcircuit:
             // Make a list to be populated with nodes belonging to the subcircuit, as they're found.
             std::set<int> nodesInSubcircuit;
-            nodesInSubcircuit.insert(m_CircuitDescriptionWithoutDiodes.components.at(startingComponent)->startNode->indexInInputData);
-            nodesInSubcircuit.insert(m_CircuitDescriptionWithoutDiodes.components.at(startingComponent)->endNode->indexInInputData);
+            nodesInSubcircuit.insert(mp_CircuitDescriptionWithoutDiodes->components.at(startingComponent)->startNode->indexInInputData);
+            nodesInSubcircuit.insert(mp_CircuitDescriptionWithoutDiodes->components.at(startingComponent)->endNode->indexInInputData);
             // Find all other components belonging to this subcircuit. We must iterate (while-loop) to keep
             // finding new connections, until nothing changes on an iteration:
             bool newComponentFoundOnLastIteration = true;
             while (newComponentFoundOnLastIteration)
             {
                 newComponentFoundOnLastIteration = false;
-                for (int potentialSubcircuitComponent = startingComponent+1; potentialSubcircuitComponent < m_CircuitDescriptionWithoutDiodes.numberOfComponents; potentialSubcircuitComponent++)
+                for (int potentialSubcircuitComponent = startingComponent+1; potentialSubcircuitComponent < mp_CircuitDescriptionWithoutDiodes->numberOfComponents; potentialSubcircuitComponent++)
                 {
                     if (componentAssignedToASubcircuit.at(potentialSubcircuitComponent) == false)
                     {
                         // get the nodes of the current component
-                        int componentStartNode = m_CircuitDescriptionWithoutDiodes.components.at(potentialSubcircuitComponent)->startNode->indexInInputData;
-                        int componentEndNode = m_CircuitDescriptionWithoutDiodes.components.at(potentialSubcircuitComponent)->endNode->indexInInputData;
+                        int componentStartNode = mp_CircuitDescriptionWithoutDiodes->components.at(potentialSubcircuitComponent)->startNode->indexInInputData;
+                        int componentEndNode = mp_CircuitDescriptionWithoutDiodes->components.at(potentialSubcircuitComponent)->endNode->indexInInputData;
 
                         // Check whether either of these nodes connect potentialSubcircuitComponent to the current subcircuit.
                         // If so, assign potentialSubcircuitComponent to the subcircuit.
@@ -571,7 +571,7 @@ void NetlistBoundaryCondition::createAtomicSubcircuitDescriptions()
             {
                 if (*componentsSubcircuitIdx == currentSubcircuitIdx)
                 {
-                    currentSubcircuit.components.push_back( m_CircuitDescriptionWithoutDiodes.components.at(componentLocationIdx) );
+                    currentSubcircuit.components.push_back( mp_CircuitDescriptionWithoutDiodes->components.at(componentLocationIdx) );
                 }
                 componentLocationIdx++;
             }
@@ -596,9 +596,9 @@ void NetlistBoundaryCondition::createAtomicSubcircuitDescriptions()
 
 void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
 {
-    // for (auto node=m_CircuitDescriptionWithoutDiodes.mapOfPressureNodes.begin(); node!=m_CircuitDescriptionWithoutDiodes.mapOfPressureNodes.end(); node++)
+    // for (auto node=mp_CircuitDescriptionWithoutDiodes.mapOfPressureNodes.begin(); node!=mp_CircuitDescriptionWithoutDiodes.mapOfPressureNodes.end(); node++)
     // Cycle and store the history pressures
-    for (auto node=m_CircuitDescription.mapOfPressureNodes.begin(); node!=m_CircuitDescription.mapOfPressureNodes.end(); node++)
+    for (auto node=mp_CircuitDescription->mapOfPressureNodes.begin(); node!=mp_CircuitDescription->mapOfPressureNodes.end(); node++)
     {
         // Store the pressure for writing to output file:
         node->second->m_entirePressureHistory.push_back(node->second->getPressure());
@@ -609,9 +609,9 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
         }
     }
 
-    // for (auto component=m_CircuitDescriptionWithoutDiodes.mapOfComponents.begin(); component!=m_CircuitDescriptionWithoutDiodes.mapOfComponents.end(); component++)
+    // for (auto component=mp_CircuitDescriptionWithoutDiodes.mapOfComponents.begin(); component!=mp_CircuitDescriptionWithoutDiodes.mapOfComponents.end(); component++)
     // Cycle and store the history flows
-    for (auto component=m_CircuitDescription.mapOfComponents.begin(); component!=m_CircuitDescription.mapOfComponents.end(); component++)
+    for (auto component=mp_CircuitDescription->mapOfComponents.begin(); component!=mp_CircuitDescription->mapOfComponents.end(); component++)
     {
         // Store the flow for writing to output file:
         component->second->m_entireFlowHistory.push_back(component->second->flow);
@@ -624,7 +624,7 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
 
     // Store the volumes (currently just for VolumeTrackingPressureChambers. Make this more generic if new volume-tracking components are added later
     // - recommed using the hasHistoryVolume bool).
-    for (auto component=m_CircuitDescription.mapOfComponents.begin(); component!=m_CircuitDescription.mapOfComponents.end(); component++)
+    for (auto component=mp_CircuitDescription->mapOfComponents.begin(); component!=mp_CircuitDescription->mapOfComponents.end(); component++)
     {
         VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
         // Ensure this actually is a VolumeTrackingPressureChamber before going further:
@@ -641,7 +641,7 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
 
 CircuitData& NetlistBoundaryCondition::getCircuitDescription()
 {
-    return m_CircuitDescription;
+    return mp_CircuitDescription;
 }
 
 // Processes the binaryMask for setting Dirichlet conditions.
@@ -650,7 +650,7 @@ CircuitData& NetlistBoundaryCondition::getCircuitDescription()
 // condition type is currently Dirichlet.
 void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
 {
-  if(m_CircuitDescription.flowPermittedAcross3DInterface())
+  if(mp_CircuitDescription->flowPermittedAcross3DInterface())
   {
     assert(hasListOfMeshNodesAtThisBoundary);
     // set ones in the binaryMask at the locations necessary to impose Dirichlet at this surface

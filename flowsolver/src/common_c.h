@@ -539,6 +539,7 @@
          int inputHRandSP;
          int geombcHasObservationFields;
          int geombcHasNodeTags;
+         int pureZeroDSimulation;
       } nomodule;
 
 

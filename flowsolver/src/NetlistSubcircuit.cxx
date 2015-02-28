@@ -511,7 +511,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
             {
   	          columnIndexOf3DInterfaceFlowInLinearSystem = ll + tempIndexingShift;
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
-              double threeDFlowValue = *flow_n_ptr * prescribedFlowComponent->second->signForPrescribed3DInterfaceFlow;
+              double threeDFlowValue = *flow_n_ptr * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
               // Give the (possibly sign-corrected) flow to the linear system:
   	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }

@@ -122,27 +122,50 @@ int main(int argc, char * argv[]) {
    // initialise reduced order boundary conditions
    multidom_initialise();
 
-   itrdrv_init(); // initialize solver
+   if (nomodule.pureZeroDSimulation == 0)
+   {
+     itrdrv_init(); // initialize solver
 
-   fortranBoundaryDataPointerManager* pointerManager;
-   pointerManager = fortranBoundaryDataPointerManager::Get();
+     fortranBoundaryDataPointerManager* pointerManager;
+     pointerManager = fortranBoundaryDataPointerManager::Get();
 
-   for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
-	   itrdrv_iter_init();
-      // std::cout << "3: C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
-      //      // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
-      //      std::cout << "3: C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
-	   itrdrv_iter_step();
-      // std::cout << "2: C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
-      //      // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
-      //      std::cout << "2: C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
-	   itrdrv_iter_finalize();
-           // std::cout << "1: C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
-           // // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
-           // std::cout << "1: C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
+     for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
+  	   itrdrv_iter_init();
+        // std::cout << "3: C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
+        //      // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
+        //      std::cout << "3: C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
+  	   itrdrv_iter_step();
+        // std::cout << "2: C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
+        //      // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
+        //      std::cout << "2: C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
+  	   itrdrv_iter_finalize();
+             // std::cout << "1: C++ saw flow in dereferenced pointer: " << *(pointerManager->boundaryFlows.at(3)) << std::endl;
+             // // see elmgmr.f90 line 379 (approx) for the code I added (the call with "pressure") to make this update.....:
+             // std::cout << "1: C++ saw pressure in dereferenced pointer: " << *(pointerManager->boundaryPressures.at(3)) << std::endl;
+     }
+
+     itrdrv_finalize();
    }
+   else // we disable to 3D domain, and just connect the boundary conditions to each other via a simple 0D circuit. This is for rapid prototyping and experimentation
+   {
+      assert(nomodule.pureZeroDSimulation==1);
 
-   itrdrv_finalize();
+      PureZeroDDriver pureZeroDDriver();
+
+      pureZeroDDriver.init();
+
+      // pointer manager?      
+
+      for (int kk = 1; kk <= inpdat.nstep[0]; kk++)
+      {
+        pureZeroDDriver.iter_init();
+        pureZeroDDriver.iter_step();
+        pureZeroDDriver.iter_finalize();
+      }
+
+      pureZeroDDriver.finalize();
+
+   }
 
    multidom_finalise();
 

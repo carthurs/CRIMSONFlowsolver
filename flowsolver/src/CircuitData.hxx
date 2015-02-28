@@ -34,7 +34,7 @@ public:
 	int indexLocalToSubcircuit;
 	circuit_component_flow_prescription_t prescribedFlowType;
 	double valueOfPrescribedFlow;
-	double signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by its end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
+	double m_signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by its end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
@@ -258,14 +258,14 @@ public:
 	void rebuildCircuitMetadata();
 	bool connectsTo3DDomain() const;
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
-	void initialiseNodeAndComponentAt3DInterface(int threeDInterfaceNodeIndex);
+	virtual void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
 	void setupComponentNeighbourPointers();
 	void switchDiodeStatesIfNecessary();
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
 
-	void setIndexOfNodeAt3DInterface(int indexToSet);
+	void setIndexOfNodeAt3DInterface(std::vector<int> indexToSet);
 	int getIndexOfNodeAt3DInterface();
 
 	void closeAllDiodes();
@@ -278,7 +278,22 @@ private:
 	int m_hstep;
 	bool m_flowPermittedAcross3DInterface;
 	bool m_boundaryConditionTypeHasJustChanged;
-	int m_indexOfNodeAt3DInterface;
+	std::vector<int> m_indexOfNodeAt3DInterface;
+};
+
+class Netlist3DDomainReplacementCircuitData : public CircuitData
+{
+public:
+	Netlist3DDomainReplacementCircuitData(const int hstep, const int m_numberOfNetlistsUsedAsBoundaryConditions_in)
+	: CircuitData(hstep),
+	m_numberOfNetlistsUsedAsBoundaryConditions(m_numberOfNetlistsUsedAsBoundaryConditions_in)
+	{
+	}
+private:
+	void initialiseNodeAndComponentAtInterface();
+	bool isNodeAtBoundaryInterface(int nodeIndex);
+	const int m_numberOfNetlistsUsedAsBoundaryConditions;
+
 };
 
 #endif

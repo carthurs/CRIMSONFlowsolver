@@ -974,6 +974,14 @@ int input_fform() {
 		      nomodule.inputHRandSP = int(0);
 		    }
 
+		    if((string)inp.GetValue("Simulate in Purely Zero Dimensions")=="True"){
+		      nomodule.pureZeroDSimulation = int(1);
+		    }
+		    else
+		    {
+		      nomodule.pureZeroDSimulation = int(0);
+		    }
+
 			if (nomodule.numVisFluxSrfs = inp.GetValue(
 					"Number of Surfaces which zero out in-plane tractions")) {
 				ivec = inp.GetValue(

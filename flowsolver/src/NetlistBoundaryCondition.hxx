@@ -8,6 +8,7 @@
 #include "NetlistSubcircuit.hxx"
 #include "CircuitData.hxx"
 #include "AtomicSubcircuitConnectionManager.hxx"
+#include <boost/unique_ptr.hpp>
 
 // The NetlistBoundaryCondition is really a manager class for a collection
 // of subcircuits, divided by the diodes/valves in the input data.
@@ -24,8 +25,8 @@ class NetlistBoundaryCondition : public abstractBoundaryCondition
 public:
 	NetlistBoundaryCondition(int surfaceIndex_in)
 	: abstractBoundaryCondition(surfaceIndex_in),
-	  m_CircuitDescription(hstep),
-	  m_CircuitDescriptionWithoutDiodes(hstep)
+	  mp_CircuitDescription(hstep),
+	  mp_CircuitDescriptionWithoutDiodes(hstep)
 	{
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
 		initialiseModel();
@@ -46,13 +47,13 @@ public:
 
 	void finalizeLPNAtEndOfTimestep();
 
-	~NetlistBoundaryCondition()
+	virtual ~NetlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;
 	}
 
-
-
+protected:
+	boost::shared_ptr<CircuitData> mp_CircuitDescription;
 private:
 	static int numberOfInitialisedNetlistLPNs;
 	int m_IndexOfThisNetlistLPN;
@@ -63,7 +64,8 @@ private:
 	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
 
 	void initialiseModel();
-	void createCircuitDescription();
+	virtual void createCircuitDescription();
+	void createCircuitDescription_3DDomainReplacement();
 	void identifySubciruits();
 	void selectAndBuildActiveSubcircuits();
 	void createInitialCircuitDescriptionWithoutDiodes();
@@ -75,13 +77,12 @@ private:
 	void identifyAtomicSubcircuits();
 	void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 
-	CircuitData m_CircuitDescription;
-	CircuitData m_CircuitDescriptionWithoutDiodes;
+	boost::shared_ptr<CircuitData> mp_CircuitDescriptionWithoutDiodes;
 	std::vector<boost::shared_ptr<CircuitData>> m_CircuitDataForAtomicSubcircuits;
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
 	std::vector<boost::shared_ptr<NetlistSubcircuit>> m_activeSubcircuits;
 
-	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in m_CircuitDescriptionWithoutDiodes
+	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_CircuitDescriptionWithoutDiodes
 
 	std::vector<double> m_PressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
 	std::vector<double> m_HistoryPressuresInLPN;                // As m_PressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.

@@ -589,6 +589,8 @@ void netlistReader::readAndSplitMultiSurfaceInputFile()
 
 	}
 
+	m_numberOfNetlistSurfacesIn_netlist_surfacesdat = indexOfNetlistCurrentlyBeingReadInFile;
+
 	fileHasBeenRead = int(1);
 }
 
@@ -671,4 +673,9 @@ std::vector<int>& netlistReader::getNumberOfNodesWithControl()
 std::vector<std::map<int,parameter_controller_t>>& netlistReader::getMapsOfNodalControlTypesForEachSurface()
 {
 	return mapsOfNodalControlTypesForEachSurface;
+}
+
+int netlistReader::getNumberOfNetlistSurfaces()
+{
+	return m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
 }

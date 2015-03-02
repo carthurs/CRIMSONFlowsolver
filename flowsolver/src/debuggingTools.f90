@@ -45,25 +45,6 @@ module debuggingTools
 		end if
 	end subroutine debug_file
 
-	function getProcessorRank_MPI() result(rank)
-
-		implicit none
-
-		include "mpif.h"
-
-		integer :: err
-		integer :: rank
-
-		call MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
-
-		if (err .ne. int(0)) then
-			write(*,*) "MPI error during call to getProcessorRank_MPI. Halting."
-			stop
-		end if
-
-		return
-
-	end function getProcessorRank_MPI
 
 	subroutine listOpenFileUnits(rangeToCheck_lowerBound,rangeToCheck_upperBound)
 
@@ -86,5 +67,25 @@ module debuggingTools
         return
 
 	end subroutine listOpenFileUnits
+
+	function getProcessorRank_MPI() result(rank)
+
+         implicit none
+
+         include "mpif.h"
+
+         integer :: err
+         integer :: rank
+
+         call MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
+
+         if (err .ne. int(0)) then
+            write(*,*) "MPI error during call to getProcessorRank_MPI. Halting."
+            stop
+         end if
+
+         return
+
+      end function getProcessorRank_MPI
 
 end module debuggingTools

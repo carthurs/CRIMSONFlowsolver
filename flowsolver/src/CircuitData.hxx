@@ -213,6 +213,10 @@ public:
 		m_flowPermittedAcross3DInterface = true;
 		m_boundaryConditionTypeHasJustChanged = false;
 	}
+
+	virtual ~CircuitData()
+	{
+	}
 	std::vector<boost::shared_ptr<CircuitComponent>> components;
 	int index;
 
@@ -259,6 +263,8 @@ public:
 	bool connectsTo3DDomain() const;
 	void generateNodeAndComponentIndicesLocalToSubcircuit();
 	virtual void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
+	virtual bool hasPrescribedFlowAcrossInterface() const;
+	virtual bool hasPrescribedPressureAcrossInterface() const;
 	void setupComponentNeighbourPointers();
 	void switchDiodeStatesIfNecessary();
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
@@ -271,14 +277,17 @@ public:
 	void closeAllDiodes();
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
+
+protected:
+	bool m_flowPermittedAcross3DInterface;
+	std::vector<int> m_indexOfNodeAt3DInterface;
+	void setIndicesOfNodesAt3DInterface(std::vector<int> indicesToSet);
 private:
 	int toOneIndexing(const int oneIndexedValue);
 	void rebuildCircuitPressureNodeMap();
 	void switchBetweenDirichletAndNeumannCircuitDesign();
 	int m_hstep;
-	bool m_flowPermittedAcross3DInterface;
 	bool m_boundaryConditionTypeHasJustChanged;
-	std::vector<int> m_indexOfNodeAt3DInterface;
 };
 
 class Netlist3DDomainReplacementCircuitData : public CircuitData
@@ -289,8 +298,10 @@ public:
 	m_numberOfNetlistsUsedAsBoundaryConditions(m_numberOfNetlistsUsedAsBoundaryConditions_in)
 	{
 	}
+	bool hasPrescribedFlowAcrossInterface() const;
+	bool hasPrescribedPressureAcrossInterface() const;
+	void initialiseNodesAndComponentsAtInterface_vector(std::vector<int> threeDInterfaceNodeIndices);
 private:
-	void initialiseNodeAndComponentAtInterface();
 	bool isNodeAtBoundaryInterface(int nodeIndex);
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 

@@ -320,6 +320,7 @@ public:
 	std::vector<std::map<int,parameter_controller_t>>& getMapsOfComponentControlTypesForEachSurface();
 	std::vector<int>& getNumberOfNodesWithControl();
 	std::vector<std::map<int,parameter_controller_t>>& getMapsOfNodalControlTypesForEachSurface();
+	int getNumberOfNetlistSurfaces();
 
 
 protected:
@@ -331,8 +332,7 @@ private:
 	static netlistReader* instance;
 
 	int m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
-	
-	int getNumberOfNetlistSurfaces();
+
 
 	std::vector<std::vector<circuit_component_t>> componentTypes; // the data in here will be the stripped first column of the netlist, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
 	std::vector<std::vector<int>> componentStartNodes;

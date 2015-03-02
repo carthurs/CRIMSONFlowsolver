@@ -18,7 +18,7 @@ public:
 	 m_circuitData(circuitData),
 	 flow_n_ptr(flow_n_ptr),
 	 pressure_n_ptr(pressure_n_ptr),
-	 alfi_delt(alfi_delt_in),
+	 m_alfi_delt(alfi_delt_in),
 	 surfaceIndex(surfaceIndex_in)
 	{
 		initialiseSubcircuit();
@@ -31,15 +31,19 @@ public:
 		PetscErrorCode errFlag;
 		errFlag = VecDestroy(&RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 		errFlag = VecDestroy(&solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		errFlag = MatDestroy(&systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		errFlag = MatDestroy(&inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		errFlag = MatDestroy(&identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = MatDestroy(&m_systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = MatDestroy(&m_inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	}
 
 	void updateInternalPressuresVolumesAndFlows();
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
+	double computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	
 	const CircuitData m_circuitData;
+	void buildAndSolveLinearSystem(const int timestepNumber);
+protected:
+
 private:
 	void initialiseSubcircuit();
 	void createVectorsAndMatricesForCircuitLinearSystem();
@@ -61,12 +65,12 @@ private:
 	const int indexOfThisSubcircuit;
 	double* const flow_n_ptr;
 	double* const pressure_n_ptr;
-	double const alfi_delt;
+	double const m_alfi_delt;
 	const int surfaceIndex;
 
-	Mat systemMatrix;
-	Mat inverseOfSystemMatrix;
-	Mat identityMatrixForPetscInversionHack;
+	Mat m_systemMatrix;
+	Mat m_inverseOfSystemMatrix;
+	Mat m_identityMatrixForPetscInversionHack;
 	Vec RHS;
 	Vec solutionVector;
 
@@ -99,6 +103,9 @@ private:
 	int columnIndexOf3DInterfacePressureInLinearSystem;
 
 	int safetyCounterLimit;
+
+	PetscScalar m_interfaceFlow;
+  	PetscScalar m_interfacePressure;
 
 };
 

@@ -8,7 +8,7 @@
 #include "NetlistSubcircuit.hxx"
 #include "CircuitData.hxx"
 #include "AtomicSubcircuitConnectionManager.hxx"
-#include <boost/unique_ptr.hpp>
+#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 
 // The NetlistBoundaryCondition is really a manager class for a collection
 // of subcircuits, divided by the diodes/valves in the input data.
@@ -24,10 +24,10 @@ class NetlistBoundaryCondition : public abstractBoundaryCondition
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
 	NetlistBoundaryCondition(int surfaceIndex_in)
-	: abstractBoundaryCondition(surfaceIndex_in),
-	  mp_CircuitDescription(hstep),
-	  mp_CircuitDescriptionWithoutDiodes(hstep)
+	: abstractBoundaryCondition(surfaceIndex_in)
 	{
+		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
+		mp_CircuitDescriptionWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
 		initialiseModel();
 		numberOfInitialisedNetlistLPNs++;
@@ -41,7 +41,7 @@ public:
 	void updateLPN();
 	void initialiseAtStartOfTimestep();
 
-	CircuitData& getCircuitDescription();
+	boost::shared_ptr<CircuitData> getCircuitDescription();
 
 	void setDirichletConditionsIfNecessary(int* const binaryMask);
 
@@ -52,8 +52,14 @@ public:
 		numberOfInitialisedNetlistLPNs--;
 	}
 
+	double computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+
+	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
+	void initialiseModel();
 protected:
 	boost::shared_ptr<CircuitData> mp_CircuitDescription;
+	std::vector<boost::shared_ptr<NetlistSubcircuit>> m_activeSubcircuits;
+	void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 private:
 	static int numberOfInitialisedNetlistLPNs;
 	int m_IndexOfThisNetlistLPN;
@@ -63,7 +69,6 @@ private:
 
 	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
 
-	void initialiseModel();
 	virtual void createCircuitDescription();
 	void createCircuitDescription_3DDomainReplacement();
 	void identifySubciruits();
@@ -75,12 +80,10 @@ private:
 	void netlistBoundaryCondition();
 	void createAtomicSubcircuitDescriptions();
 	void identifyAtomicSubcircuits();
-	void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 
 	boost::shared_ptr<CircuitData> mp_CircuitDescriptionWithoutDiodes;
 	std::vector<boost::shared_ptr<CircuitData>> m_CircuitDataForAtomicSubcircuits;
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
-	std::vector<boost::shared_ptr<NetlistSubcircuit>> m_activeSubcircuits;
 
 	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_CircuitDescriptionWithoutDiodes
 

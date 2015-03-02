@@ -3,6 +3,7 @@
 #include "datatypesInCpp.hxx"
 #include <cassert>
 #include <algorithm>
+#include <boost/make_shared.hpp>
 
 // Statics:
 int NetlistBoundaryCondition::numberOfInitialisedNetlistLPNs = 0;
@@ -67,6 +68,19 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
 
     std::cout << "setting implicit coeffs in NetlistBoundaryCondition.cxx: " << implicitCoefficients.first << " " << implicitCoefficients.second << std::endl;
     return implicitCoefficients;
+}
+
+double NetlistBoundaryCondition::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
+{
+    double pressureOrFlowToReturn;
+    int counterToAvoidErrors = 0;
+    for (auto subcircuit = m_activeSubcircuits.begin(); subcircuit != m_activeSubcircuits.end(); subcircuit++)
+    {
+        pressureOrFlowToReturn = (*subcircuit)->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber);
+        counterToAvoidErrors ++;
+    }
+    assert(counterToAvoidErrors == 1); // This is not built to deal with multiple subcircuits yet. If you go back to using multiple subcircuits, you'll need to fix this.
+    return pressureOrFlowToReturn;
 }
 
 void NetlistBoundaryCondition::updateLPN()
@@ -445,7 +459,7 @@ void NetlistBoundaryCondition::setupPressureNode(const int indexOfNodeInInputDat
 void NetlistBoundaryCondition::createInitialCircuitDescriptionWithoutDiodes()
 {
     // Copy the data as a base for modification (i.e. the removal of the diode data)
-    mp_CircuitDescriptionWithoutDiodes = mp_CircuitDescription;
+    mp_CircuitDescriptionWithoutDiodes = boost::make_shared<CircuitData> (*mp_CircuitDescription);
     // Prepare for diode removal by clearing the data that will be rebuilt:
     // mp_CircuitDescriptionWithoutDiodes->deleteSubcircuitSpecificData();
     // Rebuild the cleared vectors, but without the diodes:
@@ -639,7 +653,7 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
     }
 }
 
-CircuitData& NetlistBoundaryCondition::getCircuitDescription()
+boost::shared_ptr<CircuitData> NetlistBoundaryCondition::getCircuitDescription()
 {
     return mp_CircuitDescription;
 }
@@ -659,4 +673,10 @@ void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const bina
       binaryMask[*node] = 0;
     }
   }
+}
+
+void NetlistBoundaryCondition::setPressureAndFlowPointers(double* pressurePointer, double* flowPointer)
+{
+    flow_n_ptr = flowPointer;
+    pressure_n_ptr = pressurePointer;
 }

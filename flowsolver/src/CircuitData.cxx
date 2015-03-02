@@ -19,7 +19,7 @@ void VolumeTrackingPressureChamber::passPressureToStartNode()
 bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
 {
 	bool hasNonnegativePressureGradient = (startNode->getPressure() >= endNode->getPressure());
-	bool hasForwardFlow
+	bool hasForwardFlow;
 	// We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
 	if (m_connectsToNodeAt3DInterface)
 	{
@@ -151,11 +151,11 @@ void CircuitData::setupComponentNeighbourPointers()
 	}
 }
 
-virtual void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex)
+void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex)
 {
 	{
 		std::vector<int> vectorToSet;
-		vectorToSet.push_back(threeDInterfaceNodeIndex)
+		vectorToSet.push_back(threeDInterfaceNodeIndex);
 		setIndicesOfNodesAt3DInterface(vectorToSet);
 	}
 	// tag the node at the 3D interface:
@@ -645,6 +645,27 @@ void CircuitComponent::setConnectsToNodeAt3DInterface()
 // 	int oneIndexedValue = zeroIndexedValue + 1;
 // 	return oneIndexedValue;
 // }
+bool CircuitData::hasPrescribedFlowAcrossInterface() const
+{
+	return m_flowPermittedAcross3DInterface;
+}
+
+bool CircuitData::hasPrescribedPressureAcrossInterface() const
+{
+	// Negate and return:
+	return !m_flowPermittedAcross3DInterface;
+}
+
+bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const
+{
+	// Negate and return:
+	return !m_flowPermittedAcross3DInterface;
+}
+
+bool Netlist3DDomainReplacementCircuitData::hasPrescribedPressureAcrossInterface() const
+{
+	return m_flowPermittedAcross3DInterface;
+}
 
 bool Netlist3DDomainReplacementCircuitData::isNodeAtBoundaryInterface(int nodeIndex)
 {
@@ -659,7 +680,7 @@ bool Netlist3DDomainReplacementCircuitData::isNodeAtBoundaryInterface(int nodeIn
 	return returnValue;
 }
 
-void Netlist3DDomainReplacementCircuitData::initialiseNodeAndComponentAtInterface(std::vector<int> threeDInterfaceNodeIndices)
+void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterface_vector(std::vector<int> threeDInterfaceNodeIndices)
 {
 	setIndicesOfNodesAt3DInterface(threeDInterfaceNodeIndices);
 	// tag the nodes at the 3D interface:

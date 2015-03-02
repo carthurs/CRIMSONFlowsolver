@@ -88,7 +88,7 @@ void controlledCoronary::initialiseModel()
     }
     else
     {
-		pressure_n = *pressure_n_ptr;
+		// pressure_n = *pressure_n_ptr; // moved to abstract base class
     }
 	
 	intramyocardialPressureToLVScaling = 1.0; // \todo try other values here (0.4 in MATLAB)

@@ -29,6 +29,8 @@ public:
 
  	void setPressureFromFortran();
 
+ 	void getPressureAndFlowPointersFromFortran();
+
 	
 //  	procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
         // void setImplicitCoeff();

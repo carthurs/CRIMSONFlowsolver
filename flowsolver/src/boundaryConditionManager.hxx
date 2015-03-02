@@ -91,6 +91,10 @@ class abstractBoundaryCondition;
     void createControlSystems();
     void updateAllControlSystems();
 
+    std::vector<double> getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber);
+
+    void setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows);
+
     ~boundaryConditionManager()
     {
     }

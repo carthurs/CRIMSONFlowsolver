@@ -189,6 +189,7 @@ sources=string.split("""
 	solvecon.f90
 	timeseries.f90
 	estimation_helpers.f90
+	errorManagement.f90
 	""")
 
 object_list=env.Object(source=sources)

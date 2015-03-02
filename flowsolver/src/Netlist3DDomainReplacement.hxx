@@ -11,8 +11,14 @@ public:
 	m_elastanceToGiveVolumeTrackingPressureChamber(m_elastanceToGiveVolumeTrackingPressureChamber_in),
 	m_initialDomainPressure(m_initialDomainPressure_in)
 	{
-		mp_CircuitDescription = new Netlist3DDomainReplacementCircuitData(hstep,m_numberOfNetlistsUsedAsBoundaryConditions);
+		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new Netlist3DDomainReplacementCircuitData(hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
 	}
+
+	void setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<double> boundaryFlowsOrPressuresAsAppropriate);
+	std::vector<double> getBoundaryPressures();
+	std::vector<double> getBoundaryFlows();
+
+	void solveSystem(const int timestepNumber);
 
 private:
 	int m_numberOfNetlistsUsedAsBoundaryConditions;
@@ -21,7 +27,7 @@ private:
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveVolumeTrackingPressureChamber;
 	const double m_initialDomainPressure;
-
+	std::vector<double> m_boundaryFlowsOrPressuresAsAppropriate;
 
 };
 

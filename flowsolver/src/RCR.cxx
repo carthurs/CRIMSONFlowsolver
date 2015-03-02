@@ -132,16 +132,16 @@ void RCR::initialiseModel()
     // allocate(this%implicitcoeff(surfnum,2)) 
     // allocate(this%implicitcoeff_n1(surfnum,2)) 
     
-    if (thisIsARestartedSimulation)
-    {
-      // Initialise the pressure using the value from the PHistRCR.dat.
-      pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1,timdat.lstep);
-    }
-    else
-    {
-      // pressure_n = *pressure_n_ptr;
-      m_needsPressureToBeInitialisedFromFortran = true;
-    }
+    // if (thisIsARestartedSimulation)
+    // {
+    //   // Initialise the pressure using the value from the PHistRCR.dat.
+    //   pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1,timdat.lstep);
+    // }
+    // else
+    // {
+    //   // pressure_n = *pressure_n_ptr;
+    //   m_needsPressureToBeInitialisedFromFortran = true;
+    // }
 
     // These are Hop and dp_dq now.
     // implicitcoeff = 0.0;
@@ -253,4 +253,29 @@ void RCR::setPressureFromFortran()
   {
     pressure_n = *pressure_n_ptr;
   }
+}
+
+// This overrides the base class version of this function call; on a restart, for the RCR, we need to make sure
+// we don't overwrite the pressure data from the pressure history file with an irrelevant value from Fortran.
+void RCR::getPressureAndFlowPointersFromFortran()
+{
+    // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
+    // NB: Need to add a method in fortran to set a value for non-zero restarting!
+    flow_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
+    pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex);
+
+    flow_n = *flow_n_ptr;
+    flow_n1 = 0.0;
+
+    if (thisIsARestartedSimulation)
+    {
+      // Initialise the pressure using the value from the PHistRCR.dat.
+      pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1,timdat.lstep);
+    }
+    else
+    {
+      // pressure_n = *pressure_n_ptr;
+      m_needsPressureToBeInitialisedFromFortran = true;
+    }
+    // pressure_n = *pressure_n_ptr;
 }

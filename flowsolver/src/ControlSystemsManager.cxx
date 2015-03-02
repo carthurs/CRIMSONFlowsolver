@@ -15,7 +15,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 	{
 		// We know that we must be working with a pressure chammber, because Controller_LeftVentricularElastance
 		// refers to a controller for a VolumeTrackingPressureChamber, which derives from CircuitComponent
-		boost::shared_ptr<CircuitComponent> component = boundaryCondition->getCircuitDescription().mapOfComponents.at(nodeOrComponentIndex);
+		boost::shared_ptr<CircuitComponent> component = boundaryCondition->getCircuitDescription()->mapOfComponents.at(nodeOrComponentIndex);
 		// Get the pointer to the compliance which needs to be controlled (in this case, the compliance of the pressure chamber):
 		boost::shared_ptr<VolumeTrackingPressureChamber> downcastVolumeComponent = boost::dynamic_pointer_cast<VolumeTrackingPressureChamber> (component);
 

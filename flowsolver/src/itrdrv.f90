@@ -999,6 +999,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     use iso_c_binding
     use cpp_interface
+    use errorManagement, only: write_to_stderr
     use shapeTable
     use globalArrays
     use pvsQbi     !gives us splag (the spmass at the end of this run
@@ -1024,6 +1025,15 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer, dimension(nshg) :: binaryMask
+
+    ! Ensure that the CurrentIter counter has been reset (detects e.g. problems with
+    ! solver.inp requesting a MinNumIter which exceeds the number of steps in the
+    ! step construction)
+    if(rescontrol .gt. 0) then
+        if (CurrentIter .ne. 0) then
+            call write_to_stderr("WARNING: CurrentIter not reset to zero. Does Minimum Required Iterations exceed the number of steps in Step Construction in solver.inp?")
+        end if
+    end if
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
@@ -1203,7 +1213,6 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !.... -----------------------> predictor phase <-----------------------
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
     call itrPredict(yold, y,   acold,  ac ,  uold,  u)
 

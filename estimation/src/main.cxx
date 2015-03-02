@@ -18,6 +18,7 @@
 #include "petscsys.h"
 #include "SimvascularGlobalArrayTransfer.h"
 #include "itrPC.h"
+#include "pureZeroDDriver.hxx"
 
 #ifdef intel
 #include <direct.h>
@@ -150,7 +151,7 @@ int main(int argc, char * argv[]) {
    {
       assert(nomodule.pureZeroDSimulation==1);
 
-      PureZeroDDriver pureZeroDDriver();
+      PureZeroDDriver pureZeroDDriver;
 
       pureZeroDDriver.init();
 

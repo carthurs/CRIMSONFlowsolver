@@ -127,9 +127,25 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,st
   // Build a factory
   boundaryConditionFactory factory;
   
-  for (auto iterator=surfaceList.begin(); iterator !=surfaceList.end(); iterator++)
+  for (auto iterator = surfaceList.begin(); iterator != surfaceList.end(); iterator++)
   {
     boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
+    // complete the boundary condition by getting the flow and pressure links to Fortran:
+    boundaryConditions.back()->getPressureAndFlowPointersFromFortran();
+  }
+}
+
+void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows)
+{
+  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition != boundaryConditions.end(); boundaryCondition++)
+  {
+    boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+    assert(downcastNetlist != NULL);
+    
+    // Get the (zero-indexed) Netlist index; this gives us the appropriate location of the pointers in the input variables
+    int netlistIndex = downcastNetlist->getIndexAmongstNetlists();
+    // Give the appropriate memory addresses of the pressures and flows to this NetlistBC:
+    downcastNetlist->setPressureAndFlowPointers(&zeroDDomainPressures[netlistIndex], &zeroDDomainFlows[netlistIndex]);
   }
 }
 
@@ -502,7 +518,7 @@ void boundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisall
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (!downcastNetlist->getCircuitDescription().flowPermittedAcross3DInterface())
+      if (!downcastNetlist->getCircuitDescription()->flowPermittedAcross3DInterface())
       {
         numBCsWhichDisallowFlow++;
       }
@@ -526,7 +542,7 @@ void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentl
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (downcastNetlist->getCircuitDescription().flowPermittedAcross3DInterface())
+      if (downcastNetlist->getCircuitDescription()->flowPermittedAcross3DInterface())
       {
         numBCsWhichAllowFlow++;
       }
@@ -554,7 +570,7 @@ void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const i
     {
       // Discover whether we should report that flow is permitted or not:
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (!(downcastNetlist->getCircuitDescription().flowPermittedAcross3DInterface()))
+      if (!(downcastNetlist->getCircuitDescription()->flowPermittedAcross3DInterface()))
       {
         flowIsPermitted = 0;
       }
@@ -581,7 +597,7 @@ void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryCo
     {
       // Discover whether we should report a change in boundary condition type (Neumann/Dirichlet):
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (downcastNetlist->getCircuitDescription().boundaryConditionTypeHasJustChanged())
+      if (downcastNetlist->getCircuitDescription()->boundaryConditionTypeHasJustChanged())
       {
         boundaryConditionTypesHaveChanged = 1;
       }
@@ -622,7 +638,7 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
     {
       NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
       // All the following writes can use the same m_nextTimestepWrite_end to determine how far to go when looking for data to write to the file:
-      m_nextTimestepWrite_end = netlistBoundaryCondition->getCircuitDescription().components.at(0)->m_entireFlowHistory.size();
+      m_nextTimestepWrite_end = netlistBoundaryCondition->getCircuitDescription()->components.at(0)->m_entireFlowHistory.size();
       
       {
         // Write the netlistPressures_surface_X.dat
@@ -634,7 +650,7 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
         for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
         {
           boundaryConditionPressureHistoryWriter.writeStepIndex(stepToWrite);
-          for (auto node=netlistBoundaryCondition->getCircuitDescription().mapOfPressureNodes.begin(); node!=netlistBoundaryCondition->getCircuitDescription().mapOfPressureNodes.end(); node++)
+          for (auto node=netlistBoundaryCondition->getCircuitDescription()->mapOfPressureNodes.begin(); node!=netlistBoundaryCondition->getCircuitDescription()->mapOfPressureNodes.end(); node++)
           {
             boundaryConditionPressureHistoryWriter.writeToFile(node->second->m_entirePressureHistory.at(stepToWrite));
           }
@@ -652,7 +668,7 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
         for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
         {
           boundaryConditionFlowHistoryWriter.writeStepIndex(stepToWrite);
-          for (auto component=netlistBoundaryCondition->getCircuitDescription().components.begin(); component!=netlistBoundaryCondition->getCircuitDescription().components.end(); component++)
+          for (auto component=netlistBoundaryCondition->getCircuitDescription()->components.begin(); component!=netlistBoundaryCondition->getCircuitDescription()->components.end(); component++)
           {
             boundaryConditionFlowHistoryWriter.writeToFile((*component)->m_entireFlowHistory.at(stepToWrite));
           }
@@ -671,7 +687,7 @@ void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
         for (int stepToWrite=m_nextTimestepWrite_start; stepToWrite<m_nextTimestepWrite_end; stepToWrite++)
         {
           boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
-          for (auto component=netlistBoundaryCondition->getCircuitDescription().mapOfComponents.begin(); component!=netlistBoundaryCondition->getCircuitDescription().mapOfComponents.end(); component++)
+          for (auto component=netlistBoundaryCondition->getCircuitDescription()->mapOfComponents.begin(); component!=netlistBoundaryCondition->getCircuitDescription()->mapOfComponents.end(); component++)
           {
             VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
             // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
@@ -748,4 +764,25 @@ void boundaryConditionManager::createControlSystems()
     }
   }
 
+}
+
+std::vector<double> boundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber)
+{
+  std::vector<double> pressuresOrFlowsAsAppropriate;
+  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition != boundaryConditions.end(); boundaryCondition++)
+  {
+    if (typeid(**boundaryCondition) == typeid(NetlistBoundaryCondition))
+    {
+      boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+      pressuresOrFlowsAsAppropriate.push_back(downcastNetlist->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber));
+    }
+    else
+    {
+      std::stringstream errorMessage;
+      errorMessage << "EE: You can only use a zero-D replacement for the 3D domain if all the boundary conditions are Netlists." << std::endl;
+      throw std::runtime_error(errorMessage.str());
+    }
+  }
+  assert(pressuresOrFlowsAsAppropriate.size() == m_NumberOfNetlistSurfaces);
+  return pressuresOrFlowsAsAppropriate;
 }

@@ -1,4 +1,5 @@
 #include "Netlist3DDomainReplacement.hxx"
+#include "fileReaders.hxx"
 
 void Netlist3DDomainReplacement::createCircuitDescription()
 {
@@ -7,7 +8,7 @@ void Netlist3DDomainReplacement::createCircuitDescription()
 
     // Get the reader class for the netlist data file, and ask it for the circuit description data:
     netlistReader* netlistReader_instance = netlistReader::Instance();
-    m_numberOfNetlistsUsedAsBoundaryConditions = getNumberOfNetlistSurfaces();
+    m_numberOfNetlistsUsedAsBoundaryConditions = netlistReader_instance->getNumberOfNetlistSurfaces();
     // we'll have a resistor for each netlist used as a boundary condition, plus one VolumeTrackingPressureChamber:
     mp_CircuitDescription->numberOfComponents = m_numberOfNetlistsUsedAsBoundaryConditions + 1;
 
@@ -21,7 +22,7 @@ void Netlist3DDomainReplacement::createCircuitDescription()
 
     // Create the component data:
     std::vector<circuit_component_t> componentTypes;
-    for (boundary=0; boundary<m_numberOfNetlistsUsedAsBoundaryConditions; boundary++)
+    for (int boundary=0; boundary<m_numberOfNetlistsUsedAsBoundaryConditions; boundary++)
     {
     	componentTypes.push_back(Component_Resistor);
     }
@@ -56,7 +57,7 @@ void Netlist3DDomainReplacement::createCircuitDescription()
 
     // Deal out indices for the end nodes:
     std::vector<int> componentEndNodes;
-    for (component=0; component<mp_CircuitDescription->numberOfComponents; component++)
+    for (int component=0; component<mp_CircuitDescription->numberOfComponents; component++)
     {
     	componentEndNodes.push_back(component+1);
     }
@@ -71,12 +72,12 @@ void Netlist3DDomainReplacement::createCircuitDescription()
     std::vector<circuit_component_flow_prescription_t> typeOfPrescribedFlows; // initially empty
     std::vector<double> valueOfPrescribedFlows; // empty
     std::map<int,double> initialPressures;
-    for (node=1; node < mp_CircuitDescription->numberOfPressureNodes; node++)
+    for (int node=1; node < mp_CircuitDescription->numberOfPressureNodes; node++)
     {
-    	initialPressures.push_back(std::make_pair(node,m_initialDomainPressure));
+    	initialPressures.insert(std::make_pair(node,m_initialDomainPressure));
     }
     // Do the final node (at the base of the pressure chamber):
-    initialPressures.push_back(std::make_pair(mp_CircuitDescription->numberOfPressureNodes, 0.0))
+    initialPressures.insert(std::make_pair(mp_CircuitDescription->numberOfPressureNodes, 0.0));
     
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_CircuitDescription->components.begin(); component != mp_CircuitDescription->components.end(); component++)
@@ -132,7 +133,8 @@ void Netlist3DDomainReplacement::createCircuitDescription()
         {
         	threeDNodeIndices.push_back(nodeIndex);
         }
-        mp_CircuitDescription->initialiseNodeAndComponentAtInterface(threeDNodeIndices);
+        boost::shared_ptr<Netlist3DDomainReplacementCircuitData> downcastDomainReplacementCircuitData = boost::dynamic_pointer_cast<Netlist3DDomainReplacementCircuitData> (mp_CircuitDescription);
+        downcastDomainReplacementCircuitData->initialiseNodesAndComponentsAtInterface_vector(threeDNodeIndices);
     }
 
     // mp_CircuitDescription->switchDiodeStatesIfNecessary();
@@ -146,3 +148,60 @@ void Netlist3DDomainReplacement::createCircuitDescription()
     //     mp_CircuitDescription->componentIndices.push_back(ii);
     // }
 }
+
+void Netlist3DDomainReplacement::setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<double> boundaryFlowsOrPressuresAsAppropriate)
+{
+	m_boundaryFlowsOrPressuresAsAppropriate = boundaryFlowsOrPressuresAsAppropriate;
+}
+
+std::vector<double> Netlist3DDomainReplacement::getBoundaryPressures()
+{
+	std::vector<double> pressures;
+	for (int indexOfBoundaryInterfaceComponent = 0; indexOfBoundaryInterfaceComponent < m_numberOfNetlistsUsedAsBoundaryConditions; indexOfBoundaryInterfaceComponent++)
+	{
+		pressures.push_back(mp_CircuitDescription->components.at(indexOfBoundaryInterfaceComponent)->endNode->getPressure());
+	}
+	return pressures;
+}
+
+std::vector<double> Netlist3DDomainReplacement::getBoundaryFlows()
+{
+	std::vector<double> flows;
+	for (int indexOfBoundaryInterfaceComponent = 0; indexOfBoundaryInterfaceComponent < m_numberOfNetlistsUsedAsBoundaryConditions; indexOfBoundaryInterfaceComponent++)
+	{
+		flows.push_back(mp_CircuitDescription->components.at(indexOfBoundaryInterfaceComponent)->flow);
+	}
+	return flows;
+}
+
+void Netlist3DDomainReplacement::solveSystem(const int timestepNumber)
+{
+	m_activeSubcircuits.at(0)->buildAndSolveLinearSystem(timestepNumber);
+}
+
+// std::vector<double> Netlist3DDomainReplacement::getPressureOrFlowPrescriptionsToReturnToNetlistBoundaryConditions()
+// {
+// 	std::vector<double> pressuresAndFlowsToGiveToBoundaryConditions;
+// 	// we know the components at the boundary are just the first m_numberOfNetlistsUsedAsBoundaryConditions in the CircuitData. Loop over them!
+// 	for (int indexOfBoundaryInterfaceComponent = 0; indexOfBoundaryInterfaceComponent < m_numberOfNetlistsUsedAsBoundaryConditions; indexOfBoundaryInterfaceComponent++)
+// 	{
+// 		// Determine whether it's a Dirichlet or Neumann boundary condition at the interface (so pass a pressure or a flow to the boundary condition, respectively).
+// 		if (mp_CircuitDescription->hasPrescribedPressureAcrossInterface())
+// 		{
+// 			// Gather the pressure or flow value into the return variable:
+// 			pressuresAndFlowsToGiveToBoundaryConditions.push_back(mp_CircuitDescription->components.at(indexOfBoundaryInterfaceComponent)->flow);
+// 		}
+// 		else if (mp_CircuitDescription->hasPrescribedFlowAcrossInterface())
+// 		{
+// 			// Gather the pressure or flow value into the return variable:
+// 			pressuresAndFlowsToGiveToBoundaryConditions.push_back(mp_CircuitDescription->components.at(indexOfBoundaryInterfaceComponent)->endNode->pressure);
+// 		}
+// 		else
+// 		{
+// 			std::stringstream errorMessage;
+// 			errorMessage << "EE: Zero-D domain replacement has at least one bounday interface with neither a prescribed pressure nor a prescribed flow." << std::endl;
+// 			throw std::logic_error(errorMessage);			
+// 		}
+// 	}
+// 	return pressuresAndFlowsToGiveToBoundaryConditions;
+// }

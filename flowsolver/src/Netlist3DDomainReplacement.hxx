@@ -11,7 +11,7 @@ public:
 	m_elastanceToGiveVolumeTrackingPressureChamber(m_elastanceToGiveVolumeTrackingPressureChamber_in),
 	m_initialDomainPressure(m_initialDomainPressure_in)
 	{
-		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new Netlist3DDomainReplacementCircuitData(hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
+		mp_CircuitDescription = boost::shared_ptr<Netlist3DDomainReplacementCircuitData> (new Netlist3DDomainReplacementCircuitData(hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
 	}
 
 	void setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<double> boundaryFlowsOrPressuresAsAppropriate);

@@ -86,9 +86,9 @@ class abstractBoundaryCondition
  	std::string flowfile;
     std::string pressurefile;
 	double surfarea;
-	double* flow_n_ptr;
+	std::vector<double*> flow_n_ptrs;
     double flow_n1;
-    double* pressure_n_ptr;
+    std::vector<double*> pressure_n_ptrs;
     // double implicitcoeff;
     // double implicitcoeff_n1; 
     int hstep;

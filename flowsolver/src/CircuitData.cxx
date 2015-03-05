@@ -21,7 +21,7 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	bool hasNonnegativePressureGradient = (startNode->getPressure() >= endNode->getPressure());
 	bool hasForwardFlow;
 	// We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
-	if (m_connectsToNodeAt3DInterface)
+	if (m_connectsToNodeAtInterface)
 	{
 		hasForwardFlow = (m_signForPrescribed3DInterfaceFlow*flow >= 1e-16);
 	}
@@ -156,10 +156,10 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 	{
 		std::vector<int> vectorToSet;
 		vectorToSet.push_back(threeDInterfaceNodeIndex);
-		setIndicesOfNodesAt3DInterface(vectorToSet);
+		setIndicesOfNodesAtInterface(vectorToSet);
 	}
 	// tag the node at the 3D interface:
-    mapOfPressureNodes.at(threeDInterfaceNodeIndex)->m_connectsTo3DDomain = true;
+    mapOfPressureNodes.at(threeDInterfaceNodeIndex)->setIsAtBoundary();
 
 	int numberOfComponentsTaggedFor3DFlow = 0; //a counter to verify there exists a unique 3D flow-tagged component
 	for (auto component=components.begin(); component!=components.end(); component++)
@@ -169,12 +169,12 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 		{
 			numberOfComponentsTaggedFor3DFlow++;
 			// Ensure one of this component's nodes is the one at the 3D interface
-			bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  getIndexOfNodeAt3DInterface());
-			bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  getIndexOfNodeAt3DInterface());
+			bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  getIndexOfNodeAtInterface());
+			bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  getIndexOfNodeAtInterface());
 			if (startNodeIsAt3Dinterface || endNodeIsAt3Dinterface)
 			{
 				// tag the component as being at the 3D interface
-				(*component)->setConnectsToNodeAt3DInterface();
+				(*component)->setConnectsToNodeAtInterface();
 			}
 			else
 			{
@@ -241,8 +241,8 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 			// {
 			// 	assert(numberOfTimesComponentStartNodeAppearsInCircuit==1);
 			// 	// Setting these two bool tags here is the purpose of the whole subroutine!
-			// 	// (*component)->startNode->m_connectsTo3DDomain = true;
-			// 	(*component)->setConnectsToNodeAt3DInterface();
+			// 	// (*component)->startNode->m_isAtBoundary = true;
+			// 	(*component)->setConnectsToNodeAtInterface();
 			// }
 		}
 	}
@@ -258,8 +258,8 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 	int numberOfComponentsConnectingTo3DInterfaceNode = 0; //a counter to verify there exists a unique component connecting to the 3D interface node
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
-		bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  getIndexOfNodeAt3DInterface());
-		bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  getIndexOfNodeAt3DInterface());
+		bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  getIndexOfNodeAtInterface());
+		bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  getIndexOfNodeAtInterface());
 		if (startNodeIsAt3Dinterface)
 		{
 			numberOfComponentsConnectingTo3DInterfaceNode++;
@@ -294,6 +294,22 @@ void CircuitData::rebuildCircuitPressureNodeMap()
 		}
 	}
 	numberOfPressureNodes = mapOfPressureNodes.size();
+}
+
+int CircuitData::getIndexOfComponentConnectingToNodeAtInterface()
+{
+	int componentIndexToReturn = 0;
+	for (auto component=components.begin(); component != components.end(); component++)
+	{
+		componentIndexToReturn++;
+		if ((*component)->connectsToNodeAtInterface())
+		{
+			return componentIndexToReturn;
+		}
+	}
+	std::stringstream errorMessage;
+	errorMessage << "EE: Internal error: unreachable location in getIndexOfComponentConnectingToNodeAtInterface reached." << std::endl;
+	throw std::logic_error(errorMessage.str());
 }
 
 boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
@@ -448,7 +464,7 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 	int indexOfComponentAt3DInterface = -1;
 	for (auto component = components.begin(); component!= components.end(); component++)
 	{
-		if ((*component)->connectsToNodeAt3DInterface())
+		if ((*component)->connectsToNodeAtInterface())
 		{
 			indexOfComponentAt3DInterface = (*component)->indexInInputData;
 		}
@@ -480,9 +496,9 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 				// somewhere for flow coming in at the 3D domain to go (i.e. it's OK for the surface to have a Dirichlet boundary condition).
 				// We also ensure that we haven't accidentally detected the 3D interface node itself, using the bools.
 				int numberOfStartNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtStartNode.size();
-				bool startNodeNotAt3DInterface = !(currentComponent.lock()->startNode->m_connectsTo3DDomain);
+				bool startNodeNotAt3DInterface = !(currentComponent.lock()->startNode->isAtBoundary());
 				int numberOfEndNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtEndNode.size();
-				bool endNodeNotAt3DInterface = !(currentComponent.lock()->endNode->m_connectsTo3DDomain);
+				bool endNodeNotAt3DInterface = !(currentComponent.lock()->endNode->isAtBoundary());
 				if ((numberOfStartNodeNeighbours == 0 && startNodeNotAt3DInterface) || (numberOfEndNodeNeighbours == 0 && endNodeNotAt3DInterface))
 				{
 					m_flowPermittedAcross3DInterface = true;
@@ -529,7 +545,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		// Remove the node at the 3D interface from the list of those with prescribed pressure:
 		for (auto node=mapOfPrescribedPressureNodes.begin(); node!=mapOfPrescribedPressureNodes.end(); node++)
 		{
-			if (node->second->m_connectsTo3DDomain)
+			if (node->second->isAtBoundary())
 			{
 				node->second->prescribedPressureType=Pressure_NotPrescribed;
 				mapOfPrescribedPressureNodes.erase(node);
@@ -540,7 +556,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		// Add the component at the 3D interface to the list of those with prescribed flow:
 		for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 		{
-			if (component->second->connectsToNodeAt3DInterface())
+			if (component->second->connectsToNodeAtInterface())
 			{
 				component->second->prescribedFlowType=Flow_3DInterface;
 				mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->indexInInputData,component->second));
@@ -555,6 +571,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		// need updating.)
 		numberOfPrescribedPressures--;
 		numberOfPrescribedFlows++;
+		assert(numberOfPrescribedPressures>=0);
 	}
 	else // Else we have just changed to a Dirichlet condition
 	{
@@ -562,7 +579,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		// Add the node at the 3D interface to the list of those with prescribed pressure:
 		for (auto node=mapOfPressureNodes.begin(); node!=mapOfPressureNodes.end(); node++)
 		{
-			if (node->second->m_connectsTo3DDomain)
+			if (node->second->isAtBoundary())
 			{
 				node->second->prescribedPressureType=Pressure_3DInterface;
 				mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->indexInInputData,node->second));
@@ -573,7 +590,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		// Remove the component at the 3D interface from the list of those with prescribed flow:
 		for (auto component=mapOfPrescribedFlowComponents.begin(); component!=mapOfPrescribedFlowComponents.end(); component++)
 		{
-			if (component->second->connectsToNodeAt3DInterface())
+			if (component->second->connectsToNodeAtInterface())
 			{
 				component->second->prescribedFlowType=Flow_NotPrescribed;
 				mapOfPrescribedFlowComponents.erase(component);
@@ -588,6 +605,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		// need updating.)
 		numberOfPrescribedPressures++;
 		numberOfPrescribedFlows--;
+		assert(numberOfPrescribedFlows>=0);
 	}	
 }
 
@@ -595,11 +613,11 @@ bool CircuitData::connectsTo3DDomain() const
 {
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
-		if ((*component)->startNode->m_connectsTo3DDomain)
+		if ((*component)->startNode->isAtBoundary())
 		{
 			return true;
 		}
-		if ((*component)->endNode->m_connectsTo3DDomain)
+		if ((*component)->endNode->isAtBoundary())
 		{
 			return true;
 		}
@@ -620,31 +638,32 @@ bool CircuitData::boundaryConditionTypeHasJustChanged()
 	return m_boundaryConditionTypeHasJustChanged;
 }
 
-void CircuitData::setIndicesOfNodesAt3DInterface(std::vector<int> indicesToSet)
+void CircuitData::setIndicesOfNodesAtInterface(std::vector<int> indicesToSet)
 {
 	m_indexOfNodeAt3DInterface = indicesToSet;
 }
 
-int CircuitData::getIndexOfNodeAt3DInterface()
+int CircuitData::getIndexOfNodeAtInterface()
 {
 	return m_indexOfNodeAt3DInterface.at(0); // The basic netlist boundary condition currently only uses the 0th entry of m_indexOfNodeAt3DInterface.
 }
 
-bool CircuitComponent::connectsToNodeAt3DInterface()
+bool CircuitComponent::connectsToNodeAtInterface()
 {
-	return m_connectsToNodeAt3DInterface;
+	return m_connectsToNodeAtInterface;
 }
 
-void CircuitComponent::setConnectsToNodeAt3DInterface()
+void CircuitComponent::setConnectsToNodeAtInterface()
 {
-	m_connectsToNodeAt3DInterface = true;
+	m_connectsToNodeAtInterface = true;
 }
 
-// inline int CircuitData::toOneIndexing(const int zeroIndexedValue)
-// {
-// 	int oneIndexedValue = zeroIndexedValue + 1;
-// 	return oneIndexedValue;
-// }
+inline int CircuitData::toOneIndexing(const int zeroIndexedValue)
+{
+	int oneIndexedValue = zeroIndexedValue + 1;
+	return oneIndexedValue;
+}
+
 bool CircuitData::hasPrescribedFlowAcrossInterface() const
 {
 	return m_flowPermittedAcross3DInterface;
@@ -682,108 +701,99 @@ bool Netlist3DDomainReplacementCircuitData::isNodeAtBoundaryInterface(int nodeIn
 
 void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterface_vector(std::vector<int> threeDInterfaceNodeIndices)
 {
-	setIndicesOfNodesAt3DInterface(threeDInterfaceNodeIndices);
+	setIndicesOfNodesAtInterface(threeDInterfaceNodeIndices);
 	// tag the nodes at the 3D interface:
 	for (auto threeDInterfaceNodeIndex = threeDInterfaceNodeIndices.begin(); threeDInterfaceNodeIndex != threeDInterfaceNodeIndices.end(); threeDInterfaceNodeIndex++)
 	{
-    	mapOfPressureNodes.at(*threeDInterfaceNodeIndex)->m_connectsTo3DDomain = true;
+    	mapOfPressureNodes.at(*threeDInterfaceNodeIndex)->setIsAtBoundary();
     }
 
-	int numberOfComponentsTaggedFor3DFlow = 0; //a counter to verify we get m_numberOfNetlistsUsedAsBoundaryConditions of these.
+	int numberOfComponentsTaggedAsBeingAtInterfaces = 0; //a counter to verify we get m_numberOfNetlistsUsedAsBoundaryConditions of these.
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
 		// Find the component tagged to recieve flow from the 3D interface:
-		if ((*component)->prescribedFlowType == Flow_3DInterface)
+		// if ((*component)->prescribedFlowType == Flow_3DInterface)
+		// {
+		// Ensure one of this component's nodes is the one at the 3D interface
+		bool startNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->startNode->indexInInputData);
+		bool endNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->endNode->indexInInputData);
+		if (startNodeIsAt3Dinterface || endNodeIsAt3Dinterface)
 		{
-			numberOfComponentsTaggedFor3DFlow++;
-			// Ensure one of this component's nodes is the one at the 3D interface
-			bool startNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->startNode->indexInInputData);
-			bool endNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->endNode->indexInInputData);
-			if (startNodeIsAt3Dinterface || endNodeIsAt3Dinterface)
-			{
-				// tag the component as being at the 3D interface
-				(*component)->setConnectsToNodeAt3DInterface();
-			}
-			else
-			{
-				throw std::runtime_error("EE: Component with prescribed flow from the 3D domain does not have a node tagged as being at the 3D interface.");
-			}
-
-			// Set up the sign for the flow prescription, depending on whether it's the start or end node of the
-			// component which is at the 3D interface (if the user has listed the end node before the start node for
-			// the component at the 3D interface in the netlist_surfaces.dat, we need to flip the sign of the flow
-			// coming from the 3D interface. This affects all component types, but is needed for diodes in particular,
-			// where the user has a legitimate reason to want to reverse those nodes, depending on the orientation they
-			// want to give to the diode.)
-			if (startNodeIsAt3Dinterface)
-			{
-				(*component)->m_signForPrescribed3DInterfaceFlow = -1.0;
-			}
-			else if (endNodeIsAt3Dinterface)
-			{
-				(*component)->m_signForPrescribed3DInterfaceFlow = 1.0;
-			}
-			else
-			{
-				throw std::runtime_error("EE: Component with prescribed flow from the 3D domain does not have a node tagged as being at the 3D interface.");
-			}
-
-			// // Find which end of the component doesn't link to any other components (and so therefore is at the 3D interface)
-			// int baseComponentStartNodeIdx=(*component)->startNode->indexInInputData;
-			// int baseComponentEndNodeIdx=(*component)->endNode->indexInInputData;
-			// int numberOfTimesComponentStartNodeAppearsInCircuit = 0;
-			// int numberOfTimesComponentEndNodeAppearsInCircuit = 0;
-			// for (auto otherComponent=components.begin(); otherComponent!=components.end(); otherComponent++)
-			// {
-			// 	if ((*otherComponent)->startNode->indexInInputData == baseComponentStartNodeIdx)
-			// 	{
-			// 		numberOfTimesComponentStartNodeAppearsInCircuit++;
-			// 	}
-			// 	if ((*otherComponent)->endNode->indexInInputData == baseComponentStartNodeIdx)
-			// 	{
-			// 		numberOfTimesComponentStartNodeAppearsInCircuit++;
-			// 	}
-			// 	if ((*otherComponent)->startNode->indexInInputData == baseComponentEndNodeIdx)
-			// 	{
-			// 		numberOfTimesComponentEndNodeAppearsInCircuit++;
-			// 	}
-			// 	if ((*otherComponent)->endNode->indexInInputData == baseComponentEndNodeIdx)
-			// 	{
-			// 		numberOfTimesComponentEndNodeAppearsInCircuit++;
-			// 	}
-			// }
-
-			// // Make sure both the start and end nodes were actually found in the circuit (or else something has gone badly wrong!)
-			// assert(numberOfTimesComponentStartNodeAppearsInCircuit>=1);
-			// assert(numberOfTimesComponentEndNodeAppearsInCircuit>=1);
-
-			// if (numberOfTimesComponentStartNodeAppearsInCircuit>1 && numberOfTimesComponentEndNodeAppearsInCircuit>1)
-			// {
-			// 	throw std::runtime_error("EE: Only one component may be directly connected to the 3D interface in the Netlist.");
-			// }
-			// else if (numberOfTimesComponentStartNodeAppearsInCircuit>1)
-			// {
-			// 	throw std::runtime_error("EE: The netlist component at the 3D interface must be connected to it via its start node, not its end node.");
-			// }
-			// else // actually tag the 3D interface node, now we've checked for errors...
-			// {
-			// 	assert(numberOfTimesComponentStartNodeAppearsInCircuit==1);
-			// 	// Setting these two bool tags here is the purpose of the whole subroutine!
-			// 	// (*component)->startNode->m_connectsTo3DDomain = true;
-			// 	(*component)->setConnectsToNodeAt3DInterface();
-			// }
+			// tag the component as being at the 3D interface
+			(*component)->setConnectsToNodeAtInterface();
+			numberOfComponentsTaggedAsBeingAtInterfaces++;
 		}
+
+		// Set up the sign for the flow prescription, depending on whether it's the start or end node of the
+		// component which is at the 3D interface (if the user has listed the end node before the start node for
+		// the component at the 3D interface in the netlist_surfaces.dat, we need to flip the sign of the flow
+		// coming from the 3D interface. This affects all component types, but is needed for diodes in particular,
+		// where the user has a legitimate reason to want to reverse those nodes, depending on the orientation they
+		// want to give to the diode.)
+		if (startNodeIsAt3Dinterface)
+		{
+			(*component)->m_signForPrescribed3DInterfaceFlow = -1.0;
+		}
+		else if (endNodeIsAt3Dinterface)
+		{
+			(*component)->m_signForPrescribed3DInterfaceFlow = 1.0;
+		}
+
+		// // Find which end of the component doesn't link to any other components (and so therefore is at the 3D interface)
+		// int baseComponentStartNodeIdx=(*component)->startNode->indexInInputData;
+		// int baseComponentEndNodeIdx=(*component)->endNode->indexInInputData;
+		// int numberOfTimesComponentStartNodeAppearsInCircuit = 0;
+		// int numberOfTimesComponentEndNodeAppearsInCircuit = 0;
+		// for (auto otherComponent=components.begin(); otherComponent!=components.end(); otherComponent++)
+		// {
+		// 	if ((*otherComponent)->startNode->indexInInputData == baseComponentStartNodeIdx)
+		// 	{
+		// 		numberOfTimesComponentStartNodeAppearsInCircuit++;
+		// 	}
+		// 	if ((*otherComponent)->endNode->indexInInputData == baseComponentStartNodeIdx)
+		// 	{
+		// 		numberOfTimesComponentStartNodeAppearsInCircuit++;
+		// 	}
+		// 	if ((*otherComponent)->startNode->indexInInputData == baseComponentEndNodeIdx)
+		// 	{
+		// 		numberOfTimesComponentEndNodeAppearsInCircuit++;
+		// 	}
+		// 	if ((*otherComponent)->endNode->indexInInputData == baseComponentEndNodeIdx)
+		// 	{
+		// 		numberOfTimesComponentEndNodeAppearsInCircuit++;
+		// 	}
+		// }
+
+		// // Make sure both the start and end nodes were actually found in the circuit (or else something has gone badly wrong!)
+		// assert(numberOfTimesComponentStartNodeAppearsInCircuit>=1);
+		// assert(numberOfTimesComponentEndNodeAppearsInCircuit>=1);
+
+		// if (numberOfTimesComponentStartNodeAppearsInCircuit>1 && numberOfTimesComponentEndNodeAppearsInCircuit>1)
+		// {
+		// 	throw std::runtime_error("EE: Only one component may be directly connected to the 3D interface in the Netlist.");
+		// }
+		// else if (numberOfTimesComponentStartNodeAppearsInCircuit>1)
+		// {
+		// 	throw std::runtime_error("EE: The netlist component at the 3D interface must be connected to it via its start node, not its end node.");
+		// }
+		// else // actually tag the 3D interface node, now we've checked for errors...
+		// {
+		// 	assert(numberOfTimesComponentStartNodeAppearsInCircuit==1);
+		// 	// Setting these two bool tags here is the purpose of the whole subroutine!
+		// 	// (*component)->startNode->m_isAtBoundary = true;
+		// 	(*component)->setConnectsToNodeAtInterface();
+		// }
 	}
-	if (numberOfComponentsTaggedFor3DFlow!=m_numberOfNetlistsUsedAsBoundaryConditions)
+	if (numberOfComponentsTaggedAsBeingAtInterfaces!=m_numberOfNetlistsUsedAsBoundaryConditions)
 	{
 		// May fail if this subroutine gets called on a subcircuit, instead of the whole input data circuit, if the subcircuit doesn't have the 3D flow interface component. Don't call it in this case!
 		std::stringstream errorMessage;
-		errorMessage << "EE: Expected " << m_numberOfNetlistsUsedAsBoundaryConditions << "components at the boundary interfaces in the 0D replacement" << std::endl;
-		errorMessage << "for the 3D domain, but found " << numberOfComponentsTaggedFor3DFlow << ". You probably can't fix this." << std::endl;
+		errorMessage << "EE: Expected " << m_numberOfNetlistsUsedAsBoundaryConditions << " components at the boundary interfaces in the 0D replacement" << std::endl;
+		errorMessage << "               for the 3D domain, but found " << numberOfComponentsTaggedAsBeingAtInterfaces << ". You probably can't fix this." << std::endl;
 		throw std::logic_error(errorMessage.str());
 	}
 
-	// Ensure that the 3D interface node belongs to a unique component:
+	// Ensure that the 3D interface nodes belongs to unique components:
 	int numberOfComponentsConnectingTo3DInterfaceNode = 0; //a counter to verify there exists a unique component connecting to the 3D interface node
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
@@ -798,7 +808,7 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 			numberOfComponentsConnectingTo3DInterfaceNode++;
 		}
 	}
-	if (numberOfComponentsConnectingTo3DInterfaceNode!=1)
+	if (numberOfComponentsConnectingTo3DInterfaceNode!=m_numberOfNetlistsUsedAsBoundaryConditions)
 	{
 		// May fail if this subroutine gets called on a subcircuit, instead of the whole input data circuit, if the subcircuit doesn't have the 3D flow interface component. Don't call it in this case!
 		std::stringstream errorMessage;
@@ -806,4 +816,112 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 		throw std::runtime_error(errorMessage.str());
 	}
 
+}
+
+// Adjusts the circuit data as appropriate for a change in boundary condition type
+// between Neumann and Dirichlet.
+void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>>& boundaryFlowsOrPressuresAsAppropriate)
+{
+	for (int componentAtBoundaryIndex = 0; componentAtBoundaryIndex<m_numberOfNetlistsUsedAsBoundaryConditions; componentAtBoundaryIndex++)
+	{
+		// Scoping unit to avoid errors:
+		{
+			bool flowIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Flow);
+			if (flowIsGivenTo0DReplacementDomainAtThisBoundary)
+			{
+				givePrescribedFlowToBoundaryComponent(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
+			}
+			bool flowWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary = (mapOfPrescribedFlowComponents.find(toOneIndexing(componentAtBoundaryIndex)) == mapOfPrescribedFlowComponents.end());
+			bool flowNewlyPrescribedAtThisBoundary = (flowIsGivenTo0DReplacementDomainAtThisBoundary && flowWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary);
+			if (flowNewlyPrescribedAtThisBoundary)
+			{
+				std::cout << "Switching to Dirichlet in zero-D domain replacement!" << std::endl;
+				// Remove the node at the 3D interface from the list of those with prescribed pressure:
+				for (auto node=mapOfPrescribedPressureNodes.begin(); node!=mapOfPrescribedPressureNodes.end(); node++)
+				{
+					if (node->first == toOneIndexing(componentAtBoundaryIndex))
+					{
+						node->second->prescribedPressureType=Pressure_NotPrescribed;
+						mapOfPrescribedPressureNodes.erase(node);
+						break;
+					}
+				}
+
+				// Add the component at the 3D interface to the list of those with prescribed flow:
+				for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
+				{
+					if (component->first == toOneIndexing(componentAtBoundaryIndex))
+					{
+						component->second->prescribedFlowType=Flow_3DInterface;
+						mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->indexInInputData,component->second));
+						break;
+					}
+				}
+
+				// Update the counts of each type of prescription (in switching to a Neumann condition, we're now
+				// giving a prescribed pressure to the 3D domain, which means this boundary condition will be
+				// receiving a flow back from the 3D domain to prescribe at the LPN interface, instead of the
+				// pressure it was previously receiving under Dirichlet conditions. These counters therefore
+				// need updating.)
+				numberOfPrescribedPressures--;
+				numberOfPrescribedFlows++;
+				assert(numberOfPrescribedPressures>=0);
+			}
+		}
+		// Scoping unit to avoid errors:
+		{
+			bool pressureIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Pressure);
+			if(pressureIsGivenTo0DReplacementDomainAtThisBoundary)
+			{
+				givePrescribedPressureToBoundaryNode(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
+			}
+			bool pressureWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary = (mapOfPrescribedPressureNodes.find(toOneIndexing(componentAtBoundaryIndex)) == mapOfPrescribedPressureNodes.end());
+			bool pressureNewlyPrescribedAtThisBoundary = (pressureIsGivenTo0DReplacementDomainAtThisBoundary && pressureWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary);
+			if (pressureNewlyPrescribedAtThisBoundary)
+			{
+				std::cout << "Switching to Neumann in zero-D domain replacement!" << std::endl;
+				// Add the node at the 3D interface to the list of those with prescribed pressure:
+				for (auto node=mapOfPressureNodes.begin(); node!=mapOfPressureNodes.end(); node++)
+				{
+					if (node->first == toOneIndexing(componentAtBoundaryIndex))
+					{
+						node->second->prescribedPressureType=Pressure_3DInterface;
+						mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->indexInInputData,node->second));
+						break;
+					}
+				}
+
+				// Remove the component at the 3D interface from the list of those with prescribed flow:
+				for (auto component=mapOfPrescribedFlowComponents.begin(); component!=mapOfPrescribedFlowComponents.end(); component++)
+				{
+					if (component->first == toOneIndexing(componentAtBoundaryIndex))
+					{
+						component->second->prescribedFlowType=Flow_NotPrescribed;
+						mapOfPrescribedFlowComponents.erase(component);
+						break;
+					}
+				}
+
+				// Update the counts of each type of prescription (in switching to a Neumann condition, we're now
+				// giving a prescribed flow to the 3D domain, which means this boundary condition will be
+				// receiving a pressure back from the 3D domain to prescribe at the LPN interface, instead of the
+				// flow it was previously receiving under Neumann conditions. These counters therefore
+				// need updating.)
+				numberOfPrescribedPressures++;
+				numberOfPrescribedFlows--;
+				assert(numberOfPrescribedFlows>=0);
+			}
+		}
+
+	}
+}
+
+void Netlist3DDomainReplacementCircuitData::givePrescribedPressureToBoundaryNode(int nodeIndex, double prescribedPressure)
+{
+	mapOfPressureNodes.at(nodeIndex)->setPressure(prescribedPressure);
+}
+
+void Netlist3DDomainReplacementCircuitData::givePrescribedFlowToBoundaryComponent(int componentIndex, double prescribedFlow)
+{
+	mapOfComponents.at(componentIndex)->flow = prescribedFlow;
 }

@@ -51,7 +51,7 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
 void abstractBoundaryCondition::updatePressureAndFlowHistory()
 {
   pressurehist[timdat.lstep] = pressure_n;
-  flowhist[timdat.lstep] = *flow_n_ptr;
+  flowhist[timdat.lstep] = *(flow_n_ptrs.at(0));
 }
 
 void abstractBoundaryCondition::initialiseAtStartOfTimestep()
@@ -66,7 +66,7 @@ void abstractBoundaryCondition::updateLPN()
 
 void abstractBoundaryCondition::updpressure_n1_withflow()
 {
-  pressure_n = dp_dq_n1*(*flow_n_ptr) + Hop_n1;
+  pressure_n = dp_dq_n1*(*(flow_n_ptrs.at(0))) + Hop_n1;
 }
 
 void abstractBoundaryCondition::finalizeLPNAtEndOfTimestep()
@@ -90,10 +90,12 @@ void abstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
 {
     // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
     // NB: Need to add a method in fortran to set a value for non-zero restarting!
-    flow_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
-    pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex);
+    assert(flow_n_ptrs.size()==0);
+    flow_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
+    assert(pressure_n_ptrs.size()==0);
+    pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
 
-    flow_n = *flow_n_ptr;
+    flow_n = *(flow_n_ptrs.at(0));
     flow_n1 = 0.0;
-    pressure_n = *pressure_n_ptr;
+    pressure_n = *(pressure_n_ptrs.at(0));
 }

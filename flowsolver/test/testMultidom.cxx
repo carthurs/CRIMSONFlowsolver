@@ -21,13 +21,13 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
   EXPECT_EQ((*retrievedBoundaryConditions)[1]->surfaceIndex,7);
   EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,9);
 
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->flow_n_ptr),flow1);
+  EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->flow_n_ptrs.at(0)),flow1);
   // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->flow_n_ptr),flow2); // uncomment once Netlist initialisation sets this pointer
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->flow_n_ptr),flow3);
+  EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->flow_n_ptrs.at(0)),flow3);
 
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->pressure_n_ptr),press1);
+  EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->pressure_n_ptrs.at(0)),press1);
   // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->pressure_n_ptr),press2); // uncomment once Netlist initialisation sets this pointer
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->pressure_n_ptr),press3);
+  EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->pressure_n_ptrs.at(0)),press3);
   
 }
 
@@ -96,12 +96,12 @@ TEST_F(testMultidom, checkFlowAndPressureSetters)
 	(*retrievedBoundaryConditions)[0]->dp_dq_n1 = 534.1;
 	(*retrievedBoundaryConditions)[0]->Hop_n1 = 0.001;
 	double fakeFlow1 = 10.0;
-	(*retrievedBoundaryConditions)[0]->flow_n_ptr = &fakeFlow1;
+	(*retrievedBoundaryConditions)[0]->flow_n_ptrs.at(0) = &fakeFlow1;
 	
 	(*retrievedBoundaryConditions)[2]->dp_dq_n1 = 534.1;
 	(*retrievedBoundaryConditions)[2]->Hop_n1 = 0.001;
 	double fakeFlow2 = 15.0;
-	(*retrievedBoundaryConditions)[2]->flow_n_ptr = &fakeFlow2;
+	(*retrievedBoundaryConditions)[2]->flow_n_ptrs.at(0) = &fakeFlow2;
 	
 	boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 	

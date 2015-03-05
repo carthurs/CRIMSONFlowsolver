@@ -183,7 +183,7 @@ void controlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
     //the m21 entry of this matrix is just -1.
     double determinant = m11*m22 + m12;
 
-    double rhs_1 = *flow_n_ptr * resistanceNearAorta + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
+    double rhs_1 = *(flow_n_ptrs.at(0)) * resistanceNearAorta + (capacitorNearAortaTopPressure_acceptedAtEndOfLastTimestep*complianceNearAorta + intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep*intramyocardialCompliance + P_IM_mid*intramyocardialCompliance - P_IM_mid_lasttimestep
              *intramyocardialCompliance) * resistanceNearAorta/alfi_delt;
     double rhs_2 = midResistance*intramyocardialCompliance/alfi_delt * (intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep + P_IM_mid - P_IM_mid_lasttimestep);
 

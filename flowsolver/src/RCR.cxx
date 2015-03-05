@@ -232,7 +232,7 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
 
   temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
 
-  temp2 = pressure_n + pdistn_1 - pdistn - rp*(*flow_n_ptr);
+  temp2 = pressure_n + pdistn_1 - pdistn - rp*(*(flow_n_ptrs.at(0)));
   temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
 
   returnCoeffs.first = temp1 / denom;
@@ -251,7 +251,7 @@ void RCR::setPressureFromFortran()
   // If it's a restarted sim, the pressure should be loaded properly anyway.
   if (m_needsPressureToBeInitialisedFromFortran)
   {
-    pressure_n = *pressure_n_ptr;
+    pressure_n = *(pressure_n_ptrs.at(0));
   }
 }
 
@@ -261,10 +261,12 @@ void RCR::getPressureAndFlowPointersFromFortran()
 {
     // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
     // NB: Need to add a method in fortran to set a value for non-zero restarting!
-    flow_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
-    pressure_n_ptr = fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex);
+    assert(flow_n_ptrs.size()==0);
+    flow_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
+    assert(pressure_n_ptrs.size()==0);
+    pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
 
-    flow_n = *flow_n_ptr;
+    flow_n = *(flow_n_ptrs.at(0));
     flow_n1 = 0.0;
 
     if (thisIsARestartedSimulation)

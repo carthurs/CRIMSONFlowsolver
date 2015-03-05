@@ -11,4 +11,6 @@ enum circuit_diode_node_t {Node_Null, Node_ConnectsCircuit, Node_IsMonopolar};
 
 enum parameter_controller_t {Controller_Null, Controller_LeftVentricularElastance};
 
+enum boundary_data_t {Boundary_Pressure, Boundary_Flow};
+
 #endif

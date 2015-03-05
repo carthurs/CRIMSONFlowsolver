@@ -91,7 +91,7 @@ class abstractBoundaryCondition;
     void createControlSystems();
     void updateAllControlSystems();
 
-    std::vector<double> getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber);
+    std::vector<std::pair<boundary_data_t,double>> getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber);
 
     void setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows);
 
@@ -111,12 +111,12 @@ class abstractBoundaryCondition;
             std::string numstartString = numstartReader.getNextDataSplitBySpacesOrEndOfLine(success);
             assert(success);
 
-            m_nextTimestepWrite_start = boost::lexical_cast<int>(numstartString)+1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
+            m_nextTimestepWrite_netlistBoundaries_start = boost::lexical_cast<int>(numstartString)+1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
     	}
     	else
     	{
     		thisIsARestartedSimulation = 0;
-            m_nextTimestepWrite_start = 0;
+            m_nextTimestepWrite_netlistBoundaries_start = 0;
     	}
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> boundaryConditions;
@@ -131,8 +131,7 @@ class abstractBoundaryCondition;
     int m_NumberOfControlledCoronarySurfaces;
     double m_delt;
 
-    int m_nextTimestepWrite_start;
-    int m_nextTimestepWrite_end;
+    int m_nextTimestepWrite_netlistBoundaries_start;
 
     // For testing purposes, to clear the static class out before the next test begins
     // Note that you'll have to make the test class a friend in order to use this..

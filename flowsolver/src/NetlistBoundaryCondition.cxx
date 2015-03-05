@@ -52,7 +52,7 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
         int numberOfCircuitsClaimingToConnectToHaveA3DInterface = 0;
         for (auto subcircuit=m_activeSubcircuits.begin(); subcircuit!=m_activeSubcircuits.end(); subcircuit++)
         {
-            if ((*subcircuit)->m_circuitData.connectsTo3DDomain() == true)
+            if ((*subcircuit)->m_circuitData->connectsTo3DDomain() == true)
             {
                 numberOfCircuitsClaimingToConnectToHaveA3DInterface++;
                 implicitCoefficients = (*subcircuit)->computeImplicitCoefficients(timestepNumber,timeAtStepNplus1,alfi_delt);
@@ -70,9 +70,9 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
     return implicitCoefficients;
 }
 
-double NetlistBoundaryCondition::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
+std::pair<boundary_data_t,double> NetlistBoundaryCondition::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
 {
-    double pressureOrFlowToReturn;
+    std::pair<boundary_data_t,double> pressureOrFlowToReturn;
     int counterToAvoidErrors = 0;
     for (auto subcircuit = m_activeSubcircuits.begin(); subcircuit != m_activeSubcircuits.end(); subcircuit++)
     {
@@ -256,7 +256,7 @@ void NetlistBoundaryCondition::selectAndBuildActiveSubcircuits()
     // Actually build the active NetlistSubcircuit classes:
     m_activeSubcircuits.clear();
     double alfi_delt_in = alfi_local*delt;
-    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, *mp_CircuitDescription, flow_n_ptr, pressure_n_ptr,alfi_delt_in,surfaceIndex));
+    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, mp_CircuitDescription, flow_n_ptrs, pressure_n_ptrs,alfi_delt_in,surfaceIndex));
     m_activeSubcircuits.push_back(toPushBack);
 
 }
@@ -677,6 +677,9 @@ void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const bina
 
 void NetlistBoundaryCondition::setPressureAndFlowPointers(double* pressurePointer, double* flowPointer)
 {
-    flow_n_ptr = flowPointer;
-    pressure_n_ptr = pressurePointer;
+    flow_n_ptrs.clear();
+    flow_n_ptrs.push_back(flowPointer);
+
+    pressure_n_ptrs.clear();
+    pressure_n_ptrs.push_back(pressurePointer);
 }

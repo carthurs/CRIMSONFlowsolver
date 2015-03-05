@@ -13,16 +13,17 @@
 class NetlistSubcircuit
 {
 public:
-	NetlistSubcircuit(const int indexOfThisSubcircuit, const CircuitData& circuitData, double* const flow_n_ptr, double* const pressure_n_ptr, double const alfi_delt_in, const int surfaceIndex_in)
+	NetlistSubcircuit(const int indexOfThisSubcircuit, boost::shared_ptr<CircuitData> circuitData, const std::vector<double*> flow_n_ptrs, const std::vector<double*> pressure_n_ptrs, double const alfi_delt_in, const int surfaceIndex_in)
 	: indexOfThisSubcircuit(indexOfThisSubcircuit),
 	 m_circuitData(circuitData),
-	 flow_n_ptr(flow_n_ptr),
-	 pressure_n_ptr(pressure_n_ptr),
+	 flow_n_ptrs(flow_n_ptrs),
+	 pressure_n_ptrs(pressure_n_ptrs),
 	 m_alfi_delt(alfi_delt_in),
 	 surfaceIndex(surfaceIndex_in)
 	{
+		m_thisIsA3DDomainReplacement = false;
 		initialiseSubcircuit();
-		columnIndexOf3DInterfaceFlowInLinearSystem = 0;
+		// columnIndexOf3DInterfaceFlowInLinearSystem = 0;
 		safetyCounterLimit = 1000;
 	}
 
@@ -38,10 +39,14 @@ public:
 
 	void updateInternalPressuresVolumesAndFlows();
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
-	double computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	
-	const CircuitData m_circuitData;
+	boost::shared_ptr<CircuitData> m_circuitData;
 	void buildAndSolveLinearSystem(const int timestepNumber);
+	void setThisisA3DDomainReplacement()
+	{
+		m_thisIsA3DDomainReplacement = true;
+	}
 protected:
 
 private:
@@ -62,9 +67,11 @@ private:
 	std::vector<double> getVolumesFromSolutionVector();
 	bool areThereNegativeVolumes();
 
+	bool m_thisIsA3DDomainReplacement;
+
 	const int indexOfThisSubcircuit;
-	double* const flow_n_ptr;
-	double* const pressure_n_ptr;
+	const std::vector<double*> flow_n_ptrs;
+	const std::vector<double*> pressure_n_ptrs;
 	double const m_alfi_delt;
 	const int surfaceIndex;
 
@@ -99,8 +106,8 @@ private:
 	int numberOfTrackedVolumes;
 	std::vector<int> columnMap;
 	// int columnMapSize;//\todo check this is used
-	int columnIndexOf3DInterfaceFlowInLinearSystem;
-	int columnIndexOf3DInterfacePressureInLinearSystem;
+	std::vector<int> columnIndexOf3DInterfaceFlowInLinearSystem;
+	std::vector<int> columnIndexOf3DInterfacePressureInLinearSystem;
 
 	int safetyCounterLimit;
 

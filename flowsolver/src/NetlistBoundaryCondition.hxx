@@ -29,7 +29,7 @@ public:
 		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
 		mp_CircuitDescriptionWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
-		initialiseModel();
+		// initialiseModel();
 		numberOfInitialisedNetlistLPNs++;
 	}
 
@@ -52,17 +52,18 @@ public:
 		numberOfInitialisedNetlistLPNs--;
 	}
 
-	double computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
-	void initialiseModel();
+	virtual void initialiseModel();
+	int m_IndexOfThisNetlistLPN;
 protected:
 	boost::shared_ptr<CircuitData> mp_CircuitDescription;
 	std::vector<boost::shared_ptr<NetlistSubcircuit>> m_activeSubcircuits;
-	void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
+	void createAtomicSubcircuitDescriptions();
+	void identifyAtomicSubcircuits();
 private:
 	static int numberOfInitialisedNetlistLPNs;
-	int m_IndexOfThisNetlistLPN;
 
 	int m_NumberOfAtomicSubcircuits; // These are what you get with all valves closed: no subcircuit divides an atomic subcircuit.
 	int m_NumberOfSubcircuits;
@@ -70,16 +71,15 @@ private:
 	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
 
 	virtual void createCircuitDescription();
+	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 	void createCircuitDescription_3DDomainReplacement();
 	void identifySubciruits();
-	void selectAndBuildActiveSubcircuits();
+	virtual void selectAndBuildActiveSubcircuits();
 	void createInitialCircuitDescriptionWithoutDiodes();
 	void assignComponentsToAtomicSubcircuits();
 	void createSubcircuitDescriptions();
 	void cycleToSetHistoryPressuresFlowsAndVolumes();
 	void netlistBoundaryCondition();
-	void createAtomicSubcircuitDescriptions();
-	void identifyAtomicSubcircuits();
 
 	boost::shared_ptr<CircuitData> mp_CircuitDescriptionWithoutDiodes;
 	std::vector<boost::shared_ptr<CircuitData>> m_CircuitDataForAtomicSubcircuits;

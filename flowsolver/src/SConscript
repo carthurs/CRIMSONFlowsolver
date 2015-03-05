@@ -53,6 +53,7 @@ sources=string.split("""
 	AtomicSubcircuitConnectionManager.cxx
 	pureZeroDDriver.cxx
 	Netlist3DDomainReplacement.cxx
+	fileIOHelpers.cxx
 	controlledCoronary.cxx
 	indexShifters.cxx
 	blend.cxx

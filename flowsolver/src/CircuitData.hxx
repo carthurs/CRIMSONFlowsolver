@@ -56,7 +56,7 @@ public:
             assert(fixThisForRestart);
             flow = -1.0;
             permitsFlow = true;
-            m_connectsToNodeAt3DInterface = false;
+            m_connectsToNodeAtInterface = false;
             hasTrackedVolume = false;
 			hasHistoryVolume = false;
 		}
@@ -64,7 +64,7 @@ public:
 		{
 			flow = 0.0;
 			permitsFlow = true;
-			m_connectsToNodeAt3DInterface = false;
+			m_connectsToNodeAtInterface = false;
 			hasTrackedVolume = false;
 			hasHistoryVolume = false;
 		}
@@ -75,14 +75,14 @@ public:
 	}
 
 	bool hasNonnegativePressureGradientOrForwardFlow(); // whether the diode should be open
-	bool connectsToNodeAt3DInterface();
-	void setConnectsToNodeAt3DInterface();
+	bool connectsToNodeAtInterface();
+	void setConnectsToNodeAtInterface();
 	void enableDiodeFlow();
 	void disableDiodeFlow();
 private:
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
-	bool m_connectsToNodeAt3DInterface;
+	bool m_connectsToNodeAtInterface;
 };
 
 // A slightly more complicated class of component, which prescribes its pressure
@@ -173,7 +173,6 @@ public:
 	circuit_nodal_pressure_prescription_t prescribedPressureType;
 	int indexInInputData;
 	int indexLocalToSubcircuit;
-	bool m_connectsTo3DDomain;
 	std::vector<double> m_entirePressureHistory;
 
 	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
@@ -183,8 +182,18 @@ public:
 	m_hstep(hstep)
 	{
 		hasHistoryPressure = false;
-	    m_connectsTo3DDomain = false;
+	    m_isAtBoundary = false;
 	    m_entirePressureHistory.reserve(m_hstep);
+	}
+
+	void setIsAtBoundary()
+	{
+		m_isAtBoundary = true;
+	}
+
+	bool isAtBoundary()
+	{
+		return m_isAtBoundary;
 	}
 
 	virtual double getPressure()
@@ -199,6 +208,7 @@ protected:
 	double pressure;
 	const int m_hstep;
 private:
+	bool m_isAtBoundary;
 };
 
 class CircuitData
@@ -271,8 +281,9 @@ public:
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
 
-	void setIndexOfNodeAt3DInterface(std::vector<int> indexToSet);
-	int getIndexOfNodeAt3DInterface();
+	void setIndexOfNodeAtInterface(std::vector<int> indexToSet);
+	int getIndexOfNodeAtInterface();
+	int getIndexOfComponentConnectingToNodeAtInterface();
 
 	void closeAllDiodes();
 
@@ -281,9 +292,9 @@ public:
 protected:
 	bool m_flowPermittedAcross3DInterface;
 	std::vector<int> m_indexOfNodeAt3DInterface;
-	void setIndicesOfNodesAt3DInterface(std::vector<int> indicesToSet);
-private:
+	void setIndicesOfNodesAtInterface(std::vector<int> indicesToSet);
 	int toOneIndexing(const int oneIndexedValue);
+private:
 	void rebuildCircuitPressureNodeMap();
 	void switchBetweenDirichletAndNeumannCircuitDesign();
 	int m_hstep;
@@ -301,9 +312,12 @@ public:
 	bool hasPrescribedFlowAcrossInterface() const;
 	bool hasPrescribedPressureAcrossInterface() const;
 	void initialiseNodesAndComponentsAtInterface_vector(std::vector<int> threeDInterfaceNodeIndices);
+	void setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>>& boundaryFlowsOrPressuresAsAppropriate);
 private:
 	bool isNodeAtBoundaryInterface(int nodeIndex);
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
+	void givePrescribedPressureToBoundaryNode(int nodeIndex, double prescribedPressure);
+	void givePrescribedFlowToBoundaryComponent(int componentIndex, double prescribedFlow);
 
 };
 

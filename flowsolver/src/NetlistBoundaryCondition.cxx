@@ -49,16 +49,16 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
     std::pair<double,double> implicitCoefficients;
     // if (mp_CircuitDescription.flowPermittedAcross3DInterface())
     // {
-        int numberOfCircuitsClaimingToConnectToHaveA3DInterface = 0;
+        int numberOfCircuitsClaimingToHaveA3DInterface = 0;
         for (auto subcircuit=m_activeSubcircuits.begin(); subcircuit!=m_activeSubcircuits.end(); subcircuit++)
         {
             if ((*subcircuit)->m_circuitData->connectsTo3DDomain() == true)
             {
-                numberOfCircuitsClaimingToConnectToHaveA3DInterface++;
+                numberOfCircuitsClaimingToHaveA3DInterface++;
                 implicitCoefficients = (*subcircuit)->computeImplicitCoefficients(timestepNumber,timeAtStepNplus1,alfi_delt);
             }
         }
-        assert(numberOfCircuitsClaimingToConnectToHaveA3DInterface==1);
+        assert(numberOfCircuitsClaimingToHaveA3DInterface==1);
     // }
     // else
     // {

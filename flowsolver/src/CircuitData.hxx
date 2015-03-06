@@ -27,6 +27,8 @@ public:
 
 	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtStartNode;
 	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtEndNode;
+
+	int prescribedFlowPointerIndex;
 	
 	double currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
@@ -68,6 +70,7 @@ public:
 			hasTrackedVolume = false;
 			hasHistoryVolume = false;
 		}
+		prescribedFlowPointerIndex = 0;
 	}
 
 	virtual ~CircuitComponent()
@@ -171,6 +174,7 @@ public:
 	double historyPressure;
 	bool hasHistoryPressure;
 	circuit_nodal_pressure_prescription_t prescribedPressureType;
+	int prescribedPressurePointerIndex;
 	int indexInInputData;
 	int indexLocalToSubcircuit;
 	std::vector<double> m_entirePressureHistory;
@@ -184,6 +188,7 @@ public:
 		hasHistoryPressure = false;
 	    m_isAtBoundary = false;
 	    m_entirePressureHistory.reserve(m_hstep);
+	    prescribedPressurePointerIndex = 0;
 	}
 
 	void setIsAtBoundary()

@@ -450,6 +450,28 @@ extern "C" void callCPPUpdateAllNetlistLPNs()
   boundaryConditionManager_instance->updateAllNetlistLPNs();
 }
 
+std::map<int,std::pair<double,double>> boundaryConditionManager::getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement()
+{
+  std::map<int,std::pair<double,double>> allNetlistImplicitCoefficients;
+  
+  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  {
+    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    {
+      std::pair<double,double> thisNetlistsImplicitCoefficients;
+      
+      thisNetlistsImplicitCoefficients.first = (*iterator)->getdp_dq();
+      thisNetlistsImplicitCoefficients.second = (*iterator)->getHop();
+
+      boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*iterator);
+
+      allNetlistImplicitCoefficients.insert(std::make_pair(downcastNetlist->getIndexAmongstNetlists(), thisNetlistsImplicitCoefficients));
+    }
+  }
+
+  return allNetlistImplicitCoefficients;
+}
+
 void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized

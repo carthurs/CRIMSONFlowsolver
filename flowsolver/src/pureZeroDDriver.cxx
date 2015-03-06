@@ -9,7 +9,7 @@ void PureZeroDDriver::init()
 	m_timestepNumber = 0;
 
 	double oneResistanceToGiveEachResistor = 0.001;
-	double elastanceToGiveVolumeTrackingPressureChamber = 0.0102461; // to give ~10mmHg pressure at the initial vol
+	double elastanceToGiveVolumeTrackingPressureChamber = 0.0102461E-5; // to give ~10mmHg pressure at the initial vol
 	double initialDomainPressure = 133.3 * 10; // 80 mmHg
 	int negativeIndexForNetlistThatReplaces3DDomain = -1;
 	m_zeroDDomainLPN = boost::shared_ptr<Netlist3DDomainReplacement> (new Netlist3DDomainReplacement(negativeIndexForNetlistThatReplaces3DDomain, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure));
@@ -50,6 +50,7 @@ void PureZeroDDriver::iter_init()
 	std::cout << "============ Doing timestep number " << m_timestepNumber << " ============" << std::endl;
 	m_zeroDDomainLPN->initialiseAtStartOfTimestep();
 	boundaryConditionManager_instance->initialiseLPNAtStartOfTimestep_netlist();
+	boundaryConditionManager_instance->updateAllControlSystems();
 }
 
 void PureZeroDDriver::iter_step()
@@ -57,11 +58,15 @@ void PureZeroDDriver::iter_step()
 	// Also need to actually solve the boundary conditions etc. here!
 
 	m_pressuresOrFlowsAtBoundaries = boundaryConditionManager_instance->getBoundaryPressuresOrFlows_zeroDDomainReplacement(m_timestepNumber);
+	boundaryConditionManager_instance->computeAllImplicitCoeff_solve(m_timestepNumber);
+	std::map<int,std::pair<double,double>> allNetlistBoundaryImplicitCoeffs = boundaryConditionManager_instance->getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement();
 	for (int ii =0; ii<3; ii++)
 	{
+		m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
 		std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
 	}
 	m_zeroDDomainLPN->setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(m_pressuresOrFlowsAtBoundaries);
+	m_zeroDDomainLPN->setDpDqResistances(allNetlistBoundaryImplicitCoeffs);
 	placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();
 	m_zeroDDomainLPN->solveSystem(m_timestepNumber);
 
@@ -111,6 +116,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveToBoundaryCond
 
 void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement()
 {
+	std::cout << "mp_interfaceFlowsToBeReadBy3DDomainReplacement & mp_interfacePressuresToBeReadBy3DDomainReplacement:" << std::endl;
 	{
 		auto boundaryPressureOrFlow = m_pressuresOrFlowsAtBoundaries.begin();
 		int boundaryConditionIndex = 0;
@@ -136,10 +142,13 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 				errorMessage << "EE: Internal error in PureZeroDDriver." << std::endl;
 				throw std::logic_error(errorMessage.str());
 			}
+			std::cout << mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] << " " << mp_interfacePressuresToBeReadBy3DDomainReplacement[boundaryConditionIndex] << std::endl;
+
 
 			// Loop housekeeping:
 			boundaryPressureOrFlow++;
 			boundaryConditionIndex++;
 		}
 	}
+	
 }

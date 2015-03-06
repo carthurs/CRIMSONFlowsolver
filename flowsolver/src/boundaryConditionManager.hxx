@@ -77,6 +77,7 @@ class abstractBoundaryCondition;
     void initialiseLPNAtStartOfTimestep_netlist();
     void updateAllNetlistLPNs();
     void getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled);
+    std::map<int,std::pair<double,double>> getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement();
     void writeAllNetlistComponentFlowsAndNodalPressures();
 
     int getNumberOfRCRSurfaces(){return m_NumberOfRCRSurfaces;}

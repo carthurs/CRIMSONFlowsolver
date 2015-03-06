@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 #include "debuggingToolsForCpp.hxx"
+#include <cfloat>
 
 void NetlistSubcircuit::initialiseSubcircuit()
 {
@@ -406,7 +407,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
 
     columnIndexOf3DInterfacePressureInLinearSystem.clear(); // dummy value, to be replaced!
 
-    int nextPressurePointerIndex = 0; // for tracking which pressure pointer to use - useful when there are multiple pressure interfaces to other domains / subcircuits
+    // int nextPressurePointerIndex = 0; // for tracking which pressure pointer to use - useful when there are multiple pressure interfaces to other domains / subcircuits
 
     // Prescribed pressures
     int tempIndexingShift = m_circuitData->numberOfComponents + numberOfMultipleIncidentCurrentNodes + numberOfTrackedVolumes;
@@ -431,9 +432,9 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
             if (m_circuitData->hasPrescribedPressureAcrossInterface())
             {
               columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
-              double* pressurePointerToSet = pressure_n_ptrs.at(nextPressurePointerIndex);
+              double* pressurePointerToSet = pressure_n_ptrs.at(prescribedPressureNode->second->prescribedPressurePointerIndex);
               errFlag = VecSetValue(RHS,ll + tempIndexingShift,*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-              nextPressurePointerIndex++;
+              // nextPressurePointerIndex++;
             }
         }
         else
@@ -515,7 +516,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
     // Prescribed Flows:
     tempIndexingShift += numberOfHistoryPressures;
     columnIndexOf3DInterfaceFlowInLinearSystem.clear();
-    int nextFlowPointerIndex = 0;
+    // int nextFlowPointerIndex = 0;
     // Scoping unit to include the second counter ll in the for loop, without having ll in-scope after the loop finishes:
     {
     	int ll=0;
@@ -526,12 +527,12 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
             if (m_circuitData->hasPrescribedFlowAcrossInterface())
             {
   	          columnIndexOf3DInterfaceFlowInLinearSystem.push_back(ll + tempIndexingShift);
-              double* flowPointerToSet = flow_n_ptrs.at(nextFlowPointerIndex);
+              double* flowPointerToSet = flow_n_ptrs.at(prescribedFlowComponent->second->prescribedFlowPointerIndex);
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
               double threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
               // Give the (possibly sign-corrected) flow to the linear system:
   	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-              nextFlowPointerIndex++;
+              // nextFlowPointerIndex++;
             }
 	       }
 	       else if (prescribedFlowComponent->second->prescribedFlowType == Flow_Fixed)
@@ -875,15 +876,26 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
     int rowToGet[] = {0};
     int numberOfValuesToGet=1;
     PetscScalar valueFromInverseOfSystemMatrix;
-    errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     std::pair<double,double> returnValue;
-    returnValue.first = valueFromInverseOfSystemMatrix;
+    
 
     PetscScalar valueFromRHS;
-    errFlag = VecGetValues(RHS,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    PetscScalar valueFromSolutionVector;
-    errFlag = VecGetValues(solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    returnValue.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
+    if (columnIndexOf3DInterfaceFlowInLinearSystem.size()!=0) //\todo remove this hack and have the mat/vecgetvalues unguarded here!!
+    {
+      errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      returnValue.first = valueFromInverseOfSystemMatrix;
+
+      errFlag = VecGetValues(RHS,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      PetscScalar valueFromSolutionVector;
+      errFlag = VecGetValues(solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      returnValue.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
+    }
+    else
+    {
+      returnValue.first = DBL_MAX;
+      returnValue.second = 0.0;
+    }
+    
 
 
     return returnValue;

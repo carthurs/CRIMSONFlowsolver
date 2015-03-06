@@ -25,6 +25,8 @@ public:
 
 	void initialiseModel();
 
+	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients);
+
 private:
 	int m_numberOfNetlistsUsedAsBoundaryConditions;
 

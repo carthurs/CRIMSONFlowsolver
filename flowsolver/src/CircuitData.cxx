@@ -822,6 +822,18 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 // between Neumann and Dirichlet.
 void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>>& boundaryFlowsOrPressuresAsAppropriate)
 {
+	std::cout << "map of prescribed flow components (pre): " << std::endl;
+	for (auto flowcomp=mapOfPrescribedFlowComponents.begin(); flowcomp!=mapOfPrescribedFlowComponents.end(); flowcomp++)
+	{
+		std::cout << flowcomp->first << " " << flowcomp->second->indexInInputData << std::endl;
+	}
+
+	std::cout << "map of prescribed pressure components (pre): " << std::endl;
+	for (auto flowcomp=mapOfPrescribedPressureNodes.begin(); flowcomp!=mapOfPrescribedPressureNodes.end(); flowcomp++)
+	{
+		std::cout << flowcomp->first << " " << flowcomp->second->indexInInputData << std::endl;
+	}
+
 	for (int componentAtBoundaryIndex = 0; componentAtBoundaryIndex<m_numberOfNetlistsUsedAsBoundaryConditions; componentAtBoundaryIndex++)
 	{
 		// Scoping unit to avoid errors:
@@ -913,6 +925,18 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 			}
 		}
 
+	}
+
+	std::cout << "map of prescribed flow components (post): " << std::endl;
+	for (auto flowcomp=mapOfPrescribedFlowComponents.begin(); flowcomp!=mapOfPrescribedFlowComponents.end(); flowcomp++)
+	{
+		std::cout << flowcomp->first << " " << flowcomp->second->indexInInputData << std::endl;
+	}
+
+	std::cout << "map of prescribed pressure components (post): " << std::endl;
+	for (auto flowcomp=mapOfPrescribedPressureNodes.begin(); flowcomp!=mapOfPrescribedPressureNodes.end(); flowcomp++)
+	{
+		std::cout << flowcomp->first << " " << flowcomp->second->indexInInputData << std::endl;
 	}
 }
 

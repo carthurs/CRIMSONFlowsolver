@@ -5,8 +5,6 @@
 int PullInMyLibraryTestMain() { return 0; }
 
 TEST_F(testMain, checkRCRSimpleShortSimulation) {
-
-  getRank();  
   std::string simDir = "mainTests/basic";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -26,8 +24,6 @@ TEST_F(testMain, checkRCRSimpleShortSimulation) {
 
 TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
 
-  getRank();
-
   std::string simDir = "mainTests/restart";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -46,7 +42,6 @@ TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
 }
 
 TEST_F(testMain, checkCoronarySimpleShortSimulation) {
-  getRank();
 
   std::string simDir = "mainTests/coronary/completeLPN";
   setSimDirectory(simDir);
@@ -76,7 +71,6 @@ TEST_F(testMain, checkCoronarySimpleShortSimulation) {
 }
 
 TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
-  getRank();
 
   std::string simDir = "mainTests/coronary/emulateRCR";
   setSimDirectory(simDir);
@@ -106,7 +100,6 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
 }
 
 TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
-  getRank();
   std::string simDir = "mainTests/netlist/emulateRCR";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -135,7 +128,6 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
 }
 
 TEST_F(testMain, checkNetlistSimpleDiode) {
-  getRank();
   std::string simDir = "mainTests/netlist/simpleDiodeTest";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -164,7 +156,6 @@ TEST_F(testMain, checkNetlistSimpleDiode) {
 }
 
 TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
-  getRank();
   std::string simDir = "mainTests/legacy/preKalmanPreGlobalNodenumbering";
   setSimDirectory(simDir);
   clearOutOldFiles();
@@ -190,4 +181,49 @@ TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
   // Get the data from timestep 5, 2nd column (this method searches for the timestep by value, whereas the columns are zero-indexed)
   double flowHistResult = FlowHistReader.getReadFileData(1,5);
   EXPECT_NEAR(1.077519395498929e-2,flowHistResult,1e-7);
+}
+
+TEST_F(testMain, checkNetlistHeartModel) {
+  // This test uses a solver.inp which (on purpose) does not take enough
+  // iterations (Step Construction 0 1 0 1...) for decent convergence.
+  // The reason for this is that the inaccuracy causes the aortic valve to flap
+  // open and closed during a very short test - this is fine for us as we
+  // just want to test that the valve is doing its job!
+  setSimDirectory("mainTests/netlist/heart");
+  clearOutOldFiles();
+
+  runSimulation();
+
+  // Check PressHist.dat
+  histFileReader PressHistReader = histFileReader();
+  PressHistReader.setFileName("PressHist.dat");
+  PressHistReader.setNumColumns(3);
+  PressHistReader.readFileInternalMetadata();
+  PressHistReader.readAndSplitMultiSurfaceRestartFile();
+  
+  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double pressHistResult = PressHistReader.getReadFileData(0,6);
+  EXPECT_NEAR(1003.49069102218,pressHistResult,1e-8);
+  // ...second column
+  pressHistResult = PressHistReader.getReadFileData(1,6);
+  EXPECT_NEAR(968.660015172370,pressHistResult,1e-8);
+  // ... third column
+  pressHistResult = PressHistReader.getReadFileData(2,6);
+  EXPECT_NEAR(964.764355883842,pressHistResult,1e-8);
+
+  // Check FlowHist.dat
+  histFileReader FlowHistReader = histFileReader();
+  FlowHistReader.setFileName("FlowHist.dat");
+  FlowHistReader.setNumColumns(3);
+  FlowHistReader.readFileInternalMetadata();
+  FlowHistReader.readAndSplitMultiSurfaceRestartFile();
+  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+  double flowHistResult = FlowHistReader.getReadFileData(0,6);
+  EXPECT_NEAR(0.0,flowHistResult,1e-7);
+  // ... 2nd column:
+  flowHistResult = FlowHistReader.getReadFileData(1,6);
+  EXPECT_NEAR(73.4892153364009,flowHistResult,1e-7);
+  // ...third column:
+  flowHistResult = FlowHistReader.getReadFileData(2,6);
+  EXPECT_NEAR(-62.2259850634413,flowHistResult,1e-7);
 }

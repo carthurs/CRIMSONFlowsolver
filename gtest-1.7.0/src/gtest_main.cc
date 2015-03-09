@@ -42,6 +42,8 @@ int PullInMyLibraryTestMain();
 static int dummy3 = PullInMyLibraryTestMain();
 int PullInMyLibraryTestOrphans();
 static int dummy4 = PullInMyLibraryTestOrphans();
+int PullInMyLibraryTestMainWithZeroDDomain();
+static int dummy5 =PullInMyLibraryTestMainWithZeroDDomain();
 
 static char help[] = "Google test, modified to work with CRIMSON.\n\n";
 

@@ -9,8 +9,8 @@ void PureZeroDDriver::init()
 	m_timestepNumber = 0;
 
 	double oneResistanceToGiveEachResistor = 0.001;
-	double elastanceToGiveVolumeTrackingPressureChamber = 0.0102461E-5; // to give ~10mmHg pressure at the initial vol
-	double initialDomainPressure = 133.3 * 10; // 80 mmHg
+	double elastanceToGiveVolumeTrackingPressureChamber = 0.0102461E1; // to give ~10mmHg pressure at the initial vol
+	double initialDomainPressure = 10664.0;//133.3 * 10; // 80 mmHg
 	int negativeIndexForNetlistThatReplaces3DDomain = -1;
 	m_zeroDDomainLPN = boost::shared_ptr<Netlist3DDomainReplacement> (new Netlist3DDomainReplacement(negativeIndexForNetlistThatReplaces3DDomain, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure));
 

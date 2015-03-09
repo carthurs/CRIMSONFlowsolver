@@ -37,8 +37,8 @@
 	class testMain : public ::testing::Test {
 	 public:
 		int rank;
-	        int numProcsTotal;
-     	        MPI_Comm iNewComm_C;
+        int numProcsTotal;
+        MPI_Comm iNewComm_C;
 	 protected:
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
@@ -48,6 +48,7 @@
 		testMain() {
 			MPI_Barrier(MPI_COMM_WORLD);
 			dirBinaryCalledFrom = get_current_dir_name();
+			getRank();
 		}
 
 		void setSimDirectory(std::string dir)
@@ -62,17 +63,6 @@
 				std::cout << "EE: Failed to change to dir: " << dir << " rank was: " << rank << " success was: " << success << std::endl;
 				perror("EEEE: Failed to change dir in test");
 			}
-		}
-
-		void getRank()
-		{
-		   // save the communicator
-		   iNewComm_C = MPI_COMM_WORLD;
-		   newcom.iNewComm = MPI_Comm_c2f(iNewComm_C); // modifies newcom in fortran common block
-	           MPI_Barrier(iNewComm_C);
-
-		   MPI_Comm_size(iNewComm_C, &numProcsTotal);
-		   MPI_Comm_rank(iNewComm_C, &rank);
 		}
 
 		void clearOutOldFiles()
@@ -195,6 +185,17 @@
 	    //SimvascularGlobalArrayTransfer::Get()->tearDown();
 	    // boundaryConditionManager::Instance()->Term();
 	  }
+	private:
+		void getRank()
+		{
+		   // save the communicator
+		   iNewComm_C = MPI_COMM_WORLD;
+		   newcom.iNewComm = MPI_Comm_c2f(iNewComm_C); // modifies newcom in fortran common block
+	           MPI_Barrier(iNewComm_C);
+
+		   MPI_Comm_size(iNewComm_C, &numProcsTotal);
+		   MPI_Comm_rank(iNewComm_C, &rank);
+		}
 
 	  // Objects declared here can be used by all tests in the test case for Foo.
 	};

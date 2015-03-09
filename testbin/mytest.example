@@ -1,7 +1,9 @@
 #!/bin/bash
 ulimit -s unlimited
 
-if [ $# == 0 ]; then
+re='^[0-9]+$' # regex for detecting numbers
+
+if [ $# == 0 ] || ! [[ $1 =~ $re ]]; then
   echo -e "\nCRIMSON test suite runner script.\nUsage: ./mytest <numberOfProcessors> <options>\nTry option --gtest_help for info.\n"
   exit 1
 fi

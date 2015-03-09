@@ -645,7 +645,7 @@ void NetlistBoundaryCondition::cycleToSetHistoryPressuresFlowsAndVolumes()
         if (pressureChamber != NULL)
         {
             // Store the volume for writing to output file:
-            pressureChamber->m_entireVolumeHistory.push_back(pressureChamber->getVolume());
+            pressureChamber->recordVolumeInHistory();
 
             // Make the current volume into the new history volume:
             pressureChamber->cycleHistoryVolume();

@@ -104,7 +104,15 @@ public:
 		m_enforceZeroVolumePrescription = false;
 	}
 
-	std::vector<double> m_entireVolumeHistory;
+	void recordVolumeInHistory()
+	{
+		m_entireVolumeHistory.push_back(m_storedVolume);
+	}
+
+	double getVolumeHistoryAtTimestep(int timestep)
+	{
+		return m_entireVolumeHistory.at(timestep);
+	}
 
 	void setStoredVolume(const double newVolume)
 	{
@@ -166,6 +174,7 @@ private:
 	double m_unstressedVolume;
 	double m_historyVolume;
 	bool m_enforceZeroVolumePrescription;
+	std::vector<double> m_entireVolumeHistory;
 };
 
 class CircuitPressureNode

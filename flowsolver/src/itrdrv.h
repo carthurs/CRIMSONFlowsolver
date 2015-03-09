@@ -6,5 +6,6 @@ extern "C" void itrdrv_iter_init();
 extern "C" void itrdrv_iter_step();
 extern "C" void itrdrv_iter_finalize();
 extern "C" void itrdrv_finalize();
+extern "C" void deallocate_arrays();
 
 #endif

@@ -67,7 +67,7 @@ void writeNetlistFlowsPressuresAndVolumes(const std::vector<boost::shared_ptr<ab
             // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
             if (pressureChamber != NULL)
             {
-              boundaryConditionVolumeHistoryWriter.writeToFile(pressureChamber->m_entireVolumeHistory.at(stepToWrite));
+              boundaryConditionVolumeHistoryWriter.writeToFile(pressureChamber->getVolumeHistoryAtTimestep(stepToWrite));
             }
           }
           boundaryConditionVolumeHistoryWriter.writeEndLine();

@@ -1998,6 +1998,53 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     endif
 
 
+    call deallocate_arrays_fortran()
+
+
+5   format(1X,F15.10,3X,F15.10,3X,F15.10,3X,F15.10)
+444 format(6(2x,e14.7))
+    
+    return
+
+end subroutine itrdrv_finalize
+
+subroutine deallocate_arrays() bind(C,name="deallocate_arrays")
+    implicit none
+    call deallocate_arrays_fortran()
+end subroutine deallocate_arrays
+
+subroutine deallocate_arrays_fortran()
+    use iso_c_binding
+    use shapeTable
+    use globalArrays
+    use pvsQbi     !gives us splag (the spmass at the end of this run
+    use specialBC !gives us itvn
+    use timedata   !allows collection of time series
+    use convolImpFlow !for Imp bc
+    use convolRCRFlow !for RCR bc
+    use convolTRCRFlow !for time-varying RCR bc
+
+    !use grcrbc ! Nan rcr
+
+    use convolCORFlow !for Coronary bc
+    use incpBC        !for INCP bc
+    use calcFlowPressure !to save history of flow and pressure of bc surfaces
+    use LagrangeMultipliers
+    use deformableWall
+    use ResidualControl
+    use phcommonvars
+    use itrDrvVars
+    use debuggingTools
+
+    use multidomain
+
+    ! For deallocation:
+    use readarrays, only: nBC, BCinp, iBCtmp
+    use turbSA, only: wnrm, otwn
+    use periodicity, only: rcount
+
+    implicit none
+
     if(allocated(FlowHist)) then
         deallocate(FlowHist)
     endif
@@ -2162,13 +2209,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
     call tearDownMultidomain()
 
-
-5   format(1X,F15.10,3X,F15.10,3X,F15.10,3X,F15.10)
-444 format(6(2x,e14.7))
-    
-    return
-
-end subroutine itrdrv_finalize
+end subroutine deallocate_arrays_fortran
 
 
 !

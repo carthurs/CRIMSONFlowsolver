@@ -9,6 +9,7 @@ class fortranBoundaryDataPointerManager {
 	friend class testMultidom;
 	friend class testMain;
 	friend class testOrphans;
+	friend class testMainWithZeroDDomain;
 	FRIEND_TEST(testOrphans,checkNetlistDetectsBad3DInterfaceComponentOrientation);
 	FRIEND_TEST(testOrphans,checkNetlistDetectsBadComponentAt3DInterface);
 public:

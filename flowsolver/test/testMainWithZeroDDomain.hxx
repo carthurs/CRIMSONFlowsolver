@@ -14,6 +14,7 @@
 #include "input.h"
 #include "proces.h"
 #include "pureZeroDDriver.hxx"
+#include "itrdrv.h"
 #include "itrPC.h"
 #include "partition.h"
 #include "input_fform.h"
@@ -82,8 +83,6 @@
 		   // The zero-D domain should just be run single-threaded
 		   // if (m_rank==0)
 		   {
-		   	std::cout << "rank was: " << m_rank << std::endl;
-
 				// read configuration file
 				int errFlag = input_fform();
 				if (errFlag != 0)
@@ -148,9 +147,10 @@
 				pureZeroDDriver.finalize();
 			   
 				multidom_finalise();
+				deallocate_arrays();
 		           
 		    }
-		    // MPI_Barrier(m_iNewComm_C);
+		    MPI_Barrier(m_iNewComm_C);
 		}
 
 	  virtual ~testMainWithZeroDDomain() {
@@ -169,8 +169,8 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
-	    // fortranBoundaryDataPointerManager::Get()->tearDown();
-	    //SimvascularGlobalArrayTransfer::Get()->tearDown();
+	    fortranBoundaryDataPointerManager::Get()->tearDown();
+	    // SimvascularGlobalArrayTransfer::Get()->tearDown();
 	    // boundaryConditionManager::Instance()->Term();
 	  }
 	private:

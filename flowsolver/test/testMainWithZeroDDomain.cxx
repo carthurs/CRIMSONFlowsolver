@@ -18,7 +18,7 @@ TEST_F(testMainWithZeroDDomain, checkWithRCRs) {
   // Check netlistPressures_surface_-1.dat.dat
   {
 	  histFileReader zeroDDomainPressures = histFileReader();
-	  zeroDDomainPressures.setFileName("netlistPressures_surface_-1.dat");
+	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(9);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
 	  
@@ -51,7 +51,7 @@ TEST_F(testMainWithZeroDDomain, checkWithRCRs) {
   // Check netlistFlows_surface_-1.dat
   {
 	  histFileReader zeroDDomainFlows = histFileReader();
-	  zeroDDomainFlows.setFileName("netlistFlows_surface_-1.dat");
+	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
 	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)

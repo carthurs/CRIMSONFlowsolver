@@ -210,7 +210,7 @@ public:
 		return m_isAtBoundary;
 	}
 
-	virtual double getPressure()
+	double getPressure()
 	{
 		return pressure;
 	}
@@ -243,6 +243,11 @@ public:
 	}
 	std::vector<boost::shared_ptr<CircuitComponent>> components;
 	int index;
+
+	int getLengthOfHistoryData()
+	{
+		return components.at(0)->m_entireFlowHistory.size();
+	}
 
 	// // copy constructor
 	// CircuitData(const CircuitData &sourceCircuitData)
@@ -300,6 +305,7 @@ public:
 	int getIndexOfComponentConnectingToNodeAtInterface();
 
 	void closeAllDiodes();
+	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 
@@ -318,9 +324,9 @@ private:
 class Netlist3DDomainReplacementCircuitData : public CircuitData
 {
 public:
-	Netlist3DDomainReplacementCircuitData(const int hstep, const int m_numberOfNetlistsUsedAsBoundaryConditions_in)
+	Netlist3DDomainReplacementCircuitData(const int hstep, const int numberOfNetlistsUsedAsBoundaryConditions)
 	: CircuitData(hstep),
-	m_numberOfNetlistsUsedAsBoundaryConditions(m_numberOfNetlistsUsedAsBoundaryConditions_in)
+	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
 	}
 	bool hasPrescribedFlowAcrossInterface() const;

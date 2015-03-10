@@ -8,17 +8,29 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 
   if (boundaryType.compare("rcr") == 0)
   {
-    return boost::shared_ptr<abstractBoundaryCondition> (new RCR(surfaceIndex));
+    boost::shared_ptr<abstractBoundaryCondition> newRCR(new RCR(surfaceIndex));
+    
+    newRCR->getPressureAndFlowPointersFromFortran();
+
+    return newRCR;
   }
   else if (boundaryType.compare("netlist") == 0)
   {
     boost::shared_ptr<abstractBoundaryCondition> newNetlist(new NetlistBoundaryCondition(surfaceIndex));
+
+    newNetlist->getPressureAndFlowPointersFromFortran();
+    
     newNetlist->initialiseModel();
+    
     return newNetlist;
   }
   else if (boundaryType.compare("controlledCoronary") == 0)
   {
-    return boost::shared_ptr<abstractBoundaryCondition> (new controlledCoronary(surfaceIndex));
+    boost::shared_ptr<abstractBoundaryCondition> newControlledCoronary(new controlledCoronary(surfaceIndex));
+
+    newControlledCoronary->getPressureAndFlowPointersFromFortran();
+
+    return newControlledCoronary;
   }
   else
   {

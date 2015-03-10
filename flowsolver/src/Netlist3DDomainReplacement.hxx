@@ -1,16 +1,20 @@
 #ifndef NETLIST3DDOMAINREPLACEMENT_HXX_
 #define NETLIST3DDOMAINREPLACEMENT_HXX_
-#include "NetlistBoundaryCondition.hxx"
 
-class Netlist3DDomainReplacement : public NetlistBoundaryCondition
+#include <vector>
+#include <map>
+#include <boost/shared_ptr.hpp>
+#include "datatypesInCpp.hxx"
+#include "NetlistCircuit.hxx"
+
+class Netlist3DDomainReplacement
 {
 public:
-	Netlist3DDomainReplacement(int surfaceIndex_in, const double m_oneResistanceToGiveEachResistor_in, const double m_elastanceToGiveVolumeTrackingPressureChamber_in, const double m_initialDomainPressure_in)
-	: NetlistBoundaryCondition(surfaceIndex_in),
-	m_oneResistanceToGiveEachResistor(m_oneResistanceToGiveEachResistor_in),
-	m_elastanceToGiveVolumeTrackingPressureChamber(m_elastanceToGiveVolumeTrackingPressureChamber_in),
-	m_initialDomainPressure(m_initialDomainPressure_in)
+	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt)
+	: m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
+		bool thisIsARestartedSimulation = false; //\todo fix this!
+		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure));
 	}
 
 	void setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate);
@@ -19,24 +23,22 @@ public:
 
 	void solveSystem(const int timestepNumber);
 
-	void setPointersToBoundaryPressuresAndFlows(double* const mp_interfacePressuresToBeReadBy3DDomainReplacement, double* const mp_interfaceFlowsToBeReadBy3DDomainReplacement, const int& numberOfPointers);
-
-	void createCircuitDescription();
+	void setPointersToBoundaryPressuresAndFlows(double* const interfacePressuresToBeReadBy3DDomainReplacement, double* const interfaceFlowsToBeReadBy3DDomainReplacement, const int& numberOfPointers);
 
 	void initialiseModel();
+	void initialiseAtStartOfTimestep();
+	void updateLPN();
+	void finalizeLPNAtEndOfTimestep();
+
+	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_zeroDBoundaries_start);
 
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients);
 
 private:
-	int m_numberOfNetlistsUsedAsBoundaryConditions;
+	boost::shared_ptr<NetlistZeroDDomainCircuit> mp_NetlistZeroDDomainCircuit;
+	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 
-	void selectAndBuildActiveSubcircuits();
-
-	const double m_oneResistanceToGiveEachResistor;
-	const double m_elastanceToGiveVolumeTrackingPressureChamber;
-	const double m_initialDomainPressure;
 	std::vector<std::pair<boundary_data_t,double>> m_boundaryFlowsOrPressuresAsAppropriate;
-	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 
 };
 

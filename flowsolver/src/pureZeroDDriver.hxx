@@ -27,6 +27,8 @@ public:
 			m_thisIsARestartedSimulation = 0;
 	        m_nextTimestepWrite_zeroDBoundaries_start = 0;
 		}
+		m_alfi = timdat.alfi;
+		m_delt = inpdat.Delt[0];
 	}
 	void init();
 	void iter_init();
@@ -48,6 +50,9 @@ private:
 	int m_timestepNumber;
 	int m_nextTimestepWrite_zeroDBoundaries_start;
 	int m_thisIsARestartedSimulation;
+
+	double m_alfi;
+	double m_delt;
 
 	void placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(std::vector<double> boundaryPressures, std::vector<double> boundaryFlows);
 	void placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();

@@ -8,7 +8,7 @@
 #include "NetlistSubcircuit.hxx"
 #include "CircuitData.hxx"
 #include "AtomicSubcircuitConnectionManager.hxx"
-#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
+#include "NetlistCircuit.hxx"
 
 // The NetlistBoundaryCondition is really a manager class for a collection
 // of subcircuits, divided by the diodes/valves in the input data.
@@ -26,28 +26,30 @@ public:
 	NetlistBoundaryCondition(int surfaceIndex_in)
 	: abstractBoundaryCondition(surfaceIndex_in)
 	{
-		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
-		mp_CircuitDescriptionWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
+		mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt));
 		// initialiseModel();
 		numberOfInitialisedNetlistLPNs++;
 	}
 
 	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPN;}
 
- 	void updpressure_n1_withflow(){}
+ 	// void updpressure_n1_withflow(){}
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 
 	void updateLPN();
 	void initialiseAtStartOfTimestep();
 
-	boost::shared_ptr<CircuitData> getCircuitDescription();
+	bool flowPermittedAcross3DInterface();
+	bool boundaryConditionTypeHasJustChanged();
 
 	void setDirichletConditionsIfNecessary(int* const binaryMask);
 
 	void finalizeLPNAtEndOfTimestep();
 
-	virtual ~NetlistBoundaryCondition()
+	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
+
+	~NetlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;
 	}
@@ -55,42 +57,19 @@ public:
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
-	virtual void initialiseModel();
+	void initialiseModel();
 	int m_IndexOfThisNetlistLPN;
+
+	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 protected:
-	boost::shared_ptr<CircuitData> mp_CircuitDescription;
-	std::vector<boost::shared_ptr<NetlistSubcircuit>> m_activeSubcircuits;
-	void createAtomicSubcircuitDescriptions();
-	void identifyAtomicSubcircuits();
 private:
+	boost::shared_ptr<NetlistCircuit> mp_NetlistCircuit;
 	static int numberOfInitialisedNetlistLPNs;
 
 	int m_NumberOfAtomicSubcircuits; // These are what you get with all valves closed: no subcircuit divides an atomic subcircuit.
 	int m_NumberOfSubcircuits;
 
 	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
-
-	virtual void createCircuitDescription();
-	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
-	void createCircuitDescription_3DDomainReplacement();
-	void identifySubciruits();
-	virtual void selectAndBuildActiveSubcircuits();
-	void createInitialCircuitDescriptionWithoutDiodes();
-	void assignComponentsToAtomicSubcircuits();
-	void createSubcircuitDescriptions();
-	void cycleToSetHistoryPressuresFlowsAndVolumes();
-	void netlistBoundaryCondition();
-
-	boost::shared_ptr<CircuitData> mp_CircuitDescriptionWithoutDiodes;
-	std::vector<boost::shared_ptr<CircuitData>> m_CircuitDataForAtomicSubcircuits;
-	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
-
-	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_CircuitDescriptionWithoutDiodes
-
-	std::vector<double> m_PressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
-	std::vector<double> m_HistoryPressuresInLPN;                // As m_PressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
-	std::vector<double> m_FlowsInLPN;                           // Flow through each component in the LPN, in the order they appear in the netlist
-	std::vector<double> m_HistoryFlowsInLPN;					  // As m_FlowsInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
 
 	// double P_a;
 

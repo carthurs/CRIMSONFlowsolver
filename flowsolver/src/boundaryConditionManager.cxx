@@ -131,8 +131,6 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,st
   for (auto iterator = surfaceList.begin(); iterator != surfaceList.end(); iterator++)
   {
     boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
-    // complete the boundary condition by getting the flow and pressure links to Fortran:
-    boundaryConditions.back()->getPressureAndFlowPointersFromFortran();
   }
 }
 
@@ -541,7 +539,7 @@ void boundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisall
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (!downcastNetlist->getCircuitDescription()->flowPermittedAcross3DInterface())
+      if (!downcastNetlist->flowPermittedAcross3DInterface())
       {
         numBCsWhichDisallowFlow++;
       }
@@ -565,7 +563,7 @@ void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentl
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (downcastNetlist->getCircuitDescription()->flowPermittedAcross3DInterface())
+      if (downcastNetlist->flowPermittedAcross3DInterface())
       {
         numBCsWhichAllowFlow++;
       }
@@ -593,7 +591,7 @@ void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const i
     {
       // Discover whether we should report that flow is permitted or not:
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (!(downcastNetlist->getCircuitDescription()->flowPermittedAcross3DInterface()))
+      if (!(downcastNetlist->flowPermittedAcross3DInterface()))
       {
         flowIsPermitted = 0;
       }
@@ -620,7 +618,7 @@ void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryCo
     {
       // Discover whether we should report a change in boundary condition type (Neumann/Dirichlet):
       NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-      if (downcastNetlist->getCircuitDescription()->boundaryConditionTypeHasJustChanged())
+      if (downcastNetlist->boundaryConditionTypeHasJustChanged())
       {
         boundaryConditionTypesHaveChanged = 1;
       }

@@ -675,6 +675,11 @@ bool CircuitData::hasPrescribedPressureAcrossInterface() const
 	return !m_flowPermittedAcross3DInterface;
 }
 
+boost::shared_ptr<CircuitComponent> CircuitData::getComponentByInputDataIndex(const int componentIndex)
+{
+	return mapOfComponents.at(componentIndex);
+}
+
 bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const
 {
 	// Negate and return:

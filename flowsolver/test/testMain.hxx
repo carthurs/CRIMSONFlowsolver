@@ -158,7 +158,7 @@
 
 		   itrdrv_finalize();
 		   multidom_finalise();
-	           MPI_Barrier(iNewComm_C);
+	       MPI_Barrier(iNewComm_C);
 		   // Moved this to the gtest_main.cc
 		   // MPI_Finalize();
 

@@ -46,6 +46,7 @@ sources=string.split("""
 	boundaryConditionFactory.cxx
 	RCR.cxx
 	NetlistBoundaryCondition.cxx
+	NetlistCircuit.cxx
 	NetlistSubcircuit.cxx
 	CircuitData.cxx
 	ControlSystemsManager.cxx

@@ -4,7 +4,6 @@
 #include "gtest/gtest_prod.h"
 #include <string>
 #include <stdexcept>
-#include "common_c.h"
 #include "fortranPointerManager.hxx"
 #include "debuggingToolsForCpp.hxx"
 
@@ -23,17 +22,19 @@ class abstractBoundaryCondition
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
  	FRIEND_TEST(testMultidom, checkFlowAndPressureSetters);
  public:
-    abstractBoundaryCondition(int surfaceIndex_in)
+    abstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep)
+    : surfaceIndex(surfaceIndex_in),
+      hstep(hstep_in),
+      delt(delt_in),
+      alfi_local(alfi_in),
+      m_lstep(lstep)
     {
         hasListOfMeshNodesAtThisBoundary = false; // flag to be used to guard against using the list when it hasn't been provided by Fortran.
         std::cout <<"is surfarea set yet in c++?" << surfarea << std::endl;
-        hstep = inpdat.nstep[0] + timdat.lstep;
-        delt = inpdat.Delt[0];
         // allocate arrays with +1 to size, in case hstep=0 (that would be undefined behaviour under new double)
         flowhist = new double [hstep+1];
         pressurehist = new double [hstep+1];
 
-        surfaceIndex = surfaceIndex_in;
         dp_dq = 0.0;
         Hop = 0.0;
         dp_dq_n1 = 0.0;
@@ -41,9 +42,7 @@ class abstractBoundaryCondition
         numberOfConstructedBoundaryConditions++;
         index = numberOfConstructedBoundaryConditions;
 
-        alfi_local = timdat.alfi;
-
-        if (timdat.lstep > 0)
+        if (m_lstep > 0)
         {
             thisIsARestartedSimulation = 1;
         }
@@ -63,14 +62,14 @@ class abstractBoundaryCondition
         numberOfConstructedBoundaryConditions--;
     }
     virtual void initialiseModel() = 0;
-    virtual void initialiseAtStartOfTimestep();
+    // virtual void initialiseAtStartOfTimestep() = 0;
     double getdp_dq();
     double getHop();
     int index;
 
     // void setLPNInflowPressure(double inflowPressure);
     void updpressure_n1_withflow();
-    virtual void finalizeLPNAtEndOfTimestep();
+    // virtual void finalizeLPNAtEndOfTimestep() = 0;
     double getSurfaceIndex() const {return surfaceIndex;}
  protected:
  	double dp_dq;
@@ -91,9 +90,10 @@ class abstractBoundaryCondition
     std::vector<double*> pressure_n_ptrs;
     // double implicitcoeff;
     // double implicitcoeff_n1; 
-    int hstep;
-    double delt;
-    double alfi_local;
+    const int hstep;
+    const int m_lstep;
+    const double delt;
+    const double alfi_local;
     int thisIsARestartedSimulation;
     std::vector<int> listOfMeshNodesAtThisBoundary;
     bool hasListOfMeshNodesAtThisBoundary;
@@ -106,7 +106,7 @@ class abstractBoundaryCondition
     virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
 
 	void updatePressureAndFlowHistory();
-    virtual void updateLPN();
+    // virtual void updateLPN() = 0;
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{
     	throw std::runtime_error("Disallowed call to non-overridden (e.g. non-RCR).");

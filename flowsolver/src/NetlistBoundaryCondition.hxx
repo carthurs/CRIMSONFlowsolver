@@ -23,8 +23,8 @@ class NetlistBoundaryCondition : public abstractBoundaryCondition
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithRemainingOpenPathDetected);
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
-	NetlistBoundaryCondition(int surfaceIndex_in)
-	: abstractBoundaryCondition(surfaceIndex_in)
+	NetlistBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep)
+	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep)
 	{
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
 		mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt));

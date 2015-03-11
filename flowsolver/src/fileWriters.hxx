@@ -25,7 +25,7 @@ public:
 		
 		if (!fileHandle->is_open())
 		{
-			std::cout << "Failed to open for writing " << fileName << "!" << std::endl;
+			std::cout << "Failed to open " << fileName << " for writing!" << std::endl;
 			std::exit(1);
 		}
 	}

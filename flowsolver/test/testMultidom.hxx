@@ -58,6 +58,12 @@
 	  	overrideMissingDataForTesting();
 
 	  	boundaryConditionManager_instance = boundaryConditionManager::Instance();
+
+	  	boundaryConditionManager_instance->setDelt(0.001);
+		boundaryConditionManager_instance->setHstep(5);
+		boundaryConditionManager_instance->setAlfi(0.5);
+		boundaryConditionManager_instance->setLstep(0);
+		boundaryConditionManager_instance->setNtout(1);
 	  	
 	  	press1 = 1000;
 	    press2 = 2000;
@@ -158,24 +164,25 @@
 		// (*retrievedBoundaryConditions)[5]->pressure_n = *((*retrievedBoundaryConditions)[5]->pressure_n_ptr);
 		// (*retrievedBoundaryConditions)[6]->pressure_n = *((*retrievedBoundaryConditions)[6]->pressure_n_ptr);
 
-	    alfi_local = 0.5;
-	    delt = 0.001;
-	    (*retrievedBoundaryConditions)[0]->delt = delt;
-		(*retrievedBoundaryConditions)[1]->delt = delt;
-		(*retrievedBoundaryConditions)[2]->delt = delt;
-		(*retrievedBoundaryConditions)[3]->delt = delt;
-		(*retrievedBoundaryConditions)[4]->delt = delt;
-		(*retrievedBoundaryConditions)[5]->delt = delt;
-		(*retrievedBoundaryConditions)[6]->delt = delt;
+	    // alfi_local = 0.5;
+	    // delt = 0.001;
+	    
+	 //    (*retrievedBoundaryConditions)[0]->delt = delt;
+		// (*retrievedBoundaryConditions)[1]->delt = delt;
+		// (*retrievedBoundaryConditions)[2]->delt = delt;
+		// (*retrievedBoundaryConditions)[3]->delt = delt;
+		// (*retrievedBoundaryConditions)[4]->delt = delt;
+		// (*retrievedBoundaryConditions)[5]->delt = delt;
+		// (*retrievedBoundaryConditions)[6]->delt = delt;
 		
 
-		(*retrievedBoundaryConditions)[0]->alfi_local = alfi_local;
-		(*retrievedBoundaryConditions)[1]->alfi_local = alfi_local;
-		(*retrievedBoundaryConditions)[2]->alfi_local = alfi_local;
-		(*retrievedBoundaryConditions)[3]->alfi_local = alfi_local;
-		(*retrievedBoundaryConditions)[4]->alfi_local = alfi_local;
-		(*retrievedBoundaryConditions)[5]->alfi_local = alfi_local;
-		(*retrievedBoundaryConditions)[6]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[0]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[1]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[2]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[3]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[4]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[5]->alfi_local = alfi_local;
+		// (*retrievedBoundaryConditions)[6]->alfi_local = alfi_local;
 		
 	  }
 

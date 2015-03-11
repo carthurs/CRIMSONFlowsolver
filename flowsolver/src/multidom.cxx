@@ -25,9 +25,14 @@ void multidom_initialise(){
   // the common block to use in a boundary condition, make a set method here
   // and pass it in explicitly to the BC. It's much easier to keep track of this way.
   boundaryConditionManager_instance->setDelt(inpdat.Delt[0]);
+  boundaryConditionManager_instance->setHstep(inpdat.nstep[0] + timdat.lstep);
+  boundaryConditionManager_instance->setAlfi(timdat.alfi);
+  boundaryConditionManager_instance->setLstep(timdat.lstep);
+  boundaryConditionManager_instance->setNtout(outpar.ntout);
   boundaryConditionManager_instance->setNumberOfRCRSurfaces(grcrbccom.numGRCRSrfs);
   boundaryConditionManager_instance->setNumberOfControlledCoronarySurfaces(nomodule.numControlledCoronarySrfs);
   boundaryConditionManager_instance->setNumberOfNetlistSurfaces(nomodule.numNetlistLPNSrfs);
+
   boundaryConditionManager_instance->ifRestartingLoadNecessaryData();
 
   // Make the file readers for the classes of surface present in this simulation,

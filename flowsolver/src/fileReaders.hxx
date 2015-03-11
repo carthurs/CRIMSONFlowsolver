@@ -37,7 +37,7 @@ public:
 		if (fileHandle->fail())
 		{
 			std::stringstream error;
-			error << "Failed to open " << fileName << "!" << std::endl;
+			error << "Failed to open " << fileName << " for reading!" << std::endl;
 			throw std::runtime_error(error.str());
 		}
 		fileHandle->clear(); // reset error state flags

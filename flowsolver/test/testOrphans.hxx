@@ -21,6 +21,10 @@
 	  fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 
 	  testOrphans() {
+	  	// get the boundary condition manager
+	  	timdat.lstep = 0; // this is needed because the boundaryConditionManager constructor looks for it explicitly!
+  		boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  		overrideMissingDataForTesting();
 	  }
 
 	  virtual ~testOrphans() {
@@ -58,10 +62,12 @@
 	  	// and we're not doing that during tests.
 	  	std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
 	  	std::cout << "Information -- The overrides are in testOrphans.hxx." << std::endl;
-	  	std::cout << " timdat.lstep" << std::endl;
-	  	timdat.lstep = int(0);
-	  	std::cout << " inpdat.Delt[0]" << std::endl;
-	  	inpdat.Delt[0] = 0.01;
+	  	std::cout << "Information -- delt, hstep, alfi, lstep, ntout." << std::endl;
+	  	boundaryConditionManager_instance->setDelt(0.01);
+		boundaryConditionManager_instance->setHstep(5);
+		boundaryConditionManager_instance->setAlfi(0.5);
+		boundaryConditionManager_instance->setLstep(0);
+		boundaryConditionManager_instance->setNtout(1);
 	  	// grcrbccom.numGRCRSrfs;
 	  	// std::cout << "nomodule.numNetlistLPNSrfs" << std::endl;
     //     nomodule.numNetlistLPNSrfs = int(1);

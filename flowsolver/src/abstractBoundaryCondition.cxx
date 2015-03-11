@@ -50,28 +50,13 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
 
 void abstractBoundaryCondition::updatePressureAndFlowHistory()
 {
-  pressurehist[timdat.lstep] = pressure_n;
-  flowhist[timdat.lstep] = *(flow_n_ptrs.at(0));
-}
-
-void abstractBoundaryCondition::initialiseAtStartOfTimestep()
-{
-  throw std::logic_error("EE: Call to initialiseAtStartOfTimestep as a member of abstractBoundaryCondition. This is not allowed.");
-}
-
-void abstractBoundaryCondition::updateLPN()
-{
-	throw std::logic_error("Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed.");
+  pressurehist[m_lstep] = pressure_n;
+  flowhist[m_lstep] = *(flow_n_ptrs.at(0));
 }
 
 void abstractBoundaryCondition::updpressure_n1_withflow()
 {
   pressure_n = dp_dq_n1*(*(flow_n_ptrs.at(0))) + Hop_n1;
-}
-
-void abstractBoundaryCondition::finalizeLPNAtEndOfTimestep()
-{
-	throw std::logic_error("Error: Call to updateLPN as a member of abstractBoundaryCondition. This is not allowed.");
 }
 
 void abstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)

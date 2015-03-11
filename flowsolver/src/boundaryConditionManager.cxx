@@ -28,17 +28,45 @@ void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
 {
   m_NumberOfRCRSurfaces = numGRCRSrfs;
 }
+
 void boundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)
 {
   m_NumberOfControlledCoronarySurfaces = numControlledCoronarySrfs;
 }
+
 void boundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs)
 {
   m_NumberOfNetlistSurfaces = numNetlistLPNSrfs;
 }
+
 void boundaryConditionManager::setDelt(const double delt)
 {
   m_delt = delt;
+  deltHasBeenSet = true;
+}
+
+void boundaryConditionManager::setHstep(const int hstep)
+{
+  m_hstep = hstep;
+  hstepHasBeenSet = true;
+}
+
+void boundaryConditionManager::setAlfi(const double alfi)
+{
+  m_alfi = alfi;
+  alfiHasBeenSet = true;
+}
+
+void boundaryConditionManager::setLstep(const int lstep)
+{
+  m_lstep = lstep;
+  lstepHasBeenSet = true;
+}
+
+void boundaryConditionManager::setNtout(const int ntout)
+{
+  m_ntout = ntout;
+  ntoutHasBeenSet = true;
 }
 
 void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
@@ -125,8 +153,14 @@ extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
 
 void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList)
 {
+  // Defensive:
+  assert(deltHasBeenSet);
+  assert(hstepHasBeenSet);
+  assert(alfiHasBeenSet);
+  assert(lstepHasBeenSet);
+  assert(ntoutHasBeenSet);
   // Build a factory
-  boundaryConditionFactory factory;
+  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep);
   
   for (auto iterator = surfaceList.begin(); iterator != surfaceList.end(); iterator++)
   {
@@ -263,7 +297,7 @@ void boundaryConditionManager::writePHistAndQHistRCR()
   qhistrcr_writer.setFileName("QHistRCR.dat");
 
   // Loop over all the updates since the last restart was written:
-  for (int i=timdat.lstep-outpar.ntout+int(1); i<timdat.lstep+int(1); i++)
+  for (int i=m_lstep-m_ntout+int(1); i<m_lstep+int(1); i++)
   {
     phistrcr_writer.writeStepIndex(i);
     qhistrcr_writer.writeStepIndex(i);
@@ -342,11 +376,12 @@ extern "C" void callCppGetImplicitCoeff_controlledCoronary(double*& implicitCoef
 
 void boundaryConditionManager::updateAllControlledCoronaryLPNs()
 {
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
   {
-    if (typeid(**iterator)==typeid(controlledCoronary))
+    boost::shared_ptr<controlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<controlledCoronary> (*boundaryCondition);
+    if (downcastCoronary != NULL)
     {
-      (*iterator)->updateLPN();
+      downcastCoronary->updateLPN();
     }
   }
 }
@@ -360,11 +395,12 @@ extern "C" void callCppUpdateAllControlledCoronaryLPNs()
 
 void boundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
 {
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
   {
-    if (typeid(**iterator)==typeid(controlledCoronary))
+    boost::shared_ptr<controlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<controlledCoronary> (*boundaryCondition);
+    if (downcastCoronary != NULL)
     {
-      (*iterator)->finalizeLPNAtEndOfTimestep();
+      downcastCoronary->finalizeLPNAtEndOfTimestep();
     }
   }
 }
@@ -377,11 +413,12 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
 
 void boundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
 {
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
   {
-    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+    if (downcastNetlist != NULL)
     {
-      (*iterator)->finalizeLPNAtEndOfTimestep();
+      downcastNetlist->finalizeLPNAtEndOfTimestep();
     }
   }
 }
@@ -415,11 +452,12 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
 // ========== Netlist LPN Block Start =========
 void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
 {
-  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
   {
-    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+    if (downcastNetlist != NULL)
     {
-      (*iterator)->initialiseAtStartOfTimestep();
+      downcastNetlist->initialiseAtStartOfTimestep();
     }
   }
 }
@@ -433,11 +471,12 @@ extern "C" void callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
 void boundaryConditionManager::updateAllNetlistLPNs()
 {
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
   {
-    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
+    auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+    if (downcastNetlist != NULL)
     {
-      (*iterator)->updateLPN();
+      downcastNetlist->updateLPN();
     }
   }
 }

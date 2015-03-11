@@ -6,6 +6,7 @@
 #include "abstractBoundaryCondition.hxx"
 #include "ControlSystemsManager.hxx"
 #include <boost/lexical_cast.hpp>
+#include "common_c.h"
 
 // Forward declarations:
 class abstractBoundaryCondition;
@@ -88,6 +89,10 @@ class abstractBoundaryCondition;
     void setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs);
     void setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs);
     void setDelt(const double delt);
+    void setHstep(const int hstep);
+    void setAlfi(const double alfi);
+    void setLstep(const int lstep);
+    void setNtout(const int ntout);
 
     void createControlSystems();
     void updateAllControlSystems();
@@ -119,10 +124,14 @@ class abstractBoundaryCondition;
     		thisIsARestartedSimulation = 0;
             m_nextTimestepWrite_netlistBoundaries_start = 0;
     	}
+
+        deltHasBeenSet = false;
+        hstepHasBeenSet = false;
+        alfiHasBeenSet = false;
+        lstepHasBeenSet = false;
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> boundaryConditions;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
-    boundaryConditionFactory factory;
 
     std::unique_ptr<ControlSystemsManager> mp_controlSystemsManager;
 
@@ -131,6 +140,16 @@ class abstractBoundaryCondition;
     int m_NumberOfNetlistSurfaces;
     int m_NumberOfControlledCoronarySurfaces;
     double m_delt;
+    int m_hstep;
+    double m_alfi;
+    int m_lstep;
+    int m_ntout;
+
+    bool deltHasBeenSet;
+    bool hstepHasBeenSet;
+    bool alfiHasBeenSet;
+    bool lstepHasBeenSet;
+    bool ntoutHasBeenSet;
 
     int m_nextTimestepWrite_netlistBoundaries_start;
 

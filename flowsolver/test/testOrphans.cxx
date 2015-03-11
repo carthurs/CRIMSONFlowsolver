@@ -12,8 +12,6 @@ int PullInMyLibraryTestOrphans() { return 0; }
 // to its startNode (not its endNode). Which is which is determined by the order of the
 // two node indices given in netlist_surfaces.dat forthe component.
 TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
-  overrideMissingDataForTesting();
-
   // Create fake (i.e. non-FORTRAN) pointer manager
   fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
 
@@ -40,8 +38,6 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
   // Describe test BC that we want to construct:
   surfaceList.push_back(std::pair <int,std::string> (2,"netlist"));
 
-  // get the boundary condition manager
-  boundaryConditionManager_instance = boundaryConditionManager::Instance();
   // Testing for "EE: The netlist component at the 3D interface must be connected to it via its start node, not its end node."
   EXPECT_THROW(boundaryConditionManager_instance->setSurfaceList(surfaceList), std::runtime_error);
   // boundaryConditionManager_instance->setSurfaceList(surfaceList);
@@ -49,8 +45,6 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
 
 // The component at the 3D interface must have a node which connects to no other components (i.e. just to the 3D domain)
 TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
-  overrideMissingDataForTesting();
-  
   // Create fake (i.e. non-FORTRAN) pointer manager
   fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
 

@@ -8,8 +8,8 @@
 class controlledCoronary : public abstractBoundaryCondition
 {
 public:
-	controlledCoronary(int surfaceIndex_in)
-	: abstractBoundaryCondition(surfaceIndex_in)
+	controlledCoronary(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep)
+	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep)
 	{
 		// Note the index of this RCR (zero-indexed), and count its existance
 		// (the order of these two lines is correct!)

@@ -223,7 +223,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             int endNode = (*component)->endNode->indexInInputData;
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            double currentParameterValue = (*component)->currentParameterValue;
+            double currentParameterValue = *((*component)->getParameterPointer());
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->indexInInputData);
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
@@ -237,7 +237,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             int endNode = (*component)->endNode->indexInInputData;
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            double currentParameterValue = (*component)->currentParameterValue;
+            double currentParameterValue = *((*component)->getParameterPointer());
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->indexInInputData);
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-alfi_delt/currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,nodeIndexToPressureHistoryNodeOrderingMap.at(startNode)+m_circuitData->numberOfPressureNodes,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -253,7 +253,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             int endNode = (*component)->endNode->indexInInputData;
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            double currentParameterValue = (*component)->currentParameterValue;
+            double currentParameterValue = *((*component)->getParameterPointer());
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->indexInInputData);
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-currentParameterValue/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,componentIndexToFlowHistoryComponentOrderingMap.at(indexOfThisComponentsFlow)+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures+m_circuitData->numberOfComponents,currentParameterValue/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);

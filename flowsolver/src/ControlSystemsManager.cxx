@@ -33,7 +33,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 		boost::shared_ptr<CircuitComponent> resistor = boundaryCondition->getComponentByInputDataIndex(nodeOrComponentIndex);
 		assert(resistor->getType() == Component_Resistor);
 
-		double* resistanceToControl = &(resistor->currentParameterValue);
+		double* resistanceToControl = resistor->getParameterPointer();
 
 		boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl));
 		m_controlSystems.push_back(controllerToPushBack);
@@ -44,7 +44,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 		boost::shared_ptr<CircuitComponent> capacitor = boundaryCondition->getComponentByInputDataIndex(nodeOrComponentIndex);
 		assert(capacitor->getType() == Component_Capacitor);
 
-		double* complianceToControl = &(capacitor->currentParameterValue);
+		double* complianceToControl = capacitor->getParameterPointer());
 
 		boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl));
 		m_controlSystems.push_back(controllerToPushBack);

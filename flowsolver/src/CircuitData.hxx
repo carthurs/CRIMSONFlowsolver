@@ -29,7 +29,6 @@ public:
 
 	int prescribedFlowPointerIndex;
 	
-	double currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
 	int indexInInputData;
 	int indexLocalToSubcircuit;
@@ -82,8 +81,11 @@ public:
 	void enableDiodeFlow();
 	void disableDiodeFlow();
 	circuit_component_t& getType();
+	double* getParameterPointer();
+	void setParameterValue(double const parameterValue);
 private:
 	circuit_component_t m_type;
+	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
@@ -147,12 +149,12 @@ public:
 
 	double* getPointerToElastance()
 	{
-		return &currentParameterValue;
+		return &m_currentParameterValue;
 	}
 
 	double getElastance()
 	{
-		return currentParameterValue;
+		return m_currentParameterValue;
 	}
 
 	bool zeroVolumeShouldBePrescribed()

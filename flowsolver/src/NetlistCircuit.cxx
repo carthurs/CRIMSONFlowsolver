@@ -111,9 +111,9 @@ void NetlistCircuit::createCircuitDescription()
             }
         }
 
-        (*component)->currentParameterValue = retrievedComponentParameterValues.back();
+        (*component)->setParameterValue(retrievedComponentParameterValues.back());
         // make a copy of this value so we can reset it if necessary. Used for e.g. diode state changes.
-        (*component)->parameterValueFromInputData = (*component)->currentParameterValue;
+        (*component)->parameterValueFromInputData = *((*component)->getParameterPointer());
         retrievedComponentParameterValues.pop_back();
 
         (*component)->startNode->setPressure(retrievedInitialPressures.at((*component)->startNode->indexInInputData));
@@ -904,9 +904,9 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         //     }
         // }
 
-        (*component)->currentParameterValue = componentParameterValues.back();
+        (*component)->setParameterValue(componentParameterValues.back());
         // make a copy of this value so we can reset it if necessary. Used for e.g. diode state changes.
-        (*component)->parameterValueFromInputData = (*component)->currentParameterValue;
+        (*component)->parameterValueFromInputData = *((*component)->getParameterPointer());
         componentParameterValues.pop_back();
 
         (*component)->startNode->setPressure(initialPressures.at((*component)->startNode->indexInInputData));
@@ -1072,7 +1072,7 @@ void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double
             {
                 potentialResistance = 0.000001;
             }
-            (*component)->currentParameterValue = potentialResistance;
+            (*component)->setParameterValue(potentialResistance);
         }
     }
 }

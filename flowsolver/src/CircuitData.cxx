@@ -10,8 +10,8 @@
 
 void VolumeTrackingPressureChamber::passPressureToStartNode()
 {
-	m_pressure = (m_storedVolume - m_unstressedVolume)*currentParameterValue;
-	std::cout << "compliance set to: " << currentParameterValue << std::endl;
+	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
+	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
 	std::cout << "pressure: " << m_pressure << std::endl;
 	startNode->setPressure(m_pressure);
 }
@@ -433,14 +433,14 @@ void CircuitData::switchDiodeStatesIfNecessary()
 void CircuitComponent::enableDiodeFlow()
 {
 	assert(m_type == Component_Diode);
-	currentParameterValue = parameterValueFromInputData; // For enforcing zero resistance when the diode is open
+	m_currentParameterValue = parameterValueFromInputData; // For enforcing zero resistance when the diode is open
 	permitsFlow = true;
 }
 
 void CircuitComponent::disableDiodeFlow()
 {
 	assert(m_type == Component_Diode);
-	currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
+	m_currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
 	permitsFlow = false;
 }
 
@@ -651,6 +651,16 @@ int CircuitData::getIndexOfNodeAtInterface()
 circuit_component_t& CircuitComponent::getType()
 {
 	return m_type;
+}
+
+double* CircuitComponent::getParameterPointer()
+{
+	return &m_currentParameterValue;
+}
+
+void CircuitComponent::setParameterValue(double const parameterValue)
+{
+	m_currentParameterValue = parameterValue;
 }
 
 bool CircuitComponent::connectsToNodeAtInterface()

@@ -51,6 +51,7 @@ sources=string.split("""
 	CircuitData.cxx
 	ControlSystemsManager.cxx
 	ParameterController.cxx
+	timers.cxx
 	AtomicSubcircuitConnectionManager.cxx
 	pureZeroDDriver.cxx
 	Netlist3DDomainReplacement.cxx

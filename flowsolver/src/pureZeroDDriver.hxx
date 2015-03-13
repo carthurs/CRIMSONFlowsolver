@@ -11,30 +11,22 @@ class PureZeroDDriver
 public:
 	PureZeroDDriver()
 	{
-		if (timdat.lstep > 0)
-		{
-			m_thisIsARestartedSimulation = 1;
-	        SimpleFileReader numstartReader("numstart.dat");
+		checkIfThisIsARestartedSimulation();
 
-	        bool success = false;
-	        std::string numstartString = numstartReader.getNextDataSplitBySpacesOrEndOfLine(success);
-	        assert(success);
-
-	        m_nextTimestepWrite_zeroDBoundaries_start = boost::lexical_cast<int>(numstartString)+1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
-		}
-		else
-		{
-			m_thisIsARestartedSimulation = 0;
-	        m_nextTimestepWrite_zeroDBoundaries_start = 0;
-		}
-		m_alfi = timdat.alfi;
-		m_delt = inpdat.Delt[0];
+		m_deltHasBeenSet = false;
+		m_alfiHasBeenSet = false;
+		m_hstepHasBeenSet = false;
 	}
 	void init();
 	void iter_init();
 	void iter_step();
 	void iter_finalize();
 	void finalize();
+
+	void setDelt(const double delt);
+	void setAlfi(const double alfi);
+	void setHstep(const int hstep);
+
 private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make
 	// a replacement for the 3D domain.
@@ -49,13 +41,19 @@ private:
 
 	int m_timestepNumber;
 	int m_nextTimestepWrite_zeroDBoundaries_start;
-	int m_thisIsARestartedSimulation;
+	bool m_thisIsARestartedSimulation;
 
 	double m_alfi;
 	double m_delt;
+	int m_hstep;
+
+	bool m_deltHasBeenSet;
+	bool m_alfiHasBeenSet;
+	bool m_hstepHasBeenSet;
 
 	void placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(std::vector<double> boundaryPressures, std::vector<double> boundaryFlows);
 	void placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();
+	void checkIfThisIsARestartedSimulation();
 };
 
 #endif

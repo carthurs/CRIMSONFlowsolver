@@ -68,6 +68,8 @@
 		boundaryConditionManager_instance->setAlfi(0.5);
 		boundaryConditionManager_instance->setLstep(0);
 		boundaryConditionManager_instance->setNtout(1);
+		boundaryConditionManager_instance->setMaxsurf(199);
+		boundaryConditionManager_instance->setNstep(5);
 	  	// grcrbccom.numGRCRSrfs;
 	  	// std::cout << "nomodule.numNetlistLPNSrfs" << std::endl;
     //     nomodule.numNetlistLPNSrfs = int(1);

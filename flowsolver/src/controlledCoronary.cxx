@@ -98,7 +98,7 @@ void controlledCoronary::initialiseModel()
 
 	// Ensure that push_back on this vector does not cause big in-memory copies by reserving (empty)
 	// memory for the vector to grow into.
-	O2supplyDemandHistory.reserve(inpdat.nstep[0] + O2supplyDemandHistoryWindowLength_timesteps + 1);
+	O2supplyDemandHistory.reserve(m_nstep + O2supplyDemandHistoryWindowLength_timesteps + 1);
 	// set the history of the supply-demand discrepancy at each outlet (note that this array is long enough
 	//  for the entire simulation + a fake "negative time" history of zeros; we set this fake history now:
 	//\todo worry about restart issues here.

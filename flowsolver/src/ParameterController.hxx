@@ -2,6 +2,8 @@
 #define PARAMETERCONTROLLER_HXX_
 
 #include <cmath>
+#include <boost/shared_ptr.hpp>
+#include "timers.hxx"
 
 // This class can be connected to a netlist LPN parameter
 // (e.g. resistance for a component, or compliance for a compliance chamber).
@@ -41,12 +43,7 @@ public:
 		m_heartPeriod = 0.86;
 	}
 
-	void updateControl()
-	{
-		updatePeriodicTime();
-		// adjust the controlled elastance:
-		*mp_parameterToControl = getElastance();
-	}
+	void updateControl();
 private:
 	const double m_delt;
 	
@@ -62,6 +59,22 @@ private:
 	double getElastance();
 
 	void updatePeriodicTime();
+};
+
+class BleedController : public AbstractParameterController
+{
+public:
+	BleedController(double* const parameterToControl)
+	: AbstractParameterController(parameterToControl)
+	{
+		int initialTimestep = 0; //\todo sort the restarts for this
+		int triggerTimestep = 100;
+		mp_timer = boost::shared_ptr<BasicTimer> (new BasicTimer(initialTimestep, triggerTimestep));
+	}
+	void updateControl();
+private:
+	boost::shared_ptr<BasicTimer> mp_timer;
+	bool m_bleedingOn;
 };
 
 #endif

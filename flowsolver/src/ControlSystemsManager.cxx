@@ -27,6 +27,28 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 		boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl,m_delt));
 		m_controlSystems.push_back(controllerToPushBack);
 	}
+	else if (controllerType == Controller_BleedResistance)
+	{
+		// get the resistor:
+		boost::shared_ptr<CircuitComponent> resistor = boundaryCondition->getComponentByInputDataIndex(nodeOrComponentIndex);
+		assert(resistor->type == Component_Resistor);
+
+		double* resistanceToControl = &(resistor->currentParameterValue);
+
+		boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl));
+		m_controlSystems.push_back(controllerToPushBack);
+	}
+	else if (controllerType == Controller_BleedCompliance)
+	{
+		// get the capacitor:
+		boost::shared_ptr<CircuitComponent> capacitor = boundaryCondition->getComponentByInputDataIndex(nodeOrComponentIndex);
+		assert(capacitor->type == Component_Capacitor);
+
+		double* complianceToControl = &(capacitor->currentParameterValue);
+
+		boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl));
+		m_controlSystems.push_back(controllerToPushBack);
+	}
 	else
 	{
 		std::stringstream errorMessage;

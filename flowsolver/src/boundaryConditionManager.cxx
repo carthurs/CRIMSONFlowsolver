@@ -21,7 +21,7 @@
 // Static class static member variables:
 boundaryConditionManager* boundaryConditionManager::instance = 0;
 histFileReader* boundaryConditionManager::PHistReader = NULL;
-int boundaryConditionManager::thisIsARestartedSimulation = 0;
+bool boundaryConditionManager::m_thisIsARestartedSimulation = 0;
 
 // Functions which affect features of the abstract class:
 void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
@@ -42,32 +42,67 @@ void boundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLP
 void boundaryConditionManager::setDelt(const double delt)
 {
   m_delt = delt;
-  deltHasBeenSet = true;
+  m_deltHasBeenSet = true;
 }
 
 void boundaryConditionManager::setHstep(const int hstep)
 {
   m_hstep = hstep;
-  hstepHasBeenSet = true;
+  m_hstepHasBeenSet = true;
 }
 
 void boundaryConditionManager::setAlfi(const double alfi)
 {
   m_alfi = alfi;
-  alfiHasBeenSet = true;
+  m_alfiHasBeenSet = true;
 }
 
 void boundaryConditionManager::setLstep(const int lstep)
 {
   m_lstep = lstep;
-  lstepHasBeenSet = true;
+  m_lstepHasBeenSet = true;
 }
 
 void boundaryConditionManager::setNtout(const int ntout)
 {
   m_ntout = ntout;
-  ntoutHasBeenSet = true;
+  m_ntoutHasBeenSet = true;
 }
+
+void boundaryConditionManager::setMaxsurf(const int maxsurf)
+{
+  m_maxsurf = maxsurf;
+  m_maxsurfHasBeenSet = true;
+}
+
+void boundaryConditionManager::setNstep(const int nstep)
+{
+  m_nstep = nstep;
+  m_nstepHasBeenSet = true;
+}
+
+void boundaryConditionManager::checkIfThisIsARestartedSimulation()
+{
+  SimpleFileReader numstartReader("numstart.dat");
+
+  bool success = false;
+  std::string numstartString = numstartReader.getNextDataSplitBySpacesOrEndOfLine(success);
+  assert(success);
+
+  int valueFromNumstartDotDat = boost::lexical_cast<int>(numstartString);
+
+  if (valueFromNumstartDotDat > 0)
+  {
+    m_thisIsARestartedSimulation = true;
+    m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat + 1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
+  }
+  else
+  {
+    m_thisIsARestartedSimulation = false;
+    m_nextTimestepWrite_netlistBoundaries_start = 0;
+  }
+}
+
 
 void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
@@ -118,9 +153,9 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs
     {
       
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
-      // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
+      // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       
-      implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
+      implicitCoeffs_toBeFilled[writeLocation + m_maxsurf + 1] = (*iterator)->getHop();
       
       writeLocation++;
     }
@@ -154,13 +189,15 @@ extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
 void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList)
 {
   // Defensive:
-  assert(deltHasBeenSet);
-  assert(hstepHasBeenSet);
-  assert(alfiHasBeenSet);
-  assert(lstepHasBeenSet);
-  assert(ntoutHasBeenSet);
+  assert(m_deltHasBeenSet);
+  assert(m_hstepHasBeenSet);
+  assert(m_alfiHasBeenSet);
+  assert(m_lstepHasBeenSet);
+  assert(m_ntoutHasBeenSet);
+  assert(m_maxsurfHasBeenSet);
+  assert(m_nstepHasBeenSet);
   // Build a factory
-  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep);
+  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep);
   
   for (auto iterator = surfaceList.begin(); iterator != surfaceList.end(); iterator++)
   {
@@ -184,7 +221,7 @@ void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double
 
 void boundaryConditionManager::ifRestartingLoadNecessaryData()
 {
-  if (thisIsARestartedSimulation)
+  if (m_thisIsARestartedSimulation)
   {
     // Load PHistRCR.dat, necessary for setting the pressure data in the 
     // LPN at the boundary when restarting
@@ -361,7 +398,7 @@ void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
       // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       
-      implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
+      implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = (*iterator)->getHop();
       
       writeLocation++;
     }
@@ -523,9 +560,9 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
     {
       
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
-      // +MAXSURF+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
+      // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       
-      implicitCoeffs_toBeFilled[writeLocation+MAXSURF+1] = (*iterator)->getHop();
+      implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = (*iterator)->getHop();
       
       writeLocation++;
     }
@@ -752,6 +789,12 @@ void boundaryConditionManager::createControlSystems()
       }
     }
   }
+
+  // int boundaryConditionIndex = ???
+  // int capacitorIndex = ???
+  // mp_controlSystemsManager->createParameterController(Controller_BleedCompliance, boundaryConditions.at(boundaryConditionIndex), capacitorIndex);
+  // int resistorIndex = ???
+  // mp_controlSystemsManager->createParameterController(Controller_BleedResistance, boundaryConditions.at(boundaryConditionIndex), resistorIndex);
 
 }
 

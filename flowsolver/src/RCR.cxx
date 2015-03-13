@@ -272,7 +272,7 @@ void RCR::getPressureAndFlowPointersFromFortran()
     if (thisIsARestartedSimulation)
     {
       // Initialise the pressure using the value from the PHistRCR.dat.
-      pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1,timdat.lstep);
+      pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1, m_lstep);
     }
     else
     {

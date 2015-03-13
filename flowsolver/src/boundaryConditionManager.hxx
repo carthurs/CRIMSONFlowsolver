@@ -6,7 +6,6 @@
 #include "abstractBoundaryCondition.hxx"
 #include "ControlSystemsManager.hxx"
 #include <boost/lexical_cast.hpp>
-#include "common_c.h"
 
 // Forward declarations:
 class abstractBoundaryCondition;
@@ -28,7 +27,7 @@ class abstractBoundaryCondition;
 
 	static void Term()
 	{
-		if (thisIsARestartedSimulation)
+		if (m_thisIsARestartedSimulation)
 		{
             if (boundaryConditionManager::PHistReader != NULL)
             {
@@ -93,6 +92,8 @@ class abstractBoundaryCondition;
     void setAlfi(const double alfi);
     void setLstep(const int lstep);
     void setNtout(const int ntout);
+    void setMaxsurf(const int maxsurf);
+    void setNstep(const int nstep);
 
     void createControlSystems();
     void updateAllControlSystems();
@@ -108,34 +109,22 @@ class abstractBoundaryCondition;
  private:
     boundaryConditionManager()
     {
-    	if (timdat.lstep > 0)
-    	{
-    		thisIsARestartedSimulation = 1;
-            SimpleFileReader numstartReader("numstart.dat");
+        checkIfThisIsARestartedSimulation();
+        m_nextTimestepWrite_netlistBoundaries_start = 0;
 
-            bool success = false;
-            std::string numstartString = numstartReader.getNextDataSplitBySpacesOrEndOfLine(success);
-            assert(success);
-
-            m_nextTimestepWrite_netlistBoundaries_start = boost::lexical_cast<int>(numstartString)+1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
-    	}
-    	else
-    	{
-    		thisIsARestartedSimulation = 0;
-            m_nextTimestepWrite_netlistBoundaries_start = 0;
-    	}
-
-        deltHasBeenSet = false;
-        hstepHasBeenSet = false;
-        alfiHasBeenSet = false;
-        lstepHasBeenSet = false;
+        m_deltHasBeenSet = false;
+        m_hstepHasBeenSet = false;
+        m_alfiHasBeenSet = false;
+        m_lstepHasBeenSet = false;
+        m_maxsurfHasBeenSet = false;
+        m_nstepHasBeenSet = false;
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> boundaryConditions;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
 
     std::unique_ptr<ControlSystemsManager> mp_controlSystemsManager;
 
-    static int thisIsARestartedSimulation;
+    static bool m_thisIsARestartedSimulation;
     int m_NumberOfRCRSurfaces;
     int m_NumberOfNetlistSurfaces;
     int m_NumberOfControlledCoronarySurfaces;
@@ -144,14 +133,20 @@ class abstractBoundaryCondition;
     double m_alfi;
     int m_lstep;
     int m_ntout;
+    int m_maxsurf;
+    int m_nstep;
 
-    bool deltHasBeenSet;
-    bool hstepHasBeenSet;
-    bool alfiHasBeenSet;
-    bool lstepHasBeenSet;
-    bool ntoutHasBeenSet;
+    bool m_deltHasBeenSet;
+    bool m_hstepHasBeenSet;
+    bool m_alfiHasBeenSet;
+    bool m_lstepHasBeenSet;
+    bool m_ntoutHasBeenSet;
+    bool m_maxsurfHasBeenSet;
+    bool m_nstepHasBeenSet;
 
     int m_nextTimestepWrite_netlistBoundaries_start;
+
+    void checkIfThisIsARestartedSimulation();
 
     // For testing purposes, to clear the static class out before the next test begins
     // Note that you'll have to make the test class a friend in order to use this..

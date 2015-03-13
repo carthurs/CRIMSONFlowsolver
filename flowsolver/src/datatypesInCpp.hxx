@@ -9,7 +9,7 @@ enum circuit_component_flow_prescription_t {Flow_Null, Flow_NotPrescribed, Flow_
 
 enum circuit_diode_node_t {Node_Null, Node_ConnectsCircuit, Node_IsMonopolar};
 
-enum parameter_controller_t {Controller_Null, Controller_LeftVentricularElastance};
+enum parameter_controller_t {Controller_Null, Controller_LeftVentricularElastance, Controller_BleedResistance, Controller_BleedCompliance};
 
 enum boundary_data_t {Boundary_Pressure, Boundary_Flow};
 

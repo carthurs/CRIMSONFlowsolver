@@ -131,6 +131,9 @@
 				multidom_initialise();
 
 				PureZeroDDriver pureZeroDDriver;
+				pureZeroDDriver.setDelt(inpdat.Delt[0]);
+			    pureZeroDDriver.setAlfi(timdat.alfi);
+			    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
 
 				pureZeroDDriver.init();
 

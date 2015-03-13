@@ -22,12 +22,14 @@ class abstractBoundaryCondition
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
  	FRIEND_TEST(testMultidom, checkFlowAndPressureSetters);
  public:
-    abstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep)
+    abstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep)
     : surfaceIndex(surfaceIndex_in),
       hstep(hstep_in),
       delt(delt_in),
       alfi_local(alfi_in),
-      m_lstep(lstep)
+      m_lstep(lstep),
+      m_maxsurf(maxsurf),
+      m_nstep(nstep)
     {
         hasListOfMeshNodesAtThisBoundary = false; // flag to be used to guard against using the list when it hasn't been provided by Fortran.
         std::cout <<"is surfarea set yet in c++?" << surfarea << std::endl;
@@ -94,6 +96,8 @@ class abstractBoundaryCondition
     const int m_lstep;
     const double delt;
     const double alfi_local;
+    const int m_maxsurf;
+    const int m_nstep;
     int thisIsARestartedSimulation;
     std::vector<int> listOfMeshNodesAtThisBoundary;
     bool hasListOfMeshNodesAtThisBoundary;

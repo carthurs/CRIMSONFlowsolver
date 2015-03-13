@@ -7,7 +7,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 {
   if (boundaryType.compare("rcr") == 0)
   {
-    boost::shared_ptr<abstractBoundaryCondition> newRCR(new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep));
+    boost::shared_ptr<abstractBoundaryCondition> newRCR(new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
     
     newRCR->getPressureAndFlowPointersFromFortran();
 
@@ -15,7 +15,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
   }
   else if (boundaryType.compare("netlist") == 0)
   {
-    boost::shared_ptr<abstractBoundaryCondition> newNetlist(new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep));
+    boost::shared_ptr<abstractBoundaryCondition> newNetlist(new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
 
     newNetlist->getPressureAndFlowPointersFromFortran();
     
@@ -25,7 +25,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
   }
   else if (boundaryType.compare("controlledCoronary") == 0)
   {
-    boost::shared_ptr<abstractBoundaryCondition> newControlledCoronary(new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep));
+    boost::shared_ptr<abstractBoundaryCondition> newControlledCoronary(new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
 
     newControlledCoronary->getPressureAndFlowPointersFromFortran();
 

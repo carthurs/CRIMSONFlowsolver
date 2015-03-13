@@ -64,6 +64,8 @@
 		boundaryConditionManager_instance->setAlfi(0.5);
 		boundaryConditionManager_instance->setLstep(0);
 		boundaryConditionManager_instance->setNtout(1);
+		boundaryConditionManager_instance->setMaxsurf(MAXSURF);
+		boundaryConditionManager_instance->setNstep(5);
 	  	
 	  	press1 = 1000;
 	    press2 = 2000;
@@ -202,12 +204,12 @@
 
 	  	// This is because timdat.lstep is used to determine whether we're restarting a simulation
 	  	// and we're not doing that during tests.
-	  	std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
-	  	std::cout << "Information -- The overrides are in testMultidom.hxx." << std::endl;
-	  	std::cout << " timdat.lstep" << std::endl;
-	  	timdat.lstep = int(0);
-	  	std::cout << " inpdat.Delt[0]" << std::endl;
-	  	inpdat.Delt[0] = 0.01;
+	  	// std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
+	  	// std::cout << "Information -- The overrides are in testMultidom.hxx." << std::endl;
+	  	// std::cout << " timdat.lstep" << std::endl;
+	  	// timdat.lstep = int(0);
+	  	// std::cout << " inpdat.Delt[0]" << std::endl;
+	  	// inpdat.Delt[0] = 0.01;
 	  	// grcrbccom.numGRCRSrfs;
 	  	// std::cout << "nomodule.numNetlistLPNSrfs" << std::endl;
     //     nomodule.numNetlistLPNSrfs = int(1);

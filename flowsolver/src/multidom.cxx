@@ -29,6 +29,8 @@ void multidom_initialise(){
   boundaryConditionManager_instance->setAlfi(timdat.alfi);
   boundaryConditionManager_instance->setLstep(timdat.lstep);
   boundaryConditionManager_instance->setNtout(outpar.ntout);
+  boundaryConditionManager_instance->setMaxsurf(MAXSURF);
+  boundaryConditionManager_instance->setNstep(inpdat.nstep[0]);
   boundaryConditionManager_instance->setNumberOfRCRSurfaces(grcrbccom.numGRCRSrfs);
   boundaryConditionManager_instance->setNumberOfControlledCoronarySurfaces(nomodule.numControlledCoronarySrfs);
   boundaryConditionManager_instance->setNumberOfNetlistSurfaces(nomodule.numNetlistLPNSrfs);

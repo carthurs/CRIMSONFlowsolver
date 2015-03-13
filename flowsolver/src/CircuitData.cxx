@@ -86,7 +86,7 @@ void CircuitData::rebuildCircuitMetadata()
 	m_numberOfVolumeTrackingPressureChambers = 0;
 	for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 	{
-		if (component->second->type == Component_VolumeTrackingPressureChamber)
+		if (component->second->getType() == Component_VolumeTrackingPressureChamber)
 		{
 			mapOfVolumeTrackingComponents.insert(std::make_pair(component->first,component->second));
 			m_numberOfVolumeTrackingPressureChambers++;
@@ -413,7 +413,7 @@ void CircuitData::switchDiodeStatesIfNecessary()
 {
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
-		if ((*component)->type == Component_Diode)
+		if ((*component)->getType() == Component_Diode)
 		{
 			// (*component)->prescribedFlowType = Flow_Diode_FixedWhenClosed;
 			// (*component)->valueOfPrescribedFlow = 0.0; // For enforcing zero flow when the diode is closed
@@ -432,14 +432,14 @@ void CircuitData::switchDiodeStatesIfNecessary()
 
 void CircuitComponent::enableDiodeFlow()
 {
-	assert(type == Component_Diode);
+	assert(m_type == Component_Diode);
 	currentParameterValue = parameterValueFromInputData; // For enforcing zero resistance when the diode is open
 	permitsFlow = true;
 }
 
 void CircuitComponent::disableDiodeFlow()
 {
-	assert(type == Component_Diode);
+	assert(m_type == Component_Diode);
 	currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
 	permitsFlow = false;
 }
@@ -449,7 +449,7 @@ void CircuitData::closeAllDiodes()
 {
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
-		if ((*component)->type == Component_Diode)
+		if ((*component)->getType() == Component_Diode)
 		{
 			(*component)->disableDiodeFlow();
 		}
@@ -646,6 +646,11 @@ void CircuitData::setIndicesOfNodesAtInterface(std::vector<int> indicesToSet)
 int CircuitData::getIndexOfNodeAtInterface()
 {
 	return m_indexOfNodeAt3DInterface.at(0); // The basic netlist boundary condition currently only uses the 0th entry of m_indexOfNodeAt3DInterface.
+}
+
+circuit_component_t& CircuitComponent::getType()
+{
+	return m_type;
 }
 
 bool CircuitComponent::connectsToNodeAtInterface()

@@ -55,7 +55,7 @@ void NetlistCircuit::createCircuitDescription()
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_CircuitDescription->components.begin(); component != mp_CircuitDescription->components.end(); component++)
     {
-        (*component)->type = retrievedComponentTypes.back();
+        (*component)->getType() = retrievedComponentTypes.back();
         retrievedComponentTypes.pop_back();
 
         int indexOfStartNodeInInputData = retrievedComponentStartNodes.back();
@@ -515,7 +515,7 @@ void NetlistCircuit::createInitialCircuitDescriptionWithoutDiodes()
     int numberOfDiodes = 0;
     for (auto component=mp_CircuitDescriptionWithoutDiodes->components.begin(); component!=mp_CircuitDescriptionWithoutDiodes->components.end(); component++)
     {
-        if((*component)->type == Component_Diode)
+        if((*component)->getType() == Component_Diode)
         {
             component = mp_CircuitDescriptionWithoutDiodes->components.erase(component); // returns an iterator pointing to the new location of the element after the one that just got erased
             component--; // decrement the returned iterator, so the for loop incrememnts it back to the correct (next) element.
@@ -877,7 +877,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_CircuitDescription->components.begin(); component != mp_CircuitDescription->components.end(); component++)
     {
-        (*component)->type = componentTypes.back();
+        (*component)->getType() = componentTypes.back();
         componentTypes.pop_back();
 
         int indexOfStartNodeInInputData = componentStartNodes.back();

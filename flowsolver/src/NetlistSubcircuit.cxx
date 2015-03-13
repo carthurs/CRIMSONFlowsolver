@@ -108,7 +108,7 @@ void NetlistSubcircuit::getMapOfPressHistoriesToCorrectPressNodes()
     for (int ii=0; ii<m_circuitData->numberOfComponents; ii++)
     {
        // Check for capacitor, as these need pressure "histories" (pressure from the previous time-step) at their end-nodes (for dP/dt term).
-       if (m_circuitData->components.at(ii)->type == Component_Capacitor)
+       if (m_circuitData->components.at(ii)->getType() == Component_Capacitor)
        {
        		listOfHistoryPressures.insert(m_circuitData->components.at(ii)->startNode->indexInInputData);
           m_circuitData->components.at(ii)->startNode->hasHistoryPressure = true;
@@ -135,7 +135,7 @@ void NetlistSubcircuit::getMapOfFlowHistoriesToCorrectComponents()
 	for (int ii=0; ii<m_circuitData->numberOfComponents; ii++)
 	{
 	   // Check for inductor, as these need flow "histories" (flow from the previous time-step) (for dQ/dt term).
-     if(m_circuitData->components.at(ii)->type == Component_Inductor)
+     if(m_circuitData->components.at(ii)->getType() == Component_Inductor)
 	   {
 	   		listOfHistoryFlows.insert(ii);
         m_circuitData->components.at(ii)->hasHistoryFlow = true;
@@ -159,7 +159,7 @@ void NetlistSubcircuit::getMapOfVolumeHistoriesToCorrectComponents()
   for (int ii=0; ii<m_circuitData->numberOfComponents; ii++)
   {
      // Check for VolumeTrackingPressureChambers, as these need volume "histories" (volume from the previous time-step) (for dVolume/dt term).
-     if(m_circuitData->components.at(ii)->type == Component_VolumeTrackingPressureChamber)
+     if(m_circuitData->components.at(ii)->getType() == Component_VolumeTrackingPressureChamber)
      {
         listOfHistoryVolumes.insert(ii);
         m_circuitData->components.at(ii)->hasHistoryVolume = true;
@@ -183,7 +183,7 @@ void NetlistSubcircuit::getMapOfTrackedVolumesToCorrectComponents()
   for (int ii=0; ii<m_circuitData->numberOfComponents; ii++)
   {
      // Check for VolumeTrackingPressureChambers, as these need volume tracking (for computing the current pressure, via the compliance/elastance).
-     if(m_circuitData->components.at(ii)->type == Component_VolumeTrackingPressureChamber)
+     if(m_circuitData->components.at(ii)->getType() == Component_VolumeTrackingPressureChamber)
      {
         listOfTrackedVolumes.insert(ii);
         m_circuitData->components.at(ii)->hasTrackedVolume = true;
@@ -214,7 +214,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
           // bool componentIsOpenDiode = (m_circuitData->components.at(ll)->type == Component_Diode &&
           //                              m_circuitData->components.at(ll)->hasNonnegativePressureGradientAndNoBackflow());
           // open diodes are just implemented as zero-resistance resistors, closed diodes are zero-resistance resistors with prescribed zero flow
-          if ((*component)->type == Component_Resistor || (*component)->type == Component_Diode)
+          if ((*component)->getType() == Component_Resistor || (*component)->getType() == Component_Diode)
           {
             // insert resistor(-eqsue) relationship into equation system
             int startNode = (*component)->startNode->indexInInputData;
@@ -228,7 +228,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
           }
-          else if ((*component)->type == Component_Capacitor)
+          else if ((*component)->getType() == Component_Capacitor)
           {
             // insert capacitor relationship into equation system
             int startNode = (*component)->startNode->indexInInputData;
@@ -244,7 +244,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             errFlag = MatSetValue(m_systemMatrix,row,nodeIndexToPressureHistoryNodeOrderingMap.at(endNode)+m_circuitData->numberOfPressureNodes,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
           }
-          else if ((*component)->type == Component_Inductor)
+          else if ((*component)->getType() == Component_Inductor)
           {
             // insert inductor relationship into equation system
             int startNode = (*component)->startNode->indexInInputData;
@@ -259,7 +259,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             errFlag = MatSetValue(m_systemMatrix,row,componentIndexToFlowHistoryComponentOrderingMap.at(indexOfThisComponentsFlow)+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures+m_circuitData->numberOfComponents,currentParameterValue/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
           }
-          else if ((*component)->type == Component_VolumeTrackingPressureChamber)
+          else if ((*component)->getType() == Component_VolumeTrackingPressureChamber)
           {
             // Two equations are needed for the VolumeTrackingPressureChamber:
             // 1) dVolume/dt = flow

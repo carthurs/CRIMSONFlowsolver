@@ -16,7 +16,6 @@ class CircuitPressureNode;
 class CircuitComponent
 {
 public:
-	circuit_component_t type;
 	boost::shared_ptr<CircuitPressureNode> startNode;
 	// bool m_startNodeConnectsToDiode;
 	// boost::shared_ptr<CircuitPressureNode> startNodeIfNeighbouringDiodeExistsAndIsOpen;
@@ -48,7 +47,7 @@ public:
 	: m_hstep(hstep),
 	  m_thisIsARestartedSimulation(thisIsARestartedSimulation)
 	{
-		type = Component_Null;
+		m_type = Component_Null;
 		prescribedFlowType = Flow_Null;
 		hasHistoryFlow = false;
 		m_entireFlowHistory.reserve(m_hstep);
@@ -82,7 +81,10 @@ public:
 	void setConnectsToNodeAtInterface();
 	void enableDiodeFlow();
 	void disableDiodeFlow();
+	circuit_component_t& getType();
 private:
+	circuit_component_t m_type;
+
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
 	bool m_connectsToNodeAtInterface;

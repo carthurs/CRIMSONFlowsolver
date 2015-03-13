@@ -171,7 +171,7 @@ TEST_F(testMultidom, checkNetlistComponentNeighbourPointers)
 			// note that we're checking this component:
 			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) = true;
 			// check the type is as expected
-			EXPECT_TRUE(currentComponent.lock()->type == expectedComponentTypes.top());
+			EXPECT_TRUE(currentComponent.lock()->getType() == expectedComponentTypes.top());
 			expectedComponentTypes.pop();
 			// check the number of neighbours is as expected
 			EXPECT_EQ(currentComponent.lock()->neighbouringComponentsAtEndNode.size(), expectedEndNodeNeighbourCounts.top());

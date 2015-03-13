@@ -31,7 +31,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 	{
 		// get the resistor:
 		boost::shared_ptr<CircuitComponent> resistor = boundaryCondition->getComponentByInputDataIndex(nodeOrComponentIndex);
-		assert(resistor->type == Component_Resistor);
+		assert(resistor->getType() == Component_Resistor);
 
 		double* resistanceToControl = &(resistor->currentParameterValue);
 
@@ -42,7 +42,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 	{
 		// get the capacitor:
 		boost::shared_ptr<CircuitComponent> capacitor = boundaryCondition->getComponentByInputDataIndex(nodeOrComponentIndex);
-		assert(capacitor->type == Component_Capacitor);
+		assert(capacitor->getType() == Component_Capacitor);
 
 		double* complianceToControl = &(capacitor->currentParameterValue);
 

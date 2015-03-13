@@ -19,7 +19,7 @@ public:
 	    m_numberOfDiodes = 0;
 	    for (auto component = circuitDescription.components.begin(); component != circuitDescription.components.end(); component++)
 	    {
-	        if ((*component)->type == Component_Diode)
+	        if ((*component)->getType() == Component_Diode)
 	        {
 	            m_diodeIndexingMap.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (m_numberOfDiodes, *component));
 	            m_numberOfDiodes++;

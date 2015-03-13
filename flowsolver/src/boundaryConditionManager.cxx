@@ -790,11 +790,12 @@ void boundaryConditionManager::createControlSystems()
     }
   }
 
-  // int boundaryConditionIndex = ???
-  // int capacitorIndex = ???
-  // mp_controlSystemsManager->createParameterController(Controller_BleedCompliance, boundaryConditions.at(boundaryConditionIndex), capacitorIndex);
-  // int resistorIndex = ???
-  // mp_controlSystemsManager->createParameterController(Controller_BleedResistance, boundaryConditions.at(boundaryConditionIndex), resistorIndex);
+  // int boundaryConditionIndex = 1;
+  // int capacitorIndex = 2;
+  // auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryConditions.at(boundaryConditionIndex));
+  // // mp_controlSystemsManager->createParameterController(Controller_BleedCompliance, downcastNetlist, capacitorIndex);
+  // int resistorIndex = 3;
+  // mp_controlSystemsManager->createParameterController(Controller_BleedResistance, downcastNetlist, resistorIndex);
 
 }
 

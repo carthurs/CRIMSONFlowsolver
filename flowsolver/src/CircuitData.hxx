@@ -83,9 +83,11 @@ public:
 	circuit_component_t& getType();
 	double* getParameterPointer();
 	void setParameterValue(double const parameterValue);
+protected:
+	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 private:
 	circuit_component_t m_type;
-	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
+	
 
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;

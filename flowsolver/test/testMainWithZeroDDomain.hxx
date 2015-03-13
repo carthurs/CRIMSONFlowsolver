@@ -134,6 +134,7 @@
 				pureZeroDDriver.setDelt(inpdat.Delt[0]);
 			    pureZeroDDriver.setAlfi(timdat.alfi);
 			    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
+			    pureZeroDDriver.setNtout(1);
 
 				pureZeroDDriver.init();
 

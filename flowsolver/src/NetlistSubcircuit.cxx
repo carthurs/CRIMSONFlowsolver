@@ -277,7 +277,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             // Insert the volume history term:
             {
               int columnIndex = componentIndexToVolumeHistoryComponentOrderingMap.at(zeroIndexOfThisComponent) + numberOfTrackedVolumes + m_circuitData->numberOfPressureNodes + numberOfHistoryPressures + m_circuitData->numberOfComponents + numberOfHistoryFlows;
-              std::cout << "setting in NetlistSubcircuit.cxx row and column: " << row << " " << columnIndex << std::endl;
+              // std::cout << "setting in NetlistSubcircuit.cxx row and column: " << row << " " << columnIndex << std::endl;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
             row++; // done twice in this if-case, because there are 2 equations to create for the VolumeTrackingPressureChamber
@@ -389,8 +389,8 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      errFlag = MatAssemblyBegin(m_systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
      errFlag = MatAssemblyEnd(m_systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
-    std::cout << "System matrix for surface " << surfaceIndex << ":" << std::endl;
-     errFlag = MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "System matrix for surface " << surfaceIndex << ":" << std::endl;
+    //  errFlag = MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
      errFlag = MatLUFactor(m_systemMatrix,NULL,NULL,NULL);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
@@ -618,9 +618,9 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
     errFlag = VecAssemblyBegin(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    std::cout << "RHS for surface " << surfaceIndex << ":" << std::endl;
-    errFlag = VecView(RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    std::cout << "END RHS for surface " << surfaceIndex << std::endl;
+    // std::cout << "RHS for surface " << surfaceIndex << ":" << std::endl;
+    // errFlag = VecView(RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "END RHS for surface " << surfaceIndex << std::endl;
 
 }
 
@@ -692,8 +692,8 @@ void NetlistSubcircuit::computeCircuitLinearSystemSolution()
   }
   errFlag = MatMult(m_inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-  std::cout << "solutionVector for surface " << surfaceIndex << ":" << std::endl;
-  errFlag = VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+  // std::cout << "solutionVector for surface " << surfaceIndex << ":" << std::endl;
+  // errFlag = VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
 void NetlistSubcircuit::giveNodesTheirPressuresFromSolutionVector()

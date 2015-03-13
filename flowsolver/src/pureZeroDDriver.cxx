@@ -87,11 +87,18 @@ void PureZeroDDriver::setHstep(const int hstep)
 	m_hstepHasBeenSet = true;
 }
 
+void PureZeroDDriver::setNtout(const int ntout)
+{
+	m_ntout = ntout;
+	m_ntoutHasBeenSet = true;
+}
+
 void PureZeroDDriver::iter_init()
 {
 	std::cout << "============ Doing timestep number " << m_timestepNumber << " ============" << std::endl;
 	assert(m_alfiHasBeenSet);
 	assert(m_deltHasBeenSet);
+	assert(m_ntoutHasBeenSet);
 	m_zeroDDomainLPN->initialiseAtStartOfTimestep();
 	boundaryConditionManager_instance->initialiseLPNAtStartOfTimestep_netlist();
 	boundaryConditionManager_instance->updateAllControlSystems();
@@ -107,7 +114,7 @@ void PureZeroDDriver::iter_step()
 	for (int ii =0; ii<3; ii++)
 	{
 		m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
-		std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
+		// std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
 	}
 	m_zeroDDomainLPN->setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(m_pressuresOrFlowsAtBoundaries);
 	m_zeroDDomainLPN->setDpDqResistances(allNetlistBoundaryImplicitCoeffs);
@@ -116,10 +123,10 @@ void PureZeroDDriver::iter_step()
 
 	std::vector<double> boundaryPressures = m_zeroDDomainLPN->getBoundaryPressures();
 	std::vector<double> boundaryFlows = m_zeroDDomainLPN->getBoundaryFlows();
-	for (int ii =0; ii<3; ii++)
-	{
-		std::cout << "Gave Boundary Conditions: " << ii << " " << boundaryPressures.at(ii) << " " << boundaryFlows.at(ii) << std::endl;
-	}
+	// for (int ii =0; ii<3; ii++)
+	// {
+	// 	std::cout << "Gave Boundary Conditions: " << ii << " " << boundaryPressures.at(ii) << " " << boundaryFlows.at(ii) << std::endl;
+	// }
 	placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(boundaryPressures, boundaryFlows);
 
 }
@@ -132,7 +139,11 @@ void PureZeroDDriver::iter_finalize()
 	
 	boundaryConditionManager_instance->updateAllNetlistLPNs();
 	boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_netlists();
-	boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
+	bool thisIsAWritingStep = ( m_timestepNumber % m_ntout == 0);
+	if (thisIsAWritingStep)
+	{
+		boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
+	}
 
 	m_timestepNumber++;
 }
@@ -157,7 +168,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveToBoundaryCond
 
 void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement()
 {
-	std::cout << "mp_interfaceFlowsToBeReadBy3DDomainReplacement & mp_interfacePressuresToBeReadBy3DDomainReplacement:" << std::endl;
+	// std::cout << "mp_interfaceFlowsToBeReadBy3DDomainReplacement & mp_interfacePressuresToBeReadBy3DDomainReplacement:" << std::endl;
 	{
 		auto boundaryPressureOrFlow = m_pressuresOrFlowsAtBoundaries.begin();
 		int boundaryConditionIndex = 0;
@@ -183,7 +194,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 				errorMessage << "EE: Internal error in PureZeroDDriver." << std::endl;
 				throw std::logic_error(errorMessage.str());
 			}
-			std::cout << mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] << " " << mp_interfacePressuresToBeReadBy3DDomainReplacement[boundaryConditionIndex] << std::endl;
+			// std::cout << mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] << " " << mp_interfacePressuresToBeReadBy3DDomainReplacement[boundaryConditionIndex] << std::endl;
 
 
 			// Loop housekeeping:

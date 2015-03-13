@@ -16,6 +16,7 @@ public:
 		m_deltHasBeenSet = false;
 		m_alfiHasBeenSet = false;
 		m_hstepHasBeenSet = false;
+		m_ntoutHasBeenSet = false;
 	}
 	void init();
 	void iter_init();
@@ -26,6 +27,7 @@ public:
 	void setDelt(const double delt);
 	void setAlfi(const double alfi);
 	void setHstep(const int hstep);
+	void setNtout(const int ntout);
 
 private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make
@@ -46,10 +48,12 @@ private:
 	double m_alfi;
 	double m_delt;
 	int m_hstep;
+	int m_ntout;
 
 	bool m_deltHasBeenSet;
 	bool m_alfiHasBeenSet;
 	bool m_hstepHasBeenSet;
+	bool m_ntoutHasBeenSet;
 
 	void placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(std::vector<double> boundaryPressures, std::vector<double> boundaryFlows);
 	void placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();

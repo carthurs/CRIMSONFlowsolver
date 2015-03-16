@@ -56,13 +56,13 @@ std::pair<double,double> NetlistBoundaryCondition::computeImplicitCoefficients(c
 std::pair<boundary_data_t,double> NetlistBoundaryCondition::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
 {
     std::pair<boundary_data_t,double> pressureOrFlowToReturn;
-    mp_NetlistCircuit->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber);
+    pressureOrFlowToReturn = mp_NetlistCircuit->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber);
     return pressureOrFlowToReturn;
 }
 
-void NetlistBoundaryCondition::updateLPN()
+void NetlistBoundaryCondition::updateLPN(const int timestepNumber)
 {
-    mp_NetlistCircuit->updateLPN();
+    mp_NetlistCircuit->updateLPN(timestepNumber);
 }
 
 void NetlistBoundaryCondition::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)

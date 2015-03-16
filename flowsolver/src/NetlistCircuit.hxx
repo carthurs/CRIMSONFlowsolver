@@ -63,7 +63,7 @@ public:
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
-	void updateLPN();
+	void updateLPN(const int timestepNumber);
 
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
@@ -133,7 +133,7 @@ public:
 	std::vector<double> getBoundaryPressures();
 	std::vector<double> getBoundaryFlows();
 	void solveSystem(const int timestepNumber);
-	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients);
+	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 	void createCircuitDescription();
 private:
 	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);

@@ -113,11 +113,15 @@ void PureZeroDDriver::iter_step()
 	std::map<int,std::pair<double,double>> allNetlistBoundaryImplicitCoeffs = boundaryConditionManager_instance->getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement();
 	for (int ii =0; ii<3; ii++)
 	{
-		m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
+		if (m_pressuresOrFlowsAtBoundaries.at(ii).first == Boundary_Pressure)
+		{
+			assert(!isnan(allNetlistBoundaryImplicitCoeffs.at(ii).second));
+			m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
+		}
 		// std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
 	}
 	m_zeroDDomainLPN->setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(m_pressuresOrFlowsAtBoundaries);
-	m_zeroDDomainLPN->setDpDqResistances(allNetlistBoundaryImplicitCoeffs);
+	m_zeroDDomainLPN->setDpDqResistances(allNetlistBoundaryImplicitCoeffs,m_pressuresOrFlowsAtBoundaries);
 	placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();
 	m_zeroDDomainLPN->solveSystem(m_timestepNumber);
 
@@ -133,11 +137,11 @@ void PureZeroDDriver::iter_step()
 
 void PureZeroDDriver::iter_finalize()
 {
-	m_zeroDDomainLPN->updateLPN();
+	m_zeroDDomainLPN->updateLPN(m_timestepNumber);
 	m_zeroDDomainLPN->finalizeLPNAtEndOfTimestep();
 	m_zeroDDomainLPN->writePressuresFlowsAndVolumes(m_nextTimestepWrite_zeroDBoundaries_start);
 	
-	boundaryConditionManager_instance->updateAllNetlistLPNs();
+	boundaryConditionManager_instance->updateAllNetlistLPNs(m_timestepNumber);
 	boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_netlists();
 	bool thisIsAWritingStep = ( m_timestepNumber % m_ntout == 0);
 	if (thisIsAWritingStep)
@@ -162,7 +166,9 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveToBoundaryCond
 	for (int boundaryConditionIndex = 0; boundaryConditionIndex < boundaryConditionManager_instance->getNumberOfNetlistSurfaces(); boundaryConditionIndex++)
 	{
 		mp_interfaceFlowsToBeReadByBoundaryConditions[boundaryConditionIndex] = boundaryFlows.at(boundaryConditionIndex);
+		std::cout << "set flow: " << boundaryFlows.at(boundaryConditionIndex) << std::endl;
 		mp_interfacePressuresToBeReadByBoundaryConditions[boundaryConditionIndex] = boundaryPressures.at(boundaryConditionIndex);
+		std::cout << "set pressure: " << boundaryPressures.at(boundaryConditionIndex) << std::endl;
 	}
 }
 
@@ -176,6 +182,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 		{
 			if (boundaryPressureOrFlow->first == Boundary_Flow)
 			{
+				assert(!isnan(boundaryPressureOrFlow->second));
 				mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] = boundaryPressureOrFlow->second;
 				// Set NaN in the pressure storage for this point, so that we notice if we accidentally read it for this surface!
 				// (we should only ever read the flow at location boundaryConditionIndex)
@@ -183,6 +190,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 			}
 			else if (boundaryPressureOrFlow->first == Boundary_Pressure)
 			{
+				assert(!isnan(boundaryPressureOrFlow->second));
 				mp_interfacePressuresToBeReadBy3DDomainReplacement[boundaryConditionIndex] = boundaryPressureOrFlow->second;
 				// Set NaN in the flow storage for this point, so that we notice if we accidentally read it for this surface!
 				mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] = NAN;

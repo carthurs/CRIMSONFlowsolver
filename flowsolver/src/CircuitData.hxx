@@ -339,11 +339,15 @@ public:
 	bool hasPrescribedPressureAcrossInterface() const;
 	void initialiseNodesAndComponentsAtInterface_vector(std::vector<int> threeDInterfaceNodeIndices);
 	void setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>>& boundaryFlowsOrPressuresAsAppropriate);
+	boost::shared_ptr<CircuitComponent> getDpDqResistorByIndex(int index);
+	void addToMapOfDpDqResistors(int indexOfResistor, boost::shared_ptr<CircuitComponent> dpDqResistor);
+	bool isADpDqResistor(const int componentIndex);
 private:
 	bool isNodeAtBoundaryInterface(int nodeIndex);
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	void givePrescribedPressureToBoundaryNode(int nodeIndex, double prescribedPressure);
 	void givePrescribedFlowToBoundaryComponent(int componentIndex, double prescribedFlow);
+	std::map<int,boost::shared_ptr<CircuitComponent>> m_mapOfDpDqResistors;
 
 };
 

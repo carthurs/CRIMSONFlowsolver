@@ -868,7 +868,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 			if (flowNewlyPrescribedAtThisBoundary)
 			{
 				std::cout << "Switching to Dirichlet in zero-D domain replacement!" << std::endl;
-				// Remove the node at the 3D interface from the list of those with prescribed pressure:
+				// Remove the node at the interface from the list of those with prescribed pressure:
 				for (auto node=mapOfPrescribedPressureNodes.begin(); node!=mapOfPrescribedPressureNodes.end(); node++)
 				{
 					if (node->first == toOneIndexing(componentAtBoundaryIndex))
@@ -879,7 +879,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 					}
 				}
 
-				// Add the component at the 3D interface to the list of those with prescribed flow:
+				// Add the component at the interface to the list of those with prescribed flow:
 				for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 				{
 					if (component->first == toOneIndexing(componentAtBoundaryIndex))
@@ -891,8 +891,8 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 				}
 
 				// Update the counts of each type of prescription (in switching to a Neumann condition, we're now
-				// giving a prescribed pressure to the 3D domain, which means this boundary condition will be
-				// receiving a flow back from the 3D domain to prescribe at the LPN interface, instead of the
+				// giving a prescribed pressure to the domain, which means this boundary condition will be
+				// receiving a flow back from the domain to prescribe at the LPN interface, instead of the
 				// pressure it was previously receiving under Dirichlet conditions. These counters therefore
 				// need updating.)
 				numberOfPrescribedPressures--;
@@ -912,7 +912,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 			if (pressureNewlyPrescribedAtThisBoundary)
 			{
 				std::cout << "Switching to Neumann in zero-D domain replacement!" << std::endl;
-				// Add the node at the 3D interface to the list of those with prescribed pressure:
+				// Add the node at the interface to the list of those with prescribed pressure:
 				for (auto node=mapOfPressureNodes.begin(); node!=mapOfPressureNodes.end(); node++)
 				{
 					if (node->first == toOneIndexing(componentAtBoundaryIndex))
@@ -923,7 +923,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 					}
 				}
 
-				// Remove the component at the 3D interface from the list of those with prescribed flow:
+				// Remove the component at the interface from the list of those with prescribed flow:
 				for (auto component=mapOfPrescribedFlowComponents.begin(); component!=mapOfPrescribedFlowComponents.end(); component++)
 				{
 					if (component->first == toOneIndexing(componentAtBoundaryIndex))
@@ -935,8 +935,8 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 				}
 
 				// Update the counts of each type of prescription (in switching to a Neumann condition, we're now
-				// giving a prescribed flow to the 3D domain, which means this boundary condition will be
-				// receiving a pressure back from the 3D domain to prescribe at the LPN interface, instead of the
+				// giving a prescribed flow to the domain, which means this boundary condition will be
+				// receiving a pressure back from the domain to prescribe at the LPN interface, instead of the
 				// flow it was previously receiving under Neumann conditions. These counters therefore
 				// need updating.)
 				numberOfPrescribedPressures++;
@@ -968,4 +968,19 @@ void Netlist3DDomainReplacementCircuitData::givePrescribedPressureToBoundaryNode
 void Netlist3DDomainReplacementCircuitData::givePrescribedFlowToBoundaryComponent(int componentIndex, double prescribedFlow)
 {
 	mapOfComponents.at(componentIndex)->flow = prescribedFlow;
+}
+
+boost::shared_ptr<CircuitComponent> Netlist3DDomainReplacementCircuitData::getDpDqResistorByIndex(int index)
+{
+	return m_mapOfDpDqResistors.at(index);
+}
+
+void Netlist3DDomainReplacementCircuitData::addToMapOfDpDqResistors(int indexOfResistor, boost::shared_ptr<CircuitComponent> dpDqResistor)
+{
+	m_mapOfDpDqResistors.insert(std::make_pair(indexOfResistor,dpDqResistor));
+}
+
+bool Netlist3DDomainReplacementCircuitData::isADpDqResistor(const int componentIndex)
+{
+	return (m_mapOfDpDqResistors.count(componentIndex) == 1);
 }

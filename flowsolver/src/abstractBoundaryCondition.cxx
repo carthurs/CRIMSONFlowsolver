@@ -1,5 +1,6 @@
 #include "abstractBoundaryCondition.hxx"
 #include <stdexcept>
+#include <cmath>
 
 
 // Statics
@@ -22,30 +23,56 @@ double abstractBoundaryCondition::getdp_dq()
 //     LPNInflowPressure = inflowPressure;
 // }
 
+bool abstractBoundaryCondition::flowPermittedAcross3DInterface()
+{
+  // This is only ever false in some cases, where some subclass of abstractBoundaryCondition overrides this method.
+  return true;
+}
+
 void abstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNumber)
 {
-  std::pair<double,double> temp;
+  if (flowPermittedAcross3DInterface())
+  {
+    std::pair<double,double> temp;
 
-  double timeAtStepNplus1 = delt*((double)timestepNumber+alfi_local);
-  double alfi_delt = alfi_local*delt;
+    double timeAtStepNplus1 = delt*((double)timestepNumber+alfi_local);
+    double alfi_delt = alfi_local*delt;
 
-  temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
+    temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
 
-  dp_dq = temp.first;
-  Hop = temp.second;
+    dp_dq = temp.first;
+    Hop = temp.second;
+  }
+  else
+  {
+    // else this is a case where the boundary conditions are Dirichlet, so the Hop and dp_dq will not be used.
+    // Set them to NaN, defensively.
+    dp_dq = NAN;
+    Hop = NAN;
+  }
 }
 
 void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNumber)
 {
-  std::pair<double,double> temp;
+  if (flowPermittedAcross3DInterface())
+  {
+    std::pair<double,double> temp;
 
-  double timeAtStepNplus1 = delt*((double)timestepNumber+1.0);
-  double alfi_delt = delt;
+    double timeAtStepNplus1 = delt*((double)timestepNumber+1.0);
+    double alfi_delt = delt;
 
-  temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
+    temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
 
-  dp_dq_n1 = temp.first;
-  Hop_n1 = temp.second;
+    dp_dq_n1 = temp.first;
+    Hop_n1 = temp.second;
+  }
+  else
+  {
+    // else this is a case where the boundary conditions are Dirichlet, so the Hop and dp_dq will not be used.
+    // Set them to NaN, defensively.
+    dp_dq_n1 = NAN;
+    Hop_n1 = NAN;
+  }
 }
 
 void abstractBoundaryCondition::updatePressureAndFlowHistory()

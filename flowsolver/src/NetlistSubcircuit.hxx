@@ -37,7 +37,7 @@ public:
 		errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	}
 
-	void updateInternalPressuresVolumesAndFlows();
+	void updateInternalPressuresVolumesAndFlows(const int timestepNumber);
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	
@@ -59,13 +59,13 @@ private:
 	void getMapOfTrackedVolumesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
-	void computeCircuitLinearSystemSolution();
+	void computeCircuitLinearSystemSolution(const int timestepNumber);
 	void giveNodesTheirPressuresFromSolutionVector();
 	void giveComponentsTheirFlowsFromSolutionVector();
 	void giveComponentsTheirVolumesFromSolutionVector();
 	void giveComponentsTheirProposedVolumesFromSolutionVector();
 	std::vector<double> getVolumesFromSolutionVector();
-	bool areThereNegativeVolumes();
+	bool areThereNegativeVolumes(const int timestepNumber);
 
 	bool m_thisIsA3DDomainReplacement;
 

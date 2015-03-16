@@ -506,22 +506,22 @@ extern "C" void callCPPInitialiseLPNAtStartOfTimestep_netlist()
 }
 
 
-void boundaryConditionManager::updateAllNetlistLPNs()
+void boundaryConditionManager::updateAllNetlistLPNs(const int timestepNumber)
 {
   for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
   {
     auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     if (downcastNetlist != NULL)
     {
-      downcastNetlist->updateLPN();
+      downcastNetlist->updateLPN(timestepNumber);
     }
   }
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPUpdateAllNetlistLPNs()
+extern "C" void callCPPUpdateAllNetlistLPNs(int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->updateAllNetlistLPNs();
+  boundaryConditionManager_instance->updateAllNetlistLPNs(timestepNumber);
 }
 
 std::map<int,std::pair<double,double>> boundaryConditionManager::getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement()

@@ -174,8 +174,9 @@ module cpp_interface
     end interface
 
     interface
-            subroutine callCPPUpdateAllNetlistLPNs() bind(c,name="callCPPUpdateAllNetlistLPNs")
+            subroutine callCPPUpdateAllNetlistLPNs(timestepNumber) bind(c,name="callCPPUpdateAllNetlistLPNs")
                 use iso_c_binding
+                integer(c_int) :: timestepNumber
             end subroutine callCPPUpdateAllNetlistLPNs
     end interface
 

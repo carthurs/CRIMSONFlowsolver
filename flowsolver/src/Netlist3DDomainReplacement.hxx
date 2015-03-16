@@ -27,12 +27,12 @@ public:
 
 	void initialiseModel();
 	void initialiseAtStartOfTimestep();
-	void updateLPN();
+	void updateLPN(const int timestepNumber);
 	void finalizeLPNAtEndOfTimestep();
 
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_zeroDBoundaries_start);
 
-	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients);
+	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 
 private:
 	boost::shared_ptr<NetlistZeroDDomainCircuit> mp_NetlistZeroDDomainCircuit;

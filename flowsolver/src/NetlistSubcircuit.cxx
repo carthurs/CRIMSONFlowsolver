@@ -530,6 +530,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
               double* flowPointerToSet = flow_n_ptrs.at(prescribedFlowComponent->second->prescribedFlowPointerIndex);
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
               double threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
+              assert(!isnan(threeDFlowValue));
               // Give the (possibly sign-corrected) flow to the linear system:
   	          errFlag = VecSetValue(RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               // nextFlowPointerIndex++;
@@ -624,9 +625,9 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
 
 }
 
-void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows()
+void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows(const int timestepNumber)
 {
-    computeCircuitLinearSystemSolution();
+    computeCircuitLinearSystemSolution(timestepNumber);
 
     // Get the updated nodal pressures:
     giveNodesTheirPressuresFromSolutionVector();
@@ -661,37 +662,42 @@ void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows()
     // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInSubcircuit(2))/1.2862d5 - this%flowsInSubcircuit(1)
 }
 
-void NetlistSubcircuit::computeCircuitLinearSystemSolution()
+void NetlistSubcircuit::computeCircuitLinearSystemSolution(const int timestepNumber)
 {
-  PetscErrorCode errFlag;
+  buildAndSolveLinearSystem(timestepNumber);
+  // PetscErrorCode errFlag;
 
-  int nextFlowPointerIndex = 0;
-  int nextPressurePointerIndex = 0;
+  // // int nextFlowPointerIndex = 0;
+  // // int nextPressurePointerIndex = 0;
 
-  if (m_circuitData->connectsTo3DDomain() && !m_thisIsA3DDomainReplacement)
-  {
-    if (m_circuitData->hasPrescribedFlowAcrossInterface()) // Neumann condition
-    {
-       assert(!m_circuitData->hasPrescribedPressureAcrossInterface());
-       double* flowPointerToSet = flow_n_ptrs.at(nextFlowPointerIndex);
-       errFlag = VecSetValue(RHS,columnIndexOf3DInterfaceFlowInLinearSystem.at(0),*flowPointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag); //\todo make this write to the correct entry of RHS, dynamically, and read the correct pointer when there are multiple netlist LPNs
-       nextFlowPointerIndex++;
-    }
-    else if (m_circuitData->hasPrescribedPressureAcrossInterface())
-    {
-       double* pressurePointerToSet = pressure_n_ptrs.at(nextPressurePointerIndex);
-       errFlag = VecSetValue(RHS,columnIndexOf3DInterfacePressureInLinearSystem.at(0),*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-       nextPressurePointerIndex++;
-    }
-    else
-    {
-      std::stringstream errorMessage;
-      errorMessage << "EE: Internal error. Failed to prescribe either pressure or flow at the interface in a Netlist boundary condition." << std::endl;
-      throw std::logic_error(errorMessage.str());
-    }
-  }
-  errFlag = MatMult(m_inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
+  // if (m_circuitData->connectsTo3DDomain() && !m_thisIsA3DDomainReplacement)
+  // {
+  //   if (m_circuitData->hasPrescribedFlowAcrossInterface()) // Neumann condition
+  //   {
+  //      assert(!m_circuitData->hasPrescribedPressureAcrossInterface());
+  //      // double* flowPointerToSet = flow_n_ptrs.at(nextFlowPointerIndex);
+  //      double* flowPointerToSet = flow_n_ptrs.at(0);
+  //      errFlag = VecSetValue(RHS,columnIndexOf3DInterfaceFlowInLinearSystem.at(0),*flowPointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag); //\todo make this write to the correct entry of RHS, dynamically, and read the correct pointer when there are multiple netlist LPNs
+  //      // nextFlowPointerIndex++;
+  //   }
+  //   else if (m_circuitData->hasPrescribedPressureAcrossInterface())
+  //   {
+  //      // double* pressurePointerToSet = pressure_n_ptrs.at(nextPressurePointerIndex);
+  //     double* pressurePointerToSet = pressure_n_ptrs.at(0);
+  //      errFlag = VecSetValue(RHS,columnIndexOf3DInterfacePressureInLinearSystem.at(0),*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+  //      // nextPressurePointerIndex++;
+  //   }
+  //   else
+  //   {
+  //     std::stringstream errorMessage;
+  //     errorMessage << "EE: Internal error. Failed to prescribe either pressure or flow at the interface in a Netlist boundary condition." << std::endl;
+  //     throw std::logic_error(errorMessage.str());
+  //   }
+  // }
+  // errFlag = MatMult(m_inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+  // PetscErrorCode errFlag;
   // std::cout << "solutionVector for surface " << surfaceIndex << ":" << std::endl;
   // errFlag = VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
@@ -707,6 +713,13 @@ void NetlistSubcircuit::giveNodesTheirPressuresFromSolutionVector()
   for (int ll=0; ll<m_circuitData->numberOfPressureNodes; ll++)
   {
       errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&pressuresInSubcircuit[ll]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      // std::cout << "system matrix: " << surfaceIndex << std::endl;
+      // MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD);
+      // std::cout << "RHS: " << std::endl;
+      // VecView(RHS,PETSC_VIEWER_STDOUT_WORLD);
+      // std::cout << "solution vec: " << std::endl;
+      // VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD);
+      assert(!isnan(pressuresInSubcircuit[ll]));
       m_circuitData->mapOfPressureNodes.at(toOneIndexing(ll))->setPressure(pressuresInSubcircuit[ll]);
   }
 }
@@ -722,6 +735,7 @@ void NetlistSubcircuit::giveComponentsTheirFlowsFromSolutionVector()
   for (int ll=firstFlowIndex; ll<m_circuitData->numberOfComponents+firstFlowIndex; ll++)
   {
       errFlag = VecGetValues(solutionVector,getSingleValue,&ll,&flowsInSubcircuit[ll-firstFlowIndex]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      assert(!isnan(flowsInSubcircuit[ll-firstFlowIndex]));
       m_circuitData->mapOfComponents.at(toOneIndexing(ll-firstFlowIndex))->flow = flowsInSubcircuit[ll-firstFlowIndex];
   }
 }
@@ -738,6 +752,7 @@ void NetlistSubcircuit::giveComponentsTheirVolumesFromSolutionVector()
       // Ensure we aren't dealing with negative volumes:
       //\todo REINSTATE!
       // assert(volumes.back() >= 0.0);
+      assert(!isnan(volumes.back()));
 
       currentPressureChamber->setStoredVolume(volumes.back());
       volumes.pop_back();
@@ -854,7 +869,7 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
       {
         buildAndSolveLinearSystem(timestepNumber);
 
-        solutionVectorMightHaveNegativeVolumes = areThereNegativeVolumes();
+        solutionVectorMightHaveNegativeVolumes = areThereNegativeVolumes(timestepNumber);
 
         safetyCounter++;
         if (safetyCounter > 1 && safetyCounter < 5)
@@ -880,8 +895,8 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
     
 
     PetscScalar valueFromRHS;
-    if (columnIndexOf3DInterfaceFlowInLinearSystem.size()!=0) //\todo remove this hack and have the mat/vecgetvalues unguarded here!!
-    {
+    // if (columnIndexOf3DInterfaceFlowInLinearSystem.size()!=0) //\todo remove this hack and have the mat/vecgetvalues unguarded here!!
+    // {
       errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
       returnValue.first = valueFromInverseOfSystemMatrix;
 
@@ -889,13 +904,20 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
       PetscScalar valueFromSolutionVector;
       errFlag = VecGetValues(solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
       returnValue.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
-    }
-    else
-    {
-      returnValue.first = DBL_MAX;
-      returnValue.second = 0.0;
-    }
+    // }
+    // else
+    // {
+    //   returnValue.first = DBL_MAX;
+    //   returnValue.second = 0.0;
+    // }
     
+    std::cout << "m_inverseOfSystemMatrix: "<< std::endl;
+    MatView(m_inverseOfSystemMatrix,PETSC_VIEWER_STDOUT_WORLD);
+    std::cout << "solution vector: "<< std::endl;
+    VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD);
+    std::cout << "RHS vector: "<< std::endl;
+    VecView(RHS,PETSC_VIEWER_STDOUT_WORLD);
+    std::cout << "and just set " << returnValue.first << " " <<returnValue.second << std::endl;
 
 
     return returnValue;
@@ -903,9 +925,9 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
 
 // This subroutine detects whether the last circuit linear system solve was invalid due to its producing negative
 // volumes. The returned bool can be used to enforce a re-solve, with any negative pressures re-prescribed to be zero.
-bool NetlistSubcircuit::areThereNegativeVolumes()
+bool NetlistSubcircuit::areThereNegativeVolumes(const int timestepNumber)
 {
-  computeCircuitLinearSystemSolution();
+  computeCircuitLinearSystemSolution(timestepNumber);
   // These volumes are "proposed", because if any are negative, we 
   // re-solve with zero-volume prescribed
   giveComponentsTheirProposedVolumesFromSolutionVector();

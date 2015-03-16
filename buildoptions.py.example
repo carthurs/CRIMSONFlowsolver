@@ -33,7 +33,7 @@ EXTRA_CONSOLE_OUTPUT_ON = 0
 # if MAKE_OPTIMIZED==1:
    # DEBUG_FLAGS     = ['']
    # DEBUG_FFLAGS    = ['']
-OPT_FLAGS       = ['-O3', '-std=c++0x']
+OPT_FLAGS       = ['-O3', '-std=c++0x', '-DNDEBUG']
 OPT_FFLAGS      = ['-O3','-align','array64byte','-fpp','-D\'EXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)+'\'']
    #LINK_EXE        = '$(F90) -nofor-main -cxxlib -o'
    ##LINK_EXE        = $(CXX) -o

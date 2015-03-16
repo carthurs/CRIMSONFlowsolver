@@ -477,11 +477,11 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
     return implicitCoefficients;
 }
 
-void NetlistCircuit::updateLPN()
+void NetlistCircuit::updateLPN(const int timestepNumber)
 {
     for (auto activeSubcircuit = mp_activeSubcircuits.begin(); activeSubcircuit != mp_activeSubcircuits.end(); activeSubcircuit++)
     {
-        (*activeSubcircuit)->updateInternalPressuresVolumesAndFlows();
+        (*activeSubcircuit)->updateInternalPressuresVolumesAndFlows(timestepNumber);
     }
 }
 
@@ -835,11 +835,17 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
 
     // std::vector<double> componentParameterValues(m_numberOfNetlistsUsedAsBoundaryConditions, m_oneResistanceToGiveEachResistor);
     // componentParameterValues.push_back(m_elastanceToGiveVolumeTrackingPressureChamber);
+
+    boost::shared_ptr<Netlist3DDomainReplacementCircuitData> downcastDomainReplacementCircuitData = boost::dynamic_pointer_cast<Netlist3DDomainReplacementCircuitData> (mp_CircuitDescription);
+    downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(1,downcastDomainReplacementCircuitData->components.at(0));
+    downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(2,downcastDomainReplacementCircuitData->components.at(1));
+    downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(3,downcastDomainReplacementCircuitData->components.at(2));
     
     std::vector<double> componentParameterValues;
-    componentParameterValues.push_back(NAN);
-    componentParameterValues.push_back(NAN);
-    componentParameterValues.push_back(NAN);
+    double initialResistanceForDpDqResistors = 0.0;
+    componentParameterValues.push_back(initialResistanceForDpDqResistors);
+    componentParameterValues.push_back(initialResistanceForDpDqResistors);
+    componentParameterValues.push_back(initialResistanceForDpDqResistors);
     componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
@@ -1059,20 +1065,28 @@ void NetlistZeroDDomainCircuit::solveSystem(const int timestepNumber)
 	mp_activeSubcircuits.at(0)->buildAndSolveLinearSystem(timestepNumber);
 }
 
-void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients)
+void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries)
 {
+    int dpDqResistorIndex=0;
     for (auto component=mp_CircuitDescription->components.begin(); component!=mp_CircuitDescription->components.end(); component++)
     {
-        if ((*component)->indexInInputData <= 3)
+        boost::shared_ptr<Netlist3DDomainReplacementCircuitData> downcastDomainReplacementCircuitData = boost::dynamic_pointer_cast<Netlist3DDomainReplacementCircuitData> (mp_CircuitDescription);
+        if (downcastDomainReplacementCircuitData->isADpDqResistor((*component)->indexInInputData)) // these are the extra resistors added for the zeroD domain replacement. Needs making generic (set for 3 outlets here!)
         {
-            // the component indexInInputData needs to be converted to zero-indexing:
-            double potentialResistance = allImplicitCoefficients.at((*component)->indexInInputData-1).first;
-
-            if (potentialResistance == 0.0)
+            bool boundaryCurrentlyUsesDpDqResistance = (pressuresOrFlowsAtBoundaries.at(dpDqResistorIndex).first == Boundary_Pressure);
+            if (boundaryCurrentlyUsesDpDqResistance)
             {
-                potentialResistance = 0.000001;
+                // the component indexInInputData needs to be converted to zero-indexing:
+                double potentialResistance = allImplicitCoefficients.at((*component)->indexInInputData-1).first;
+                assert(!isnan(potentialResistance));
+
+                if (potentialResistance == 0.0)
+                {
+                    potentialResistance = 0.000001;
+                }
+                (*component)->setParameterValue(potentialResistance);
             }
-            (*component)->setParameterValue(potentialResistance);
+            dpDqResistorIndex++;
         }
     }
 }

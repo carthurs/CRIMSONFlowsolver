@@ -30,10 +30,10 @@ void Netlist3DDomainReplacement::initialiseAtStartOfTimestep()
     mp_NetlistZeroDDomainCircuit->initialiseAtStartOfTimestep();
 }
 
-void Netlist3DDomainReplacement::updateLPN()
+void Netlist3DDomainReplacement::updateLPN(const int timestepNumber)
 {
     // Idetify and construct the appropriate subcircuits for this timestep
-    mp_NetlistZeroDDomainCircuit->updateLPN();
+    mp_NetlistZeroDDomainCircuit->updateLPN(timestepNumber);
 }
 
 void Netlist3DDomainReplacement::finalizeLPNAtEndOfTimestep()
@@ -105,9 +105,9 @@ void Netlist3DDomainReplacement::setPointersToBoundaryPressuresAndFlows(double* 
 // 	return pressuresAndFlowsToGiveToBoundaryConditions;
 // }
 
-void Netlist3DDomainReplacement::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients)
+void Netlist3DDomainReplacement::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries)
 {
-    mp_NetlistZeroDDomainCircuit->setDpDqResistances(allImplicitCoefficients);
+    mp_NetlistZeroDDomainCircuit->setDpDqResistances(allImplicitCoefficients,pressuresOrFlowsAtBoundaries);
 }
 
 // void Netlist3DDomainReplacement::switchSurfaceToZeroFlow(const int& surfaceIndex)

@@ -56,6 +56,7 @@ class abstractBoundaryCondition
     }
 
     virtual void getPressureAndFlowPointersFromFortran();
+    virtual bool flowPermittedAcross3DInterface();
 
     virtual ~abstractBoundaryCondition()
     {

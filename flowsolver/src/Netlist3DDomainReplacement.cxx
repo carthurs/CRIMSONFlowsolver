@@ -114,3 +114,8 @@ void Netlist3DDomainReplacement::setDpDqResistances(std::map<int,std::pair<doubl
 // {
 
 // }
+
+boost::shared_ptr<NetlistZeroDDomainCircuit> Netlist3DDomainReplacement::getCircuit()
+{
+    return mp_NetlistZeroDDomainCircuit;
+}

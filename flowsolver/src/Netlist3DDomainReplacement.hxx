@@ -30,6 +30,8 @@ public:
 	void updateLPN(const int timestepNumber);
 	void finalizeLPNAtEndOfTimestep();
 
+	boost::shared_ptr<NetlistZeroDDomainCircuit> getCircuit();
+
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_zeroDBoundaries_start);
 
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);

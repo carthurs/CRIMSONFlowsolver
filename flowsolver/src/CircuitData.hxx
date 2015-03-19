@@ -2,6 +2,7 @@
 #define CIRCUITDATA_HXX_
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <iostream>
 #include <boost/shared_ptr.hpp>

@@ -15,7 +15,7 @@ module phcommonvars
     !.... parameters  IF YOU CHANGE THESE YOU HAVE TO CHANGE THEM IN
     !                  common_c.h ALSO
     !
-    parameter     ( MAXBLK = 5000, MAXTS = 100)
+    parameter     ( MAXBLK = 50000, MAXTS = 100)
     parameter     ( MAXSH = 32, NSD = 3 )
     parameter     ( maxtask = 256 ) ! this used to be in auxmpi.h
     !

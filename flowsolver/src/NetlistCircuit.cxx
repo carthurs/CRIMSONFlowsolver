@@ -2,6 +2,7 @@
 #include "fileReaders.hxx"
 #include "fileWriters.hxx"
 #include <boost/make_shared.hpp>
+#include "indexShifters.hxx"
 
 void NetlistCircuit::createCircuitDescription()
 {
@@ -805,31 +806,50 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // int centralNodeIndex = mp_CircuitDescription->numberOfComponents + 1;
     // std::vector<int> componentStartNodes(mp_CircuitDescription->numberOfComponents, centralNodeIndex);
 
-    std::vector<int> componentStartNodes;
-    componentStartNodes.push_back(6);
-    componentStartNodes.push_back(7);
-    componentStartNodes.push_back(8);
-    componentStartNodes.push_back(5);
-    componentStartNodes.push_back(5);
-    componentStartNodes.push_back(5);
-    componentStartNodes.push_back(5);
-
-    std::reverse(componentStartNodes.begin(), componentStartNodes.end()); // actually no point in this call, but it's tidier to leave it here for symmetry with the related calls below.
-
     // Deal out indices for the end nodes:
     std::vector<int> componentEndNodes;
-    // for (int component=0; component<mp_CircuitDescription->numberOfComponents; component++)
-    // {
-    // 	componentEndNodes.push_back(component+1);
-    // }
+    // First, do the end nodes for the dP/dQ resistors: those which are "past" the boundary, and have
+    // resistance coming from the "implicit coefficient" dP/dQ passed by the
+    // boundary condition to this zero-D domain. These are used to mirror the coupling
+    // method that would be used if the domain were 3D.
+    //
+    // These end-nodes themselves will receive the second implicit coefficient as the 
+    // pressure shift, on each time-step.
+    //
+    // (the domain is designed so that the
+    // dP/dQ resistors happen to have the same indices as their end-nodes)
+    for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; dpDqResistorIndex++)
+    {
+        componentEndNodes.push_back(dpDqResistorIndex);
+    }
+    // The next two node indices are used for the domain central node (it's basically star-shaped),
+    // and the end-node singleton for the bottom of the compliance chamber.
+    //
+    // Skip these two, and now do the end nodes for the resistors which represent
+    // the resistance of the 3D domain itself.
+    for (int internalDomainResistorEndNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 3; internalDomainResistorEndNodeIndex <= mp_CircuitDescription->numberOfPressureNodes; internalDomainResistorEndNodeIndex++)
+    {
+        componentEndNodes.push_back(internalDomainResistorEndNodeIndex);
+    }
+    // Finally, do the end-node at the base of the compliance chamber:
+    componentEndNodes.push_back(m_numberOfNetlistsUsedAsBoundaryConditions + 1);
 
-    componentEndNodes.push_back(1);
-    componentEndNodes.push_back(2);
-    componentEndNodes.push_back(3);
-    componentEndNodes.push_back(6);
-    componentEndNodes.push_back(7);
-    componentEndNodes.push_back(8);
-    componentEndNodes.push_back(4);
+
+    std::vector<int> componentStartNodes;
+    // All the components, except for the dP/dQ resistors, have the same
+    // start-node (the centre-point of the star-shape of this domain).
+    // We do the dP/dQ resistors first:
+    for (int dpDqResistorStartNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions+3; dpDqResistorStartNodeIndex <= mp_CircuitDescription->numberOfPressureNodes; dpDqResistorStartNodeIndex++)
+    {
+        componentStartNodes.push_back(dpDqResistorStartNodeIndex);
+    }
+    // All the other components share the same start node, at the centre of the star-shaped domain:
+    for (int componentIndex = m_numberOfNetlistsUsedAsBoundaryConditions+1; componentIndex <= mp_CircuitDescription->numberOfComponents; componentIndex++)
+    {
+        componentStartNodes.push_back(m_numberOfNetlistsUsedAsBoundaryConditions+2);
+    }
+
+    std::reverse(componentStartNodes.begin(), componentStartNodes.end()); // actually no point in this call, but it's tidier to leave it here for symmetry with the related calls below.
 
     std::reverse(componentEndNodes.begin(), componentEndNodes.end());
 
@@ -837,18 +857,31 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // componentParameterValues.push_back(m_elastanceToGiveVolumeTrackingPressureChamber);
 
     boost::shared_ptr<Netlist3DDomainReplacementCircuitData> downcastDomainReplacementCircuitData = boost::dynamic_pointer_cast<Netlist3DDomainReplacementCircuitData> (mp_CircuitDescription);
-    downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(1,downcastDomainReplacementCircuitData->components.at(0));
-    downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(2,downcastDomainReplacementCircuitData->components.at(1));
-    downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(3,downcastDomainReplacementCircuitData->components.at(2));
+    for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; dpDqResistorIndex++)
+    {
+        downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(dpDqResistorIndex,downcastDomainReplacementCircuitData->components.at(toZeroIndexing(dpDqResistorIndex)));    
+    }
+    // downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(1,downcastDomainReplacementCircuitData->components.at(0));
+    // downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(2,downcastDomainReplacementCircuitData->components.at(1));
+    // downcastDomainReplacementCircuitData->addToMapOfDpDqResistors(3,downcastDomainReplacementCircuitData->components.at(2));
     
     std::vector<double> componentParameterValues;
     double initialResistanceForDpDqResistors = 0.0;
-    componentParameterValues.push_back(initialResistanceForDpDqResistors);
-    componentParameterValues.push_back(initialResistanceForDpDqResistors);
-    componentParameterValues.push_back(initialResistanceForDpDqResistors);
-    componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
-    componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
-    componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
+    for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; dpDqResistorIndex++)
+    {
+        componentParameterValues.push_back(initialResistanceForDpDqResistors);
+    }
+    for (int internalDomainResistorIndex = 1; internalDomainResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; internalDomainResistorIndex++)
+    {
+        componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
+    }
+
+    // componentParameterValues.push_back(initialResistanceForDpDqResistors);
+    // componentParameterValues.push_back(initialResistanceForDpDqResistors);
+    // componentParameterValues.push_back(initialResistanceForDpDqResistors);
+    // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
+    // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
+    // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     componentParameterValues.push_back(m_elastanceToGiveVolumeTrackingPressureChamber);
 
     std::reverse(componentParameterValues.begin(), componentParameterValues.end());
@@ -866,13 +899,13 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     }
     
     std::map<int,double> initialPressures;
-    for (int node=1; node < 4; node++)
+    for (int node=1; node <= m_numberOfNetlistsUsedAsBoundaryConditions; node++)
     {
     	initialPressures.insert(std::make_pair(node,m_initialDomainPressure));
     }
     // Do the node at the base of the pressure chamber:
-    initialPressures.insert(std::make_pair(4, 0.0));
-    for (int node=5; node <= mp_CircuitDescription->numberOfPressureNodes; node++)
+    initialPressures.insert(std::make_pair(m_numberOfNetlistsUsedAsBoundaryConditions+1, 0.0));
+    for (int node=m_numberOfNetlistsUsedAsBoundaryConditions+2; node <= mp_CircuitDescription->numberOfPressureNodes; node++)
     {
         initialPressures.insert(std::make_pair(node,m_initialDomainPressure));
     }
@@ -1018,6 +1051,11 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     }
 }
 
+boost::shared_ptr<CircuitData> NetlistCircuit::getCircuitDescription()
+{
+    return mp_CircuitDescription;
+}
+
 void NetlistZeroDDomainCircuit::selectAndBuildActiveSubcircuits()
 {
     mp_CircuitDescription->rebuildCircuitMetadata();
@@ -1080,10 +1118,10 @@ void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double
                 double potentialResistance = allImplicitCoefficients.at((*component)->indexInInputData-1).first;
                 assert(!isnan(potentialResistance));
 
-                if (potentialResistance == 0.0)
-                {
-                    potentialResistance = 0.000001;
-                }
+                // if (potentialResistance == 0.0)
+                // {
+                //     potentialResistance = 0.000001;
+                // }
                 (*component)->setParameterValue(potentialResistance);
             }
             dpDqResistorIndex++;

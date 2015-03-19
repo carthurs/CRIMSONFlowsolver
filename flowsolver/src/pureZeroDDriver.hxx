@@ -50,6 +50,8 @@ private:
 	int m_hstep;
 	int m_ntout;
 
+	int m_numberOfNetlistsUsedAsBoundaryConditions;
+
 	bool m_deltHasBeenSet;
 	bool m_alfiHasBeenSet;
 	bool m_hstepHasBeenSet;

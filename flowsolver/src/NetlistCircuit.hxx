@@ -51,6 +51,7 @@ public:
 	void createAtomicSubcircuitDescriptions();
 	void initialiseAtStartOfTimestep();
 	void finalizeLPNAtEndOfTimestep();
+	boost::shared_ptr<CircuitData> getCircuitDescription();
 
 	virtual void createCircuitDescription();
 	virtual void selectAndBuildActiveSubcircuits();

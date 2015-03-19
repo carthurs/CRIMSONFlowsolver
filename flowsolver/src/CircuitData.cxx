@@ -290,7 +290,10 @@ void CircuitData::rebuildCircuitPressureNodeMap()
 		}
 		if ((*component)->endNode) // ensure the pointer endNode is not null
 		{
-			mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
+			int index = (*component)->endNode->indexInInputData;
+			boost::shared_ptr<CircuitPressureNode> node = (*component)->endNode;
+			mapOfPressureNodes[index] = node;
+			// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (index, node));
 		}
 	}
 	numberOfPressureNodes = mapOfPressureNodes.size();

@@ -2169,7 +2169,8 @@
 !
 ! *** start multidomain with multidomain.dat file
 !
-      subroutine startmultidomain_file() 
+      subroutine startmultidomain_file()
+      use phcommonvars, only : pureZeroDSimulation
       implicit none
       integer :: ierr, rerr      
       integer :: fnum = 671
@@ -2182,7 +2183,12 @@
             multidomainactive = int(0)
             nrcractive = int(0)
             ntrcractive = int(0)
-         end if 
+         end if
+
+         if (pureZeroDSimulation .eq. int(1)) then
+            write(*,*) "No multidomain.dat found. A multidomain.dat is required to use pure zero-D simulation."
+            call exit(1)
+         end if
 !            
       else  
 !         

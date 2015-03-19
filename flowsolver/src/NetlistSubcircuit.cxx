@@ -911,13 +911,13 @@ std::pair<double,double> NetlistSubcircuit::computeImplicitCoefficients(const in
     //   returnValue.second = 0.0;
     // }
     
-    std::cout << "m_inverseOfSystemMatrix: "<< std::endl;
-    MatView(m_inverseOfSystemMatrix,PETSC_VIEWER_STDOUT_WORLD);
-    std::cout << "solution vector: "<< std::endl;
-    VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD);
-    std::cout << "RHS vector: "<< std::endl;
-    VecView(RHS,PETSC_VIEWER_STDOUT_WORLD);
-    std::cout << "and just set " << returnValue.first << " " <<returnValue.second << std::endl;
+    // std::cout << "m_inverseOfSystemMatrix: "<< std::endl;
+    // MatView(m_inverseOfSystemMatrix,PETSC_VIEWER_STDOUT_WORLD);
+    // std::cout << "solution vector: "<< std::endl;
+    // VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD);
+    // std::cout << "RHS vector: "<< std::endl;
+    // VecView(RHS,PETSC_VIEWER_STDOUT_WORLD);
+    // std::cout << "and just set " << returnValue.first << " " <<returnValue.second << std::endl;
 
 
     return returnValue;

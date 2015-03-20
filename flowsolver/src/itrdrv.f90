@@ -1026,14 +1026,14 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     integer, dimension(nshg) :: binaryMask
 
-    ! Ensure that the CurrentIter counter has been reset (detects e.g. problems with
-    ! solver.inp requesting a MinNumIter which exceeds the number of steps in the
-    ! step construction)
-    if(rescontrol .gt. 0) then
-        if (CurrentIter .ne. 0) then
-            call write_to_stderr("WARNING: CurrentIter not reset to zero. Does Minimum Required Iterations exceed the number of steps in Step Construction in solver.inp?")
-        end if
-    end if
+    ! ! Ensure that the CurrentIter counter has been reset (detects e.g. problems with
+    ! ! solver.inp requesting a MinNumIter which exceeds the number of steps in the
+    ! ! step construction)
+    ! if(rescontrol .gt. 0) then
+    !     if (CurrentIter .ne. 0) then
+    !         call write_to_stderr("WARNING: CurrentIter not reset to zero. Does Minimum Required Iterations exceed the number of steps in Step Construction in solver.inp?")
+    !     end if
+    ! end if
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 

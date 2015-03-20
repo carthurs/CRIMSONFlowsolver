@@ -185,15 +185,13 @@ void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::
     }
 }
 
-void NetlistCircuit::selectAndBuildActiveSubcircuits()
+void NetlistCircuit::buildSubcircuit()
 {
-    rebuildCircuitMetadata();
     detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
-    mp_activeSubcircuits.clear();
+    mp_subcircuit.reset();
     double alfi_delt_in = m_alfi_local*m_delt;
-    boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(0, mp_CircuitDescription, flow_n_ptrs, pressure_n_ptrs, alfi_delt_in, m_surfaceIndex));
-    mp_activeSubcircuits.push_back(toPushBack);
+    mp_subcircuit = boost::make_shared<NetlistSubcircuit> (new NetlistSubcircuit(0, mp_CircuitDescription, flow_n_ptrs, pressure_n_ptrs, alfi_delt_in, m_surfaceIndex));
 }
 
 bool NetlistCircuit::flowPermittedAcross3DInterface() const
@@ -295,16 +293,12 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
     std::pair<double,double> implicitCoefficients;
     // if (mp_CircuitDescription.flowPermittedAcross3DInterface())
     // {
-        int numberOfCircuitsClaimingToHaveA3DInterface = 0;
-        for (auto subcircuit=mp_activeSubcircuits.begin(); subcircuit!=mp_activeSubcircuits.end(); subcircuit++)
-        {
-            if ((*subcircuit)->m_circuitData->connectsTo3DDomain() == true)
-            {
-                numberOfCircuitsClaimingToHaveA3DInterface++;
-                implicitCoefficients = (*subcircuit)->computeImplicitCoefficients(timestepNumber,timeAtStepNplus1,alfi_delt);
-            }
-        }
-        assert(numberOfCircuitsClaimingToHaveA3DInterface==1);
+    if ((*mp_subcircuit)->m_circuitData->connectsTo3DDomain() == true)
+    {
+        numberOfCircuitsClaimingToHaveA3DInterface++;
+        implicitCoefficients = (*mp_subcircuit)->computeImplicitCoefficients(timestepNumber,timeAtStepNplus1,alfi_delt);
+    }
+    assert(numberOfCircuitsClaimingToHaveA3DInterface==1);
     // }
     // else
     // {
@@ -317,10 +311,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
 
 void NetlistCircuit::updateLPN(const int timestepNumber)
 {
-    for (auto activeSubcircuit = mp_activeSubcircuits.begin(); activeSubcircuit != mp_activeSubcircuits.end(); activeSubcircuit++)
-    {
-        (*activeSubcircuit)->updateInternalPressuresVolumesAndFlows(timestepNumber);
-    }
+    (*mp_subcircuit)->updateInternalPressuresVolumesAndFlows(timestepNumber);
 }
 
 void NetlistCircuit::setPressureAndFlowPointers(double* pressurePointer, double* flowPointer)
@@ -554,14 +545,7 @@ void NetlistCircuit::cycleToSetHistoryPressuresFlowsAndVolumes()
 std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
 {
     std::pair<boundary_data_t,double> pressureOrFlowToReturn;
-
-    int counterToAvoidErrors = 0;
-    for (auto subcircuit = mp_activeSubcircuits.begin(); subcircuit != mp_activeSubcircuits.end(); subcircuit++)
-    {
-        pressureOrFlowToReturn = (*subcircuit)->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber);
-        counterToAvoidErrors ++;
-    }
-    assert(counterToAvoidErrors == 1); // This is not built to deal with multiple subcircuits yet. If you go back to using multiple subcircuits, you'll need to fix this.
+    pressureOrFlowToReturn = (*mp_subcircuit)->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber);
 
     return pressureOrFlowToReturn;
 }
@@ -569,7 +553,8 @@ std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToG
 void NetlistCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep
-    selectAndBuildActiveSubcircuits();
+    rebuildCircuitMetadata();
+    buildSubcircuit();
     cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
@@ -893,18 +878,15 @@ boost::shared_ptr<CircuitData> NetlistCircuit::getCircuitDescription()
     return mp_CircuitDescription;
 }
 
-void NetlistZeroDDomainCircuit::selectAndBuildActiveSubcircuits()
+void NetlistZeroDDomainCircuit::buildSubcircuit()
 {
-    mp_CircuitDescription->rebuildCircuitMetadata();
     // mp_CircuitDescription.switchDiodeStatesIfNecessary();
     // mp_CircuitDescription->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
-    mp_activeSubcircuits.clear();
+    mp_subcircuit.reset();
     double alfi_delt_in = m_alfi_local*m_delt;
-    boost::shared_ptr<NetlistSubcircuit> newNetlistZeroDDomain(new NetlistSubcircuit(0, mp_CircuitDescription, flow_n_ptrs, pressure_n_ptrs,alfi_delt_in,m_surfaceIndex));
-    newNetlistZeroDDomain->setThisisA3DDomainReplacement();
-    mp_activeSubcircuits.push_back(newNetlistZeroDDomain);
-
+    mp_subcircuit = boost::make_shared<NetlistSubcircuit> (new NetlistSubcircuit(0, mp_CircuitDescription, flow_n_ptrs, pressure_n_ptrs,alfi_delt_in,m_surfaceIndex));
+    mp_subcircuit->setThisisA3DDomainReplacement();
 }
 
 void NetlistZeroDDomainCircuit::setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate)
@@ -936,7 +918,7 @@ std::vector<double> NetlistZeroDDomainCircuit::getBoundaryFlows()
 
 void NetlistZeroDDomainCircuit::solveSystem(const int timestepNumber)
 {
-	mp_activeSubcircuits.at(0)->buildAndSolveLinearSystem(timestepNumber);
+	mp_subcircuit->buildAndSolveLinearSystem(timestepNumber);
 }
 
 void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries)

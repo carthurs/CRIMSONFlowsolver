@@ -54,7 +54,7 @@ public:
 	boost::shared_ptr<CircuitData> getCircuitDescription();
 
 	virtual void createCircuitDescription();
-	virtual void selectAndBuildActiveSubcircuits();
+	virtual void buildSubcircuit();
 	virtual ~NetlistCircuit() {}
 
 	// This can be used to give more than one pressure and one flow pointer to the netlist. Useful if this Netlist
@@ -83,7 +83,7 @@ protected:
 	std::string m_FlowHistoryFileName;
 	std::string m_VolumeHistoryFileName;
 	boost::shared_ptr<CircuitData> mp_CircuitDescription;
-	std::vector<boost::shared_ptr<NetlistSubcircuit>> mp_activeSubcircuits;
+	boost::shared_ptr<NetlistSubcircuit> mp_subcircuit;
 	const int m_surfaceIndex;
 	const bool m_thisIsARestartedSimulation;
 	const double m_delt;
@@ -138,7 +138,7 @@ public:
 	void createCircuitDescription();
 private:
 	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
-	void selectAndBuildActiveSubcircuits();
+	void buildSubcircuit();
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveVolumeTrackingPressureChamber;

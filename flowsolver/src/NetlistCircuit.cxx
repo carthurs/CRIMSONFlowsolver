@@ -33,7 +33,7 @@ void NetlistCircuit::createCircuitDescription()
         }
 
         mp_CircuitDescription->components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
-        mp_CircuitDescription->components.back()->indexInInputData = ii+1; // This uses input data indexing, which is one-indexed. We add 1 to achieve this here.
+        mp_CircuitDescription->components.back()->setIndex(toOneIndexing(ii));
     }
 
 
@@ -67,12 +67,12 @@ void NetlistCircuit::createCircuitDescription()
         setupPressureNode(indexOfStartNodeInInputData, (*component)->startNode, *component);
 
         // (*component)->startNode = mp_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfStartNodeInInputData);
-        // (*component)->startNode->indexInInputData = indexOfStartNodeInInputData;
+        // (*component)->startNode->getIndex() = indexOfStartNodeInInputData;
 
         // (*component)->startNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
         // for (int prescribedPressure=0; prescribedPressure<mp_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
         // {
-        //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->indexInInputData)
+        //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->getIndex())
         //     {
         //         (*component)->startNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
         //         (*component)->startNode->pressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
@@ -90,11 +90,11 @@ void NetlistCircuit::createCircuitDescription()
         // int indexOfEndNodeInInputData = retrievedComponentEndNodes.back();
         // retrievedComponentEndNodes.pop_back();
         // (*component)->endNode = mp_CircuitDescription.ifExistsGetNodeOtherwiseConstructNode(indexOfEndNodeInInputData);
-        // (*component)->endNode->indexInInputData = indexOfEndNodeInInputData;
+        // (*component)->endNode->getIndex() = indexOfEndNodeInInputData;
         // (*component)->endNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
         // for (int prescribedPressure=0; prescribedPressure<mp_CircuitDescription.numberOfPrescribedPressures; prescribedPressure++)
         // {
-        //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->indexInInputData)
+        //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->getIndex())
         //     {
         //         (*component)->endNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
         //         (*component)->endNode->pressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
@@ -105,7 +105,7 @@ void NetlistCircuit::createCircuitDescription()
         (*component)->prescribedFlowType = Flow_NotPrescribed;  // initialise as a default, before replacing as necessary
         for (int prescribedFlow=0; prescribedFlow<mp_CircuitDescription->numberOfPrescribedFlows; prescribedFlow++)
         {
-            if (retrievedListOfPrescribedFlows.at(prescribedFlow) == (*component)->indexInInputData)
+            if (retrievedListOfPrescribedFlows.at(prescribedFlow) == (*component)->getIndex())
             {
                 (*component)->prescribedFlowType = retrievedTypeOfPrescribedFlows.at(prescribedFlow);
                 (*component)->valueOfPrescribedFlow = retrievedValueOfPrescribedFlows.at(prescribedFlow);
@@ -117,8 +117,8 @@ void NetlistCircuit::createCircuitDescription()
         (*component)->parameterValueFromInputData = *((*component)->getParameterPointer());
         retrievedComponentParameterValues.pop_back();
 
-        (*component)->startNode->setPressure(retrievedInitialPressures.at((*component)->startNode->indexInInputData));
-        (*component)->endNode->setPressure(retrievedInitialPressures.at((*component)->endNode->indexInInputData));
+        (*component)->startNode->setPressure(retrievedInitialPressures.at((*component)->startNode->getIndex()));
+        (*component)->endNode->setPressure(retrievedInitialPressures.at((*component)->endNode->getIndex()));
 
 
     }
@@ -177,7 +177,7 @@ void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::
     }
     // Get the node (or create a new node if this one hasn't been made yet)
     node = mp_CircuitDescription->ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
-    // node->indexInInputData = indexOfNodeInInputData;
+    // node->getIndex() = indexOfNodeInInputData;
     // node->prescribedPressureType = typeOfPrescribedPressure;
     if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
     {
@@ -187,165 +187,7 @@ void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::
 
 void NetlistCircuit::selectAndBuildActiveSubcircuits()
 {
-    // // Identify which valves are open
-    // for (int diodeIdx=0; diodeIdx< m_atomicSubcircuitConnectionManager->getNumberOfDiodes(); diodeIdx++)
-    // {
-    //     int diodeStartNodeIdx = m_atomicSubcircuitConnectionManager->m_diodeIndexingMap.at(diodeIdx)->startNode->indexInInputData;
-    //     int diodeEndNodeIdx = m_atomicSubcircuitConnectionManager->m_diodeIndexingMap.at(diodeIdx)->endNode->indexInInputData;
-
-    //     if(m_PressuresInLPN.at(diodeStartNodeIdx) >= m_PressuresInLPN.at(diodeEndNodeIdx))
-    //     {
-    //         m_atomicSubcircuitConnectionManager->setDiodeOpen(diodeIdx,true);
-    //     }
-    //     else
-    //     {
-    //         m_atomicSubcircuitConnectionManager->setDiodeOpen(diodeIdx,false);
-    //     }
-    // }
-
-    // // populate ActiveSubcircuits
-    // m_activeSubcircuitCircuitData.clear();
-    // std::vector<bool> atomicSubcircuitAssignedToActiveCircuit(m_NumberOfAtomicSubcircuits,false);
-    // if (m_atomicSubcircuitConnectionManager->getNumberOfDiodes() > 0)
-    // {
-    //     for (int diodeIdx=0; diodeIdx<m_atomicSubcircuitConnectionManager->getNumberOfDiodes(); diodeIdx++)
-    //     {
-    //         if (m_atomicSubcircuitConnectionManager->diodeIsOpen(diodeIdx))
-    //         {
-    //             int diodeStartNodeIdx = m_atomicSubcircuitConnectionManager->m_diodeIndexingMap.at(diodeIdx)->startNode->indexInInputData;
-    //             int diodeEndNodeIdx = m_atomicSubcircuitConnectionManager->m_diodeIndexingMap.at(diodeIdx)->endNode->indexInInputData;
-    //             for (auto activeSubcircuit = m_activeSubcircuitCircuitData.begin(); activeSubcircuit!=m_activeSubcircuitCircuitData.end(); activeSubcircuit++)
-    //             {
-    //                 // If startNode belongs to activeSubcircuit...
-    //                 bool diodeStartNodeBelongsToActiveSubcircuit = ((*activeSubcircuit)->mapOfPressureNodes.count(diodeStartNodeIdx) == 1); 
-    //                 bool atomicSubcircuitAtEndNodeOfDiodeNotAssignedToActiveSubcircuit = !(atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->index));
-    //                 if (diodeStartNodeBelongsToActiveSubcircuit && atomicSubcircuitAtEndNodeOfDiodeNotAssignedToActiveSubcircuit)
-    //                 {
-    //                     if (diodeStartNodeConnectsCircuit(diodeIdx))
-    //                     {
-    //                         // Connect the end-node subcircuit to this activeSubcircuit:
-    //                         (*activeSubcircuit)->components.reserve((*activeSubcircuit)->components.size() + m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->components.size());
-    //                         for (auto componentToInsert = m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->components.begin();
-    //                              componentToInsert != m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->components.end();
-    //                              componentToInsert++)
-    //                         {
-    //                             boost::shared_ptr<CircuitComponent> componentToPushBack(&(**componentToInsert));
-    //                             (*activeSubcircuit)->components.push_back(componentToPushBack);
-    //                         }
-    //                         atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->index) = true;
-    //                     }
-    //                     else // Diode start node is just a single node, connecting to no other componenet (but must have prescribed pressure!)
-    //                     {
-    //                         // In this case, we just re-index the diode end node to be the diode start node, throughout the whole subcircuit.
-    //                         (*activeSubcircuit)->com
-    //                     }
-    //                 }
-    //                 // If endNode belongs to activeSubcircuit...
-    //                 bool diodeEndNodeBelongsToActiveSubcircuit = ((*activeSubcircuit)->mapOfPressureNodes.count(diodeEndNodeIdx) == 1);
-    //                 bool atomicSubcircuitAtStartNodeOfDiodeNotAssignedToActiveSubcircuit = !(atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->index));
-    //                 if (diodeEndNodeBelongsToActiveSubcircuit && atomicSubcircuitAtStartNodeOfDiodeNotAssignedToActiveSubcircuit)
-    //                 {
-    //                     // Add the atomic subcircuit to this activeSubcircuit:
-    //                     (*activeSubcircuit)->components.reserve((*activeSubcircuit)->components.size() + m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->components.size());
-    //                     for (auto componentToInsert = m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->components.begin();
-    //                          componentToInsert != m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->components.end();
-    //                          componentToInsert++)
-    //                     {
-    //                         boost::shared_ptr<CircuitComponent> componentToPushBack(&(**componentToInsert));
-    //                         (*activeSubcircuit)->components.push_back(componentToPushBack);
-    //                     }
-    //                     atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->index) = true;
-    //                 }
-    //             }
-    //             // If the atomic subcircuits at the start or end of the diode remain unassigned, add them as a new activeSubcircuit:
-    //             if(atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->index) = false)
-    //             {
-    //                 m_activeSubcircuitCircuitData.push_back( m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx) );
-    //                 atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToStartNode(diodeIdx)->index) = true;
-    //             }
-    //             if(atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->index) = false)
-    //             {
-    //                 m_activeSubcircuitCircuitData.push_back( m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx) );
-    //                 atomicSubcircuitAssignedToActiveCircuit.at(m_atomicSubcircuitConnectionManager->getCircuitConnectedToEndNode(diodeIdx)->index) = true;
-    //             }
-    //         }
-    //     }
-    // }
-    // else if (m_atomicSubcircuitConnectionManager->getNumberOfDiodes() == 0)
-    // {
-    //     // There's only one circuit (i.e. no diodes) in this case, so we just get the shared_ptr for its data and push it back.
-    //     m_activeSubcircuitCircuitData.push_back(m_CircuitDataForAtomicSubcircuits.at(0));
-    //     atomicSubcircuitAssignedToActiveCircuit.at(0) = true;
-    // }
-    // else
-    // {
-    //     throw std::runtime_error("EE: Invalid number of atomic subcircuits detected.");
-    // }
-
-    // // Build the active subcircuits' circuit metadata:
-    // for (auto subcircuit=m_activeSubcircuitCircuitData.begin(); subcircuit!=m_activeSubcircuitCircuitData.end(); subcircuit++)
-    // {
-    //     (*subcircuit)->rebuildCircuitMetadata();
-    // }
-
-    // // Check all the atomic subcircuits got assigned:
-    // for (auto assigned=atomicSubcircuitAssignedToActiveCircuit.begin(); assigned!=atomicSubcircuitAssignedToActiveCircuit.end(); assigned++)
-    // {
-    //     if(!*assigned)
-    //     {
-    //         throw std::runtime_error("EE: At least one atomic subcircuit not assigned during netlist assembly; likely a problem with the diodes.");
-    //     }
-    // }
-    
-    // // The atomic subcircuits are all now properly assigned to active subcircuits.
-    // // Next, we go on to change the node indexing so that open diode start-nodes are 
-    // // identified with their diode's end node.
-    // // To do this, we replace all references to the diode's start-node with references
-    // // to its end node.
-    // //
-    // // This completes the connection between the atomic subcircuits.
-    // for (int diodeIdx=0; diodeIdx< m_atomicSubcircuitConnectionManager->getNumberOfDiodes(); diodeIdx++)
-    // {
-    //     if (m_atomicSubcircuitConnectionManager->diodeIsOpen(diodeIdx))
-    //     {
-    //         int diodeStartNodeIdx = m_atomicSubcircuitConnectionManager->m_diodeIndexingMap.at(diodeIdx)->startNode->indexInInputData;
-    //         CircuitPressureNode diodeEndNode = *(m_atomicSubcircuitConnectionManager->m_diodeIndexingMap.at(diodeIdx)->endNode);
-    //         for (auto activeSubcircuit = m_activeSubcircuitCircuitData.begin(); activeSubcircuit!=m_activeSubcircuitCircuitData.end(); activeSubcircuit++)
-    //         {
-    //             for (auto component=(*activeSubcircuit)->components.begin(); component!=(*activeSubcircuit)->components.end(); component++)
-    //             {
-    //                 //\todo consider cases at the edge of the domain here,
-    //                 // where e.g. the diode start node has a prescribed pressure
-    //                 // and is monopolar. The code currently here will over-write and
-    //                 // break that pressure imposition!
-    //                 if ((*component)->startNode->indexInInputData == diodeStartNodeIdx)
-    //                 {
-    //                     (*component)->startNode->indexInInputData = diodeEndNode.indexInInputData;
-    //                 }
-    //                 if ((*component)->endNode->indexInInputData == diodeStartNodeIdx)
-    //                 {
-    //                     (*component)->endNode->indexInInputData = diodeEndNode.indexInInputData;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    // for (auto subcircuit=m_activeSubcircuitCircuitData.begin(); subcircuit!=m_activeSubcircuitCircuitData.end(); subcircuit++)
-    // {
-    //     (*subcircuit)->generateNodeAndComponentIndicesLocalToSubcircuit();
-    // }
-
-    // // Actually build the active NetlistSubcircuit classes:
-    // mp_activeSubcircuits.clear();
-    // for (int subcircuitIdx=0; subcircuitIdx<m_activeSubcircuitCircuitData.size(); subcircuitIdx++)
-    // {
-    //     boost::shared_ptr<NetlistSubcircuit> toPushBack(new NetlistSubcircuit(subcircuitIdx, *(m_activeSubcircuitCircuitData.at(subcircuitIdx)), flow_n_ptr));
-    //     mp_activeSubcircuits.push_back(toPushBack);
-    // }
     rebuildCircuitMetadata();
-    generateNodeAndComponentIndicesLocalToSubcircuit();
-    // mp_CircuitDescription.switchDiodeStatesIfNecessary();
     detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
     mp_activeSubcircuits.clear();
@@ -382,11 +224,6 @@ void NetlistCircuit::switchDiodeStatesIfNecessary()
 void NetlistCircuit::rebuildCircuitMetadata()
 {
 	mp_CircuitDescription->rebuildCircuitMetadata();
-}
-
-void NetlistCircuit::generateNodeAndComponentIndicesLocalToSubcircuit()
-{
-	mp_CircuitDescription->generateNodeAndComponentIndicesLocalToSubcircuit();
 }
 
 // nextTimestepWrite_start will be updated and returned to caller of this function.
@@ -566,8 +403,8 @@ void NetlistCircuit::assignComponentsToAtomicSubcircuits()
             // search the rest of the list for the remaining components belonging to this subcircuit:
             // Make a list to be populated with nodes belonging to the subcircuit, as they're found.
             std::set<int> nodesInSubcircuit;
-            nodesInSubcircuit.insert(mp_CircuitDescriptionWithoutDiodes->components.at(startingComponent)->startNode->indexInInputData);
-            nodesInSubcircuit.insert(mp_CircuitDescriptionWithoutDiodes->components.at(startingComponent)->endNode->indexInInputData);
+            nodesInSubcircuit.insert(mp_CircuitDescriptionWithoutDiodes->components.at(startingComponent)->startNode->getIndex());
+            nodesInSubcircuit.insert(mp_CircuitDescriptionWithoutDiodes->components.at(startingComponent)->endNode->getIndex());
             // Find all other components belonging to this subcircuit. We must iterate (while-loop) to keep
             // finding new connections, until nothing changes on an iteration:
             bool newComponentFoundOnLastIteration = true;
@@ -579,8 +416,8 @@ void NetlistCircuit::assignComponentsToAtomicSubcircuits()
                     if (componentAssignedToASubcircuit.at(potentialSubcircuitComponent) == false)
                     {
                         // get the nodes of the current component
-                        int componentStartNode = mp_CircuitDescriptionWithoutDiodes->components.at(potentialSubcircuitComponent)->startNode->indexInInputData;
-                        int componentEndNode = mp_CircuitDescriptionWithoutDiodes->components.at(potentialSubcircuitComponent)->endNode->indexInInputData;
+                        int componentStartNode = mp_CircuitDescriptionWithoutDiodes->components.at(potentialSubcircuitComponent)->startNode->getIndex();
+                        int componentEndNode = mp_CircuitDescriptionWithoutDiodes->components.at(potentialSubcircuitComponent)->endNode->getIndex();
 
                         // Check whether either of these nodes connect potentialSubcircuitComponent to the current subcircuit.
                         // If so, assign potentialSubcircuitComponent to the subcircuit.
@@ -794,7 +631,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         }
 
         mp_CircuitDescription->components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
-        mp_CircuitDescription->components.back()->indexInInputData = ii+1; // This uses input data indexing, which is one-indexed. We add 1 to achieve this here.
+        mp_CircuitDescription->components.back()->setIndex(toOneIndexing(ii));
     }
 
     // Obtain the component- and node-level data for the circuit, for moving into the appropriate data structure CircuitData
@@ -936,7 +773,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         (*component)->prescribedFlowType = Flow_NotPrescribed;  // initialise as a default, before replacing as necessary
         // for (int prescribedFlow=0; prescribedFlow<mp_CircuitDescription->numberOfPrescribedFlows; prescribedFlow++)
         // {
-        //     if (listOfPrescribedFlows.at(prescribedFlow) == (*component)->indexInInputData)
+        //     if (listOfPrescribedFlows.at(prescribedFlow) == (*component)->getIndex())
         //     {
         //         (*component)->prescribedFlowType = typeOfPrescribedFlows.at(prescribedFlow);
         //         (*component)->valueOfPrescribedFlow = valueOfPrescribedFlows.at(prescribedFlow);
@@ -948,12 +785,12 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         (*component)->parameterValueFromInputData = *((*component)->getParameterPointer());
         componentParameterValues.pop_back();
 
-        (*component)->startNode->setPressure(initialPressures.at((*component)->startNode->indexInInputData));
-        (*component)->endNode->setPressure(initialPressures.at((*component)->endNode->indexInInputData));
+        (*component)->startNode->setPressure(initialPressures.at((*component)->startNode->getIndex()));
+        (*component)->endNode->setPressure(initialPressures.at((*component)->endNode->getIndex()));
 
-        if ((*component)->indexInInputData <= m_numberOfNetlistsUsedAsBoundaryConditions)
+        if ((*component)->getIndex() <= m_numberOfNetlistsUsedAsBoundaryConditions)
         {
-            (*component)->prescribedFlowPointerIndex = (*component)->indexInInputData-1;
+            (*component)->prescribedFlowPointerIndex = (*component)->getIndex()-1;
         }
 
 
@@ -1038,16 +875,16 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     }
     // Get the node (or create a new node if this one hasn't been made yet)
     node = mp_CircuitDescription->ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
-    // node->indexInInputData = indexOfNodeInInputData;
+    // node->getIndex() = indexOfNodeInInputData;
     // node->prescribedPressureType = typeOfPrescribedPressure;
     if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
     {
         node->setPressure(valueOfPrescribedPressures.at(indexOfPrescribedPressure));
     }
 
-    if (node->indexInInputData <= m_numberOfNetlistsUsedAsBoundaryConditions)
+    if (node->getIndex() <= m_numberOfNetlistsUsedAsBoundaryConditions)
     {
-        node->prescribedPressurePointerIndex = node->indexInInputData-1;
+        node->prescribedPressurePointerIndex = node->getIndex()-1;
     }
 }
 
@@ -1059,7 +896,6 @@ boost::shared_ptr<CircuitData> NetlistCircuit::getCircuitDescription()
 void NetlistZeroDDomainCircuit::selectAndBuildActiveSubcircuits()
 {
     mp_CircuitDescription->rebuildCircuitMetadata();
-    mp_CircuitDescription->generateNodeAndComponentIndicesLocalToSubcircuit();
     // mp_CircuitDescription.switchDiodeStatesIfNecessary();
     // mp_CircuitDescription->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     // Actually build the active NetlistSubcircuit classes:
@@ -1109,13 +945,13 @@ void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double
     for (auto component=mp_CircuitDescription->components.begin(); component!=mp_CircuitDescription->components.end(); component++)
     {
         boost::shared_ptr<Netlist3DDomainReplacementCircuitData> downcastDomainReplacementCircuitData = boost::dynamic_pointer_cast<Netlist3DDomainReplacementCircuitData> (mp_CircuitDescription);
-        if (downcastDomainReplacementCircuitData->isADpDqResistor((*component)->indexInInputData)) // these are the extra resistors added for the zeroD domain replacement. Needs making generic (set for 3 outlets here!)
+        if (downcastDomainReplacementCircuitData->isADpDqResistor((*component)->getIndex())) // these are the extra resistors added for the zeroD domain replacement. Needs making generic (set for 3 outlets here!)
         {
             bool boundaryCurrentlyUsesDpDqResistance = (pressuresOrFlowsAtBoundaries.at(dpDqResistorIndex).first == Boundary_Pressure);
             if (boundaryCurrentlyUsesDpDqResistance)
             {
-                // the component indexInInputData needs to be converted to zero-indexing:
-                double potentialResistance = allImplicitCoefficients.at((*component)->indexInInputData-1).first;
+                // the component getIndex() needs to be converted to zero-indexing:
+                double potentialResistance = allImplicitCoefficients.at((*component)->getIndex()-1).first;
                 assert(!isnan(potentialResistance));
 
                 // if (potentialResistance == 0.0)

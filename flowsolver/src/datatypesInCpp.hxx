@@ -1,6 +1,8 @@
 #ifndef DATATYPESINCPP_HXX_
 #define DATATYPESINCPP_HXX_
 
+enum boundary_condition_t {BoundaryCondition_Null, BoundaryCondition_RCR, BoundaryCondition_ControlledCoronary, BoundaryCondition_Netlist};
+
 enum circuit_component_t {Component_Null, Component_Resistor, Component_Capacitor, Component_Inductor, Component_Diode, Component_MonopolePressureNode, Component_VolumeTrackingPressureChamber};
 
 enum circuit_nodal_pressure_prescription_t {Pressure_Null, Pressure_NotPrescribed, Pressure_Fixed, Pressure_LeftVentricular, Pressure_3DInterface};

@@ -18,11 +18,11 @@ void NetlistSubcircuit::initialiseSubcircuit()
   getMapOfPressHistoriesToCorrectPressNodes(); //initialises numberOfHistoryPressures
   getMapOfFlowHistoriesToCorrectComponents(); //initialises numberOfHistoryFlows
   getMapOfVolumeHistoriesToCorrectComponents(); // initialises numberOfHistoryVolumes
-  getMapOfTrackedVolumesToCorrectComponents(); // initialises numberOfTrackedVolumes
+  getMapOfTrackedVolumesToCorrectComponents(); // initialises m_numberOfTrackedVolumes
 
-  volumesInSubcircuit.resize(numberOfTrackedVolumes,0.0);
+  volumesInSubcircuit.resize(m_numberOfTrackedVolumes,0.0);
 
-  systemSize = m_circuitData->numberOfPressureNodes + numberOfHistoryPressures + m_circuitData->numberOfComponents + numberOfHistoryFlows + numberOfTrackedVolumes + numberOfHistoryVolumes;
+  systemSize = m_circuitData->numberOfPressureNodes + numberOfHistoryPressures + m_circuitData->numberOfComponents + numberOfHistoryFlows + m_numberOfTrackedVolumes + numberOfHistoryVolumes;
 
   createVectorsAndMatricesForCircuitLinearSystem();
 
@@ -84,12 +84,12 @@ void NetlistSubcircuit::getListOfNodesWithMultipleIncidentCurrents()
     // The node data from the input file is 1-indexed, so shift this to 1:numberOfPressureNodes, instead of 0:numberOfPressureNodes-1
     for(auto node=m_circuitData->mapOfPressureNodes.begin(); node!=m_circuitData->mapOfPressureNodes.end(); node++)
     {
-       int nodeIndex = node->second->indexInInputData;
+       int nodeIndex = node->second->getIndex();
        numberOfTimesNodeSeen = int(0);
        for (int ii = 0; ii<m_circuitData->numberOfComponents; ii++)
        {
-          if ((m_circuitData->components.at(ii)->startNode->indexInInputData == nodeIndex) || 
-          	  (m_circuitData->components.at(ii)->endNode->indexInInputData == nodeIndex))
+          if ((m_circuitData->components.at(ii)->startNode->getIndex() == nodeIndex) || 
+          	  (m_circuitData->components.at(ii)->endNode->getIndex() == nodeIndex))
           {
              numberOfTimesNodeSeen++;
           }
@@ -110,9 +110,9 @@ void NetlistSubcircuit::getMapOfPressHistoriesToCorrectPressNodes()
        // Check for capacitor, as these need pressure "histories" (pressure from the previous time-step) at their end-nodes (for dP/dt term).
        if (m_circuitData->components.at(ii)->getType() == Component_Capacitor)
        {
-       		listOfHistoryPressures.insert(m_circuitData->components.at(ii)->startNode->indexInInputData);
+       		listOfHistoryPressures.insert(m_circuitData->components.at(ii)->startNode->getIndex());
           m_circuitData->components.at(ii)->startNode->hasHistoryPressure = true;
-       		listOfHistoryPressures.insert(m_circuitData->components.at(ii)->endNode->indexInInputData);
+       		listOfHistoryPressures.insert(m_circuitData->components.at(ii)->endNode->getIndex());
           m_circuitData->components.at(ii)->endNode->hasHistoryPressure = true;
        }
     }
@@ -190,7 +190,7 @@ void NetlistSubcircuit::getMapOfTrackedVolumesToCorrectComponents()
      }
   }
 
-  numberOfTrackedVolumes = listOfTrackedVolumes.size();
+  m_numberOfTrackedVolumes = listOfTrackedVolumes.size();
 
   // Now do the actual generation of the volume node ordering map (for use when bulding the linear system matrix):
   int ii=0;
@@ -217,28 +217,28 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
           if ((*component)->getType() == Component_Resistor || (*component)->getType() == Component_Diode)
           {
             // insert resistor(-eqsue) relationship into equation system
-            int startNode = (*component)->startNode->indexInInputData;
+            int startNode = (*component)->startNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(startNode),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            int endNode = (*component)->endNode->indexInInputData;
+            int endNode = (*component)->endNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
-            int indexOfThisComponentsFlow = toZeroIndexing((*component)->indexInInputData);
+            int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
           }
           else if ((*component)->getType() == Component_Capacitor)
           {
             // insert capacitor relationship into equation system
-            int startNode = (*component)->startNode->indexInInputData;
+            int startNode = (*component)->startNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(startNode),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            int endNode = (*component)->endNode->indexInInputData;
+            int endNode = (*component)->endNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
-            int indexOfThisComponentsFlow = toZeroIndexing((*component)->indexInInputData);
+            int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-alfi_delt/currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,nodeIndexToPressureHistoryNodeOrderingMap.at(startNode)+m_circuitData->numberOfPressureNodes,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,nodeIndexToPressureHistoryNodeOrderingMap.at(endNode)+m_circuitData->numberOfPressureNodes,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -247,14 +247,14 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
           else if ((*component)->getType() == Component_Inductor)
           {
             // insert inductor relationship into equation system
-            int startNode = (*component)->startNode->indexInInputData;
+            int startNode = (*component)->startNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(startNode),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             
-            int endNode = (*component)->endNode->indexInInputData;
+            int endNode = (*component)->endNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
-            int indexOfThisComponentsFlow = toZeroIndexing((*component)->indexInInputData);
+            int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-currentParameterValue/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,componentIndexToFlowHistoryComponentOrderingMap.at(indexOfThisComponentsFlow)+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures+m_circuitData->numberOfComponents,currentParameterValue/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
@@ -267,7 +267,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             // Note that this means we increment row (row++) twice during this if-case
             // Do (1):
             // Insert the dt*flow term:
-            int zeroIndexOfThisComponent = toZeroIndexing((*component)->indexInInputData);
+            int zeroIndexOfThisComponent = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,zeroIndexOfThisComponent+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             // Insert the volume term (volume to-be-found during the next system solve):
             {
@@ -276,7 +276,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             }
             // Insert the volume history term:
             {
-              int columnIndex = componentIndexToVolumeHistoryComponentOrderingMap.at(zeroIndexOfThisComponent) + numberOfTrackedVolumes + m_circuitData->numberOfPressureNodes + numberOfHistoryPressures + m_circuitData->numberOfComponents + numberOfHistoryFlows;
+              int columnIndex = componentIndexToVolumeHistoryComponentOrderingMap.at(zeroIndexOfThisComponent) + m_numberOfTrackedVolumes + m_circuitData->numberOfPressureNodes + numberOfHistoryPressures + m_circuitData->numberOfComponents + numberOfHistoryFlows;
               // std::cout << "setting in NetlistSubcircuit.cxx row and column: " << row << " " << columnIndex << std::endl;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
@@ -288,7 +288,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
             if (!volumeTrackingPressureChamber->zeroVolumeShouldBePrescribed()) // test whether, on a previous attempt to solve the system, negative volumes were detected. If so, we'll do something different in the "else" below...
             {
               {
-                int columnIndex = toZeroIndexing((*component)->startNode->indexInInputData);
+                int columnIndex = toZeroIndexing((*component)->startNode->getIndex());
                 double valueToInsert = 1.0/(volumeTrackingPressureChamber->getElastance());
                 errFlag = MatSetValue(m_systemMatrix,row,columnIndex,valueToInsert,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               }
@@ -325,23 +325,23 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      {
        for (int ll=0; ll<m_circuitData->numberOfComponents; ll++)
        {
-          bool foundMultipleIncidentCurrentsForEndNode = (m_circuitData->components.at(ll)->endNode->indexInInputData == listOfNodesWithMultipleIncidentCurrents.at(mm)); 
+          bool foundMultipleIncidentCurrentsForEndNode = (m_circuitData->components.at(ll)->endNode->getIndex() == listOfNodesWithMultipleIncidentCurrents.at(mm)); 
           if (foundMultipleIncidentCurrentsForEndNode)
           {
-            int row = mm + m_circuitData->numberOfComponents + numberOfTrackedVolumes;
+            int row = mm + m_circuitData->numberOfComponents + m_numberOfTrackedVolumes;
             errFlag = MatSetValue(m_systemMatrix,row,ll+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           }
 
-          bool foundMultipleIncidentCurrentsForStartNode = (m_circuitData->components.at(ll)->startNode->indexInInputData == listOfNodesWithMultipleIncidentCurrents.at(mm));
+          bool foundMultipleIncidentCurrentsForStartNode = (m_circuitData->components.at(ll)->startNode->getIndex() == listOfNodesWithMultipleIncidentCurrents.at(mm));
           if (foundMultipleIncidentCurrentsForStartNode)
           {
-            int row = mm + m_circuitData->numberOfComponents + numberOfTrackedVolumes;
+            int row = mm + m_circuitData->numberOfComponents + m_numberOfTrackedVolumes;
             errFlag = MatSetValue(m_systemMatrix,row,ll+m_circuitData->numberOfPressureNodes+numberOfHistoryPressures,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           }
        }
      }
 
-     int rowsDoneSoFar = m_circuitData->numberOfComponents + numberOfMultipleIncidentCurrentNodes + numberOfTrackedVolumes;
+     int rowsDoneSoFar = m_circuitData->numberOfComponents + numberOfMultipleIncidentCurrentNodes + m_numberOfTrackedVolumes;
 
      // create the columnMap which tells us which system column each of the prescribed pressure, pressure-history, flow, or volume values belong to
      columnMap.clear();
@@ -349,7 +349,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      // Do the prescribed pressures:
      for (auto prescribedPressureNode=m_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=m_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++)
      {
-     	columnMap.push_back(toZeroIndexing(prescribedPressureNode->second->indexLocalToSubcircuit));
+     	columnMap.push_back(toZeroIndexing(prescribedPressureNode->second->getIndex()));
      }
 
      // Do the history pressures
@@ -363,7 +363,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      tempUnknownVariableIndexWithinLinearSystem += numberOfHistoryPressures;
      for (auto prescribedFlowComponent=m_circuitData->mapOfPrescribedFlowComponents.begin(); prescribedFlowComponent!=m_circuitData->mapOfPrescribedFlowComponents.end(); prescribedFlowComponent++)
      {
-     	columnMap.push_back(toZeroIndexing(prescribedFlowComponent->second->indexLocalToSubcircuit)+tempUnknownVariableIndexWithinLinearSystem);
+     	columnMap.push_back(toZeroIndexing(prescribedFlowComponent->second->getIndex())+tempUnknownVariableIndexWithinLinearSystem);
      }
 
      // Do the history flows
@@ -374,7 +374,7 @@ void NetlistSubcircuit::generateLinearSystemFromPrescribedCircuit(const double a
      }
 
      // Do the history volumes
-     tempUnknownVariableIndexWithinLinearSystem += numberOfHistoryFlows + numberOfTrackedVolumes;
+     tempUnknownVariableIndexWithinLinearSystem += numberOfHistoryFlows + m_numberOfTrackedVolumes;
      for (int ll=0; ll<numberOfHistoryVolumes; ll++)
      {
        columnMap.push_back(ll + tempUnknownVariableIndexWithinLinearSystem);
@@ -410,7 +410,7 @@ void NetlistSubcircuit::assembleRHS(const int timestepNumber)
     // int nextPressurePointerIndex = 0; // for tracking which pressure pointer to use - useful when there are multiple pressure interfaces to other domains / subcircuits
 
     // Prescribed pressures
-    int tempIndexingShift = m_circuitData->numberOfComponents + numberOfMultipleIncidentCurrentNodes + numberOfTrackedVolumes;
+    int tempIndexingShift = m_circuitData->numberOfComponents + numberOfMultipleIncidentCurrentNodes + m_numberOfTrackedVolumes;
     {
       int ll=0;
       for (auto prescribedPressureNode=m_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=m_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
@@ -638,7 +638,7 @@ void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows(const int timeste
     // Get the updated volumes:
     giveComponentsTheirVolumesFromSolutionVector();
 
-    // for (int volumeIndex = indexShift; volumeIndex < indexShift + numberOfTrackedVolumes; volumeIndex++)
+    // for (int volumeIndex = indexShift; volumeIndex < indexShift + m_numberOfTrackedVolumes; volumeIndex++)
     // {
     //     errFlag = VecGetValues(solutionVector,getSingleValue,&volumeIndex,&volumesInSubcircuit[volumeIndex-indexShift]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 

@@ -62,18 +62,18 @@ void multidom_initialise(){
 
   // Assemble the list of global surface numbers and types. This will be used
   // by the boundaryConditionFactory to build the boundary conditions.
-  std::vector<std::pair<int,std::string>> surfaceList;
+  std::vector<std::pair<int,boundary_condition_t>> surfaceList;
   for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfRCRSurfaces(); ii++)
   {
-    surfaceList.push_back(std::pair <int,std::string> (grcrbccom.nsrflistGRCR[ii+1],"rcr"));
+    surfaceList.push_back(std::pair <int,boundary_condition_t> (grcrbccom.nsrflistGRCR[ii+1],BoundaryCondition_RCR));
   }
   for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfControlledCoronarySurfaces(); ii++)
   {
-    surfaceList.push_back(std::pair <int,std::string> (nomodule.indicesOfCoronarySurfaces[ii+1],"controlledCoronary"));
+    surfaceList.push_back(std::pair <int,boundary_condition_t> (nomodule.indicesOfCoronarySurfaces[ii+1],BoundaryCondition_ControlledCoronary));
   }
   for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfNetlistSurfaces() ; ii++)
   {
-    surfaceList.push_back(std::pair<int,std::string> (nomodule.indicesOfNetlistSurfaces[ii+1],"netlist"));
+    surfaceList.push_back(std::pair<int,boundary_condition_t> (nomodule.indicesOfNetlistSurfaces[ii+1],BoundaryCondition_Netlist));
   }
   // Write loops here for all the other surface types!
 

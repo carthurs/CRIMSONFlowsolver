@@ -121,18 +121,18 @@
 	    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
 		
-		std::vector<std::pair<int,std::string>> surfaceList;
+		std::vector<std::pair<int,boundary_condition_t>> surfaceList;
 		surfaceList.clear();
 		
 
 	    // Describe 4 test BCs that we want to construct:
-	    surfaceList.push_back(std::pair <int,std::string> (3,"rcr"));
-	    surfaceList.push_back(std::pair <int,std::string> (7,"netlist"));
-	    surfaceList.push_back(std::pair <int,std::string> (9,"rcr"));
-	    surfaceList.push_back(std::pair <int,std::string> (11,"controlledCoronary"));
-	    surfaceList.push_back(std::pair <int,std::string> (12,"netlist"));
-	    surfaceList.push_back(std::pair <int,std::string> (13,"netlist"));
-	    surfaceList.push_back(std::pair <int,std::string> (14,"netlist"));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (3,BoundaryCondition_RCR));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (7,BoundaryCondition_Netlist));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (9,BoundaryCondition_RCR));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (11,BoundaryCondition_ControlledCoronary));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (12,BoundaryCondition_Netlist));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (13,BoundaryCondition_Netlist));
+	    surfaceList.push_back(std::pair <int,boundary_condition_t> (14,BoundaryCondition_Netlist));
 
 	    // get the boundary condition manager
 		// boundaryConditionManager_instance->boundaryConditions.clear();

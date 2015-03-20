@@ -31,8 +31,6 @@ public:
 	int prescribedFlowPointerIndex;
 	
 	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
-	int indexInInputData;
-	int indexLocalToSubcircuit;
 	circuit_component_flow_prescription_t prescribedFlowType;
 	double valueOfPrescribedFlow;
 	double m_signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by its end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
@@ -84,12 +82,14 @@ public:
 	circuit_component_t& getType();
 	double* getParameterPointer();
 	void setParameterValue(double const parameterValue);
+	int getIndex() const;
+	void setIndex(const int index);
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 private:
 	circuit_component_t m_type;
 	
-
+	int m_indexInInputData;
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
 	bool m_connectsToNodeAtInterface;
@@ -191,13 +191,11 @@ public:
 	bool hasHistoryPressure;
 	circuit_nodal_pressure_prescription_t prescribedPressureType;
 	int prescribedPressurePointerIndex;
-	int indexInInputData;
-	int indexLocalToSubcircuit;
 	std::vector<double> m_entirePressureHistory;
 
 	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
-	CircuitPressureNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
-	: indexInInputData(indexInInputData_in),
+	CircuitPressureNode(const int indexInInputData, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
+	: m_indexInInputData(indexInInputData),
 	prescribedPressureType(typeOfPrescribedPressure),
 	m_hstep(hstep)
 	{
@@ -207,29 +205,17 @@ public:
 	    prescribedPressurePointerIndex = 0;
 	}
 
-	void setIsAtBoundary()
-	{
-		m_isAtBoundary = true;
-	}
-
-	bool isAtBoundary()
-	{
-		return m_isAtBoundary;
-	}
-
-	double getPressure()
-	{
-		return pressure;
-	}
-	void setPressure(const double pressure_in)
-	{
-		pressure = pressure_in;
-	}
+	void setIsAtBoundary();
+	bool isAtBoundary() const;
+	double getPressure() const;
+	void setPressure(const double pressure_in);
+	int getIndex() const;
 protected:
 	double pressure;
 	const int m_hstep;
 private:
 	bool m_isAtBoundary;
+	const int m_indexInInputData;
 };
 
 class CircuitData
@@ -297,7 +283,6 @@ public:
 	
 	void rebuildCircuitMetadata();
 	bool connectsTo3DDomain() const;
-	void generateNodeAndComponentIndicesLocalToSubcircuit();
 	virtual void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
 	virtual bool hasPrescribedFlowAcrossInterface() const;
 	virtual bool hasPrescribedPressureAcrossInterface() const;

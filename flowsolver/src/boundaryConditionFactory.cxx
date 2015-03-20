@@ -2,10 +2,11 @@
 #include "RCR.hxx"
 #include "NetlistBoundaryCondition.hxx"
 #include "controlledCoronary.hxx"
+#include "datatypesInCpp.hxx"
 
-boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, std::string boundaryType)
+boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, boundary_condition_t boundaryType)
 {
-  if (boundaryType.compare("rcr") == 0)
+  if (boundaryType == BoundaryCondition_RCR)
   {
     boost::shared_ptr<abstractBoundaryCondition> newRCR(new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
     
@@ -13,7 +14,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 
     return newRCR;
   }
-  else if (boundaryType.compare("netlist") == 0)
+  else if (boundaryType == BoundaryCondition_Netlist)
   {
     boost::shared_ptr<abstractBoundaryCondition> newNetlist(new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
 
@@ -23,7 +24,7 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
     
     return newNetlist;
   }
-  else if (boundaryType.compare("controlledCoronary") == 0)
+  else if (boundaryType == BoundaryCondition_ControlledCoronary)
   {
     boost::shared_ptr<abstractBoundaryCondition> newControlledCoronary(new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
 

@@ -57,12 +57,12 @@ void AtomicSubcircuitConnectionManager::discoverAtomicSubcircuitsJoinedByEachDio
         // Loop the atomic subcircuits, looking for the subcircuit that the diode connects to:
         for (auto atomicSubcircuit = circuitDataForAtomicSubcircuits.begin(); atomicSubcircuit != circuitDataForAtomicSubcircuits.end(); atomicSubcircuit++)
         {
-            if ((*atomicSubcircuit)->mapOfPressureNodes.count(currentDiode->startNode->indexInInputData) == 1)
+            if ((*atomicSubcircuit)->mapOfPressureNodes.count(currentDiode->startNode->getIndex()) == 1)
             {
                 adjoiningAtomicSubcircuitsPair.first = *atomicSubcircuit;
             }
 
-            if ((*atomicSubcircuit)->mapOfPressureNodes.count(currentDiode->endNode->indexInInputData) == 1)
+            if ((*atomicSubcircuit)->mapOfPressureNodes.count(currentDiode->endNode->getIndex()) == 1)
             {
                 adjoiningAtomicSubcircuitsPair.second = *atomicSubcircuit;
             }

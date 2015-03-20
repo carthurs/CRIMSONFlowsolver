@@ -47,11 +47,11 @@ void PureZeroDDriver::init()
 	// m_zeroDDomainLPN->setPointersToBoundaryPressuresAndFlows(mp_interfacePressuresToBeReadByBoundaryConditions,mp_interfaceFlowsToBeReadByBoundaryConditions);
 	// for (int ii=0; ii<m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->numberOfComponents; ii++)
 	// {
-	// 	std::cout << "index component: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->indexInInputData << std::endl;
+	// 	std::cout << "index component: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->getIndex() << std::endl;
 	// 	std::cout << "type: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->getType() << std::endl;
 	// 	std::cout << "parametervalue: " << *(m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->getParameterPointer()) << std::endl;
-	// 	std::cout << "start node index: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->startNode->indexInInputData << std::endl;
-	// 	std::cout << "end node index: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->endNode->indexInInputData << std::endl;
+	// 	std::cout << "start node index: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->startNode->getIndex() << std::endl;
+	// 	std::cout << "end node index: " << m_zeroDDomainLPN->getCircuit()->getCircuitDescription()->components.at(ii)->endNode->getIndex() << std::endl;
 	// }
 }
 

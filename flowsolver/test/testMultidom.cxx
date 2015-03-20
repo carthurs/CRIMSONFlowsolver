@@ -134,7 +134,7 @@ TEST_F(testMultidom, checkNetlistComponentNeighbourPointers)
 	{
 		if ((*component)->prescribedFlowType == Flow_3DInterface)
 		{
-			indexOfComponentAt3DInterface = (*component)->indexInInputData;
+			indexOfComponentAt3DInterface = (*component)->getIndex();
 		}
 	}
 
@@ -166,10 +166,10 @@ TEST_F(testMultidom, checkNetlistComponentNeighbourPointers)
 		componentsNeedingChecking.pop();
 		// For the current component:
 		// Ensure we've not done this component yet (avoids circular problems)
-		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) == false)
+		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) == false)
 		{
 			// note that we're checking this component:
-			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) = true;
+			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) = true;
 			// check the type is as expected
 			EXPECT_TRUE(currentComponent.lock()->getType() == expectedComponentTypes.top());
 			expectedComponentTypes.pop();

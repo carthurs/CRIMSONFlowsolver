@@ -39,7 +39,7 @@ class abstractBoundaryCondition;
 		instance = 0;
 	}
 	
-    void setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList);
+    void setSurfaceList(const std::vector<std::pair<int,boundary_condition_t>> surfaceList);
 
     void ifRestartingLoadNecessaryData();
 

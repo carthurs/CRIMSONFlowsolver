@@ -3,6 +3,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "abstractBoundaryCondition.hxx"
+#include "datatypesInCpp.hxx"
 
 // Forward declarations:
 class abstractBoundaryCondition;
@@ -20,7 +21,7 @@ class boundaryConditionFactory
  	{
  	}
 
-	boost::shared_ptr<abstractBoundaryCondition> createBoundaryCondition(int surfaceIndex_in, std::string boundaryType);
+	boost::shared_ptr<abstractBoundaryCondition> createBoundaryCondition(int surfaceIndex_in, boundary_condition_t boundaryType);
 
  private:
 	const double m_hstep;

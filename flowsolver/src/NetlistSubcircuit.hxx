@@ -103,7 +103,7 @@ private:
 	int numberOfHistoryPressures;
 	int numberOfHistoryFlows;
 	int numberOfHistoryVolumes;
-	int numberOfTrackedVolumes;
+	int m_numberOfTrackedVolumes;
 	std::vector<int> columnMap;
 	// int columnMapSize;//\todo check this is used
 	std::vector<int> columnIndexOf3DInterfaceFlowInLinearSystem;

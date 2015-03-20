@@ -51,18 +51,18 @@ void CircuitData::rebuildCircuitMetadata()
 		assert((*component)->startNode->prescribedPressureType!=Pressure_Null);
 		if((*component)->startNode->prescribedPressureType != Pressure_NotPrescribed)
 		{
-			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
+			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->getIndex(), (*component)->startNode));
 		}
 		// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
 
 		assert((*component)->endNode->prescribedPressureType!=Pressure_Null);
 		if((*component)->endNode->prescribedPressureType != Pressure_NotPrescribed)
 		{
-			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
+			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->getIndex(), (*component)->endNode));
 		}
 		// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->indexInInputData, (*component)->endNode));
 
-		mapOfComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> ((*component)->indexInInputData,(*component)));
+		mapOfComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> ((*component)->getIndex(),(*component)));
 
 		assert((*component)->prescribedFlowType != Flow_Null);
 		// bool isDiode = ((*component)->type == Component_Diode);
@@ -70,7 +70,7 @@ void CircuitData::rebuildCircuitMetadata()
 		if((*component)->prescribedFlowType != Flow_NotPrescribed) // || (diodeIsClosedSoPrescribeZeroFlow && isDiode))
 		{
 			numberOfPrescribedFlows++;
-			mapOfPrescribedFlowComponents.insert(std::pair<int, boost::shared_ptr<CircuitComponent>> ((*component)->indexInInputData, *component));
+			mapOfPrescribedFlowComponents.insert(std::pair<int, boost::shared_ptr<CircuitComponent>> ((*component)->getIndex(), *component));
 		}
 	}
 
@@ -112,15 +112,15 @@ void CircuitData::setupComponentNeighbourPointers()
 		(*component)->neighbouringComponentsAtStartNode.clear();
 		(*component)->neighbouringComponentsAtEndNode.clear();
 
-		int startNodeIdx = (*component)->startNode->indexInInputData;
-		int endNodeIdx = (*component)->endNode->indexInInputData;
+		int startNodeIdx = (*component)->startNode->getIndex();
+		int endNodeIdx = (*component)->endNode->getIndex();
 		for (auto possibleNeighbouringComponent=components.begin(); possibleNeighbouringComponent!=components.end(); possibleNeighbouringComponent++)
 		{
 			// Avoid giving a component itself as a neighbour:
 			if (component!=possibleNeighbouringComponent)
 			{
-				int neighbourStartNodeIdx = (*possibleNeighbouringComponent)->startNode->indexInInputData;
-				int neighbourEndNodeIdx = (*possibleNeighbouringComponent)->endNode->indexInInputData;
+				int neighbourStartNodeIdx = (*possibleNeighbouringComponent)->startNode->getIndex();
+				int neighbourEndNodeIdx = (*possibleNeighbouringComponent)->endNode->getIndex();
 				// check whether these nodes match, if so, give the component a pointer to its newly-discovered neighbour
 				
 				bool isANeighbourViaComponentStartNode = (neighbourStartNodeIdx == startNodeIdx ||
@@ -169,8 +169,8 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 		{
 			numberOfComponentsTaggedFor3DFlow++;
 			// Ensure one of this component's nodes is the one at the 3D interface
-			bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  getIndexOfNodeAtInterface());
-			bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  getIndexOfNodeAtInterface());
+			bool startNodeIsAt3Dinterface = ((*component)->startNode->getIndex()  ==  getIndexOfNodeAtInterface());
+			bool endNodeIsAt3Dinterface = ((*component)->endNode->getIndex()  ==  getIndexOfNodeAtInterface());
 			if (startNodeIsAt3Dinterface || endNodeIsAt3Dinterface)
 			{
 				// tag the component as being at the 3D interface
@@ -258,8 +258,8 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 	int numberOfComponentsConnectingTo3DInterfaceNode = 0; //a counter to verify there exists a unique component connecting to the 3D interface node
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
-		bool startNodeIsAt3Dinterface = ((*component)->startNode->indexInInputData  ==  getIndexOfNodeAtInterface());
-		bool endNodeIsAt3Dinterface = ((*component)->endNode->indexInInputData  ==  getIndexOfNodeAtInterface());
+		bool startNodeIsAt3Dinterface = ((*component)->startNode->getIndex()  ==  getIndexOfNodeAtInterface());
+		bool endNodeIsAt3Dinterface = ((*component)->endNode->getIndex()  ==  getIndexOfNodeAtInterface());
 		if (startNodeIsAt3Dinterface)
 		{
 			numberOfComponentsConnectingTo3DInterfaceNode++;
@@ -286,11 +286,11 @@ void CircuitData::rebuildCircuitPressureNodeMap()
 	{
 		if ((*component)->startNode) // ensure the pointer startNode is not null 
 		{
-			mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
+			mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->getIndex(), (*component)->startNode));
 		}
 		if ((*component)->endNode) // ensure the pointer endNode is not null
 		{
-			int index = (*component)->endNode->indexInInputData;
+			int index = (*component)->endNode->getIndex();
 			boost::shared_ptr<CircuitPressureNode> node = (*component)->endNode;
 			mapOfPressureNodes[index] = node;
 			// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (index, node));
@@ -352,66 +352,6 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseCons
 
 }
 
-void CircuitData::generateNodeAndComponentIndicesLocalToSubcircuit()
-{
-	// Ensure the metadata is up-to-date before we start
-	rebuildCircuitMetadata();
-
-	// we take advantage of the fact that std::map<int,*> keeps elements sorted 
-	// in increasing value order of int keys
-	{
-		// Get the circuit-local pressure node indexing
-		int indexLocalToSubcircuit_loopCounter = 1;
-		for (auto pressureNode = mapOfPressureNodes.begin(); pressureNode != mapOfPressureNodes.end(); pressureNode++)
-		{
-			// (*pressureNode)->indexLocalToSubcircuit = indexLocalToSubcircuit_loopCounter;
-			pressureNode->second->indexLocalToSubcircuit = indexLocalToSubcircuit_loopCounter;
-			indexLocalToSubcircuit_loopCounter++;
-		}
-	}
-	// for (int ii=0; ii<numberOfPressureNodes; ii++)
-	// {
-	// 	for (auto component=components.begin(); component!=components.end(); component++)
-	// 	{
-	// 		// If the component's index from the input data matches with the
-	// 		// ii-th entry in the mapOfPressureNodes for this subcircuit,
-	// 		// then we know that the component is the ii-th of the circuit,
-	// 		// - this is just because the std::set<int> keeps its entries
-	// 		// sorted.
-	// 		// We also converto from zero- to one-indexing, for consistency
-	// 		// with the usual semantics of the input data.
-	// 		if (*component->startNode->indexInInputData == mapOfPressureNodes.at(ii))
-	// 		{
-	// 			*component->startNode->indexLocalToSubcircuit = toOneIndexing(ii);
-	// 		}
-	// 		if (*component->endNode->indexInInputData == mapOfPressureNodes.at(ii))
-	// 		{
-	// 			*component->endNode->indexLocalToSubcircuit = toOneIndexing(ii);
-	// 		}
-	// 	}
-	// }
-
-	{
-		// Get the circuit-local component indexing
-		int indexLocalToSubcircuit_loopCounter = 1;
-		for (auto component = mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
-		{
-			component->second->indexLocalToSubcircuit = indexLocalToSubcircuit_loopCounter;
-		}
-	}
-	// for (int ii=0; ii<numberOfComponents; ii++)
-	// {
-	// 	for (auto component=components.begin(); component!=components.end(); component++)
-	// 	{
-	// 		if(*component->indexInInputData == mapOfComponents.at(ii))
-	// 		{
-	// 			*component->indexLocalToSubcircuit = toOneIndexing(ii);
-	// 		}
-	// 	}
-	// }
-
-}
-
 void CircuitData::switchDiodeStatesIfNecessary()
 {
 	for (auto component=components.begin(); component!=components.end(); component++)
@@ -459,6 +399,16 @@ void CircuitData::closeAllDiodes()
 	}
 }
 
+int CircuitComponent::getIndex() const
+{
+	return m_indexInInputData;
+}
+
+void CircuitComponent::setIndex(const int index)
+{
+	m_indexInInputData = index;
+}
+
 void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 {
 	bool previousStateOf_m_flowPermittedAcross3DInterface = m_flowPermittedAcross3DInterface;
@@ -469,7 +419,7 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 	{
 		if ((*component)->connectsToNodeAtInterface())
 		{
-			indexOfComponentAt3DInterface = (*component)->indexInInputData;
+			indexOfComponentAt3DInterface = (*component)->getIndex();
 		}
 	}
 
@@ -487,10 +437,10 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 		componentsNeedingChecking.pop();
 		// For the current component:
 		// Ensure we've not done this component yet (avoids circular problems)
-		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) == false)
+		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) == false)
 		{
 			// note that we're checking this component:
-			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->indexInInputData)) = true;
+			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) = true;
 
 			// Don't parse the neighbours if flow is banned (i.e. if there's a closed diode)
 			if (currentComponent.lock()->permitsFlow)
@@ -562,7 +512,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 			if (component->second->connectsToNodeAtInterface())
 			{
 				component->second->prescribedFlowType=Flow_3DInterface;
-				mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->indexInInputData,component->second));
+				mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->getIndex(),component->second));
 				break;
 			}
 		}
@@ -585,7 +535,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 			if (node->second->isAtBoundary())
 			{
 				node->second->prescribedPressureType=Pressure_3DInterface;
-				mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->indexInInputData,node->second));
+				mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->getIndex(),node->second));
 				break;
 			}
 		}
@@ -738,8 +688,8 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 		// if ((*component)->prescribedFlowType == Flow_3DInterface)
 		// {
 		// Ensure one of this component's nodes is the one at the 3D interface
-		bool startNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->startNode->indexInInputData);
-		bool endNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->endNode->indexInInputData);
+		bool startNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->startNode->getIndex());
+		bool endNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->endNode->getIndex());
 		if (startNodeIsAt3Dinterface || endNodeIsAt3Dinterface)
 		{
 			// tag the component as being at the 3D interface
@@ -820,8 +770,8 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 	int numberOfComponentsConnectingTo3DInterfaceNode = 0; //a counter to verify there exists a unique component connecting to the 3D interface node
 	for (auto component=components.begin(); component!=components.end(); component++)
 	{
-		bool startNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->startNode->indexInInputData);
-		bool endNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->endNode->indexInInputData);
+		bool startNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->startNode->getIndex());
+		bool endNodeIsAt3Dinterface = isNodeAtBoundaryInterface((*component)->endNode->getIndex());
 		if (startNodeIsAt3Dinterface)
 		{
 			numberOfComponentsConnectingTo3DInterfaceNode++;
@@ -888,7 +838,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 					if (component->first == toOneIndexing(componentAtBoundaryIndex))
 					{
 						component->second->prescribedFlowType=Flow_3DInterface;
-						mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->indexInInputData,component->second));
+						mapOfPrescribedFlowComponents.insert(std::pair<int,boost::shared_ptr<CircuitComponent>> (component->second->getIndex(),component->second));
 						break;
 					}
 				}
@@ -921,7 +871,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 					if (node->first == toOneIndexing(componentAtBoundaryIndex))
 					{
 						node->second->prescribedPressureType=Pressure_3DInterface;
-						mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->indexInInputData,node->second));
+						mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->getIndex(),node->second));
 						break;
 					}
 				}
@@ -986,4 +936,28 @@ void Netlist3DDomainReplacementCircuitData::addToMapOfDpDqResistors(int indexOfR
 bool Netlist3DDomainReplacementCircuitData::isADpDqResistor(const int componentIndex)
 {
 	return (m_mapOfDpDqResistors.count(componentIndex) == 1);
+}
+
+int CircuitPressureNode::getIndex() const
+{
+	return m_indexInInputData;
+}
+
+void CircuitPressureNode::setIsAtBoundary()
+{
+	m_isAtBoundary = true;
+}
+
+bool CircuitPressureNode::isAtBoundary() const
+{
+	return m_isAtBoundary;
+}
+
+double CircuitPressureNode::getPressure() const
+{
+	return pressure;
+}
+void CircuitPressureNode::setPressure(const double pressure_in)
+{
+	pressure = pressure_in;
 }

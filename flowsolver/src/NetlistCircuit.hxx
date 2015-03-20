@@ -43,7 +43,7 @@ public:
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 	void switchDiodeStatesIfNecessary();
 	void rebuildCircuitMetadata();
-	void generateNodeAndComponentIndicesLocalToSubcircuit();
+
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
 	void cycleToSetHistoryPressuresFlowsAndVolumes();
 

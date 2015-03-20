@@ -32,11 +32,11 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
   netlistReader_instance->setFileName("netlist_surfaces_bad3DInterfaceComponentOrientation.dat");
   netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
-  std::vector<std::pair<int,std::string>> surfaceList;
+  std::vector<std::pair<int,boundary_condition_t>> surfaceList;
   surfaceList.clear();
 
   // Describe test BC that we want to construct:
-  surfaceList.push_back(std::pair <int,std::string> (2,"netlist"));
+  surfaceList.push_back(std::pair <int,boundary_condition_t> (2,BoundaryCondition_Netlist));
 
   // Testing for "EE: The netlist component at the 3D interface must be connected to it via its start node, not its end node."
   EXPECT_THROW(boundaryConditionManager_instance->setSurfaceList(surfaceList), std::runtime_error);
@@ -65,11 +65,11 @@ TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
   netlistReader_instance->setFileName("netlist_surfaces_badComponentAt3DInterface.dat");
   netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
-  std::vector<std::pair<int,std::string>> surfaceList;
+  std::vector<std::pair<int,boundary_condition_t>> surfaceList;
   surfaceList.clear();
 
   // Describe test BC that we want to construct:
-  surfaceList.push_back(std::pair <int,std::string> (2,"netlist"));
+  surfaceList.push_back(std::pair <int,boundary_condition_t> (2,BoundaryCondition_Netlist));
 
   // get the boundary condition manager
   boundaryConditionManager_instance = boundaryConditionManager::Instance();

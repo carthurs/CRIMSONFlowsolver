@@ -186,7 +186,7 @@ extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
   boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 }
 
-void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,std::string>> surfaceList)
+void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,boundary_condition_t>> surfaceList)
 {
   // Defensive:
   assert(m_deltHasBeenSet);

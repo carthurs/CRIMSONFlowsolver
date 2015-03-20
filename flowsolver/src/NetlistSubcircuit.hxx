@@ -21,7 +21,6 @@ public:
 	 m_alfi_delt(alfi_delt_in),
 	 surfaceIndex(surfaceIndex_in)
 	{
-		m_thisIsA3DDomainReplacement = false;
 		initialiseSubcircuit();
 		// columnIndexOf3DInterfaceFlowInLinearSystem = 0;
 		safetyCounterLimit = 1000;
@@ -43,10 +42,6 @@ public:
 	
 	boost::shared_ptr<CircuitData> m_circuitData;
 	void buildAndSolveLinearSystem(const int timestepNumber);
-	void setThisisA3DDomainReplacement()
-	{
-		m_thisIsA3DDomainReplacement = true;
-	}
 protected:
 
 private:

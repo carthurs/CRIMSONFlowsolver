@@ -665,41 +665,6 @@ void NetlistSubcircuit::updateInternalPressuresVolumesAndFlows(const int timeste
 void NetlistSubcircuit::computeCircuitLinearSystemSolution(const int timestepNumber)
 {
   buildAndSolveLinearSystem(timestepNumber);
-  // PetscErrorCode errFlag;
-
-  // // int nextFlowPointerIndex = 0;
-  // // int nextPressurePointerIndex = 0;
-
-
-  // if (m_circuitData->connectsTo3DDomain() && !m_thisIsA3DDomainReplacement)
-  // {
-  //   if (m_circuitData->hasPrescribedFlowAcrossInterface()) // Neumann condition
-  //   {
-  //      assert(!m_circuitData->hasPrescribedPressureAcrossInterface());
-  //      // double* flowPointerToSet = flow_n_ptrs.at(nextFlowPointerIndex);
-  //      double* flowPointerToSet = flow_n_ptrs.at(0);
-  //      errFlag = VecSetValue(RHS,columnIndexOf3DInterfaceFlowInLinearSystem.at(0),*flowPointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag); //\todo make this write to the correct entry of RHS, dynamically, and read the correct pointer when there are multiple netlist LPNs
-  //      // nextFlowPointerIndex++;
-  //   }
-  //   else if (m_circuitData->hasPrescribedPressureAcrossInterface())
-  //   {
-  //      // double* pressurePointerToSet = pressure_n_ptrs.at(nextPressurePointerIndex);
-  //     double* pressurePointerToSet = pressure_n_ptrs.at(0);
-  //      errFlag = VecSetValue(RHS,columnIndexOf3DInterfacePressureInLinearSystem.at(0),*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-  //      // nextPressurePointerIndex++;
-  //   }
-  //   else
-  //   {
-  //     std::stringstream errorMessage;
-  //     errorMessage << "EE: Internal error. Failed to prescribe either pressure or flow at the interface in a Netlist boundary condition." << std::endl;
-  //     throw std::logic_error(errorMessage.str());
-  //   }
-  // }
-  // errFlag = MatMult(m_inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-
-  // PetscErrorCode errFlag;
-  // std::cout << "solutionVector for surface " << surfaceIndex << ":" << std::endl;
-  // errFlag = VecView(solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
 void NetlistSubcircuit::giveNodesTheirPressuresFromSolutionVector()

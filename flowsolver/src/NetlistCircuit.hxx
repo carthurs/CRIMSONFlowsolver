@@ -48,7 +48,6 @@ public:
 	void cycleToSetHistoryPressuresFlowsAndVolumes();
 
 	void identifyAtomicSubcircuits();
-	void createAtomicSubcircuitDescriptions();
 	void initialiseAtStartOfTimestep();
 	void finalizeLPNAtEndOfTimestep();
 	boost::shared_ptr<CircuitData> getCircuitDescription();
@@ -98,7 +97,6 @@ private:
 	void assignComponentsToAtomicSubcircuits();
 
 	boost::shared_ptr<CircuitData> mp_CircuitDescriptionWithoutDiodes;
-	std::vector<boost::shared_ptr<CircuitData>> m_CircuitDataForAtomicSubcircuits;
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
 	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_CircuitDescriptionWithoutDiodes
 

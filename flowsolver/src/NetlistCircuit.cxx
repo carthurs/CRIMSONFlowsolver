@@ -446,47 +446,6 @@ void NetlistCircuit::assignComponentsToAtomicSubcircuits()
 
 }
 
-void NetlistCircuit::createAtomicSubcircuitDescriptions()
-{
-    // Make the data for the atomic subcircuits:
-    assert(m_CircuitDataForAtomicSubcircuits.empty());
-    for(int currentSubcircuitIdx=0; currentSubcircuitIdx<m_NumberOfAtomicSubcircuits; currentSubcircuitIdx++)
-    {
-        boost::shared_ptr<CircuitData> toPushBack(new CircuitData(m_hstep));
-        m_CircuitDataForAtomicSubcircuits.push_back(toPushBack);
-        // Get a reference to the new CircuitData, just to avoid filling the screen with an infinite amount of code, below.
-        CircuitData& currentSubcircuit = *(m_CircuitDataForAtomicSubcircuits.back());
-
-        // Scoping unit for componentLocationIdx:
-        {
-            int componentLocationIdx = 0;
-            for (auto componentsSubcircuitIdx=m_AtomicSubcircuitsComponentsBelongsTo.begin(); componentsSubcircuitIdx!=m_AtomicSubcircuitsComponentsBelongsTo.end(); componentsSubcircuitIdx++)
-            {
-                if (*componentsSubcircuitIdx == currentSubcircuitIdx)
-                {
-                    currentSubcircuit.components.push_back( mp_CircuitDescriptionWithoutDiodes->components.at(componentLocationIdx) );
-                }
-                componentLocationIdx++;
-            }
-        }
-
-        currentSubcircuit.rebuildCircuitMetadata();
-    }
-
-    // Give each subcircuit its index in the parent vector:
-    for (int ii=0; ii<m_CircuitDataForAtomicSubcircuits.size(); ii++)
-    {
-        m_CircuitDataForAtomicSubcircuits.at(ii)->index=ii;
-    }
-
-    // Identify the composite subcircuits (with legality assigned by user?)
-
-    // Make the data for the composite subcircuits
-
-    // Make sure that we have a sensible data structure so that the list of active subcircuits
-    // can easily be mapped to the actual active circuits themselves.
-}
-
 void NetlistCircuit::setPointersToBoundaryPressuresAndFlows(double* const interfacePressures, double* const interfaceFlows, const int& numberOfPointers)
 {
     assert(pressure_n_ptrs.size()==0);
@@ -887,7 +846,6 @@ void NetlistZeroDDomainCircuit::buildSubcircuit()
     mp_subcircuit.reset();
     double alfi_delt_in = m_alfi_local*m_delt;
     mp_subcircuit = boost::shared_ptr<NetlistSubcircuit> (new NetlistSubcircuit(0, mp_CircuitDescription, flow_n_ptrs, pressure_n_ptrs,alfi_delt_in,m_surfaceIndex));
-    mp_subcircuit->setThisisA3DDomainReplacement();
 }
 
 void NetlistZeroDDomainCircuit::setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate)

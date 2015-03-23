@@ -185,14 +185,6 @@ void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::
     }
 }
 
-void NetlistCircuit::buildSubcircuit()
-{
-    detectWhetherClosedDiodesStopAllFlowAt3DInterface();
-    // Actually build the active NetlistSubcircuit classes:
-    // mp_subcircuit.reset();
-    // mp_subcircuit = boost::shared_ptr<NetlistSubcircuit> (new NetlistSubcircuit(mp_circuitData, flow_n_ptrs, pressure_n_ptrs, m_surfaceIndex, m_delt));
-}
-
 bool NetlistCircuit::flowPermittedAcross3DInterface() const
 {
 	return mp_circuitData->flowPermittedAcross3DInterface();
@@ -513,7 +505,7 @@ void NetlistCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep
     rebuildCircuitMetadata();
-    buildSubcircuit();
+    detectWhetherClosedDiodesStopAllFlowAt3DInterface();
     cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
@@ -525,6 +517,13 @@ void NetlistCircuit::finalizeLPNAtEndOfTimestep()
 boost::shared_ptr<CircuitComponent> NetlistCircuit::getComponentByInputDataIndex(const int componentIndex)
 {
     return mp_circuitData->getComponentByInputDataIndex(componentIndex);
+}
+
+void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
+{
+    // Idetify and construct the appropriate subcircuits for this timestep
+    rebuildCircuitMetadata();
+    cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
 void NetlistZeroDDomainCircuit::createCircuitDescription()
@@ -837,14 +836,6 @@ boost::shared_ptr<CircuitData> NetlistCircuit::getCircuitDescription()
     return mp_circuitData;
 }
 
-void NetlistZeroDDomainCircuit::buildSubcircuit()
-{
-    // mp_circuitData.switchDiodeStatesIfNecessary();
-    // mp_circuitData->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
-    // Actually build the active NetlistSubcircuit classes:
-    // mp_subcircuit.reset();
-    // mp_subcircuit = boost::shared_ptr<NetlistSubcircuit> (new NetlistSubcircuit(mp_circuitData, flow_n_ptrs, pressure_n_ptrs, m_surfaceIndex, m_delt));
-}
 
 void NetlistZeroDDomainCircuit::setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate)
 {

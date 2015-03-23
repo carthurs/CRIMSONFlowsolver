@@ -62,7 +62,7 @@ public:
 	void cycleToSetHistoryPressuresFlowsAndVolumes();
 
 	// void identifyAtomicSubcircuits();
-	void initialiseAtStartOfTimestep();
+	virtual void initialiseAtStartOfTimestep();
 	void finalizeLPNAtEndOfTimestep();
 	boost::shared_ptr<CircuitData> getCircuitDescription();
 
@@ -126,7 +126,6 @@ protected:
 	std::vector<double*> pressure_n_ptrs;
 	std::vector<double*> flow_n_ptrs;
 	int m_NumberOfAtomicSubcircuits;
-	virtual void buildSubcircuit();
 
 	void createVectorsAndMatricesForCircuitLinearSystem();
 	void getListOfNodesWithMultipleIncidentCurrents();
@@ -232,9 +231,9 @@ public:
 	void solveSystem(const int timestepNumber);
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 	void createCircuitDescription();
+	void initialiseAtStartOfTimestep();
 private:
 	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
-	void buildSubcircuit();
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveVolumeTrackingPressureChamber;

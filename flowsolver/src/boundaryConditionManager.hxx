@@ -118,6 +118,8 @@ class abstractBoundaryCondition;
         m_lstepHasBeenSet = false;
         m_maxsurfHasBeenSet = false;
         m_nstepHasBeenSet = false;
+
+        m_hasSurfaceList = false;
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> boundaryConditions;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
@@ -143,6 +145,8 @@ class abstractBoundaryCondition;
     bool m_ntoutHasBeenSet;
     bool m_maxsurfHasBeenSet;
     bool m_nstepHasBeenSet;
+
+    bool m_hasSurfaceList;
 
     int m_nextTimestepWrite_netlistBoundaries_start;
 

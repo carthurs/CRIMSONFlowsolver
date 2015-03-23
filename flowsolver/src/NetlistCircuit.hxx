@@ -3,8 +3,11 @@
 
 #include "gtest/gtest_prod.h"
 #include "CircuitData.hxx"
-#include "NetlistSubcircuit.hxx"
 #include <sstream>
+#include "petscsys.h"
+#include "petscmat.h"
+#include "petscvec.h"
+#include <set>
 
 class NetlistCircuit
 {
@@ -21,8 +24,15 @@ public:
 	m_delt(delt),
 	m_alfi(alfi)
 	{
+		RHS = PETSC_NULL;
+		solutionVector = PETSC_NULL;
+		m_systemMatrix = PETSC_NULL;
+		m_inverseOfSystemMatrix = PETSC_NULL;
+		m_identityMatrixForPetscInversionHack = PETSC_NULL;
+
+		safetyCounterLimit = 1000;
 		mp_circuitData = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
-		mp_circuitDataWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
+		// mp_circuitDataWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
 
 		std::stringstream pressureFileNameBuilder;
 		pressureFileNameBuilder << "netlistPressures_surface_" << m_surfaceIndex << ".dat";
@@ -35,7 +45,11 @@ public:
 		std::stringstream volumeFileNameBuilder;
 		volumeFileNameBuilder << "netlistVolumes_surface_" << m_surfaceIndex << ".dat";
 		m_VolumeHistoryFileName = volumeFileNameBuilder.str();
+
+		// initialiseSubcircuit();
 	}
+
+	void initialiseSubcircuit();
 
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
@@ -47,13 +61,36 @@ public:
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
 	void cycleToSetHistoryPressuresFlowsAndVolumes();
 
-	void identifyAtomicSubcircuits();
+	// void identifyAtomicSubcircuits();
 	void initialiseAtStartOfTimestep();
 	void finalizeLPNAtEndOfTimestep();
 	boost::shared_ptr<CircuitData> getCircuitDescription();
 
 	virtual void createCircuitDescription();
-	virtual ~NetlistCircuit() {}
+	virtual ~NetlistCircuit()
+	{
+		PetscErrorCode errFlag;
+		if (RHS)
+		{
+			errFlag = VecDestroy(&RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		}
+		if (solutionVector)
+		{
+			errFlag = VecDestroy(&solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		}
+		if (m_systemMatrix)
+		{
+			errFlag = MatDestroy(&m_systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		}
+		if (m_inverseOfSystemMatrix)
+		{
+			errFlag = MatDestroy(&m_inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		}
+		if (m_identityMatrixForPetscInversionHack)
+		{
+			errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+		}
+	}
 
 	// This can be used to give more than one pressure and one flow pointer to the netlist. Useful if this Netlist
 	// has multiple interfaces with other domains (e.g. if this is a Netlist replacement for the 3D domain.)
@@ -81,7 +118,6 @@ protected:
 	std::string m_FlowHistoryFileName;
 	std::string m_VolumeHistoryFileName;
 	boost::shared_ptr<CircuitData> mp_circuitData;
-	boost::shared_ptr<NetlistSubcircuit> mp_subcircuit;
 	const int m_surfaceIndex;
 	const bool m_thisIsARestartedSimulation;
 	const double m_delt;
@@ -91,12 +127,74 @@ protected:
 	std::vector<double*> flow_n_ptrs;
 	int m_NumberOfAtomicSubcircuits;
 	virtual void buildSubcircuit();
+
+	void createVectorsAndMatricesForCircuitLinearSystem();
+	void getListOfNodesWithMultipleIncidentCurrents();
+	void getMapOfPressHistoriesToCorrectPressNodes();
+	void getMapOfFlowHistoriesToCorrectComponents();
+	void getMapOfVolumeHistoriesToCorrectComponents();
+	void getMapOfTrackedVolumesToCorrectComponents();
+	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
+	void assembleRHS(const int timestepNumber);
+	void computeCircuitLinearSystemSolution(const int timestepNumber, const double alfi_delt);
+	void giveNodesTheirPressuresFromSolutionVector();
+	void giveComponentsTheirFlowsFromSolutionVector();
+	void giveComponentsTheirVolumesFromSolutionVector();
+	void giveComponentsTheirProposedVolumesFromSolutionVector();
+	std::vector<double> getVolumesFromSolutionVector();
+	bool areThereNegativeVolumes(const int timestepNumber, const double alfi_delt);
+
+	Mat m_systemMatrix;
+	Mat m_inverseOfSystemMatrix;
+	Mat m_identityMatrixForPetscInversionHack;
+	Vec RHS;
+	Vec solutionVector;
+
+	std::vector<double> pressuresInSubcircuit;
+	std::vector<double> historyPressuresInSubcircuit; // As pressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
+	std::vector<double> flowsInSubcircuit;            // Flow through each component in the LPN, in the order they appear in the netlist
+	std::vector<double> historyFlowsInSubcircuit;	  // As flowsInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
+	std::vector<double> volumesInSubcircuit;
+	std::vector<double> historyVolumesInSubcircuit;
+	// circuitData subcircuitInputData;
+	std::map<int,int> nodeIndexToPressureHistoryNodeOrderingMap;
+	std::map<int,int> componentIndexToFlowHistoryComponentOrderingMap;
+	std::map<int,int> componentIndexToVolumeHistoryComponentOrderingMap;
+	std::map<int,int> componentIndexToTrackedVolumeComponentOrderingMap;
+	PetscInt systemSize;
+	std::vector<int> listOfNodesWithMultipleIncidentCurrents;
+	int numberOfMultipleIncidentCurrentNodes;
+	std::set<int> listOfHistoryPressures;            // generated from input data, listing pressure node indices and component flow indices where a history is needed (i.e. last time-step values for capacitors/inductors)
+	std::set<int> listOfHistoryFlows;
+	std::set<int> listOfHistoryVolumes;
+	std::set<int> listOfTrackedVolumes;
+	int numberOfPrescribedPressuresAndFlows;           // Just the sum of the previous two declared integers
+	int numberOfHistoryPressures;
+	int numberOfHistoryFlows;
+	int numberOfHistoryVolumes;
+	int m_numberOfTrackedVolumes;
+	std::vector<int> columnMap;
+	// int columnMapSize;//\todo check this is used
+	std::vector<int> columnIndexOf3DInterfaceFlowInLinearSystem;
+	std::vector<int> columnIndexOf3DInterfacePressureInLinearSystem;
+
+	int safetyCounterLimit;
+
+	PetscScalar m_interfaceFlow;
+  	PetscScalar m_interfacePressure;
+
+  	void updateInternalPressuresVolumesAndFlows_internal(const int timestepNumber, const double alfi_delt);
+	std::pair<double,double> computeImplicitCoefficients_internal(const int timestepNumber, const double timen_1, const double alfi_delt);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement_internal(const int timestepNumber);
+	
+	void buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt);
+
 private:
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
-	void createInitialCircuitDescriptionWithoutDiodes();
-	void assignComponentsToAtomicSubcircuits();
+	// void createInitialCircuitDescriptionWithoutDiodes();
+	// void assignComponentsToAtomicSubcircuits();
 
-	boost::shared_ptr<CircuitData> mp_circuitDataWithoutDiodes;
+	// boost::shared_ptr<CircuitData> mp_circuitDataWithoutDiodes;
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
 	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_circuitDataWithoutDiodes
 

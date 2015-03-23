@@ -51,8 +51,10 @@ void Netlist3DDomainReplacement::initialiseModel()
     // Get the input data
     mp_NetlistZeroDDomainCircuit->createCircuitDescription();
 
+    mp_NetlistZeroDDomainCircuit->initialiseSubcircuit();
+
     // Determine how many subcircuits are needed, and note which components belong to each subcircuit
-    mp_NetlistZeroDDomainCircuit->identifyAtomicSubcircuits();
+    // mp_NetlistZeroDDomainCircuit->identifyAtomicSubcircuits();
 
     // Initialise all diodes to their closed state, for stability
     //\todo change this if you're restarting and the diodes need to be open at restart!

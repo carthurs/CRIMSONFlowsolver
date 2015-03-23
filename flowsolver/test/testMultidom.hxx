@@ -193,6 +193,7 @@
 	    // before the destructor).
 	    multidom_finalise();
 	    fortranPointerManager_instance->tearDown();
+	    boundaryConditionManager_instance->tearDown();
 	    // retrievedBoundaryConditions = 0;
 	  }
 

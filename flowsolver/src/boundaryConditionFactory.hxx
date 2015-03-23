@@ -24,6 +24,13 @@ class boundaryConditionFactory
 	boost::shared_ptr<abstractBoundaryCondition> createBoundaryCondition(int surfaceIndex_in, boundary_condition_t boundaryType);
 
  private:
+ 	// We make boundaryConditionToReturn a member variable for safety: if 
+ 	// boundaryConditionToReturn throws anything durin construction, we dont
+ 	// want it being deleted by the shared pointer reference counter
+ 	// and causing segfaults before the throw error message has been 
+ 	// presented to the user.
+ 	boost::shared_ptr<abstractBoundaryCondition> boundaryConditionToReturn;
+
 	const double m_hstep;
 	const double m_delt;
 	const double m_alfi;

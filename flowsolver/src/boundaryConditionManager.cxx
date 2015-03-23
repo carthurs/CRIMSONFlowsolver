@@ -196,6 +196,10 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   assert(m_ntoutHasBeenSet);
   assert(m_maxsurfHasBeenSet);
   assert(m_nstepHasBeenSet);
+
+  assert(!m_hasSurfaceList);
+  m_hasSurfaceList = true;
+
   // Build a factory
   boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep);
   

@@ -5,7 +5,6 @@
 #include <set>
 #include <vector>
 #include "datatypesInCpp.hxx"
-#include "NetlistSubcircuit.hxx"
 #include "CircuitData.hxx"
 #include "AtomicSubcircuitConnectionManager.hxx"
 #include "NetlistCircuit.hxx"

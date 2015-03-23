@@ -17,12 +17,14 @@ void NetlistBoundaryCondition::initialiseModel()
     mp_NetlistCircuit->createCircuitDescription();
 
     // Determine how many subcircuits are needed, and note which components belong to each subcircuit
-    mp_NetlistCircuit->identifyAtomicSubcircuits();
+    // mp_NetlistCircuit->identifyAtomicSubcircuits();
 
     // Initialise all diodes to their closed state, for stability
     //\todo change this if you're restarting and the diodes need to be open at restart!
     mp_NetlistCircuit->closeAllDiodes();
     mp_NetlistCircuit->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+
+    mp_NetlistCircuit->initialiseSubcircuit();
 
     // count the diodes, and set up the AtomicSubcircuitConnectionManager, which is used it working out
     // what connections should be made when a diode/valve opens.

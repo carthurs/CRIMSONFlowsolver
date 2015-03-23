@@ -8,29 +8,29 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 {
   if (boundaryType == BoundaryCondition_RCR)
   {
-    boost::shared_ptr<abstractBoundaryCondition> newRCR(new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
     
-    newRCR->getPressureAndFlowPointersFromFortran();
+    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
 
-    return newRCR;
+    return boundaryConditionToReturn;
   }
   else if (boundaryType == BoundaryCondition_Netlist)
   {
-    boost::shared_ptr<abstractBoundaryCondition> newNetlist(new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
 
-    newNetlist->getPressureAndFlowPointersFromFortran();
+    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
     
-    newNetlist->initialiseModel();
+    boundaryConditionToReturn->initialiseModel();
     
-    return newNetlist;
+    return boundaryConditionToReturn;
   }
   else if (boundaryType == BoundaryCondition_ControlledCoronary)
   {
-    boost::shared_ptr<abstractBoundaryCondition> newControlledCoronary(new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
 
-    newControlledCoronary->getPressureAndFlowPointersFromFortran();
+    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
 
-    return newControlledCoronary;
+    return boundaryConditionToReturn;
   }
   else
   {

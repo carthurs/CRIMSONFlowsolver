@@ -13,16 +13,16 @@ class NetlistCircuit
 	FRIEND_TEST(testMultidom, checkClosedDiodeWithRemainingOpenPathDetected);
 	FRIEND_TEST(testMultidom, checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
-	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi_local, const double delt)
+	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt)
 	: m_surfaceIndex(surfaceIndex),
 	m_IndexOfThisNetlistLPN(indexOfThisNetlistLPN),
 	m_hstep(hstep),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
-	m_alfi_local(alfi_local)
+	m_alfi(alfi)
 	{
-		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
-		mp_CircuitDescriptionWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
+		mp_circuitData = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
+		mp_circuitDataWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
 
 		std::stringstream pressureFileNameBuilder;
 		pressureFileNameBuilder << "netlistPressures_surface_" << m_surfaceIndex << ".dat";
@@ -53,7 +53,6 @@ public:
 	boost::shared_ptr<CircuitData> getCircuitDescription();
 
 	virtual void createCircuitDescription();
-	virtual void buildSubcircuit();
 	virtual ~NetlistCircuit() {}
 
 	// This can be used to give more than one pressure and one flow pointer to the netlist. Useful if this Netlist
@@ -69,36 +68,37 @@ public:
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 protected:
 	// Overload constructor for subclasses to call:
-	NetlistCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi_local, const double delt)
+	NetlistCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
 	: m_hstep(hstep),
 	m_surfaceIndex(-1),
 	m_IndexOfThisNetlistLPN(-1),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
-	m_alfi_local(alfi_local)
+	m_alfi(alfi)
 	{
 	}
 	std::string m_PressureHistoryFileName;
 	std::string m_FlowHistoryFileName;
 	std::string m_VolumeHistoryFileName;
-	boost::shared_ptr<CircuitData> mp_CircuitDescription;
+	boost::shared_ptr<CircuitData> mp_circuitData;
 	boost::shared_ptr<NetlistSubcircuit> mp_subcircuit;
 	const int m_surfaceIndex;
 	const bool m_thisIsARestartedSimulation;
 	const double m_delt;
-	const double m_alfi_local;
+	const double m_alfi;
 	const int m_hstep;
 	std::vector<double*> pressure_n_ptrs;
 	std::vector<double*> flow_n_ptrs;
 	int m_NumberOfAtomicSubcircuits;
+	virtual void buildSubcircuit();
 private:
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 	void createInitialCircuitDescriptionWithoutDiodes();
 	void assignComponentsToAtomicSubcircuits();
 
-	boost::shared_ptr<CircuitData> mp_CircuitDescriptionWithoutDiodes;
+	boost::shared_ptr<CircuitData> mp_circuitDataWithoutDiodes;
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
-	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_CircuitDescriptionWithoutDiodes
+	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_circuitDataWithoutDiodes
 
 	const int m_IndexOfThisNetlistLPN;
 	// std::vector<double> m_PressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
@@ -111,14 +111,14 @@ private:
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
-	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi_local, const double delt, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure)
-	: NetlistCircuit(hstep, thisIsARestartedSimulation, delt, alfi_local),
+	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure)
+	: NetlistCircuit(hstep, thisIsARestartedSimulation, alfi, delt),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
 	m_elastanceToGiveVolumeTrackingPressureChamber(elastanceToGiveVolumeTrackingPressureChamber),
 	m_initialDomainPressure(initialDomainPressure),
 	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
-		mp_CircuitDescription = boost::shared_ptr<CircuitData> (new Netlist3DDomainReplacementCircuitData(hstep, numberOfNetlistsUsedAsBoundaryConditions));
+		mp_circuitData = boost::shared_ptr<CircuitData> (new Netlist3DDomainReplacementCircuitData(hstep, numberOfNetlistsUsedAsBoundaryConditions));
 		m_PressureHistoryFileName.clear(); // Defensive
 		m_PressureHistoryFileName.append("netlistPressures_zeroDDomainReplacement.dat");
 		m_FlowHistoryFileName.clear(); // Defensive

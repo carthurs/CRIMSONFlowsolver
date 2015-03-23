@@ -13,13 +13,13 @@
 class NetlistSubcircuit
 {
 public:
-	NetlistSubcircuit(const int indexOfThisSubcircuit, boost::shared_ptr<CircuitData> circuitData, const std::vector<double*> flow_n_ptrs, const std::vector<double*> pressure_n_ptrs, double const alfi_delt_in, const int surfaceIndex_in)
-	: indexOfThisSubcircuit(indexOfThisSubcircuit),
-	 m_circuitData(circuitData),
+	NetlistSubcircuit(boost::shared_ptr<CircuitData> circuitData, const std::vector<double*> flow_n_ptrs, const std::vector<double*> pressure_n_ptrs, const int surfaceIndex_in, const double delt)
+	: 
+	 mp_circuitData(circuitData),
 	 flow_n_ptrs(flow_n_ptrs),
 	 pressure_n_ptrs(pressure_n_ptrs),
-	 m_alfi_delt(alfi_delt_in),
-	 surfaceIndex(surfaceIndex_in)
+	 surfaceIndex(surfaceIndex_in),
+	 m_delt(delt)
 	{
 		initialiseSubcircuit();
 		// columnIndexOf3DInterfaceFlowInLinearSystem = 0;
@@ -36,12 +36,12 @@ public:
 		errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 	}
 
-	void updateInternalPressuresVolumesAndFlows(const int timestepNumber);
-	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
-	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	void updateInternalPressuresVolumesAndFlows_internal(const int timestepNumber, const double alfi_delt);
+	std::pair<double,double> computeImplicitCoefficients_internal(const int timestepNumber, const double timen_1, const double alfi_delt);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement_internal(const int timestepNumber);
 	
-	boost::shared_ptr<CircuitData> m_circuitData;
-	void buildAndSolveLinearSystem(const int timestepNumber);
+	boost::shared_ptr<CircuitData> mp_circuitData;
+	void buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt);
 protected:
 
 private:
@@ -54,21 +54,18 @@ private:
 	void getMapOfTrackedVolumesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
-	void computeCircuitLinearSystemSolution(const int timestepNumber);
+	void computeCircuitLinearSystemSolution(const int timestepNumber, const double alfi_delt);
 	void giveNodesTheirPressuresFromSolutionVector();
 	void giveComponentsTheirFlowsFromSolutionVector();
 	void giveComponentsTheirVolumesFromSolutionVector();
 	void giveComponentsTheirProposedVolumesFromSolutionVector();
 	std::vector<double> getVolumesFromSolutionVector();
-	bool areThereNegativeVolumes(const int timestepNumber);
+	bool areThereNegativeVolumes(const int timestepNumber, const double alfi_delt);
 
-	bool m_thisIsA3DDomainReplacement;
-
-	const int indexOfThisSubcircuit;
 	const std::vector<double*> flow_n_ptrs;
 	const std::vector<double*> pressure_n_ptrs;
-	double const m_alfi_delt;
 	const int surfaceIndex;
+	const double m_delt;
 
 	Mat m_systemMatrix;
 	Mat m_inverseOfSystemMatrix;

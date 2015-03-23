@@ -59,9 +59,8 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
     std::pair<double,double> temp;
 
     double timeAtStepNplus1 = delt*((double)timestepNumber+1.0);
-    double alfi_delt = delt;
 
-    temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
+    temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, delt);
 
     dp_dq_n1 = temp.first;
     Hop_n1 = temp.second;

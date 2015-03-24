@@ -46,10 +46,9 @@ public:
 		volumeFileNameBuilder << "netlistVolumes_surface_" << m_surfaceIndex << ".dat";
 		m_VolumeHistoryFileName = volumeFileNameBuilder.str();
 
-		// initialiseSubcircuit();
 	}
 
-	void initialiseSubcircuit();
+	void initialiseCircuit();
 
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
@@ -135,7 +134,6 @@ protected:
 	void getMapOfTrackedVolumesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
-	void computeCircuitLinearSystemSolution(const int timestepNumber, const double alfi_delt);
 	void giveNodesTheirPressuresFromSolutionVector();
 	void giveComponentsTheirFlowsFromSolutionVector();
 	void giveComponentsTheirVolumesFromSolutionVector();
@@ -181,12 +179,8 @@ protected:
 
 	PetscScalar m_interfaceFlow;
   	PetscScalar m_interfacePressure;
-
-  	void updateInternalPressuresVolumesAndFlows_internal(const int timestepNumber, const double alfi_delt);
-	std::pair<double,double> computeImplicitCoefficients_internal(const int timestepNumber, const double timen_1, const double alfi_delt);
-	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement_internal(const int timestepNumber);
 	
-	void buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt);
+	void buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt);
 
 private:
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);

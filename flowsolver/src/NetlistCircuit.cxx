@@ -278,34 +278,6 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
       nextTimestepWrite_start = nextTimestepWrite_end;
 }
 
-std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt)
-{
-    // Get the implicit coefficients from the identified subcircuit
-    std::pair<double,double> implicitCoefficients;
-    // if (mp_circuitData.flowPermittedAcross3DInterface())
-    // {
-    int numberOfCircuitsClaimingToHaveA3DInterface = 0;
-    if (this->mp_circuitData->connectsTo3DDomain() == true)
-    {
-        numberOfCircuitsClaimingToHaveA3DInterface++;
-        implicitCoefficients = this->computeImplicitCoefficients_internal(timestepNumber,timeAtStepNplus1,alfi_delt);
-    }
-    assert(numberOfCircuitsClaimingToHaveA3DInterface==1);
-    // }
-    // else
-    // {
-    //     implicitCoefficients.first=1.0;
-    //     implicitCoefficients.second=0.0;
-    // }
-
-    return implicitCoefficients;
-}
-
-void NetlistCircuit::updateLPN(const int timestepNumber)
-{
-    this->updateInternalPressuresVolumesAndFlows_internal(timestepNumber, m_delt);
-}
-
 void NetlistCircuit::setPressureAndFlowPointers(double* pressurePointer, double* flowPointer)
 {
     flow_n_ptrs.clear();
@@ -491,14 +463,6 @@ void NetlistCircuit::cycleToSetHistoryPressuresFlowsAndVolumes()
             pressureChamber->cycleHistoryVolume();
         }
     }
-}
-
-std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
-{
-    std::pair<boundary_data_t,double> pressureOrFlowToReturn;
-    pressureOrFlowToReturn = this->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement_internal(timestepNumber);
-
-    return pressureOrFlowToReturn;
 }
 
 void NetlistCircuit::initialiseAtStartOfTimestep()
@@ -866,7 +830,7 @@ std::vector<double> NetlistZeroDDomainCircuit::getBoundaryFlows()
 
 void NetlistZeroDDomainCircuit::solveSystem(const int timestepNumber)
 {
-	this->buildAndSolveLinearSystem_internal(timestepNumber,m_delt);
+	buildAndSolveLinearSystem(timestepNumber,m_delt);
 }
 
 void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries)
@@ -895,7 +859,7 @@ void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double
     }
 }
 
-void NetlistCircuit::initialiseSubcircuit()
+void NetlistCircuit::initialiseCircuit()
 {
   numberOfPrescribedPressuresAndFlows = mp_circuitData->numberOfPrescribedPressures + mp_circuitData->numberOfPrescribedFlows; // Just the sum of the previous two declared integers
 
@@ -1513,9 +1477,9 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
 
 }
 
-void NetlistCircuit::updateInternalPressuresVolumesAndFlows_internal(const int timestepNumber, const double alfi_delt)
+void NetlistCircuit::updateLPN(const int timestepNumber)
 {
-    computeCircuitLinearSystemSolution(timestepNumber, alfi_delt);
+    buildAndSolveLinearSystem(timestepNumber, m_delt);
 
     // Get the updated nodal pressures:
     giveNodesTheirPressuresFromSolutionVector();
@@ -1548,11 +1512,6 @@ void NetlistCircuit::updateInternalPressuresVolumesAndFlows_internal(const int t
     // }
 
     // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInSubcircuit(2))/1.2862d5 - this%flowsInSubcircuit(1)
-}
-
-void NetlistCircuit::computeCircuitLinearSystemSolution(const int timestepNumber, const double alfi_delt)
-{
-  buildAndSolveLinearSystem_internal(timestepNumber, alfi_delt);
 }
 
 void NetlistCircuit::giveNodesTheirPressuresFromSolutionVector()
@@ -1665,7 +1624,7 @@ std::vector<double> NetlistCircuit::getVolumesFromSolutionVector()
   return volumesToReturn;
 }
 
-void NetlistCircuit::buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt)
+void NetlistCircuit::buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt)
 {
   generateLinearSystemFromPrescribedCircuit(alfi_delt);
   assembleRHS(timestepNumber);
@@ -1680,9 +1639,9 @@ void NetlistCircuit::buildAndSolveLinearSystem_internal(const int timestepNumber
   errFlag = MatMult(m_inverseOfSystemMatrix,RHS,solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
-std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement_internal(const int timestepNumber)
+std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
 {
-  buildAndSolveLinearSystem_internal(timestepNumber,m_delt);
+  buildAndSolveLinearSystem(timestepNumber,m_delt);
 
   PetscErrorCode errFlag;
 
@@ -1708,7 +1667,7 @@ std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToG
   }
 }
 
-std::pair<double,double> NetlistCircuit::computeImplicitCoefficients_internal(const int timestepNumber, const double timen_1, const double alfi_delt)
+std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
     assert(mp_circuitData->connectsTo3DDomain());
 
@@ -1720,7 +1679,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients_internal(co
       // ensured there are no negative volumes:
       while (solutionVectorMightHaveNegativeVolumes)
       {
-        buildAndSolveLinearSystem_internal(timestepNumber,alfi_delt);
+        buildAndSolveLinearSystem(timestepNumber,alfi_delt);
 
         solutionVectorMightHaveNegativeVolumes = areThereNegativeVolumes(timestepNumber, alfi_delt);
 
@@ -1780,7 +1739,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients_internal(co
 // volumes. The returned bool can be used to enforce a re-solve, with any negative pressures re-prescribed to be zero.
 bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const double alfi_delt)
 {
-  computeCircuitLinearSystemSolution(timestepNumber, alfi_delt);
+  buildAndSolveLinearSystem(timestepNumber, alfi_delt);
   // These volumes are "proposed", because if any are negative, we 
   // re-solve with zero-volume prescribed
   giveComponentsTheirProposedVolumesFromSolutionVector();

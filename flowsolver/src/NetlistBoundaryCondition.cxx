@@ -24,7 +24,7 @@ void NetlistBoundaryCondition::initialiseModel()
     mp_NetlistCircuit->closeAllDiodes();
     mp_NetlistCircuit->detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 
-    mp_NetlistCircuit->initialiseSubcircuit();
+    mp_NetlistCircuit->initialiseCircuit();
 
     // count the diodes, and set up the AtomicSubcircuitConnectionManager, which is used it working out
     // what connections should be made when a diode/valve opens.

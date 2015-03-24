@@ -51,7 +51,7 @@ void Netlist3DDomainReplacement::initialiseModel()
     // Get the input data
     mp_NetlistZeroDDomainCircuit->createCircuitDescription();
 
-    mp_NetlistZeroDDomainCircuit->initialiseSubcircuit();
+    mp_NetlistZeroDDomainCircuit->initialiseCircuit();
 
     // Determine how many subcircuits are needed, and note which components belong to each subcircuit
     // mp_NetlistZeroDDomainCircuit->identifyAtomicSubcircuits();

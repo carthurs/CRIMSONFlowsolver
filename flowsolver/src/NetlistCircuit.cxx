@@ -4,6 +4,42 @@
 #include <boost/make_shared.hpp>
 #include "indexShifters.hxx"
 
+// Statics:
+int NetlistClosedLoopDownstreamCircuit::sm_numberOfDownstreamCircuits = 0;
+
+void NetlistCircuit::initialisePetscArrayNames()
+{
+    RHS = PETSC_NULL;
+    solutionVector = PETSC_NULL;
+    m_systemMatrix = PETSC_NULL;
+    m_inverseOfSystemMatrix = PETSC_NULL;
+    m_identityMatrixForPetscInversionHack = PETSC_NULL;
+}
+void NetlistCircuit::terminatePetscArrays()
+{
+    PetscErrorCode errFlag;
+    if (RHS)
+    {
+        errFlag = VecDestroy(&RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (solutionVector)
+    {
+        errFlag = VecDestroy(&solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_systemMatrix)
+    {
+        errFlag = MatDestroy(&m_systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_inverseOfSystemMatrix)
+    {
+        errFlag = MatDestroy(&m_inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_identityMatrixForPetscInversionHack)
+    {
+        errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+}
+
 void NetlistCircuit::createCircuitDescription()
 {
     // This function takes the read-in netlist circuit description and converts it
@@ -1761,3 +1797,148 @@ bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const dou
 
   return thereAreNegativeVolumes;
 }
+
+
+// void NetlistClosedLoopDownstreamCircuit::createCircuitDescription()
+// {
+//     // This function takes the read-in netlist circuit description and converts it
+//     // to the internal CircuitData class format.
+//     assert(false); // need to make the file reader first for the closed loop..
+
+//     // Get the reader class for the netlist data file, and ask it for the circuit description data:
+//     netlistReader* netlistReader_instance = netlistReader::Instance();
+//     mp_circuitData->numberOfComponents = netlistReader_instance->getNumberOfComponents().at(m_IndexOfThisNetlistLPN);
+//     mp_circuitData->numberOfPressureNodes = netlistReader_instance->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPN);
+//     mp_circuitData->numberOfPrescribedPressures = netlistReader_instance->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
+//     mp_circuitData->numberOfPrescribedFlows = netlistReader_instance->getNumberOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
+
+//     std::vector<circuit_component_t> retrievedComponentTypes = netlistReader_instance->getComponentTypes().at(m_IndexOfThisNetlistLPN);
+
+//     // Prepare space for the components in the circuit:
+//     assert(mp_circuitData->components.empty());
+//     for (int ii=0; ii<mp_circuitData->numberOfComponents; ii++)
+//     {
+//         CircuitComponent* toPushBack;
+//         if (retrievedComponentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
+//         {
+//             toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
+//         }
+//         else
+//         {
+//             toPushBack = new CircuitComponent(m_hstep,m_thisIsARestartedSimulation);
+//         }
+
+//         mp_circuitData->components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
+//         mp_circuitData->components.back()->setIndex(toOneIndexing(ii));
+//     }
+
+
+//     // Obtain the component- and node-level data for the circuit, for moving into the appropriate data structure CircuitData
+//     // We want to pop off the component types as we use them, but starting from the beginning of the vector. To do this, we reverse
+//     // the vector and then pop from the new end.
+//     std::reverse(retrievedComponentTypes.begin(), retrievedComponentTypes.end());
+//     std::vector<int> retrievedComponentStartNodes = netlistReader_instance->getComponentStartNodes().at(m_IndexOfThisNetlistLPN);
+//     std::reverse(retrievedComponentStartNodes.begin(), retrievedComponentStartNodes.end());
+//     std::vector<int> retrievedComponentEndNodes = netlistReader_instance->getComponentEndNodes().at(m_IndexOfThisNetlistLPN);
+//     std::reverse(retrievedComponentEndNodes.begin(), retrievedComponentEndNodes.end());
+//     std::vector<double> retrievedComponentParameterValues = netlistReader_instance->getComponentParameterValues().at(m_IndexOfThisNetlistLPN);
+//     std::reverse(retrievedComponentParameterValues.begin(), retrievedComponentParameterValues.end());
+
+//     std::vector<int> retrievedListOfPrescribedFlows = netlistReader_instance->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
+//     std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = netlistReader_instance->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
+//     std::vector<double> retrievedValueOfPrescribedFlows = netlistReader_instance->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPN);
+//     std::map<int,double> retrievedInitialPressures = netlistReader_instance->getInitialPressures().at(m_IndexOfThisNetlistLPN);
+    
+//     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
+//     for (auto component = mp_circuitData->components.begin(); component != mp_circuitData->components.end(); component++)
+//     {
+//         (*component)->getType() = retrievedComponentTypes.back();
+//         retrievedComponentTypes.pop_back();
+
+//         int indexOfStartNodeInInputData = retrievedComponentStartNodes.back();
+//         retrievedComponentStartNodes.pop_back();
+        
+//         // note that we're passing a boost::shared_ptr to the startNode here; if this is currently NULL, it will
+//         // be constructed during the call to setupPressureNode.
+//         setupPressureNode(indexOfStartNodeInInputData, (*component)->startNode, *component);
+
+//         // (*component)->startNode = mp_circuitData.ifExistsGetNodeOtherwiseConstructNode(indexOfStartNodeInInputData);
+//         // (*component)->startNode->getIndex() = indexOfStartNodeInInputData;
+
+//         // (*component)->startNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
+//         // for (int prescribedPressure=0; prescribedPressure<mp_circuitData.numberOfPrescribedPressures; prescribedPressure++)
+//         // {
+//         //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->startNode->getIndex())
+//         //     {
+//         //         (*component)->startNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
+//         //         (*component)->startNode->pressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
+//         //         (*component)->startNode->pressure = (*component)->startNode->pressure;
+//         //     }
+//         // }
+
+//         int indexOfEndNodeInInputData = retrievedComponentEndNodes.back();
+//         retrievedComponentEndNodes.pop_back();
+
+//         // note that we're passing a boost::shared_ptr to the endNode here; if this is currently NULL, it will
+//         // be constructed during the call to setupPressureNode.
+//         setupPressureNode(indexOfEndNodeInInputData, (*component)->endNode, *component);
+
+//         // int indexOfEndNodeInInputData = retrievedComponentEndNodes.back();
+//         // retrievedComponentEndNodes.pop_back();
+//         // (*component)->endNode = mp_circuitData.ifExistsGetNodeOtherwiseConstructNode(indexOfEndNodeInInputData);
+//         // (*component)->endNode->getIndex() = indexOfEndNodeInInputData;
+//         // (*component)->endNode->prescribedPressureType = Pressure_NotPrescribed; // initialise as a default, before replacing as necessary
+//         // for (int prescribedPressure=0; prescribedPressure<mp_circuitData.numberOfPrescribedPressures; prescribedPressure++)
+//         // {
+//         //     if (retrievedListOfPrescribedPressures.at(prescribedPressure) == (*component)->endNode->getIndex())
+//         //     {
+//         //         (*component)->endNode->prescribedPressureType = retrievedTypeOfPrescribedPressures.at(prescribedPressure);
+//         //         (*component)->endNode->pressure = retrievedValueOfPrescribedPressures.at(prescribedPressure);
+//         //         (*component)->endNode->pressure = (*component)->endNode->pressure;
+//         //     }
+//         // }
+
+//         (*component)->prescribedFlowType = Flow_NotPrescribed;  // initialise as a default, before replacing as necessary
+//         for (int prescribedFlow=0; prescribedFlow<mp_circuitData->numberOfPrescribedFlows; prescribedFlow++)
+//         {
+//             if (retrievedListOfPrescribedFlows.at(prescribedFlow) == (*component)->getIndex())
+//             {
+//                 (*component)->prescribedFlowType = retrievedTypeOfPrescribedFlows.at(prescribedFlow);
+//                 (*component)->valueOfPrescribedFlow = retrievedValueOfPrescribedFlows.at(prescribedFlow);
+//             }
+//         }
+
+//         (*component)->setParameterValue(retrievedComponentParameterValues.back());
+//         // make a copy of this value so we can reset it if necessary. Used for e.g. diode state changes.
+//         (*component)->parameterValueFromInputData = *((*component)->getParameterPointer());
+//         retrievedComponentParameterValues.pop_back();
+
+//         (*component)->startNode->setPressure(retrievedInitialPressures.at((*component)->startNode->getIndex()));
+//         (*component)->endNode->setPressure(retrievedInitialPressures.at((*component)->endNode->getIndex()));
+
+
+//     }
+
+//     // Some metadata is already set-up for this circuit, as a side-effect
+//     // of the above construction. This call completes the metadata; it's not
+//     // a problem that it also re-writes some of the existing metadata
+//     // (rewrites - but does not change - the values are identical!)
+//     mp_circuitData->rebuildCircuitMetadata();
+
+//     // Tell the node at the 3D interface that it connects to the 3D domain:
+//     {
+//         int threeDNodeIndex = netlistReader_instance->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPN);
+//         mp_circuitData->initialiseNodeAndComponentAtInterface(threeDNodeIndex);
+//     }
+
+//     // mp_circuitData.switchDiodeStatesIfNecessary();
+//     // mp_circuitData.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+
+//     // // Component indices are just consecutive integers by default, but sometimes non-consecutive numbering
+//     // // is needed; componentIndices allows for this.
+//     // // We initialise it now for the default case.
+//     // for (int ii=1; ii < mp_circuitData.numberOfComponents + 1; ii++)
+//     // {
+//     //     mp_circuitData.componentIndices.push_back(ii);
+//     // }
+// }

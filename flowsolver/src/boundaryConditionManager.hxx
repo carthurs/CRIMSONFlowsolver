@@ -5,7 +5,7 @@
 #include "boundaryConditionFactory.hxx"
 #include "abstractBoundaryCondition.hxx"
 #include "ControlSystemsManager.hxx"
-#include "NetlistLoopClosingCircuit.hxx"
+#include "ClosedLoopDownstreamSubsection.hxx"
 #include <boost/lexical_cast.hpp>
 
 // Forward declarations:
@@ -125,7 +125,7 @@ class abstractBoundaryCondition;
         m_hasSurfaceList = false;
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> m_boundaryConditions;
-    std::vector<boost::shared_ptr<NetlistLoopClosingCircuit>> m_netlistLoopClosingCircuits;
+    std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubsections;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
 
     std::unique_ptr<ControlSystemsManager> mp_controlSystemsManager;

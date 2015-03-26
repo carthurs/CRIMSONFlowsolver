@@ -24,11 +24,7 @@ public:
 	m_delt(delt),
 	m_alfi(alfi)
 	{
-		RHS = PETSC_NULL;
-		solutionVector = PETSC_NULL;
-		m_systemMatrix = PETSC_NULL;
-		m_inverseOfSystemMatrix = PETSC_NULL;
-		m_identityMatrixForPetscInversionHack = PETSC_NULL;
+		initialisePetscArrayNames();
 
 		safetyCounterLimit = 1000;
 		mp_circuitData = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
@@ -68,27 +64,7 @@ public:
 	virtual void createCircuitDescription();
 	virtual ~NetlistCircuit()
 	{
-		PetscErrorCode errFlag;
-		if (RHS)
-		{
-			errFlag = VecDestroy(&RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		}
-		if (solutionVector)
-		{
-			errFlag = VecDestroy(&solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		}
-		if (m_systemMatrix)
-		{
-			errFlag = MatDestroy(&m_systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		}
-		if (m_inverseOfSystemMatrix)
-		{
-			errFlag = MatDestroy(&m_inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		}
-		if (m_identityMatrixForPetscInversionHack)
-		{
-			errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-		}
+		terminatePetscArrays();
 	}
 
 	// This can be used to give more than one pressure and one flow pointer to the netlist. Useful if this Netlist
@@ -112,6 +88,7 @@ protected:
 	m_delt(delt),
 	m_alfi(alfi)
 	{
+		initialisePetscArrayNames();
 	}
 	std::string m_PressureHistoryFileName;
 	std::string m_FlowHistoryFileName;
@@ -179,10 +156,14 @@ protected:
 
 	PetscScalar m_interfaceFlow;
   	PetscScalar m_interfacePressure;
+
+  	const int m_IndexOfThisNetlistLPN;
 	
 	void buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt);
 
 private:
+	void initialisePetscArrayNames();
+	void terminatePetscArrays();
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
@@ -191,7 +172,6 @@ private:
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
 	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_circuitDataWithoutDiodes
 
-	const int m_IndexOfThisNetlistLPN;
 	// std::vector<double> m_PressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
 	// std::vector<double> m_HistoryPressuresInLPN;                // As m_PressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
 	// std::vector<double> m_FlowsInLPN;                           // Flow through each component in the LPN, in the order they appear in the netlist
@@ -232,6 +212,41 @@ private:
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveVolumeTrackingPressureChamber;
 	const double m_initialDomainPressure;
+};
+
+class NetlistClosedLoopDownstreamCircuit : public NetlistCircuit
+{
+public:
+	NetlistClosedLoopDownstreamCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
+	: NetlistCircuit(hstep, thisIsARestartedSimulation, alfi, delt)
+	{
+		m_downstreamCircuitIndex = sm_numberOfDownstreamCircuits;
+		sm_numberOfDownstreamCircuits++;
+
+		mp_circuitData = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
+
+		std::stringstream pressureFileNameBuilder;
+		pressureFileNameBuilder << "netlistPressures_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
+		m_PressureHistoryFileName = pressureFileNameBuilder.str();
+
+		std::stringstream flowFileNameBuilder;
+		flowFileNameBuilder << "netlistFlows_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
+		m_FlowHistoryFileName = flowFileNameBuilder.str();
+
+		std::stringstream volumeFileNameBuilder;
+		volumeFileNameBuilder << "netlistVolumes_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
+		m_VolumeHistoryFileName = volumeFileNameBuilder.str();
+	}
+
+	void createCircuitDescription();
+
+	~NetlistClosedLoopDownstreamCircuit()
+	{
+		sm_numberOfDownstreamCircuits--;
+	}
+private:
+	int m_downstreamCircuitIndex;
+	static int sm_numberOfDownstreamCircuits;
 };
 
 #endif

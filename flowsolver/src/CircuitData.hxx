@@ -241,28 +241,6 @@ public:
 	{
 		return components.at(0)->m_entireFlowHistory.size();
 	}
-
-	// // copy constructor
-	// CircuitData(const CircuitData &sourceCircuitData)
-	// : m_hstep(sourceCircuitData.m_hstep),
-	// components(sourceCircuitData.components),
-	// index(sourceCircuitData.index),
-	// numberOfPrescribedPressures(sourceCircuitData.numberOfPrescribedPressures),
-	// numberOfPrescribedFlows(sourceCircuitData.numberOfPrescribedFlows),
-	// numberOfPressureNodes(sourceCircuitData.numberOfPressureNodes),
-	// numberOfComponents(sourceCircuitData.numberOfComponents),
-	// mapOfPressureNodes(sourceCircuitData.mapOfPressureNodes),
-	// mapOfPrescribedPressureNodes(sourceCircuitData.mapOfPrescribedPressureNodes),
-	// mapOfComponents(sourceCircuitData.mapOfComponents),
-	// mapOfPrescribedFlowComponents(sourceCircuitData.mapOfPrescribedFlowComponents)
-	// {
-	// }
-
-	// // assignment operator
-	// CircuitData operator=(CircuitData rhs)
-	// {
-	// 	return CircuitData(rhs);
-	// }
 	
 	// Begin metadata, updated with rebuildCircuitMetadata.
 	int numberOfPrescribedPressures;
@@ -283,7 +261,7 @@ public:
 	
 	void rebuildCircuitMetadata();
 	bool connectsTo3DDomain() const;
-	virtual void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
+	void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
 	virtual bool hasPrescribedFlowAcrossInterface() const;
 	virtual bool hasPrescribedPressureAcrossInterface() const;
 	void setupComponentNeighbourPointers();

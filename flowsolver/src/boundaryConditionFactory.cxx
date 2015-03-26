@@ -3,11 +3,11 @@
 #include "NetlistBoundaryCondition.hxx"
 #include "controlledCoronary.hxx"
 #include "datatypesInCpp.hxx"
-#include "NetlistLoopClosingCircuit.hxx"
+#include "ClosedLoopDownstreamSubsection.hxx"
 
 boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, boundary_condition_t boundaryType)
 {
-  assert(m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
+  // assert(m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
 
   if (boundaryType == BoundaryCondition_RCR)
   {
@@ -45,14 +45,14 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 // The "venous system" type circuits - which we generically name "netlist loop closing circuits"
 // (because we may use these in non-venous contexts) must be built before we start
 // constructing the boundary conditions that connect to them.
-void boundaryConditionFactory::createNetlistLoopClosingCircuits(std::vector<boost::shared_ptr<NetlistLoopClosingCircuit>>& netlistLoopClosingCircuits)
+void boundaryConditionFactory::createNetlistLoopClosingCircuits(std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>>& netlistDownstreamLoopClosingSubsections)
 {
-  assert(!m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
+  // assert(!m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
 
   for (int loopClosingCircuitIndex=1; loopClosingCircuitIndex <= m_numLoopClosingNetlistCircuits; loopClosingCircuitIndex++)
   {
-    boost::shared_ptr<NetlistLoopClosingCircuit> toPushBack(new NetlistLoopClosingCircuit(loopClosingCircuitIndex));
-    netlistLoopClosingCircuits.push_back(toPushBack);
+    boost::shared_ptr<ClosedLoopDownstreamSubsection> toPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex));
+    netlistDownstreamLoopClosingSubsections.push_back(toPushBack);
   }
 
   m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt = true;

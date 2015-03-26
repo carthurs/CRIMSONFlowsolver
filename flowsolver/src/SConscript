@@ -52,7 +52,7 @@ sources=string.split("""
 	ParameterController.cxx
 	ClosedLoopBoundaryConditionSubsection.cxx
 	timers.cxx
-	NetlistLoopClosingCircuit.cxx
+	ClosedLoopDownstreamSubsection.cxx
 	AtomicSubcircuitConnectionManager.cxx
 	pureZeroDDriver.cxx
 	Netlist3DDomainReplacement.cxx

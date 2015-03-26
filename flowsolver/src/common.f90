@@ -76,6 +76,7 @@ module phcommonvars
         iuseBET, numBETFields, iestimator, iheart, &
         numControlledCoronarySrfs, indicesOfCoronarySurfaces(0:MAXSURF), &
         numNetlistLPNSrfs, indicesOfNetlistSurfaces(0:MAXSURF), &
+        numLoopClosingNetlistCircuits, &
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation
     common /nomodule/ bcttimescale,ValueListResist, &
@@ -113,6 +114,7 @@ module phcommonvars
         iuseBET, numBETFields, iestimator, iheart, &
         numControlledCoronarySrfs, indicesOfCoronarySurfaces, &
         numNetlistLPNSrfs, indicesOfNetlistSurfaces, &
+        numLoopClosingNetlistCircuits, &
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation
     bind(C, name="nomodule") :: /nomodule/

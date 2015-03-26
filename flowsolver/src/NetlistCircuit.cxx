@@ -931,22 +931,22 @@ void NetlistCircuit::getListOfNodesWithMultipleIncidentCurrents()
 
     int numberOfTimesNodeSeen;
 
-    numberOfMultipleIncidentCurrentNodes = int(0);
+    numberOfMultipleIncidentCurrentNodes = 0;
 
     // The node data from the input file is 1-indexed, so shift this to 1:numberOfPressureNodes, instead of 0:numberOfPressureNodes-1
     for(auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
     {
        int nodeIndex = node->second->getIndex();
-       numberOfTimesNodeSeen = int(0);
-       for (int ii = 0; ii<mp_circuitData->numberOfComponents; ii++)
+       numberOfTimesNodeSeen = 0;
+       for (int componentIndex = 0; componentIndex<mp_circuitData->numberOfComponents; componentIndex++)
        {
-          if ((mp_circuitData->components.at(ii)->startNode->getIndex() == nodeIndex) || 
-              (mp_circuitData->components.at(ii)->endNode->getIndex() == nodeIndex))
+          if ((mp_circuitData->components.at(componentIndex)->startNode->getIndex() == nodeIndex) || 
+              (mp_circuitData->components.at(componentIndex)->endNode->getIndex() == nodeIndex))
           {
              numberOfTimesNodeSeen++;
           }
        }
-       if (numberOfTimesNodeSeen > int(1))
+       if (numberOfTimesNodeSeen > 1)
        {
           listOfNodesWithMultipleIncidentCurrents.push_back(nodeIndex);
           numberOfMultipleIncidentCurrentNodes++;

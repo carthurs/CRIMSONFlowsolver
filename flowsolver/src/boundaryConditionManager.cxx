@@ -81,6 +81,12 @@ void boundaryConditionManager::setNstep(const int nstep)
   m_nstepHasBeenSet = true;
 }
 
+void boundaryConditionManager::setNumLoopClosingnetlistCircuits(const int numLoopClosingNetlistCircuits)
+{
+  m_numLoopClosingNetlistCircuits = numLoopClosingNetlistCircuits;
+  m_numLoopClosingNetlistCircuitsHasBeenSet = true;
+}
+
 void boundaryConditionManager::checkIfThisIsARestartedSimulation()
 {
   SimpleFileReader numstartReader("numstart.dat");
@@ -106,7 +112,7 @@ void boundaryConditionManager::checkIfThisIsARestartedSimulation()
 
 void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     (*boundaryCondition)->setListOfMeshNodesAtThisBoundary(ndsurf_nodeToBoundaryAssociationArray, lengthOfNodeToBoundaryAssociationArray);
   }
@@ -123,7 +129,7 @@ extern "C" void callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(con
 void boundaryConditionManager::setPressureFromFortran()
 {
   // see the called funciton setPressureFromFortran comments for details of what this does.
-  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     if (typeid(**boundaryCondition)==typeid(RCR))
     {
@@ -147,7 +153,7 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs
   // as opposed to the C++ row-major standard.
   int writeLocation = 0;
   
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(RCR))
     {
@@ -171,7 +177,7 @@ extern "C" void callCppGetImplicitCoeff_rcr(double*& implicitCoeffs_toBeFilled)
 
 void boundaryConditionManager::updateAllRCRS_Pressure_n1_withflow()
 {
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(RCR))
     {
@@ -196,22 +202,25 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   assert(m_ntoutHasBeenSet);
   assert(m_maxsurfHasBeenSet);
   assert(m_nstepHasBeenSet);
+  assert(m_numLoopClosingNetlistCircuitsHasBeenSet);
 
   assert(!m_hasSurfaceList);
   m_hasSurfaceList = true;
 
   // Build a factory
-  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep);
+  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits);
+
+  factory.createNetlistLoopClosingCircuits(m_netlistLoopClosingCircuits);
   
   for (auto iterator = surfaceList.begin(); iterator != surfaceList.end(); iterator++)
   {
-    boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
+    m_boundaryConditions.push_back(factory.createBoundaryCondition(iterator->first,iterator->second));
   }
 }
 
 void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows)
 {
-  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition != boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
   {
     boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     assert(downcastNetlist != NULL);
@@ -241,13 +250,13 @@ void boundaryConditionManager::ifRestartingLoadNecessaryData()
 
 std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
 {
-    return &boundaryConditions;
+    return &m_boundaryConditions;
 }
 
 void boundaryConditionManager::computeAllImplicitCoeff_solve(const int timestepNumber)
 {
   fortranBoundaryDataPointerManager* fortranBoundaryDataPointerManager_instance = fortranBoundaryDataPointerManager::Get();
-  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     (*iterator)->computeImplicitCoeff_solve(timestepNumber);
   }
@@ -261,7 +270,7 @@ extern "C" void callCppComputeAllImplicitCoeff_solve(int& timestepNumber)
 
 void boundaryConditionManager::computeAllImplicitCoeff_update(const int timestepNumber)
 {
-  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     (*iterator)->computeImplicitCoeff_update(timestepNumber);
   }
@@ -277,7 +286,7 @@ extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 void boundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows)
 {
   int readLocation = 0;
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(RCR))
     {
@@ -297,7 +306,7 @@ extern "C" void callCPPUpdateAllRCRS_setflow_n(double*& flows)
 void boundaryConditionManager::updateAllRCRS_setflow_n1(const double* const flows)
 {
   int readLocation = 0;
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(RCR))
     {
@@ -315,7 +324,7 @@ extern "C" void callCPPUpdateAllRCRS_setflow_n1(double*& flows)
 
 void boundaryConditionManager::recordPressuresAndFlowsInHistoryArrays()
 {
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     (*iterator)->updatePressureAndFlowHistory();
   }
@@ -344,7 +353,7 @@ void boundaryConditionManager::writePHistAndQHistRCR()
     qhistrcr_writer.writeStepIndex(i);
 
     // Loop the boundary conditions looking for the RCRs
-    for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+    for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
     {
       if (typeid(**iterator)==typeid(RCR))
       {
@@ -370,7 +379,7 @@ extern "C" void callCPPWritePHistAndQHistRCR()
 // void boundaryConditionManager::setSurfacePressure_controlledCoronary(double* coronarySurfacePressures)
 // {
 //   int readLocation = int(0);
-//   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+//   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
 //   {
 //     if (typeid(**iterator)==typeid(controlledCoronary))
 //     {
@@ -394,7 +403,7 @@ void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const
   // as opposed to the C++ row-major standard.
   int writeLocation = 0;
   
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(controlledCoronary))
     {
@@ -417,7 +426,7 @@ extern "C" void callCppGetImplicitCoeff_controlledCoronary(double*& implicitCoef
 
 void boundaryConditionManager::updateAllControlledCoronaryLPNs()
 {
-  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     boost::shared_ptr<controlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<controlledCoronary> (*boundaryCondition);
     if (downcastCoronary != NULL)
@@ -436,7 +445,7 @@ extern "C" void callCppUpdateAllControlledCoronaryLPNs()
 
 void boundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
 {
-  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     boost::shared_ptr<controlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<controlledCoronary> (*boundaryCondition);
     if (downcastCoronary != NULL)
@@ -454,7 +463,7 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
 
 void boundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
 {
-  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     if (downcastNetlist != NULL)
@@ -473,7 +482,7 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
 
 // void boundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
 // {
-//   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+//   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
 //   {
 //     if (typeid(**iterator)==typeid(controlledCoronary))
 //     {
@@ -493,7 +502,7 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
 // ========== Netlist LPN Block Start =========
 void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
 {
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     if (downcastNetlist != NULL)
@@ -512,7 +521,7 @@ extern "C" void callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
 void boundaryConditionManager::updateAllNetlistLPNs(const int timestepNumber)
 {
-  for(auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     if (downcastNetlist != NULL)
@@ -532,7 +541,7 @@ std::map<int,std::pair<double,double>> boundaryConditionManager::getImplicitCoef
 {
   std::map<int,std::pair<double,double>> allNetlistImplicitCoefficients;
   
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
     {
@@ -558,7 +567,7 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
   // as opposed to the C++ row-major standard.
   int writeLocation = 0;
   
-  for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
     {
@@ -593,7 +602,7 @@ void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int*
     binaryMask[maskLocation] = 1;
   }
   // Ask the boundary conditions to set zeros where they want Neumann conditions
-  for (auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+  for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
     {
@@ -614,7 +623,7 @@ void boundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisall
   // Ensure we start from zero, before we count the surfaces which disallow flow due to closed valves (so we have to switch to Dirichlet)
   numBCsWhichDisallowFlow = 0;
   // ...do the counting (currently only netlists have valves...)
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
@@ -638,7 +647,7 @@ void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentl
   // Ensure we start from zero, before we count the surfaces which allow flow due to closed valves (so we have to switch to Dirichlet)
   numBCsWhichAllowFlow = 0;
   // ...do the counting (currently only netlists have valves...)
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
@@ -664,7 +673,7 @@ void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const i
   // Begin by assuming flow is permitted; this will be changed below if flow is not permitted.
   flowIsPermitted = 1;
   // find the queried surface:
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     bool thisIsANetlist = typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition);
     if ((*boundaryCondition)->surfaceIndex == queriedSurfaceIndex && thisIsANetlist)
@@ -692,7 +701,7 @@ void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryCo
   // Begin by assuming boundary conditions are as they were on the previous time-step; this will be changed below if the assumption is false.
   boundaryConditionTypesHaveChanged = 0;
   // find netlists
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     if (typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition))
     {
@@ -715,7 +724,7 @@ extern "C" void callCPPHaveBoundaryConditionTypesChanged(int& boundaryConditionT
 // void boundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)
 // {
 //   int readLocation = int(0);
-//   for(auto iterator=boundaryConditions.begin(); iterator!=boundaryConditions.end(); iterator++)
+//   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
 //   {
 //     if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
 //     {
@@ -733,7 +742,7 @@ extern "C" void callCPPHaveBoundaryConditionTypesChanged(int& boundaryConditionT
 
 void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
 {
-  writeNetlistFlowsPressuresAndVolumes(boundaryConditions, m_nextTimestepWrite_netlistBoundaries_start);
+  writeNetlistFlowsPressuresAndVolumes(m_boundaryConditions, m_nextTimestepWrite_netlistBoundaries_start);
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
@@ -773,7 +782,7 @@ void boundaryConditionManager::createControlSystems()
 
   // Check for the existence of netlists with input data setting up control of any of 
   // the components. If any are found, initialise the control appropriately.
-  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     if (typeid(**boundaryCondition) == typeid(NetlistBoundaryCondition))
     {
@@ -796,7 +805,7 @@ void boundaryConditionManager::createControlSystems()
 
   // int boundaryConditionIndex = 1;
   // int capacitorIndex = 2;
-  // auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryConditions.at(boundaryConditionIndex));
+  // auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (m_boundaryConditions.at(boundaryConditionIndex));
   // // mp_controlSystemsManager->createParameterController(Controller_BleedCompliance, downcastNetlist, capacitorIndex);
   // int resistorIndex = 3;
   // mp_controlSystemsManager->createParameterController(Controller_BleedResistance, downcastNetlist, resistorIndex);
@@ -806,7 +815,7 @@ void boundaryConditionManager::createControlSystems()
 std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber)
 {
   std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAsAppropriate;
-  for (auto boundaryCondition = boundaryConditions.begin(); boundaryCondition != boundaryConditions.end(); boundaryCondition++)
+  for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
   {
     if (typeid(**boundaryCondition) == typeid(NetlistBoundaryCondition))
     {

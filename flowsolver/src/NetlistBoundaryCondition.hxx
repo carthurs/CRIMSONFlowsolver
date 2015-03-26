@@ -32,20 +32,14 @@ public:
 	}
 
 	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPN;}
-
  	// void updpressure_n1_withflow(){}
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
-
 	void updateLPN(const int timestepNumber);
 	void initialiseAtStartOfTimestep();
-
 	bool flowPermittedAcross3DInterface();
 	bool boundaryConditionTypeHasJustChanged();
-
 	void setDirichletConditionsIfNecessary(int* const binaryMask);
-
 	void finalizeLPNAtEndOfTimestep();
-
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 
 	~NetlistBoundaryCondition()

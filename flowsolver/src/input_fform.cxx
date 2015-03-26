@@ -966,6 +966,8 @@ int input_fform() {
 				}
 			}
 
+			nomodule.numLoopClosingNetlistCircuits = inp.GetValue("Number of Loop Closing Netlist Circuits");
+
 			if((string)inp.GetValue("Input prescribed HR and peak systolic pressure from file")=="True"){
 		      nomodule.inputHRandSP = int(1);
 		    }

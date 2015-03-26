@@ -5,6 +5,7 @@
 #include "boundaryConditionFactory.hxx"
 #include "abstractBoundaryCondition.hxx"
 #include "ControlSystemsManager.hxx"
+#include "NetlistLoopClosingCircuit.hxx"
 #include <boost/lexical_cast.hpp>
 
 // Forward declarations:
@@ -94,6 +95,7 @@ class abstractBoundaryCondition;
     void setNtout(const int ntout);
     void setMaxsurf(const int maxsurf);
     void setNstep(const int nstep);
+    void setNumLoopClosingnetlistCircuits(const int numLoopClosingNetlistCircuits);
 
     void createControlSystems();
     void updateAllControlSystems();
@@ -118,10 +120,12 @@ class abstractBoundaryCondition;
         m_lstepHasBeenSet = false;
         m_maxsurfHasBeenSet = false;
         m_nstepHasBeenSet = false;
+        m_numLoopClosingNetlistCircuitsHasBeenSet = false;
 
         m_hasSurfaceList = false;
     }
-    std::vector<boost::shared_ptr<abstractBoundaryCondition>> boundaryConditions;
+    std::vector<boost::shared_ptr<abstractBoundaryCondition>> m_boundaryConditions;
+    std::vector<boost::shared_ptr<NetlistLoopClosingCircuit>> m_netlistLoopClosingCircuits;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
 
     std::unique_ptr<ControlSystemsManager> mp_controlSystemsManager;
@@ -137,6 +141,7 @@ class abstractBoundaryCondition;
     int m_ntout;
     int m_maxsurf;
     int m_nstep;
+    int m_numLoopClosingNetlistCircuits;
 
     bool m_deltHasBeenSet;
     bool m_hstepHasBeenSet;
@@ -145,6 +150,7 @@ class abstractBoundaryCondition;
     bool m_ntoutHasBeenSet;
     bool m_maxsurfHasBeenSet;
     bool m_nstepHasBeenSet;
+    bool m_numLoopClosingNetlistCircuitsHasBeenSet;
 
     bool m_hasSurfaceList;
 

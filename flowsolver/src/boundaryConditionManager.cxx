@@ -769,7 +769,7 @@ void boundaryConditionManager::createControlSystems()
   mp_controlSystemsManager = std::unique_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt));
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
-  netlistReader* netlistReader_instance = netlistReader::Instance();
+  NetlistReader* netlistReader_instance = NetlistReader::Instance();
   
   // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
   // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();

@@ -15,7 +15,7 @@ TEST_F(testMain, checkRCRSimpleShortSimulation) {
   QHistReader->setNumColumns(2);
   QHistReader->readAndSplitMultiSurfaceRestartFile();
 
-  double finalQHistRCRValue = ((QHistReader->dataReadFromFile).at(5))[1];
+  double finalQHistRCRValue = ((QHistReader->m_dataReadFromFile).at(5))[1];
   EXPECT_NEAR(finalQHistRCRValue,714.921079082528,1e-7);
 
   delete QHistReader;
@@ -34,7 +34,7 @@ TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
   PHistReader->setNumColumns(2);
   PHistReader->readAndSplitMultiSurfaceRestartFile();
 
-  double finalPHistRCRValue = ((PHistReader->dataReadFromFile).at(10))[1];
+  double finalPHistRCRValue = ((PHistReader->m_dataReadFromFile).at(10))[1];
 
   EXPECT_NEAR(finalPHistRCRValue,0.1162541088E+05,10e-5);
 

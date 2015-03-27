@@ -24,7 +24,7 @@
 	   std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
 	   boundaryConditionManager* boundaryConditionManager_instance;
 	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
-	   netlistReader* netlistReader_instance;
+	   NetlistReader* netlistReader_instance;
 
 	   double press1;
 	   double press2;
@@ -116,7 +116,7 @@
 		controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
 
 		// Setup the netlist reader:
-		netlistReader_instance = netlistReader::Instance();
+		netlistReader_instance = NetlistReader::Instance();
 	    netlistReader_instance->setFileName("netlist_surfaces.dat");
 	    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 

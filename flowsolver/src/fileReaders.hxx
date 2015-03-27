@@ -23,38 +23,38 @@ class abstractFileReader
 public:
 	abstractFileReader()
 	{
-		fileHasBeenRead = 0;
-		metadataOnNumberOfLinesInFileAvailable = false;
-		currentLineSplitBySpaces = new std::vector<std::string>;
-		fileHandle = new std::ifstream();
+		m_fileHasBeenRead = 0;
+		m_metadataOnNumberOfLinesInFileAvailable = false;
+		mp_currentLineSplitBySpaces = new std::vector<std::string>;
+		mp_file = new std::ifstream();
 	}
 	
 	void setFileName(std::string fileNameIn)
 	{
-	    fileName = fileNameIn;
-		fileHandle->open(fileName.c_str());
+	    m_fileName = fileNameIn;
+		mp_file->open(m_fileName.c_str());
 		
-		if (fileHandle->fail())
+		if (mp_file->fail())
 		{
 			std::stringstream error;
-			error << "Failed to open " << fileName << " for reading!" << std::endl;
+			error << "Failed to open " << m_fileName << " for reading!" << std::endl;
 			throw std::runtime_error(error.str());
 		}
-		fileHandle->clear(); // reset error state flags
-		fileHandle->seekg(0,fileHandle->beg); // ensure the file is rewound
+		mp_file->clear(); // reset error state flags
+		mp_file->seekg(0,mp_file->beg); // ensure the file is rewound
 	}
 
 	void setNumColumns(int numberOfColumns)
 	{
-		numColumns = numberOfColumns;
+		m_numColumns = numberOfColumns;
 	}
 	
 	virtual ~abstractFileReader()
 	{
-		fileHandle->close();
-		delete fileHandle;
-		delete currentLineSplitBySpaces;
-		// delete fileName;
+		mp_file->close();
+		delete mp_file;
+		delete mp_currentLineSplitBySpaces;
+		// delete m_fileName;
 	}
 
 	double getReadFileData(int columnIndex, int timestepNumber);
@@ -62,23 +62,23 @@ public:
 	void readFileInternalMetadata();
 
 protected:
-	std::ifstream* fileHandle;
-	std::vector<std::string>* currentLineSplitBySpaces;
-	std::string currentLine;
-	std::string fileName;
+	std::ifstream* mp_file;
+	std::vector<std::string>* mp_currentLineSplitBySpaces;
+	std::string m_currentLine;
+	std::string m_fileName;
 	// The data as a map of timestep index to vector of all data for that timestep,
 	// for all relevant surfaces, in the order in which they appear in the file.
 	//\todo: this is buggy, because FORTRAN writes three-in-a-row!
-	std::map<int,std::vector<double>> dataReadFromFile;
+	std::map<int,std::vector<double>> m_dataReadFromFile;
 	bool readNextLine();
 
-	int numColumns;
-	std::vector<double> dataReadFromFile_line;
-	int fileHasBeenRead;
+	int m_numColumns;
+	std::vector<double> m_dataReadFromFile_line;
+	int m_fileHasBeenRead;
 	bool readNextLineWithKnownNumberOfColumns();
 
-	int expectedNumberOfLinesInFile;
-	bool metadataOnNumberOfLinesInFileAvailable;
+	int m_expectedNumberOfLinesInFile;
+	bool m_metadataOnNumberOfLinesInFileAvailable;
 private:
 };
 
@@ -110,7 +110,7 @@ public:
 	{
 		success = false;
 		// If there's no data left on the current line from the file, get a new line:
-		if (currentLineSplitBySpaces->size()==0)
+		if (mp_currentLineSplitBySpaces->size()==0)
 		{
 			success = readNextLine();
 			if (!success)
@@ -119,11 +119,11 @@ public:
 			}
 			// Reverse so we can pop off from the end of the vector in the order
 			// that the data appears on the line in the file
-			std::reverse(currentLineSplitBySpaces->begin(), currentLineSplitBySpaces->end());
+			std::reverse(mp_currentLineSplitBySpaces->begin(), mp_currentLineSplitBySpaces->end());
 		}
 
-		std::string returnValue = currentLineSplitBySpaces->back();
-		currentLineSplitBySpaces->pop_back();
+		std::string returnValue = mp_currentLineSplitBySpaces->back();
+		mp_currentLineSplitBySpaces->pop_back();
 		
 		success = true;
 		return returnValue;
@@ -191,9 +191,9 @@ private:
     	// c.clear();
     	// r2.clear();
     	// timeDataPdist.clear();
-    	// currentLineSplitBySpaces->clear();
-    	// dataReadFromFile.clear();
-    	// dataReadFromFile_line.clear();
+    	// mp_currentLineSplitBySpaces->clear();
+    	// m_dataReadFromFile.clear();
+    	// m_dataReadFromFile_line.clear();
     }
 
 	int pdmax;
@@ -276,14 +276,14 @@ private:
 	std::vector<double> intramyocardialCapacitorTopPressure;
 };
 
-class netlistReader : public abstractMultipleSurfaceFileReader
+class NetlistReader : public abstractMultipleSurfaceFileReader
 {
 public:
-	static netlistReader* Instance()
+	static NetlistReader* Instance()
 	{
 		if (!instance)
 		{
-			instance = new netlistReader();
+			instance = new NetlistReader();
 		}
 		return instance;
 	}
@@ -297,7 +297,7 @@ public:
 		}
 	}
 
-	void readAndSplitMultiSurfaceInputFile();
+	virtual void readAndSplitMultiSurfaceInputFile();
 
 	std::vector<std::vector<circuit_component_t>> getComponentTypes();
 	std::vector<std::vector<int>> getComponentStartNodes();
@@ -314,54 +314,108 @@ public:
 	std::vector<std::vector<circuit_component_flow_prescription_t>> getTypeOfPrescribedFlows();
 	std::vector<int> getNumberOfPressureNodes();
 	std::vector<std::map<int,double>> getInitialPressures();
-	std::vector<int> getIndicesOfNodesAt3DInterface();
+	virtual std::vector<int> getIndicesOfNodesAt3DInterface();
 	
 	std::vector<int>& getNumberOfComponentsWithControl();
 	std::vector<std::map<int,parameter_controller_t>>& getMapsOfComponentControlTypesForEachSurface();
 	std::vector<int>& getNumberOfNodesWithControl();
 	std::vector<std::map<int,parameter_controller_t>>& getMapsOfNodalControlTypesForEachSurface();
-	int getNumberOfNetlistSurfaces();
+	virtual int getNumberOfNetlistSurfaces();
 
 
 protected:
-private:
-	netlistReader()
+	int m_indexOfNetlistCurrentlyBeingReadInFile;
+	virtual ~NetlistReader()
 	{
 	}
 
-	static netlistReader* instance;
+	void readCircuitStructure();
+	void readPrescribedPressureNodes();
+	void readPrescribedPressureValues();
+	void readPrescribedPressureTypes();
+	void readPrescribedFlowComponents();
+	void readPrescribedFlowValues();
+	void readPrescribedFlowTypes();
+	void readInitialPressures();
+	void readControlSystemPrescriptions();
+
+	std::vector<std::vector<circuit_component_t>> m_componentTypes; // the data in here will be the stripped first column of the netlist, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
+	std::vector<std::vector<int>> m_componentStartNodes;
+	std::vector<std::vector<int>> m_componentEndNodes;
+	std::vector<std::vector<double>> m_componentParameterValues;
+
+	std::vector<int> m_numberOfComponents;
+	std::vector<int> m_numberOfPrescribedPressures;
+	std::vector<int> m_numberOfPrescribedFlows;
+
+	std::vector<std::vector<int>> m_listOfPrescribedPressures;
+	std::vector<std::vector<int>> m_listOfPrescribedFlows;
+
+	std::vector<std::vector<double>> m_valueOfPrescribedPressures;
+	std::vector<std::vector<double>> m_valueOfPrescribedFlows;
+	std::vector<std::vector<circuit_nodal_pressure_prescription_t>> m_typeOfPrescribedPressures;
+	std::vector<std::vector<circuit_component_flow_prescription_t>> m_typeOfPrescribedFlows;
+
+	std::vector<int> m_numberOfPressureNodes;
+	std::vector<std::map<int,double>> m_initialPressures;
+
+	std::vector<int> m_numberOfComponentsWithControl;
+	std::vector<std::map<int,parameter_controller_t>> m_mapsOfComponentControlTypesForEachSurface;
+
+	std::vector<int> m_numberOfNodesWithControl;
+	std::vector<std::map<int,parameter_controller_t>> m_mapsOfNodalControlTypesForEachSurface;
+
+	NetlistReader()
+	{
+	}
+private:
+
+	static NetlistReader* instance;
 
 	int m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
 
+	std::vector<int> m_indicesOfNodesAt3DInterface;
 
-	std::vector<std::vector<circuit_component_t>> componentTypes; // the data in here will be the stripped first column of the netlist, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
-	std::vector<std::vector<int>> componentStartNodes;
-	std::vector<std::vector<int>> componentEndNodes;
-	std::vector<std::vector<double>> componentParameterValues;
+};
 
-	std::vector<int> numberOfComponents;
-	std::vector<int> numberOfPrescribedPressures;
-	std::vector<int> numberOfPrescribedFlows;
+class NetlistDownstreamCircuitReader : public NetlistReader
+{
+public:
+	static NetlistDownstreamCircuitReader* Instance()
+	{
+		if (!instance)
+		{
+			instance = new NetlistDownstreamCircuitReader();
+		}
+		return instance;
+	}
 
-	std::vector<std::vector<int>> listOfPrescribedPressures;
-	std::vector<std::vector<int>> listOfPrescribedFlows;
+	static void Term()
+	{
+		if (instance!=0)
+		{
+			delete instance;
+			instance = 0;
+		}
+	}
 
-	std::vector<std::vector<double>> valueOfPrescribedPressures;
-	std::vector<std::vector<double>> valueOfPrescribedFlows;
-	std::vector<std::vector<circuit_nodal_pressure_prescription_t>> typeOfPrescribedPressures;
-	std::vector<std::vector<circuit_component_flow_prescription_t>> typeOfPrescribedFlows;
+	void readAndSplitMultiSurfaceInputFile();
 
-	std::vector<int> numberOfPressureNodes;
-	std::vector<std::map<int,double>> initialPressures;
+	std::vector<int> getNumberOfBoundaryConditionsConnectedTo();
+	std::vector<std::vector<int>> getConnectedCircuitSurfaceIndices();
+	std::vector<std::vector<int>> getLocalBoundaryConditionInterfaceNodes();
+	std::vector<std::vector<int>> getRemoteBoundaryConditionInterfaceNodes();
 
-	std::vector<int> indicesOfNodesAt3DInterface;
+private:
+	static NetlistDownstreamCircuitReader* instance;
+	std::vector<int> getIndicesOfNodesAt3DInterface();
+	int getNumberOfNetlistSurfaces();
+	void readBoundaryConditionConnectivity();
 
-	std::vector<int> numberOfComponentsWithControl;
-	std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypesForEachSurface;
-
-	std::vector<int> numberOfNodesWithControl;
-	std::vector<std::map<int,parameter_controller_t>> mapsOfNodalControlTypesForEachSurface;
-
+	std::vector<int> m_numberOfBoundaryConditionsConnectedTo;
+	std::vector<std::vector<int>> m_connectedCircuitSurfaceIndices;
+	std::vector<std::vector<int>> m_localBoundaryConditionInterfaceNodes;
+	std::vector<std::vector<int>> m_remoteBoundaryConditionInterfaceNodes;
 };
 
 #endif

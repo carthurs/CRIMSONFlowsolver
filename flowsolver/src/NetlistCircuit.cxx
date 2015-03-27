@@ -46,7 +46,7 @@ void NetlistCircuit::createCircuitDescription()
     // to the internal CircuitData class format.
 
     // Get the reader class for the netlist data file, and ask it for the circuit description data:
-    netlistReader* netlistReader_instance = netlistReader::Instance();
+    NetlistReader* netlistReader_instance = NetlistReader::Instance();
     mp_circuitData->numberOfComponents = netlistReader_instance->getNumberOfComponents().at(m_IndexOfThisNetlistLPN);
     mp_circuitData->numberOfPressureNodes = netlistReader_instance->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPN);
     mp_circuitData->numberOfPrescribedPressures = netlistReader_instance->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
@@ -195,7 +195,7 @@ void NetlistCircuit::createCircuitDescription()
 void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
 {
     // Access the read-in file data:
-    netlistReader* netlistReader_instance = netlistReader::Instance();
+    NetlistReader* netlistReader_instance = NetlistReader::Instance();
     std::vector<int> retrievedListOfPrescribedPressures = netlistReader_instance->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
     std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = netlistReader_instance->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
     std::vector<double> retrievedValueOfPrescribedPressures = netlistReader_instance->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);
@@ -532,7 +532,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // Netlist, non-boundary-condition replacement for the 3D domain, for pure zero-D simulation.
 
     // Get the reader class for the netlist data file, and ask it for the circuit description data:
-    netlistReader* netlistReader_instance = netlistReader::Instance();
+    NetlistReader* netlistReader_instance = NetlistReader::Instance();
 
     // Make the appropriate class to store the 3D domain replacement circuit data:
     mp_circuitData = boost::shared_ptr<Netlist3DDomainReplacementCircuitData> (new Netlist3DDomainReplacementCircuitData(m_hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
@@ -1806,7 +1806,7 @@ bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const dou
 //     assert(false); // need to make the file reader first for the closed loop..
 
 //     // Get the reader class for the netlist data file, and ask it for the circuit description data:
-//     netlistReader* netlistReader_instance = netlistReader::Instance();
+//     NetlistReader* netlistReader_instance = NetlistReader::Instance();
 //     mp_circuitData->numberOfComponents = netlistReader_instance->getNumberOfComponents().at(m_IndexOfThisNetlistLPN);
 //     mp_circuitData->numberOfPressureNodes = netlistReader_instance->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPN);
 //     mp_circuitData->numberOfPrescribedPressures = netlistReader_instance->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPN);

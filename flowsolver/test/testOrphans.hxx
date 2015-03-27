@@ -16,7 +16,7 @@
 	protected:
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
-	  netlistReader* netlistReader_instance;
+	  NetlistReader* netlistReader_instance;
 	  boundaryConditionManager* boundaryConditionManager_instance;
 	  fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 

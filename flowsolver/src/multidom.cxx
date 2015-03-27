@@ -55,7 +55,7 @@ void multidom_initialise(){
 
   if (boundaryConditionManager_instance->getNumberOfNetlistSurfaces() > 0)
   {
-    netlistReader* netlistReader_instance = netlistReader::Instance();
+    NetlistReader* netlistReader_instance = NetlistReader::Instance();
     netlistReader_instance->setFileName("netlist_surfaces.dat");
     netlistReader_instance->readAndSplitMultiSurfaceInputFile();
   }
@@ -114,6 +114,6 @@ void multidom_finalise(){
   boundaryConditionManager::Instance()->Term();
   rcrtReader::Instance()->Term();
   controlledCoronaryReader::Instance()->Term();
-  netlistReader::Instance()->Term();
+  NetlistReader::Instance()->Term();
 }
 

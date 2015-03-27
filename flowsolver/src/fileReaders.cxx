@@ -5,7 +5,8 @@
 
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
-netlistReader* netlistReader::instance = 0;
+NetlistReader* NetlistReader::instance = 0;
+NetlistDownstreamCircuitReader* NetlistDownstreamCircuitReader::instance = 0;
 
 
 // Reads a file line, returns a successful-read bool.
@@ -13,46 +14,53 @@ netlistReader* netlistReader::instance = 0;
 // the read line from the file, split by spaces.
 bool abstractFileReader::readNextLine()
 {
-	if (fileHandle->fail())
+	if (mp_file->eof())
 	{
 		std::stringstream error;
-		error << "File " << fileName << " appears to be malformed.";
+		error << "Reached the end of " << m_fileName << " before all the required data was read.";
 		throw std::runtime_error(error.str());
 	}
 
-	if(!fileHandle->is_open())
+	if (mp_file->fail())
 	{
 		std::stringstream error;
-		error << "File " << fileName << " was not opened properly.";
+		error << "File " << m_fileName << " appears to be malformed.";
+		throw std::runtime_error(error.str());
+	}
+
+	if(!mp_file->is_open())
+	{
+		std::stringstream error;
+		error << "File " << m_fileName << " was not opened properly.";
 		throw std::runtime_error(error.str());	
 	}
 
 	// Read the next line from the file
-	currentLine.clear();
+	m_currentLine.clear();
 	bool fileNotEnded;
 
-	fileNotEnded = !(std::getline(*fileHandle,currentLine).eof());
+	fileNotEnded = !(std::getline(*mp_file,m_currentLine).eof());
 
 	// If the end of the file had not been reached before the above read:
 	if (fileNotEnded)
 	{
 		// See if we have a hash-commented line.
 		// If we do, try reading the next line
-		while(currentLine.compare(0,1,"#") == int(0))
+		while(m_currentLine.compare(0,1,"#") == int(0))
 		{
-			currentLine.clear();
-			fileNotEnded = !(std::getline(*fileHandle,currentLine).eof());
+			m_currentLine.clear();
+			fileNotEnded = !(std::getline(*mp_file,m_currentLine).eof());
 		}
 
 		if (fileNotEnded)
 		{
 			// Now we've found a non-commented line, actually read the data from it.
 			std::stringstream lineSplitBuffer;
-			lineSplitBuffer << currentLine;
+			lineSplitBuffer << m_currentLine;
 
 			std::string substring;
 
-			currentLineSplitBySpaces->clear();
+			mp_currentLineSplitBySpaces->clear();
 
 			while(std::getline(lineSplitBuffer,substring,' '))
 			{
@@ -61,7 +69,7 @@ bool abstractFileReader::readNextLine()
 				{
 					continue;
 				}
-				currentLineSplitBySpaces->push_back(substring);
+				mp_currentLineSplitBySpaces->push_back(substring);
 			}
 		}
 	}
@@ -75,35 +83,35 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 	int index;
 	double value;
 
-	dataReadFromFile_line.clear();
+	m_dataReadFromFile_line.clear();
 	// Get all the data entries from a single line of the file.
 	// Return false if the end of file is reached, otherwise, return true.
-	// Read data is sequentially placed in the vector dataReadFromFile_line,
+	// Read data is sequentially placed in the vector m_dataReadFromFile_line,
 	// which is newly cleared on each call to this function.
- 	for (int currentColumn=0; currentColumn<numColumns; currentColumn++)
+ 	for (int currentColumn=0; currentColumn<m_numColumns; currentColumn++)
  	{
  		value = 0.0;
- 		if (!fileHandle->fail())
+ 		if (!mp_file->fail())
  		{
- 			*fileHandle >> value;
+ 			*mp_file >> value;
  		}
  		else
 		{
 			std::stringstream error;
-			error << "File " << fileName << " appears to be malformed.";
+			error << "File " << m_fileName << " appears to be malformed.";
 			throw std::runtime_error(error.str());
  		}
- 		if (fileHandle->eof())
+ 		if (mp_file->eof())
 	 	{
 	 		if (currentColumn>0)
 	 		{
 	 			std::stringstream error;
-	 			error << "File " << fileName << " terminated early.";
+	 			error << "File " << m_fileName << " terminated early.";
 				throw std::runtime_error(error.str());
 	 		}
 	 		return false;
 	 	}
- 		dataReadFromFile_line.push_back(value);
+ 		m_dataReadFromFile_line.push_back(value);
  	}
 
  	// return false case is guarded by an if above
@@ -114,29 +122,29 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 // The columnIndex refers to the file columns. It's zero-indexed.
 double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 {
-	if (!fileHasBeenRead)
+	if (!m_fileHasBeenRead)
 	{
 		std::stringstream error;
-		error << "Attempted to access data in file " << fileName << " before it has been read. Terminating.";
+		error << "Attempted to access data in file " << m_fileName << " before it has been read. Terminating.";
 		throw std::runtime_error(error.str());
 	}
 
-	return ((dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
+	return ((m_dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
 }
 
 void abstractFileReader::readFileInternalMetadata()
 {
-	if (!metadataOnNumberOfLinesInFileAvailable)
+	if (!m_metadataOnNumberOfLinesInFileAvailable)
 	{
 		// e.g. hist files start with a single integer on the first line, giving the length of the file.
 		// We read this first, as a special case
-		*fileHandle >> expectedNumberOfLinesInFile;
-		metadataOnNumberOfLinesInFileAvailable = true;
+		*mp_file >> m_expectedNumberOfLinesInFile;
+		m_metadataOnNumberOfLinesInFileAvailable = true;
 	}
 	else
 	{
 		std::stringstream error;
-		error << "Attempted to read metadata from file " << fileName << " twice. Don't do this. Exiting";
+		error << "Attempted to read metadata from file " << m_fileName << " twice. Don't do this. Exiting";
 		throw std::runtime_error(error.str());
 	}
 }
@@ -147,15 +155,15 @@ void histFileReader::readAndSplitMultiSurfaceRestartFile()
 	while(readNextLineWithKnownNumberOfColumns())
 	{
 		lineIndex++;
-		dataReadFromFile.insert(std::pair<int,std::vector<double>> (lineIndex, dataReadFromFile_line));
+		m_dataReadFromFile.insert(std::pair<int,std::vector<double>> (lineIndex, m_dataReadFromFile_line));
 	}
-	if (metadataOnNumberOfLinesInFileAvailable && (lineIndex != expectedNumberOfLinesInFile))
+	if (m_metadataOnNumberOfLinesInFileAvailable && (lineIndex != m_expectedNumberOfLinesInFile))
 	{
-		std::cerr << "WARNING: Failed to read as many lines from  " << fileName << " as the integer on its first line suggests it should have!" << std::endl;
-		std::cerr << "Expected " << expectedNumberOfLinesInFile << " but read " << lineIndex << " lines!" << std::endl;
+		std::cerr << "WARNING: Failed to read as many lines from  " << m_fileName << " as the integer on its first line suggests it should have!" << std::endl;
+		std::cerr << "Expected " << m_expectedNumberOfLinesInFile << " but read " << lineIndex << " lines!" << std::endl;
 	}
 
-	fileHasBeenRead = int(1);
+	m_fileHasBeenRead = int(1);
 }
 
 // The output objects are std::vectors at the top level, with each vector
@@ -167,31 +175,31 @@ void rcrtReader::readAndSplitMultiSurfaceInputFile()
 
 	// Get the pdmax (first line of the file)
 	readNextLine();
-	pdmax = std::atoi((*currentLineSplitBySpaces)[0].c_str());
+	pdmax = std::atoi((*mp_currentLineSplitBySpaces)[0].c_str());
 
 	// Loop over the rest of the file to get the relevant RCR data for this boundary:
 	while(readNextLine())
 	{
 		tempTimeDataPdist.clear();
 
-		numDataRCR.push_back(atoi((*currentLineSplitBySpaces)[0].c_str()));
+		numDataRCR.push_back(atoi((*mp_currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
-		r1.push_back(atof((*currentLineSplitBySpaces)[0].c_str()));
+		r1.push_back(atof((*mp_currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
-		c.push_back(atof((*currentLineSplitBySpaces)[0].c_str()));
+		c.push_back(atof((*mp_currentLineSplitBySpaces)[0].c_str()));
 		readNextLine();
-		r2.push_back(atof((*currentLineSplitBySpaces)[0].c_str()));
+		r2.push_back(atof((*mp_currentLineSplitBySpaces)[0].c_str()));
 
 		for(int ii=0; ii<numDataRCR.back(); ii++)
 		{
 			readNextLine();
-			tempTimeAndPdistval.first = atof((*currentLineSplitBySpaces)[0].c_str());
-			tempTimeAndPdistval.second = atof((*currentLineSplitBySpaces)[1].c_str());
+			tempTimeAndPdistval.first = atof((*mp_currentLineSplitBySpaces)[0].c_str());
+			tempTimeAndPdistval.second = atof((*mp_currentLineSplitBySpaces)[1].c_str());
 			tempTimeDataPdist.push_back(tempTimeAndPdistval);
 		}
 		timeDataPdist.push_back(tempTimeDataPdist);
 	}
-	fileHasBeenRead = int(1);
+	m_fileHasBeenRead = int(1);
 }
 
 int rcrtReader::getPdmax()
@@ -230,58 +238,58 @@ void controlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
 	// Loop over the rest of the file to get the relevant RCR data for this boundary:
 	while(readNextLine())
 	{
-		resistanceNearAorta.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		resistanceNearAorta.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 		
 		readNextLine();
-		midResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		midResistance.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 		
 		readNextLine();
-		distalResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		distalResistance.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		complianceNearAorta.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		complianceNearAorta.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		intramyocardialCompliance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		intramyocardialCompliance.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		minimumAllowedResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		minimumAllowedResistance.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		maximumAllowedResistance.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		maximumAllowedResistance.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		perfusionBedMVO2_previous.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		perfusionBedMVO2_previous.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		perfusionBedMVO2_current.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		perfusionBedMVO2_current.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		proportionOfMyocardiumPerfusedByThisSurface.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		proportionOfMyocardiumPerfusedByThisSurface.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		metabolicFeedbackGain.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		metabolicFeedbackGain.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		alphaAdrenergicFeedforwardGain.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		alphaAdrenergicFeedforwardGain.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		betaAdrenergicFeedforwardGain.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		betaAdrenergicFeedforwardGain.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		feedbackDamping.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		feedbackDamping.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		O2DemandIntegrationWindow.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		O2DemandIntegrationWindow.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		capacitorNearAortaTopPressure.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		capacitorNearAortaTopPressure.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
 		readNextLine();
-		intramyocardialCapacitorTopPressure.push_back(atof((*currentLineSplitBySpaces).at(0).c_str()));
+		intramyocardialCapacitorTopPressure.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 	}
 
-	fileHasBeenRead = int(1);
+	m_fileHasBeenRead = int(1);
 }
 
 std::vector<double> controlledCoronaryReader::getResistanceNearAorta()
@@ -369,313 +377,420 @@ std::vector<double> controlledCoronaryReader::getIntramyocardialCapacitorTopPres
 	return intramyocardialCapacitorTopPressure;
 }
 
-void netlistReader::readAndSplitMultiSurfaceInputFile()
+void NetlistReader::readAndSplitMultiSurfaceInputFile()
 {
+	m_indexOfNetlistCurrentlyBeingReadInFile = 0;
+	while(readNextLine())
+	{
+		// This is for error reporting purposes, to inform the user of errors in particular netlists during the read.
+		m_indexOfNetlistCurrentlyBeingReadInFile++;
 
+		// These member functions are used just to break
+		// the file read up into more human-understandable chunks.
+		// Don't change their order.
+		readCircuitStructure();
+		readPrescribedPressureNodes();
+		readPrescribedPressureValues();
+		readPrescribedPressureTypes();
+		readPrescribedFlowComponents();
+		readPrescribedFlowValues();
+		readPrescribedFlowTypes();
+		readInitialPressures();
+
+		// Get the tag for the node at the 3D interface:
+		readNextLine();
+		m_indicesOfNodesAt3DInterface.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+
+		readControlSystemPrescriptions();
+
+	}
+
+	m_numberOfNetlistSurfacesIn_netlist_surfacesdat = m_indexOfNetlistCurrentlyBeingReadInFile;
+
+	m_fileHasBeenRead = int(1);
+}
+
+void NetlistReader::readCircuitStructure()
+{
 	std::vector<circuit_component_t> tempComponentTypes;
 	std::vector<int> tempComponentStartNodes;
 	std::vector<int> tempComponentEndNodes;
 	std::vector<double> tempComponentParameterValues;
-	std::vector<int> tempListOfPrescribedPressures;
-	std::vector<double> tempValueOfPrescribedPressures;
-	std::vector<double> tempValueOfPrescribedFlows;
-	std::vector<circuit_nodal_pressure_prescription_t> tempTypeOfPrescribedPressures;
-	std::vector<int> tempListOfPrescribedFlows;
-	std::vector<circuit_component_flow_prescription_t> tempTypeOfPrescribedFlows;
-	std::map<int,double> tempInitialPressures;
 
-	int indexOfNetlistCurrentlyBeingReadInFile = 0;
+	m_numberOfComponents.push_back(atoi((*mp_currentLineSplitBySpaces).at(0).c_str()));
+
+	// Get the netlist-format-style data for each component in the circuit:
+	for (int componentIndex=0; componentIndex < m_numberOfComponents.back(); componentIndex++)
+	{
+		readNextLine();
+		if (mp_currentLineSplitBySpaces->at(0).compare("r") == 0)
+		{
+			tempComponentTypes.push_back(Component_Resistor);
+		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("c") == 0)
+		{
+			tempComponentTypes.push_back(Component_Capacitor);
+		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("i") == 0)
+		{
+			tempComponentTypes.push_back(Component_Inductor);
+		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("d") == 0)
+		{
+			tempComponentTypes.push_back(Component_Diode);
+		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("v") == 0)
+		{
+			tempComponentTypes.push_back(Component_VolumeTrackingPressureChamber);
+		}
+		else
+		{
+			throw std::runtime_error("ERROR: Unknown netlist component type. This often indicates a malformed netlist_surfaces.dat.\n");
+		}
+
+		readNextLine();
+		tempComponentStartNodes.push_back(atoi((*mp_currentLineSplitBySpaces).at(0).c_str()));
+
+		readNextLine();
+		tempComponentEndNodes.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+
+		readNextLine();
+		tempComponentParameterValues.push_back(atof(mp_currentLineSplitBySpaces->at(0).c_str()));
+	}
+	m_componentTypes.push_back(tempComponentTypes);
+	m_componentStartNodes.push_back(tempComponentStartNodes);
+	m_componentEndNodes.push_back(tempComponentEndNodes);
+	m_componentParameterValues.push_back(tempComponentParameterValues);
+}
+
+void NetlistReader::readPrescribedPressureNodes()
+{
+	std::vector<int> tempListOfPrescribedPressures;
+	
+	readNextLine();
+	m_numberOfPrescribedPressures.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+
+	for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < m_numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
+	{
+		readNextLine();
+		tempListOfPrescribedPressures.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+	}
+	m_listOfPrescribedPressures.push_back(tempListOfPrescribedPressures);
+}
+
+void NetlistReader::readPrescribedPressureValues()
+{
+	std::vector<double> tempValueOfPrescribedPressures;
+	for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < m_numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
+	{
+		readNextLine();
+		tempValueOfPrescribedPressures.push_back(atof(mp_currentLineSplitBySpaces->at(0).c_str()));
+	}
+	m_valueOfPrescribedPressures.push_back(tempValueOfPrescribedPressures);
+}
+
+void NetlistReader::readPrescribedPressureTypes()
+{
+	std::vector<circuit_nodal_pressure_prescription_t> tempTypeOfPrescribedPressures;
+	
+	for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < m_numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
+	{
+		readNextLine();
+		if (mp_currentLineSplitBySpaces->at(0).compare("f") == 0)
+		{
+			tempTypeOfPrescribedPressures.push_back(Pressure_Fixed);
+		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("l") == 0)
+		{
+			tempTypeOfPrescribedPressures.push_back(Pressure_LeftVentricular);
+		}
+		else
+		{
+			throw std::runtime_error("EE: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
+		}
+	}
+	m_typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
+}
+
+void NetlistReader::readPrescribedFlowComponents()
+{
+	std::vector<int> tempListOfPrescribedFlows;
+	readNextLine();
+	m_numberOfPrescribedFlows.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+
+	for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < m_numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
+	{
+		readNextLine();
+		tempListOfPrescribedFlows.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+	}
+	m_listOfPrescribedFlows.push_back(tempListOfPrescribedFlows);
+}
+
+void NetlistReader::readPrescribedFlowValues()
+{
+	std::vector<double> tempValueOfPrescribedFlows;
+	for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < m_numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
+	{
+		readNextLine();
+		tempValueOfPrescribedFlows.push_back(atof(mp_currentLineSplitBySpaces->at(0).c_str()));
+	}
+	m_valueOfPrescribedFlows.push_back(tempValueOfPrescribedFlows);
+}
+
+void NetlistReader::readPrescribedFlowTypes()
+{
+	std::vector<circuit_component_flow_prescription_t> tempTypeOfPrescribedFlows;
+	for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < m_numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
+	{
+		readNextLine();
+		if (mp_currentLineSplitBySpaces->at(0).compare("f") == 0)
+		{
+			tempTypeOfPrescribedFlows.push_back(Flow_Fixed);
+		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("t") == 0)
+		{
+			tempTypeOfPrescribedFlows.push_back(Flow_3DInterface);
+		}
+		else
+		{
+			throw std::runtime_error("ERROR: Unknown netlist component flow prescription. This often indicates a malformed netlist_surfaces.dat.");
+		}
+	}
+	m_typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
+}
+
+void NetlistReader::readInitialPressures()
+{
+	std::map<int,double> tempInitialPressures;
+	
+	readNextLine();
+	m_numberOfPressureNodes.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+	for (int pressureNode=0; pressureNode < m_numberOfPressureNodes.back(); pressureNode++)
+	{
+		readNextLine();
+		tempInitialPressures.insert( std::pair<int,double> (atoi(mp_currentLineSplitBySpaces->at(0).c_str()), atof(mp_currentLineSplitBySpaces->at(1).c_str()))  );
+	}
+	m_initialPressures.push_back(tempInitialPressures);
+}
+
+void NetlistReader::readControlSystemPrescriptions()
+{
+	// Get the number, list and control types of components which have attached control systems:
+	readNextLine();
+	m_numberOfComponentsWithControl.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+	std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
+	for (int controlledComponent=0; controlledComponent<m_numberOfComponentsWithControl.back(); controlledComponent++)
+	{
+		parameter_controller_t controlType;
+		readNextLine();
+		// Work out what sort of control is required for this component:
+		if (mp_currentLineSplitBySpaces->at(1).compare("pc") == 0) // proximal coronary resistor control
+		{
+			throw std::logic_error("EE: This control hasn't been implemented yet!"); // need to do the push_backs below, too.
+			// controlType = 
+		}
+		else if (mp_currentLineSplitBySpaces->at(1).compare("l") == 0)
+		{
+			controlType = Controller_LeftVentricularElastance;
+		}
+		else
+		{
+			std::stringstream error;
+			error << "EE: Unknown component control type found during read of netlist surface " << m_indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
+			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+			throw std::runtime_error(error.str());
+		}
+		int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
+		componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
+	}
+	m_mapsOfComponentControlTypesForEachSurface.push_back(componentControlTypesForThisSurface);
+
+	// Get the number, list and control types of nodes which have attached control systems:
+	readNextLine();
+	m_numberOfNodesWithControl.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+	std::map<int,parameter_controller_t> nodalControlTypesForThisSurface;
+	for (int controlledNode=0; controlledNode < m_numberOfNodesWithControl.back(); controlledNode++)
+	{
+		parameter_controller_t controlType;
+		readNextLine();
+		// Work out what sort of control is required for this component:
+		if (true) // proximal coronary resistor control
+		{
+			throw std::runtime_error("EE: No nodal control is implemented yet. This is not an input data problem; coding is needed! - fileReaders.cxx");
+		}
+		else
+		{
+			std::stringstream error;
+			error << "EE: Unknown node control type found during read of netlist surface " << m_indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
+			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+			throw std::runtime_error(error.str());
+		}
+		int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
+		nodalControlTypesForThisSurface.insert( std::make_pair(nodeIndex,controlType) );
+	}
+	m_mapsOfNodalControlTypesForEachSurface.push_back(nodalControlTypesForThisSurface);
+}
+
+std::vector<std::vector<circuit_component_t>> NetlistReader::getComponentTypes()
+{
+	return m_componentTypes;
+}
+std::vector<std::vector<int>> NetlistReader::getComponentStartNodes()
+{
+	return m_componentStartNodes;
+}
+std::vector<std::vector<int>> NetlistReader::getComponentEndNodes()
+{
+	return m_componentEndNodes;
+}
+std::vector<std::vector<double>> NetlistReader::getComponentParameterValues()
+{
+	return m_componentParameterValues;
+}
+std::vector<int> NetlistReader::getNumberOfComponents()
+{
+	return m_numberOfComponents;
+}
+std::vector<int> NetlistReader::getNumberOfPrescribedPressures()
+{
+	return m_numberOfPrescribedPressures;
+}
+std::vector<int> NetlistReader::getNumberOfPrescribedFlows()
+{
+	return m_numberOfPrescribedFlows;
+}
+std::vector<std::vector<int>> NetlistReader::getListOfPrescribedPressures()
+{
+	return m_listOfPrescribedPressures;
+}
+std::vector<std::vector<int>> NetlistReader::getListOfPrescribedFlows()
+{
+	return m_listOfPrescribedFlows;
+}
+std::vector<std::vector<double>> NetlistReader::getValueOfPrescribedPressures()
+{
+	return m_valueOfPrescribedPressures;
+}
+std::vector<std::vector<double>> NetlistReader::getValueOfPrescribedFlows()
+{
+	return m_valueOfPrescribedFlows;
+}
+std::vector<std::vector<circuit_nodal_pressure_prescription_t>> NetlistReader::getTypeOfPrescribedPressures()
+{
+	return m_typeOfPrescribedPressures;
+}
+std::vector<std::vector<circuit_component_flow_prescription_t>> NetlistReader::getTypeOfPrescribedFlows()
+{
+	return m_typeOfPrescribedFlows;
+}
+std::vector<int> NetlistReader::getNumberOfPressureNodes()
+{
+	return m_numberOfPressureNodes;
+}
+std::vector<std::map<int,double>> NetlistReader::getInitialPressures()
+{
+	return m_initialPressures;
+}
+std::vector<int> NetlistReader::getIndicesOfNodesAt3DInterface()
+{
+	return m_indicesOfNodesAt3DInterface;
+}
+std::vector<int>& NetlistReader::getNumberOfComponentsWithControl()
+{
+	return m_numberOfComponentsWithControl;
+}
+std::vector<std::map<int,parameter_controller_t>>& NetlistReader::getMapsOfComponentControlTypesForEachSurface()
+{
+	return m_mapsOfComponentControlTypesForEachSurface;
+}
+std::vector<int>& NetlistReader::getNumberOfNodesWithControl()
+{
+	return m_numberOfNodesWithControl;
+}
+std::vector<std::map<int,parameter_controller_t>>& NetlistReader::getMapsOfNodalControlTypesForEachSurface()
+{
+	return m_mapsOfNodalControlTypesForEachSurface;
+}
+
+int NetlistReader::getNumberOfNetlistSurfaces()
+{
+	return m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
+}
+
+void NetlistDownstreamCircuitReader::readAndSplitMultiSurfaceInputFile()
+{
+	m_indexOfNetlistCurrentlyBeingReadInFile = 0;
 	while(readNextLine())
 	{
 		// This is for error reporting purposes, to inform the user of errors in particular netlists during the read.
-		indexOfNetlistCurrentlyBeingReadInFile++;
+		m_indexOfNetlistCurrentlyBeingReadInFile++;
 
-		tempComponentTypes.clear();
-		tempComponentStartNodes.clear();
-		tempComponentEndNodes.clear();
-		tempComponentParameterValues.clear();
-		tempListOfPrescribedPressures.clear();
-		tempValueOfPrescribedPressures.clear();
-		tempValueOfPrescribedFlows.clear();
-		tempTypeOfPrescribedPressures.clear();
-		tempListOfPrescribedFlows.clear();
-		tempTypeOfPrescribedFlows.clear();
-		tempInitialPressures.clear();
-
-		numberOfComponents.push_back(atoi((*currentLineSplitBySpaces).at(0).c_str()));
-
-		// Get the netlist-format-style data for each component in the circuit:
-		for (int componentIndex=0; componentIndex < numberOfComponents.back(); componentIndex++)
-		{
-			readNextLine();
-			if (currentLineSplitBySpaces->at(0).compare("r") == 0)
-			{
-				tempComponentTypes.push_back(Component_Resistor);
-			}
-			else if (currentLineSplitBySpaces->at(0).compare("c") == 0)
-			{
-				tempComponentTypes.push_back(Component_Capacitor);
-			}
-			else if (currentLineSplitBySpaces->at(0).compare("i") == 0)
-			{
-				tempComponentTypes.push_back(Component_Inductor);
-			}
-			else if (currentLineSplitBySpaces->at(0).compare("d") == 0)
-			{
-				tempComponentTypes.push_back(Component_Diode);
-			}
-			else if (currentLineSplitBySpaces->at(0).compare("v") == 0)
-			{
-				tempComponentTypes.push_back(Component_VolumeTrackingPressureChamber);
-			}
-			else
-			{
-				throw std::runtime_error("ERROR: Unknown netlist component type. This often indicates a malformed netlist_surfaces.dat.\n");
-			}
-
-			readNextLine();
-			tempComponentStartNodes.push_back(atoi((*currentLineSplitBySpaces).at(0).c_str()));
-
-			readNextLine();
-			tempComponentEndNodes.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-
-			readNextLine();
-			tempComponentParameterValues.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
-		}
-		componentTypes.push_back(tempComponentTypes);
-		componentStartNodes.push_back(tempComponentStartNodes);
-		componentEndNodes.push_back(tempComponentEndNodes);
-		componentParameterValues.push_back(tempComponentParameterValues);
-
-		readNextLine();
-		numberOfPrescribedPressures.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-
-		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
-		{
-			readNextLine();
-			tempListOfPrescribedPressures.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-		}
-		listOfPrescribedPressures.push_back(tempListOfPrescribedPressures);
-
-		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
-		{
-			readNextLine();
-			tempValueOfPrescribedPressures.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
-		}
-		valueOfPrescribedPressures.push_back(tempValueOfPrescribedPressures);
-
-
-		for (int prescribedPressureNodeIndex=0; prescribedPressureNodeIndex < numberOfPrescribedPressures.back(); prescribedPressureNodeIndex++)
-		{
-			readNextLine();
-			if (currentLineSplitBySpaces->at(0).compare("f") == 0)
-			{
-				tempTypeOfPrescribedPressures.push_back(Pressure_Fixed);
-			}
-			else if (currentLineSplitBySpaces->at(0).compare("l") == 0)
-			{
-				tempTypeOfPrescribedPressures.push_back(Pressure_LeftVentricular);
-			}
-			else
-			{
-				throw std::runtime_error("EE: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
-			}
-		}
-		typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
-		
-
-		readNextLine();
-		numberOfPrescribedFlows.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-
-		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
-		{
-			readNextLine();
-			tempListOfPrescribedFlows.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-		}
-		listOfPrescribedFlows.push_back(tempListOfPrescribedFlows);
-
-		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
-		{
-			readNextLine();
-			tempValueOfPrescribedFlows.push_back(atof(currentLineSplitBySpaces->at(0).c_str()));
-		}
-		valueOfPrescribedFlows.push_back(tempValueOfPrescribedFlows);
-
-		for (int prescribedFlowComponentIndex=0; prescribedFlowComponentIndex < numberOfPrescribedFlows.back(); prescribedFlowComponentIndex++)
-		{
-			readNextLine();
-			if (currentLineSplitBySpaces->at(0).compare("f") == 0)
-			{
-				tempTypeOfPrescribedFlows.push_back(Flow_Fixed);
-			}
-			else if (currentLineSplitBySpaces->at(0).compare("t") == 0)
-			{
-				tempTypeOfPrescribedFlows.push_back(Flow_3DInterface);
-			}
-			else
-			{
-				throw std::runtime_error("ERROR: Unknown netlist component flow prescription. This often indicates a malformed netlist_surfaces.dat.");
-			}
-		}
-		typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
-
-		readNextLine();
-		numberOfPressureNodes.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-		for (int pressureNode=0; pressureNode < numberOfPressureNodes.back(); pressureNode++)
-		{
-			readNextLine();
-			tempInitialPressures.insert( std::pair<int,double> (atoi(currentLineSplitBySpaces->at(0).c_str()), atof(currentLineSplitBySpaces->at(1).c_str()))  );
-		}
-		initialPressures.push_back(tempInitialPressures);
-
-		// Get the tag for the node at the 3D interface:
-		readNextLine();
-		indicesOfNodesAt3DInterface.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-
-		// Get the number, list and control types of components which have attached control systems:
-		readNextLine();
-		numberOfComponentsWithControl.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-		std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
-		for (int controlledComponent=0; controlledComponent<numberOfComponentsWithControl.back(); controlledComponent++)
-		{
-			parameter_controller_t controlType;
-			readNextLine();
-			// Work out what sort of control is required for this component:
-			if (currentLineSplitBySpaces->at(1).compare("pc") == 0) // proximal coronary resistor control
-			{
-				throw std::logic_error("EE: This control hasn't been implemented yet!"); // need to do the push_backs below, too.
-				// controlType = 
-			}
-			else if (currentLineSplitBySpaces->at(1).compare("l") == 0)
-			{
-				controlType = Controller_LeftVentricularElastance;
-			}
-			else
-			{
-				std::stringstream error;
-				error << "EE: Unknown component control type found during read of netlist surface " << indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-				error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
-				throw std::runtime_error(error.str());
-			}
-			int componentIndex = atoi(currentLineSplitBySpaces->at(0).c_str());
-			componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
-		}
-		mapsOfComponentControlTypesForEachSurface.push_back(componentControlTypesForThisSurface);
-
-		// Get the number, list and control types of nodes which have attached control systems:
-		readNextLine();
-		numberOfNodesWithControl.push_back(atoi(currentLineSplitBySpaces->at(0).c_str()));
-		std::map<int,parameter_controller_t> nodalControlTypesForThisSurface;
-		for (int controlledNode=0; controlledNode < numberOfNodesWithControl.back(); controlledNode++)
-		{
-			parameter_controller_t controlType;
-			readNextLine();
-			// Work out what sort of control is required for this component:
-			if (true) // proximal coronary resistor control
-			{
-				throw std::runtime_error("EE: No nodal control is implemented yet. This is not an input data problem; coding is needed! - fileReaders.cxx");
-			}
-			else
-			{
-				std::stringstream error;
-				error << "EE: Unknown node control type found during read of netlist surface " << indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-				error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
-				throw std::runtime_error(error.str());
-			}
-			int nodeIndex = atoi(currentLineSplitBySpaces->at(0).c_str());
-			nodalControlTypesForThisSurface.insert( std::make_pair(nodeIndex,controlType) );
-		}
-		mapsOfNodalControlTypesForEachSurface.push_back(nodalControlTypesForThisSurface);
+		// These member functions are used just to break
+		// the file read up into more human-understandable chunks.
+		// Don't change their order.
+		readCircuitStructure();
+		readPrescribedPressureNodes();
+		readPrescribedPressureValues();
+		readPrescribedPressureTypes();
+		readPrescribedFlowComponents();
+		readPrescribedFlowValues();
+		readPrescribedFlowTypes();
+		readInitialPressures();
+		readBoundaryConditionConnectivity();
+		readControlSystemPrescriptions();
 
 	}
 
-	m_numberOfNetlistSurfacesIn_netlist_surfacesdat = indexOfNetlistCurrentlyBeingReadInFile;
-
-	fileHasBeenRead = int(1);
+	m_fileHasBeenRead = int(1);
 }
 
-std::vector<std::vector<circuit_component_t>> netlistReader::getComponentTypes()
+void NetlistDownstreamCircuitReader::readBoundaryConditionConnectivity()
 {
-	return componentTypes;
-}
-std::vector<std::vector<int>> netlistReader::getComponentStartNodes()
-{
-	return componentStartNodes;
-}
-std::vector<std::vector<int>> netlistReader::getComponentEndNodes()
-{
-	return componentEndNodes;
-}
-std::vector<std::vector<double>> netlistReader::getComponentParameterValues()
-{
-	return componentParameterValues;
-}
-std::vector<int> netlistReader::getNumberOfComponents()
-{
-	return numberOfComponents;
-}
-std::vector<int> netlistReader::getNumberOfPrescribedPressures()
-{
-	return numberOfPrescribedPressures;
-}
-std::vector<int> netlistReader::getNumberOfPrescribedFlows()
-{
-	return numberOfPrescribedFlows;
-}
-std::vector<std::vector<int>> netlistReader::getListOfPrescribedPressures()
-{
-	return listOfPrescribedPressures;
-}
-std::vector<std::vector<int>> netlistReader::getListOfPrescribedFlows()
-{
-	return listOfPrescribedFlows;
-}
-std::vector<std::vector<double>> netlistReader::getValueOfPrescribedPressures()
-{
-	return valueOfPrescribedPressures;
-}
-std::vector<std::vector<double>> netlistReader::getValueOfPrescribedFlows()
-{
-	return valueOfPrescribedFlows;
-}
-std::vector<std::vector<circuit_nodal_pressure_prescription_t>> netlistReader::getTypeOfPrescribedPressures()
-{
-	return typeOfPrescribedPressures;
-}
-std::vector<std::vector<circuit_component_flow_prescription_t>> netlistReader::getTypeOfPrescribedFlows()
-{
-	return typeOfPrescribedFlows;
-}
-std::vector<int> netlistReader::getNumberOfPressureNodes()
-{
-	return numberOfPressureNodes;
-}
-std::vector<std::map<int,double>> netlistReader::getInitialPressures()
-{
-	return initialPressures;
-}
-std::vector<int> netlistReader::getIndicesOfNodesAt3DInterface()
-{
-	return indicesOfNodesAt3DInterface;
-}
-std::vector<int>& netlistReader::getNumberOfComponentsWithControl()
-{
-	return numberOfComponentsWithControl;
-}
-std::vector<std::map<int,parameter_controller_t>>& netlistReader::getMapsOfComponentControlTypesForEachSurface()
-{
-	return mapsOfComponentControlTypesForEachSurface;
-}
-std::vector<int>& netlistReader::getNumberOfNodesWithControl()
-{
-	return numberOfNodesWithControl;
-}
-std::vector<std::map<int,parameter_controller_t>>& netlistReader::getMapsOfNodalControlTypesForEachSurface()
-{
-	return mapsOfNodalControlTypesForEachSurface;
+	readNextLine();
+	m_numberOfBoundaryConditionsConnectedTo.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+
+	{
+		std::vector<int> tempConnectedCircuitSurfaceIndces;
+		std::vector<int> tempLocalBoundaryConditionInterfaceNodes;
+		std::vector<int> tempRemoteBoundaryConditionInterfaceNodes;
+		for (int connectedBoundaryCondition = 0; connectedBoundaryCondition < m_numberOfBoundaryConditionsConnectedTo.back(); connectedBoundaryCondition++)
+		{
+			readNextLine();
+			tempConnectedCircuitSurfaceIndces.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
+			tempLocalBoundaryConditionInterfaceNodes.push_back(atoi(mp_currentLineSplitBySpaces->at(1).c_str()));
+			tempRemoteBoundaryConditionInterfaceNodes.push_back(atoi(mp_currentLineSplitBySpaces->at(2).c_str()));
+		}
+		m_connectedCircuitSurfaceIndices.push_back(tempConnectedCircuitSurfaceIndces);
+		m_localBoundaryConditionInterfaceNodes.push_back(tempLocalBoundaryConditionInterfaceNodes);
+		m_remoteBoundaryConditionInterfaceNodes.push_back(tempRemoteBoundaryConditionInterfaceNodes);
+	}
+
+
 }
 
-int netlistReader::getNumberOfNetlistSurfaces()
+std::vector<int> NetlistDownstreamCircuitReader::getNumberOfBoundaryConditionsConnectedTo()
 {
-	return m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
+	return m_numberOfBoundaryConditionsConnectedTo;
+}
+std::vector<std::vector<int>> NetlistDownstreamCircuitReader::getConnectedCircuitSurfaceIndices()
+{
+	return m_connectedCircuitSurfaceIndices;
+}
+std::vector<std::vector<int>> NetlistDownstreamCircuitReader::getLocalBoundaryConditionInterfaceNodes()
+{
+	return m_localBoundaryConditionInterfaceNodes;
+}
+std::vector<std::vector<int>> NetlistDownstreamCircuitReader::getRemoteBoundaryConditionInterfaceNodes()
+{
+	return m_remoteBoundaryConditionInterfaceNodes;
+}
+
+// Disable unwanted methods:
+std::vector<int> NetlistDownstreamCircuitReader::getIndicesOfNodesAt3DInterface()
+{
+	throw std::logic_error("Method getIndicesOfNodesAt3DInterface() should not be called on the NetlistDownstreamCircuitReader, as it has no 3D interface.");
+}
+int NetlistDownstreamCircuitReader::getNumberOfNetlistSurfaces()
+{
+	throw std::logic_error("Method getNumberOfNetlistSurfaces() should not be called on the NetlistDownstreamCircuitReader, as it has no surfaces.");
 }

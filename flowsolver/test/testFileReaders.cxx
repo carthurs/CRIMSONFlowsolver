@@ -165,7 +165,7 @@ TEST_F(testFileReaders, checkHistFileReader) {
 }
 
 TEST_F(testFileReaders, checkNetlistReader) {
-  netlistReader* netlistReader_instance = netlistReader::Instance();
+  NetlistReader* netlistReader_instance = NetlistReader::Instance();
   netlistReader_instance->setFileName("netlist_surfaces.dat");
   netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
@@ -282,4 +282,97 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(4) == Component_Resistor);
 
   netlistReader_instance->Term();
+}
+
+
+TEST_F(testFileReaders, checkNetlistDownstreamCircuitReader)
+{
+  NetlistDownstreamCircuitReader* downstreamReader_instance = NetlistDownstreamCircuitReader::Instance();
+  downstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
+  downstreamReader_instance->readAndSplitMultiSurfaceInputFile();
+
+  std::vector<std::vector<double>> returnedVectorOfDoubleVectors;
+  returnedVectorOfDoubleVectors = downstreamReader_instance->getComponentParameterValues();
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),58.43089e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.001278473e0);
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(2),1400.0e0);
+
+  returnedVectorOfDoubleVectors = downstreamReader_instance->getValueOfPrescribedPressures();
+  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),0.01e0);
+
+  // returnedVectorOfDoubleVectors = downstreamReader_instance->getValueOfPrescribedFlows();
+  // EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),-1.0e0);
+
+  std::vector<std::map<int,double>> returnedVectorOfIntToDoubleMaps = downstreamReader_instance->getInitialPressures();
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(1),133.0e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(2),133.1e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(3),0.1e0);
+  EXPECT_EQ(returnedVectorOfIntToDoubleMaps.at(0).at(4),133.2e0);
+
+  std::vector<int> returnedVectorOfInts;
+  returnedVectorOfInts = downstreamReader_instance->getNumberOfPressureNodes();
+  EXPECT_EQ(returnedVectorOfInts.at(0),4);
+
+  returnedVectorOfInts = downstreamReader_instance->getNumberOfComponents();
+  EXPECT_EQ(returnedVectorOfInts.at(0),3);
+
+  returnedVectorOfInts = downstreamReader_instance->getNumberOfPrescribedPressures();
+  EXPECT_EQ(returnedVectorOfInts.at(0),1);
+
+  // returnedVectorOfInts = downstreamReader_instance->getNumberOfPrescribedFlows();
+  // EXPECT_EQ(returnedVectorOfInts.at(0),1);
+  // EXPECT_EQ(returnedVectorOfInts.at(1),1);
+  
+  std::vector<std::vector<int>> returnedVectorOfIntVectors;
+  returnedVectorOfIntVectors = downstreamReader_instance->getComponentStartNodes();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),2);
+
+  returnedVectorOfIntVectors = downstreamReader_instance->getComponentEndNodes();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),2);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),3);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),4);
+
+  returnedVectorOfIntVectors = downstreamReader_instance->getListOfPrescribedPressures();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),3);
+
+  // returnedVectorOfIntVectors = downstreamReader_instance->getListOfPrescribedFlows();
+  // EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
+
+
+  std::vector<std::vector<circuit_nodal_pressure_prescription_t>> returnedVectorOfPressurePrescriptions;
+  returnedVectorOfPressurePrescriptions = downstreamReader_instance->getTypeOfPrescribedPressures();
+  EXPECT_TRUE(returnedVectorOfPressurePrescriptions.at(0).at(0) == Pressure_Fixed);
+
+  // std::vector<std::vector<circuit_component_flow_prescription_t>> returnedVectorOfFlowPrescriptions;
+  // returnedVectorOfFlowPrescriptions = downstreamReader_instance->getTypeOfPrescribedFlows();
+  // EXPECT_TRUE(returnedVectorOfFlowPrescriptions.at(0).at(0) == Flow_3DInterface);
+  // EXPECT_TRUE(returnedVectorOfFlowPrescriptions.at(1).at(0) == Flow_3DInterface);
+
+  std::vector<std::vector<circuit_component_t>> returnedVectorOfComponentTypes;
+  returnedVectorOfComponentTypes = downstreamReader_instance->getComponentTypes();
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(0) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(1) == Component_Capacitor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(2) == Component_Resistor);
+
+  returnedVectorOfInts = downstreamReader_instance->getNumberOfBoundaryConditionsConnectedTo();
+  EXPECT_EQ(returnedVectorOfInts.at(0),3);
+
+  returnedVectorOfIntVectors = downstreamReader_instance->getConnectedCircuitSurfaceIndices();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),5);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),6);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),7);
+
+  returnedVectorOfIntVectors = downstreamReader_instance->getLocalBoundaryConditionInterfaceNodes();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),4);
+
+  returnedVectorOfIntVectors = downstreamReader_instance->getRemoteBoundaryConditionInterfaceNodes();
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),5);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),4);
+  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),3);
+
+  downstreamReader_instance->Term();
 }

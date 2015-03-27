@@ -28,7 +28,7 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
   fortranPointerManager_instance->hasBoundaryPressures = true;
 
   // Setup the netlist reader:
-  netlistReader_instance = netlistReader::Instance();
+  netlistReader_instance = NetlistReader::Instance();
   netlistReader_instance->setFileName("netlist_surfaces_bad3DInterfaceComponentOrientation.dat");
   netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
@@ -61,7 +61,7 @@ TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
   fortranPointerManager_instance->hasBoundaryPressures = true;
 
   // Setup the netlist reader:
-  netlistReader_instance = netlistReader::Instance();
+  netlistReader_instance = NetlistReader::Instance();
   netlistReader_instance->setFileName("netlist_surfaces_badComponentAt3DInterface.dat");
   netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 

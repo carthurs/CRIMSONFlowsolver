@@ -633,87 +633,108 @@ void NetlistReader::readControlSystemPrescriptions()
 
 std::vector<std::vector<circuit_component_t>> NetlistReader::getComponentTypes()
 {
+	assert(m_fileHasBeenRead);
 	return m_componentTypes;
 }
 std::vector<std::vector<int>> NetlistReader::getComponentStartNodes()
 {
+	assert(m_fileHasBeenRead);
 	return m_componentStartNodes;
 }
 std::vector<std::vector<int>> NetlistReader::getComponentEndNodes()
 {
+	assert(m_fileHasBeenRead);
 	return m_componentEndNodes;
 }
 std::vector<std::vector<double>> NetlistReader::getComponentParameterValues()
 {
+	assert(m_fileHasBeenRead);
 	return m_componentParameterValues;
 }
 std::vector<int> NetlistReader::getNumberOfComponents()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfComponents;
 }
 std::vector<int> NetlistReader::getNumberOfPrescribedPressures()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfPrescribedPressures;
 }
 std::vector<int> NetlistReader::getNumberOfPrescribedFlows()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfPrescribedFlows;
 }
 std::vector<std::vector<int>> NetlistReader::getListOfPrescribedPressures()
 {
+	assert(m_fileHasBeenRead);
 	return m_listOfPrescribedPressures;
 }
 std::vector<std::vector<int>> NetlistReader::getListOfPrescribedFlows()
 {
+	assert(m_fileHasBeenRead);
 	return m_listOfPrescribedFlows;
 }
 std::vector<std::vector<double>> NetlistReader::getValueOfPrescribedPressures()
 {
+	assert(m_fileHasBeenRead);
 	return m_valueOfPrescribedPressures;
 }
 std::vector<std::vector<double>> NetlistReader::getValueOfPrescribedFlows()
 {
+	assert(m_fileHasBeenRead);
 	return m_valueOfPrescribedFlows;
 }
 std::vector<std::vector<circuit_nodal_pressure_prescription_t>> NetlistReader::getTypeOfPrescribedPressures()
 {
+	assert(m_fileHasBeenRead);
 	return m_typeOfPrescribedPressures;
 }
 std::vector<std::vector<circuit_component_flow_prescription_t>> NetlistReader::getTypeOfPrescribedFlows()
 {
+	assert(m_fileHasBeenRead);
 	return m_typeOfPrescribedFlows;
 }
 std::vector<int> NetlistReader::getNumberOfPressureNodes()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfPressureNodes;
 }
 std::vector<std::map<int,double>> NetlistReader::getInitialPressures()
 {
+	assert(m_fileHasBeenRead);
 	return m_initialPressures;
 }
 std::vector<int> NetlistReader::getIndicesOfNodesAt3DInterface()
 {
+	assert(m_fileHasBeenRead);
 	return m_indicesOfNodesAt3DInterface;
 }
 std::vector<int>& NetlistReader::getNumberOfComponentsWithControl()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfComponentsWithControl;
 }
 std::vector<std::map<int,parameter_controller_t>>& NetlistReader::getMapsOfComponentControlTypesForEachSurface()
 {
+	assert(m_fileHasBeenRead);
 	return m_mapsOfComponentControlTypesForEachSurface;
 }
 std::vector<int>& NetlistReader::getNumberOfNodesWithControl()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfNodesWithControl;
 }
 std::vector<std::map<int,parameter_controller_t>>& NetlistReader::getMapsOfNodalControlTypesForEachSurface()
 {
+	assert(m_fileHasBeenRead);
 	return m_mapsOfNodalControlTypesForEachSurface;
 }
 
 int NetlistReader::getNumberOfNetlistSurfaces()
 {
+	assert(m_fileHasBeenRead);
 	return m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
 }
 
@@ -768,21 +789,47 @@ void NetlistDownstreamCircuitReader::readBoundaryConditionConnectivity()
 
 }
 
-std::vector<int> NetlistDownstreamCircuitReader::getNumberOfBoundaryConditionsConnectedTo()
+int NetlistDownstreamCircuitReader::getNumberOfBoundaryConditionsConnectedTo(const int downstreamCircuitIndex) const
 {
-	return m_numberOfBoundaryConditionsConnectedTo;
+	assert(m_fileHasBeenRead);
+	return m_numberOfBoundaryConditionsConnectedTo.at(downstreamCircuitIndex);
 }
-std::vector<std::vector<int>> NetlistDownstreamCircuitReader::getConnectedCircuitSurfaceIndices()
+std::vector<int> NetlistDownstreamCircuitReader::getConnectedCircuitSurfaceIndices(const int downstreamCircuitIndex) const
 {
-	return m_connectedCircuitSurfaceIndices;
+	assert(m_fileHasBeenRead);
+	return m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex);
 }
-std::vector<std::vector<int>> NetlistDownstreamCircuitReader::getLocalBoundaryConditionInterfaceNodes()
+std::vector<int> NetlistDownstreamCircuitReader::getLocalBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const
 {
-	return m_localBoundaryConditionInterfaceNodes;
+	assert(m_fileHasBeenRead);
+	return m_localBoundaryConditionInterfaceNodes.at(downstreamCircuitIndex);
 }
-std::vector<std::vector<int>> NetlistDownstreamCircuitReader::getRemoteBoundaryConditionInterfaceNodes()
+std::vector<int> NetlistDownstreamCircuitReader::getRemoteBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const
 {
-	return m_remoteBoundaryConditionInterfaceNodes;
+	assert(m_fileHasBeenRead);
+	return m_remoteBoundaryConditionInterfaceNodes.at(downstreamCircuitIndex);
+}
+
+// boundaryConditionIndex here should be as in the solver.inp.
+std::set<int> NetlistDownstreamCircuitReader::getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(const int boundaryConditionIndex) const
+{
+	assert(m_fileHasBeenRead);
+	std::set<int> nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit;
+
+	// Find all the downstream circuits which connect to the requested boundary condition (boundaryConditionIndex)
+	for (int downstreamCircuitIndex = 0; downstreamCircuitIndex < m_connectedCircuitSurfaceIndices.size(); downstreamCircuitIndex++)
+	{
+		for (int attachedBoundaryConditionIndex = 0; attachedBoundaryConditionIndex < m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).size(); attachedBoundaryConditionIndex++)
+		{
+			if (m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).at(attachedBoundaryConditionIndex) == boundaryConditionIndex)
+			{
+				// Gather the nodes in this boundary condition which connect to downstream circuits:
+				nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit.insert(m_remoteBoundaryConditionInterfaceNodes.at(downstreamCircuitIndex).at(attachedBoundaryConditionIndex));
+			}
+		}
+	}
+
+	return nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit;
 }
 
 // Disable unwanted methods:

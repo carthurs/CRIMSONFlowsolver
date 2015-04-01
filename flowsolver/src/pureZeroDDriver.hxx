@@ -17,6 +17,7 @@ public:
 		m_alfiHasBeenSet = false;
 		m_hstepHasBeenSet = false;
 		m_ntoutHasBeenSet = false;
+		m_netlistDownstreamCircuitsExistHasBeenSet = false;
 	}
 	void init();
 	void iter_init();
@@ -28,6 +29,7 @@ public:
 	void setAlfi(const double alfi);
 	void setHstep(const int hstep);
 	void setNtout(const int ntout);
+	void setNetlistDownstreamCircuitsExistence(const int numLoopClosingNetlistCircuits);
 
 private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make
@@ -52,10 +54,13 @@ private:
 
 	int m_numberOfNetlistsUsedAsBoundaryConditions;
 
+	bool m_netlistDownstreamCircuitsExist;
+
 	bool m_deltHasBeenSet;
 	bool m_alfiHasBeenSet;
 	bool m_hstepHasBeenSet;
 	bool m_ntoutHasBeenSet;
+	bool m_netlistDownstreamCircuitsExistHasBeenSet;
 
 	void placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(std::vector<double> boundaryPressures, std::vector<double> boundaryFlows);
 	void placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();

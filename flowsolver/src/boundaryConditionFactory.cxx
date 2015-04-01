@@ -4,10 +4,11 @@
 #include "controlledCoronary.hxx"
 #include "datatypesInCpp.hxx"
 #include "ClosedLoopDownstreamSubsection.hxx"
+#include <boost/weak_ptr.hpp>
 
 boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBoundaryCondition (int surfaceIndex, boundary_condition_t boundaryType)
 {
-  // assert(m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
+  assert(m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
 
   if (boundaryType == BoundaryCondition_RCR)
   {
@@ -19,13 +20,30 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
   }
   else if (boundaryType == BoundaryCondition_Netlist)
   {
-    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
+    // Identify and gather the weak pointers to the downstream loop-closing subcircuits which connect to this boundary condition.
+    // These will be passed to the NetlistBoundaryCondition constructor so that it knows which, if any, circuits are downstream of it
+    std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> gatheredDownstreamSubcircuits;
+    for (auto downstreamSubcircuit = mp_netlistDownstreamLoopClosingSubsectionsWeakPointers.begin(); downstreamSubcircuit != mp_netlistDownstreamLoopClosingSubsectionsWeakPointers.end(); downstreamSubcircuit++)
+    {
+      if(downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(surfaceIndex))
+      {
+        gatheredDownstreamSubcircuits.push_back(*downstreamSubcircuit);
+      }
+    }
 
-    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    boundaryCondition = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, gatheredDownstreamSubcircuits));
+
+    boundaryCondition->getPressureAndFlowPointersFromFortran();
+    boundaryCondition->initialiseModel();
+
+    // We finish off by giving the ClosedLoopdownstreamSubcircuits pointers to the just-constructed NetlistBoundaryCondition, if the two are connected directly.
+    // This completes the allowing of each to access each other using smart pointers.
+    for (auto downstreamSubcircuit = gatheredDownstreamSubcircuits.begin(); downstreamSubcircuit != gatheredDownstreamSubcircuits.end(); downstreamSubcircuit++)
+    {
+      downstreamSubcircuit->lock()->setPointerToNeighbouringBoundaryCondition(boundaryCondition);
+    }
     
-    boundaryConditionToReturn->initialiseModel();
-    
-    return boundaryConditionToReturn;
+    return boundaryCondition;
   }
   else if (boundaryType == BoundaryCondition_ControlledCoronary)
   {
@@ -47,12 +65,16 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 // constructing the boundary conditions that connect to them.
 void boundaryConditionFactory::createNetlistLoopClosingCircuits(std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>>& netlistDownstreamLoopClosingSubsections)
 {
-  // assert(!m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
+  assert(!m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt);
 
   for (int loopClosingCircuitIndex=1; loopClosingCircuitIndex <= m_numLoopClosingNetlistCircuits; loopClosingCircuitIndex++)
   {
-    boost::shared_ptr<ClosedLoopDownstreamSubsection> toPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex));
-    netlistDownstreamLoopClosingSubsections.push_back(toPushBack);
+    boost::shared_ptr<ClosedLoopDownstreamSubsection> sharedPtrToPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex));
+    netlistDownstreamLoopClosingSubsections.push_back(sharedPtrToPushBack);
+
+    // These weak pointers to the loop closing circuits will be given to the boundary conditions that connect to them.
+    boost::weak_ptr<ClosedLoopDownstreamSubsection> weakPtrToPushBack(sharedPtrToPushBack);
+    mp_netlistDownstreamLoopClosingSubsectionsWeakPointers.push_back(weakPtrToPushBack);
   }
 
   m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt = true;

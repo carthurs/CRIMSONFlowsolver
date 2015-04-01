@@ -8,6 +8,7 @@
 #include "CircuitData.hxx"
 #include "AtomicSubcircuitConnectionManager.hxx"
 #include "NetlistCircuit.hxx"
+#include <boost/weak_ptr.hpp>
 
 // The NetlistBoundaryCondition is really a manager class for a collection
 // of subcircuits, divided by the diodes/valves in the input data.
@@ -22,11 +23,19 @@ class NetlistBoundaryCondition : public abstractBoundaryCondition
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithRemainingOpenPathDetected);
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
-	NetlistBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep)
-	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep, maxsurf, nstep)
+	NetlistBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep, const boost::weak_ptr<ClosedLoopDownstreamSubsection> downstreamSubcircuits)
+	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep, maxsurf, nstep),
+	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
 	{
 		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
-		mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt));
+		if (m_netlistDownstreamLoopClosingSubcircuits.size() > 0)
+		{
+			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt, m_netlistDownstreamLoopClosingSubcircuits));
+		}
+		else
+		{
+			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt));
+		}
 		// initialiseModel();
 		numberOfInitialisedNetlistLPNs++;
 	}
@@ -61,6 +70,8 @@ private:
 
 	int m_NumberOfAtomicSubcircuits; // These are what you get with all valves closed: no subcircuit divides an atomic subcircuit.
 	int m_NumberOfSubcircuits;
+
+	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
 
 	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
 

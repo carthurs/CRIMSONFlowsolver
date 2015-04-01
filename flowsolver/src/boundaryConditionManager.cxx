@@ -202,7 +202,7 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   assert(m_ntoutHasBeenSet);
   assert(m_maxsurfHasBeenSet);
   assert(m_nstepHasBeenSet);
-  // assert(m_numLoopClosingNetlistCircuitsHasBeenSet);
+  assert(m_numLoopClosingNetlistCircuitsHasBeenSet);
 
   assert(!m_hasSurfaceList);
   m_hasSurfaceList = true;
@@ -210,7 +210,7 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   // Build a factory
   boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits);
 
-  // factory.createNetlistLoopClosingCircuits(m_netlistDownstreamLoopClosingSubsections);
+  factory.createNetlistLoopClosingCircuits(m_netlistDownstreamLoopClosingSubsections);
 
   for (auto iterator = surfaceList.begin(); iterator != surfaceList.end(); iterator++)
   {

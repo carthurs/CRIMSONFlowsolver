@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <map>
+#include <set>
 #include <cstdlib>
 #include <algorithm>
 #include "gtest/gtest_prod.h"
@@ -401,10 +402,11 @@ public:
 
 	void readAndSplitMultiSurfaceInputFile();
 
-	std::vector<int> getNumberOfBoundaryConditionsConnectedTo();
-	std::vector<std::vector<int>> getConnectedCircuitSurfaceIndices();
-	std::vector<std::vector<int>> getLocalBoundaryConditionInterfaceNodes();
-	std::vector<std::vector<int>> getRemoteBoundaryConditionInterfaceNodes();
+	int getNumberOfBoundaryConditionsConnectedTo(const int downstreamCircuitIndex) const;
+	std::vector<int> getConnectedCircuitSurfaceIndices(const int downstreamCircuitIndex) const;
+	std::vector<int> getLocalBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
+	std::vector<int> getRemoteBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
+	std::set<int> getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(const int boundaryConditionIndex) const; // boundaryConditionIndex here should be as in the solver.inp.
 
 private:
 	static NetlistDownstreamCircuitReader* instance;

@@ -34,6 +34,7 @@ void multidom_initialise(){
   boundaryConditionManager_instance->setNumberOfRCRSurfaces(grcrbccom.numGRCRSrfs);
   boundaryConditionManager_instance->setNumberOfControlledCoronarySurfaces(nomodule.numControlledCoronarySrfs);
   boundaryConditionManager_instance->setNumberOfNetlistSurfaces(nomodule.numNetlistLPNSrfs);
+  boundaryConditionManager_instance->setNumLoopClosingnetlistCircuits(nomodule.numLoopClosingNetlistCircuits);
 
   boundaryConditionManager_instance->ifRestartingLoadNecessaryData();
 

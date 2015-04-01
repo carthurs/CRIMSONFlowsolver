@@ -44,12 +44,12 @@ public:
 
 	}
 
-	void initialiseCircuit();
+	virtual void initialiseCircuit();
 
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
 	void closeAllDiodes();
-	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+	virtual void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 	void switchDiodeStatesIfNecessary();
 	void rebuildCircuitMetadata();
 
@@ -73,7 +73,7 @@ public:
 
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 
-	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
+	virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 	void updateLPN(const int timestepNumber);
 
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
@@ -103,8 +103,11 @@ protected:
 	std::vector<double*> flow_n_ptrs;
 	int m_NumberOfAtomicSubcircuits;
 
+	NetlistReader* mp_netlistFileReader;
+
+	void createBasicCircuitDescription();
 	void createVectorsAndMatricesForCircuitLinearSystem();
-	void getListOfNodesWithMultipleIncidentCurrents();
+	void createListOfNodesWithMultipleIncidentCurrents();
 	void getMapOfPressHistoriesToCorrectPressNodes();
 	void getMapOfFlowHistoriesToCorrectComponents();
 	void getMapOfVolumeHistoriesToCorrectComponents();
@@ -117,6 +120,7 @@ protected:
 	void giveComponentsTheirProposedVolumesFromSolutionVector();
 	std::vector<double> getVolumesFromSolutionVector();
 	bool areThereNegativeVolumes(const int timestepNumber, const double alfi_delt);
+	void initialiseCircuit_common();
 
 	Mat m_systemMatrix;
 	Mat m_inverseOfSystemMatrix;
@@ -135,7 +139,8 @@ protected:
 	std::map<int,int> componentIndexToFlowHistoryComponentOrderingMap;
 	std::map<int,int> componentIndexToVolumeHistoryComponentOrderingMap;
 	std::map<int,int> componentIndexToTrackedVolumeComponentOrderingMap;
-	PetscInt systemSize;
+	PetscInt m_numberOfSystemRows;
+	PetscInt m_numberOfSystemColumns;
 	std::vector<int> listOfNodesWithMultipleIncidentCurrents;
 	int numberOfMultipleIncidentCurrentNodes;
 	std::set<int> listOfHistoryPressures;            // generated from input data, listing pressure node indices and component flow indices where a history is needed (i.e. last time-step values for capacitors/inductors)
@@ -165,6 +170,7 @@ private:
 	void initialisePetscArrayNames();
 	void terminatePetscArrays();
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
+	virtual void kirchoffEquationAtNodeNotDeferredToDownstreamCircuit(const int nodeIndex) const;
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 
@@ -177,6 +183,22 @@ private:
 	// std::vector<double> m_FlowsInLPN;                           // Flow through each component in the LPN, in the order they appear in the netlist
 	// std::vector<double> m_HistoryFlowsInLPN;					  // As m_FlowsInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
 
+};
+
+class NetlistBoundaryCircuitWhenDownstreamCircuitsExist : public NetlistCircuit
+{
+public:
+	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const boost::weak_ptr<ClosedLoopDownstreamSubsection> downstreamSubcircuits)
+	:NetlistCircuit(hstep, surfaceIndex, indexOfThisNetlistLPN, thisIsARestartedSimulation, alfi, delt),
+	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
+	void initialiseCircuit();
+	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
+protected:
+private:
+	std::set<int> m_pressureNodesWhichConnectToDownstreamCircuits;
+	int m_numberOfNodesConnectingToAnotherCircuit;
+	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
+	void kirchoffEquationAtNodeNotDeferredToDownstreamCircuit(const int nodeIndex) const;
 };
 
 class NetlistZeroDDomainCircuit : public NetlistCircuit
@@ -220,10 +242,8 @@ public:
 	NetlistClosedLoopDownstreamCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
 	: NetlistCircuit(hstep, thisIsARestartedSimulation, alfi, delt)
 	{
-		m_downstreamCircuitIndex = sm_numberOfDownstreamCircuits;
-		sm_numberOfDownstreamCircuits++;
-
-		mp_circuitData = boost::shared_ptr<CircuitData> (new CircuitData(hstep));
+		m_downstreamCircuitIndex = s_numberOfDownstreamCircuits;
+		s_numberOfDownstreamCircuits++;
 
 		std::stringstream pressureFileNameBuilder;
 		pressureFileNameBuilder << "netlistPressures_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
@@ -242,11 +262,20 @@ public:
 
 	~NetlistClosedLoopDownstreamCircuit()
 	{
-		sm_numberOfDownstreamCircuits--;
+		s_numberOfDownstreamCircuits--;
 	}
 private:
+	static int s_numberOfDownstreamCircuits;
 	int m_downstreamCircuitIndex;
-	static int sm_numberOfDownstreamCircuits;
+	int m_numberOfConnectedBoundaryConditions;
+	std::vector<int> m_connectedCircuitSurfaceIndices;
+	std::vector<int> m_localInterfacingNodes;
+	std::vector<int> m_remoteInterfacingNodes;
+
+	void appendClosedLoopSpecificCircuitDescription();
+
+	// Disabling methods that should never be called:
+	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 };
 
 #endif

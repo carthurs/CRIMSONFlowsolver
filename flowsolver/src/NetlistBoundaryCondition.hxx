@@ -23,7 +23,7 @@ class NetlistBoundaryCondition : public abstractBoundaryCondition
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithRemainingOpenPathDetected);
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
-	NetlistBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep, const boost::weak_ptr<ClosedLoopDownstreamSubsection> downstreamSubcircuits)
+	NetlistBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep, const std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> downstreamSubcircuits)
 	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep, maxsurf, nstep),
 	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
 	{
@@ -50,6 +50,7 @@ public:
 	void setDirichletConditionsIfNecessary(int* const binaryMask);
 	void finalizeLPNAtEndOfTimestep();
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
+	boost::shared_ptr<NetlistCircuit> getNetlistCircuit();
 
 	~NetlistBoundaryCondition()
 	{

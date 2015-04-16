@@ -45,14 +45,13 @@ sources=string.split("""
 	boundaryConditionManager.cxx
 	boundaryConditionFactory.cxx
 	RCR.cxx
+	ClosedLoopDownstreamSubsection.cxx
 	NetlistBoundaryCondition.cxx
 	NetlistCircuit.cxx
 	CircuitData.cxx
 	ControlSystemsManager.cxx
 	ParameterController.cxx
-	ClosedLoopBoundaryConditionSubsection.cxx
 	timers.cxx
-	ClosedLoopDownstreamSubsection.cxx
 	AtomicSubcircuitConnectionManager.cxx
 	pureZeroDDriver.cxx
 	Netlist3DDomainReplacement.cxx

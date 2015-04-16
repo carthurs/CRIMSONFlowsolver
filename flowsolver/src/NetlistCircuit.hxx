@@ -8,6 +8,9 @@
 #include "petscmat.h"
 #include "petscvec.h"
 #include <set>
+#include <boost/weak_ptr.hpp>
+#include "ClosedLoopDownstreamSubsection.hxx"
+#include "fileReaders.hxx"
 
 class NetlistCircuit
 {
@@ -113,6 +116,7 @@ protected:
 	void getMapOfVolumeHistoriesToCorrectComponents();
 	void getMapOfTrackedVolumesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
+	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
 	void giveNodesTheirPressuresFromSolutionVector();
 	void giveComponentsTheirFlowsFromSolutionVector();
@@ -125,8 +129,8 @@ protected:
 	Mat m_systemMatrix;
 	Mat m_inverseOfSystemMatrix;
 	Mat m_identityMatrixForPetscInversionHack;
-	Vec RHS;
-	Vec solutionVector;
+	Vec m_RHS;
+	Vec m_solutionVector;
 
 	std::vector<double> pressuresInSubcircuit;
 	std::vector<double> historyPressuresInSubcircuit; // As pressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.
@@ -142,13 +146,13 @@ protected:
 	PetscInt m_numberOfSystemRows;
 	PetscInt m_numberOfSystemColumns;
 	std::vector<int> listOfNodesWithMultipleIncidentCurrents;
-	int numberOfMultipleIncidentCurrentNodes;
+	int m_numberOfMultipleIncidentCurrentNodes;
 	std::set<int> listOfHistoryPressures;            // generated from input data, listing pressure node indices and component flow indices where a history is needed (i.e. last time-step values for capacitors/inductors)
 	std::set<int> listOfHistoryFlows;
 	std::set<int> listOfHistoryVolumes;
 	std::set<int> listOfTrackedVolumes;
 	int numberOfPrescribedPressuresAndFlows;           // Just the sum of the previous two declared integers
-	int numberOfHistoryPressures;
+	int m_numberOfHistoryPressures;
 	int numberOfHistoryFlows;
 	int numberOfHistoryVolumes;
 	int m_numberOfTrackedVolumes;
@@ -165,6 +169,7 @@ protected:
   	const int m_IndexOfThisNetlistLPN;
 	
 	void buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt);
+	const int getNumberOfHistoryPressures() const;
 
 private:
 	void initialisePetscArrayNames();
@@ -185,14 +190,19 @@ private:
 
 };
 
+// Forward declaration:
+class ClosedLoopDownstreamSubsection;
+
 class NetlistBoundaryCircuitWhenDownstreamCircuitsExist : public NetlistCircuit
 {
 public:
-	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const boost::weak_ptr<ClosedLoopDownstreamSubsection> downstreamSubcircuits)
+	NetlistBoundaryCircuitWhenDownstreamCircuitsExist(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> downstreamSubcircuits)
 	:NetlistCircuit(hstep, surfaceIndex, indexOfThisNetlistLPN, thisIsARestartedSimulation, alfi, delt),
 	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
+	{}
 	void initialiseCircuit();
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
+	void getMatrixContribuitons(Mat& matrixFromThisBoundary, Vec& rhsFromThisBoundary);
 protected:
 private:
 	std::set<int> m_pressureNodesWhichConnectToDownstreamCircuits;

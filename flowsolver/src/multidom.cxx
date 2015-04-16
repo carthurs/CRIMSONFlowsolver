@@ -108,7 +108,7 @@ void multidom_iter_step(){
 }
 
 void multidom_iter_finalise(){
-
+  boundaryConditionManager::Instance()->markClosedLoopLinearSystemsForRebuilding();
 }
 
 void multidom_finalise(){

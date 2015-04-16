@@ -31,19 +31,19 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
       }
     }
 
-    boundaryCondition = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, gatheredDownstreamSubcircuits));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, gatheredDownstreamSubcircuits));
 
-    boundaryCondition->getPressureAndFlowPointersFromFortran();
-    boundaryCondition->initialiseModel();
+    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    boundaryConditionToReturn->initialiseModel();
 
     // We finish off by giving the ClosedLoopdownstreamSubcircuits pointers to the just-constructed NetlistBoundaryCondition, if the two are connected directly.
     // This completes the allowing of each to access each other using smart pointers.
     for (auto downstreamSubcircuit = gatheredDownstreamSubcircuits.begin(); downstreamSubcircuit != gatheredDownstreamSubcircuits.end(); downstreamSubcircuit++)
     {
-      downstreamSubcircuit->lock()->setPointerToNeighbouringBoundaryCondition(boundaryCondition);
+      downstreamSubcircuit->lock()->setPointerToNeighbouringBoundaryConditionCircuit(boundaryConditionToReturn.getNetlistCircuit());
     }
     
-    return boundaryCondition;
+    return boundaryConditionToReturn;
   }
   else if (boundaryType == BoundaryCondition_ControlledCoronary)
   {
@@ -69,7 +69,7 @@ void boundaryConditionFactory::createNetlistLoopClosingCircuits(std::vector<boos
 
   for (int loopClosingCircuitIndex=1; loopClosingCircuitIndex <= m_numLoopClosingNetlistCircuits; loopClosingCircuitIndex++)
   {
-    boost::shared_ptr<ClosedLoopDownstreamSubsection> sharedPtrToPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex));
+    boost::shared_ptr<ClosedLoopDownstreamSubsection> sharedPtrToPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex, m_hstep, m_delt, m_alfi, m_lstep));
     netlistDownstreamLoopClosingSubsections.push_back(sharedPtrToPushBack);
 
     // These weak pointers to the loop closing circuits will be given to the boundary conditions that connect to them.

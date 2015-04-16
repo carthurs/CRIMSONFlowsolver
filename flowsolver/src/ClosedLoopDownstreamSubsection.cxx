@@ -1,14 +1,17 @@
 #include "ClosedLoopDownstreamSubsection.hxx"
-#include <pair>
+#include <utility>
 
 bool ClosedLoopDownstreamSubsection::boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const
 {
 	return (m_setOfAttachedBoundaryConditionIndices.count(boundaryConditionIndex) == 1);
 }
 
-void ClosedLoopDownstreamSubsection::setPointerToNeighbouringBoundaryCondition(boost::shared_ptr<abstractBoundaryCondition> upstreamBC)
+void ClosedLoopDownstreamSubsection::setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBCCircuit)
 {
-    m_upstreamBoundaryConditions.push_back(upstreamBC);
+    m_upstreamBoundaryConditionCircuits.push_back(upstreamBCCircuit);
+    // m_numberOfUpstreamCircuits gets updated every time we add an upstreamBCCircuit
+    // (although its value won't be used - at the time of writing this comment - until all upstreamBCCircuits have been set.)
+    m_numberOfUpstreamCircuits = m_upstreamBoundaryConditionCircuits.size();
 }
 
 void ClosedLoopDownstreamSubsection::initialiseModel()
@@ -34,31 +37,238 @@ void ClosedLoopDownstreamSubsection::initialiseModel()
 void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
-
-    // Call the upstream boundary conditions to ask for their contributions to the (closed loop)-type
-    // linear system:
-    for (auto upstreamBoundaryCondition = m_upstreamBoundaryConditions.begin(); upstreamBoundaryCondition != m_upstreamBoundaryConditions.end(); upstreamBoundaryCondition++)
+    if (!m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep)
     {
-        Mat matrixContribution;
-        Vec rhsContribuiton;
-        (*upstreamBoundaryCondition)->getMatrixContribuitons(matrixContribution, rhsContribuiton);
-        m_matrixContributionsFromUpstreamBoundaryConditions.push_back(matrixContribution);
-        m_rhsContributionsFromUpstreamBoundaryConditions.push_back(rhsContribuiton);
+        // Call the upstream boundary conditions to ask for their contributions to the (closed loop)-type
+        // linear system:
+        for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
+        {
+            Mat matrixContribution;
+            Vec rhsContribuiton;
+
+            boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
+            downcastCircuit->getMatrixContribuitons(matrixContribution, rhsContribuiton);
+            m_matrixContributionsFromUpstreamBoundaryConditions.push(matrixContribution);
+            m_rhsContributionsFromUpstreamBoundaryConditions.push(rhsContribuiton);
+
+            // Get the offsets which tell us where we will find 
+            downcastCircuit->getLocationsToLookForImplicitCoefficientInfoInLinearSystem();
+            //\todo actually get and store these....
+
+            m_systemSize += downcastCircuit->getSystemSize();
+        }
+
+        assert(m_systemSize > 0);
+
+        PetscErrorCode errFlag;
+        // Tile the matrices to make the big system matrix
+        // Create m_systemMatrix and m_inverseOfSystemMatrix (to be filled later)
+        {
+            errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            errFlag = MatZeroEntries(m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // these variables will be used during tiling to mark where the top-left corner of
+            // the next matrix that we tile into the system goes:
+            int currentStartingRow = 0;
+            int currentStartingColumn = 0;
+
+            for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
+            {
+                Mat nextMatrixToAddToSystem = m_matrixContributionsFromUpstreamBoundaryConditions.pop();
+                PetscInt numberOfRows;
+                PetscInt numberOfColumns;
+                errFlag = MatGetSize(nextMatrixToAddToSystem, &numberOfRows, &numberOfColumns); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                // Extract the actual data array in the petsc matrix Mat, so we can pass it to MatSetValuesBlocked, for inclusion in m_closedLoopSystemMatrix:
+                PetscScalar* rawDataInNextMatrixToAddToSystem;
+                errFlag = MatGetArray(nextMatrixToAddToSystem, &rawDataInNextMatrixToAddToSystem); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                // Create location data for the rows and columns where we will place nextMatrixToAddToSystem in m_closedLoopSystemMatrix:
+                PetscInt globalRowIndices[numberOfRows];
+                createContiguousIntegerRange(currentStartingRow, numberOfRows, globalRowIndices);
+                PetscInt globalColumnIndices[numberOfColumns];
+                createContiguousIntegerRange(currentStartingColumn, numberOfColumns, globalColumnIndices);
+
+                errFlag = MatSetValuesBlocked(m_closedLoopSystemMatrix, numberOfRows, globalRowIndices, numberOfColumns, globalColumnIndices, rawDataInNextMatrixToAddToSystem, INSERT_VALUES);
+
+                // I'm not convinced this call is necessary given that we're about to destroy nextMatrixToAddToSystem anyway,
+                // but the Petsc documentation says I MUST call it after MatGetArray once access to an array is no longer needed,
+                // and who am I to argue with a block-capital imperative?
+                errFlag = MatRestoreArray(nextMatrixToAddToSystem, rawDataInNextMatrixToAddToSystem); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                currentStartingRow += numberOfRows;
+                currentStartingColumn += numberOfColumns;
+            }
+            m_firstBlankRowAfterTiling = currentStartingRow;
+            m_firstBlankColumnAfterTiling = currentStartingColumn;
+        }
+
+        // Add the Kirchoff laws for the connecting nodes, and also set their pressures to be equal
+        appendKirchoffLawsToClosedLoopLinearSystem();
+
+        // Finalise the matrix construction
+        errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    
+        // std::cout << "System matrix for closed loop " << m_index << ":" << std::endl;
+        //  errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+        // LU factor m_closedLoopSystemMatrix
+        PetscErrorCode errFlag = MatLUFactor(m_closedLoopSystemMatrix,NULL,NULL,NULL);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+
+        // Tile the RHS contributions into our closed loop RHS:
+        {
+            // To track where the start of the next rhs contribution goes in m_closedLoopRHS:
+            int currentStartingRow = 0;
+
+            // Create a vector to hold the RHS (m_closedLoopRHS)
+            errFlag = VecCreate(PETSC_COMM_SELF,&m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);m_closedLoopRHS
+            errFlag = VecSetType(m_closedLoopRHS,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
+            errFlag = VecSetSizes(m_closedLoopRHS,m_systemSize,m_systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            errFlag = VecZeroEntries(m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            errFlag = VecAssemblyBegin(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            errFlag = VecAssemblyEnd(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+            assert(m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.size() == 0);
+
+            for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
+            {
+                Vec nextVectorToAddToClosedLoopRHS = m_rhsContributionsFromUpstreamBoundaryConditions.pop();
+                PetscInt numberOfRows;
+                errFlag = VecGetSize(nextVectorToAddToClosedLoopRHS, &numberOfRows); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                // Get the raw data to add to the RHS:
+                PetscScalar* rawDataInNextVectorToAddToClosedLoopRHS;
+                errFlag = VecGetArray(nextVectorToAddToClosedLoopRHS, &rawDataInNextVectorToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+                
+                PetscInt globalRowIndices[numberOfRows];
+                createContiguousIntegerRange(currentStartingRow, numberOfRows, globalRowIndices);
+                errFlag = VecSetValues(m_closedLoopRHS, numberOfRows, globalRowIndices, rawDataInNextVectorToAddToClosedLoopRHS, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                errFlag = VecRestoreArray(nextVectorToAddToClosedLoopRHS, rawDataInNextVectorToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.push_back(currentStartingRow);
+                currentStartingRow += numberOfRows;
+            }
+        }
+
+        // get the inverse of the system matrix:
+        // First, create a matrix to store the inverse, m_inverseOfClosedLoopMatrix:
+        errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_inverseOfClosedLoopMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = MatZeroEntries(m_inverseOfClosedLoopMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+        errFlag = MatMatSolve(m_systemMatrix,m_identityMatrixForPetscInversionHack,m_inverseOfClosedLoopMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // Release the m_systemMatrix so we can edit it again on the next iteration (we only need the just-computed m_inverseOfClosedLoopMatrix for computations on this step now.)
+        errFlag = MatSetUnfactored(m_systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        
+        // Solve the system
+        // Create a vector to hold the solution
+        errFlag = VecCreate(PETSC_COMM_SELF,&m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = VecSetType(m_solutionVector,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
+        errFlag = VecSetSizes(m_solutionVector,m_systemSize,m_systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = VecZeroEntries(m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = VecAssemblyBegin(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = VecAssemblyEnd(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        
+        errFlag = MatMult(m_inverseOfClosedLoopMatrix,m_closedLoopRHS,m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+        // Clean up
+        errFlag = MatDestroy(&m_inverseOfClosedLoopMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = MatDestroy(&m_closedLoopSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        errFlag = VecDestroy(&m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+        // Set the "done for this timestep" flag. Reset this with ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain() (from BC manager for now)
+        m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep = true;
+    }
+}
+
+void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem()
+{
+    // Loop over the upstream boundary conditions which form part of this closed loop circuit:
+    {
+        auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin();
+        int upstreamCircuitIndex = 0;
+        int row = m_firstBlankRowAfterTiling;
+        while (upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end())
+        {
+            // Get the multiple incident current nodes for this boundary
+            boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
+            downcastCircuit->
+
+            // Get the circuit data for this boundary (so we can check the sign for
+            // the Kirchoff equation by seeing if a node is the start node or end
+            // node of a component):
+            boost::shared_ptr<CircuitData> circuitData = downcastCircuit->getCircuitDescription();
+
+            // Get the 
+            int columnOffsetOfCurrentUpstreamCircuit = m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.at(upstreamCircuitIndex);
+            // Loop the multiple incident current nodes:
+            for ...
+            {
+                int numberOfHistoryPressures = downcastCircuit->getNumberOfHistoryPressures();
+
+                // Write the Kirchoff equation
+                writeKirchoffEquationIntoClosedLoopSysteMatrix(numberOfComponents, multipleIncidentCurrentNode, row, numberOfHistoryPressures, columnOffsetOfCurrentUpstreamCircuit);
+                
+
+                // Move to the next available row in the matrix that isn't used for an equation yet:
+                row++;
+            }
+
+            upstreamCircuitIndex++;
+            // Loop control code:
+            upstreamBCCircuit++;
+        }
+    }
+    // Finally, do the Kirchoff equations for multiple incident current nodes
+    // which are internal to the closed loop downstream subsection (i.e. those
+    // which do not lie at an interface with an upstream boundary condition circuit)
+    m_closedLoopSystemMatrix
+    
+}
+// std::vector<int>& closedLoopNodesWithMultipleIncidentCurrents
+void ClosedLoopDownstreamSubsection::writeKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset)
+{
+    // Do the equations for the nodes with multiple incident currents:
+    for (int ll=0; ll < circuitData->numberOfComponents; ll++)
+    {
+      int column = ll + circuitData->numberOfPressureNodes + numberOfHistoryPressures + columnOffset;
+      bool foundMultipleIncidentCurrentsForEndNode = (circuitData->components.at(ll)->endNode->getIndex() == multipleIncidentCurrentNode); 
+      if (foundMultipleIncidentCurrentsForEndNode)
+      {
+        errFlag = MatSetValue(m_closedLoopSystemMatrix,row,column,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      }
+
+      bool foundMultipleIncidentCurrentsForStartNode = (circuitData->components.at(ll)->startNode->getIndex() == multipleIncidentCurrentNode);
+      if (foundMultipleIncidentCurrentsForStartNode)
+      {
+        errFlag = MatSetValue(m_closedLoopSystemMatrix,row,column,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      }
     }
 
-    // Tile the matrices to make the big system matrix
+    // Check whether the multiple incident current node is also
+    // an interface node with the closed loop circuit. If so,
+    // extend the Kirchoff equation to include this in the balance
+}
 
-    // Add the Kirchoff laws for the connecting nodes, and also set their pressures to be equal
-
-    // Solve the matrix system
-
-    // Set some "done" flag possibly so we know the system doesnt need building and solving - but where to reset this flag again?
+void ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain()
+{
+    m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep = false;
 }
 
 std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients(const int boundaryConditionIndex) const
 {
     // assert the linear system has been solved:
+    assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
 
     // Use the known offsets in the matrix of the boundary condition with index boundaryConditionIndex
     // to extract the implicit coefficients
+}
+
+void ClosedLoopDownstreamSubsection::createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill)
+{
+    for (int ii = 0; ii < numberOfIntegers; ii++)
+    {
+        arrayToFill[ii] = startingInteger + ii;
+    }
 }

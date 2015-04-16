@@ -114,3 +114,8 @@ boost::shared_ptr<CircuitComponent> NetlistBoundaryCondition::getComponentByInpu
 {
     return mp_NetlistCircuit->getComponentByInputDataIndex(componentIndex);
 }
+
+boost::shared_ptr<NetlistCircuit> NetlistBoundaryCondition::getNetlistCircuit()
+{
+    return mp_NetlistCircuit;
+}

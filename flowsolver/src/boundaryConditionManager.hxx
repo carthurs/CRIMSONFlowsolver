@@ -100,6 +100,8 @@ class abstractBoundaryCondition;
     void createControlSystems();
     void updateAllControlSystems();
 
+    void markClosedLoopLinearSystemsForRebuilding();
+
     std::vector<std::pair<boundary_data_t,double>> getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber);
 
     void setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows);

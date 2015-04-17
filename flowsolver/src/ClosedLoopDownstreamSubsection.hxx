@@ -58,8 +58,9 @@ private:
 	Mat m_inverseOfClosedLoopMatrix;
 	Vec m_closedLoopRHS;
 	Vec m_solutionVector;
-	int m_firstBlankRowAfterTiling; // zero-indexed
-	int m_firstBlankColumnAfterTiling; // zero-indexed
+	int m_nextBlankSystemMatrixRow; // zero-indexed
+	int m_nextBlankSystemMatrixColumn; // zero-indexed
+	int m_nextBlankRhsRow; // zero-indexed
 
 	std::queue<Mat> m_matrixContributionsFromUpstreamBoundaryConditions;
 	std::queue<Vec> m_rhsContributionsFromUpstreamBoundaryConditions;

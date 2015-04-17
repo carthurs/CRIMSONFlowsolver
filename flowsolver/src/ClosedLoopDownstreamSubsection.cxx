@@ -47,7 +47,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
             Vec rhsContribuiton;
 
             boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
-            downcastCircuit->getMatrixContribuitons(matrixContribution, rhsContribuiton);
+            downcastCircuit->getMatrixContribution(matrixContribution);
+            downcastCircuit->getRHSContribution(rhsContribuiton);
             m_matrixContributionsFromUpstreamBoundaryConditions.push(matrixContribution);
             m_rhsContributionsFromUpstreamBoundaryConditions.push(rhsContribuiton);
 
@@ -55,21 +56,24 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
             downcastCircuit->getLocationsToLookForImplicitCoefficientInfoInLinearSystem();
             //\todo actually get and store these....
 
-            m_systemSize += downcastCircuit->getSystemSize();
+            m_systemSize += downcastCircuit->getNumberOfDegreesOfFreedom();
         }
 
-        assert(m_systemSize > 0);
+        assert(m_systemSize > 0); // defensive
+        
+        // Get the final system size by adding in the number of degrees of freedom in the downstream closed loop subsection circuit.
+        m_systemSize += mp_NetlistCircuit->getNumberOfDegreesOfFreedom();
+
 
         PetscErrorCode errFlag;
-        // Tile the matrices to make the big system matrix
-        // Create m_systemMatrix and m_inverseOfSystemMatrix (to be filled later)
+        // Tile the matrices to make the full closed loop system matrix
         {
             errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatZeroEntries(m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
             // these variables will be used during tiling to mark where the top-left corner of
             // the next matrix that we tile into the system goes:
-            int currentStartingRow = 0;
-            int currentStartingColumn = 0;
+            int m_nextBlankSystemMatrixRow = 0;
+            int m_nextBlankSystemMatrixColumn = 0;
 
             for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
             {
@@ -78,15 +82,15 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
                 PetscInt numberOfColumns;
                 errFlag = MatGetSize(nextMatrixToAddToSystem, &numberOfRows, &numberOfColumns); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-                // Extract the actual data array in the petsc matrix Mat, so we can pass it to MatSetValuesBlocked, for inclusion in m_closedLoopSystemMatrix:
+                // Extract the actual data array in the petsc matrix nextMatrixToAddToSystem, so we can pass it to MatSetValuesBlocked, for inclusion in m_closedLoopSystemMatrix:
                 PetscScalar* rawDataInNextMatrixToAddToSystem;
                 errFlag = MatGetArray(nextMatrixToAddToSystem, &rawDataInNextMatrixToAddToSystem); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
                 // Create location data for the rows and columns where we will place nextMatrixToAddToSystem in m_closedLoopSystemMatrix:
                 PetscInt globalRowIndices[numberOfRows];
-                createContiguousIntegerRange(currentStartingRow, numberOfRows, globalRowIndices);
+                createContiguousIntegerRange(m_nextBlankSystemMatrixRow, numberOfRows, globalRowIndices);
                 PetscInt globalColumnIndices[numberOfColumns];
-                createContiguousIntegerRange(currentStartingColumn, numberOfColumns, globalColumnIndices);
+                createContiguousIntegerRange(m_nextBlankSystemMatrixColumn, numberOfColumns, globalColumnIndices);
 
                 errFlag = MatSetValuesBlocked(m_closedLoopSystemMatrix, numberOfRows, globalRowIndices, numberOfColumns, globalColumnIndices, rawDataInNextMatrixToAddToSystem, INSERT_VALUES);
 
@@ -95,12 +99,47 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
                 // and who am I to argue with a block-capital imperative?
                 errFlag = MatRestoreArray(nextMatrixToAddToSystem, rawDataInNextMatrixToAddToSystem); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-                currentStartingRow += numberOfRows;
-                currentStartingColumn += numberOfColumns;
+                m_nextBlankSystemMatrixRow += numberOfRows;
+                m_nextBlankSystemMatrixColumn += numberOfColumns;
             }
-            m_firstBlankRowAfterTiling = currentStartingRow;
-            m_firstBlankColumnAfterTiling = currentStartingColumn;
+
+            // Scopign unit containing just the addition of the closed loop circuit matrix to the full system matrix, m_closedLoopSystemMatrix:
+            {
+                // Add the closed loop downstream circuit's matrix:
+                Mat matrixContribution;
+                mp_NetlistCircuit->getMatrixContribution(matrixContribution);
+
+                PetscInt numberOfRows;
+                PetscInt numberOfColumns;
+                errFlag = MatGetSize(matrixContribution, &numberOfRows, &numberOfColumns); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                // Extract the actual data array in the petsc matrix matrixContribution, so we can pass it to MatSetValuesBlocked, for inclusion in m_closedLoopSystemMatrix:
+                PetscScalar* rawDataInMatrix;
+                errFlag = MatGetArray(matrixContribution, &rawDataInMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                // Create location data for the rows and columns where we will place matrixContribution in m_closedLoopSystemMatrix:
+                PetscInt globalRowIndices[numberOfRows];
+                createContiguousIntegerRange(m_nextBlankSystemMatrixRow, numberOfRows, globalRowIndices);
+                PetscInt globalColumnIndices[numberOfColumns];
+                createContiguousIntegerRange(m_nextBlankSystemMatrixColumn, numberOfColumns, globalColumnIndices);
+
+                errFlag = MatSetValuesBlocked(m_closedLoopSystemMatrix, numberOfRows, globalRowIndices, numberOfColumns, globalColumnIndices, rawDataInMatrix, INSERT_VALUES);
+
+                // as noted above, I'm not sure this is needed... but just in case...
+                errFlag = MatRestoreArray(matrixContribution, rawDataInMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                m_nextBlankSystemMatrixRow += numberOfRows;
+                m_nextBlankSystemMatrixColumn += numberOfColumns;
+            }
         }
+
+        // By this stage, the matrices for all the subcircuits of the closed loop
+        // are tiled into the big matrix, m_closedLoopSystemMatrix. If this assert
+        // fails, it means there are no rows left to actually add equations which
+        // couple the circuit together.
+        assert(m_nextBlankSystemMatrixRow < m_systemSize);
+
+        assert(m_nextBlankSystemMatrixColumn < m_systemSize);
 
         // Add the Kirchoff laws for the connecting nodes, and also set their pressures to be equal
         appendKirchoffLawsToClosedLoopLinearSystem();
@@ -119,7 +158,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
         // Tile the RHS contributions into our closed loop RHS:
         {
             // To track where the start of the next rhs contribution goes in m_closedLoopRHS:
-            int currentStartingRow = 0;
+            int m_nextBlankRhsRow = 0;
 
             // Create a vector to hold the RHS (m_closedLoopRHS)
             errFlag = VecCreate(PETSC_COMM_SELF,&m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);m_closedLoopRHS
@@ -142,15 +181,43 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
                 errFlag = VecGetArray(nextVectorToAddToClosedLoopRHS, &rawDataInNextVectorToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
                 
                 PetscInt globalRowIndices[numberOfRows];
-                createContiguousIntegerRange(currentStartingRow, numberOfRows, globalRowIndices);
+                createContiguousIntegerRange(m_nextBlankRhsRow, numberOfRows, globalRowIndices);
                 errFlag = VecSetValues(m_closedLoopRHS, numberOfRows, globalRowIndices, rawDataInNextVectorToAddToClosedLoopRHS, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF, errFlag);
 
                 errFlag = VecRestoreArray(nextVectorToAddToClosedLoopRHS, rawDataInNextVectorToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
 
-                m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.push_back(currentStartingRow);
-                currentStartingRow += numberOfRows;
+                m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.push_back(m_nextBlankRhsRow);
+                m_nextBlankRhsRow += numberOfRows;
+            }
+
+            // Scoping unit just to add the downstream closed loop subsection to m_closedLoopRHS:
+            {
+                // Add the closed loop downstream circuit's RHS:
+                Vec rhsContribuiton;
+                mp_NetlistCircuit->getRHSContribution(rhsContribuiton);
+
+                PetscInt numberOfRows;
+                errFlag = VecGetSize(rhsContribuiton, &numberOfRows); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                // Get the raw data to add to the RHS:
+                PetscScalar* rawDataToAddToClosedLoopRHS;
+                errFlag = VecGetArray(rhsContribuiton, &rawDataToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                PetscInt globalRowIndices[numberOfRows];
+                createContiguousIntegerRange(m_nextBlankRhsRow, numberOfRows, globalRowIndices);
+                errFlag = VecSetValues(m_closedLoopRHS, numberOfRows, globalRowIndices, rawDataToAddToClosedLoopRHS, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                errFlag = VecRestoreArray(rhsContribuiton, rawDataToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+
+                m_nextBlankRhsRow += numberOfRows;
             }
         }
+
+        // By this stage, the matrices for all the subcircuits of the closed loop
+        // are tiled into the big matrix, m_closedLoopSystemMatrix. If this assert
+        // fails, it means there are no rows left to actually add equations which
+        // couple the circuit together.
+        assert(m_nextBlankRhsRow < m_systemSize);
 
         // get the inverse of the system matrix:
         // First, create a matrix to store the inverse, m_inverseOfClosedLoopMatrix:
@@ -188,7 +255,6 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem(
     {
         auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin();
         int upstreamCircuitIndex = 0;
-        int row = m_firstBlankRowAfterTiling;
         while (upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end())
         {
             // Get the multiple incident current nodes for this boundary
@@ -208,11 +274,11 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem(
                 int numberOfHistoryPressures = downcastCircuit->getNumberOfHistoryPressures();
 
                 // Write the Kirchoff equation
-                writeKirchoffEquationIntoClosedLoopSysteMatrix(numberOfComponents, multipleIncidentCurrentNode, row, numberOfHistoryPressures, columnOffsetOfCurrentUpstreamCircuit);
+                writeKirchoffEquationIntoClosedLoopSysteMatrix(numberOfComponents, multipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures, columnOffsetOfCurrentUpstreamCircuit);
                 
 
                 // Move to the next available row in the matrix that isn't used for an equation yet:
-                row++;
+                m_nextBlankSystemMatrixRow++;
             }
 
             upstreamCircuitIndex++;
@@ -229,7 +295,8 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem(
 // std::vector<int>& closedLoopNodesWithMultipleIncidentCurrents
 void ClosedLoopDownstreamSubsection::writeKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset)
 {
-    // Do the equations for the nodes with multiple incident currents:
+    // Do the equations for the nodes with multiple incident currents (just the part for the upstream boundary condition circuit first...
+    // we'll append the currents for the components in the downstream closed loop circuit in a moment...)
     for (int ll=0; ll < circuitData->numberOfComponents; ll++)
     {
       int column = ll + circuitData->numberOfPressureNodes + numberOfHistoryPressures + columnOffset;
@@ -249,6 +316,7 @@ void ClosedLoopDownstreamSubsection::writeKirchoffEquationIntoClosedLoopSysteMat
     // Check whether the multiple incident current node is also
     // an interface node with the closed loop circuit. If so,
     // extend the Kirchoff equation to include this in the balance
+    
 }
 
 void ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain()

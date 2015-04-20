@@ -39,6 +39,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
     if (!m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep)
     {
+        terminatePetscArrays(); // This does nothing if the arrays don't exist. \todo consider refactoring the matrix creation/termination.
         // Call the upstream boundary conditions to ask for their contributions to the (closed loop)-type
         // linear system:
         for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
@@ -64,12 +65,12 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
         // Get the final system size by adding in the number of degrees of freedom in the downstream closed loop subsection circuit.
         m_systemSize += mp_NetlistCircuit->getNumberOfDegreesOfFreedom();
 
+        createVectorsAndMatricesForCircuitLinearSystem();
+
 
         PetscErrorCode errFlag;
         // Tile the matrices to make the full closed loop system matrix
         {
-            errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            errFlag = MatZeroEntries(m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
             // these variables will be used during tiling to mark where the top-left corner of
             // the next matrix that we tile into the system goes:
             int m_nextBlankSystemMatrixRow = 0;
@@ -173,13 +174,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
             // To track where the start of the next rhs contribution goes in m_closedLoopRHS:
             int m_nextBlankRhsRow = 0;
 
-            // Create a vector to hold the RHS (m_closedLoopRHS)
-            errFlag = VecCreate(PETSC_COMM_SELF,&m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);m_closedLoopRHS
-            errFlag = VecSetType(m_closedLoopRHS,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
-            errFlag = VecSetSizes(m_closedLoopRHS,m_systemSize,m_systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // Zero out the RHS ready for the construction on this timestep:
             errFlag = VecZeroEntries(m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            errFlag = VecAssemblyBegin(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            errFlag = VecAssemblyEnd(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
             {
@@ -230,32 +226,88 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
         assert(m_nextBlankRhsRow < m_systemSize);
 
         // get the inverse of the system matrix:
-        // First, create a matrix to store the inverse, m_inverseOfClosedLoopMatrix:
-        errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_inverseOfClosedLoopMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = MatZeroEntries(m_inverseOfClosedLoopMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-
         errFlag = MatMatSolve(m_systemMatrix,m_identityMatrixForPetscInversionHack,m_inverseOfClosedLoopMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         // Release the m_systemMatrix so we can edit it again on the next iteration (we only need the just-computed m_inverseOfClosedLoopMatrix for computations on this step now.)
         errFlag = MatSetUnfactored(m_systemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         
         // Solve the system
-        // Create a vector to hold the solution
-        errFlag = VecCreate(PETSC_COMM_SELF,&m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = VecSetType(m_solutionVector,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
-        errFlag = VecSetSizes(m_solutionVector,m_systemSize,m_systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = VecZeroEntries(m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = VecAssemblyBegin(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = VecAssemblyEnd(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        
         errFlag = MatMult(m_inverseOfClosedLoopMatrix,m_closedLoopRHS,m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-        // Clean up
-        errFlag = MatDestroy(&m_inverseOfClosedLoopMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = MatDestroy(&m_closedLoopSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = VecDestroy(&m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
         // Set the "done for this timestep" flag. Reset this with ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain() (from BC manager for now)
         m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep = true;
+    }
+}
+
+void ClosedLoopDownstreamSubsection::createVectorsAndMatricesForCircuitLinearSystem()
+{
+    // Create a vector to hold the solution
+    errFlag = VecCreate(PETSC_COMM_SELF,&m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecSetType(m_solutionVector,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
+    errFlag = VecSetSizes(m_solutionVector,m_systemSize,m_systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecZeroEntries(m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecAssemblyBegin(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecAssemblyEnd(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    // Create a vector to hold the RHS (m_closedLoopRHS)
+    errFlag = VecCreate(PETSC_COMM_SELF,&m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);m_closedLoopRHS
+    errFlag = VecSetType(m_closedLoopRHS,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
+    errFlag = VecSetSizes(m_closedLoopRHS,m_systemSize,m_systemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecZeroEntries(m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecAssemblyBegin(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecAssemblyEnd(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    // Create the vector to hold the system matrix
+    errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = MatZeroEntries(m_closedLoopSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    // Create a matrix to store the inverse, m_inverseOfClosedLoopMatrix:
+    errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_inverseOfClosedLoopMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = MatZeroEntries(m_inverseOfClosedLoopMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    // Create an identity matrix for use when inverting the system matrix:
+    errFlag = MatCreateSeqDense(PETSC_COMM_SELF,m_systemSize,m_systemSize,NULL,&m_identityMatrixForPetscInversionHack);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = MatZeroEntries(m_identityMatrixForPetscInversionHack);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // Fill the diagonal with ones:
+    for (int ii=0; ii<m_systemSize; ii++)
+    {
+        errFlag = MatSetValue(m_identityMatrixForPetscInversionHack,ii,ii,1.0,INSERT_VALUES);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    errFlag = MatAssemblyBegin(m_identityMatrixForPetscInversionHack,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = MatAssemblyEnd(m_identityMatrixForPetscInversionHack,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+}
+
+void ClosedLoopDownstreamSubsection::initialisePetscArrayNames()
+{
+    m_closedLoopRHS = PETSC_NULL;
+    m_solutionVector = PETSC_NULL;
+    m_closedLoopSystemMatrix = PETSC_NULL;
+    m_inverseOfClosedLoopMatrix = PETSC_NULL;
+    m_identityMatrixForPetscInversionHack = PETSC_NULL;
+}
+
+void ClosedLoopDownstreamSubsection::terminatePetscArrays()
+{
+    PetscErrorCode errFlag;
+    if (m_closedLoopRHS)
+    {
+        errFlag = VecDestroy(&m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_solutionVector)
+    {
+        errFlag = VecDestroy(&m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_closedLoopSystemMatrix)
+    {
+        errFlag = MatDestroy(&m_closedLoopSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_inverseOfClosedLoopMatrix)
+    {
+        errFlag = MatDestroy(&m_inverseOfClosedLoopMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+    if (m_identityMatrixForPetscInversionHack)
+    {
+        errFlag = MatDestroy(&m_identityMatrixForPetscInversionHack); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     }
 }
 
@@ -391,8 +443,8 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     // assert the linear system has been solved:
     assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
 
-    // Use the known offsets in the matrix of the boundary condition with index boundaryConditionIndex
-    // to extract the implicit coefficients
+    // The linear system is solved, so we can just extract the necessary values from the resulting solution
+    // vector and inverted system matrix:
 }
 
 void ClosedLoopDownstreamSubsection::createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill)

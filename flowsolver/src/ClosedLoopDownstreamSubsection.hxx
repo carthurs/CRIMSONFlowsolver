@@ -23,6 +23,7 @@ public:
 	m_alfi(alfi),
 	m_lstep(lstep)
 	{
+		initialisePetscArrayNames();
 		if (m_lstep > 0)
 		{
 			m_thisIsARestartedSimulation = true;
@@ -37,6 +38,12 @@ public:
 
 		mp_NetlistCircuit = boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> (new NetlistClosedLoopDownstreamCircuit(m_hstep, m_thisIsARestartedSimulation, m_alfi, m_delt));
 	}
+
+	~ClosedLoopDownstreamSubsection()
+	{
+		terminatePetscArrays();
+	}
+
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 	void setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBC);
 	void buildAndSolveLinearSystemIfNotYetDone();
@@ -69,6 +76,10 @@ private:
 	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> mp_NetlistCircuit;
 
 	std::vector<int> m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
+
+	void terminatePetscArrays();
+	void initialisePetscArrayNames();
+	void createVectorsAndMatricesForCircuitLinearSystem();
 
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);

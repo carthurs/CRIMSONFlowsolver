@@ -68,11 +68,12 @@ private:
 	std::vector<boost::shared_ptr<NetlistCircuit>> m_upstreamBoundaryConditionCircuits;
 	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> mp_NetlistCircuit;
 
-	std::vector<int> m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix; // zero indexed
+	std::vector<int> m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
 
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);
-	void appendKirchoffLawsToClosedLoopLinearSystem();
+	void appendKirchoffLawsAtInterfacesBetweenCircuits();
+	void writePartOfKirchoffEquationIntoClosedLoopSysteMatrix();
 };
 
 #endif

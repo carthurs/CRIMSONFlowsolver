@@ -1041,22 +1041,34 @@ void NetlistCircuit::createListOfNodesWithMultipleIncidentCurrents()
              numberOfTimesNodeSeen++;
           }
        }
-       if (numberOfTimesNodeSeen > 1 && kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(nodeIndex))
+       if (numberOfTimesNodeSeen > 1)
        {
-          listOfNodesWithMultipleIncidentCurrents.push_back(nodeIndex);
-          m_numberOfMultipleIncidentCurrentNodes++;
+          if (kirchoffEquationAtNodeDeferredToInterfacingCircuit(nodeIndex))
+          {
+              m_nodesWithKirchoffEquationsDeferredToClosedLoop.push_back(nodeIndex);
+          }
+          else
+          {
+              listOfNodesWithMultipleIncidentCurrents.push_back(nodeIndex);
+              m_numberOfMultipleIncidentCurrentNodes++;
+          }
        }
     }
 
 }
 
-bool NetlistCircuit::kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(const int nodeIndex) const
+std::vector<int> NetlistCircuit::getNodesWithDeferredKirchoffEquations() const
 {
-    // In NetlistCircuit, there is no downstream circuit, so the return value is always true.
-    return true;
+    return m_nodesWithKirchoffEquationsDeferredToClosedLoop;
 }
 
-bool NetlistBoundaryCircuitWhenDownstreamCircuitsExist::kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(const int nodeIndex) const
+bool NetlistCircuit::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
+{
+    // In NetlistCircuit, there is no downstream circuit, so the return value is always false.
+    return false;
+}
+
+bool NetlistBoundaryCircuitWhenDownstreamCircuitsExist::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
 {
     bool nodeInterfacesWithDownstreamCircuit = false;
     if (m_pressureNodesWhichConnectToDownstreamCircuits.count(nodeIndex) == 1)
@@ -1066,7 +1078,7 @@ bool NetlistBoundaryCircuitWhenDownstreamCircuitsExist::kirchoffEquationAtNodeNo
     return nodeInterfacesWithDownstreamCircuit;
 }
 
-bool NetlistClosedLoopDownstreamCircuit::kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(const int nodeIndex) const
+bool NetlistClosedLoopDownstreamCircuit::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
 {
     bool nodeInterfacesWithDownstreamCircuit = false;
     if (m_pressureNodesWhichConnectToBoundaryCircuits.count(nodeIndex) == 1)
@@ -1074,6 +1086,11 @@ bool NetlistClosedLoopDownstreamCircuit::kirchoffEquationAtNodeNotDeferredToInte
         nodeInterfacesWithDownstreamCircuit = true;
     }
     return nodeInterfacesWithDownstreamCircuit;
+}
+
+int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const
+{
+    return m_circuitInterfaceNodeIndexMapDownstreamToUpstream.at(sharedNodeDownstreamIndex);
 }
 
 void NetlistCircuit::getMapOfPressHistoriesToCorrectPressNodes()
@@ -1942,10 +1959,20 @@ void NetlistClosedLoopDownstreamCircuit::createCircuitDescription()
 
 void NetlistClosedLoopDownstreamCircuit::appendClosedLoopSpecificCircuitDescription()
 {
-    m_numberOfConnectedBoundaryConditions = getNumberOfBoundaryConditionsConnectedTo(m_downstreamCircuitIndex);
-    m_connectedCircuitSurfaceIndices = getConnectedCircuitSurfaceIndices(m_downstreamCircuitIndex);
-    m_localInterfacingNodes = getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
-    m_remoteInterfacingNodes = getRemoteBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
+    m_numberOfConnectedBoundaryConditions = mp_netlistFileReader->getNumberOfBoundaryConditionsConnectedTo(m_downstreamCircuitIndex);
+    m_connectedCircuitSurfaceIndices = mp_netlistFileReader->getConnectedCircuitSurfaceIndices(m_downstreamCircuitIndex);
+    m_localInterfacingNodes = mp_netlistFileReader->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
+    m_remoteInterfacingNodes = mp_netlistFileReader->getRemoteBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
+    
+    // Create a useful map which pairs up the two names for each interface node:
+    // the node's index as seen by the downstream circuit of the closed loop,
+    // and the nodes' index as seen by the upstream bounday condition circuit.
+    for (int interfaceNodeIndex = 0; interfaceNodeIndex < m_localInterfacingNodes.size(); interfaceNodeIndex++)
+    {
+        m_circuitInterfaceNodeIndexMapDownstreamToUpstream.insert(std::make_pair(m_localInterfacingNodes.at(interfaceNodeIndex),
+                                                                                m_remoteInterfacingNodes.at(interfaceNodeIndex)  ));
+    }
+    
 }
 
 void NetlistClosedLoopDownstreamCircuit::getMatrixContribution(Mat& matrixFromThisBoundary)

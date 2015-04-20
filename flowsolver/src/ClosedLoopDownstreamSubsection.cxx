@@ -75,6 +75,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
             int m_nextBlankSystemMatrixRow = 0;
             int m_nextBlankSystemMatrixColumn = 0;
 
+            assert(m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.size() == 0);
+
             for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
             {
                 Mat nextMatrixToAddToSystem = m_matrixContributionsFromUpstreamBoundaryConditions.pop();
@@ -100,10 +102,15 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
                 errFlag = MatRestoreArray(nextMatrixToAddToSystem, rawDataInNextMatrixToAddToSystem); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
                 m_nextBlankSystemMatrixRow += numberOfRows;
+
+                m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.push_back(m_nextBlankSystemMatrixColumn);
                 m_nextBlankSystemMatrixColumn += numberOfColumns;
             }
 
-            // Scopign unit containing just the addition of the closed loop circuit matrix to the full system matrix, m_closedLoopSystemMatrix:
+            // This adds the location of the first column of the downstream closed loop circuit in m_closedLoopSystemMatrix.
+            m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.push_back(m_nextBlankSystemMatrixColumn);
+
+            // Scoping unit containing just the addition of the closed loop downstream circuit matrix to the full system matrix, m_closedLoopSystemMatrix:
             {
                 // Add the closed loop downstream circuit's matrix:
                 Mat matrixContribution;
@@ -142,7 +149,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
         assert(m_nextBlankSystemMatrixColumn < m_systemSize);
 
         // Add the Kirchoff laws for the connecting nodes, and also set their pressures to be equal
-        appendKirchoffLawsToClosedLoopLinearSystem();
+        appendKirchoffLawsAtInterfacesBetweenCircuits();
 
         // Finalise the matrix construction
         errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -168,8 +175,6 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
             errFlag = VecAssemblyBegin(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = VecAssemblyEnd(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            assert(m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.size() == 0);
-
             for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
             {
                 Vec nextVectorToAddToClosedLoopRHS = m_rhsContributionsFromUpstreamBoundaryConditions.pop();
@@ -186,7 +191,6 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
 
                 errFlag = VecRestoreArray(nextVectorToAddToClosedLoopRHS, rawDataInNextVectorToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
 
-                m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.push_back(m_nextBlankRhsRow);
                 m_nextBlankRhsRow += numberOfRows;
             }
 
@@ -249,7 +253,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
     }
 }
 
-void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem()
+void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircuits()
 {
     // Loop over the upstream boundary conditions which form part of this closed loop circuit:
     {
@@ -257,26 +261,37 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem(
         int upstreamCircuitIndex = 0;
         while (upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end())
         {
-            // Get the multiple incident current nodes for this boundary
             boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
-            downcastCircuit->
-
+            
             // Get the circuit data for this boundary (so we can check the sign for
             // the Kirchoff equation by seeing if a node is the start node or end
             // node of a component):
             boost::shared_ptr<CircuitData> circuitData = downcastCircuit->getCircuitDescription();
 
-            // Get the 
-            int columnOffsetOfCurrentUpstreamCircuit = m_indicesOfFirstRowOfEachUpstreamContributionInClosedLoopMatrix.at(upstreamCircuitIndex);
+            // Get the deferred (i.e. interfacing-with-closed-loop-downstream-subsection) multiple incident current nodes for this boundary
+            std::vector<int> multipleIncidentCurrentNodes = downcastCircuit->getNodesWithDeferredKirchoffEquations();
+
+            // Get the column where the data block for the current upstream boundarycondition circuit
+            // begins in the big matrix, m_closedLoopSystemMatrix
+            int columnOffsetOfCurrentUpstreamCircuit = m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.at(upstreamCircuitIndex);
             // Loop the multiple incident current nodes:
-            for ...
+            for (auto multipleIncidentCurrentNode = multipleIncidentCurrentNodes.begin(); multipleIncidentCurrentNode != multipleIncidentCurrentNodes.end(); multipleIncidentCurrentNode++)
             {
-                int numberOfHistoryPressures = downcastCircuit->getNumberOfHistoryPressures();
+                int numberOfHistoryPressures_upstreamCircuit = downcastCircuit->getNumberOfHistoryPressures();
 
-                // Write the Kirchoff equation
-                writeKirchoffEquationIntoClosedLoopSysteMatrix(numberOfComponents, multipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures, columnOffsetOfCurrentUpstreamCircuit);
+                // Write the part of the Kirchoff equation for this node (multipleIncidentCurrentNode)
+                // which corresponds to the components incident at multipleIndidentCurrentNode in
+                // the upstream boundary condition:
+                writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(circuitData, multipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_upstreamCircuit, columnOffsetOfCurrentUpstreamCircuit);
+
+                // Write the part of the Kirchoff equation for this node (multipleIncidentCurrentNode)
+                // which corresponds to the components incident at multipleIndidentCurrentNode in
+                // the downstream closed loop subsection circuit:
+                int numberOfHistoryPressures_downstreamCircuit
+                int upstreamIndexOfMultipleIncidentCurrentNode = mp_NetlistCircuit->convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(multipleIncidentCurrentNode);
+                int columnOffsetOfDownstreamClosedLoopCircuit = m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.back();
+                writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(mp_NetlistCircuit, upstreamIndexOfMultipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_downstreamCircuit, columnOffsetOfDownstreamClosedLoopCircuit);
                 
-
                 // Move to the next available row in the matrix that isn't used for an equation yet:
                 m_nextBlankSystemMatrixRow++;
             }
@@ -286,14 +301,9 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsToClosedLoopLinearSystem(
             upstreamBCCircuit++;
         }
     }
-    // Finally, do the Kirchoff equations for multiple incident current nodes
-    // which are internal to the closed loop downstream subsection (i.e. those
-    // which do not lie at an interface with an upstream boundary condition circuit)
-    m_closedLoopSystemMatrix
-    
 }
-// std::vector<int>& closedLoopNodesWithMultipleIncidentCurrents
-void ClosedLoopDownstreamSubsection::writeKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset)
+
+void ClosedLoopDownstreamSubsection::writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset)
 {
     // Do the equations for the nodes with multiple incident currents (just the part for the upstream boundary condition circuit first...
     // we'll append the currents for the components in the downstream closed loop circuit in a moment...)
@@ -313,10 +323,7 @@ void ClosedLoopDownstreamSubsection::writeKirchoffEquationIntoClosedLoopSysteMat
       }
     }
 
-    // Check whether the multiple incident current node is also
-    // an interface node with the closed loop circuit. If so,
-    // extend the Kirchoff equation to include this in the balance
-    
+
 }
 
 void ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain()

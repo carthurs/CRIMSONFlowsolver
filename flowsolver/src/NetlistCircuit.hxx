@@ -64,6 +64,7 @@ public:
 	void finalizeLPNAtEndOfTimestep();
 	boost::shared_ptr<CircuitData> getCircuitDescription();
 	int getNumberOfDegreesOfFreedom() const;
+	std::vector<int> getNodesWithDeferredKirchoffEquations() const;
 
 	virtual void createCircuitDescription();
 	virtual ~NetlistCircuit()
@@ -162,6 +163,8 @@ protected:
 	std::vector<int> columnIndexOf3DInterfaceFlowInLinearSystem;
 	std::vector<int> columnIndexOf3DInterfacePressureInLinearSystem;
 
+	std::vector<int> m_nodesWithKirchoffEquationsDeferredToClosedLoop;
+
 	int safetyCounterLimit;
 
 	PetscScalar m_interfaceFlow;
@@ -176,7 +179,7 @@ private:
 	void initialisePetscArrayNames();
 	void terminatePetscArrays();
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
-	virtual void kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(const int nodeIndex) const;
+	virtual void kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 
@@ -210,7 +213,7 @@ private:
 	std::set<int> m_pressureNodesWhichConnectToDownstreamCircuits;
 	int m_numberOfNodesConnectingToAnotherCircuit;
 	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
-	void kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(const int nodeIndex) const;
+	void kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
 };
 
 class NetlistZeroDDomainCircuit : public NetlistCircuit
@@ -276,6 +279,8 @@ public:
 	void getMatrixContribution(Mat& matrixFromThisBoundary);
 	void getRHSContribuiton(Vec& rhsFromThisBoundary);
 
+	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const;
+
 	~NetlistClosedLoopDownstreamCircuit()
 	{
 		s_numberOfDownstreamCircuits--;
@@ -288,9 +293,10 @@ private:
 	std::vector<int> m_localInterfacingNodes;
 	std::vector<int> m_remoteInterfacingNodes;
 	std::set<int> m_pressureNodesWhichConnectToBoundaryCircuits;
+	std::map<int,int> m_circuitInterfaceNodeIndexMapDownstreamToUpstream;
 
 	void appendClosedLoopSpecificCircuitDescription();
-	bool kirchoffEquationAtNodeNotDeferredToInterfacingCircuit(const int nodeIndex) const;
+	bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
 
 	// Disabling methods that should never be called:
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();

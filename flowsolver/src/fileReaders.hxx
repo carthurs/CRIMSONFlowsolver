@@ -418,6 +418,18 @@ private:
 	std::vector<std::vector<int>> m_connectedCircuitSurfaceIndices;
 	std::vector<std::vector<int>> m_localBoundaryConditionInterfaceNodes;
 	std::vector<std::vector<int>> m_remoteBoundaryConditionInterfaceNodes;
+
+	template <typename Type>
+	std::vector<Type> intersectVectors(std::vector<Type> vector1, std::vector<Type> vector2)
+	{
+		std::vector<Type> intersection(std::max(vector1.size(), vector2.size()));
+		iteratorToEndOfIntersection = std::set_intersection(vector1.begin(), vector1.end(), vector2.begin(), vector2.end(), intersection.begin());
+
+		// shrink intersection to the size of just the intersecting elements (it's usually going to be longer than that before doing this.)
+		intersection.resize(iteratorToEndOfIntersection - intersection.begin());
+
+		return intersection;
+	}
 };
 
 #endif

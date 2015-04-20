@@ -2,6 +2,7 @@
 #include "debuggingToolsForCpp.hxx"
 #include "common_c.h"
 #include "datatypesInCpp.hxx"
+#include <iterator>
 
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
@@ -762,6 +763,8 @@ void NetlistDownstreamCircuitReader::readAndSplitMultiSurfaceInputFile()
 
 	}
 
+	checkForBadCircuitDesign();
+
 	m_fileHasBeenRead = int(1);
 }
 
@@ -830,6 +833,49 @@ std::set<int> NetlistDownstreamCircuitReader::getSetOfNodesInBoundaryConditionWh
 	}
 
 	return nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit;
+}
+
+void NetlistDownstreamCircuitReader::checkForBadCircuitDesign()
+{
+	// Ensure that each boundary condition connects to at most one
+	// downstream circuit (i.e. that it is part of a unique closed
+	// loop connected component (in the topological sense)).
+	//
+	// Note that this requirement is not fundamental; it would just
+	// require lots of work in the closed loop matrix construction
+	// code to make it viable.
+
+	// To test for uniqueness, we assert that the intersection of
+	// the lists of boundary conditions connected to the downstream
+	// circuits is empty OR that there is a unique closed loop 
+	// circuit.
+	if (m_connectedCircuitSurfaceIndices.size() > 0)
+	{
+		// Work out the size of the largest 
+		int maxNumberOfSurfacesConnectedToAnyClosedLoop = 0;
+		for (auto connectedSurfacesForThisClosedLoop = m_connectedCircuitSurfaceIndices.begin(); connectedSurfacesForThisClosedLoop != m_connectedCircuitSurfaceIndices.end(); connectedSurfacesForThisClosedLoop++)
+		{
+			maxNumberOfSurfacesConnectedToAnyClosedLoop = std::max(maxNumberOfSurfacesConnectedToAnyClosedLoop, connectedSurfacesForThisClosedLoop.size());
+		}
+
+		// Intersect the lists of connected boundary conditions for each closed loop:
+		std::vector<int> intersection(maxNumberOfSurfacesConnectedToAnyClosedLoop);
+		// Initialise by intersecting for the first two closed loops:
+		intersection = intersectVectors(m_connectedCircuitSurfaceIndices.at(0), m_connectedCircuitSurfaceIndices.at(1));
+		// Do all the remaining intersections
+		// Begin by moving a start-iterator to m_connectedCircuitSurfaceIndices.at(2):
+		auto startingIterator = std::advance(m_connectedCircuitSurfaceIndices.begin(),2);
+		for (auto connectedSurfacesForThisClosedLoop = startingIterator; connectedSurfacesForThisClosedLoop != m_connectedCircuitSurfaceIndices.end(); connectedSurfacesForThisClosedLoop++)
+		{
+			intersection = intersectVectors(intersection,connectedSurfacesForThisClosedLoop);
+		}
+
+		if (intersection.size() > 0)
+		{
+			throw std::runtiem_error("EE: Each boundary condition should connect to at most one closed-loop downstream circuit.");
+		}
+	}
+
 }
 
 // Disable unwanted methods:

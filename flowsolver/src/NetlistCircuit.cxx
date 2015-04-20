@@ -21,6 +21,18 @@ int NetlistCircuit::getNumberOfDegreesOfFreedom()
     return mp_circuitData->numberOfComponents + mp_circuitData->numberOfPressureNodes;
 }
 
+bool NetlistCircuit::surfaceIndexMatches(const int surfaceIndexToTest) const
+{
+    if (m_surfaceIndex == surfaceIndexToTest)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void NetlistCircuit::terminatePetscArrays()
 {
     PetscErrorCode errFlag;
@@ -1985,6 +1997,19 @@ void NetlistClosedLoopDownstreamCircuit::getRHSContribution(Vec& rhsFromThisBoun
 {
     assembleRHS(timestepNumber);
     rhsFromThisBoundary = m_RHS;
+}
+
+
+void NetlistClosedLoopDownstreamCircuit::getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(std::vector<int>& downstreamNodeIndices, std::vector<int>& upstreamNodeIndices, std::vector<int>& upstreamSurfaceIndices) const
+{
+    downstreamNodeIndices = m_localInterfacingNodes;
+    upstreamNodeIndices = m_remoteInterfacingNodes;
+    upstreamSurfaceIndices = m_connectedCircuitSurfaceIndices;
+}
+
+int NetlistClosedLoopDownstreamCircuit::getCircuitIndex() const
+{
+    return m_downstreamCircuitIndex;
 }
 
 // Disable unwanted methods:

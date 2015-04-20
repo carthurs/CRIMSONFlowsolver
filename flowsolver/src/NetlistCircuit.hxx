@@ -49,6 +49,8 @@ public:
 
 	virtual void initialiseCircuit();
 
+	bool surfaceIndexMatches(const int surfaceIndexToTest) const;
+
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
 	void closeAllDiodes();
@@ -279,7 +281,11 @@ public:
 	void getMatrixContribution(Mat& matrixFromThisBoundary);
 	void getRHSContribuiton(Vec& rhsFromThisBoundary);
 
+	int getCircuitIndex() const;
+
 	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const;
+
+	void getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(std::vector<int>& downstreamNodeIndices, std::vector<int>& upstreamNodeIndices, std::vector<int>& upstreamSurfaceIndices) const;
 
 	~NetlistClosedLoopDownstreamCircuit()
 	{
@@ -289,9 +295,11 @@ private:
 	static int s_numberOfDownstreamCircuits;
 	int m_downstreamCircuitIndex;
 	int m_numberOfConnectedBoundaryConditions;
+	
 	std::vector<int> m_connectedCircuitSurfaceIndices;
 	std::vector<int> m_localInterfacingNodes;
 	std::vector<int> m_remoteInterfacingNodes;
+
 	std::set<int> m_pressureNodesWhichConnectToBoundaryCircuits;
 	std::map<int,int> m_circuitInterfaceNodeIndexMapDownstreamToUpstream;
 

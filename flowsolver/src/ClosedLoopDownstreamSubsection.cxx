@@ -148,8 +148,14 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone()
 
         assert(m_nextBlankSystemMatrixColumn < m_systemSize);
 
-        // Add the Kirchoff laws for the connecting nodes, and also set their pressures to be equal
+        // Add the Kirchoff laws for the connecting nodes
         appendKirchoffLawsAtInterfacesBetweenCircuits();
+
+        // At the interface between an "upstream" boundary condition and the "downstream" 
+        // closed loop circuit, the interfacing nodes are duplicated (as they belong to both
+        // the upstream and the downstream circuit). We must enforce equality of pressure
+        // at such copies of the same node. Do that now.
+        enforcePressureEqualityBetweenDuplicatedNodes();
 
         // Finalise the matrix construction
         errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -322,8 +328,57 @@ void ClosedLoopDownstreamSubsection::writePartOfKirchoffEquationIntoClosedLoopSy
         errFlag = MatSetValue(m_closedLoopSystemMatrix,row,column,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
       }
     }
+}
 
+int ClosedLoopDownstreamSubsection::getCircuitIndexFromSurfaceIndex(const int upstreamSurfaceIndex) const
+{
+    for (auto upstreamBC = m_upstreamBoundaryConditionCircuits.begin(); upstreamBC != m_upstreamBoundaryConditionCircuits.end(); upstreamBC++)
+    {
+        if ((*upstreamBC)->surfaceIndexMatches(upstreamSurfaceIndex))
+        {
+            boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBC);
+            return downcastCircuit->getCircuitIndex();
+        }
+    }
+}
 
+void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNodes()
+{
+    // Vectors to hold the pass-by-reference return from getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices
+    std::vector<int> downstreamNodeIndices;
+    std::vector<int> upstreamNodeIndices;
+    std::vector<int> upstreamSurfaceIndices;
+    mp_NetlistCircuit->getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(downstreamNodeIndices, upstreamNodeIndices, upstreamSurfaceIndices);
+
+    // The upstreamSurfaceIndices (which are solver.inp indices for the surfaces of the 3D model) need to be converted to 
+    // the indices of the circuits themselves (i.e. 0th, 1st, 2nd,... circuit; whereas the surfaces may have non-consecutive 
+    // arbitrary numbering)
+    std::vector<int> upstreamCircuitIndices;
+    for (auto upstreamSurfaceIndex = upstreamSurfaceIndices.begin(); upstreamSurfaceIndex != upstreamSurfaceIndices.end(); upstreamCircuitIndex++)
+    {
+        int upstreamCircuitIndex = getCircuitIndexFromSurfaceIndex(*upstreamSurfaceIndex);
+        upstreamCircuitIndices.push_back(upstreamCircuitIndex);
+    }
+
+    for (int sharedNodeIndex = 0; sharedNodeIndex < downstreamNodeIndices.size(); sharedNodeIndex++)
+    {
+        // The entry for the upstream copy of the pressure node:
+        {
+            int currentUpstreamCircuitIndex = upstreamCircuitIndices.at(sharedNodeIndex);
+            int upstreamNodeIndex = upstreamNodeIndices.at(sharedNodeIndex);
+            int column = m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.at(currentUpstreamCircuitIndex) + upstreamNodeIndex;
+            errFlag = MatSetValue(m_closedLoopSystemMatrix,m_nextBlankSystemMatrixRow,column,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        }
+
+        // The entry for the downstream (i.e. local) copy of the pressure node:
+        {
+            int downstreamNodeIndex = downstreamNodeIndices.at(sharedNodeIndex);
+            int column = m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.back() + downstreamNodeIndex;
+            errFlag = MatSetValue(m_closedLoopSystemMatrix,m_nextBlankSystemMatrixRow,column,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        }
+
+        m_nextBlankSystemMatrixRow++;
+    } 
 }
 
 void ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain()

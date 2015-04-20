@@ -73,7 +73,8 @@ private:
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);
 	void appendKirchoffLawsAtInterfacesBetweenCircuits();
-	void writePartOfKirchoffEquationIntoClosedLoopSysteMatrix();
+	void enforcePressureEqualityBetweenDuplicatedNodes();
+	void writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset);
 };
 
 #endif

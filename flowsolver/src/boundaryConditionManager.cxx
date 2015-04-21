@@ -223,7 +223,7 @@ void boundaryConditionManager::markClosedLoopLinearSystemsForRebuilding()
   // Only do this if this simulation is using a closed loop:
   for (auto downstreamLoopClosingSubsection = m_netlistDownstreamLoopClosingSubsections.begin(); downstreamLoopClosingSubsection != m_netlistDownstreamLoopClosingSubsections.end(); downstreamLoopClosingSubsection++)
   {
-    downstreamLoopClosingSubsection->markLinearSystemAsNeedingBuildingAgain();
+    (*downstreamLoopClosingSubsection)->markLinearSystemAsNeedingBuildingAgain();
   }
 }
 

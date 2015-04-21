@@ -4,11 +4,15 @@
 #include <set>
 #include <queue>
 #include <boost/shared_ptr.hpp>
-#include "NetlistCircuit.hxx"
 #include "abstractBoundaryCondition.hxx"
+#include "NetlistClosedLoopDownstreamCircuit.hxx"
+#include "NetlistBoundaryCircuitWhenDownstreamCircuitsExist.hxx"
 #include "petscsys.h"
 #include "petscmat.h"
 #include "petscvec.h"
+
+// Forward declarations:
+// class NetlistBoundaryCircuitWhenDownstreamCircuitsExist;
 
 // Instances of this class manage whole closed-loop circuits currently, although they are designed
 // to allow for extension to be only part of a single closed loop (in which case, they'll have to 
@@ -46,7 +50,7 @@ public:
 
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 	void setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBC);
-	void buildAndSolveLinearSystemIfNotYetDone();
+	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const int alfi_delt);
 	std::pair<double,double> getImplicitCoefficients(const int boundaryConditionIndex) const;
 	void markLinearSystemAsNeedingBuildingAgain();
 private:
@@ -63,6 +67,7 @@ private:
 	bool m_thisIsARestartedSimulation;
 	Mat m_closedLoopSystemMatrix;
 	Mat m_inverseOfClosedLoopMatrix;
+	Mat m_identityMatrixForPetscInversionHack;
 	Vec m_closedLoopRHS;
 	Vec m_solutionVector;
 	int m_nextBlankSystemMatrixRow; // zero-indexed
@@ -71,21 +76,32 @@ private:
 
 	std::queue<Mat> m_matrixContributionsFromUpstreamBoundaryConditions;
 	std::queue<Vec> m_rhsContributionsFromUpstreamBoundaryConditions;
+	std::map<int,int> m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems;
 
 	std::vector<boost::shared_ptr<NetlistCircuit>> m_upstreamBoundaryConditionCircuits;
 	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> mp_NetlistCircuit;
 
 	std::vector<int> m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
+	std::vector<int> m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
 
 	void terminatePetscArrays();
 	void initialisePetscArrayNames();
 	void createVectorsAndMatricesForCircuitLinearSystem();
+	int getCircuitIndexFromSurfaceIndex(const int upstreamSurfaceIndex) const;
 
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);
 	void appendKirchoffLawsAtInterfacesBetweenCircuits();
 	void enforcePressureEqualityBetweenDuplicatedNodes();
 	void writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset);
+
+	// std::queue has no clear() method, so we use this instead:
+	template <typename Type>
+	void clearQueue(std::queue<Type> queueToClear)
+	{
+		std::queue<Type> emptyQueue;
+		std::swap(emptyQueue, queueToClear);
+	}
 };
 
 #endif

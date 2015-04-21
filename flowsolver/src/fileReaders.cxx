@@ -852,10 +852,10 @@ void NetlistDownstreamCircuitReader::checkForBadCircuitDesign()
 	if (m_connectedCircuitSurfaceIndices.size() > 0)
 	{
 		// Work out the size of the largest 
-		int maxNumberOfSurfacesConnectedToAnyClosedLoop = 0;
+		std::size_t maxNumberOfSurfacesConnectedToAnyClosedLoop = 0; // size_t because std::max expects it as the size() operator in the second argument also returns a size_t
 		for (auto connectedSurfacesForThisClosedLoop = m_connectedCircuitSurfaceIndices.begin(); connectedSurfacesForThisClosedLoop != m_connectedCircuitSurfaceIndices.end(); connectedSurfacesForThisClosedLoop++)
 		{
-			maxNumberOfSurfacesConnectedToAnyClosedLoop = std::max(maxNumberOfSurfacesConnectedToAnyClosedLoop, connectedSurfacesForThisClosedLoop.size());
+			maxNumberOfSurfacesConnectedToAnyClosedLoop = std::max(maxNumberOfSurfacesConnectedToAnyClosedLoop, connectedSurfacesForThisClosedLoop->size());
 		}
 
 		// Intersect the lists of connected boundary conditions for each closed loop:
@@ -864,15 +864,16 @@ void NetlistDownstreamCircuitReader::checkForBadCircuitDesign()
 		intersection = intersectVectors(m_connectedCircuitSurfaceIndices.at(0), m_connectedCircuitSurfaceIndices.at(1));
 		// Do all the remaining intersections
 		// Begin by moving a start-iterator to m_connectedCircuitSurfaceIndices.at(2):
-		auto startingIterator = std::advance(m_connectedCircuitSurfaceIndices.begin(),2);
+		auto startingIterator = m_connectedCircuitSurfaceIndices.begin();
+		std::advance(startingIterator,2);
 		for (auto connectedSurfacesForThisClosedLoop = startingIterator; connectedSurfacesForThisClosedLoop != m_connectedCircuitSurfaceIndices.end(); connectedSurfacesForThisClosedLoop++)
 		{
-			intersection = intersectVectors(intersection,connectedSurfacesForThisClosedLoop);
+			intersection = intersectVectors(intersection,*connectedSurfacesForThisClosedLoop);
 		}
 
 		if (intersection.size() > 0)
 		{
-			throw std::runtiem_error("EE: Each boundary condition should connect to at most one closed-loop downstream circuit.");
+			throw std::runtime_error("EE: Each boundary condition should connect to at most one closed-loop downstream circuit.");
 		}
 	}
 

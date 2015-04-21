@@ -9,7 +9,6 @@
 #include "petscvec.h"
 #include <set>
 #include <boost/weak_ptr.hpp>
-#include "ClosedLoopDownstreamSubsection.hxx"
 #include "fileReaders.hxx"
 
 class NetlistCircuit
@@ -85,6 +84,7 @@ public:
 
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
+	int getNumberOfHistoryPressures() const;
 protected:
 	// Overload constructor for subclasses to call:
 	NetlistCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
@@ -119,7 +119,6 @@ protected:
 	void getMapOfFlowHistoriesToCorrectComponents();
 	void getMapOfVolumeHistoriesToCorrectComponents();
 	void getMapOfTrackedVolumesToCorrectComponents();
-	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
 	void assembleRHS(const int timestepNumber);
 	void giveNodesTheirPressuresFromSolutionVector();
@@ -175,13 +174,13 @@ protected:
   	const int m_IndexOfThisNetlistLPN;
 	
 	void buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt);
-	const int getNumberOfHistoryPressures() const;
+	void generateLinearSystemWithoutFactorisation(const double alfi_delt);
 
 private:
 	void initialisePetscArrayNames();
 	void terminatePetscArrays();
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
-	virtual void kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
+	virtual bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 
@@ -196,27 +195,6 @@ private:
 
 };
 
-// Forward declaration:
-class ClosedLoopDownstreamSubsection;
-
-class NetlistBoundaryCircuitWhenDownstreamCircuitsExist : public NetlistCircuit
-{
-public:
-	NetlistBoundaryCircuitWhenDownstreamCircuitsExist(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> downstreamSubcircuits)
-	:NetlistCircuit(hstep, surfaceIndex, indexOfThisNetlistLPN, thisIsARestartedSimulation, alfi, delt),
-	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
-	{}
-	void initialiseCircuit();
-	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
-	void getMatrixContribution(Mat& matrixFromThisBoundary);
-	void getRHSContribuiton(Vec& rhsFromThisBoundary);
-protected:
-private:
-	std::set<int> m_pressureNodesWhichConnectToDownstreamCircuits;
-	int m_numberOfNodesConnectingToAnotherCircuit;
-	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
-	void kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
-};
 
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
@@ -251,63 +229,6 @@ private:
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveVolumeTrackingPressureChamber;
 	const double m_initialDomainPressure;
-};
-
-class NetlistClosedLoopDownstreamCircuit : public NetlistCircuit
-{
-public:
-	NetlistClosedLoopDownstreamCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
-	: NetlistCircuit(hstep, thisIsARestartedSimulation, alfi, delt)
-	{
-		m_downstreamCircuitIndex = s_numberOfDownstreamCircuits;
-		s_numberOfDownstreamCircuits++;
-
-		std::stringstream pressureFileNameBuilder;
-		pressureFileNameBuilder << "netlistPressures_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
-		m_PressureHistoryFileName = pressureFileNameBuilder.str();
-
-		std::stringstream flowFileNameBuilder;
-		flowFileNameBuilder << "netlistFlows_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
-		m_FlowHistoryFileName = flowFileNameBuilder.str();
-
-		std::stringstream volumeFileNameBuilder;
-		volumeFileNameBuilder << "netlistVolumes_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
-		m_VolumeHistoryFileName = volumeFileNameBuilder.str();
-	}
-
-	void createCircuitDescription();
-	void initialiseCircuit();
-
-	void getMatrixContribution(Mat& matrixFromThisBoundary);
-	void getRHSContribuiton(Vec& rhsFromThisBoundary);
-
-	int getCircuitIndex() const;
-
-	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const;
-
-	void getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(std::vector<int>& downstreamNodeIndices, std::vector<int>& upstreamNodeIndices, std::vector<int>& upstreamSurfaceIndices) const;
-
-	~NetlistClosedLoopDownstreamCircuit()
-	{
-		s_numberOfDownstreamCircuits--;
-	}
-private:
-	static int s_numberOfDownstreamCircuits;
-	int m_downstreamCircuitIndex;
-	int m_numberOfConnectedBoundaryConditions;
-	
-	std::vector<int> m_connectedCircuitSurfaceIndices;
-	std::vector<int> m_localInterfacingNodes;
-	std::vector<int> m_remoteInterfacingNodes;
-
-	std::set<int> m_pressureNodesWhichConnectToBoundaryCircuits;
-	std::map<int,int> m_circuitInterfaceNodeIndexMapDownstreamToUpstream;
-
-	void appendClosedLoopSpecificCircuitDescription();
-	bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
-
-	// Disabling methods that should never be called:
-	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 };
 
 #endif

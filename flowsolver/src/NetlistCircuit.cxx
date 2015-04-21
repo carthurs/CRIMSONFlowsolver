@@ -4,9 +4,6 @@
 #include <boost/make_shared.hpp>
 #include "indexShifters.hxx"
 
-// Statics:
-int NetlistClosedLoopDownstreamCircuit::s_numberOfDownstreamCircuits = 0;
-
 void NetlistCircuit::initialisePetscArrayNames()
 {
     m_RHS = PETSC_NULL;
@@ -16,7 +13,7 @@ void NetlistCircuit::initialisePetscArrayNames()
     m_identityMatrixForPetscInversionHack = PETSC_NULL;
 }
 
-int NetlistCircuit::getNumberOfDegreesOfFreedom()
+int NetlistCircuit::getNumberOfDegreesOfFreedom() const
 {
     return mp_circuitData->numberOfComponents + mp_circuitData->numberOfPressureNodes;
 }
@@ -926,37 +923,6 @@ void NetlistCircuit::initialiseCircuit()
     m_numberOfSystemRows = m_numberOfSystemColumns;
 }
 
-void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::initialiseCircuit()
-{
-    // Discover which pressure nodes don't need Kirchoff law applications yet, because such laws will be applied later
-    // once this circuit is combined with the downstreamCircuit to make a (closed loop)-type boundary circuit.
-    m_pressureNodesWhichConnectToDownstreamCircuits = NetlistDownstreamCircuitReader::Instance()->getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(m_surfaceIndex);
-    m_numberOfNodesConnectingToAnotherCircuit = m_pressureNodesWhichConnectToDownstreamCircuits.size();
-
-    // This function exists just so we can modify what initialiseCircuit does in subclasses without repeating code.
-    initialiseCircuit_common();
-
-    m_numberOfSystemRows = m_numberOfSystemColumns - m_numberOfNodesConnectingToAnotherCircuit;
-}
-
-void NetlistClosedLoopDownstreamCircuit::initialiseCircuit()
-{
-    // Discover which pressure nodes don't need Kirchoff law applications yet, because such laws will be applied later
-    // once this circuit is combined with the upstream boundary conditions to make a (closed loop)-type boundary circuit.
-    std::vector<int> nodesConnectingToBoundaryCircuits = NetlistDownstreamCircuitReader::Instance()->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
-    // Convert the vector to a set, which is more convenient for checking membership:
-    for (auto node = nodesConnectingToBoundaryCircuits.begin(); node != nodesConnectingToBoundaryCircuits.end(); node++)
-    {
-        m_pressureNodesWhichConnectToBoundaryCircuits.insert(*node);
-    }
-    m_numberOfNodesConnectingToAnotherCircuit = m_pressureNodesWhichConnectToBoundaryCircuits.size();
-
-    // This function exists just so we can modify what initialiseCircuit does in subclasses without repeating code.
-    initialiseCircuit_common();
-
-    m_numberOfSystemRows = m_numberOfSystemColumns - m_numberOfNodesConnectingToAnotherCircuit;
-}
-
 void NetlistCircuit::initialiseCircuit_common()
 {
   numberOfPrescribedPressuresAndFlows = mp_circuitData->numberOfPrescribedPressures + mp_circuitData->numberOfPrescribedFlows; // Just the sum of the previous two declared integers
@@ -985,7 +951,7 @@ void NetlistCircuit::initialiseCircuit_common()
   createListOfNodesWithMultipleIncidentCurrents();
 }
 
-int NetlistCircuit::getNumberOfHistoryPressures()
+int NetlistCircuit::getNumberOfHistoryPressures() const
 {
     return m_numberOfHistoryPressures;
 }
@@ -1020,7 +986,7 @@ void NetlistCircuit::createVectorsAndMatricesForCircuitLinearSystem()
 
   errFlag = VecCreate(PETSC_COMM_SELF,&m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecSetType(m_solutionVector,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
-  errFlag = VecSetSizes(m_solutionVector,m_numberOfSystemRows,sym_numberOfSystemRowsstemSize); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+  errFlag = VecSetSizes(m_solutionVector,m_numberOfSystemRows,m_numberOfSystemRows); CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecZeroEntries(m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecAssemblyBegin(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecAssemblyEnd(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -1078,31 +1044,6 @@ bool NetlistCircuit::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const in
 {
     // In NetlistCircuit, there is no downstream circuit, so the return value is always false.
     return false;
-}
-
-bool NetlistBoundaryCircuitWhenDownstreamCircuitsExist::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
-{
-    bool nodeInterfacesWithDownstreamCircuit = false;
-    if (m_pressureNodesWhichConnectToDownstreamCircuits.count(nodeIndex) == 1)
-    {
-        nodeInterfacesWithDownstreamCircuit = true;
-    }
-    return nodeInterfacesWithDownstreamCircuit;
-}
-
-bool NetlistClosedLoopDownstreamCircuit::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
-{
-    bool nodeInterfacesWithDownstreamCircuit = false;
-    if (m_pressureNodesWhichConnectToBoundaryCircuits.count(nodeIndex) == 1)
-    {
-        nodeInterfacesWithDownstreamCircuit = true;
-    }
-    return nodeInterfacesWithDownstreamCircuit;
-}
-
-int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const
-{
-    return m_circuitInterfaceNodeIndexMapDownstreamToUpstream.at(sharedNodeDownstreamIndex);
 }
 
 void NetlistCircuit::getMapOfPressHistoriesToCorrectPressNodes()
@@ -1826,47 +1767,6 @@ std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToG
   }
 }
 
-std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
-{
-    // Call the downstream circuit(s?) and tell them to contact each NetlistBoundaryCondition to get
-    // their contributions to the (closed loop)-type matrix, build the full matrix and solve it
-    // 
-    // Internally, that call will only do anything if this is the first boundary condition to try to computeImplicitCoefficients
-    // this time. Otherwise, the system state has already been computed, and we don't need to do anything
-    for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
-    {
-        downstreamSubcircuit->lock()->buildAndSolveLinearSystemIfNotYetDone();
-    }
-
-    // Call the downstream circuits to get the implicit coefficients that they computed for this
-    // boundary
-    std::pair<double,double> returnValue;
-    int counterToDetectErrors = 0;
-    for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
-    {
-        if (downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(m_IndexOfThisNetlistLPN))
-        {
-            returnValue = downstreamSubcircuit->lock()->getImplicitCoefficients(m_IndexOfThisNetlistLPN);
-            counterToDetectErrors++;
-        }
-    }
-
-    assert(counterToDetectErrors == 1);
-
-    return returnValue;
-}
-
-void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getMatrixContribution(Mat& matrixFromThisBoundary)
-{
-    generateLinearSystemWithoutFactorisation(alfi_delt);
-    matrixFromThisBoundary = m_systemMatrix;
-}
-
-void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getRHSContribution(Vec& rhsFromThisBoundary)
-{
-    assembleRHS(timestepNumber);
-    rhsFromThisBoundary = m_RHS;
-}
 
 std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
@@ -1955,65 +1855,4 @@ bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const dou
   // }
 
   return thereAreNegativeVolumes;
-}
-
-
-void NetlistClosedLoopDownstreamCircuit::createCircuitDescription()
-{
-    // This function takes the read-in netlist circuit description and converts it
-    // to the internal CircuitData class format.
-
-    // Get the reader class for the netlist data file, and ask it for the circuit description data:
-    mp_netlistFileReader = NetlistDownstreamCircuitReader::Instance();
-    createBasicCircuitDescription();
-    appendClosedLoopSpecificCircuitDescription();
-}
-
-void NetlistClosedLoopDownstreamCircuit::appendClosedLoopSpecificCircuitDescription()
-{
-    m_numberOfConnectedBoundaryConditions = mp_netlistFileReader->getNumberOfBoundaryConditionsConnectedTo(m_downstreamCircuitIndex);
-    m_connectedCircuitSurfaceIndices = mp_netlistFileReader->getConnectedCircuitSurfaceIndices(m_downstreamCircuitIndex);
-    m_localInterfacingNodes = mp_netlistFileReader->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
-    m_remoteInterfacingNodes = mp_netlistFileReader->getRemoteBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
-    
-    // Create a useful map which pairs up the two names for each interface node:
-    // the node's index as seen by the downstream circuit of the closed loop,
-    // and the nodes' index as seen by the upstream bounday condition circuit.
-    for (int interfaceNodeIndex = 0; interfaceNodeIndex < m_localInterfacingNodes.size(); interfaceNodeIndex++)
-    {
-        m_circuitInterfaceNodeIndexMapDownstreamToUpstream.insert(std::make_pair(m_localInterfacingNodes.at(interfaceNodeIndex),
-                                                                                m_remoteInterfacingNodes.at(interfaceNodeIndex)  ));
-    }
-    
-}
-
-void NetlistClosedLoopDownstreamCircuit::getMatrixContribution(Mat& matrixFromThisBoundary)
-{
-    generateLinearSystemWithoutFactorisation(alfi_delt);
-    matrixFromThisBoundary = m_systemMatrix;
-}
-
-void NetlistClosedLoopDownstreamCircuit::getRHSContribution(Vec& rhsFromThisBoundary)
-{
-    assembleRHS(timestepNumber);
-    rhsFromThisBoundary = m_RHS;
-}
-
-
-void NetlistClosedLoopDownstreamCircuit::getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(std::vector<int>& downstreamNodeIndices, std::vector<int>& upstreamNodeIndices, std::vector<int>& upstreamSurfaceIndices) const
-{
-    downstreamNodeIndices = m_localInterfacingNodes;
-    upstreamNodeIndices = m_remoteInterfacingNodes;
-    upstreamSurfaceIndices = m_connectedCircuitSurfaceIndices;
-}
-
-int NetlistClosedLoopDownstreamCircuit::getCircuitIndex() const
-{
-    return m_downstreamCircuitIndex;
-}
-
-// Disable unwanted methods:
-void NetlistClosedLoopDownstreamCircuit::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
-{
-    throw std::logic_error("Method detectWhetherClosedDiodesStopAllFlowAt3DInterface() should not be called on the NetlistClosedLoopDownstreamCircuit, as it has no 3D interface.");
 }

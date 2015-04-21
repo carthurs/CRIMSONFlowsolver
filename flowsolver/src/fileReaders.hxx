@@ -413,6 +413,7 @@ private:
 	std::vector<int> getIndicesOfNodesAt3DInterface();
 	int getNumberOfNetlistSurfaces();
 	void readBoundaryConditionConnectivity();
+	void checkForBadCircuitDesign();
 
 	std::vector<int> m_numberOfBoundaryConditionsConnectedTo;
 	std::vector<std::vector<int>> m_connectedCircuitSurfaceIndices;
@@ -423,7 +424,7 @@ private:
 	std::vector<Type> intersectVectors(std::vector<Type> vector1, std::vector<Type> vector2)
 	{
 		std::vector<Type> intersection(std::max(vector1.size(), vector2.size()));
-		iteratorToEndOfIntersection = std::set_intersection(vector1.begin(), vector1.end(), vector2.begin(), vector2.end(), intersection.begin());
+		auto iteratorToEndOfIntersection = std::set_intersection(vector1.begin(), vector1.end(), vector2.begin(), vector2.end(), intersection.begin());
 
 		// shrink intersection to the size of just the intersecting elements (it's usually going to be longer than that before doing this.)
 		intersection.resize(iteratorToEndOfIntersection - intersection.begin());

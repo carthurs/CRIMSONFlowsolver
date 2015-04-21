@@ -356,23 +356,24 @@ TEST_F(testFileReaders, checkNetlistDownstreamCircuitReader)
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(1) == Component_Capacitor);
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(2) == Component_Resistor);
 
-  returnedVectorOfInts = downstreamReader_instance->getNumberOfBoundaryConditionsConnectedTo();
-  EXPECT_EQ(returnedVectorOfInts.at(0),3);
+  int downstreamCircuitIndex = 0;
+  int returnedInteger = downstreamReader_instance->getNumberOfBoundaryConditionsConnectedTo(downstreamCircuitIndex);
+  EXPECT_EQ(returnedInteger,3);
 
-  returnedVectorOfIntVectors = downstreamReader_instance->getConnectedCircuitSurfaceIndices();
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),5);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),6);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),7);
+  returnedVectorOfInts = downstreamReader_instance->getConnectedCircuitSurfaceIndices(downstreamCircuitIndex);
+  EXPECT_EQ(returnedVectorOfInts.at(0),5);
+  EXPECT_EQ(returnedVectorOfInts.at(1),6);
+  EXPECT_EQ(returnedVectorOfInts.at(2),7);
 
-  returnedVectorOfIntVectors = downstreamReader_instance->getLocalBoundaryConditionInterfaceNodes();
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),1);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),4);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),4);
+  returnedVectorOfInts = downstreamReader_instance->getLocalBoundaryConditionInterfaceNodes(downstreamCircuitIndex);
+  EXPECT_EQ(returnedVectorOfInts.at(0),1);
+  EXPECT_EQ(returnedVectorOfInts.at(1),4);
+  EXPECT_EQ(returnedVectorOfInts.at(2),4);
 
-  returnedVectorOfIntVectors = downstreamReader_instance->getRemoteBoundaryConditionInterfaceNodes();
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(0),5);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(1),4);
-  EXPECT_EQ(returnedVectorOfIntVectors.at(0).at(2),3);
+  returnedVectorOfInts = downstreamReader_instance->getRemoteBoundaryConditionInterfaceNodes(downstreamCircuitIndex);
+  EXPECT_EQ(returnedVectorOfInts.at(0),5);
+  EXPECT_EQ(returnedVectorOfInts.at(1),4);
+  EXPECT_EQ(returnedVectorOfInts.at(2),3);
 
   downstreamReader_instance->Term();
 }

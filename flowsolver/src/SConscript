@@ -48,6 +48,8 @@ sources=string.split("""
 	ClosedLoopDownstreamSubsection.cxx
 	NetlistBoundaryCondition.cxx
 	NetlistCircuit.cxx
+	NetlistBoundaryCircuitWhenDownstreamCircuitsExist.cxx
+	NetlistClosedLoopDownstreamCircuit.cxx
 	CircuitData.cxx
 	ControlSystemsManager.cxx
 	ParameterController.cxx

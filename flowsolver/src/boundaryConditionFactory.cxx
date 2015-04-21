@@ -36,11 +36,13 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
     boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
     boundaryConditionToReturn->initialiseModel();
 
+    boost::shared_ptr<NetlistBoundaryCondition> downcastNetlistBoundaryCondition = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryConditionToReturn);
+
     // We finish off by giving the ClosedLoopdownstreamSubcircuits pointers to the just-constructed NetlistBoundaryCondition, if the two are connected directly.
     // This completes the allowing of each to access each other using smart pointers.
     for (auto downstreamSubcircuit = gatheredDownstreamSubcircuits.begin(); downstreamSubcircuit != gatheredDownstreamSubcircuits.end(); downstreamSubcircuit++)
     {
-      downstreamSubcircuit->lock()->setPointerToNeighbouringBoundaryConditionCircuit(boundaryConditionToReturn.getNetlistCircuit());
+      downstreamSubcircuit->lock()->setPointerToNeighbouringBoundaryConditionCircuit(downcastNetlistBoundaryCondition->getNetlistCircuit());
     }
     
     return boundaryConditionToReturn;

@@ -8,6 +8,7 @@
 #include "CircuitData.hxx"
 #include "AtomicSubcircuitConnectionManager.hxx"
 #include "NetlistCircuit.hxx"
+#include "NetlistBoundaryCircuitWhenDownstreamCircuitsExist.hxx"
 #include <boost/weak_ptr.hpp>
 
 // The NetlistBoundaryCondition is really a manager class for a collection

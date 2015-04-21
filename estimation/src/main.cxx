@@ -158,7 +158,6 @@ int main(int argc, char * argv[]) {
       pureZeroDDriver.setAlfi(timdat.alfi);
       pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
       pureZeroDDriver.setNtout(outpar.ntout);
-      pureZeroDDriver.setNetlistDownstreamCircuitsExistence(nomodule.numLoopClosingNetlistCircuits);
 
       pureZeroDDriver.init();
 

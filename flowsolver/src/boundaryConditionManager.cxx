@@ -763,7 +763,10 @@ extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
 // Control systems specific functions
 void boundaryConditionManager::updateAllControlSystems()
 {
-  mp_controlSystemsManager->updateAllControlSystems();
+  if (m_controlSystemsPresent)
+  {
+    mp_controlSystemsManager->updateAllControlSystems();
+  }
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllControlSystems()
@@ -774,6 +777,7 @@ extern "C" void callCPPUpdateAllControlSystems()
 
 void boundaryConditionManager::createControlSystems()
 {
+  m_controlSystemsPresent = true;
   // Instantiate the manager
   mp_controlSystemsManager = std::unique_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt));
   

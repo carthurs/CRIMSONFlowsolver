@@ -62,7 +62,7 @@
 	  	// and we're not doing that during tests.
 	  	std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
 	  	std::cout << "Information -- The overrides are in testOrphans.hxx." << std::endl;
-	  	std::cout << "Information -- delt, hstep, alfi, lstep, ntout." << std::endl;
+	  	std::cout << "Information -- delt, hstep, alfi, lstep, ntout, numLoopClosingNetlistCircuits." << std::endl;
 	  	boundaryConditionManager_instance->setDelt(0.01);
 		boundaryConditionManager_instance->setHstep(5);
 		boundaryConditionManager_instance->setAlfi(0.5);
@@ -70,6 +70,7 @@
 		boundaryConditionManager_instance->setNtout(1);
 		boundaryConditionManager_instance->setMaxsurf(199);
 		boundaryConditionManager_instance->setNstep(5);
+		boundaryConditionManager_instance->setNumLoopClosingnetlistCircuits(0);
 	  	// grcrbccom.numGRCRSrfs;
 	  	// std::cout << "nomodule.numNetlistLPNSrfs" << std::endl;
     //     nomodule.numNetlistLPNSrfs = int(1);

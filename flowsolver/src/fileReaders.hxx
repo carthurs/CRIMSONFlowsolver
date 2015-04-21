@@ -24,7 +24,7 @@ class abstractFileReader
 public:
 	abstractFileReader()
 	{
-		m_fileHasBeenRead = 0;
+		m_fileHasBeenRead = false;
 		m_metadataOnNumberOfLinesInFileAvailable = false;
 		mp_currentLineSplitBySpaces = new std::vector<std::string>;
 		mp_file = new std::ifstream();
@@ -75,7 +75,7 @@ protected:
 
 	int m_numColumns;
 	std::vector<double> m_dataReadFromFile_line;
-	int m_fileHasBeenRead;
+	bool m_fileHasBeenRead;
 	bool readNextLineWithKnownNumberOfColumns();
 
 	int m_expectedNumberOfLinesInFile;

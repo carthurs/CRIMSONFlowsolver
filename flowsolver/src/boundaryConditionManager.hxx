@@ -125,6 +125,7 @@ class abstractBoundaryCondition;
         m_numLoopClosingNetlistCircuitsHasBeenSet = false;
 
         m_hasSurfaceList = false;
+        m_controlSystemsPresent = false;
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> m_boundaryConditions;
     std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubsections;
@@ -155,6 +156,7 @@ class abstractBoundaryCondition;
     bool m_numLoopClosingNetlistCircuitsHasBeenSet;
 
     bool m_hasSurfaceList;
+    bool m_controlSystemsPresent;
 
     int m_nextTimestepWrite_netlistBoundaries_start;
 

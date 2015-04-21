@@ -43,7 +43,6 @@ class boundaryConditionFactory
 	const int m_maxsurf;
 	const int m_nstep;
 	const int m_numLoopClosingNetlistCircuits;
-	bool m_netlistDownstreamCircuitsExist;
 	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> mp_netlistDownstreamLoopClosingSubsectionsWeakPointers;
 
 	bool m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt;

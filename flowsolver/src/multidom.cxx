@@ -80,7 +80,10 @@ void multidom_initialise(){
 
   boundaryConditionManager_instance->setSurfaceList(surfaceList);
 
-  boundaryConditionManager_instance->createControlSystems();
+  if (boundaryConditionManager_instance->getNumberOfNetlistSurfaces() > 0)
+  {
+    boundaryConditionManager_instance->createControlSystems();
+  }
   
   // std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
   // retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();

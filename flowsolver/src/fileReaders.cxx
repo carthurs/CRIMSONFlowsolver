@@ -164,7 +164,7 @@ void histFileReader::readAndSplitMultiSurfaceRestartFile()
 		std::cerr << "Expected " << m_expectedNumberOfLinesInFile << " but read " << lineIndex << " lines!" << std::endl;
 	}
 
-	m_fileHasBeenRead = int(1);
+	m_fileHasBeenRead = true;
 }
 
 // The output objects are std::vectors at the top level, with each vector
@@ -200,7 +200,7 @@ void rcrtReader::readAndSplitMultiSurfaceInputFile()
 		}
 		timeDataPdist.push_back(tempTimeDataPdist);
 	}
-	m_fileHasBeenRead = int(1);
+	m_fileHasBeenRead = true;
 }
 
 int rcrtReader::getPdmax()
@@ -290,7 +290,7 @@ void controlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
 		intramyocardialCapacitorTopPressure.push_back(atof((*mp_currentLineSplitBySpaces).at(0).c_str()));
 	}
 
-	m_fileHasBeenRead = int(1);
+	m_fileHasBeenRead = true;
 }
 
 std::vector<double> controlledCoronaryReader::getResistanceNearAorta()
@@ -408,7 +408,7 @@ void NetlistReader::readAndSplitMultiSurfaceInputFile()
 
 	m_numberOfNetlistSurfacesIn_netlist_surfacesdat = m_indexOfNetlistCurrentlyBeingReadInFile;
 
-	m_fileHasBeenRead = int(1);
+	m_fileHasBeenRead = true;
 }
 
 void NetlistReader::readCircuitStructure()
@@ -765,7 +765,7 @@ void NetlistDownstreamCircuitReader::readAndSplitMultiSurfaceInputFile()
 
 	checkForBadCircuitDesign();
 
-	m_fileHasBeenRead = int(1);
+	m_fileHasBeenRead = true;
 }
 
 void NetlistDownstreamCircuitReader::readBoundaryConditionConnectivity()
@@ -849,7 +849,7 @@ void NetlistDownstreamCircuitReader::checkForBadCircuitDesign()
 	// the lists of boundary conditions connected to the downstream
 	// circuits is empty OR that there is a unique closed loop 
 	// circuit.
-	if (m_connectedCircuitSurfaceIndices.size() > 0)
+	if (m_connectedCircuitSurfaceIndices.size() != 1)
 	{
 		// Work out the size of the largest 
 		std::size_t maxNumberOfSurfacesConnectedToAnyClosedLoop = 0; // size_t because std::max expects it as the size() operator in the second argument also returns a size_t
@@ -875,6 +875,10 @@ void NetlistDownstreamCircuitReader::checkForBadCircuitDesign()
 		{
 			throw std::runtime_error("EE: Each boundary condition should connect to at most one closed-loop downstream circuit.");
 		}
+	}
+	else if (m_connectedCircuitSurfaceIndices.size() == 0)
+	{
+		throw std::runtime_error("EE: Closed loop code has run, but no closed loop circuits were found. This is probably due some disagreement in the input data.");
 	}
 
 }

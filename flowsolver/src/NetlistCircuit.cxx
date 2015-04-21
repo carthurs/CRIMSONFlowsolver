@@ -919,8 +919,11 @@ void NetlistCircuit::initialiseCircuit()
 {
     // This function exists just so we can modify what initialiseCircuit does in subclasses without repeating code.
     initialiseCircuit_common();
+
     // The system is square in this case
     m_numberOfSystemRows = m_numberOfSystemColumns;
+
+    createVectorsAndMatricesForCircuitLinearSystem();
 }
 
 void NetlistCircuit::initialiseCircuit_common()
@@ -944,8 +947,6 @@ void NetlistCircuit::initialiseCircuit_common()
   m_numberOfSystemColumns += numberOfHistoryFlows;
   m_numberOfSystemColumns += m_numberOfTrackedVolumes;
   m_numberOfSystemColumns += numberOfHistoryVolumes;
-
-  createVectorsAndMatricesForCircuitLinearSystem();
 
   // columnMapSize = m_numberOfHistoryPressures + numberOfHistoryFlows + numberOfPrescribedPressures + numberOfPrescribedFlows;
   createListOfNodesWithMultipleIncidentCurrents();

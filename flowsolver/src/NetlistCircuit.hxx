@@ -20,7 +20,7 @@ class NetlistCircuit
 public:
 	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt)
 	: m_surfaceIndex(surfaceIndex),
-	m_IndexOfThisNetlistLPN(indexOfThisNetlistLPN),
+	m_IndexOfThisNetlistLPNInInputFile(indexOfThisNetlistLPN),
 	m_hstep(hstep),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
@@ -49,6 +49,7 @@ public:
 	virtual void initialiseCircuit();
 
 	bool surfaceIndexMatches(const int surfaceIndexToTest) const;
+	int getSurfaceIndex() const;
 
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
@@ -87,10 +88,10 @@ public:
 	int getNumberOfHistoryPressures() const;
 protected:
 	// Overload constructor for subclasses to call:
-	NetlistCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
+	NetlistCircuit(const int hstep, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt)
 	: m_hstep(hstep),
 	m_surfaceIndex(-1),
-	m_IndexOfThisNetlistLPN(-1),
+	m_IndexOfThisNetlistLPNInInputFile(indexOfThisNetlistLPN),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
 	m_alfi(alfi)
@@ -171,7 +172,7 @@ protected:
 	PetscScalar m_interfaceFlow;
   	PetscScalar m_interfacePressure;
 
-  	const int m_IndexOfThisNetlistLPN;
+  	const int m_IndexOfThisNetlistLPNInInputFile;
 	
 	void buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt);
 	void generateLinearSystemWithoutFactorisation(const double alfi_delt);
@@ -200,7 +201,7 @@ class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
 	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure)
-	: NetlistCircuit(hstep, thisIsARestartedSimulation, alfi, delt),
+	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
 	m_elastanceToGiveVolumeTrackingPressureChamber(elastanceToGiveVolumeTrackingPressureChamber),
 	m_initialDomainPressure(initialDomainPressure),

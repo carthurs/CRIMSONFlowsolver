@@ -41,6 +41,7 @@ public:
 		m_systemSize = 0;
 
 		mp_NetlistCircuit = boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> (new NetlistClosedLoopDownstreamCircuit(m_hstep, m_thisIsARestartedSimulation, m_alfi, m_delt));
+		initialiseModel();
 	}
 
 	~ClosedLoopDownstreamSubsection()
@@ -50,12 +51,11 @@ public:
 
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 	void setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBC);
-	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const int alfi_delt);
+	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt);
 	std::pair<double,double> getImplicitCoefficients(const int boundaryConditionIndex) const;
 	void markLinearSystemAsNeedingBuildingAgain();
 private:
 	bool m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep;
-	std::set<int> m_setOfAttachedBoundaryConditionIndices;
 	const int m_index;
 	const int m_hstep;
 	const double m_delt;
@@ -84,10 +84,13 @@ private:
 	std::vector<int> m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
 	std::vector<int> m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
 
+	std::map<int,std::set<int>> m_mapOfSurfaceIndicesConnectedToEachDownstreamInterfaceNode;
+
 	void terminatePetscArrays();
 	void initialisePetscArrayNames();
 	void createVectorsAndMatricesForCircuitLinearSystem();
 	int getCircuitIndexFromSurfaceIndex(const int upstreamSurfaceIndex) const;
+	void generateCircuitInterfaceNodeData();
 
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);

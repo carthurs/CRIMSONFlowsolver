@@ -7,7 +7,7 @@ class NetlistClosedLoopDownstreamCircuit : public NetlistCircuit
 {
 public:
 	NetlistClosedLoopDownstreamCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
-	: NetlistCircuit(hstep, thisIsARestartedSimulation, alfi, delt)
+	: NetlistCircuit(hstep, s_numberOfDownstreamCircuits, thisIsARestartedSimulation, alfi, delt)
 	{
 		m_downstreamCircuitIndex = s_numberOfDownstreamCircuits;
 		s_numberOfDownstreamCircuits++;
@@ -23,6 +23,8 @@ public:
 		std::stringstream volumeFileNameBuilder;
 		volumeFileNameBuilder << "netlistVolumes_downstreamCircuit_" << m_downstreamCircuitIndex << ".dat";
 		m_VolumeHistoryFileName = volumeFileNameBuilder.str();
+
+		mp_circuitData = boost::shared_ptr<CircuitData> (new ClosedLoopDownstreamCircuitData(hstep));
 	}
 
 	void createCircuitDescription();
@@ -33,7 +35,11 @@ public:
 
 	int getCircuitIndex() const;
 
+	std::set<int> getPressureNodesConnectingToUpstreamCircuits() {return m_pressureNodesWhichConnectToBoundaryCircuits};
+
 	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const;
+	int convertInterfaceNodeIndexFromUpstreamToDownstreamCircuit(const int sharedNodeUpstreamIndex) const;
+	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 
 	void getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(std::vector<int>& downstreamNodeIndices, std::vector<int>& upstreamNodeIndices, std::vector<int>& upstreamSurfaceIndices) const;
 
@@ -52,6 +58,9 @@ private:
 
 	std::set<int> m_pressureNodesWhichConnectToBoundaryCircuits;
 	std::map<int,int> m_circuitInterfaceNodeIndexMapDownstreamToUpstream;
+	std::map<int,int> m_circuitInterfaceNodeIndexMapUpstreamToDownstream;
+
+	std::set<int> m_setOfAttachedBoundaryConditionIndices;
 
 	int m_numberOfNodesConnectingToAnotherCircuit;
 

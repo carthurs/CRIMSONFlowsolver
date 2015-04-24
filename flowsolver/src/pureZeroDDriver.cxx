@@ -41,7 +41,7 @@ void PureZeroDDriver::init()
 	// conditions their pointers to boundary pressures and flows.
 	boundaryConditionManager_instance->setZeroDDomainReplacementPressuresAndFlows(mp_interfacePressuresToBeReadByBoundaryConditions,mp_interfaceFlowsToBeReadByBoundaryConditions);
 
-	// m_zeroDDomainLPN->m_IndexOfThisNetlistLPN = 0; // \todo remove, this is a hack to get the fake "file reader" to read from the right place
+	// m_zeroDDomainLPN->m_IndexOfThisNetlistLPNInInputFile = 0; // \todo remove, this is a hack to get the fake "file reader" to read from the right place
 	m_zeroDDomainLPN->initialiseModel();
 	m_zeroDDomainLPN->setPointersToBoundaryPressuresAndFlows(mp_interfacePressuresToBeReadBy3DDomainReplacement, mp_interfaceFlowsToBeReadBy3DDomainReplacement, m_numberOfNetlistsUsedAsBoundaryConditions);
 	// m_zeroDDomainLPN->setPointersToBoundaryPressuresAndFlows(mp_interfacePressuresToBeReadByBoundaryConditions,mp_interfaceFlowsToBeReadByBoundaryConditions);

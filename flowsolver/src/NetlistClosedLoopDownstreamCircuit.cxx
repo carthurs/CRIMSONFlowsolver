@@ -20,6 +20,8 @@ void NetlistClosedLoopDownstreamCircuit::initialiseCircuit()
     initialiseCircuit_common();
 
     m_numberOfSystemRows = m_numberOfSystemColumns - m_numberOfNodesConnectingToAnotherCircuit;
+
+    createVectorsAndMatricesForCircuitLinearSystem();
 }
 
 bool NetlistClosedLoopDownstreamCircuit::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
@@ -37,6 +39,11 @@ int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromDownstreamT
     return m_circuitInterfaceNodeIndexMapDownstreamToUpstream.at(sharedNodeDownstreamIndex);
 }
 
+int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromUpstreamToDownstreamCircuit(const int sharedNodeUpstreamIndex) const
+{
+    return m_circuitInterfaceNodeIndexMapUpstreamToDownstream.at(sharedNodeUpstreamIndex);
+}
+
 void NetlistClosedLoopDownstreamCircuit::createCircuitDescription()
 {
     // This function takes the read-in netlist circuit description and converts it
@@ -50,21 +57,40 @@ void NetlistClosedLoopDownstreamCircuit::createCircuitDescription()
 
 void NetlistClosedLoopDownstreamCircuit::appendClosedLoopSpecificCircuitDescription()
 {
-	NetlistDownstreamCircuitReader* downcastDownstreamCircuitReader = dynamic_cast<NetlistDownstreamCircuitReader*> (mp_netlistFileReader);
+	NetlistDownstreamCircuitReader* downcastDownstreamCircuitReader = static_cast<NetlistDownstreamCircuitReader*> (mp_netlistFileReader);
     m_numberOfConnectedBoundaryConditions = downcastDownstreamCircuitReader->getNumberOfBoundaryConditionsConnectedTo(m_downstreamCircuitIndex);
     m_connectedCircuitSurfaceIndices = downcastDownstreamCircuitReader->getConnectedCircuitSurfaceIndices(m_downstreamCircuitIndex);
+
+    for (auto upstreamSurfaceIndex = m_connectedCircuitSurfaceIndices.begin(); upstreamSurfaceIndex != m_connectedCircuitSurfaceIndices.end(); upstreamSurfaceIndex++)
+    {
+    	m_setOfAttachedBoundaryConditionIndices.insert(*upstreamSurfaceIndex);
+    }
+
     m_localInterfacingNodes = downcastDownstreamCircuitReader->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
     m_remoteInterfacingNodes = downcastDownstreamCircuitReader->getRemoteBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
     
     // Create a useful map which pairs up the two names for each interface node:
     // the node's index as seen by the downstream circuit of the closed loop,
     // and the nodes' index as seen by the upstream bounday condition circuit.
+    assert(m_circuitInterfaceNodeIndexMapDownstreamToUpstream.size() == 0);
     for (int interfaceNodeIndex = 0; interfaceNodeIndex < m_localInterfacingNodes.size(); interfaceNodeIndex++)
     {
         m_circuitInterfaceNodeIndexMapDownstreamToUpstream.insert(std::make_pair(m_localInterfacingNodes.at(interfaceNodeIndex),
                                                                                 m_remoteInterfacingNodes.at(interfaceNodeIndex)  ));
     }
+    // Also build the inverse of m_circuitInterfaceNodeIndexMapDownstreamToUpstream:
+    assert(m_circuitInterfaceNodeIndexMapUpstreamToDownstream.size() == 0);
+    for (int interfaceNodeIndex = 0; interfaceNodeIndex < m_localInterfacingNodes.size(); interfaceNodeIndex++)
+    {
+        m_circuitInterfaceNodeIndexMapUpstreamToDownstream.insert(std::make_pair(m_remoteInterfacingNodes.at(interfaceNodeIndex),
+        																		m_localInterfacingNodes.at(interfaceNodeIndex)  ));
+    }                                         
     
+}
+
+bool NetlistClosedLoopDownstreamCircuit::boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const
+{
+	return (m_setOfAttachedBoundaryConditionIndices.count(boundaryConditionIndex) == 1);
 }
 
 void NetlistClosedLoopDownstreamCircuit::getMatrixContribution(const double alfi_delt, Mat& matrixFromThisDownstreamCircuit)

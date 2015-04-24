@@ -261,7 +261,7 @@ public:
 	
 	void rebuildCircuitMetadata();
 	bool connectsTo3DDomain() const;
-	void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
+	virtual void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex);
 	virtual bool hasPrescribedFlowAcrossInterface() const;
 	virtual bool hasPrescribedPressureAcrossInterface() const;
 	void setupComponentNeighbourPointers();
@@ -312,6 +312,20 @@ private:
 	void givePrescribedPressureToBoundaryNode(int nodeIndex, double prescribedPressure);
 	void givePrescribedFlowToBoundaryComponent(int componentIndex, double prescribedFlow);
 	std::map<int,boost::shared_ptr<CircuitComponent>> m_mapOfDpDqResistors;
+
+};
+
+class ClosedLoopDownstreamCircuitData : public CircuitData
+{
+public:
+	ClosedLoopDownstreamCircuitData(const int hstep) :
+	CircuitData(hstep)
+	{
+	}
+	void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex)
+	{
+		// Does nothing, as there's no node at 3D interface. \todo this could be tidier, but not essential.
+	}
 
 };
 

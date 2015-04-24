@@ -61,6 +61,13 @@ void multidom_initialise(){
     netlistReader_instance->readAndSplitMultiSurfaceInputFile();
   }
 
+  if (boundaryConditionManager_instance->getNumberOfDownsreamClosedLoopCircuits() > 0)
+  {
+    NetlistReader* closedLoopDownstreamReader_instance = NetlistDownstreamCircuitReader::Instance();
+    closedLoopDownstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
+    closedLoopDownstreamReader_instance->readAndSplitMultiSurfaceInputFile();
+  }
+
   // Assemble the list of global surface numbers and types. This will be used
   // by the boundaryConditionFactory to build the boundary conditions.
   std::vector<std::pair<int,boundary_condition_t>> surfaceList;
@@ -119,5 +126,6 @@ void multidom_finalise(){
   rcrtReader::Instance()->Term();
   controlledCoronaryReader::Instance()->Term();
   NetlistReader::Instance()->Term();
+  NetlistDownstreamCircuitReader::Instance()->Term();
 }
 

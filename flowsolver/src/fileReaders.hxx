@@ -384,19 +384,19 @@ class NetlistDownstreamCircuitReader : public NetlistReader
 public:
 	static NetlistDownstreamCircuitReader* Instance()
 	{
-		if (!instance)
+		if (!downstreamReaderInstance)
 		{
-			instance = new NetlistDownstreamCircuitReader();
+			downstreamReaderInstance = new NetlistDownstreamCircuitReader();
 		}
-		return instance;
+		return downstreamReaderInstance;
 	}
 
 	static void Term()
 	{
-		if (instance!=0)
+		if (downstreamReaderInstance!=0)
 		{
-			delete instance;
-			instance = 0;
+			delete downstreamReaderInstance;
+			downstreamReaderInstance = 0;
 		}
 	}
 
@@ -409,7 +409,7 @@ public:
 	std::set<int> getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(const int boundaryConditionIndex) const; // boundaryConditionIndex here should be as in the solver.inp.
 
 private:
-	static NetlistDownstreamCircuitReader* instance;
+	static NetlistDownstreamCircuitReader* downstreamReaderInstance;
 	std::vector<int> getIndicesOfNodesAt3DInterface();
 	int getNumberOfNetlistSurfaces();
 	void readBoundaryConditionConnectivity();

@@ -7,7 +7,7 @@
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
 NetlistReader* NetlistReader::instance = 0;
-NetlistDownstreamCircuitReader* NetlistDownstreamCircuitReader::instance = 0;
+NetlistDownstreamCircuitReader* NetlistDownstreamCircuitReader::downstreamReaderInstance = 0;
 
 
 // Reads a file line, returns a successful-read bool.

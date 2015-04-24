@@ -84,6 +84,7 @@ class abstractBoundaryCondition;
     int getNumberOfRCRSurfaces(){return m_NumberOfRCRSurfaces;}
     int getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
     int getNumberOfControlledCoronarySurfaces(){return m_NumberOfControlledCoronarySurfaces;}
+    int getNumberOfDownsreamClosedLoopCircuits(){return m_numLoopClosingNetlistCircuits;}
 
     void setNumberOfRCRSurfaces(const int numGRCRSrfs);
     void setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs);

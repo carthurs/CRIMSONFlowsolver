@@ -12,6 +12,8 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::initialiseCircuit()
     initialiseCircuit_common();
 
     m_numberOfSystemRows = m_numberOfSystemColumns - m_numberOfNodesConnectingToAnotherCircuit;
+
+    createVectorsAndMatricesForCircuitLinearSystem();
 }
 
 bool NetlistBoundaryCircuitWhenDownstreamCircuitsExist::kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const
@@ -42,9 +44,9 @@ std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::comp
     int counterToDetectErrors = 0;
     for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
     {
-        if (downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(m_IndexOfThisNetlistLPN))
+        if (downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(m_surfaceIndex))
         {
-            returnValue = downstreamSubcircuit->lock()->getImplicitCoefficients(m_IndexOfThisNetlistLPN);
+            returnValue = downstreamSubcircuit->lock()->getImplicitCoefficients(m_IndexOfThisNetlistLPNInInputFile);
             counterToDetectErrors++;
         }
     }
@@ -73,5 +75,5 @@ int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfaceF
 
 int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getCircuitIndex() const
 {
-    return m_IndexOfThisNetlistLPN;
+    return m_IndexOfThisNetlistLPNInInputFile;
 }

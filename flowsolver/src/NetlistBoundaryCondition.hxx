@@ -28,20 +28,20 @@ public:
 	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep, maxsurf, nstep),
 	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
 	{
-		m_IndexOfThisNetlistLPN = numberOfInitialisedNetlistLPNs;
+		m_IndexOfThisNetlistLPNInInputFile = numberOfInitialisedNetlistLPNs;
 		if (m_netlistDownstreamLoopClosingSubcircuits.size() > 0)
 		{
-			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt, m_netlistDownstreamLoopClosingSubcircuits));
+			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, thisIsARestartedSimulation, alfi_local, delt, m_netlistDownstreamLoopClosingSubcircuits));
 		}
 		else
 		{
-			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPN, thisIsARestartedSimulation, alfi_local, delt));
+			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, thisIsARestartedSimulation, alfi_local, delt));
 		}
 		// initialiseModel();
 		numberOfInitialisedNetlistLPNs++;
 	}
 
-	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPN;}
+	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPNInInputFile;}
  	// void updpressure_n1_withflow(){}
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
 	void updateLPN(const int timestepNumber);
@@ -62,7 +62,7 @@ public:
 
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
 	void initialiseModel();
-	int m_IndexOfThisNetlistLPN;
+	int m_IndexOfThisNetlistLPNInInputFile;
 
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 protected:

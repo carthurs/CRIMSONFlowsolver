@@ -224,6 +224,7 @@ void boundaryConditionManager::markClosedLoopLinearSystemsForRebuilding()
   for (auto downstreamLoopClosingSubsection = m_netlistDownstreamLoopClosingSubsections.begin(); downstreamLoopClosingSubsection != m_netlistDownstreamLoopClosingSubsections.end(); downstreamLoopClosingSubsection++)
   {
     (*downstreamLoopClosingSubsection)->markLinearSystemAsNeedingBuildingAgain();
+    (*downstreamLoopClosingSubsection)->markLinearSystemAsNeedingUpdatingAgain();
   }
 }
 
@@ -519,6 +520,12 @@ void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
       downcastNetlist->initialiseAtStartOfTimestep();
     }
   }
+
+  // Now initialise any closed loop downstream subsections for this timestep:
+  for (auto downstreamCircuit = m_netlistDownstreamLoopClosingSubsections.begin(); downstreamCircuit != m_netlistDownstreamLoopClosingSubsections.end(); downstreamCircuit++)
+  {
+    (*downstreamCircuit)->initialiseAtStartOfTimestep();
+  }
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPInitialiseLPNAtStartOfTimestep_netlist()
@@ -582,9 +589,11 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
     {
       
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
+      std::cout << "just got implicit dp_dq: " << implicitCoeffs_toBeFilled[writeLocation];
       // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       
       implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = (*iterator)->getHop();
+      std::cout << " and H operator: " << implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] << std::endl;
       
       writeLocation++;
     }
@@ -751,7 +760,7 @@ extern "C" void callCPPHaveBoundaryConditionTypesChanged(int& boundaryConditionT
 
 void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
 {
-  writeNetlistFlowsPressuresAndVolumes(m_boundaryConditions, m_nextTimestepWrite_netlistBoundaries_start);
+  writeNetlistFlowsPressuresAndVolumes(m_boundaryConditions, m_netlistDownstreamLoopClosingSubsections, m_nextTimestepWrite_netlistBoundaries_start);
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()

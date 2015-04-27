@@ -994,7 +994,7 @@ void NetlistCircuit::createVectorsAndMatricesForCircuitLinearSystem()
 
   errFlag = VecCreate(PETSC_COMM_SELF,&m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecSetType(m_solutionVector,VECSEQ);CHKERRABORT(PETSC_COMM_SELF,errFlag); // Make m_solutionVector a VECSEQ sequential vector
-  errFlag = VecSetSizes(m_solutionVector,m_numberOfSystemRows,m_numberOfSystemRows); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+  errFlag = VecSetSizes(m_solutionVector,m_numberOfSystemColumns,m_numberOfSystemColumns); CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecZeroEntries(m_solutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecAssemblyBegin(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
   errFlag = VecAssemblyEnd(m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);

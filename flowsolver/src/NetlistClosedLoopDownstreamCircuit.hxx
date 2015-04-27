@@ -32,16 +32,18 @@ public:
 
 	void getMatrixContribution(const double alfi_delt, Mat& matrixFromThisDownstreamCircuit);
 	void getRHSContribution(const int timestepNumber, Vec& rhsFromThisDownstreamCircuit);
+	void initialiseAtStartOfTimestep();
 
 	int getCircuitIndex() const;
 
-	std::set<int> getPressureNodesConnectingToUpstreamCircuits() {return m_pressureNodesWhichConnectToBoundaryCircuits};
+	std::set<int> getPressureNodesConnectingToUpstreamCircuits() {return m_pressureNodesWhichConnectToBoundaryCircuits;};
 
 	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const;
 	int convertInterfaceNodeIndexFromUpstreamToDownstreamCircuit(const int sharedNodeUpstreamIndex) const;
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 
 	void getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(std::vector<int>& downstreamNodeIndices, std::vector<int>& upstreamNodeIndices, std::vector<int>& upstreamSurfaceIndices) const;
+	void giveNodesAndComponentsTheirUpdatedValuesFromSolutionVector(const std::vector<PetscScalar> solutionEntriesForDownstreamCircuit);
 
 	~NetlistClosedLoopDownstreamCircuit()
 	{

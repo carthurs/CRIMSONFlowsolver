@@ -38,6 +38,7 @@ public:
 		}
 
 		m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep = false;
+		m_linearSystemAlreadyUpdatedOnThisTimestep = false;
 		m_systemSize = 0;
 
 		mp_NetlistCircuit = boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> (new NetlistClosedLoopDownstreamCircuit(m_hstep, m_thisIsARestartedSimulation, m_alfi, m_delt));
@@ -49,13 +50,20 @@ public:
 		terminatePetscArrays();
 	}
 
+	void initialiseAtStartOfTimestep();
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 	void setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBC);
 	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt);
+	void buildAndSolveLinearSystemForUpdateIfNotYetDone(const int timestepNumber, const double alfi_delt);
+	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 	std::pair<double,double> getImplicitCoefficients(const int boundaryConditionIndex) const;
 	void markLinearSystemAsNeedingBuildingAgain();
+	void markLinearSystemAsNeedingUpdatingAgain();
+	std::vector<PetscScalar> getSolutionVectorEntriesCorrespondingToSurface(const int surfaceIndex) const;
+	void giveNodesAndComponentsTheirUpdatedValues();
 private:
 	bool m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep;
+	bool m_linearSystemAlreadyUpdatedOnThisTimestep;
 	const int m_index;
 	const int m_hstep;
 	const double m_delt;
@@ -73,6 +81,7 @@ private:
 	int m_nextBlankSystemMatrixRow; // zero-indexed
 	int m_nextBlankSystemMatrixColumn; // zero-indexed
 	int m_nextBlankRhsRow; // zero-indexed
+	std::pair<int,int> m_boundsOfDownstreamSolutionDataInSolutionVector;
 
 	std::queue<Mat> m_matrixContributionsFromUpstreamBoundaryConditions;
 	std::queue<Vec> m_rhsContributionsFromUpstreamBoundaryConditions;
@@ -85,18 +94,21 @@ private:
 	std::vector<int> m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
 
 	std::map<int,std::set<int>> m_mapOfSurfaceIndicesConnectedToEachDownstreamInterfaceNode;
+	std::map<int,std::pair<int,int>> m_mapOfSurfaceIndicesToRangeOfEntriesInSolutionVector;
 
 	void terminatePetscArrays();
 	void initialisePetscArrayNames();
 	void createVectorsAndMatricesForCircuitLinearSystem();
 	int getCircuitIndexFromSurfaceIndex(const int upstreamSurfaceIndex) const;
 	void generateCircuitInterfaceNodeData();
+	void buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt);
 
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);
 	void appendKirchoffLawsAtInterfacesBetweenCircuits();
 	void enforcePressureEqualityBetweenDuplicatedNodes();
 	void writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset);
+	std::vector<PetscScalar> extractContiguousRangeFromPetscVector(Vec vector, const int firstEntry, const int lastEntry) const;
 
 	// std::queue has no clear() method, so we use this instead:
 	template <typename Type>

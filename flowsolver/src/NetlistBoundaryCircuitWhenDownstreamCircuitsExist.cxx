@@ -26,6 +26,50 @@ bool NetlistBoundaryCircuitWhenDownstreamCircuitsExist::kirchoffEquationAtNodeDe
     return nodeInterfacesWithDownstreamCircuit;
 }
 
+void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::updateLPN(const int timestepNumber)
+{
+	// Call the downstream circuit(s?) and tell them to contact each NetlistBoundaryCondition to get
+    // their contributions to the (closed loop)-type matrix, build the full matrix and solve it
+    // 
+    // Internally, that call will only do anything if this is the first boundary condition to try to computeImplicitCoefficients
+    // this time. Otherwise, the system state has already been computed, and we don't need to do anything
+	for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
+    {
+        downstreamSubcircuit->lock()->buildAndSolveLinearSystemForUpdateIfNotYetDone(timestepNumber, m_delt);
+    }
+
+    // Extract & get the m_solutionVector for just this circuit back from the big downstream
+    // loop:
+    assert(m_netlistDownstreamLoopClosingSubcircuits.size() <= 1); // \todo Actually, we can't have a given boundary circuit connecting to more than one downstream loop-closing circuit - otherwise which one do we ask for the solution vector here? Therefore, need to remove support for having more than one downstream loop-closing circuit per boundary.
+    std::vector<PetscScalar> dataForSolutionVectorForThisSurface = m_netlistDownstreamLoopClosingSubcircuits.at(0).lock()->getSolutionVectorEntriesCorrespondingToSurface(m_surfaceIndex);
+    // Put the raw data we just received into m_solutionVector, so that
+    // the function calls below can find it where they expect it to be:
+    PetscErrorCode errFlag;
+    for (int vectorEntry = 0; vectorEntry < dataForSolutionVectorForThisSurface.size(); vectorEntry++)
+    {
+    	PetscScalar valueToInsert = dataForSolutionVectorForThisSurface.at(vectorEntry);
+    	errFlag = VecSetValue(m_solutionVector,vectorEntry,valueToInsert,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+
+    // Get the updated nodal pressures:
+    giveNodesTheirPressuresFromSolutionVector();
+
+    // Get the updated component flows:
+    giveComponentsTheirFlowsFromSolutionVector();
+
+    // Get the updated volumes:
+    giveComponentsTheirVolumesFromSolutionVector();
+
+    // Call the downstream subsections, and tell them to get their own parts of the full closed loop
+    // solution vector, and extract the information to give to the components of the circuit
+    // (pressure, flows, volumes)
+    //
+    // We don't need to do a solve in this case, because the solve has just been done above in this function.
+    // \todo this is .at(0) because there should only ever be one of these (see the comment with the assert guardin this, above).
+	m_netlistDownstreamLoopClosingSubcircuits.at(0).lock()->giveNodesAndComponentsTheirUpdatedValues();
+
+}
+
 std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
     // Call the downstream circuit(s?) and tell them to contact each NetlistBoundaryCondition to get

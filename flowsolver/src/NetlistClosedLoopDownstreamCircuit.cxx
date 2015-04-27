@@ -88,6 +88,35 @@ void NetlistClosedLoopDownstreamCircuit::appendClosedLoopSpecificCircuitDescript
     
 }
 
+void NetlistClosedLoopDownstreamCircuit::initialiseAtStartOfTimestep()
+{
+    // Idetify and construct the appropriate subcircuits for this timestep
+    rebuildCircuitMetadata();
+    cycleToSetHistoryPressuresFlowsAndVolumes();
+}
+
+void NetlistClosedLoopDownstreamCircuit::giveNodesAndComponentsTheirUpdatedValuesFromSolutionVector(const std::vector<PetscScalar> solutionEntriesForDownstreamCircuit)
+{
+    // This method receives the subvector from the closed loop m_solutionVector which corresponds
+    // to just this downstream circuit.
+    //
+    // It then passes this data to its circuit components (pressures, flows, volumes).
+    
+    // Put the raw data we just received into m_solutionVector, so that
+    // the function calls below can find it where they expect it to be:
+    PetscErrorCode errFlag;
+    for (int vectorEntry = 0; vectorEntry < solutionEntriesForDownstreamCircuit.size(); vectorEntry++)
+    {
+        PetscScalar valueToInsert = solutionEntriesForDownstreamCircuit.at(vectorEntry);
+        errFlag = VecSetValue(m_solutionVector,vectorEntry,valueToInsert,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    }
+
+    giveNodesTheirPressuresFromSolutionVector();
+    giveComponentsTheirFlowsFromSolutionVector();
+    giveComponentsTheirVolumesFromSolutionVector();
+    // giveComponentsTheirProposedVolumesFromSolutionVector();
+}
+
 bool NetlistClosedLoopDownstreamCircuit::boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const
 {
 	return (m_setOfAttachedBoundaryConditionIndices.count(boundaryConditionIndex) == 1);

@@ -19,6 +19,7 @@ public:
 	void getRHSContribution(const int timestepNumber, Vec& rhsFromThisBoundary);
 	int getLocationOf3DInterfaceFlowColumnInLinearSystem() const;
 	int getCircuitIndex() const;
+	void updateLPN(const int timestepNumber);
 protected:
 private:
 	std::set<int> m_pressureNodesWhichConnectToDownstreamCircuits;

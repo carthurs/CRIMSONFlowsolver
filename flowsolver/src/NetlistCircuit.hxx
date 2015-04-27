@@ -67,6 +67,7 @@ public:
 	boost::shared_ptr<CircuitData> getCircuitDescription();
 	int getNumberOfDegreesOfFreedom() const;
 	std::vector<int> getNodesWithDeferredKirchoffEquations() const;
+	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPNInInputFile;}
 
 	virtual void createCircuitDescription();
 	virtual ~NetlistCircuit()
@@ -81,7 +82,7 @@ public:
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 
 	virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
-	void updateLPN(const int timestepNumber);
+	virtual void updateLPN(const int timestepNumber);
 
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);

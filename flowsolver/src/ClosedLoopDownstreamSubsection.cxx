@@ -308,39 +308,39 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
             m_boundsOfDownstreamSolutionDataInSolutionVector.first = m_nextBlankSystemMatrixColumn;
             m_boundsOfDownstreamSolutionDataInSolutionVector.second = m_nextBlankSystemMatrixColumn + toZeroIndexing(numberOfColumns);
 
-            std::cout << "location 2: first numRows entries in the underlying array for closed loop " << ":" << std::endl;
-            for (int jj=0; jj<numberOfRows;jj++)
-            {
-                for (int ii=0; ii<numberOfColumns; ii++)
-                {
-                    std::cout << transposedRawDataInMatrix[ii + jj*numberOfRows] << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << "numberOfRows: " << numberOfRows << std::endl;
-            for (int ii = 0; ii < numberOfRows; ii++)
-            {
-                std::cout << globalRowIndices[ii] << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "numberOfColumns: " << numberOfColumns << std::endl;
-            for (int ii = 0; ii < numberOfColumns; ii++)
-            {
-                std::cout << globalColumnIndices[ii] << " ";
-            }
-            std::cout << std::endl;
-            PetscInt numberOfRows_tmp;
-            PetscInt numberOfColumns_tmp;
-            errFlag = MatGetSize(m_closedLoopSystemMatrix, &numberOfRows_tmp, &numberOfColumns_tmp); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            std::cout << "rows: " << numberOfRows_tmp << " columns: " << numberOfColumns_tmp << std::endl;
+            // std::cout << "location 2: first numRows entries in the underlying array for closed loop " << ":" << std::endl;
+            // for (int jj=0; jj<numberOfRows;jj++)
+            // {
+            //     for (int ii=0; ii<numberOfColumns; ii++)
+            //     {
+            //         std::cout << transposedRawDataInMatrix[ii + jj*numberOfRows] << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+            // std::cout << "numberOfRows: " << numberOfRows << std::endl;
+            // for (int ii = 0; ii < numberOfRows; ii++)
+            // {
+            //     std::cout << globalRowIndices[ii] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "numberOfColumns: " << numberOfColumns << std::endl;
+            // for (int ii = 0; ii < numberOfColumns; ii++)
+            // {
+            //     std::cout << globalColumnIndices[ii] << " ";
+            // }
+            // std::cout << std::endl;
+            // PetscInt numberOfRows_tmp;
+            // PetscInt numberOfColumns_tmp;
+            // errFlag = MatGetSize(m_closedLoopSystemMatrix, &numberOfRows_tmp, &numberOfColumns_tmp); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // std::cout << "rows: " << numberOfRows_tmp << " columns: " << numberOfColumns_tmp << std::endl;
 
             errFlag = MatSetValues(m_closedLoopSystemMatrix, numberOfRows, globalRowIndices, numberOfColumns, globalColumnIndices, transposedRawDataInMatrix, INSERT_VALUES);
             delete[] transposedRawDataInMatrix;
 
-            std::cout << "Location 3: System matrix for closed loop " << m_index << ":" << std::endl;
-            errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // std::cout << "Location 3: System matrix for closed loop " << m_index << ":" << std::endl;
+            // errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             m_nextBlankSystemMatrixRow += numberOfRows;
             m_nextBlankSystemMatrixColumn += numberOfColumns;
@@ -361,10 +361,10 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     // Add the Kirchoff laws for the connecting nodes
     appendKirchoffLawsAtInterfacesBetweenCircuits();
 
-    std::cout << "Location 4: System matrix for closed loop " << m_index << ":" << std::endl;
-    errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "Location 4: System matrix for closed loop " << m_index << ":" << std::endl;
+    // errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
     // At the interface between an "upstream" boundary condition and the "downstream" 
     // closed loop circuit, the interfacing nodes are duplicated (as they belong to both
@@ -376,8 +376,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    std::cout << "System matrix for closed loop " << m_index << ":" << std::endl;
-    errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "System matrix for closed loop " << m_index << ":" << std::endl;
+    // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
     // LU factor m_closedLoopSystemMatrix
     errFlag = MatLUFactor(m_closedLoopSystemMatrix,NULL,NULL,NULL);CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -825,14 +825,14 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
             int column = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(currentUpstreamCircuitIndex) + toZeroIndexing(upstreamNodeIndex);
             assert(column < m_systemSize);
             errFlag = MatSetValue(m_closedLoopSystemMatrix,m_nextBlankSystemMatrixRow,column,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            std::cout << "just wrote to row " << m_nextBlankSystemMatrixRow << " and column " << column << " in enforcePressure." << std::endl;
+            // std::cout << "just wrote to row " << m_nextBlankSystemMatrixRow << " and column " << column << " in enforcePressure." << std::endl;
         }
 
-        MAGICAL_DEBUG();
-        std::cout << "Location (see above MAGICAL_DEBUG): System matrix for closed loop " << m_index << ":" << std::endl;
-        errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // MAGICAL_DEBUG();
+        // std::cout << "Location (see above MAGICAL_DEBUG): System matrix for closed loop " << m_index << ":" << std::endl;
+        // errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
         // The entry for the downstream (i.e. local) copy of the pressure node:
         {
@@ -841,15 +841,15 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
             int column = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.back() + toZeroIndexing(downstreamNodeIndex);
             assert(column < m_systemSize);
             errFlag = MatSetValue(m_closedLoopSystemMatrix,m_nextBlankSystemMatrixRow,column,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            std::cout << "just wrote to row " << m_nextBlankSystemMatrixRow << " and column " << column << " in enforcePressure." << std::endl;
+            // std::cout << "just wrote to row " << m_nextBlankSystemMatrixRow << " and column " << column << " in enforcePressure." << std::endl;
         }
         m_nextBlankSystemMatrixRow++;
 
         MAGICAL_DEBUG();
-        std::cout << "Location (see above MAGICAL_DEBUG): System matrix for closed loop " << m_index << ":" << std::endl;
-        errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // std::cout << "Location (see above MAGICAL_DEBUG): System matrix for closed loop " << m_index << ":" << std::endl;
+        // errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+        // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     } 
 }
 

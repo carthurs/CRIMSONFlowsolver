@@ -126,7 +126,7 @@ void PureZeroDDriver::iter_step()
 			assert(!isnan(allNetlistBoundaryImplicitCoeffs.at(ii).second));
 			m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
 		}
-		// std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
+		std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
 	}
 	m_zeroDDomainLPN->setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(m_pressuresOrFlowsAtBoundaries);
 	m_zeroDDomainLPN->setDpDqResistances(allNetlistBoundaryImplicitCoeffs,m_pressuresOrFlowsAtBoundaries);
@@ -135,10 +135,10 @@ void PureZeroDDriver::iter_step()
 
 	std::vector<double> boundaryPressures = m_zeroDDomainLPN->getBoundaryPressures();
 	std::vector<double> boundaryFlows = m_zeroDDomainLPN->getBoundaryFlows();
-	// for (int ii =0; ii<3; ii++)
-	// {
-	// 	std::cout << "Gave Boundary Conditions: " << ii << " " << boundaryPressures.at(ii) << " " << boundaryFlows.at(ii) << std::endl;
-	// }
+	for (int ii =0; ii<3; ii++)
+	{
+		std::cout << "Gave Boundary Conditions: " << ii << " " << boundaryPressures.at(ii) << " " << boundaryFlows.at(ii) << std::endl;
+	}
 	placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(boundaryPressures, boundaryFlows);
 
 }

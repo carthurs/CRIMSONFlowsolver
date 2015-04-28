@@ -61,6 +61,8 @@ public:
 	void markLinearSystemAsNeedingUpdatingAgain();
 	std::vector<PetscScalar> getSolutionVectorEntriesCorrespondingToSurface(const int surfaceIndex) const;
 	void giveNodesAndComponentsTheirUpdatedValues();
+	double getComputedInterfacePressure(const int boundaryConditionIndex) const;
+	double getComputedInterfaceFlow(const int boundaryConditionIndex) const;
 private:
 	bool m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep;
 	bool m_linearSystemAlreadyUpdatedOnThisTimestep;
@@ -85,7 +87,8 @@ private:
 
 	std::queue<Mat> m_matrixContributionsFromUpstreamBoundaryConditions;
 	std::queue<Vec> m_rhsContributionsFromUpstreamBoundaryConditions;
-	std::map<int,int> m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems;
+	std::map<int,int> m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
+	std::map<int,int> m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
 
 	std::vector<boost::shared_ptr<NetlistCircuit>> m_upstreamBoundaryConditionCircuits;
 	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> mp_NetlistCircuit;

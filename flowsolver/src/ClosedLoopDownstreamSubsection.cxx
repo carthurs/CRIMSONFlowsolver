@@ -99,6 +99,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     clearQueue(m_matrixContributionsFromUpstreamBoundaryConditions);
     clearQueue(m_rhsContributionsFromUpstreamBoundaryConditions);
     m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.clear();
+    m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems.clear();
 
     // Call the upstream boundary conditions to ask for their contributions to the (closed loop)-type
     // linear system:
@@ -128,16 +129,6 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         m_mapOfSurfaceIndicesToRangeOfEntriesInSolutionVector.insert(std::make_pair(surfaceIndex, solutionVectorRange));
         firstEntryBelongingToCurrentSurfaceInSolutionVector += numberOfColumns;
 
-        // Get the offsets which tell us where we will find the implicit coefficient conributions in 
-        // the solved linear system.
-        //
-        // The first entry of the pair will be the boundary condition index (NOT the surface index from solver.inp). This
-        // indexing is internal to the code, starts at zero, and numbers the netlist surfaces consecuitvely.
-        int upstreamCircuitIndex = downcastCircuit->getCircuitIndex();
-        int threeDInterfaceFlowLocationColumn = downcastCircuit->getLocationOf3DInterfaceFlowColumnInLinearSystem();
-        m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceFlowLocationColumn));
-
-
         m_systemSize += downcastCircuit->getNumberOfDegreesOfFreedom();
     }
 
@@ -145,6 +136,23 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     
     // Get the final system size by adding in the number of degrees of freedom in the downstream closed loop subsection circuit.
     m_systemSize += mp_NetlistCircuit->getNumberOfDegreesOfFreedom();
+
+    // Get the offsets which tell us where we will find the implicit coefficient conributions in 
+    // the solved linear system.
+    //
+    // The first entry of the pair will be the boundary condition index (NOT the surface index from solver.inp). This
+    // indexing is internal to the code, starts at zero, and numbers the netlist surfaces consecuitvely.
+    for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
+    {
+        boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
+        const int upstreamCircuitIndex = downcastCircuit->getCircuitIndex();
+        
+        const int threeDInterfaceFlowLocationColumn = downcastCircuit->getLocationOf3DInterfaceFlowColumnInLinearSystem();
+        m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceFlowLocationColumn));
+        
+        const int threeDInterfacePressureLocationColumn = downcastCircuit->getLocationOf3DInterfacePressureColumnInLinearSystem();
+        m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfacePressureLocationColumn));
+    }
 
     createVectorsAndMatricesForCircuitLinearSystem();
 
@@ -864,7 +872,7 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     // The linear system is solved, so we can just extract the necessary values from the resulting solution
     // vector and inverted system matrix:
     int rowToGet[] = {m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex)};
-    int numberOfValuesToGet = 1;
+    const int numberOfValuesToGet = 1;
     PetscScalar valueFromInverseOfSystemMatrix;
     
     std::pair<double,double> implicitCoefficientsToReturn;
@@ -884,6 +892,38 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     implicitCoefficientsToReturn.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
     
     return implicitCoefficientsToReturn;
+}
+
+double ClosedLoopDownstreamSubsection::getComputedInterfacePressure(const int boundaryConditionIndex) const
+{
+    PetscErrorCode errFlag;
+    // assert the linear system has been solved:
+    assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
+
+    const int numberOfValuesToGet = 1;
+    const int vectorIndexOf3DInterfacePressure = m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems.at(boundaryConditionIndex) + 
+                                        m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
+
+    PetscScalar pressureFromRHS;
+    errFlag = VecGetValues(m_closedLoopRHS,numberOfValuesToGet,&vectorIndexOf3DInterfacePressure,&pressureFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    return pressureFromRHS;
+}
+
+double ClosedLoopDownstreamSubsection::getComputedInterfaceFlow(const int boundaryConditionIndex) const
+{
+    PetscErrorCode errFlag;
+    // assert the linear system has been solved:
+    assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
+
+    const int numberOfValuesToGet = 1;
+    const int vectorIndexOf3DInterfaceFlow = m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.at(boundaryConditionIndex) + 
+                                        m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
+
+    PetscScalar flowFromRHS;
+    errFlag = VecGetValues(m_closedLoopRHS,numberOfValuesToGet,&vectorIndexOf3DInterfaceFlow,&flowFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    return flowFromRHS;
 }
 
 void ClosedLoopDownstreamSubsection::createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill)

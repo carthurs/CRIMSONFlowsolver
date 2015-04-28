@@ -84,7 +84,7 @@ public:
 	virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 	virtual void updateLPN(const int timestepNumber);
 
-	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	virtual std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 	int getNumberOfHistoryPressures() const;
 protected:
@@ -183,6 +183,7 @@ private:
 	void terminatePetscArrays();
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 	virtual bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
+	void findLinearSystemIndicesOf3DInterfacePressureAndFlow();
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 

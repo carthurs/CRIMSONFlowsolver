@@ -1360,6 +1360,69 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
     errFlag = MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
+void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
+{   
+    // Find the location of the 3D interface pressure in the linear system:
+    columnIndexOf3DInterfacePressureInLinearSystem.clear();
+    if (mp_circuitData->hasPrescribedPressureAcrossInterface())
+    {
+        const int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfTrackedVolumes;
+        int ll=0;
+        for (auto prescribedPressureNode=mp_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=mp_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
+        {
+            // Annotate the location of the 3D interface pressure in the linear system
+            // (regardless of whether it is computed or prescribed)
+            if (prescribedPressureNode->second->isAtBoundary())
+            {
+                columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
+                break;
+            }
+            ll++;
+        }
+    }
+    else // The pressure at the 3D interface is computed, not imposed, on this time-step:
+    {
+        for (auto pressureNode = mp_circuitData->mapOfPressureNodes.begin(); pressureNode != mp_circuitData->mapOfPressureNodes.end(); pressureNode++)
+        {
+            if (pressureNode->second->isAtBoundary())
+            {
+                columnIndexOf3DInterfacePressureInLinearSystem.push_back(pressureNode->second->getIndex());
+                break;
+            }
+        }
+    }
+
+    // Find the location of the 3D interface flow in the linear system:
+    columnIndexOf3DInterfaceFlowInLinearSystem.clear();
+    if (mp_circuitData->hasPrescribedFlowAcrossInterface())
+    {
+        const  int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfTrackedVolumes +
+                                        mp_circuitData->numberOfPrescribedPressures +
+                                        m_numberOfHistoryPressures;
+
+        int ll=0;
+        for (auto prescribedFlowComponent=mp_circuitData->mapOfPrescribedFlowComponents.begin(); prescribedFlowComponent!=mp_circuitData->mapOfPrescribedFlowComponents.end(); prescribedFlowComponent++)
+        {
+            if (prescribedFlowComponent->second->connectsToNodeAtInterface())
+            {
+                columnIndexOf3DInterfaceFlowInLinearSystem.push_back(ll + tempIndexingShift);
+                break;
+            }
+            ll++;
+        }
+    }
+    else // The flow at the 3D interface is computed, not imposed, on this time-step:
+    {
+        for (auto component = mp_circuitData->mapOfComponents.begin(); component != mp_circuitData->mapOfComponents.end(); component++)
+        {
+            if (component->second->connectsToNodeAtInterface())
+            {
+                columnIndexOf3DInterfaceFlowInLinearSystem.push_back(component->second->getIndex());
+            }
+        }
+    }
+}
+
 void NetlistCircuit::assembleRHS(const int timestepNumber)
 {
 
@@ -1370,7 +1433,8 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
     historyFlowsInSubcircuit = flowsInSubcircuit;
     historyVolumesInSubcircuit = volumesInSubcircuit;
 
-    columnIndexOf3DInterfacePressureInLinearSystem.clear(); // dummy value, to be replaced!
+    // columnIndexOf3DInterfacePressureInLinearSystem.clear(); // dummy value, to be replaced!
+    findLinearSystemIndicesOf3DInterfacePressureAndFlow();
 
     // int nextPressurePointerIndex = 0; // for tracking which pressure pointer to use - useful when there are multiple pressure interfaces to other domains / subcircuits
 
@@ -1396,9 +1460,9 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
             // We only do this if the netlist is in Dirichlet BC mode:
             if (mp_circuitData->hasPrescribedPressureAcrossInterface())
             {
-              columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
               double* pressurePointerToSet = pressure_n_ptrs.at(prescribedPressureNode->second->prescribedPressurePointerIndex);
               errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+              // columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
               // nextPressurePointerIndex++;
             }
         }
@@ -1406,12 +1470,6 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
         {
               throw std::runtime_error("Unknown pressure prescription value in Netlist.");
         }
-
-        // // get the column index for the pressure in the linear system:
-        // if (prescribedPressureNode->second->isAtBoundary())
-        // {
-        //   columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
-        // }
 
         ll++;
       }
@@ -1480,7 +1538,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
       }
     // Prescribed Flows:
     tempIndexingShift += m_numberOfHistoryPressures;
-    columnIndexOf3DInterfaceFlowInLinearSystem.clear();
+    // columnIndexOf3DInterfaceFlowInLinearSystem.clear();
     // int nextFlowPointerIndex = 0;
     // Scoping unit to include the second counter ll in the for loop, without having ll in-scope after the loop finishes:
     {
@@ -1491,13 +1549,13 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
            {
             if (mp_circuitData->hasPrescribedFlowAcrossInterface())
             {
-              columnIndexOf3DInterfaceFlowInLinearSystem.push_back(ll + tempIndexingShift);
               double* flowPointerToSet = flow_n_ptrs.at(prescribedFlowComponent->second->prescribedFlowPointerIndex);
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
               double threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
               assert(!isnan(threeDFlowValue));
               // Give the (possibly sign-corrected) flow to the linear system:
               errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+              // columnIndexOf3DInterfaceFlowInLinearSystem.push_back(ll + tempIndexingShift);
               // nextFlowPointerIndex++;
             }
            }

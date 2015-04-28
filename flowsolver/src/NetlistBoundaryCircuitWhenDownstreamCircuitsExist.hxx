@@ -18,6 +18,8 @@ public:
 	void getMatrixContribution(const double alfi_delt, Mat& matrixFromThisBoundary);
 	void getRHSContribution(const int timestepNumber, Vec& rhsFromThisBoundary);
 	int getLocationOf3DInterfaceFlowColumnInLinearSystem() const;
+	int getLocationOf3DInterfacePressureColumnInLinearSystem() const;
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	int getCircuitIndex() const;
 	void updateLPN(const int timestepNumber);
 protected:

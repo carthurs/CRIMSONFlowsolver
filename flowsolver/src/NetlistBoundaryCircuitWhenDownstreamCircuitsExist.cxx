@@ -100,6 +100,61 @@ std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::comp
     return returnValue;
 }
 
+std::pair<boundary_data_t,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
+{
+	// Call the downstream circuit(s?) and tell them to contact each NetlistBoundaryCondition to get
+    // their contributions to the (closed loop)-type matrix, build the full matrix and solve it
+    // 
+    // Internally, that call will only do anything if this is the first boundary condition to try to computeImplicitCoefficients
+    // this time. Otherwise, the system state has already been computed, and we don't need to do anything
+    for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
+    {
+        downstreamSubcircuit->lock()->buildAndSolveLinearSystemIfNotYetDone(timestepNumber, m_delt);
+    }
+
+    // Call the downstream circuits to get the pressure of flow that they computed for this
+	// boundary interface:
+	std::pair<boundary_data_t,double> returnValue;
+	if (mp_circuitData->hasPrescribedFlowAcrossInterface()) // This boundary condition is receiving flow and returning pressure (Neumann mode if NetlistSubcircuit is a boundary condition)
+	{
+	    int counterToDetectErrors = 0;
+	    for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
+	    {
+	        if (downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(m_surfaceIndex))
+	        {
+	            m_interfacePressure = downstreamSubcircuit->lock()->getComputedInterfacePressure(m_IndexOfThisNetlistLPNInInputFile);
+	            counterToDetectErrors++;
+	        }
+	    }
+	    assert(counterToDetectErrors == 1);
+
+		returnValue = std::make_pair(Boundary_Pressure,m_interfacePressure);
+	}
+	else if (mp_circuitData->hasPrescribedPressureAcrossInterface()) // This boundary condition is receiving pressure and returning flow (Dirichlet mode if NetlistSubcircuit is a boundary condition)
+	{
+		int counterToDetectErrors = 0;
+	    for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
+	    {
+	        if (downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(m_surfaceIndex))
+	        {
+	            m_interfaceFlow = downstreamSubcircuit->lock()->getComputedInterfaceFlow(m_IndexOfThisNetlistLPNInInputFile);
+	            counterToDetectErrors++;
+	        }
+	    }
+	    assert(counterToDetectErrors == 1);
+	    
+		returnValue = std::make_pair(Boundary_Flow,m_interfaceFlow);
+	}
+	else
+	{
+		std::stringstream errorMessage;
+		errorMessage << "EE: Internal error when computing flow or pressure to pass to zero-D domain replacement." << std::endl;
+		throw std::logic_error(errorMessage.str());
+	}
+
+	return returnValue;
+}
+
 void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getMatrixContribution(const double alfi_delt, Mat& matrixFromThisBoundary)
 {
     generateLinearSystemWithoutFactorisation(alfi_delt);
@@ -115,6 +170,11 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getRHSContribution(const
 int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfaceFlowColumnInLinearSystem() const
 {
     return columnIndexOf3DInterfaceFlowInLinearSystem.at(0);
+}
+
+int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfacePressureColumnInLinearSystem() const
+{
+	return columnIndexOf3DInterfacePressureInLinearSystem.at(0);
 }
 
 int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getCircuitIndex() const

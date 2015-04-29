@@ -119,3 +119,13 @@ boost::shared_ptr<NetlistCircuit> NetlistBoundaryCondition::getNetlistCircuit()
 {
     return mp_NetlistCircuit;
 }
+
+bool NetlistBoundaryCondition::hasPrescribedPressureAcross3DInterface() const
+{
+    return mp_NetlistCircuit->hasPrescribedPressureAcross3DInterface();
+}
+
+bool NetlistBoundaryCondition::hasPrescribedFlowAcross3DInterface() const
+{
+    return mp_NetlistCircuit->hasPrescribedFlowAcross3DInterface();
+}

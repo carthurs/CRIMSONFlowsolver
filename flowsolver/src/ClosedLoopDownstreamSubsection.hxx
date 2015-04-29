@@ -87,8 +87,10 @@ private:
 
 	std::queue<Mat> m_matrixContributionsFromUpstreamBoundaryConditions;
 	std::queue<Vec> m_rhsContributionsFromUpstreamBoundaryConditions;
-	std::map<int,int> m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
-	std::map<int,int> m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
+	std::map<int,int> m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
+	std::map<int,int> m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
+	std::map<int,int> m_indicesOf3DInterfaceComputedPressuresInUpstreamSolutionVectors; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
+	std::map<int,int> m_columnIndicesOf3DInterfacePrescribedPressuresInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
 
 	std::vector<boost::shared_ptr<NetlistCircuit>> m_upstreamBoundaryConditionCircuits;
 	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> mp_NetlistCircuit;

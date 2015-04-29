@@ -68,6 +68,9 @@ public:
 	int getNumberOfDegreesOfFreedom() const;
 	std::vector<int> getNodesWithDeferredKirchoffEquations() const;
 	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPNInInputFile;}
+	
+	bool hasPrescribedPressureAcross3DInterface() const;
+	bool hasPrescribedFlowAcross3DInterface() const;
 
 	virtual void createCircuitDescription();
 	virtual ~NetlistCircuit()
@@ -163,8 +166,10 @@ protected:
 	int m_numberOfTrackedVolumes;
 	std::vector<int> columnMap;
 	// int columnMapSize;//\todo check this is used
-	std::vector<int> columnIndexOf3DInterfaceFlowInLinearSystem;
-	std::vector<int> columnIndexOf3DInterfacePressureInLinearSystem;
+	std::vector<int> m_columnOf3DInterfacePrescribedPressureInLinearSystem;
+	std::vector<int> m_locationOf3DInterfaceComputedPressureInSolutionVector;
+	std::vector<int> m_columnOf3DInterfacePrescribedFlowInLinearSystem;
+	std::vector<int> m_locationOf3DInterfaceComputedFlowInSolutionVector;
 
 	std::vector<int> m_nodesWithKirchoffEquationsDeferredToClosedLoop;
 

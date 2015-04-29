@@ -98,8 +98,10 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     terminatePetscArrays(); // This does nothing if the arrays don't yet exist. \todo consider refactoring the matrix creation/termination.
     clearQueue(m_matrixContributionsFromUpstreamBoundaryConditions);
     clearQueue(m_rhsContributionsFromUpstreamBoundaryConditions);
-    m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.clear();
-    m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems.clear();
+    m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors.clear();
+    m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.clear();
+    m_indicesOf3DInterfaceComputedPressuresInUpstreamSolutionVectors.clear();
+    m_columnIndicesOf3DInterfacePrescribedPressuresInUpstreamLinearSystems.clear();
 
     // Call the upstream boundary conditions to ask for their contributions to the (closed loop)-type
     // linear system:
@@ -146,12 +148,22 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     {
         boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
         const int upstreamCircuitIndex = downcastCircuit->getCircuitIndex();
+
+        const int threeDInterfaceComputedFlowLocation = downcastCircuit->getLocationOf3DInterfaceComputedFlowInSolutionVector();
+        m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceComputedFlowLocation));
+        if (downcastCircuit->hasPrescribedFlowAcross3DInterface())
+        {
+            const int threeDInterfaceFlowPrescriptionLocationColumn = downcastCircuit->getColumnOf3DInterfacePrescribedFlowInLinearSystem();
+            m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceFlowPrescriptionLocationColumn));
+        }
         
-        const int threeDInterfaceFlowLocationColumn = downcastCircuit->getLocationOf3DInterfaceFlowColumnInLinearSystem();
-        m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceFlowLocationColumn));
-        
-        const int threeDInterfacePressureLocationColumn = downcastCircuit->getLocationOf3DInterfacePressureColumnInLinearSystem();
-        m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfacePressureLocationColumn));
+        const int threeDInterfacePressureLocation = downcastCircuit->getLocationOf3DInterfaceComputedPressureInSolutionVector();
+        m_indicesOf3DInterfaceComputedPressuresInUpstreamSolutionVectors.insert(std::make_pair(upstreamCircuitIndex,threeDInterfacePressureLocation));
+        if (downcastCircuit->hasPrescribedPressureAcross3DInterface())
+        {
+            const int threeDInterfacePressurePrescriptionLocationColumn = downcastCircuit->getColumnOf3DInterfacePrescribedPressureInLinearSystem();
+            m_columnIndicesOf3DInterfacePrescribedPressuresInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfacePressurePrescriptionLocationColumn));
+        }
     }
 
     createVectorsAndMatricesForCircuitLinearSystem();
@@ -220,31 +232,31 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
             createContiguousIntegerRange(m_nextBlankSystemMatrixColumn, numberOfColumns, globalColumnIndices);
 
 
-            std::cout << "first numRows entries in the underlying array for upstream circuit " << upstreamCircuit << ":" << std::endl;
-            for (int jj=0; jj<numberOfRows;jj++)
-            {
-                for (int ii=0; ii<numberOfColumns; ii++)
-                {
-                    std::cout << transposedRawDataInNextMatrixToAddToSystem[ii + jj*numberOfColumns] << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << "numberOfRows: " << numberOfRows << std::endl;
-            for (int ii = 0; ii < numberOfRows; ii++)
-            {
-                std::cout << globalRowIndices[ii] << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "numberOfColumns: " << numberOfColumns << std::endl;
-            for (int ii = 0; ii < numberOfColumns; ii++)
-            {
-                std::cout << globalColumnIndices[ii] << " ";
-            }
-            std::cout << std::endl;
-            PetscInt numberOfRows_tmp;
-            PetscInt numberOfColumns_tmp;
-            errFlag = MatGetSize(m_closedLoopSystemMatrix, &numberOfRows_tmp, &numberOfColumns_tmp); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-            std::cout << "rows: " << numberOfRows_tmp << " columns: " << numberOfColumns_tmp << std::endl;
+            // std::cout << "first numRows entries in the underlying array for upstream circuit " << upstreamCircuit << ":" << std::endl;
+            // for (int jj=0; jj<numberOfRows;jj++)
+            // {
+            //     for (int ii=0; ii<numberOfColumns; ii++)
+            //     {
+            //         std::cout << transposedRawDataInNextMatrixToAddToSystem[ii + jj*numberOfColumns] << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+            // std::cout << "numberOfRows: " << numberOfRows << std::endl;
+            // for (int ii = 0; ii < numberOfRows; ii++)
+            // {
+            //     std::cout << globalRowIndices[ii] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "numberOfColumns: " << numberOfColumns << std::endl;
+            // for (int ii = 0; ii < numberOfColumns; ii++)
+            // {
+            //     std::cout << globalColumnIndices[ii] << " ";
+            // }
+            // std::cout << std::endl;
+            // PetscInt numberOfRows_tmp;
+            // PetscInt numberOfColumns_tmp;
+            // errFlag = MatGetSize(m_closedLoopSystemMatrix, &numberOfRows_tmp, &numberOfColumns_tmp); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            // std::cout << "rows: " << numberOfRows_tmp << " columns: " << numberOfColumns_tmp << std::endl;
 
             errFlag = MatSetValues(m_closedLoopSystemMatrix, numberOfRows, globalRowIndices, numberOfColumns, globalColumnIndices, transposedRawDataInNextMatrixToAddToSystem, INSERT_VALUES);
             delete[] transposedRawDataInNextMatrixToAddToSystem;
@@ -845,7 +857,7 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
         }
         m_nextBlankSystemMatrixRow++;
 
-        MAGICAL_DEBUG();
+        // MAGICAL_DEBUG();
         // std::cout << "Location (see above MAGICAL_DEBUG): System matrix for closed loop " << m_index << ":" << std::endl;
         // errFlag = MatAssemblyBegin(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
         // errFlag = MatAssemblyEnd(m_closedLoopSystemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -877,8 +889,8 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     
     std::pair<double,double> implicitCoefficientsToReturn;
 
-    int columnIndexOf3DInterfaceFlow = m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.at(boundaryConditionIndex) + 
-                                        m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
+    int columnIndexOf3DInterfaceFlow = m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.at(boundaryConditionIndex) + 
+                                        m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
 
     errFlag = MatGetValues(m_inverseOfClosedLoopMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlow,&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     implicitCoefficientsToReturn.first = valueFromInverseOfSystemMatrix;
@@ -896,32 +908,38 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
 
 double ClosedLoopDownstreamSubsection::getComputedInterfacePressure(const int boundaryConditionIndex) const
 {
+    // Note that in some cases, this "computed interface pressure" will actually have been prescribed,
+    // and so the value this function returns is not strictly "computed", but rather, just imposed
+    // and passed through the linear system without change.
     PetscErrorCode errFlag;
     // assert the linear system has been solved:
     assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
 
     const int numberOfValuesToGet = 1;
-    const int vectorIndexOf3DInterfacePressure = m_columnIndicesOf3DInterfacePressuresInUpstreamLinearSystems.at(boundaryConditionIndex) + 
+    const int vectorIndexOf3DInterfacePressure = m_indicesOf3DInterfaceComputedPressuresInUpstreamSolutionVectors.at(boundaryConditionIndex) + 
                                         m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
 
     PetscScalar pressureFromRHS;
-    errFlag = VecGetValues(m_closedLoopRHS,numberOfValuesToGet,&vectorIndexOf3DInterfacePressure,&pressureFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,&vectorIndexOf3DInterfacePressure,&pressureFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
     return pressureFromRHS;
 }
 
 double ClosedLoopDownstreamSubsection::getComputedInterfaceFlow(const int boundaryConditionIndex) const
 {
+    // Note that in some cases, this "computed interface flow" will actually have been prescribed,
+    // and so the value this function returns is not strictly "computed", but rather, just imposed
+    // and passed through the linear system without change.
     PetscErrorCode errFlag;
     // assert the linear system has been solved:
     assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
 
     const int numberOfValuesToGet = 1;
-    const int vectorIndexOf3DInterfaceFlow = m_columnIndicesOf3DInterfaceFlowsInUpstreamLinearSystems.at(boundaryConditionIndex) + 
+    const int vectorIndexOf3DInterfaceFlow = m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors.at(boundaryConditionIndex) + 
                                         m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
 
     PetscScalar flowFromRHS;
-    errFlag = VecGetValues(m_closedLoopRHS,numberOfValuesToGet,&vectorIndexOf3DInterfaceFlow,&flowFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,&vectorIndexOf3DInterfaceFlow,&flowFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
     return flowFromRHS;
 }

@@ -53,6 +53,9 @@ public:
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 	boost::shared_ptr<NetlistCircuit> getNetlistCircuit();
 
+	bool hasPrescribedPressureAcross3DInterface() const;
+	bool hasPrescribedFlowAcross3DInterface() const;
+
 	~NetlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;

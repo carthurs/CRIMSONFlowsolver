@@ -167,14 +167,24 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getRHSContribution(const
     rhsFromThisBoundary = m_RHS;
 }
 
-int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfaceFlowColumnInLinearSystem() const
+int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfaceComputedFlowInSolutionVector() const
 {
-    return columnIndexOf3DInterfaceFlowInLinearSystem.at(0);
+    return m_locationOf3DInterfaceComputedFlowInSolutionVector.at(0);
 }
 
-int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfacePressureColumnInLinearSystem() const
+int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getLocationOf3DInterfaceComputedPressureInSolutionVector() const
 {
-	return columnIndexOf3DInterfacePressureInLinearSystem.at(0);
+	return m_locationOf3DInterfaceComputedPressureInSolutionVector.at(0);
+}
+
+int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getColumnOf3DInterfacePrescribedPressureInLinearSystem() const
+{
+    return m_columnOf3DInterfacePrescribedPressureInLinearSystem.at(0);
+}
+
+int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getColumnOf3DInterfacePrescribedFlowInLinearSystem() const
+{
+    return m_columnOf3DInterfacePrescribedFlowInLinearSystem.at(0);
 }
 
 int NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getCircuitIndex() const

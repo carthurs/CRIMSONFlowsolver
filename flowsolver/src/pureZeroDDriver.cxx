@@ -127,6 +127,7 @@ void PureZeroDDriver::iter_step()
 			m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
 		}
 		std::cout << "Gave 0D domain: " << ii << " " << m_pressuresOrFlowsAtBoundaries.at(ii).first << " " << m_pressuresOrFlowsAtBoundaries.at(ii).second << std::endl;
+		std::cout << "Computed implicit coeff at surface " << ii << ": " << allNetlistBoundaryImplicitCoeffs.at(ii).first << " " << allNetlistBoundaryImplicitCoeffs.at(ii).second << std::endl;
 	}
 	m_zeroDDomainLPN->setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(m_pressuresOrFlowsAtBoundaries);
 	m_zeroDDomainLPN->setDpDqResistances(allNetlistBoundaryImplicitCoeffs,m_pressuresOrFlowsAtBoundaries);

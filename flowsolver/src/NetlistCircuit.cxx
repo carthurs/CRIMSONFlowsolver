@@ -1356,14 +1356,15 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
      errFlag = MatAssemblyBegin(m_systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
      errFlag = MatAssemblyEnd(m_systemMatrix,MAT_FINAL_ASSEMBLY); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
-    std::cout << "System matrix for surface " << m_surfaceIndex << ":" << std::endl;
-    errFlag = MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "System matrix for surface " << m_surfaceIndex << ":" << std::endl;
+    // errFlag = MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
 void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
 {   
     // Find the location of the 3D interface pressure in the linear system:
-    columnIndexOf3DInterfacePressureInLinearSystem.clear();
+    m_columnOf3DInterfacePrescribedPressureInLinearSystem.clear();
+    m_locationOf3DInterfaceComputedPressureInSolutionVector.clear();
     if (mp_circuitData->hasPrescribedPressureAcrossInterface())
     {
         const int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfTrackedVolumes;
@@ -1374,26 +1375,25 @@ void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
             // (regardless of whether it is computed or prescribed)
             if (prescribedPressureNode->second->isAtBoundary())
             {
-                columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
-                break;
+                m_columnOf3DInterfacePrescribedPressureInLinearSystem.push_back(ll + tempIndexingShift);
             }
             ll++;
         }
     }
-    else // The pressure at the 3D interface is computed, not imposed, on this time-step:
+
+    // Get the locations of the computed 3D interface pressure (which will just be a copy of an imposition in some cases):    
+    for (auto pressureNode = mp_circuitData->mapOfPressureNodes.begin(); pressureNode != mp_circuitData->mapOfPressureNodes.end(); pressureNode++)
     {
-        for (auto pressureNode = mp_circuitData->mapOfPressureNodes.begin(); pressureNode != mp_circuitData->mapOfPressureNodes.end(); pressureNode++)
+        if (pressureNode->second->isAtBoundary())
         {
-            if (pressureNode->second->isAtBoundary())
-            {
-                columnIndexOf3DInterfacePressureInLinearSystem.push_back(pressureNode->second->getIndex());
-                break;
-            }
+            m_locationOf3DInterfaceComputedPressureInSolutionVector.push_back(toZeroIndexing(pressureNode->second->getIndex()));
         }
     }
+    
 
     // Find the location of the 3D interface flow in the linear system:
-    columnIndexOf3DInterfaceFlowInLinearSystem.clear();
+    m_columnOf3DInterfacePrescribedFlowInLinearSystem.clear();
+    m_locationOf3DInterfaceComputedFlowInSolutionVector.clear();
     if (mp_circuitData->hasPrescribedFlowAcrossInterface())
     {
         const  int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfTrackedVolumes +
@@ -1405,22 +1405,23 @@ void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
         {
             if (prescribedFlowComponent->second->connectsToNodeAtInterface())
             {
-                columnIndexOf3DInterfaceFlowInLinearSystem.push_back(ll + tempIndexingShift);
-                break;
+                m_columnOf3DInterfacePrescribedFlowInLinearSystem.push_back(ll + tempIndexingShift);
             }
             ll++;
         }
     }
-    else // The flow at the 3D interface is computed, not imposed, on this time-step:
+
+    // Get the locations of the computed 3D interface flow (which will just be a copy of an imposition in some cases):    
+    for (auto component = mp_circuitData->mapOfComponents.begin(); component != mp_circuitData->mapOfComponents.end(); component++)
     {
-        for (auto component = mp_circuitData->mapOfComponents.begin(); component != mp_circuitData->mapOfComponents.end(); component++)
+        if (component->second->connectsToNodeAtInterface())
         {
-            if (component->second->connectsToNodeAtInterface())
-            {
-                columnIndexOf3DInterfaceFlowInLinearSystem.push_back(component->second->getIndex());
-            }
+            const int index = toZeroIndexing(component->second->getIndex()) + mp_circuitData->numberOfPressureNodes + m_numberOfHistoryPressures;
+            m_locationOf3DInterfaceComputedFlowInSolutionVector.push_back(index);
         }
     }
+
+    // std::cout << "sizes are: " << columnIndexOf3DInterfacePressureInLinearSystem.size() << " " << columnIndexOf3DInterfaceFlowInLinearSystem.size() << std::endl;
 }
 
 void NetlistCircuit::assembleRHS(const int timestepNumber)
@@ -1516,7 +1517,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
     //    }
     // }
     // History Pressures
-    tempIndexingShift = tempIndexingShift + mp_circuitData->numberOfPrescribedPressures;
+    tempIndexingShift += mp_circuitData->numberOfPrescribedPressures;
     // for(int ll=0; ll<m_numberOfHistoryPressures; ll++)
 
     // Scoping unit to include the second counter lll in the for loop, without having lll in-scope after the loop finishes:
@@ -1878,11 +1879,11 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
     
     std::pair<double,double> implicitCoefficientsToReturn;
 
-    errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&m_columnOf3DInterfacePrescribedFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     implicitCoefficientsToReturn.first = valueFromInverseOfSystemMatrix;
 
     PetscScalar valueFromRHS;
-    errFlag = VecGetValues(m_RHS,numberOfValuesToGet,&columnIndexOf3DInterfaceFlowInLinearSystem.at(0),&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    errFlag = VecGetValues(m_RHS,numberOfValuesToGet,&m_columnOf3DInterfacePrescribedFlowInLinearSystem.at(0),&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
     PetscScalar valueFromSolutionVector;
     errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -1926,4 +1927,14 @@ bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const dou
   // }
 
   return thereAreNegativeVolumes;
+}
+
+bool NetlistCircuit::hasPrescribedPressureAcross3DInterface() const
+{
+    return mp_circuitData->hasPrescribedPressureAcrossInterface();
+}
+
+bool NetlistCircuit::hasPrescribedFlowAcross3DInterface() const
+{
+    return mp_circuitData->hasPrescribedFlowAcrossInterface();
 }

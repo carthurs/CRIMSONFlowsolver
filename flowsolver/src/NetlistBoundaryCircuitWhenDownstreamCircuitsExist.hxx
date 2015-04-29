@@ -17,8 +17,10 @@ public:
 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 	void getMatrixContribution(const double alfi_delt, Mat& matrixFromThisBoundary);
 	void getRHSContribution(const int timestepNumber, Vec& rhsFromThisBoundary);
-	int getLocationOf3DInterfaceFlowColumnInLinearSystem() const;
-	int getLocationOf3DInterfacePressureColumnInLinearSystem() const;
+	int getLocationOf3DInterfaceComputedFlowInSolutionVector() const;
+	int getLocationOf3DInterfaceComputedPressureInSolutionVector() const;
+	int getColumnOf3DInterfacePrescribedPressureInLinearSystem() const;
+	int getColumnOf3DInterfacePrescribedFlowInLinearSystem() const;
 	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	int getCircuitIndex() const;
 	void updateLPN(const int timestepNumber);

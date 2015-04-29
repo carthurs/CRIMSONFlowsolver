@@ -18,16 +18,20 @@ void VolumeTrackingPressureChamber::passPressureToStartNode()
 
 bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
 {
-	bool hasNonnegativePressureGradient = (startNode->getPressure() >= endNode->getPressure());
+	// We use a tolerance on these floating-point comparisons here
+	// because the errors in the netlist linear system solves
+	// for the boundary conditions can be of order 1e-9.
+	const int floatingPointTolerance = 1e-16;
+	bool hasNonnegativePressureGradient = (startNode->getPressure() - endNode->getPressure() >= 0.0 - floatingPointTolerance);
 	bool hasForwardFlow;
 	// We use 1e-16 because it's essentially zero. Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
 	if (m_connectsToNodeAtInterface)
 	{
-		hasForwardFlow = (m_signForPrescribed3DInterfaceFlow*flow >= 1e-16);
+		hasForwardFlow = (m_signForPrescribed3DInterfaceFlow*flow >= floatingPointTolerance);
 	}
 	else
 	{
-		hasForwardFlow = (flow >= 1e-16);
+		hasForwardFlow = (flow >= floatingPointTolerance);
 	}
 
 	return (hasNonnegativePressureGradient || hasForwardFlow);

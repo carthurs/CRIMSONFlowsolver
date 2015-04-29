@@ -34,9 +34,9 @@ bool NetlistClosedLoopDownstreamCircuit::kirchoffEquationAtNodeDeferredToInterfa
     return nodeInterfacesWithDownstreamCircuit;
 }
 
-int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const
+int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int surfaceIndex, const int sharedNodeDownstreamIndex) const
 {
-    return m_circuitInterfaceNodeIndexMapDownstreamToUpstream.at(sharedNodeDownstreamIndex);
+    return m_circuitInterfaceNodeIndexMapDownstreamToUpstream.at(surfaceIndex, sharedNodeDownstreamIndex);
 }
 
 int NetlistClosedLoopDownstreamCircuit::convertInterfaceNodeIndexFromUpstreamToDownstreamCircuit(const int sharedNodeUpstreamIndex) const
@@ -75,8 +75,9 @@ void NetlistClosedLoopDownstreamCircuit::appendClosedLoopSpecificCircuitDescript
     assert(m_circuitInterfaceNodeIndexMapDownstreamToUpstream.size() == 0);
     for (int interfaceNodeIndex = 0; interfaceNodeIndex < m_localInterfacingNodes.size(); interfaceNodeIndex++)
     {
-        m_circuitInterfaceNodeIndexMapDownstreamToUpstream.insert(std::make_pair(m_localInterfacingNodes.at(interfaceNodeIndex),
-                                                                                m_remoteInterfacingNodes.at(interfaceNodeIndex)  ));
+        m_circuitInterfaceNodeIndexMapDownstreamToUpstream.insert(m_connectedCircuitSurfaceIndices.at(interfaceNodeIndex),
+                                                                      m_localInterfacingNodes.at(interfaceNodeIndex),
+                                                                      m_remoteInterfacingNodes.at(interfaceNodeIndex)  );
     }
     // Also build the inverse of m_circuitInterfaceNodeIndexMapDownstreamToUpstream:
     assert(m_circuitInterfaceNodeIndexMapUpstreamToDownstream.size() == 0);

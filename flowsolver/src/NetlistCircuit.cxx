@@ -561,7 +561,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     mp_netlistFileReader = NetlistReader::Instance();
 
     // Make the appropriate class to store the 3D domain replacement circuit data:
-    mp_circuitData = boost::shared_ptr<Netlist3DDomainReplacementCircuitData> (new Netlist3DDomainReplacementCircuitData(m_hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
+    // mp_circuitData = boost::shared_ptr<Netlist3DDomainReplacementCircuitData> (new Netlist3DDomainReplacementCircuitData(m_hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
 
     // we'll have a resistor for each netlist used as a boundary condition, plus one VolumeTrackingPressureChamber:
     mp_circuitData->numberOfComponents = 2*m_numberOfNetlistsUsedAsBoundaryConditions + 1;

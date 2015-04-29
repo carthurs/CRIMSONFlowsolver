@@ -3,6 +3,35 @@
 
 #include "NetlistCircuit.hxx"
 
+class twoDimensionalMap
+{
+public:
+	void insert(const int key1, const int key2, const int mappedValue)
+	{
+		std::map<int,int> toInsert;
+		toInsert.insert(std::make_pair(key2, mappedValue));
+		m_data.insert(std::make_pair(key1, toInsert));
+	}
+
+	int at(const int key1, const int key2) const
+	{
+		return m_data.at(key1).at(key2);
+	}
+
+	int size() const
+	{
+		int sizeToReturn = 0;
+		for (auto firstKeyLevel = m_data.begin(); firstKeyLevel != m_data.end(); firstKeyLevel++)
+		{
+			sizeToReturn += firstKeyLevel->second.size();
+		}
+		return sizeToReturn;
+	}
+
+private:
+	std::map<int,std::map<int,int>> m_data;
+};
+
 class NetlistClosedLoopDownstreamCircuit : public NetlistCircuit
 {
 public:
@@ -38,7 +67,7 @@ public:
 
 	std::set<int> getPressureNodesConnectingToUpstreamCircuits() {return m_pressureNodesWhichConnectToBoundaryCircuits;};
 
-	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int sharedNodeDownstreamIndex) const;
+	int convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(const int surfaceIndex, const int sharedNodeDownstreamIndex) const;
 	int convertInterfaceNodeIndexFromUpstreamToDownstreamCircuit(const int sharedNodeUpstreamIndex) const;
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 
@@ -59,7 +88,7 @@ private:
 	std::vector<int> m_remoteInterfacingNodes;
 
 	std::set<int> m_pressureNodesWhichConnectToBoundaryCircuits;
-	std::map<int,int> m_circuitInterfaceNodeIndexMapDownstreamToUpstream;
+	twoDimensionalMap m_circuitInterfaceNodeIndexMapDownstreamToUpstream;
 	std::map<int,int> m_circuitInterfaceNodeIndexMapUpstreamToDownstream;
 
 	std::set<int> m_setOfAttachedBoundaryConditionIndices;

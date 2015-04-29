@@ -632,7 +632,7 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircui
                 // Write the part of the Kirchoff equation for this node (multipleIncidentCurrentNode)
                 // which corresponds to the components incident at multipleIndidentCurrentNode in
                 // the upstream boundary condition:
-                int multipleIncidentCurrentNode = mp_NetlistCircuit->convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(*downstreamInterfaceNode);
+                int multipleIncidentCurrentNode = mp_NetlistCircuit->convertInterfaceNodeIndexFromDownstreamToUpstreamCircuit(upstreamSurfaceIndex,*downstreamInterfaceNode);
                 writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(upstreamCircuitData, multipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_upstreamCircuit, columnOffsetOfCurrentUpstreamCircuit);
             }
         }

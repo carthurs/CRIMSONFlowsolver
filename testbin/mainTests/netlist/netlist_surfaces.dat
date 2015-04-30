@@ -1,0 +1,51 @@
+# List of components in a format similar to that for netlist.
+# Hash-commented lines are ignored.
+### Begin first netlist boundary condition model
+# Number of Components
+3
+# Component 1 type (resistor here):
+r
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2
+3.815889462107935e-01
+# Component 2 type (capacitor here):
+c
+# Component 2 details:
+2
+3 
+1.885526988247284e-01
+# Component 3 type:
+r
+# Component 3 details:
+2
+4
+1.740713618386789e+00
+# Number of prescribed pressure nodes:
+2
+# Indices of nodes with prescribed pressures:
+3
+4
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.0
+0.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.0e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+4
+# Initial pressures at the pressure nodes:
+1 10585.0
+2 10585.0
+3 0.0e0
+4 0.0e0
+# Index of node at 3D interface:
+1

@@ -47,3 +47,5 @@ testbin/mainTests/restart/restart.0.1
 testbin/mainTests/restart/memLS_NS.log
 testbin/mytestmallocdebug
 testbin/mytestvalgrind
+crimson_flowsolver.sublime-project
+crimson_flowsolver.sublime-workspace

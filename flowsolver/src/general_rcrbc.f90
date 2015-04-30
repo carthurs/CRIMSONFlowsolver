@@ -153,7 +153,7 @@ contains
 
     subroutine ComputeImplicitCoefficients(stepn,y)
 
-        use phcommonvars
+        use phcommonvars, only: nshg, ndof, alfi, nsrflistGRCR, numGRCRSrfs, Delt, one, MAXSURF
         use boundarymodule, only: GetFlowQ
         implicit none
 

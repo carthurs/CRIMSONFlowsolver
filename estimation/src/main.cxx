@@ -166,9 +166,7 @@ int main(int argc, char * argv[]) {
       for (int kk = 1; kk <= inpdat.nstep[0]; kk++)
       {
         pureZeroDDriver.iter_init();
-        
         pureZeroDDriver.iter_step();
-        
         pureZeroDDriver.iter_finalize();
         multidom_iter_finalise();
       }

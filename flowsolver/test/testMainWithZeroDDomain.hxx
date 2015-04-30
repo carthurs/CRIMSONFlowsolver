@@ -146,6 +146,7 @@
 					pureZeroDDriver.iter_init();
 					pureZeroDDriver.iter_step();
 					pureZeroDDriver.iter_finalize();
+					multidom_iter_finalise();
 				}
 
 				pureZeroDDriver.finalize();

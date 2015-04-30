@@ -651,121 +651,6 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircui
     }
 }
 
-// // Never used this one - it's not even completely written!
-// void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircuits()
-// {
-//     std::vector<int> downstreamNodeIndices;
-//     std::vector<int> upstreamNodeIndices;
-//     std::vector<int> upstreamSurfaceIndices;
-//     mp_NetlistCircuit->getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(downstreamNodeIndices, upstreamNodeIndices, upstreamSurfaceIndices);
-
-//     // Loop over the nodes in the downstream circuit which connect to upstream circuit(s), writing the associated equations:
-//     std::set<int> nodesInterfacingWithUpstreamCircuits;
-//     nodesInterfacingWithUpstreamCircuits = mp_NetlistCircuit->getPressureNodesConnectingToUpstreamCircuits;
-//     for (auto downstreamCircuitInterfaceNode = nodesInterfacingWithUpstreamCircuits.begin(); downstreamCircuitInterfaceNode != nodesInterfacingWithUpstreamCircuits.end(); downstreamCircuitInterfaceNode++)
-//     {
-//         // A set to store the discovered upstream surfaces:
-//         std::set<int> indicesOfConnectionsToThisDownstreamNode;
-//         // Get the list of upstream circuits (by surface index) which connect to this node
-//         for (int connectionIndex = 0; connectionIndex < upstreamSurfaceIndices.size(); connectionIndex++)
-//         {
-//             // If the upstream circuit connects to this node, remember it, so we can include it in the
-//             // next Kirchoff equation that we write:
-//             bool upstreamCircuitConnectsToThisDownstreamNode = (*downstreamCircuitInterfaceNode == downstreamNodeIndices.at(connectionIndex));
-//             if (upstreamCircuitConnectsToThisDownstreamNode)
-//             {
-//                 indicesOfConnectionsToThisDownstreamNode.insert(connectionIndex);
-//             }
-//         }
-//         // Write the contribution to the Kirchoff equation for each upstream circuit
-//         // that's connected to the present downstream node:
-//         for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
-//         {
-//             bool upstreamCircuitConnectsToThisDownstreamNode = (indicesOfConnectionsToThisDownstreamNode.count() == 1);
-//         }
-//     }
-// }
-
-// // This one didn't quite work - when there was more than one upstream circuit connected to the same downstream node
-// void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircuits()
-// {
-//     // Loop over the upstream boundary conditions which form part of this closed loop circuit:
-//     {
-//         auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin();
-//         int upstreamCircuitIndex = 0;
-//         while (upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end())
-//         {
-//             boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastUpstreamCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
-            
-//             // Get the circuit data for this boundary (so we can check the sign for
-//             // the Kirchoff equation by seeing if a node is the start node or end
-//             // node of a component):
-//             boost::shared_ptr<CircuitData> upstreamCircuitData = downcastUpstreamCircuit->getCircuitDescription();
-
-//             // Get the deferred (i.e. interfacing-with-closed-loop-downstream-subsection) multiple incident current nodes for this boundary
-//             std::set<int> multipleIncidentCurrentNodes;
-//             {
-//                 std::vector<int> multipleIncidentCurrentNodes_vector = downcastUpstreamCircuit->getNodesWithDeferredKirchoffEquations();
-//                 // Convert it to a set, for convenience later (this is a C++11 range-based for loop):
-//                 for (const int& node : multipleIncidentCurrentNodes_vector)
-//                     multipleIncidentCurrentNodes.insert(node);
-//             }
-
-//             // If the interface nodes in the downstream or upstream circuits would just be 
-//             // a singleton node if it weren't for the connecting to the closed loop
-//             // (i.e. if an interface node would not have a Kirchoff equation without
-//             // the closed loop), then no Kirchoff equation will have been "deferred"
-//             // by one of the subcircuits (i.e. multipleIncidentCurrentNodes will
-//             // not have an entry for any such nodes).
-//             //
-//             // We must identify if this is the case, and append any therefore-missing
-//             // nodes to multipleIncidentCurrentNodes before proceeding:
-//             std::vector<int> downstreamNodeIndices;
-//             std::vector<int> upstreamNodeIndices;
-//             std::vector<int> upstreamSurfaceIndices;
-//             mp_NetlistCircuit->getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(downstreamNodeIndices, upstreamNodeIndices, upstreamSurfaceIndices);
-//             for (int interfaceIndex = 0; interfaceIndex < upstreamSurfaceIndices.size(); interfaceIndex++)
-//             {
-//                 if(downcastUpstreamCircuit->surfaceIndexMatches(upstreamSurfaceIndices.at(interfaceIndex)))
-//                 {
-//                     multipleIncidentCurrentNodes.insert(upstreamNodeIndices.at(interfaceIndex));
-//                 }
-//             }
-
-
-//             // Get the column where the data block for the current upstream boundarycondition circuit
-//             // begins in the big matrix, m_closedLoopSystemMatrix
-//             int columnOffsetOfCurrentUpstreamCircuit = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(upstreamCircuitIndex);
-//             // Loop the multiple incident current nodes:
-//             for (auto multipleIncidentCurrentNode = multipleIncidentCurrentNodes.begin(); multipleIncidentCurrentNode != multipleIncidentCurrentNodes.end(); multipleIncidentCurrentNode++)
-//             {
-//                 int numberOfHistoryPressures_upstreamCircuit = downcastUpstreamCircuit->getNumberOfHistoryPressures();
-
-//                 // Write the part of the Kirchoff equation for this node (multipleIncidentCurrentNode)
-//                 // which corresponds to the components incident at multipleIndidentCurrentNode in
-//                 // the upstream boundary condition:
-//                 writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(upstreamCircuitData, *multipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_upstreamCircuit, columnOffsetOfCurrentUpstreamCircuit);
-
-//                 // Write the part of the Kirchoff equation for this node (multipleIncidentCurrentNode)
-//                 // which corresponds to the components incident at multipleIndidentCurrentNode in
-//                 // the downstream closed loop subsection circuit:
-//                 int numberOfHistoryPressures_downstreamCircuit = mp_NetlistCircuit->getNumberOfHistoryPressures();
-//                 int upstreamIndexOfMultipleIncidentCurrentNode = mp_NetlistCircuit->convertInterfaceNodeIndexFromUpstreamToDownstreamCircuit(*multipleIncidentCurrentNode);
-//                 int columnOffsetOfDownstreamClosedLoopCircuit = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.back();
-//                 boost::shared_ptr<CircuitData> downstreamCircuitData = mp_NetlistCircuit->getCircuitDescription();
-//                 writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(downstreamCircuitData, upstreamIndexOfMultipleIncidentCurrentNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_downstreamCircuit, columnOffsetOfDownstreamClosedLoopCircuit);
-                
-//                 // Move to the next available row in the matrix that isn't used for an equation yet:
-//                 m_nextBlankSystemMatrixRow++;
-//             }
-
-//             upstreamCircuitIndex++;
-//             // Loop control code:
-//             upstreamBCCircuit++;
-//         }
-//     }
-// }
-
 void ClosedLoopDownstreamSubsection::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
 {
     mp_NetlistCircuit->writePressuresFlowsAndVolumes(nextTimestepWrite_start);
@@ -776,16 +661,16 @@ void ClosedLoopDownstreamSubsection::writePartOfKirchoffEquationIntoClosedLoopSy
     PetscErrorCode errFlag;
     // Do the equations for the nodes with multiple incident currents (just the part for the upstream boundary condition circuit first...
     // we'll append the currents for the components in the downstream closed loop circuit in a moment...)
-    for (int ll=0; ll < circuitData->numberOfComponents; ll++)
+    for (int component = 0; component < circuitData->numberOfComponents; component++)
     {
-      int column = ll + circuitData->numberOfPressureNodes + numberOfHistoryPressures + columnOffset;
-      bool foundMultipleIncidentCurrentsForEndNode = (circuitData->components.at(ll)->endNode->getIndex() == multipleIncidentCurrentNode); 
+      int column = component + circuitData->numberOfPressureNodes + numberOfHistoryPressures + columnOffset;
+      bool foundMultipleIncidentCurrentsForEndNode = (circuitData->components.at(component)->endNode->getIndex() == multipleIncidentCurrentNode); 
       if (foundMultipleIncidentCurrentsForEndNode)
       {
         errFlag = MatSetValue(m_closedLoopSystemMatrix,row,column,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
       }
 
-      bool foundMultipleIncidentCurrentsForStartNode = (circuitData->components.at(ll)->startNode->getIndex() == multipleIncidentCurrentNode);
+      bool foundMultipleIncidentCurrentsForStartNode = (circuitData->components.at(component)->startNode->getIndex() == multipleIncidentCurrentNode);
       if (foundMultipleIncidentCurrentsForStartNode)
       {
         errFlag = MatSetValue(m_closedLoopSystemMatrix,row,column,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);

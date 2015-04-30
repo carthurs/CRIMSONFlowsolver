@@ -1285,7 +1285,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
       }
     }
 
-     // Do the equations for the nodes with multiple incident currents:
+     // Do the equations for the nodes with multiple incident currents (Kirchoff):
      for (int mm = 0; mm < m_numberOfMultipleIncidentCurrentNodes; mm++)
      {
        for (int ll=0; ll<mp_circuitData->numberOfComponents; ll++)

@@ -228,3 +228,97 @@ TEST_F(testMain, checkNetlistHeartModel) {
   flowHistResult = FlowHistReader.getReadFileData(2,6);
   EXPECT_NEAR(-62.2259850634413,flowHistResult,1e-7);
 }
+
+TEST_F(testMain, checkClosedLoopWithHeart) {
+  setSimDirectory("mainTests/netlist/closedLoopHeart");
+  clearOutOldFiles();
+
+  runSimulation();
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Check PressHist.dat
+  {
+    histFileReader zeroDDomainPressures = histFileReader();
+    zeroDDomainPressures.setFileName("PressHist.dat");
+    zeroDDomainPressures.setNumColumns(3);
+    zeroDDomainPressures.readFileInternalMetadata();
+    zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
+    
+    // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+    double pressureResult = zeroDDomainPressures.getReadFileData(0,6);
+    EXPECT_NEAR(10660.4833743447,pressureResult,1e-8);
+    // ...second column
+    pressureResult = zeroDDomainPressures.getReadFileData(1,6);
+    EXPECT_NEAR(10660.4715871085,pressureResult,1e-8);
+    // ... third column
+    pressureResult = zeroDDomainPressures.getReadFileData(2,6);
+    EXPECT_NEAR(10660.4714780595,pressureResult,1e-8);
+  }
+
+  // Check FlowHist.dat
+  {
+    histFileReader zeroDDomainFlows = histFileReader();
+    zeroDDomainFlows.setFileName("FlowHist.dat");
+    zeroDDomainFlows.setNumColumns(3);
+    zeroDDomainFlows.readFileInternalMetadata();
+    zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
+    
+    // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+    double flowResult = zeroDDomainFlows.getReadFileData(0,6);
+    EXPECT_NEAR(0.000000000000000E+000,flowResult,1e-8);
+    // ...second column
+    flowResult = zeroDDomainFlows.getReadFileData(1,6);
+    EXPECT_NEAR(3.220856348012216E-003,flowResult,1e-8);
+    // ... third column
+    flowResult = zeroDDomainFlows.getReadFileData(2,6);
+    EXPECT_NEAR(-1.859633050898444E-002,flowResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_5.dat
+  {
+    histFileReader zeroDDomainFlows = histFileReader();
+    zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
+    zeroDDomainFlows.setNumColumns(6);
+    zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
+    // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+    double pressureResult = zeroDDomainFlows.getReadFileData(1,5);
+    EXPECT_NEAR(5.6353779204791e-305,pressureResult,1e-8);
+  }
+
+  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
+  {
+    histFileReader closedLoopDownstreamPressures = histFileReader();
+    closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
+    closedLoopDownstreamPressures.setNumColumns(5);
+    closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+    double pressureResult = closedLoopDownstreamPressures.getReadFileData(1,5);
+    EXPECT_NEAR(533.181018322494,pressureResult,1e-8);
+
+    pressureResult = closedLoopDownstreamPressures.getReadFileData(2,5);
+    EXPECT_NEAR(533.181018322494,pressureResult,1e-8);
+
+    pressureResult = closedLoopDownstreamPressures.getReadFileData(3,5);
+    EXPECT_NEAR(0.0,pressureResult,1e-8);
+
+    pressureResult = closedLoopDownstreamPressures.getReadFileData(4,5);
+    EXPECT_NEAR(4584.09714300042,pressureResult,1e-8);
+  }
+
+  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
+  {
+    histFileReader closedLoopDownstreamPressures = histFileReader();
+    closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
+    closedLoopDownstreamPressures.setNumColumns(4);
+    closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+    double flowResult = closedLoopDownstreamPressures.getReadFileData(1,5);
+    EXPECT_NEAR(7.71998706812362e-310,flowResult,1e-8);
+
+    flowResult = closedLoopDownstreamPressures.getReadFileData(2,5);
+    EXPECT_NEAR(40509.1612467792,flowResult,1e-8);
+
+    flowResult = closedLoopDownstreamPressures.getReadFileData(3,5);
+    EXPECT_NEAR(-40509.1612467792,flowResult,1e-8);
+  }
+}

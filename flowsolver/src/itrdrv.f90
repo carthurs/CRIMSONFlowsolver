@@ -1270,7 +1270,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                     ! call callCPPHaveBoundaryConditionTypesChanged(boundaryConditionRebuildNeeded)
                     ! write(*,*) "BC state change flag: ", boundaryConditionRebuildNeeded
                     ! if (boundaryConditionRebuildNeeded .eq. int(1)) then
-                        write(*,*) "rebuilding memLS linear system..."
+                        ! write(*,*) "rebuilding memLS linear system..."
                         call rebuildMemLS_lhs()
                     ! endif
                 endif

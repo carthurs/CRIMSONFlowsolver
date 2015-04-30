@@ -1,7 +1,7 @@
 Global Node Numbering: True
 Geombc Has Observation Fields: False
 Geombc Has Node Tags: False
-Simulate in Purely Zero Dimensions: True
+Simulate in Purely Zero Dimensions: False
 
 # CARDIOVASCULAR MODELING PARAMETERS
 # {
@@ -41,8 +41,8 @@ Simulate in Purely Zero Dimensions: True
 # {
     Solver Type : memLS
 #    Step Construction : 0 1 # this is the standard 1 iteration
-#    Step Construction : 0 1 0 1 0 1 0 1 0 1 # this is the standard 5 iteration
-  Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 # this is the standard 20 iteration
+    Step Construction : 0 1 0 1 0 1 0 1 0 1 # this is the standard 5 iteration
+#  Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 # this is the standard 20 iteration
 
 # }
 

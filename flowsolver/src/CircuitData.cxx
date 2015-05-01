@@ -21,7 +21,7 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	// We use a tolerance on these floating-point comparisons here
 	// because the errors in the netlist linear system solves
 	// for the boundary conditions can be of order 1e-9.
-	const int floatingPointTolerance = 1e-8;
+	const double floatingPointTolerance = 1e-8;
 	// std::cout << "start and end node pressures for switching in hasNonnegativePressureGradientOrForwardFlow: " << startNode->getPressure() << " " << endNode->getPressure() << " difference is: " << startNode->getPressure() - endNode->getPressure() << std::endl;
 	// std::cout << "m_connectsToNodeAtInterface: " << m_connectsToNodeAtInterface << std::endl;
 	bool hasNonnegativePressureGradient = (startNode->getPressure() - endNode->getPressure() >= 0.0 - floatingPointTolerance);
@@ -36,6 +36,8 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 		hasForwardFlow = (flow >= floatingPointTolerance);
 	}
 	// std::cout << "flow in hasNonnegativePressureGradientOrForwardFlow:" << flow << " and sign " << m_signForPrescribed3DInterfaceFlow << std::endl;
+	// std::cout << "hasNonnegativePressureGradient: " << hasNonnegativePressureGradient << std::endl;
+	// std::cout << "hasForwardFlow: " << hasForwardFlow << std::endl;
 
 	return (hasNonnegativePressureGradient || hasForwardFlow);
 }
@@ -380,18 +382,24 @@ void CircuitData::switchDiodeStatesIfNecessary()
 	}
 }
 
+bool CircuitComponent::permitsFlow() const
+{
+	assert(m_type == Component_Diode);
+	return m_permitsFlow;
+}
+
 void CircuitComponent::enableDiodeFlow()
 {
 	assert(m_type == Component_Diode);
 	m_currentParameterValue = parameterValueFromInputData; // For enforcing zero resistance when the diode is open
-	permitsFlow = true;
+	m_permitsFlow = true;
 }
 
 void CircuitComponent::disableDiodeFlow()
 {
 	assert(m_type == Component_Diode);
 	m_currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
-	permitsFlow = false;
+	m_permitsFlow = false;
 }
 
 // In particular, this is for starting a simulation with all diodes shut, for stability.
@@ -450,7 +458,7 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) = true;
 
 			// Don't parse the neighbours if flow is banned (i.e. if there's a closed diode)
-			if (currentComponent.lock()->permitsFlow)
+			if (currentComponent.lock()->permitsFlow())
 			{
 				// Discover whether currentComponent has no neighbours at one end (i.e. it's a flow sink), so there is
 				// somewhere for flow coming in at the 3D domain to go (i.e. it's OK for the surface to have a Dirichlet boundary condition).

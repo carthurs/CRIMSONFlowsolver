@@ -39,7 +39,6 @@ public:
 	bool hasHistoryFlow;
 	bool hasTrackedVolume;
 	bool hasHistoryVolume;
-	bool permitsFlow; // for diodes in particular
 	std::vector<double> m_entireFlowHistory;
 	CircuitComponent(const int hstep, const bool thisIsARestartedSimulation)
 	: m_hstep(hstep),
@@ -54,7 +53,7 @@ public:
 			bool fixThisForRestart=false;
             assert(fixThisForRestart);
             flow = -1.0;
-            permitsFlow = true;
+            m_permitsFlow = true;
             m_connectsToNodeAtInterface = false;
             hasTrackedVolume = false;
 			hasHistoryVolume = false;
@@ -62,7 +61,7 @@ public:
 		else
 		{
 			flow = 0.0;
-			permitsFlow = true;
+			m_permitsFlow = true;
 			m_connectsToNodeAtInterface = false;
 			hasTrackedVolume = false;
 			hasHistoryVolume = false;
@@ -84,10 +83,12 @@ public:
 	void setParameterValue(double const parameterValue);
 	int getIndex() const;
 	void setIndex(const int index);
+	bool permitsFlow() const;
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 private:
 	circuit_component_t m_type;
+	bool m_permitsFlow; // for diodes in particular
 	
 	int m_indexInInputData;
 	const int m_hstep;

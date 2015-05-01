@@ -1179,9 +1179,9 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
           // bool componentIsOpenDiode = (mp_circuitData->components.at(ll)->type == Component_Diode &&
           //                              mp_circuitData->components.at(ll)->hasNonnegativePressureGradientAndNoBackflow());
           // open diodes are just implemented as zero-resistance resistors, closed diodes are zero-resistance resistors with prescribed zero flow
-          if ((*component)->getType() == Component_Resistor || (*component)->getType() == Component_Diode)
+          if ((*component)->getType() == Component_Resistor)
           {
-            // insert resistor(-eqsue) relationship into equation system
+            // insert resistor relationship into equation system
             int startNode = (*component)->startNode->getIndex();
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(startNode),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
@@ -1191,6 +1191,29 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             double currentParameterValue = *((*component)->getParameterPointer());
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            row++;
+          }
+          else if  ((*component)->getType() == Component_Diode)
+          {
+            if ((*component)->permitsFlow()) // if the diode is open
+            {
+                // insert resistor(-eqsue) relationship into equation system for the open diode
+                int startNode = (*component)->startNode->getIndex();
+                errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(startNode),1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                int endNode = (*component)->endNode->getIndex();
+                errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+                double currentParameterValue = *((*component)->getParameterPointer());
+                int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
+                errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+            }
+            else // the diode is closed
+            {
+                int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
+                const double justAOneToImposeZeroFlow = 1.0;
+                errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,justAOneToImposeZeroFlow,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);                
+            }
             row++;
           }
           else if ((*component)->getType() == Component_Capacitor)

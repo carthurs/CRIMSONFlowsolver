@@ -100,6 +100,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     clearQueue(m_rhsContributionsFromUpstreamBoundaryConditions);
     m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors.clear();
     m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.clear();
+    // std::cout << "just cleared m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems." << std::endl;
     m_indicesOf3DInterfaceComputedPressuresInUpstreamSolutionVectors.clear();
     m_columnIndicesOf3DInterfacePrescribedPressuresInUpstreamLinearSystems.clear();
 
@@ -147,21 +148,22 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
     {
         boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
-        const int upstreamCircuitIndex = downcastCircuit->getCircuitIndex();
+        int upstreamCircuitIndex = downcastCircuit->getCircuitIndex();
 
-        const int threeDInterfaceComputedFlowLocation = downcastCircuit->getLocationOf3DInterfaceComputedFlowInSolutionVector();
+        int threeDInterfaceComputedFlowLocation = downcastCircuit->getLocationOf3DInterfaceComputedFlowInSolutionVector();
         m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceComputedFlowLocation));
         if (downcastCircuit->hasPrescribedFlowAcross3DInterface())
         {
-            const int threeDInterfaceFlowPrescriptionLocationColumn = downcastCircuit->getColumnOf3DInterfacePrescribedFlowInLinearSystem();
+            // std::cout << "inserting upstreamCircuitIndex " << upstreamCircuitIndex << " in m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems" << std::endl;
+            int threeDInterfaceFlowPrescriptionLocationColumn = downcastCircuit->getColumnOf3DInterfacePrescribedFlowInLinearSystem();
             m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfaceFlowPrescriptionLocationColumn));
         }
         
-        const int threeDInterfacePressureLocation = downcastCircuit->getLocationOf3DInterfaceComputedPressureInSolutionVector();
+        int threeDInterfacePressureLocation = downcastCircuit->getLocationOf3DInterfaceComputedPressureInSolutionVector();
         m_indicesOf3DInterfaceComputedPressuresInUpstreamSolutionVectors.insert(std::make_pair(upstreamCircuitIndex,threeDInterfacePressureLocation));
         if (downcastCircuit->hasPrescribedPressureAcross3DInterface())
         {
-            const int threeDInterfacePressurePrescriptionLocationColumn = downcastCircuit->getColumnOf3DInterfacePrescribedPressureInLinearSystem();
+            int threeDInterfacePressurePrescriptionLocationColumn = downcastCircuit->getColumnOf3DInterfacePrescribedPressureInLinearSystem();
             m_columnIndicesOf3DInterfacePrescribedPressuresInUpstreamLinearSystems.insert(std::make_pair(upstreamCircuitIndex,threeDInterfacePressurePrescriptionLocationColumn));
         }
     }
@@ -455,8 +457,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
 
     // std::cout << "m_identityMatrixForPetscInversionHack" << std::endl;
     // errFlag = MatView(m_identityMatrixForPetscInversionHack,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    // std::cout << "m_inverseOfClosedLoopMatrix" << std::endl;
-    // errFlag = MatView(m_inverseOfClosedLoopMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "m_closedLoopSystemMatrix" << std::endl;
+    // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
     // get the inverse of the system matrix:
     errFlag = MatMatSolve(m_closedLoopSystemMatrix,m_identityMatrixForPetscInversionHack,m_inverseOfClosedLoopMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -465,6 +467,10 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
 
     // std::cout << "m_inverseOfClosedLoopMatrix" << std::endl;
     // errFlag = MatView(m_inverseOfClosedLoopMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
+    // std::cout << "m_inverseOfClosedLoopMatrix" << std::endl;
+    // errFlag = MatView(m_inverseOfClosedLoopMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "m_closedLoopRHS: " << std::endl;
     // errFlag = VecView(m_closedLoopRHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     // errFlag = VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     // Solve the system
@@ -472,11 +478,14 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     assert(m_closedLoopRHS != PETSC_NULL);
     assert(m_solutionVector != PETSC_NULL);
     errFlag = MatMult(m_inverseOfClosedLoopMatrix,m_closedLoopRHS,m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    // std::cout << "m_solutionVector (just computed): " << std::endl;
+    // errFlag = VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
 void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt)
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
+    // std::cout << "called buildAndSolveLinearSystemIfNotYetDone 1 " << m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep<<std::endl;
     if (!m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep)
     {
         buildAndSolveLinearSystem_internal(timestepNumber, alfi_delt);
@@ -488,7 +497,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone(const
 void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemForUpdateIfNotYetDone(const int timestepNumber, const double delt)
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
-    if (!m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep)
+    // std::cout << "called buildAndSolveLinearSystemIfNotYetDone 2 " << m_linearSystemAlreadyUpdatedOnThisTimestep << std::endl;
+    if (!m_linearSystemAlreadyUpdatedOnThisTimestep)
     {
         buildAndSolveLinearSystem_internal(timestepNumber, delt);
         // Set the "done for this timestep" flag. Reset this with ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingUpdatingAgain() (from BC manager for now)
@@ -766,6 +776,23 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     // assert the linear system has been solved:
     assert(m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep);
 
+    // std::cout<< "boundaryConditionIndex: " << boundaryConditionIndex << std::endl;
+
+    // for (auto entry = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.begin(); entry != m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.end();entry++)
+    // {
+    //     std::cout << "m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix " << *entry << std::endl;
+    // }
+    // for (auto entry = m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.begin(); entry != m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems.end();entry++)
+    // {
+    //     std::cout << "m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems " << entry->first << " " << entry->second << std::endl;
+    // }
+    // for (auto entry = m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.begin(); entry != m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.end();entry++)
+    // {
+    //     std::cout << "m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix " << *entry << std::endl;
+    // }
+
+    // std::cout << "block end ============" << std::endl;
+
     // The linear system is solved, so we can just extract the necessary values from the resulting solution
     // vector and inverted system matrix:
     int rowToGet[] = {m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex)};
@@ -835,4 +862,19 @@ void ClosedLoopDownstreamSubsection::createContiguousIntegerRange(const int star
     {
         arrayToFill[ii] = startingInteger + ii;
     }
+}
+
+int ClosedLoopDownstreamSubsection::getIndexOfClosedLoop_zeroIndexed() const
+{
+    return toZeroIndexing(m_index);
+}
+
+int ClosedLoopDownstreamSubsection::getIndexOfClosedLoop_oneIndexed() const
+{
+    return m_index;
+}
+
+boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> ClosedLoopDownstreamSubsection::getNetlistCircuit() const
+{
+    return mp_NetlistCircuit;
 }

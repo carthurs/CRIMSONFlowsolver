@@ -90,6 +90,7 @@ std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::comp
     {
         if (downstreamSubcircuit->lock()->boundaryConditionCircuitConnectsToThisDownstreamSubsection(m_surfaceIndex))
         {
+            // std::cout << "called from in NetlistBoundaryCircuitWhenDownstreamCircuitsExist " << m_IndexOfThisNetlistLPNInInputFile << std::endl;
             returnValue = downstreamSubcircuit->lock()->getImplicitCoefficients(m_IndexOfThisNetlistLPNInInputFile);
             counterToDetectErrors++;
         }

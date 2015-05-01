@@ -1303,8 +1303,8 @@
       if(numNetlistLPNSrfs .gt. 0) then
         call GetFlowQ(p,y,indicesOfNetlistSurfaces,numNetlistLPNSrfs)  !Q pushed into p but at this point 
         ! p is just the full Q for each surface
-        write(*,*) "elmgmr.f90 netlist 1 flow:", p(1)
-        write(*,*) "elmgmr.f90 netlist 2 flow:", p(2)
+        ! write(*,*) "elmgmr.f90 netlist 1 flow:", p(1)
+        ! write(*,*) "elmgmr.f90 netlist 2 flow:", p(2)
 
 
         ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of

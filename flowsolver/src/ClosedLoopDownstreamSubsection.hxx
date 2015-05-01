@@ -63,6 +63,9 @@ public:
 	void giveNodesAndComponentsTheirUpdatedValues();
 	double getComputedInterfacePressure(const int boundaryConditionIndex) const;
 	double getComputedInterfaceFlow(const int boundaryConditionIndex) const;
+	int getIndexOfClosedLoop_zeroIndexed() const;
+	int getIndexOfClosedLoop_oneIndexed() const;
+	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> getNetlistCircuit() const;
 private:
 	bool m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep;
 	bool m_linearSystemAlreadyUpdatedOnThisTimestep;

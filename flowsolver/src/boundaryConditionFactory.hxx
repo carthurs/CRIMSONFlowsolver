@@ -12,14 +12,14 @@ class abstractBoundaryCondition;
 class boundaryConditionFactory
 {
  public:
- 	boundaryConditionFactory(const double hstep, const double delt, const double alfi, const double lstep, const int maxsurf, const int nstep, const int numLoopClosingNetlistCircuits)
+ 	boundaryConditionFactory(const double hstep, const double delt, const double alfi, const double lstep, const int maxsurf, const int nstep, const int numLoopClosingCircuits)
  	: m_hstep(hstep),
  	m_delt(delt),
  	m_alfi(alfi),
  	m_lstep(lstep),
  	m_maxsurf(maxsurf),
  	m_nstep(nstep),
- 	m_numLoopClosingNetlistCircuits(numLoopClosingNetlistCircuits)
+ 	m_numLoopClosingNetlistCircuits(numLoopClosingCircuits)
  	{
  		m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt = false;
  	}

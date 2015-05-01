@@ -9,7 +9,7 @@ void ControlSystemsManager::updateAllControlSystems()
 	}
 }
 
-void ControlSystemsManager::createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistBoundaryCondition> boundaryCondition, const int nodeOrComponentIndex)
+void ControlSystemsManager::createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex)
 {
 	if (controllerType == Controller_LeftVentricularElastance)
 	{

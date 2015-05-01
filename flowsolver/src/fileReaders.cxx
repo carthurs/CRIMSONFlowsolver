@@ -594,6 +594,10 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			controlType = Controller_LeftVentricularElastance;
 		}
+		else if (mp_currentLineSplitBySpaces->at(1).compare("bleed") == 0)
+		{
+			controlType = Controller_BleedResistance;
+		}
 		else
 		{
 			std::stringstream error;

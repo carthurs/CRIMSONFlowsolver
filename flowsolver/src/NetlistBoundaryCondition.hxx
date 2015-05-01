@@ -31,6 +31,7 @@ public:
 		m_IndexOfThisNetlistLPNInInputFile = numberOfInitialisedNetlistLPNs;
 		if (m_netlistDownstreamLoopClosingSubcircuits.size() > 0)
 		{
+			std::cout << "constructing in NetlistBoundaryCondition.hxx with parameter " << m_IndexOfThisNetlistLPNInInputFile << std::endl;
 			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, thisIsARestartedSimulation, alfi_local, delt, m_netlistDownstreamLoopClosingSubcircuits));
 		}
 		else

@@ -81,9 +81,9 @@ void boundaryConditionManager::setNstep(const int nstep)
   m_nstepHasBeenSet = true;
 }
 
-void boundaryConditionManager::setNumLoopClosingnetlistCircuits(const int numLoopClosingNetlistCircuits)
+void boundaryConditionManager::setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits)
 {
-  m_numLoopClosingNetlistCircuits = numLoopClosingNetlistCircuits;
+  m_numLoopClosingNetlistCircuits = numLoopClosingCircuits;
   m_numLoopClosingNetlistCircuitsHasBeenSet = true;
 }
 
@@ -810,19 +810,53 @@ void boundaryConditionManager::createControlSystems()
     {
       // Downcast to a shared_ptr to a Netlist:
       boost::shared_ptr<NetlistBoundaryCondition> currentNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
+      boost::shared_ptr<NetlistCircuit> currentNetlistCircuit = currentNetlist->getNetlistCircuit();
       // We now initialise all the controls which affect this netlist...
       int netlistIndex = currentNetlist->getIndexAmongstNetlists();
       // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
       for (auto componentIndexAndControlType = mapsOfComponentControlTypes.at(netlistIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes.at(netlistIndex).end(); componentIndexAndControlType++)
       {
-        mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlist, componentIndexAndControlType->first);
+        mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
       }
       // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
       for (auto nodeIndexAndControlType = mapsOfNodeControlTypes.at(netlistIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes.at(netlistIndex).end(); nodeIndexAndControlType++)
       {
-        mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlist, nodeIndexAndControlType->first);
+        mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlistCircuit, nodeIndexAndControlType->first);
       }
     }
+  }
+
+  // If there's a closed loop present:
+  if (m_numLoopClosingNetlistCircuits > 0)
+  {
+    // Get the reader for the closed loop system
+    NetlistDownstreamCircuitReader* downstreamNetlistReader_instance = NetlistDownstreamCircuitReader::Instance();
+
+    // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
+    // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
+    std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
+
+    // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
+    // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();
+    std::vector<std::map<int,parameter_controller_t>> mapsOfNodeControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfNodalControlTypesForEachSurface();
+
+    for (auto loopClosingCircuit = m_netlistDownstreamLoopClosingSubsections.begin(); loopClosingCircuit != m_netlistDownstreamLoopClosingSubsections.end(); loopClosingCircuit++)
+    {
+      const int closedLoopIndex = (*loopClosingCircuit)->getIndexOfClosedLoop_zeroIndexed();
+      boost::shared_ptr<NetlistCircuit> currentNetlistCircuit = (*loopClosingCircuit)->getNetlistCircuit();
+
+      // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+      for (auto componentIndexAndControlType = mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).end(); componentIndexAndControlType++)
+      {
+        mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
+      }
+      // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+      for (auto nodeIndexAndControlType = mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).end(); nodeIndexAndControlType++)
+      {
+        mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlistCircuit, nodeIndexAndControlType->first);
+      }
+    }
+
   }
 
   // int boundaryConditionIndex = 1;

@@ -22,6 +22,8 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	// because the errors in the netlist linear system solves
 	// for the boundary conditions can be of order 1e-9.
 	const int floatingPointTolerance = 1e-8;
+	// std::cout << "start and end node pressures for switching in hasNonnegativePressureGradientOrForwardFlow: " << startNode->getPressure() << " " << endNode->getPressure() << " difference is: " << startNode->getPressure() - endNode->getPressure() << std::endl;
+	// std::cout << "m_connectsToNodeAtInterface: " << m_connectsToNodeAtInterface << std::endl;
 	bool hasNonnegativePressureGradient = (startNode->getPressure() - endNode->getPressure() >= 0.0 - floatingPointTolerance);
 	bool hasForwardFlow;
 	// Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
@@ -33,6 +35,7 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	{
 		hasForwardFlow = (flow >= floatingPointTolerance);
 	}
+	// std::cout << "flow in hasNonnegativePressureGradientOrForwardFlow:" << flow << " and sign " << m_signForPrescribed3DInterfaceFlow << std::endl;
 
 	return (hasNonnegativePressureGradient || hasForwardFlow);
 }

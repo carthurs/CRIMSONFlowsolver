@@ -19,8 +19,7 @@ public:
 	: m_delt(delt)
 	{
 	}
-	// Probably overload this function if you want to createParameterControllers for non-NetlistBoundaryConditions.
-	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistBoundaryCondition> boundaryCondition, const int nodeOrComponentIndex);
+	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex);
 	void updateAllControlSystems();
 private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;

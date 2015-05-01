@@ -536,7 +536,7 @@
          int indicesOfCoronarySurfaces[MAXSURF+1];
          int numNetlistLPNSrfs;
          int indicesOfNetlistSurfaces[MAXSURF+1];
-         int numLoopClosingNetlistCircuits;
+         int numLoopClosingCircuits;
          int inputHRandSP;
          int geombcHasObservationFields;
          int geombcHasNodeTags;

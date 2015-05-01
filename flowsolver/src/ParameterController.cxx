@@ -56,7 +56,7 @@ void BleedController::updateControl()
 	bool m_bleedingOn = mp_timer->hasTheTimeCome();
 	if (m_bleedingOn)
 	{
-		*mp_parameterToControl = 0.0; // set the resistance / compliance to zero (depending on the type of component we're controlling here...)
+		*mp_parameterToControl = 0.001; // set the resistance / compliance to be tiny (depending on the type of component we're controlling here...)
 	}
 	mp_timer->incrementTimer();
 }

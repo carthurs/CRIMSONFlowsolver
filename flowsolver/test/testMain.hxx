@@ -154,6 +154,7 @@
 			   itrdrv_iter_init();
 			   itrdrv_iter_step();
 			   itrdrv_iter_finalize();
+			   multidom_iter_finalise();
 		   }
 
 		   itrdrv_finalize();

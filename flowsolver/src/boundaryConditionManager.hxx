@@ -96,7 +96,7 @@ class abstractBoundaryCondition;
     void setNtout(const int ntout);
     void setMaxsurf(const int maxsurf);
     void setNstep(const int nstep);
-    void setNumLoopClosingnetlistCircuits(const int numLoopClosingNetlistCircuits);
+    void setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits);
 
     void createControlSystems();
     void updateAllControlSystems();

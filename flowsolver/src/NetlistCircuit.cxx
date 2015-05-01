@@ -1692,6 +1692,7 @@ void NetlistCircuit::giveNodesTheirPressuresFromSolutionVector()
 
   // A self-documenting name for the request given to VecGetValues():
   int getSingleValue=1;
+  // std::cout << "called giveNodesTheirPressuresFromSolutionVector" << std::endl;
 
   // Look the nodes, handing them their new pressures from the circuit linear system solve:
   for (int ll=0; ll<mp_circuitData->numberOfPressureNodes; ll++)
@@ -1705,6 +1706,7 @@ void NetlistCircuit::giveNodesTheirPressuresFromSolutionVector()
       // VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD);
       assert(!isnan(pressuresInSubcircuit[ll]));
       mp_circuitData->mapOfPressureNodes.at(toOneIndexing(ll))->setPressure(pressuresInSubcircuit[ll]);
+      // std::cout << "just set pressure " << pressuresInSubcircuit[ll] << " at node " << ll << " of circuit " << m_surfaceIndex << std::endl;
   }
 }
 

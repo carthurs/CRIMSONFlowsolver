@@ -30,7 +30,7 @@ using namespace std;
 
 static char help[] = "Pure Flowsolver.\n\n";
 
-int main(int argc, char * argv[]) {
+int main(int argc, char **argv) {
 
 
    int rank;

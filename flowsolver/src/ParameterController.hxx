@@ -68,7 +68,7 @@ public:
 	: AbstractParameterController(parameterToControl)
 	{
 		int initialTimestep = 0; //\todo sort the restarts for this
-		int triggerTimestep = 100;
+		int triggerTimestep = 1600;
 		mp_timer = boost::shared_ptr<BasicTimer> (new BasicTimer(initialTimestep, triggerTimestep));
 	}
 	void updateControl();

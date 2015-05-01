@@ -888,7 +888,7 @@ subroutine rebuildMemLS_lhs()
         IF  (ipvsq .GE. 2) THEN
             call callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow)
             memLS_nFaces = 1 + numResistSrfs + numImpSrfs + numRCRSrfs + numGRCRSrfs + numControlledCoronarySrfs + numNetlistLPNSrfs - numBCsWhichDisallowFlow
-            write(*,*) "numBCsWhichDisallowFlow:", numBCsWhichDisallowFlow
+            ! write(*,*) "numBCsWhichDisallowFlow:", numBCsWhichDisallowFlow
         ELSE
             memLS_nFaces = 1
         END IF

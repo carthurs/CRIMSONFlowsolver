@@ -384,7 +384,6 @@ void CircuitData::switchDiodeStatesIfNecessary()
 
 bool CircuitComponent::permitsFlow() const
 {
-	assert(m_type == Component_Diode);
 	return m_permitsFlow;
 }
 

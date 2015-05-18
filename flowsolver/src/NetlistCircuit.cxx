@@ -76,6 +76,14 @@ void NetlistCircuit::createCircuitDescription()
         int threeDNodeIndex = mp_netlistFileReader->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPNInInputFile);
         mp_circuitData->initialiseNodeAndComponentAtInterface(threeDNodeIndex);
     }
+
+    // Give any components tagged in the input data for custom Python
+    // control systems the name of their Python controller script:
+    std::vector<std::pair<int,std::string>> userDefinedComponentControllers = mp_netlistFileReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
+    for (auto componentIndexAndPythonName = userDefinedComponentControllers.begin(); componentIndexAndPythonName != userDefinedComponentControllers.end(); componentIndexAndPythonName++)
+    {
+        mp_circuitData->mapOfComponents.at(componentIndexAndPythonName->first)->setPythonControllerName(componentIndexAndPythonName->second);
+    }
 }
 
 void NetlistCircuit::createBasicCircuitDescription()

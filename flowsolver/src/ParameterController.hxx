@@ -1,9 +1,13 @@
 #ifndef PARAMETERCONTROLLER_HXX_
 #define PARAMETERCONTROLLER_HXX_
 
+#include <Python.h>
 #include <cmath>
 #include <boost/shared_ptr.hpp>
+#include <boost/filesystem.hpp>
 #include "timers.hxx"
+#include <sstream>
+#include <iostream>
 
 // This class can be connected to a netlist LPN parameter
 // (e.g. resistance for a component, or compliance for a compliance chamber).
@@ -75,6 +79,102 @@ public:
 private:
 	boost::shared_ptr<BasicTimer> mp_timer;
 	bool m_bleedingOn;
+};
+
+// This class supports user-defined parameter controllers, which the 
+// user provides in an external Python script.
+//
+// Currently, it only supports
+class UserDefinedCustomPythonParameterController : public AbstractParameterController
+{
+public:
+	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName)
+	: AbstractParameterController(parameterToControl),
+	m_delt(PyFloat_FromDouble(delt))
+	{
+		std::stringstream fullFileName;
+		fullFileName << controllerPythonScriptBaseName << ".py";
+		boost::filesystem::path fullFileName_path(fullFileName.str());
+		if (!boost::filesystem::exists(fullFileName_path))
+		{
+			std::stringstream errorMessage;
+			errorMessage << "EE: Could not find custom parameter control script " << controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			throw std::runtime_error(errorMessage.str());
+		}
+		// Start the Python C extensions
+		Py_Initialize();
+
+		// Change Python's current path to be the same as that which C++ is
+		// currently using:
+		boost::filesystem::path currentDirectory( boost::filesystem::current_path() );
+		char* current_path = (char*) currentDirectory.string().c_str();
+		PySys_SetPath(current_path);
+
+		// This is the name of the method that gets called on the class to update the control
+		// on each time-step
+		m_updateControlPyobjectName = PyString_FromString("updateControl");
+		m_pythonControllerClassName = PyString_FromString(controllerPythonScriptBaseName.c_str());
+		m_pythonScriptName = PyString_FromString(controllerPythonScriptBaseName.c_str());
+		m_customPythonModule = PyImport_Import(m_pythonScriptName);
+
+		// Get a reference to the custom controller class from within the user-provide Python script
+		m_customPythonClass = PyObject_GetAttr(m_customPythonModule, m_pythonControllerClassName);
+
+
+		// Instantiate the Python controller class:
+		if (PyCallable_Check(m_customPythonClass))
+		{
+			// Instantiate the controller class
+			m_pythonParameterControllerInstance = PyObject_CallObject(m_customPythonClass, NULL);
+		}
+	}
+
+	void safe_Py_DECREF(PyObject* toBeDeleted)
+	{
+		// Avoid trying to delete null pointers:
+		if (!toBeDeleted)
+		{
+			Py_DECREF(toBeDeleted);
+		}
+	}
+
+	~UserDefinedCustomPythonParameterController()
+	{
+		// Py_DECREF(); is like deleting stuff (marking it for deletion by Python garbage
+		// collection by decrementing the reference count - deletion happens when
+		// the ref count reaches zero, and these calls should make them zero.)
+		safe_Py_DECREF(m_delt);
+		safe_Py_DECREF(m_pythonScriptName);
+		safe_Py_DECREF(m_pythonControllerClassName);
+		safe_Py_DECREF(m_updateControlPyobjectName);
+		safe_Py_DECREF(m_customPythonClass);
+		safe_Py_DECREF(m_customPythonModule);
+		safe_Py_DECREF(m_pythonParameterControllerInstance);
+		// Terminate the Python C extensions
+		Py_Finalize();
+	}
+
+	void updateControl()
+	{
+		// Convert the parameter value to Python format, for passing to Python:
+		PyObject* parameterValue = PyFloat_FromDouble(*mp_parameterToControl);
+
+		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, NULL);
+
+		// Place the newly-computed parameter value object being controlled:
+		*mp_parameterToControl = PyFloat_AsDouble(newParameterValue);
+
+		safe_Py_DECREF(parameterValue);
+		safe_Py_DECREF(newParameterValue);
+	}
+private:
+	PyObject* m_delt;
+	PyObject* m_pythonScriptName;
+	PyObject* m_pythonControllerClassName;
+	PyObject* m_updateControlPyobjectName;
+	PyObject* m_customPythonClass;
+	PyObject* m_customPythonModule;
+	PyObject* m_pythonParameterControllerInstance;
 };
 
 #endif

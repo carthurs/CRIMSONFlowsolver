@@ -382,6 +382,31 @@ void CircuitData::switchDiodeStatesIfNecessary()
 	}
 }
 
+bool CircuitComponent::hasUserDefinedExternalPythonScriptParameterController() const
+{
+	return m_hasPythonParameterController;
+}
+
+std::string CircuitComponent::getPythonControllerName() const
+{
+	assert(m_hasPythonParameterController);
+	return m_pythonParameterControllerName;
+}
+
+// Sets the name "whateverName" of the parameter controller to look for in the
+// working directory: whateverName.py, containing class whateverName,
+// with class method:
+// newParamterValue = updateControl(self, oldParameterValue, delt).
+//
+// This should be a Python script.
+void CircuitComponent::setPythonControllerName(const std::string pythonParameterControllerName)
+{
+	assert(!m_hasPythonParameterController);
+	m_hasPythonParameterController = true;
+	m_pythonParameterControllerName = pythonParameterControllerName;
+}
+
+
 bool CircuitComponent::permitsFlow() const
 {
 	return m_permitsFlow;

@@ -580,6 +580,7 @@ void NetlistReader::readControlSystemPrescriptions()
 	readNextLine();
 	m_numberOfComponentsWithControl.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
 	std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
+	std::vector<std::pair<int,std::string>> userDefinedComponentControllersAndPythonNamesForThisSurface;
 	for (int controlledComponent=0; controlledComponent<m_numberOfComponentsWithControl.back(); controlledComponent++)
 	{
 		parameter_controller_t controlType;
@@ -598,6 +599,13 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			controlType = Controller_BleedResistance;
 		}
+		else if (mp_currentLineSplitBySpaces->at(1).compare("customPython") == 0)
+		{
+			controlType = Controller_CustomPython;
+			// Store the name of the Python script that controls this surface:
+			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
+			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
+		}
 		else
 		{
 			std::stringstream error;
@@ -609,6 +617,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
 	}
 	m_mapsOfComponentControlTypesForEachSurface.push_back(componentControlTypesForThisSurface);
+	m_userDefinedComponentControllersAndPythonNames.push_back(userDefinedComponentControllersAndPythonNamesForThisSurface);
 
 	// Get the number, list and control types of nodes which have attached control systems:
 	readNextLine();
@@ -634,6 +643,11 @@ void NetlistReader::readControlSystemPrescriptions()
 		nodalControlTypesForThisSurface.insert( std::make_pair(nodeIndex,controlType) );
 	}
 	m_mapsOfNodalControlTypesForEachSurface.push_back(nodalControlTypesForThisSurface);
+}
+
+std::vector<std::pair<int,std::string>> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
+{
+	return m_userDefinedComponentControllersAndPythonNames.at(surfaceIndex);
 }
 
 std::vector<std::vector<circuit_component_t>> NetlistReader::getComponentTypes()

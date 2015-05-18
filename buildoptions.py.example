@@ -45,6 +45,10 @@ DEBUG_FFLAGS    = ['-O0','-g','-align','array64byte','-traceback','-fp-stack-che
    ##LINK_EXE        = $(CXX) -o
    #LINK_EXE        = '$(F90) -nofor-main -cxxlib -o'
 
+
+PYTHON_INCDIR = ['/usr/include/python2.7']
+PYTHON_LIBSDIR = ['/usr/lib/python2.7/config']
+PYTHON_LIBSLIST = ['dl','util','m','python2.7']
  
 BUILDFLAGS      = GLOBAL_DEFINES
 # GLOBAL_CXXFLAGS = BUILDFLAGS+DEBUG_FLAGS+OPT_FLAGS

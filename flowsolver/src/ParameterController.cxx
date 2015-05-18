@@ -35,9 +35,9 @@ double LeftVentricularElastanceController::getElastance()
 		elastance = m_minimumElastance;
 	}
 
-	std::cout << "elastance was: "<< elastance << std::endl;
+	// std::cout << "elastance was: "<< elastance << std::endl;
 
-  return elastance;
+  	return elastance;
 }
 
 void LeftVentricularElastanceController::updatePeriodicTime()
@@ -48,7 +48,7 @@ void LeftVentricularElastanceController::updatePeriodicTime()
 	{
 		m_periodicTime = m_periodicTime - m_heartPeriod;
 	}
-	std::cout << "m_periodicTime was: "<< m_periodicTime << std::endl;
+	// std::cout << "m_periodicTime was: "<< m_periodicTime << std::endl;
 }
 
 void BleedController::updateControl()

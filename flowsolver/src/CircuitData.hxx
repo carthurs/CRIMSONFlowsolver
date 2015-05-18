@@ -55,6 +55,7 @@ public:
             flow = -1.0;
             m_permitsFlow = true;
             m_connectsToNodeAtInterface = false;
+            m_hasPythonParameterController = false;
             hasTrackedVolume = false;
 			hasHistoryVolume = false;
 		}
@@ -63,6 +64,7 @@ public:
 			flow = 0.0;
 			m_permitsFlow = true;
 			m_connectsToNodeAtInterface = false;
+			m_hasPythonParameterController = false; //\todo fix this for restart
 			hasTrackedVolume = false;
 			hasHistoryVolume = false;
 		}
@@ -72,6 +74,10 @@ public:
 	virtual ~CircuitComponent()
 	{
 	}
+
+	bool hasUserDefinedExternalPythonScriptParameterController() const;
+	std::string getPythonControllerName() const;
+	void setPythonControllerName(const std::string pythonParameterControllerName);
 
 	bool hasNonnegativePressureGradientOrForwardFlow(); // whether the diode should be open
 	bool connectsToNodeAtInterface();
@@ -86,6 +92,8 @@ public:
 	bool permitsFlow() const;
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
+	bool m_hasPythonParameterController;
+	std::string m_pythonParameterControllerName;
 private:
 	circuit_component_t m_type;
 	bool m_permitsFlow; // for diodes in particular

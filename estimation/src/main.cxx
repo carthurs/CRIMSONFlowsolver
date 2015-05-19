@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////
 //main function - builds flowsolver binary
 /////////////////////////////////////////////////////////////////
+#include <Python.h>
 #include "mpi.h"
 
 #include <iostream>
@@ -40,6 +41,7 @@ int main(int argc, char **argv) {
 
    // MPI_Init(&argc,&argv);
    PetscInitialize(&argc, &argv, (char *)0, help);
+   Py_Initialize();
 
    // save the communicator
    MPI_Comm iNewComm_C = MPI_COMM_WORLD;
@@ -180,6 +182,7 @@ int main(int argc, char **argv) {
    SimvascularGlobalArrayTransfer::Get()->tearDown();
 
    // MPI_Finalize();
+   Py_Finalize();
    ierr = PetscFinalize();
    CHKERRQ(ierr);
    return ierr;

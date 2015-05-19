@@ -12,10 +12,15 @@ class elastanceController:
 		self.m_heartPeriod = 0.86;
 
 
-	def updateControl(self, currentParameterValue, delt):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex):
 
 		self.updatePeriodicTime(delt)
 		elastance = self.getElastance(currentParameterValue)
+
+		# for key in dictionaryOfPressuresByComponentIndex:
+		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
+		# for key in dictionaryOfFlowsByComponentIndex:
+		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 
 		return elastance
 

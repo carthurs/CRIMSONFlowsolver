@@ -68,6 +68,9 @@ public:
 	int getNumberOfDegreesOfFreedom() const;
 	std::vector<int> getNodesWithDeferredKirchoffEquations() const;
 	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPNInInputFile;}
+	std::vector<std::pair<int,double*>> getComponentInputDataIndicesAndFlows() const;
+	std::vector<std::pair<int,double*>> getNodeInputDataIndicesAndPressures() const;
+
 	
 	bool hasPrescribedPressureAcross3DInterface() const;
 	bool hasPrescribedFlowAcross3DInterface() const;

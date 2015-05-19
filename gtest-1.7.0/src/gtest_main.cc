@@ -27,6 +27,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Python.h>
 #include <stdio.h>
 #include "mpi.h"
 #include "petscsys.h"
@@ -70,8 +71,7 @@ GTEST_API_ int main(int argc, char **argv) {
 
   // MPI_Init(&fake_argc,(char***)&fake_argv);
   PetscInitialize(&fake_argc, &fake_argv, (char *)0, help);
-
-  
+  Py_Initialize();
   
   int testSuccess = 0;
 
@@ -82,6 +82,7 @@ GTEST_API_ int main(int argc, char **argv) {
   // we find a use for it later .
   testSuccess = RUN_ALL_TESTS();
 
+  Py_Finalize();
   int ierr;
   ierr = PetscFinalize();
   CHKERRQ(ierr);

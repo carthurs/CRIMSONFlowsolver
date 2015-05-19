@@ -88,9 +88,11 @@ private:
 class UserDefinedCustomPythonParameterController : public AbstractParameterController
 {
 public:
-	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName)
+	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs)
 	: AbstractParameterController(parameterToControl),
-	m_delt(PyFloat_FromDouble(delt))
+	m_delt(PyFloat_FromDouble(delt)),
+	m_pressurePointerPairs(pressurePointerPairs),
+	m_flowPointerPairs(flowPointerPairs)
 	{
 		std::stringstream fullFileName;
 		fullFileName << controllerPythonScriptBaseName << ".py";
@@ -101,8 +103,6 @@ public:
 			errorMessage << "EE: Could not find custom parameter control script " << controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
 			throw std::runtime_error(errorMessage.str());
 		}
-		// Start the Python C extensions
-		Py_Initialize();
 
 		// Change Python's current path to be the same as that which C++ is
 		// currently using:
@@ -132,9 +132,10 @@ public:
 	void safe_Py_DECREF(PyObject* toBeDeleted)
 	{
 		// Avoid trying to delete null pointers:
-		if (!toBeDeleted)
+		if (toBeDeleted)
 		{
 			Py_DECREF(toBeDeleted);
+			toBeDeleted = NULL;
 		}
 	}
 
@@ -150,22 +151,49 @@ public:
 		safe_Py_DECREF(m_customPythonClass);
 		safe_Py_DECREF(m_customPythonModule);
 		safe_Py_DECREF(m_pythonParameterControllerInstance);
-		// Terminate the Python C extensions
-		Py_Finalize();
 	}
 
 	void updateControl()
 	{
+		// Pack up the pressures and flows in Python dictionaries for this Netlist,
+		// indexed by the input data indices for the nodes / componnents:
+		PyObject* pressuresInThisNetlist = PyDict_New();
+		PyObject* flowsInThisNetlist = PyDict_New();
+		
+		for (auto pressurePair = m_pressurePointerPairs.begin(); pressurePair != m_pressurePointerPairs.end(); pressurePair++)
+		{
+			PyObject* nodeIndexInInputData = PyInt_FromLong((long) pressurePair->first);
+			PyObject* pressurePointer = PyFloat_FromDouble(*(pressurePair->second));
+			errFlag = PyDict_SetItem(pressuresInThisNetlist, nodeIndexInInputData, pressurePointer);
+			assert(errFlag == 0);
+
+			safe_Py_DECREF(nodeIndexInInputData);
+			safe_Py_DECREF(pressurePointer);
+		}
+
+		for (auto flowPair = m_flowPointerPairs.begin(); flowPair != m_flowPointerPairs.end(); flowPair++)
+		{
+			PyObject* componentIndexInInputData = PyInt_FromLong((long) flowPair->first);
+			PyObject* flowPointer = PyFloat_FromDouble(*(flowPair->second));
+			errFlag = PyDict_SetItem(flowsInThisNetlist, componentIndexInInputData, flowPointer);
+			assert(errFlag == 0);
+
+			safe_Py_DECREF(componentIndexInInputData);
+			safe_Py_DECREF(flowPointer);
+		}
+
+
 		// Convert the parameter value to Python format, for passing to Python:
 		PyObject* parameterValue = PyFloat_FromDouble(*mp_parameterToControl);
-
-		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, NULL);
-
+		// Call the updateControl method in the Python script:
+		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, pressuresInThisNetlist, flowsInThisNetlist, NULL);
 		// Place the newly-computed parameter value object being controlled:
 		*mp_parameterToControl = PyFloat_AsDouble(newParameterValue);
 
 		safe_Py_DECREF(parameterValue);
 		safe_Py_DECREF(newParameterValue);
+		safe_Py_DECREF(pressuresInThisNetlist);
+		safe_Py_DECREF(flowsInThisNetlist);
 	}
 private:
 	PyObject* m_delt;
@@ -175,6 +203,11 @@ private:
 	PyObject* m_customPythonClass;
 	PyObject* m_customPythonModule;
 	PyObject* m_pythonParameterControllerInstance;
+
+	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
+	const std::vector<std::pair<int,double*>> m_flowPointerPairs;
+
+	int errFlag;
 };
 
 #endif

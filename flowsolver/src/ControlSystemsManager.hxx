@@ -1,5 +1,7 @@
 #ifndef CONTROLSYSTEMSMANAGER_HXX_
 #define CONTROLSYSTEMSMANAGER_HXX_
+
+#include <Python.h>
 #include "ParameterController.hxx"
 #include "NetlistBoundaryCondition.hxx"
 #include "datatypesInCpp.hxx"
@@ -18,9 +20,17 @@ public:
 	ControlSystemsManager(const double delt)
 	: m_delt(delt)
 	{
+		// Start the Python C extensions
+		// Py_Initialize();
 	}
 	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex);
 	void updateAllControlSystems();
+
+	~ControlSystemsManager()
+	{
+		// Terminate the Python C extensions
+		// Py_Finalize();
+	}
 private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;
 	const double m_delt;

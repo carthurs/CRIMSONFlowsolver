@@ -553,6 +553,16 @@ boost::shared_ptr<CircuitComponent> NetlistCircuit::getComponentByInputDataIndex
     return mp_circuitData->getComponentByInputDataIndex(componentIndex);
 }
 
+std::vector<std::pair<int,double*>> NetlistCircuit::getComponentInputDataIndicesAndFlows() const
+{
+    return mp_circuitData->getComponentInputDataIndicesAndFlows();
+}
+
+std::vector<std::pair<int,double*>> NetlistCircuit::getNodeInputDataIndicesAndPressures() const
+{
+    return mp_circuitData->getNodeInputDataIndicesAndPressures();
+}
+
 void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep

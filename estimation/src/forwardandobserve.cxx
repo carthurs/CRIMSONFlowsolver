@@ -27,6 +27,7 @@
 //#include <omp.h>
 //#endif
 
+#include <Python.h>
 #include <petscmat.h>
 #include <petscvec.h>
 #include <petscksp.h>
@@ -85,6 +86,7 @@ int main(int argc, char** argv)
 	}
 
 	PetscInitialize(&argc, &argv, (char *)0, help);
+    Py_Initialize();
 
     std::string current_directory = getenv("PWD");
     std::string input_filename = argv[1];
@@ -113,6 +115,7 @@ int main(int argc, char** argv)
 
     END;
 
+    Py_Finalize();
     int ierr;
     ierr = PetscFinalize();
     CHKERRQ(ierr);

@@ -426,6 +426,18 @@ void CircuitComponent::disableDiodeFlow()
 	m_permitsFlow = false;
 }
 
+double* CircuitComponent::getFlowPointer()
+{
+	double* flowPointer = &flow;
+	return flowPointer;
+}
+
+double* CircuitPressureNode::getPressurePointer()
+{
+	double* pressurePointer = &pressure;
+	return pressurePointer;
+}
+
 // In particular, this is for starting a simulation with all diodes shut, for stability.
 void CircuitData::closeAllDiodes()
 {
@@ -686,6 +698,27 @@ boost::shared_ptr<CircuitComponent> CircuitData::getComponentByInputDataIndex(co
 {
 	return mapOfComponents.at(componentIndex);
 }
+
+std::vector<std::pair<int,double*>> CircuitData::getComponentInputDataIndicesAndFlows() const
+{
+	std::vector<std::pair<int,double*>> returnValue;
+	for (auto componentPair = mapOfComponents.begin(); componentPair != mapOfComponents.end(); componentPair++)
+	{
+		returnValue.push_back(std::make_pair(componentPair->first, componentPair->second->getFlowPointer()));
+	}
+	return returnValue;
+}
+
+std::vector<std::pair<int,double*>> CircuitData::getNodeInputDataIndicesAndPressures() const
+{
+	std::vector<std::pair<int,double*>> returnValue;
+	for (auto nodePair = mapOfPressureNodes.begin(); nodePair != mapOfPressureNodes.end(); nodePair++)
+	{
+		returnValue.push_back(std::make_pair(nodePair->first, nodePair->second->getPressurePointer()));
+	}
+	return returnValue;
+}
+
 
 bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const
 {

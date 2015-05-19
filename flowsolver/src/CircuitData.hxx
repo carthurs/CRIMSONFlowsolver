@@ -86,6 +86,7 @@ public:
 	void disableDiodeFlow();
 	circuit_component_t& getType();
 	double* getParameterPointer();
+	double* getFlowPointer();
 	void setParameterValue(double const parameterValue);
 	int getIndex() const;
 	void setIndex(const int index);
@@ -214,6 +215,7 @@ public:
 	    prescribedPressurePointerIndex = 0;
 	}
 
+	double* getPressurePointer();
 	void setIsAtBoundary();
 	bool isAtBoundary() const;
 	double getPressure() const;
@@ -278,6 +280,9 @@ public:
 	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
 	bool flowPermittedAcross3DInterface() const;
 	bool boundaryConditionTypeHasJustChanged();
+
+	std::vector<std::pair<int,double*>> getComponentInputDataIndicesAndFlows() const;
+	std::vector<std::pair<int,double*>> getNodeInputDataIndicesAndPressures() const;
 
 	void setIndexOfNodeAtInterface(std::vector<int> indexToSet);
 	int getIndexOfNodeAtInterface();

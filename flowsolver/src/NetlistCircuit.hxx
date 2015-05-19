@@ -193,6 +193,7 @@ private:
 	virtual void setupPressureNode(const int indexOfEndNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> component);
 	virtual bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
 	void findLinearSystemIndicesOf3DInterfacePressureAndFlow();
+	void setupCustomPythonControlSystems();
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 

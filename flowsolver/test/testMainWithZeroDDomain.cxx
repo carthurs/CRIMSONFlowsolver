@@ -358,3 +358,50 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
   	EXPECT_NEAR(-48823.4344337329,flowResult,1e-8);
   }
 }
+
+// This test includes Python controllers on both pressure nodes
+// and resistances in the downstream closed loop.
+TEST_F(testMainWithZeroDDomain, checkDownstreamPythonElastanceController) {
+  setSimDirectory("mainTests/zeroDDomain/downstreamPythonParameterControllers");
+  clearOutOldFiles();
+
+  runSimulation();
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
+  {
+  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
+  	closedLoopDownstreamPressures.setNumColumns(5);
+  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+  	double pressureResult = closedLoopDownstreamPressures.getReadFileData(1,1000);
+  	EXPECT_NEAR(498.519721797159,pressureResult,1e-8);
+
+  	pressureResult = closedLoopDownstreamPressures.getReadFileData(2,1000);
+  	EXPECT_NEAR(498.519721797159,pressureResult,1e-8);
+
+  	pressureResult = closedLoopDownstreamPressures.getReadFileData(3,1000);
+  	EXPECT_NEAR(0.990355044196067,pressureResult,1e-8);
+
+  	pressureResult = closedLoopDownstreamPressures.getReadFileData(4,1000);
+  	EXPECT_NEAR(5489.82349624579,pressureResult,1e-8);
+  }
+
+  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
+  {
+  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
+  	closedLoopDownstreamPressures.setNumColumns(4);
+  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+  	double flowResult = closedLoopDownstreamPressures.getReadFileData(1,1000);
+  	EXPECT_NEAR(0.0,flowResult,1e-8);
+
+  	flowResult = closedLoopDownstreamPressures.getReadFileData(2,1000);
+  	EXPECT_NEAR(49913.0377444863,flowResult,1e-8);
+
+  	flowResult = closedLoopDownstreamPressures.getReadFileData(3,1000);
+  	EXPECT_NEAR(-49913.0377444863,flowResult,1e-8);
+  }
+}

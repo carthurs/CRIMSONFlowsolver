@@ -77,6 +77,10 @@ void NetlistCircuit::createCircuitDescription()
         mp_circuitData->initialiseNodeAndComponentAtInterface(threeDNodeIndex);
     }
 
+}
+
+void NetlistCircuit::setupCustomPythonControlSystems()
+{
     // Give any components tagged in the input data for custom Python
     // control systems the name of their Python controller script:
     std::vector<std::pair<int,std::string>> userDefinedComponentControllers = mp_netlistFileReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
@@ -246,6 +250,7 @@ void NetlistCircuit::createBasicCircuitDescription()
     // {
     //     mp_circuitData.componentIndices.push_back(ii);
     // }
+    setupCustomPythonControlSystems();
 }
 
 // This function gets a pointer to, or creates anew, a pressure node (dependent on whether the node already has been

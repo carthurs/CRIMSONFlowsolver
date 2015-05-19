@@ -91,16 +91,19 @@ public:
 	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs)
 	: AbstractParameterController(parameterToControl),
 	m_delt(PyFloat_FromDouble(delt)),
+	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName),
 	m_pressurePointerPairs(pressurePointerPairs),
 	m_flowPointerPairs(flowPointerPairs)
 	{
+		m_updateControlNameString = "updateControl";
+
 		std::stringstream fullFileName;
-		fullFileName << controllerPythonScriptBaseName << ".py";
+		fullFileName << m_controllerPythonScriptBaseName << ".py";
 		boost::filesystem::path fullFileName_path(fullFileName.str());
 		if (!boost::filesystem::exists(fullFileName_path))
 		{
 			std::stringstream errorMessage;
-			errorMessage << "EE: Could not find custom parameter control script " << controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			errorMessage << "EE: Could not find custom parameter control script " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
 			throw std::runtime_error(errorMessage.str());
 		}
 
@@ -112,21 +115,36 @@ public:
 
 		// This is the name of the method that gets called on the class to update the control
 		// on each time-step
-		m_updateControlPyobjectName = PyString_FromString("updateControl");
-		m_pythonControllerClassName = PyString_FromString(controllerPythonScriptBaseName.c_str());
-		m_pythonScriptName = PyString_FromString(controllerPythonScriptBaseName.c_str());
+		m_updateControlPyobjectName = PyString_FromString(m_updateControlNameString.c_str());
+		m_pythonControllerClassName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
+		m_pythonScriptName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
 		m_customPythonModule = PyImport_Import(m_pythonScriptName);
 
 		// Get a reference to the custom controller class from within the user-provide Python script
 		m_customPythonClass = PyObject_GetAttr(m_customPythonModule, m_pythonControllerClassName);
+		if (m_customPythonClass == NULL)
+		{
+			std::stringstream errorMessage;
+			errorMessage << "EE: Could not find a class named " << m_controllerPythonScriptBaseName.c_str();
+			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			throw std::runtime_error(errorMessage.str());
+		}
 
 
 		// Instantiate the Python controller class:
-		if (PyCallable_Check(m_customPythonClass))
+		if (PyCallable_Check(m_customPythonClass) == 1)
 		{
 			// Instantiate the controller class
 			m_pythonParameterControllerInstance = PyObject_CallObject(m_customPythonClass, NULL);
 		}
+		else
+		{
+			std::stringstream errorMessage;
+			errorMessage << "EE: Failed to call a class named " << m_controllerPythonScriptBaseName.c_str();
+			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			throw std::runtime_error(errorMessage.str());
+		}
+
 	}
 
 	void safe_Py_DECREF(PyObject* toBeDeleted)
@@ -187,6 +205,14 @@ public:
 		PyObject* parameterValue = PyFloat_FromDouble(*mp_parameterToControl);
 		// Call the updateControl method in the Python script:
 		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, pressuresInThisNetlist, flowsInThisNetlist, NULL);
+		if (newParameterValue == NULL)
+		{
+			std::stringstream errorMessage;
+			errorMessage << "EE: Failed to call a method named " << m_updateControlNameString;
+			errorMessage << " of a class named " << m_controllerPythonScriptBaseName.c_str();
+			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			throw std::runtime_error(errorMessage.str());
+		}
 		// Place the newly-computed parameter value object being controlled:
 		*mp_parameterToControl = PyFloat_AsDouble(newParameterValue);
 
@@ -203,6 +229,9 @@ private:
 	PyObject* m_customPythonClass;
 	PyObject* m_customPythonModule;
 	PyObject* m_pythonParameterControllerInstance;
+
+	std::string m_updateControlNameString;
+	std::string m_controllerPythonScriptBaseName;
 
 	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
 	const std::vector<std::pair<int,double*>> m_flowPointerPairs;

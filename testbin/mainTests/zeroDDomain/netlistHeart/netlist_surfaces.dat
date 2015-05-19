@@ -70,6 +70,7 @@ t
 # number of nodes with control
 0
 # details of nodes with control (l= lv elastance):
+#5 customPython nodeController
 ### Begin SECOND netlist boundary condition model
 # Number of Components
 3

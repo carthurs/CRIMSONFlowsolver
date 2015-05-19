@@ -438,6 +438,30 @@ double* CircuitPressureNode::getPressurePointer()
 	return pressurePointer;
 }
 
+bool CircuitPressureNode::hasUserDefinedExternalPythonScriptParameterController() const
+{
+	return m_hasPythonParameterController;
+}
+
+std::string CircuitPressureNode::getPythonControllerName() const
+{
+	assert(m_hasPythonParameterController);
+	return m_pythonParameterControllerName;
+}
+
+// Sets the name "whateverName" of the nodal pressure controller to look for in the
+// working directory: whateverName.py, containing class whateverName,
+// with class method:
+// newParamterValue = updateControl(self, oldParameterValue, delt).
+//
+// This should be a Python script.
+void CircuitPressureNode::setPythonControllerName(const std::string pythonParameterControllerName)
+{
+	assert(!m_hasPythonParameterController);
+	m_hasPythonParameterController = true;
+	m_pythonParameterControllerName = pythonParameterControllerName;
+}
+
 // In particular, this is for starting a simulation with all diodes shut, for stability.
 void CircuitData::closeAllDiodes()
 {
@@ -697,6 +721,11 @@ bool CircuitData::hasPrescribedPressureAcrossInterface() const
 boost::shared_ptr<CircuitComponent> CircuitData::getComponentByInputDataIndex(const int componentIndex)
 {
 	return mapOfComponents.at(componentIndex);
+}
+
+boost::shared_ptr<CircuitPressureNode> CircuitData::getNodeByInputDataIndex(const int componentIndex)
+{
+	return mapOfPressureNodes.at(componentIndex);
 }
 
 std::vector<std::pair<int,double*>> CircuitData::getComponentInputDataIndicesAndFlows() const

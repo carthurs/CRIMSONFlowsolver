@@ -60,9 +60,9 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 			break;
 
-		case Controller_CustomPython:
+		case Controller_CustomPythonComponent:
 			{
-				// get the component or node:
+				// get the component:
 				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
 				double* parameterToControl = controlledComponent->getParameterPointer();
 				std::string externalPythonControllerName;
@@ -84,7 +84,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				else
 				{
 					std::stringstream errorMessage;
-					errorMessage << "EE: A component or node of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
@@ -95,6 +95,40 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 			break;
 
+		case Controller_CustomPythonNode:
+			{
+				// get the component:
+				boost::shared_ptr<CircuitPressureNode> controlledNode = netlistCircuit->getNodeByInputDataIndex(nodeOrComponentIndex);
+				double* pressureToControl = controlledNode->getPressurePointer();
+				std::string externalPythonControllerName;
+				std::vector<std::pair<int,double*>> flowPointerPairs;
+				std::vector<std::pair<int,double*>> pressurePointerPairs;
+
+				if (controlledNode->hasUserDefinedExternalPythonScriptParameterController())
+				{
+					externalPythonControllerName = controlledNode->getPythonControllerName();
+
+					// Gather the pressures and flows as pointers, so the CustomPython parameter
+					// controller can retrieve the pressure and flow values for each component
+					// of its netlist, and pass them to the Python controller for use by the user.
+					// They're indexed by the input data indices for the nodes / componnents:
+					flowPointerPairs = netlistCircuit->getComponentInputDataIndicesAndFlows();
+					pressurePointerPairs = netlistCircuit->getNodeInputDataIndicesAndPressures();
+
+				}
+				else
+				{
+					std::stringstream errorMessage;
+					errorMessage << "EE: A node of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
+					throw std::runtime_error(errorMessage.str());
+				}
+
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs));
+				m_controlSystems.push_back(controllerToPushBack);
+			}
+
+			break;
 		default:
 			std::stringstream errorMessage;
 			errorMessage << "EE: Unknown control parameter type (controllerType) requested for Netlist boundary condition for surface " << netlistCircuit->getSurfaceIndex() << "." << std::endl;

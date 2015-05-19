@@ -62,11 +62,12 @@ t
 1
 # Number of components with control
 1
-# detains of components with control (component index, control type char; l=LV elastance)
+# details of components with control (component index, control type char; l=LV elastance)
 5 customPython elastanceController
 # number of nodes with control
-0
+1
 # details of nodes with control (l= lv elastance):
+6 customPython nodeController
 ### Begin SECOND netlist boundary condition model
 # Number of Components
 3

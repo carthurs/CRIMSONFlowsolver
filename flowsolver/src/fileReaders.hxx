@@ -323,7 +323,7 @@ public:
 	std::vector<std::map<int,parameter_controller_t>>& getMapsOfNodalControlTypesForEachSurface();
 	virtual int getNumberOfNetlistSurfaces();
 	std::vector<std::pair<int,std::string>> getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const;
-
+	std::vector<std::pair<int,std::string>> getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const;
 
 protected:
 	int m_indexOfNetlistCurrentlyBeingReadInFile;
@@ -368,6 +368,7 @@ protected:
 	std::vector<std::map<int,parameter_controller_t>> m_mapsOfNodalControlTypesForEachSurface;
 
 	std::vector<std::vector<std::pair<int,std::string>>> m_userDefinedComponentControllersAndPythonNames;
+	std::vector<std::vector<std::pair<int,std::string>>> m_userDefinedNodeControllersAndPythonNames;
 
 	NetlistReader()
 	{

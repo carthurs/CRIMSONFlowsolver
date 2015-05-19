@@ -62,6 +62,6 @@ Simulate in Purely Zero Dimensions: True
 # SOLUTION CONTROL
 # {
     Equation of State : Incompressible
-    Number of Timesteps : 30000
+    Number of Timesteps : 1000
     Time Step Size : 0.001
 # }

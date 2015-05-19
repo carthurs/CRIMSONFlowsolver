@@ -601,7 +601,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("customPython") == 0)
 		{
-			controlType = Controller_CustomPython;
+			controlType = Controller_CustomPythonComponent;
 			// Store the name of the Python script that controls this surface:
 			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
@@ -623,14 +623,18 @@ void NetlistReader::readControlSystemPrescriptions()
 	readNextLine();
 	m_numberOfNodesWithControl.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
 	std::map<int,parameter_controller_t> nodalControlTypesForThisSurface;
+	std::vector<std::pair<int,std::string>> userDefinedNodeControllersAndPythonNamesForThisSurface;
 	for (int controlledNode=0; controlledNode < m_numberOfNodesWithControl.back(); controlledNode++)
 	{
 		parameter_controller_t controlType;
 		readNextLine();
 		// Work out what sort of control is required for this component:
-		if (true) // proximal coronary resistor control
+		if (mp_currentLineSplitBySpaces->at(1).compare("customPython") == 0)
 		{
-			throw std::runtime_error("EE: No nodal control is implemented yet. This is not an input data problem; coding is needed! - fileReaders.cxx");
+			controlType = Controller_CustomPythonNode;
+			// Store the name of the Python script that controls this surface:
+			int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
+			userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));
 		}
 		else
 		{
@@ -643,11 +647,17 @@ void NetlistReader::readControlSystemPrescriptions()
 		nodalControlTypesForThisSurface.insert( std::make_pair(nodeIndex,controlType) );
 	}
 	m_mapsOfNodalControlTypesForEachSurface.push_back(nodalControlTypesForThisSurface);
+	m_userDefinedNodeControllersAndPythonNames.push_back(userDefinedNodeControllersAndPythonNamesForThisSurface);
 }
 
 std::vector<std::pair<int,std::string>> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
 {
 	return m_userDefinedComponentControllersAndPythonNames.at(surfaceIndex);
+}
+
+std::vector<std::pair<int,std::string>> NetlistReader::getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const
+{
+	return m_userDefinedNodeControllersAndPythonNames.at(surfaceIndex);
 }
 
 std::vector<std::vector<circuit_component_t>> NetlistReader::getComponentTypes()

@@ -84,6 +84,36 @@ void NetlistCircuit::createCircuitDescription()
     {
         mp_circuitData->mapOfComponents.at(componentIndexAndPythonName->first)->setPythonControllerName(componentIndexAndPythonName->second);
     }
+    // Give any nodes tagged in the input data for custom Python
+    // control systems the name of their Python controller script:
+    std::vector<std::pair<int,std::string>> userDefinedNodeControllers = mp_netlistFileReader->getUserDefinedNodeControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
+    for (auto nodeIndexAndPythonName = userDefinedNodeControllers.begin(); nodeIndexAndPythonName != userDefinedNodeControllers.end(); nodeIndexAndPythonName++)
+    {
+        // Nodal parameter (i.e. presure) controllers can only be attached
+        // to _prescribed_ pressure nodes - here we try to get the requested
+        // node from mapOfPrescribedPressureNodes; if this fails, we throw an error telling
+        // the user that they can only use prescribed pressure nodes here.
+        try
+        {
+            mp_circuitData->mapOfPrescribedPressureNodes.at(nodeIndexAndPythonName->first)->setPythonControllerName(nodeIndexAndPythonName->second);
+        }
+        catch (std::out_of_range& outOfRange)
+        {
+            bool pressureNodeExistsButIsNotAPrescribedPressureNode = (mp_circuitData->mapOfPressureNodes.count(nodeIndexAndPythonName->first) == 1);
+            if (pressureNodeExistsButIsNotAPrescribedPressureNode)
+            {
+                std::stringstream errorMessage;
+                errorMessage << "EE: Nodal parameter controllers can only be attached to prescribed pressure nodes, as specified in the Netlist description." << std::endl;
+                throw std::runtime_error(errorMessage.str());
+            }
+            else
+            {
+                // If the node doesn't even exist, just rethrow the original out_of_range error
+                throw outOfRange;
+            }
+        }
+        
+    }
 }
 
 void NetlistCircuit::createBasicCircuitDescription()
@@ -551,6 +581,11 @@ void NetlistCircuit::finalizeLPNAtEndOfTimestep()
 boost::shared_ptr<CircuitComponent> NetlistCircuit::getComponentByInputDataIndex(const int componentIndex)
 {
     return mp_circuitData->getComponentByInputDataIndex(componentIndex);
+}
+
+boost::shared_ptr<CircuitPressureNode> NetlistCircuit::getNodeByInputDataIndex(const int componentIndex)
+{
+    return mp_circuitData->getNodeByInputDataIndex(componentIndex);
 }
 
 std::vector<std::pair<int,double*>> NetlistCircuit::getComponentInputDataIndicesAndFlows() const

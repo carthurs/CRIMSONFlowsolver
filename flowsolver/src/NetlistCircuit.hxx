@@ -92,6 +92,7 @@ public:
 
 	virtual std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
+	boost::shared_ptr<CircuitPressureNode> getNodeByInputDataIndex(const int componentIndex);
 	int getNumberOfHistoryPressures() const;
 protected:
 	// Overload constructor for subclasses to call:

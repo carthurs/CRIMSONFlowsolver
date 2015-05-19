@@ -211,6 +211,7 @@ public:
 	{
 		hasHistoryPressure = false;
 	    m_isAtBoundary = false;
+	    m_hasPythonParameterController = false;
 	    m_entirePressureHistory.reserve(m_hstep);
 	    prescribedPressurePointerIndex = 0;
 	}
@@ -221,12 +222,18 @@ public:
 	double getPressure() const;
 	void setPressure(const double pressure_in);
 	int getIndex() const;
+	void setPythonControllerName(const std::string pythonParameterControllerName);
+	bool hasUserDefinedExternalPythonScriptParameterController() const;
+	std::string getPythonControllerName() const;
+
 protected:
 	double pressure;
 	const int m_hstep;
 private:
 	bool m_isAtBoundary;
 	const int m_indexInInputData;
+	bool m_hasPythonParameterController;
+	std::string m_pythonParameterControllerName;
 };
 
 class CircuitData
@@ -290,6 +297,7 @@ public:
 
 	void closeAllDiodes();
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
+	boost::shared_ptr<CircuitPressureNode> getNodeByInputDataIndex(const int componentIndex);
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 

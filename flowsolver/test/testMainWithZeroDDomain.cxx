@@ -300,8 +300,25 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 		zeroDDomainFlows.setNumColumns(6);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
 		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
-		double pressureResult = zeroDDomainFlows.getReadFileData(1,1000);
-		EXPECT_NEAR(-245488.583296014,pressureResult,1e-8);
+		double flowResult = zeroDDomainFlows.getReadFileData(1,1000);
+		EXPECT_NEAR(-245488.583296014,flowResult,1e-8);
+  }
+
+  // Check netlistPressures_surface_5.dat - this is really a very minimal
+  // test of the nodal python parameter controller - it's set up to prescribe
+  // cosine-in-time pressure on a node which does not affect the results
+  // (the base of the VolumeTrackingPressureChamber - whose pressure is not relevant
+  // to any calculations). We just read the pressure that it has on the last
+  // timestep and confirm that it is what would be expected after 1000 steps
+  // of cosine prescription.
+  {
+		histFileReader heartModelPressures = histFileReader();
+		heartModelPressures.setFileName("netlistPressures_surface_5.dat");
+		heartModelPressures.setNumColumns(7);
+		heartModelPressures.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double pressureResult = heartModelPressures.getReadFileData(6,1000);
+		EXPECT_NEAR(0.990355044196067,pressureResult,1e-8);
   }
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)

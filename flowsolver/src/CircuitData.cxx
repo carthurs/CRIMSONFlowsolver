@@ -88,7 +88,7 @@ void CircuitData::rebuildCircuitMetadata()
 	m_numberOfVolumeTrackingComponenets = 0;
 	for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 	{
-		if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (Component->second))
+		if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (component->second))
 		{
 			mapOfVolumeTrackingComponents.insert(std::make_pair(component->first,component->second));
 			m_numberOfVolumeTrackingComponenets++;
@@ -1132,7 +1132,7 @@ void VolumeTrackingPressureChamber::passPressureToStartNode()
 {
 	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
 	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
-	std::cout << "pressure: " << m_pressure << std::endl;
+	std::cout << "pressure set to: " << m_pressure << std::endl;
 	startNode->setPressure(m_pressure);
 }
 

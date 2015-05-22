@@ -138,6 +138,10 @@ void NetlistCircuit::createBasicCircuitDescription()
         {
             toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
         }
+        else if (retrievedComponentTypes.at(ii) == Component_VolumeTracking)
+        {
+            toPushBack = new VolumeTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
+        }
         else
         {
             toPushBack = new CircuitComponent(m_hstep,m_thisIsARestartedSimulation);
@@ -360,7 +364,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
 
 
       {
-        // Write the volumes of the pressure chambers, as netlistVolumes_surface_X.dat
+        // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
         basicFileWriter boundaryConditionVolumeHistoryWriter;
         boundaryConditionVolumeHistoryWriter.setFileName(m_VolumeHistoryFileName);
         for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
@@ -368,11 +372,11 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
           boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
           for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
           {
-            VolumeTrackingComponent* pressureChamber = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
+            VolumeTrackingComponent* volumeTrackingComponent = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
             // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
-            if (pressureChamber != NULL)
+            if (volumeTrackingComponent != NULL)
             {
-              boundaryConditionVolumeHistoryWriter.writeToFile(pressureChamber->getVolumeHistoryAtTimestep(stepToWrite));
+              boundaryConditionVolumeHistoryWriter.writeToFile(volumeTrackingComponent->getVolumeHistoryAtTimestep(stepToWrite));
             }
           }
           boundaryConditionVolumeHistoryWriter.writeEndLine();
@@ -656,6 +660,10 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         if (componentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
             toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
+        }
+        else if (componentTypes.at(ii) == Component_VolumeTracking)
+        {
+            toPushBack = new VolumeTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
         }
         else
         {
@@ -1173,7 +1181,7 @@ void NetlistCircuit::getMapOfVolumeHistoriesToCorrectComponents()
   for (int ii=0; ii<mp_circuitData->numberOfComponents; ii++)
   {
      // Check for VolumeTrackingPressureChambers, as these need volume "histories" (volume from the previous time-step) (for dVolume/dt term).
-     if(mp_circuitData->components.at(ii)->getType() == Component_VolumeTrackingPressureChamber)
+     if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (mp_circuitData->components.at(ii)))
      {
         listOfHistoryVolumes.insert(ii);
         mp_circuitData->components.at(ii)->hasHistoryVolume = true;
@@ -1197,7 +1205,7 @@ void NetlistCircuit::getMapOfTrackedVolumesToCorrectComponents()
   for (int ii=0; ii<mp_circuitData->numberOfComponents; ii++)
   {
      // Check for VolumeTrackingPressureChambers, as these need volume tracking (for computing the current pressure, via the compliance/elastance).
-     if(mp_circuitData->components.at(ii)->getType() == Component_VolumeTrackingPressureChamber)
+     if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (mp_circuitData->components.at(ii)))
      {
         listOfTrackedVolumes.insert(ii);
         mp_circuitData->components.at(ii)->hasTrackedVolume = true;

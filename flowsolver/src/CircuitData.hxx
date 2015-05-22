@@ -116,13 +116,12 @@ public:
 	{
 		assert(!thisIsARestartedSimulation);
 		m_storedVolume = 130000.0; // default; can be changed later if necessary
-		m_unstressedVolume = 0.0; // default; can be changed later if necessary
 		m_entireVolumeHistory.reserve(hstep);
 		m_enforceZeroVolumePrescription = false;
 	}
 
 	double getVolumeHistoryAtTimestep(int timestep);
-	void setStoredVolume(const double newVolume);
+	virtual void setStoredVolume(const double newVolume);
 	void setProposedVolume(const double proposedVolume);
 	double getVolume();
 	double* getVolumePointer();
@@ -134,14 +133,13 @@ public:
 	void enforceZeroVolumePrescription();
 	void resetZeroVolumePrescription();
 	void recordVolumeInHistory();
-private:
+protected:
 	double m_pressure;
 	double m_storedVolume;
 	double m_proposedVolume; // this holds volumes temporarily, so that we can check them for invalid negative values & do something about it if necessary
 	double m_historyVolume;
 	bool m_enforceZeroVolumePrescription;
 	std::vector<double> m_entireVolumeHistory;
-	void passPressureToStartNode();
 };
 
 class VolumeTrackingPressureChamber : public VolueTrackingComponent
@@ -153,8 +151,11 @@ public:
 		assert(!thisIsARestartedSimulation);
 		m_unstressedVolume = 0.0; // default; can be changed later if necessary
 	}
+	
+	void setStoredVolume(const double newVolume);
 private:
 	double m_unstressedVolume;
+	void passPressureToStartNode();
 };
 
 class CircuitPressureNode
@@ -228,7 +229,7 @@ public:
 	int numberOfPrescribedFlows;
 	int numberOfPressureNodes;
 	int numberOfComponents;
-	int m_numberOfVolumeTrackingPressureChambers;
+	int m_numberOfVolumeTrackingComponenets;
 
 	// These maps have indexInInputData as the key, and a shared_ptr to the relevant node/circuit as the mapped value.
 	// Although this provides useful random access by indexInInputData, it is often useful to just use the std::map iterator to process them all.

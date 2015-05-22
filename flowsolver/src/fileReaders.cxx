@@ -440,6 +440,10 @@ void NetlistReader::readCircuitStructure()
 		{
 			tempComponentTypes.push_back(Component_Diode);
 		}
+		else if (mp_currentLineSplitBySpaces->at(0).compare("t") == 0)
+		{
+			tempComponentTypes.push_back(Component_VolumeTracking);
+		}
 		else if (mp_currentLineSplitBySpaces->at(0).compare("v") == 0)
 		{
 			tempComponentTypes.push_back(Component_VolumeTrackingPressureChamber);

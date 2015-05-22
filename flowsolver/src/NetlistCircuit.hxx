@@ -212,10 +212,10 @@ private:
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
-	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure)
+	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure)
 	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
-	m_elastanceToGiveVolumeTrackingPressureChamber(elastanceToGiveVolumeTrackingPressureChamber),
+	m_elastanceToGiveCentralCapacitor(complianceToGiveCentralCapacitor),
 	m_initialDomainPressure(initialDomainPressure),
 	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
@@ -240,7 +240,7 @@ private:
 	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	const double m_oneResistanceToGiveEachResistor;
-	const double m_elastanceToGiveVolumeTrackingPressureChamber;
+	const double m_elastanceToGiveCentralCapacitor;
 	const double m_initialDomainPressure;
 };
 

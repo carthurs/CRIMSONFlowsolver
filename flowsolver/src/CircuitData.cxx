@@ -83,15 +83,15 @@ void CircuitData::rebuildCircuitMetadata()
 	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();
 	numberOfComponents = mapOfComponents.size();
 
-	// Get the number of VolumeTrackingPressureChambers,
+	// Get the number of VolumeTrackingComponents,
 	// and generate mapOfVolumeTrackingComponents:
-	m_numberOfVolumeTrackingPressureChambers = 0;
+	m_numberOfVolumeTrackingComponenets = 0;
 	for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 	{
 		if (component->second->getType() == Component_VolumeTrackingPressureChamber)
 		{
 			mapOfVolumeTrackingComponents.insert(std::make_pair(component->first,component->second));
-			m_numberOfVolumeTrackingPressureChambers++;
+			m_numberOfVolumeTrackingComponenets++;
 		}
 	}
 
@@ -1066,14 +1066,6 @@ void CircuitPressureNode::setPressure(const double pressure_in)
 	pressure = pressure_in;
 }
 
-void VolueTrackingComponent::passPressureToStartNode()
-{
-	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
-	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
-	std::cout << "pressure: " << m_pressure << std::endl;
-	startNode->setPressure(m_pressure);
-}
-
 void VolueTrackingComponent::recordVolumeInHistory()
 {
 	m_entireVolumeHistory.push_back(m_storedVolume);
@@ -1087,7 +1079,6 @@ double VolueTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
 void VolueTrackingComponent::setStoredVolume(const double newVolume)
 {
 	m_storedVolume = newVolume;
-	passPressureToStartNode();
 }
 // The /proposed/ volume is the one which gets checked for negative (invalid) values
 // so that we can detect such invalid cases, and take steps to remedy.
@@ -1135,4 +1126,18 @@ void VolueTrackingComponent::enforceZeroVolumePrescription()
 void VolueTrackingComponent::resetZeroVolumePrescription()
 {
 	m_enforceZeroVolumePrescription = false;
+}
+
+void VolumeTrackingPressureChamber::passPressureToStartNode()
+{
+	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
+	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
+	std::cout << "pressure: " << m_pressure << std::endl;
+	startNode->setPressure(m_pressure);
+}
+
+void VolumeTrackingPressureChamber::setStoredVolume(const double newVolume)
+{
+	m_storedVolume = newVolume;
+	passPressureToStartNode();
 }

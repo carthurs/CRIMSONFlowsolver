@@ -136,7 +136,7 @@ void NetlistCircuit::createBasicCircuitDescription()
         CircuitComponent* toPushBack;
         if (retrievedComponentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
-            toPushBack = new VolueTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
+            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
         }
         else
         {
@@ -655,7 +655,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         CircuitComponent* toPushBack;
         if (componentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
-            toPushBack = new VolueTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
+            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
         }
         else
         {
@@ -723,7 +723,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     std::reverse(componentEndNodes.begin(), componentEndNodes.end());
 
     // std::vector<double> componentParameterValues(m_numberOfNetlistsUsedAsBoundaryConditions, m_oneResistanceToGiveEachResistor);
-    // componentParameterValues.push_back(m_elastanceToGiveVolumeTrackingPressureChamber);
+    // componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
 
     boost::shared_ptr<Netlist3DDomainReplacementCircuitData> downcastDomainReplacementCircuitData = boost::dynamic_pointer_cast<Netlist3DDomainReplacementCircuitData> (mp_circuitData);
     for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; dpDqResistorIndex++)
@@ -751,7 +751,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
-    componentParameterValues.push_back(m_elastanceToGiveVolumeTrackingPressureChamber);
+    componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
 
     std::reverse(componentParameterValues.begin(), componentParameterValues.end());
 
@@ -1310,7 +1310,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             errFlag = MatSetValue(m_systemMatrix,row,componentIndexToFlowHistoryComponentOrderingMap.at(indexOfThisComponentsFlow)+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures+mp_circuitData->numberOfComponents,currentParameterValue/alfi_delt,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
           }
-          else if ((*component)->getType() == Component_VolumeTrackingPressureChamber)
+          else if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (*component))
           {
             // Two equations are needed for the VolueTrackingComponent:
             // 1) dVolume/dt = flow
@@ -1335,12 +1335,12 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
 
             // Now do (2) (see comment block above, within this if-case)
             // Do the compliance term:
-            boost::shared_ptr<VolueTrackingComponent> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolueTrackingComponent> (*component);
-            if (!volumeTrackingPressureChamber->zeroVolumeShouldBePrescribed()) // test whether, on a previous attempt to solve the system, negative volumes were detected. If so, we'll do something different in the "else" below...
+            boost::shared_ptr<VolueTrackingComponent> volumeTrackingComponent = boost::dynamic_pointer_cast<VolueTrackingComponent> (*component);
+            if (!volumeTrackingComponent->zeroVolumeShouldBePrescribed()) // test whether, on a previous attempt to solve the system, negative volumes were detected. If so, we'll do something different in the "else" below...
             {
               {
                 int columnIndex = toZeroIndexing((*component)->startNode->getIndex());
-                double valueToInsert = 1.0/(volumeTrackingPressureChamber->getElastance());
+                double valueToInsert = 1.0/(volumeTrackingComponent->getElastance());
                 errFlag = MatSetValue(m_systemMatrix,row,columnIndex,valueToInsert,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               }
               // Do the volume term:
@@ -1359,7 +1359,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
               int columnIndex = componentIndexToTrackedVolumeComponentOrderingMap.at(zeroIndexOfThisComponent) + mp_circuitData->numberOfPressureNodes + m_numberOfHistoryPressures + mp_circuitData->numberOfComponents + numberOfHistoryFlows;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               // Reset the zero-volume marker on the component:
-              volumeTrackingPressureChamber->resetZeroVolumePrescription();
+              volumeTrackingComponent->resetZeroVolumePrescription();
             }
             row++; // done twice in this if-case, because there are 2 equations to create for the VolueTrackingComponent
 
@@ -1715,10 +1715,10 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
       {
         if ((*component)->hasHistoryVolume)
         {
-          // currently, only VolumeTrackingPresureChambers have history volumes. We might want to change this cast later, if new component types
+          // currently, only VolumeTrackingComponents have history volumes. We might want to change this cast later, if new component types
           // with history volumes get added.
-          boost::shared_ptr<VolueTrackingComponent> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolueTrackingComponent> (*component);
-          double volume = volumeTrackingPressureChamber->getHistoryVolume();
+          boost::shared_ptr<VolueTrackingComponent> volumeTrackingComponent = boost::dynamic_pointer_cast<VolueTrackingComponent> (*component);
+          double volume = volumeTrackingComponent->getHistoryVolume();
           int row = ll + tempIndexingShift;
           errFlag = VecSetValue(m_RHS,row,volume,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
           ll++;

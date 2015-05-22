@@ -8,13 +8,6 @@
 
 #include "common_c.h"
 
-void VolumeTrackingPressureChamber::passPressureToStartNode()
-{
-	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
-	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
-	std::cout << "pressure: " << m_pressure << std::endl;
-	startNode->setPressure(m_pressure);
-}
 
 bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
 {
@@ -107,7 +100,7 @@ void CircuitData::rebuildCircuitMetadata()
 	// {
 	// 	if ((*component)->type == Component_VolumeTrackingPressureChamber)
 	// 	{
-	// 		VolumeTrackingPressureChamber* volumeTrackingPressureChamber = dynamic_cast<VolumeTrackingPressureChamber> ((*component).get());
+	// 		VolueTrackingComponent* volumeTrackingPressureChamber = dynamic_cast<VolueTrackingComponent> ((*component).get());
 	// 		if (volumeTrackingPressureChamber->
 	// 	}
 	// }
@@ -748,6 +741,16 @@ std::vector<std::pair<int,double*>> CircuitData::getNodeInputDataIndicesAndPress
 	return returnValue;
 }
 
+std::vector<std::pair<int,double*>> CircuitData::getVolumeTrackingComponentInputDataIndicesAndVolumes() const
+{
+	std::vector<std::pair<int,double*>> returnValue;
+	for (auto componentPair = mapOfVolumeTrackingComponents.begin(); componentPair != mapOfVolumeTrackingComponents.end(); componentPair++)
+	{
+		boost::shared_ptr<VolueTrackingComponent> downcastPressureChamber = boost::dynamic_pointer_cast<VolueTrackingComponent> (componentPair->second);
+		returnValue.push_back(std::make_pair(componentPair->first, downcastPressureChamber->getVolumePointer()));
+	}
+	return returnValue;
+}
 
 bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const
 {
@@ -1061,4 +1064,75 @@ double CircuitPressureNode::getPressure() const
 void CircuitPressureNode::setPressure(const double pressure_in)
 {
 	pressure = pressure_in;
+}
+
+void VolueTrackingComponent::passPressureToStartNode()
+{
+	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
+	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
+	std::cout << "pressure: " << m_pressure << std::endl;
+	startNode->setPressure(m_pressure);
+}
+
+void VolueTrackingComponent::recordVolumeInHistory()
+{
+	m_entireVolumeHistory.push_back(m_storedVolume);
+}
+
+double VolueTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
+{
+	return m_entireVolumeHistory.at(timestep);
+}
+
+void VolueTrackingComponent::setStoredVolume(const double newVolume)
+{
+	m_storedVolume = newVolume;
+	passPressureToStartNode();
+}
+// The /proposed/ volume is the one which gets checked for negative (invalid) values
+// so that we can detect such invalid cases, and take steps to remedy.
+void VolueTrackingComponent::setProposedVolume(const double proposedVolume)
+{
+	m_proposedVolume = proposedVolume;
+}
+double VolueTrackingComponent::getVolume()
+{
+	return m_storedVolume;
+}
+double* VolueTrackingComponent::getVolumePointer()
+{
+	return &m_storedVolume;
+}
+double VolueTrackingComponent::getProposedVolume()
+{
+	std::cout<<"proposed volume was: " << m_proposedVolume << std::endl;
+	return m_proposedVolume;	
+}
+double VolueTrackingComponent::getHistoryVolume()
+{
+	return m_historyVolume;
+}
+void VolueTrackingComponent::cycleHistoryVolume()
+{
+	m_historyVolume = m_storedVolume;
+}
+
+double VolueTrackingComponent::getElastance()
+{
+	return m_currentParameterValue;
+}
+
+bool VolueTrackingComponent::zeroVolumeShouldBePrescribed()
+{
+	return m_enforceZeroVolumePrescription;
+}
+
+void VolueTrackingComponent::enforceZeroVolumePrescription()
+{
+	m_enforceZeroVolumePrescription = true;
+}
+
+void VolueTrackingComponent::resetZeroVolumePrescription()
+{
+	m_enforceZeroVolumePrescription = false;
 }

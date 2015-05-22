@@ -64,6 +64,7 @@ t
 1
 # details of components with control (component index, control type char; l=LV elastance)
 5 customPython elastanceController
+#5 customPython electrophysElastanceController
 # number of nodes with control
 1
 # details of nodes with control (l= lv elastance):

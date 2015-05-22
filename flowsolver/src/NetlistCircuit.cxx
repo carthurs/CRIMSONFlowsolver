@@ -136,7 +136,7 @@ void NetlistCircuit::createBasicCircuitDescription()
         CircuitComponent* toPushBack;
         if (retrievedComponentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
-            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
+            toPushBack = new VolueTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
         }
         else
         {
@@ -368,7 +368,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
           boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
           for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
           {
-            VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+            VolueTrackingComponent* pressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
             // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
             if (pressureChamber != NULL)
             {
@@ -557,8 +557,8 @@ void NetlistCircuit::cycleToSetHistoryPressuresFlowsAndVolumes()
     // - recommed using the hasHistoryVolume bool).
     for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
     {
-        VolumeTrackingPressureChamber* pressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
-        // Ensure this actually is a VolumeTrackingPressureChamber before going further:
+        VolueTrackingComponent* pressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
+        // Ensure this actually is a VolueTrackingComponent before going further:
         if (pressureChamber != NULL)
         {
             // Store the volume for writing to output file:
@@ -603,6 +603,11 @@ std::vector<std::pair<int,double*>> NetlistCircuit::getNodeInputDataIndicesAndPr
     return mp_circuitData->getNodeInputDataIndicesAndPressures();
 }
 
+std::vector<std::pair<int,double*>> NetlistCircuit::getVolumeTrackingComponentInputDataIndicesAndVolumes() const
+{
+    return mp_circuitData->getVolumeTrackingComponentInputDataIndicesAndVolumes();
+}
+
 void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep
@@ -621,14 +626,14 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // Make the appropriate class to store the 3D domain replacement circuit data:
     // mp_circuitData = boost::shared_ptr<Netlist3DDomainReplacementCircuitData> (new Netlist3DDomainReplacementCircuitData(m_hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
 
-    // we'll have a resistor for each netlist used as a boundary condition, plus one VolumeTrackingPressureChamber:
+    // we'll have a resistor for each netlist used as a boundary condition, plus one VolueTrackingComponent:
     mp_circuitData->numberOfComponents = 2*m_numberOfNetlistsUsedAsBoundaryConditions + 1;
 
     // The components will be arranged in a star (all start-nodes are connected together at a single point, all end-nodes only connect to one component)
     mp_circuitData->numberOfPressureNodes = 2*m_numberOfNetlistsUsedAsBoundaryConditions + 2;
 
     // The pressures will initially be received from the boundary conditions at the boundary condition interface nodes,
-    // plus the zero-pressure prescription on the base of the VolumeTrackingPressureChamber:
+    // plus the zero-pressure prescription on the base of the VolueTrackingComponent:
     mp_circuitData->numberOfPrescribedPressures = 1;
     // None initially:
     mp_circuitData->numberOfPrescribedFlows = m_numberOfNetlistsUsedAsBoundaryConditions;
@@ -650,7 +655,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         CircuitComponent* toPushBack;
         if (componentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
-            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
+            toPushBack = new VolueTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
         }
         else
         {
@@ -875,7 +880,7 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     {
     	typeOfPrescribedPressures.push_back(Pressure_3DInterface);
     }
-    // The last prescribed pressure is the one at the base of the VolumeTrackingPressureChamber
+    // The last prescribed pressure is the one at the base of the VolueTrackingComponent
     typeOfPrescribedPressures.push_back(Pressure_Fixed);
 
     std::vector<double> valueOfPrescribedPressures;
@@ -885,7 +890,7 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
         //\todo remove \hardcoded to millimetres! units: 10^0 x Pa here
     	valueOfPrescribedPressures.push_back(1332.0); // ~10 mmHg
     }
-    // The last prescribed pressure is the one at the base of the VolumeTrackingPressureChamber
+    // The last prescribed pressure is the one at the base of the VolueTrackingComponent
     valueOfPrescribedPressures.push_back(0.0);
 
 
@@ -1307,7 +1312,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
           }
           else if ((*component)->getType() == Component_VolumeTrackingPressureChamber)
           {
-            // Two equations are needed for the VolumeTrackingPressureChamber:
+            // Two equations are needed for the VolueTrackingComponent:
             // 1) dVolume/dt = flow
             // 2) compliance * pressure = (volume - unstressed volume) ... unstressed vol will go on m_RHS of system, later.
             // Note that this means we increment row (row++) twice during this if-case
@@ -1326,11 +1331,11 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
               // std::cout << "setting in NetlistSubcircuit.cxx row and column: " << row << " " << columnIndex << std::endl;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
-            row++; // done twice in this if-case, because there are 2 equations to create for the VolumeTrackingPressureChamber
+            row++; // done twice in this if-case, because there are 2 equations to create for the VolueTrackingComponent
 
             // Now do (2) (see comment block above, within this if-case)
             // Do the compliance term:
-            boost::shared_ptr<VolumeTrackingPressureChamber> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolumeTrackingPressureChamber> (*component);
+            boost::shared_ptr<VolueTrackingComponent> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolueTrackingComponent> (*component);
             if (!volumeTrackingPressureChamber->zeroVolumeShouldBePrescribed()) // test whether, on a previous attempt to solve the system, negative volumes were detected. If so, we'll do something different in the "else" below...
             {
               {
@@ -1356,7 +1361,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
               // Reset the zero-volume marker on the component:
               volumeTrackingPressureChamber->resetZeroVolumePrescription();
             }
-            row++; // done twice in this if-case, because there are 2 equations to create for the VolumeTrackingPressureChamber
+            row++; // done twice in this if-case, because there are 2 equations to create for the VolueTrackingComponent
 
           }
           else
@@ -1712,7 +1717,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
         {
           // currently, only VolumeTrackingPresureChambers have history volumes. We might want to change this cast later, if new component types
           // with history volumes get added.
-          boost::shared_ptr<VolumeTrackingPressureChamber> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolumeTrackingPressureChamber> (*component);
+          boost::shared_ptr<VolueTrackingComponent> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolueTrackingComponent> (*component);
           double volume = volumeTrackingPressureChamber->getHistoryVolume();
           int row = ll + tempIndexingShift;
           errFlag = VecSetValue(m_RHS,row,volume,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -1747,18 +1752,18 @@ void NetlistCircuit::updateLPN(const int timestepNumber)
     // {
     //     errFlag = VecGetValues(m_solutionVector,getSingleValue,&volumeIndex,&volumesInSubcircuit[volumeIndex-indexShift]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    //     VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (mp_circuitData->mapOfVolumeTrackingComponents.at(toOneIndexing(volumeIndex-indexShift)).get());
+    //     VolueTrackingComponent* currentPressureChamber = dynamic_cast<VolueTrackingComponent*> (mp_circuitData->mapOfVolumeTrackingComponents.at(toOneIndexing(volumeIndex-indexShift)).get());
     //     currentPressureChamber->setStoredVolume(volumesInSubcircuit[volumeIndex-indexShift]);
     //     currentPressureChamber->passPressureToStartNode();
     // }
 
-    // // Update the volumes in each VolumeTrackingPressureChamber
+    // // Update the volumes in each VolueTrackingComponent
     // for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
     // {
     //   // detect the VolumeTrackingPressureChambers:
     //   if (component->second->type == Component_VolumeTrackingPressureChamber)
     //   {
-    //     VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+    //     VolueTrackingComponent* currentPressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
     //     currentPressureChamber->updateStoredVolume(alfi_delt);
     //     currentPressureChamber->passPressureToStartNode();
     //   }
@@ -1814,7 +1819,7 @@ void NetlistCircuit::giveComponentsTheirVolumesFromSolutionVector()
   std::reverse(volumes.begin(), volumes.end());
   for (auto component = mp_circuitData->mapOfVolumeTrackingComponents.begin(); component != mp_circuitData->mapOfVolumeTrackingComponents.end(); component++)
   {
-      VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+      VolueTrackingComponent* currentPressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
       
       // Ensure we aren't dealing with negative volumes:
       //\todo REINSTATE!
@@ -1823,7 +1828,6 @@ void NetlistCircuit::giveComponentsTheirVolumesFromSolutionVector()
 
       currentPressureChamber->setStoredVolume(volumes.back());
       volumes.pop_back();
-      currentPressureChamber->passPressureToStartNode();
   }
 
   // Ensure we've used all the retrieved volumes:
@@ -1841,7 +1845,7 @@ void NetlistCircuit::giveComponentsTheirProposedVolumesFromSolutionVector()
   std::reverse(volumes.begin(), volumes.end());
   for (auto component = mp_circuitData->mapOfVolumeTrackingComponents.begin(); component != mp_circuitData->mapOfVolumeTrackingComponents.end(); component++)
   {
-      VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+      VolueTrackingComponent* currentPressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
       
       currentPressureChamber->setProposedVolume(volumes.back());
       volumes.pop_back();
@@ -1869,7 +1873,7 @@ std::vector<double> NetlistCircuit::getVolumesFromSolutionVector()
   {
     errFlag = VecGetValues(m_solutionVector,getSingleValue,&volumeIndex,&volumesInSubcircuit[volumeIndex-firstVolumeIndex]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    VolumeTrackingPressureChamber* currentPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+    VolueTrackingComponent* currentPressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
     volumesToReturn.push_back(volumesInSubcircuit[volumeIndex-firstVolumeIndex]);
 
     volumeIndex++;
@@ -1998,7 +2002,7 @@ bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const dou
   //\todo REINSTATE THIS LOOP!
   // for (auto component = mp_circuitData->mapOfVolumeTrackingComponents.begin(); component!=mp_circuitData->mapOfVolumeTrackingComponents.end(); component++)
   // {
-  //   VolumeTrackingPressureChamber* volumeTrackingPressureChamber = dynamic_cast<VolumeTrackingPressureChamber*> (component->second.get());
+  //   VolueTrackingComponent* volumeTrackingPressureChamber = dynamic_cast<VolueTrackingComponent*> (component->second.get());
   //   // Check for negative volumes:
   //   if (volumeTrackingPressureChamber->getProposedVolume() < 0.0)
   //   {

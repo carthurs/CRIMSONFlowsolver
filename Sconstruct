@@ -8,6 +8,7 @@ env = Environment(ENV = os.environ)
 # Clear the incoming variables from the shell, to avoid conflicts
 env.Replace(PATH = '')
 env.Replace(LD_LIBRARY_PATH = '')
+env.Append(LINKFLAGS = bop.PYTHON_LDMODULEFLAGS)
 
 env.Prepend(LIBPATH = bop.EFENCE_INCDIR)
 env.Prepend(LIBS = bop.EFENCE_LIBSLIST)

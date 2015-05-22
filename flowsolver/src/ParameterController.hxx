@@ -88,12 +88,13 @@ private:
 class UserDefinedCustomPythonParameterController : public AbstractParameterController
 {
 public:
-	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs)
+	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs)
 	: AbstractParameterController(parameterToControl),
 	m_delt(PyFloat_FromDouble(delt)),
 	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName),
 	m_pressurePointerPairs(pressurePointerPairs),
-	m_flowPointerPairs(flowPointerPairs)
+	m_flowPointerPairs(flowPointerPairs),
+	m_volumePointerPairs(volumePointerPairs)
 	{
 		m_updateControlNameString = "updateControl";
 
@@ -119,6 +120,14 @@ public:
 		m_pythonControllerClassName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
 		m_pythonScriptName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
 		m_customPythonModule = PyImport_Import(m_pythonScriptName);
+
+		if (m_customPythonModule == NULL)
+		{
+			std::stringstream errorMessage;
+			errorMessage << "EE: Error while parsing file ";
+			errorMessage << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			throw std::runtime_error(errorMessage.str());
+		}
 
 		// Get a reference to the custom controller class from within the user-provide Python script
 		m_customPythonClass = PyObject_GetAttr(m_customPythonModule, m_pythonControllerClassName);
@@ -176,8 +185,6 @@ public:
 		// Pack up the pressures and flows in Python dictionaries for this Netlist,
 		// indexed by the input data indices for the nodes / componnents:
 		PyObject* pressuresInThisNetlist = PyDict_New();
-		PyObject* flowsInThisNetlist = PyDict_New();
-		
 		for (auto pressurePair = m_pressurePointerPairs.begin(); pressurePair != m_pressurePointerPairs.end(); pressurePair++)
 		{
 			PyObject* nodeIndexInInputData = PyInt_FromLong((long) pressurePair->first);
@@ -189,6 +196,7 @@ public:
 			safe_Py_DECREF(pressurePointer);
 		}
 
+		PyObject* flowsInThisNetlist = PyDict_New();
 		for (auto flowPair = m_flowPointerPairs.begin(); flowPair != m_flowPointerPairs.end(); flowPair++)
 		{
 			PyObject* componentIndexInInputData = PyInt_FromLong((long) flowPair->first);
@@ -200,11 +208,23 @@ public:
 			safe_Py_DECREF(flowPointer);
 		}
 
+		PyObject* volumesInThisNetlist = PyDict_New();
+		for (auto volumePair = m_volumePointerPairs.begin(); volumePair != m_volumePointerPairs.end(); volumePair++)
+		{
+			PyObject* componentIndexInInputData = PyInt_FromLong((long) volumePair->first);
+			PyObject* volumePointer = PyFloat_FromDouble(*(volumePair->second));
+			errFlag = PyDict_SetItem(volumesInThisNetlist, componentIndexInInputData, volumePointer);
+			assert(errFlag == 0);
+
+			safe_Py_DECREF(componentIndexInInputData);
+			safe_Py_DECREF(volumePointer);
+		}
+
 
 		// Convert the parameter value to Python format, for passing to Python:
 		PyObject* parameterValue = PyFloat_FromDouble(*mp_parameterToControl);
 		// Call the updateControl method in the Python script:
-		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, pressuresInThisNetlist, flowsInThisNetlist, NULL);
+		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, pressuresInThisNetlist, flowsInThisNetlist, volumesInThisNetlist, NULL);
 		if (newParameterValue == NULL)
 		{
 			std::stringstream errorMessage;
@@ -220,6 +240,7 @@ public:
 		safe_Py_DECREF(newParameterValue);
 		safe_Py_DECREF(pressuresInThisNetlist);
 		safe_Py_DECREF(flowsInThisNetlist);
+		safe_Py_DECREF(volumesInThisNetlist);
 	}
 private:
 	PyObject* m_delt;
@@ -235,6 +256,7 @@ private:
 
 	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
 	const std::vector<std::pair<int,double*>> m_flowPointerPairs;
+	const std::vector<std::pair<int,double*>> m_volumePointerPairs;
 
 	int errFlag;
 };

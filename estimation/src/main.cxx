@@ -41,6 +41,10 @@ int main(int argc, char **argv) {
 
    // MPI_Init(&argc,&argv);
    PetscInitialize(&argc, &argv, (char *)0, help);
+   
+   // char pySearchPath[] = "/usr/lib/Python2.7";
+   char pySearchPath[] = "/usr";
+   Py_SetPythonHome(pySearchPath);
    Py_Initialize();
 
    // save the communicator

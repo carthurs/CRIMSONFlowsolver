@@ -12,7 +12,7 @@ class nodeController:
 		self.m_heartPeriod = 0.86;
 
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.updatePeriodicTime(delt)
 		pressure = cos(self.m_periodicTime)

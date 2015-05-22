@@ -108,10 +108,10 @@ private:
 // A slightly more complicated class of component, which prescribes its pressure
 // in the circuit depending on its elastance and its stored volume.
 // Think of it more as a chamber than as a node.
-class VolumeTrackingPressureChamber : public CircuitComponent
+class VolueTrackingComponent : public CircuitComponent
 {
 public:
-	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation)
+	VolueTrackingComponent(const int hstep, const bool thisIsARestartedSimulation)
 	: CircuitComponent(hstep, thisIsARestartedSimulation)
 	{
 		assert(!thisIsARestartedSimulation);
@@ -121,77 +121,40 @@ public:
 		m_enforceZeroVolumePrescription = false;
 	}
 
-	void recordVolumeInHistory()
-	{
-		m_entireVolumeHistory.push_back(m_storedVolume);
-	}
-
-	double getVolumeHistoryAtTimestep(int timestep)
-	{
-		return m_entireVolumeHistory.at(timestep);
-	}
-
-	void setStoredVolume(const double newVolume)
-	{
-		m_storedVolume = newVolume;
-	}
-	// The /proposed/ volume is the one which gets checked for negative (invalid) values
-	// so that we can detect such invalid cases, and take steps to remedy.
-	void setProposedVolume(const double proposedVolume)
-	{
-		m_proposedVolume = proposedVolume;
-	}
-	double getVolume()
-	{
-		return m_storedVolume;
-	}
-	double getProposedVolume()
-	{
-		std::cout<<"proposed volume was: " << m_proposedVolume << std::endl;
-		return m_proposedVolume;	
-	}
-	double getHistoryVolume()
-	{
-		return m_historyVolume;
-	}
-	void cycleHistoryVolume()
-	{
-		m_historyVolume = m_storedVolume;
-	}
-	void passPressureToStartNode();
-
-	double* getPointerToElastance()
-	{
-		return &m_currentParameterValue;
-	}
-
-	double getElastance()
-	{
-		return m_currentParameterValue;
-	}
-
-	bool zeroVolumeShouldBePrescribed()
-	{
-		return m_enforceZeroVolumePrescription;
-	}
-
-	void enforceZeroVolumePrescription()
-	{
-		m_enforceZeroVolumePrescription = true;
-	}
-
-	void resetZeroVolumePrescription()
-	{
-		m_enforceZeroVolumePrescription = false;
-	}
+	double getVolumeHistoryAtTimestep(int timestep);
+	void setStoredVolume(const double newVolume);
+	void setProposedVolume(const double proposedVolume);
+	double getVolume();
+	double* getVolumePointer();
+	double getProposedVolume();
+	double getHistoryVolume();
+	void cycleHistoryVolume();
+	double getElastance();
+	bool zeroVolumeShouldBePrescribed();
+	void enforceZeroVolumePrescription();
+	void resetZeroVolumePrescription();
+	void recordVolumeInHistory();
 private:
 	double m_pressure;
 	double m_storedVolume;
 	double m_proposedVolume; // this holds volumes temporarily, so that we can check them for invalid negative values & do something about it if necessary
-	double m_unstressedVolume;
 	double m_historyVolume;
 	bool m_enforceZeroVolumePrescription;
 	std::vector<double> m_entireVolumeHistory;
+	void passPressureToStartNode();
+};
+
+class VolumeTrackingPressureChamber : public VolueTrackingComponent
+{
+public:
+	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation)
+	: VolueTrackingComponent(hstep, thisIsARestartedSimulation)
+	{
+		assert(!thisIsARestartedSimulation);
+		m_unstressedVolume = 0.0; // default; can be changed later if necessary
+	}
+private:
+	double m_unstressedVolume;
 };
 
 class CircuitPressureNode
@@ -290,6 +253,7 @@ public:
 
 	std::vector<std::pair<int,double*>> getComponentInputDataIndicesAndFlows() const;
 	std::vector<std::pair<int,double*>> getNodeInputDataIndicesAndPressures() const;
+	std::vector<std::pair<int,double*>> getVolumeTrackingComponentInputDataIndicesAndVolumes() const;
 
 	void setIndexOfNodeAtInterface(std::vector<int> indexToSet);
 	int getIndexOfNodeAtInterface();

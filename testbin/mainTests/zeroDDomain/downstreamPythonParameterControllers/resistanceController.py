@@ -12,7 +12,7 @@ class resistanceController:
 		self.m_heartPeriod = 0.86;
 
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.updatePeriodicTime(delt)
 		pressure = abs(0.001 * cos(pi*100*self.m_periodicTime))

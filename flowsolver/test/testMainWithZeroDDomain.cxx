@@ -307,7 +307,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
   // Check netlistPressures_surface_5.dat - this is really a very minimal
   // test of the nodal python parameter controller - it's set up to prescribe
   // cosine-in-time pressure on a node which does not affect the results
-  // (the base of the VolueTrackingComponent - whose pressure is not relevant
+  // (the base of the VolumeTrackingComponent - whose pressure is not relevant
   // to any calculations). We just read the pressure that it has on the last
   // timestep and confirm that it is what would be expected after 1000 steps
   // of cosine prescription.

@@ -16,16 +16,16 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 		case  Controller_LeftVentricularElastance:
 			{
 				// We know that we must be working with a pressure chammber, because Controller_LeftVentricularElastance
-				// refers to a controller for a VolueTrackingComponent, which derives from CircuitComponent
+				// refers to a controller for a VolumeTrackingComponent, which derives from CircuitComponent
 				boost::shared_ptr<CircuitComponent> component = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
 				
-				// Make sure that the user actually requested this controller on a VolueTrackingComponent:
-				if (boost::dynamic_pointer_cast<VolueTrackingComponent> (component) == NULL)
+				// Make sure that the user actually requested this controller on a VolumeTrackingComponent:
+				if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (component) == NULL)
 				{
 					std::stringstream errorMessage;
 					errorMessage << "A LV Elastance Controller was requested for Component " << nodeOrComponentIndex;
 					errorMessage << " of Netlist circuit number " << netlistCircuit->getIndexAmongstNetlists();
-					errorMessage << " but this component is not a VolueTrackingComponent." << std::endl;
+					errorMessage << " but this component is not a VolumeTrackingComponent." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
 

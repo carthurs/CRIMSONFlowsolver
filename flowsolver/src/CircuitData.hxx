@@ -108,10 +108,10 @@ private:
 // A slightly more complicated class of component, which prescribes its pressure
 // in the circuit depending on its elastance and its stored volume.
 // Think of it more as a chamber than as a node.
-class VolueTrackingComponent : public CircuitComponent
+class VolumeTrackingComponent : public CircuitComponent
 {
 public:
-	VolueTrackingComponent(const int hstep, const bool thisIsARestartedSimulation)
+	VolumeTrackingComponent(const int hstep, const bool thisIsARestartedSimulation)
 	: CircuitComponent(hstep, thisIsARestartedSimulation)
 	{
 		assert(!thisIsARestartedSimulation);
@@ -142,11 +142,11 @@ protected:
 	std::vector<double> m_entireVolumeHistory;
 };
 
-class VolumeTrackingPressureChamber : public VolueTrackingComponent
+class VolumeTrackingPressureChamber : public VolumeTrackingComponent
 {
 public:
 	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation)
-	: VolueTrackingComponent(hstep, thisIsARestartedSimulation)
+	: VolumeTrackingComponent(hstep, thisIsARestartedSimulation)
 	{
 		assert(!thisIsARestartedSimulation);
 		m_unstressedVolume = 0.0; // default; can be changed later if necessary

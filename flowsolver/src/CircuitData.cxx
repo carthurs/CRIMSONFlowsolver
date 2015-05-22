@@ -88,7 +88,7 @@ void CircuitData::rebuildCircuitMetadata()
 	m_numberOfVolumeTrackingComponenets = 0;
 	for (auto component=mapOfComponents.begin(); component!=mapOfComponents.end(); component++)
 	{
-		if (component->second->getType() == Component_VolumeTrackingPressureChamber)
+		if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (Component->second))
 		{
 			mapOfVolumeTrackingComponents.insert(std::make_pair(component->first,component->second));
 			m_numberOfVolumeTrackingComponenets++;
@@ -100,7 +100,7 @@ void CircuitData::rebuildCircuitMetadata()
 	// {
 	// 	if ((*component)->type == Component_VolumeTrackingPressureChamber)
 	// 	{
-	// 		VolueTrackingComponent* volumeTrackingPressureChamber = dynamic_cast<VolueTrackingComponent> ((*component).get());
+	// 		VolumeTrackingComponent* volumeTrackingPressureChamber = dynamic_cast<VolumeTrackingComponent> ((*component).get());
 	// 		if (volumeTrackingPressureChamber->
 	// 	}
 	// }
@@ -746,7 +746,7 @@ std::vector<std::pair<int,double*>> CircuitData::getVolumeTrackingComponentInput
 	std::vector<std::pair<int,double*>> returnValue;
 	for (auto componentPair = mapOfVolumeTrackingComponents.begin(); componentPair != mapOfVolumeTrackingComponents.end(); componentPair++)
 	{
-		boost::shared_ptr<VolueTrackingComponent> downcastPressureChamber = boost::dynamic_pointer_cast<VolueTrackingComponent> (componentPair->second);
+		boost::shared_ptr<VolumeTrackingComponent> downcastPressureChamber = boost::dynamic_pointer_cast<VolumeTrackingComponent> (componentPair->second);
 		returnValue.push_back(std::make_pair(componentPair->first, downcastPressureChamber->getVolumePointer()));
 	}
 	return returnValue;
@@ -1066,64 +1066,64 @@ void CircuitPressureNode::setPressure(const double pressure_in)
 	pressure = pressure_in;
 }
 
-void VolueTrackingComponent::recordVolumeInHistory()
+void VolumeTrackingComponent::recordVolumeInHistory()
 {
 	m_entireVolumeHistory.push_back(m_storedVolume);
 }
 
-double VolueTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
+double VolumeTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
 {
 	return m_entireVolumeHistory.at(timestep);
 }
 
-void VolueTrackingComponent::setStoredVolume(const double newVolume)
+void VolumeTrackingComponent::setStoredVolume(const double newVolume)
 {
 	m_storedVolume = newVolume;
 }
 // The /proposed/ volume is the one which gets checked for negative (invalid) values
 // so that we can detect such invalid cases, and take steps to remedy.
-void VolueTrackingComponent::setProposedVolume(const double proposedVolume)
+void VolumeTrackingComponent::setProposedVolume(const double proposedVolume)
 {
 	m_proposedVolume = proposedVolume;
 }
-double VolueTrackingComponent::getVolume()
+double VolumeTrackingComponent::getVolume()
 {
 	return m_storedVolume;
 }
-double* VolueTrackingComponent::getVolumePointer()
+double* VolumeTrackingComponent::getVolumePointer()
 {
 	return &m_storedVolume;
 }
-double VolueTrackingComponent::getProposedVolume()
+double VolumeTrackingComponent::getProposedVolume()
 {
 	std::cout<<"proposed volume was: " << m_proposedVolume << std::endl;
 	return m_proposedVolume;	
 }
-double VolueTrackingComponent::getHistoryVolume()
+double VolumeTrackingComponent::getHistoryVolume()
 {
 	return m_historyVolume;
 }
-void VolueTrackingComponent::cycleHistoryVolume()
+void VolumeTrackingComponent::cycleHistoryVolume()
 {
 	m_historyVolume = m_storedVolume;
 }
 
-double VolueTrackingComponent::getElastance()
+double VolumeTrackingComponent::getElastance()
 {
 	return m_currentParameterValue;
 }
 
-bool VolueTrackingComponent::zeroVolumeShouldBePrescribed()
+bool VolumeTrackingComponent::zeroVolumeShouldBePrescribed()
 {
 	return m_enforceZeroVolumePrescription;
 }
 
-void VolueTrackingComponent::enforceZeroVolumePrescription()
+void VolumeTrackingComponent::enforceZeroVolumePrescription()
 {
 	m_enforceZeroVolumePrescription = true;
 }
 
-void VolueTrackingComponent::resetZeroVolumePrescription()
+void VolumeTrackingComponent::resetZeroVolumePrescription()
 {
 	m_enforceZeroVolumePrescription = false;
 }

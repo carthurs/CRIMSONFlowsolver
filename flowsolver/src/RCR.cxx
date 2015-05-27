@@ -262,7 +262,8 @@ void RCR::getPressureAndFlowPointersFromFortran()
     // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
     // NB: Need to add a method in fortran to set a value for non-zero restarting!
     assert(flow_n_ptrs.size()==0);
-    flow_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
+    double* flowPointer = fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
+    flow_n_ptrs.push_back(flowPointer);
     assert(pressure_n_ptrs.size()==0);
     pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
 

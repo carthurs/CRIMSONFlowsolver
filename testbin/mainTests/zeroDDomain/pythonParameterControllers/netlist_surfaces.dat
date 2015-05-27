@@ -68,6 +68,7 @@ t
 # number of nodes with control
 1
 # details of nodes with control (l= lv elastance):
+#3 customPython thinShellPressureController
 6 customPython nodeController
 ### Begin SECOND netlist boundary condition model
 # Number of Components

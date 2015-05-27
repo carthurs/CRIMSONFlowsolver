@@ -3,6 +3,7 @@
 
 #include "abstractBoundaryCondition.hxx"
 #include "fileReaders.hxx"
+#include "../../estimation/src/SimvascularGlobalArrayTransfer.h"
 
 class RCR : public abstractBoundaryCondition
 {
@@ -23,6 +24,12 @@ public:
 		r2 = rcrtReader_instance->getR2()[indexOfThisRCR];
 		timeDataPdist = rcrtReader_instance->getTimeDataPdist()[indexOfThisRCR];
 		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[indexOfThisRCR];
+
+		// Set up for Kalman filtering:
+		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselProximalResistance(&r1, indexOfThisRCR);
+		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselDistalResistance(&r2, indexOfThisRCR);
+		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselCompilance(&c, indexOfThisRCR);
+		SimvascularGlobalArrayTransfer::Get()->setPointerToRCRSurfacePressure(&pressure_n, indexOfThisRCR);
 	}
 	
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);

@@ -284,7 +284,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-			state_part.addDataPointer(&gat->pointerMapDP_["solution"][varIdx * conpar.nshg + actualIdx-1]);
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("solution", varIdx * conpar.nshg + actualIdx-1) );
 			state_part.addIsEstimated(0);
 		}
 	}
@@ -296,7 +296,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
-			state_part.addDataPointer(&gat->pointerMapDP_["time derivative of solution"][varIdx * conpar.nshg + actualIdx-1]);
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("time derivative of solution", varIdx * conpar.nshg + actualIdx-1));
 			state_part.addIsEstimated(0);
 		}
 	}
@@ -310,7 +310,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 			int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 			for(int varIdx=0; varIdx < 3; varIdx++) {
-				state_part.addDataPointer(&gat->pointerMapDP_["displacement"][varIdx * conpar.nshg + actualIdx-1]);
+				state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("displacement", varIdx * conpar.nshg + actualIdx-1));
 				state_part.addIsEstimated(0);
 			}
 		}
@@ -325,7 +325,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	if (grcrbccom.numGRCRSrfs > 0) {
 		state_part.Initialize("RCR P_current");
 		for(int surfIdx=0; surfIdx < grcrbccom.numGRCRSrfs; surfIdx++) {
-			state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_P"][surfIdx]);
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_P", surfIdx) );
 			if (cp_rcr_estimate_pstates_)
 				state_part.addIsEstimated(1);
 			else
@@ -342,8 +342,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		dynamic_start_ = 1;
 
 		state_part.Initialize("Heart LV Volume");		
-		state_part.addDataPointer(&gat->pointerMapDP_["Heart_LV_Vol"][0]);
-        std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_LV_Vol"][0] << endl;
+		state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_LV_Vol", 0) );
+        std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_LV_Vol",0)) << endl;
 
 		// estimating this variable
 		if (cp_hrt_estimate_vlv_){
@@ -364,7 +364,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	if (nreduced_has_wall_parameters_ && nomodule.ideformwall > 0 && nomodule.numWallRegions > 0) {
 		state_part.Initialize("E");
 		for(int parIdx = 0; parIdx < nomodule.numWallRegions; parIdx++) {
-			state_part.addDataPointer(&gat->pointerMapDP_["Vessel Wall Young's Modulus"][parIdx]);
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Vessel Wall Young's Modulus",parIdx) );
 			state_part.addIsEstimated(1);
 		}
 		shared_parts_.push_back(state_part);
@@ -382,7 +382,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
 				if (cp_rcr_include_compliance_[parIdx]) {
-					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1]);
+					state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Params", parIdx*3+1) );
 					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1] << endl;
 					state_part.addIsEstimated(1);
 				}
@@ -400,7 +400,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
 				if (cp_rcr_include_resistance_[parIdx]) {
-					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2]);
+					state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Params", parIdx*3+2) ) ;
 					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2] << endl;
 					state_part.addIsEstimated(1);
 				}
@@ -418,7 +418,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
 
 				if (cp_rcr_include_prox_resistance_[parIdx]) {
-					state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0]);
+					state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Params", parIdx*3+0) );
 					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0] << endl;
 					state_part.addIsEstimated(1);
 				}
@@ -434,8 +434,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 			state_part.Initialize("RCR Pdist");
 
-			state_part.addDataPointer(&gat->pointerMapDP_["WindkesselRCR_Pdist"][0]);
-			std::cout << gat->pointerMapDP_["WindkesselRCR_Pdist"][0] << endl;
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Pdist",0) );
+			std::cout << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Pdist",0)) << endl;
 			state_part.addIsEstimated(1);
 
 			shared_parts_.push_back(state_part);
@@ -450,8 +450,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			state_part.Initialize("Heart EMax");
 
             // single parameter, will be in the 0 index and print out 
-			state_part.addDataPointer(&gat->pointerMapDP_["Heart_EMax"][0]);           
-			std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_EMax"][0] << endl;
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_EMax",0));           
+			std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_EMax",0)) << endl;
 			
 			// set this parameter to be estimated and add to shared_parts vector
 			state_part.addIsEstimated(1);
@@ -468,8 +468,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			state_part.Initialize("Heart TMax");
 
             // single parameter, will be in the 0 index and print out 
-			state_part.addDataPointer(&gat->pointerMapDP_["Heart_TMax"][0]);           
-			std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_TMax"][0] << endl;
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TMax",0));           
+			std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TMax",0)) << endl;
 			
 			// set this parameter to be estimated and add to shared_parts vector
 			state_part.addIsEstimated(1);
@@ -486,8 +486,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 			state_part.Initialize("Heart TRel");
 
             // single parameter, will be in the 0 index and print out 
-			state_part.addDataPointer(&gat->pointerMapDP_["Heart_TRel"][0]);           
-			std::cout << state_part.getName() << " " << gat->pointerMapDP_["Heart_TRel"][0] << endl;
+			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TRel",0));           
+			std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TRel",0)) << endl;
 			
 			// set this parameter to be estimated and add to shared_parts vector
 			state_part.addIsEstimated(1);

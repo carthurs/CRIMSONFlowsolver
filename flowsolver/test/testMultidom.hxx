@@ -11,6 +11,7 @@
 #include <typeinfo>
 #include "debuggingToolsForCpp.hxx"
 #include <boost/shared_ptr.hpp>
+#include "SimvascularGlobalArrayTransfer.h"
 
 	// The fixture for testing class Foo.
 	class testMultidom : public ::testing::Test {
@@ -137,6 +138,7 @@
 
 	    // get the boundary condition manager
 		// boundaryConditionManager_instance->boundaryConditions.clear();
+		SimvascularGlobalArrayTransfer::Get()->initialiseForRCRFiltering(2);
 		boundaryConditionManager_instance->setSurfaceList(surfaceList);
 		
 		retrievedBoundaryConditions = boundaryConditionManager::Instance()->getBoundaryConditions();
@@ -195,6 +197,7 @@
 	    multidom_finalise();
 	    fortranPointerManager_instance->tearDown();
 	    boundaryConditionManager_instance->tearDown();
+	    SimvascularGlobalArrayTransfer::Get()->tearDown();
 	    // retrievedBoundaryConditions = 0;
 	  }
 

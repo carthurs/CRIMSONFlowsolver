@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include "debuggingToolsForCpp.hxx"
 #include <boost/shared_ptr.hpp>
+#include "SimvascularGlobalArrayTransfer.h"
 
 	// The fixture for testing class Foo.
 	class testOrphans : public ::testing::Test {
@@ -50,6 +51,7 @@
 	    netlistReader_instance->Term();
 	    boundaryConditionManager_instance->Term();
 	    fortranPointerManager_instance->tearDown();
+	    SimvascularGlobalArrayTransfer::Get()->tearDown();
 	  }
 
 	  void overrideMissingDataForTesting() {

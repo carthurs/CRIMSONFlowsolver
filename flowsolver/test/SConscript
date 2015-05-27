@@ -10,7 +10,7 @@ env_local.Append(CFLAGS=bop.GLOBAL_CFLAGS)
 env_local.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
 env_local.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
 
-env_local.Append(CPPPATH=bop.GOOGLETEST_INCDIR+bop.FLOWSOLVER_INCDIR)
+env_local.Append(CPPPATH=bop.GOOGLETEST_INCDIR+bop.FLOWSOLVER_INCDIR+bop.ESTIMATOR_INCDIR)
 # env_local.Append(CPPPATH=[bop.GOOGLETEST_TOP])
 
 env_local.Prepend(LIBPATH=bop.BOOSTCPP_LIBSDIR)

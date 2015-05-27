@@ -207,14 +207,30 @@ void Partition_Problem(int numProcs) {
 	npe.close();
 
 	// copy the bct.dat file if one exists
-
-	char systemcmd[2048];
+	int bufferSize = 2048;
+	char systemcmd[bufferSize];
 	systemcmd[0] = '\0';
 
 	sprintf(systemcmd, "cp *.dat %s", _directory_name);
 	system(systemcmd);
 
-	sprintf(systemcmd, "cp *.inp %s", _directory_name);
+	char* inpfilename_env = NULL;
+	inpfilename_env = getenv("PHASTA_INPFILE");
+	if (inpfilename_env)
+	{
+		// If the .inp file was specified as an environmental variable, just copy it to the working directory
+		// this is just for human convenience later, so users can see which .inp file belongs to their
+		// simulation. The copied verison is not read by the flowsolver.
+		int lengthOfAttemptedBufferWrite = snprintf(systemcmd, bufferSize, "cp %s %s", inpfilename_env, _directory_name);
+		assert(lengthOfAttemptedBufferWrite < bufferSize); // paranoia
+	}
+	else
+	{
+		// If the environmental variable for which .inp file to use wasn't set,
+		// just get all the .inps from the directory. This is not great; prefer 
+		// setting the environmental variable if possible.
+		sprintf(systemcmd, "cp *.inp %s", _directory_name);
+	}
 	system(systemcmd);
 
 	sprintf(systemcmd, "cp *.lua %s", _directory_name);

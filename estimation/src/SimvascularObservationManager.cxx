@@ -313,7 +313,7 @@ void SimvascularDistanceObservation::ApplyOperator(const state& x, observation& 
 
 		for(int varIdx=0; varIdx < 3; varIdx++) { // 3 components
 
-			(gat->pointerMapDP_["temporary array"])[varIdx * conpar.nshg + actualIdx-1] = x(disp_duplicated_state_index_[icounter++]);
+			gat->setValueInPointerMapDP("temporary array", varIdx * conpar.nshg + actualIdx-1, x(disp_duplicated_state_index_[icounter++]) );
 
 		}
 
@@ -326,11 +326,11 @@ void SimvascularDistanceObservation::ApplyOperator(const state& x, observation& 
 	if (rank_ == 0)
 		std::cout << "computing distance to wall data surfaces (obs. op.)" << std::endl;
 
-	elmdist(gat->pointerMapDP_["temporary array"], // temporary array now has displacement from input state x
-			gat->pointerMapDP_["coordinates"],
-			gat->pointerMapDP_["distance"],
-			gat->pointerMapDP_["distance normal"],
-			gat->pointerMapDP_["M*distance"]);
+	elmdist(gat->getPointerToFirstArrayEntryFromPointerMapDP("temporary array"), // temporary array now has displacement from input state x
+			gat->getPointerToFirstArrayEntryFromPointerMapDP("coordinates"),
+			gat->getPointerToFirstArrayEntryFromPointerMapDP("distance"),
+			gat->getPointerToFirstArrayEntryFromPointerMapDP("distance normal"),
+			gat->getPointerToFirstArrayEntryFromPointerMapDP("M*distance"));
 
 	icounter = 0;
 
@@ -339,9 +339,9 @@ void SimvascularDistanceObservation::ApplyOperator(const state& x, observation& 
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 		actualIdx--;
 
-		if ( gat->pointerMapInt_["observation function distance"][actualIdx] ) {
-			Hx1(obs_start_index+icounter) = gat->pointerMapDP_["distance"][actualIdx];
-			Hx2(obs_start_index+icounter) = gat->pointerMapDP_["M*distance"][actualIdx];
+		if ( gat->getValueFromPointerMapDP("observation function distance",actualIdx) ) {
+			Hx1(obs_start_index+icounter) = gat->getValueFromPointerMapDP("distance", actualIdx);
+			Hx2(obs_start_index+icounter) = gat->getValueFromPointerMapDP("M*distance", actualIdx);
 			icounter++;
 		}
 
@@ -431,10 +431,10 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 		double dispVal[3];
 
 		for (int kk = 0; kk < 3; kk++)
-			coordVal[kk] = (gat->pointerMapDP_["coordinates"])[kk * conpar.nshg + unitIdx];
+			coordVal[kk] = gat->getValueFromPointerMapDP("coordinates", kk * conpar.nshg + unitIdx);
 
 		for (int kk = 0; kk < 3; kk++)
-			dispVal[kk] = (gat->pointerMapDP_["displacement"])[kk * conpar.nshg + unitIdx];
+			dispVal[kk] = gat->getValueFromPointerMapDP("displacement", kk * conpar.nshg + unitIdx);
 
 		geom_points_->InsertPoint(unitIdx,coordVal[0],coordVal[1],coordVal[2]);
 		geom_points_def_->InsertPoint(unitIdx,coordVal[0]+dispVal[0],coordVal[1]+dispVal[1],coordVal[2]+dispVal[2]);
@@ -476,7 +476,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 		double solVal[4];
 
 		for (int kk = 0; kk < 4; kk++)
-			solVal[kk] = (gat->pointerMapDP_["solution"])[kk * conpar.nshg + unitIdx];
+			solVal[kk] = gat->getValueFromPointerMapDP("solution", kk * conpar.nshg + unitIdx);
 
 		geom_vel_array->InsertNextTuple3(solVal[0],solVal[1],solVal[2]);
 		geom_pres_array->InsertNextTuple1(solVal[3]);
@@ -645,7 +645,7 @@ void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation&
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 
 		for(int varIdx=0; varIdx < 4; varIdx++) // ignore the 5th dof and beyond
-			(gat->pointerMapDP_["temporary array"])[varIdx * conpar.nshg + actualIdx-1] = x(sol_duplicated_state_index_[icounter++]);;
+			gat->setValueInPointerMapDP("temporary array", varIdx * conpar.nshg + actualIdx-1, x(sol_duplicated_state_index_[icounter++]) );;
 
 	}
 
@@ -659,7 +659,7 @@ void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation&
 		double solVal[4];
 
 		for (int ii = 0; ii < 4; ii++)
-			solVal[ii] = (gat->pointerMapDP_["temporary array"])[ii * conpar.nshg + unitIdx];
+			solVal[ii] = gat->getValueFromPointerMapDP("temporary array", ii * conpar.nshg + unitIdx);
 
 		geom_UGrid_->GetPointData()->GetArray(0)->SetTuple3(unitIdx,solVal[0],solVal[1],solVal[2]);
 		geom_UGrid_->GetPointData()->GetArray(1)->SetTuple1(unitIdx,solVal[3]);

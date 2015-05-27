@@ -5,6 +5,7 @@
 #include "fortranPointerManager.hxx"
 #include "fileWriters.hxx"
 #include "fileIOHelpers.hxx"
+#include "../../estimation/src/SimvascularGlobalArrayTransfer.h"
 
 // This file contains (and should continue to contain) all the tools needed to control the boundary conditions.
 //
@@ -27,6 +28,7 @@ bool boundaryConditionManager::m_thisIsARestartedSimulation = 0;
 void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
 {
   m_NumberOfRCRSurfaces = numGRCRSrfs;
+  SimvascularGlobalArrayTransfer::Get()->initialiseForRCRFiltering(numGRCRSrfs);
 }
 
 void boundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)

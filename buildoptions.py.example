@@ -68,6 +68,8 @@ SOLVERIO_LIBSLIST = ['simvascular_solverio']
 FLOWSOLVER_INCDIR = [HOME_DIR+'/flowsolver/src']
 FLOWSOLVER_LIBSDIR = [HOME_DIR+'/lib']
 FLOWSOLVER_LIBSLIST = ['simvascular_flowsolver']
+
+ESTIMATOR_INCDIR = [HOME_DIR+'/estimation/src']
  
 # MPI_TOP        = '/opt/sgi/mpt/mpt-2.05'
 # MPI_INCDIR     = ' -I '+MPI_TOP+'/include'

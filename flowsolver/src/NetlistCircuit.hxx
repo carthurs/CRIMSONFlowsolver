@@ -168,6 +168,7 @@ protected:
 	int numberOfHistoryFlows;
 	int numberOfHistoryVolumes;
 	int m_numberOfTrackedVolumes;
+	int m_numberOfVolumeTrackingPressureChambers;
 	std::vector<int> columnMap;
 	// int columnMapSize;//\todo check this is used
 	std::vector<int> m_columnOf3DInterfacePrescribedPressureInLinearSystem;
@@ -194,6 +195,7 @@ private:
 	virtual bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
 	void findLinearSystemIndicesOf3DInterfacePressureAndFlow();
 	void setupCustomPythonControlSystems();
+	void countVolumeTrackingPressureChambers();
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 

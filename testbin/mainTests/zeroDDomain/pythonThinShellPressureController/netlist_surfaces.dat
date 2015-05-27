@@ -28,18 +28,24 @@ d
 4
 0.1187e-4
 # component 5 type: (v=VolumeTrackingPressureChamber; its parameter value is the initial elastance)
-v
+t
 # component 5 details:
 3
 6
 4.10246e-3
 # Number of prescribed pressure nodes:
-1
+3
 # Indices of nodes with prescribed pressures:
+3
+5
 6
 # Prescribed pressure values / scalings (dependent on types, given by next component):
+533.2
+533.2
 0.0
 # Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+f
 f
 # Number of prescribed flows:
 1
@@ -61,13 +67,14 @@ t
 # index of node  at 3D interface
 1
 # Number of components with control
-1
-# details of components with control (component index, control type char; l=LV elastance)
-5 customPython elastanceController
+0
+# detains of components with control (component index, control type char; l=LV elastance)
+#5 l
 # number of nodes with control
 1
 # details of nodes with control (l= lv elastance):
-6 customPython nodeController
+3 customPython thinShellPressureController
+#5 customPython nodeController
 ### Begin SECOND netlist boundary condition model
 # Number of Components
 3
@@ -76,13 +83,13 @@ r
 # Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
 1
 2
-0.03
+0.008
 # component 2 type:
 c
 # component 2 details:
 2
 3
-5.74
+8.074
 # component 3 type:
 r
 # component 3 details:
@@ -90,12 +97,15 @@ r
 4
 0.3
 # Number of prescribed pressure nodes:
-1
+2
 # Indices of nodes with prescribed pressures:
 3
+4
 # Prescribed pressure values / scalings (dependent on types, given by next component):
 0.0
+0.0
 # Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
 f
 # Number of prescribed flows:
 1
@@ -109,9 +119,9 @@ t
 4
 # Initial pressures at the pressure nodes:
 1 10664.0
-2 10664.0
+2 969.4545
 3 0.0
-4 533.0
+4 0.0
 # index of node  at 3D interface
 1
 # Number of components with control
@@ -127,7 +137,7 @@ r
 # Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
 1
 2
-0.03
+0.008
 #component 2 type
 r
 # component 2 details
@@ -139,14 +149,17 @@ c
 # component 3 details:
 2
 4
-5.74
+8.074
 # Number of prescribed pressure nodes:
-1
+2
 # Indices of nodes with prescribed pressures:
+3
 4
 # Prescribed pressure values / scalings (dependent on types, given by next component):
 0.0
+0.0
 # Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line, v = volume chamber pressure, computed from volume & compliance):
+f
 f
 # Number of prescribed flows:
 1
@@ -160,8 +173,8 @@ t
 4
 # Initial pressures at the pressure nodes:
 1 10664.0
-2 10664.0
-3 533.0
+2 969.4545
+3 0.0
 4 0.0
 # index of node at 3D interface
 1

@@ -96,75 +96,9 @@ public:
 	m_flowPointerPairs(flowPointerPairs),
 	m_volumePointerPairs(volumePointerPairs)
 	{
-		m_updateControlNameString = "updateControl";
-
-		std::stringstream fullFileName;
-		fullFileName << m_controllerPythonScriptBaseName << ".py";
-		boost::filesystem::path fullFileName_path(fullFileName.str());
-		if (!boost::filesystem::exists(fullFileName_path))
-		{
-			std::stringstream errorMessage;
-			errorMessage << "EE: Could not find custom parameter control script " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
-			throw std::runtime_error(errorMessage.str());
-		}
-
-		// Change Python's current path to be the same as that which C++ is
-		// currently using:
-		boost::filesystem::path currentDirectory( boost::filesystem::current_path() );
-		char* current_path = (char*) currentDirectory.string().c_str();
-		PySys_SetPath(current_path);
-
-		// This is the name of the method that gets called on the class to update the control
-		// on each time-step
-		m_updateControlPyobjectName = PyString_FromString(m_updateControlNameString.c_str());
-		m_pythonControllerClassName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
-		m_pythonScriptName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
-		m_customPythonModule = PyImport_Import(m_pythonScriptName);
-
-		if (m_customPythonModule == NULL)
-		{
-			std::stringstream errorMessage;
-			errorMessage << "EE: Error while parsing file ";
-			errorMessage << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
-			throw std::runtime_error(errorMessage.str());
-		}
-
-		// Get a reference to the custom controller class from within the user-provide Python script
-		m_customPythonClass = PyObject_GetAttr(m_customPythonModule, m_pythonControllerClassName);
-		if (m_customPythonClass == NULL)
-		{
-			std::stringstream errorMessage;
-			errorMessage << "EE: Could not find a class named " << m_controllerPythonScriptBaseName.c_str();
-			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
-			throw std::runtime_error(errorMessage.str());
-		}
-
-
-		// Instantiate the Python controller class:
-		if (PyCallable_Check(m_customPythonClass) == 1)
-		{
-			// Instantiate the controller class
-			m_pythonParameterControllerInstance = PyObject_CallObject(m_customPythonClass, NULL);
-		}
-		else
-		{
-			std::stringstream errorMessage;
-			errorMessage << "EE: Failed to call a class named " << m_controllerPythonScriptBaseName.c_str();
-			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
-			throw std::runtime_error(errorMessage.str());
-		}
-
+		initialise();
 	}
 
-	void safe_Py_DECREF(PyObject* toBeDeleted)
-	{
-		// Avoid trying to delete null pointers:
-		if (toBeDeleted)
-		{
-			Py_DECREF(toBeDeleted);
-			toBeDeleted = NULL;
-		}
-	}
 
 	~UserDefinedCustomPythonParameterController()
 	{
@@ -180,68 +114,7 @@ public:
 		safe_Py_DECREF(m_pythonParameterControllerInstance);
 	}
 
-	void updateControl()
-	{
-		// Pack up the pressures and flows in Python dictionaries for this Netlist,
-		// indexed by the input data indices for the nodes / componnents:
-		PyObject* pressuresInThisNetlist = PyDict_New();
-		for (auto pressurePair = m_pressurePointerPairs.begin(); pressurePair != m_pressurePointerPairs.end(); pressurePair++)
-		{
-			PyObject* nodeIndexInInputData = PyInt_FromLong((long) pressurePair->first);
-			PyObject* pressurePointer = PyFloat_FromDouble(*(pressurePair->second));
-			errFlag = PyDict_SetItem(pressuresInThisNetlist, nodeIndexInInputData, pressurePointer);
-			assert(errFlag == 0);
-
-			safe_Py_DECREF(nodeIndexInInputData);
-			safe_Py_DECREF(pressurePointer);
-		}
-
-		PyObject* flowsInThisNetlist = PyDict_New();
-		for (auto flowPair = m_flowPointerPairs.begin(); flowPair != m_flowPointerPairs.end(); flowPair++)
-		{
-			PyObject* componentIndexInInputData = PyInt_FromLong((long) flowPair->first);
-			PyObject* flowPointer = PyFloat_FromDouble(*(flowPair->second));
-			errFlag = PyDict_SetItem(flowsInThisNetlist, componentIndexInInputData, flowPointer);
-			assert(errFlag == 0);
-
-			safe_Py_DECREF(componentIndexInInputData);
-			safe_Py_DECREF(flowPointer);
-		}
-
-		PyObject* volumesInThisNetlist = PyDict_New();
-		for (auto volumePair = m_volumePointerPairs.begin(); volumePair != m_volumePointerPairs.end(); volumePair++)
-		{
-			PyObject* componentIndexInInputData = PyInt_FromLong((long) volumePair->first);
-			PyObject* volumePointer = PyFloat_FromDouble(*(volumePair->second));
-			errFlag = PyDict_SetItem(volumesInThisNetlist, componentIndexInInputData, volumePointer);
-			assert(errFlag == 0);
-
-			safe_Py_DECREF(componentIndexInInputData);
-			safe_Py_DECREF(volumePointer);
-		}
-
-
-		// Convert the parameter value to Python format, for passing to Python:
-		PyObject* parameterValue = PyFloat_FromDouble(*mp_parameterToControl);
-		// Call the updateControl method in the Python script:
-		PyObject* newParameterValue = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, m_updateControlPyobjectName, parameterValue, m_delt, pressuresInThisNetlist, flowsInThisNetlist, volumesInThisNetlist, NULL);
-		if (newParameterValue == NULL)
-		{
-			std::stringstream errorMessage;
-			errorMessage << "EE: Failed to call a method named " << m_updateControlNameString;
-			errorMessage << " of a class named " << m_controllerPythonScriptBaseName.c_str();
-			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
-			throw std::runtime_error(errorMessage.str());
-		}
-		// Place the newly-computed parameter value object being controlled:
-		*mp_parameterToControl = PyFloat_AsDouble(newParameterValue);
-
-		safe_Py_DECREF(parameterValue);
-		safe_Py_DECREF(newParameterValue);
-		safe_Py_DECREF(pressuresInThisNetlist);
-		safe_Py_DECREF(flowsInThisNetlist);
-		safe_Py_DECREF(volumesInThisNetlist);
-	}
+	void updateControl();
 private:
 	PyObject* m_delt;
 	PyObject* m_pythonScriptName;
@@ -259,6 +132,10 @@ private:
 	const std::vector<std::pair<int,double*>> m_volumePointerPairs;
 
 	int errFlag;
+
+	void initialise();
+	void safe_Py_DECREF(PyObject* toBeDeleted);
+
 };
 
 #endif

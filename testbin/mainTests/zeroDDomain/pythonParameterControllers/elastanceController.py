@@ -59,6 +59,7 @@
 #from random import getstate
 #from numpy import *
 #from scipy.integrate import ode
+import sys
 from math import pi, cos
 
 class elastanceController:

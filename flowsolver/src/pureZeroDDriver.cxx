@@ -12,7 +12,7 @@ void PureZeroDDriver::init()
 	assert(m_numberOfNetlistsUsedAsBoundaryConditions > 0);
 
 	double oneResistanceToGiveEachResistor = 0.001;
-	double complianceToGiveCentralCapacitor = 0.0102461E2; // to give ~10mmHg pressure at the initial vol
+	double complianceToGiveCentralCapacitor = 0.0102461E1; // to give ~10mmHg pressure at the initial vol
 	double initialDomainPressure = 10664.0;//133.3 * 10; // 80 mmHg
 	assert(m_hstepHasBeenSet);
 	m_zeroDDomainLPN = boost::shared_ptr<Netlist3DDomainReplacement> (new Netlist3DDomainReplacement(m_numberOfNetlistsUsedAsBoundaryConditions, oneResistanceToGiveEachResistor, complianceToGiveCentralCapacitor, initialDomainPressure, m_hstep, m_alfi, m_delt));

@@ -69,6 +69,12 @@ int main(int argc, char **argv) {
    // expiry.enableExpiryDate();
    expiry.checkWhetherExpiryDatePassed();
 
+   if ( argc < 2 ) {
+      if ( 0 == rank ) {
+         std::cout << "Usage: " << argv[0] << "<.inp file> <optional debug flag> \n";
+      }
+      return 0;
+   }
 
    // Debugger snare:
    const char* debuggerFlag = "1";
@@ -82,13 +88,6 @@ int main(int argc, char **argv) {
          std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
          while (!debuggerPresent ); // assign debuggerPresent=1
      }
-   }
-
-   if ( argc < 2 ) {
-      if ( 0 == rank ) {
-         std::cout << "Usage: " << argv[0] << "<.inp file> <optional debug flag> \n";
-      }
-      return 0;
    }
 
    // read configuration file

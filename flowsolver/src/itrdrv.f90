@@ -1505,10 +1505,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     integer jj
     integer ifail
 
-    ! Update boundary conditions to the final pressure, conforming to the final flow:
-    if (nrcractive) then
-        call callCPPUpdateAllRCRS_Pressure_n1_withflow()
-    end if
+    ! ! Update boundary conditions to the final pressure, conforming to the final flow:
+    ! if (nrcractive) then
+    !     call callCPPUpdateAllRCRS_Pressure_n1_withflow()
+    ! end if
 
     if (newCoronaryActive) then
         ! call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
@@ -1627,6 +1627,9 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call updmultidomaincontainer(y,multidom,'pressure')
     end if 
 
+    if (nrcractive) then
+        call callCPPUpdateAllRCRS_Pressure_n1_withflow()
+    end if
     !
     ! *** update flow and pressure history in the numerical RCR
     !
@@ -1635,6 +1638,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         ! here we re-update the RCR with the innovated y (for the flow only)
         ! the corresponding innovated pressure_n is externally set by the filter directly (see the subroutine updreducedordermodel)
         call updreducedordermodel(y,nrcr,'update-flow-only')
+         ! Update boundary conditions to the final pressure, conforming to the final flow:
 
         ! update pressure and flow history arrays
         call nrcr%updxvars(lstep)

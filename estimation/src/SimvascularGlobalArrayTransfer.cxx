@@ -33,7 +33,7 @@ void SimvascularGlobalArrayTransfer::insertDoublePointerPair(double* pointer, co
 
 void SimvascularGlobalArrayTransfer::setSynchronisationDisabled(const std::string& keyName)
 {
-	synchronisatoinEnabled_.insert(std::make_pair(keyName, false));
+	synchronisationEnabled_.insert(std::make_pair(keyName, false));
 }
 
 void SimvascularGlobalArrayTransfer::initialiseForRCRFiltering(const int numberOfRCRSurfaces)
@@ -50,7 +50,7 @@ void SimvascularGlobalArrayTransfer::setupArraysForWindkesselFiltering()
 		std::vector<double*> pointersToActualModelRCRParameters(3*m_numberOfRCRSurfaces, NULL);
 		std::string valueName("WindkesselRCR_Params");
 		actualDataPointerMap_.insert(std::make_pair(valueName, pointersToActualModelRCRParameters));
-		synchronisatoinEnabled_.insert(std::make_pair(valueName, true));
+		synchronisationEnabled_.insert(std::make_pair(valueName, true));
 	}
 
 	{
@@ -66,7 +66,7 @@ void SimvascularGlobalArrayTransfer::setupArraysForWindkesselFiltering()
 		std::vector<double*> pointersToActualModelInterfacePressures(m_numberOfRCRSurfaces, NULL);
 		std::string valueName("WindkesselRCR_P");
 		actualDataPointerMap_.insert(std::make_pair(valueName, pointersToActualModelInterfacePressures));
-		synchronisatoinEnabled_.insert(std::make_pair(valueName, true));
+		synchronisationEnabled_.insert(std::make_pair(valueName, true));
 	}
 
 	{

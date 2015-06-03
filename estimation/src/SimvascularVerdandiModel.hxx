@@ -25,6 +25,8 @@
 #include "proces.h"
 #include "itrdrv.h"
 #include "estimation_helpers.h"
+#include "multidom.hxx"
+#include "itrPC.h"
 
 #include "SimvascularGlobalArrayTransfer.h"
 

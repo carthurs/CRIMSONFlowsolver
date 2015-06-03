@@ -1,7 +1,7 @@
 Global Node Numbering: True
 Geombc Has Observation Fields: False
 Geombc Has Node Tags: False
-Simulate in Purely Zero Dimensions: True
+Simulate in Purely Zero Dimensions: False
 
 # CARDIOVASCULAR MODELING PARAMETERS
 # {
@@ -54,7 +54,7 @@ Simulate in Purely Zero Dimensions: True
 
 # OUTPUT CONTROL
 # {
-    Number of Timesteps between Restarts : 1
+    Number of Timesteps between Restarts : 20
     Print Error Indicators : True
 # }
 

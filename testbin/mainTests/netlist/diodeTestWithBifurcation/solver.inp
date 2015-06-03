@@ -1,3 +1,7 @@
+Global Node Numbering: True
+Geombc Has Observation Fields: False
+Geombc Has Node Tags: False
+Simulate in Purely Zero Dimensions: False
 
 
 # CARDIOVASCULAR MODELING PARAMETERS

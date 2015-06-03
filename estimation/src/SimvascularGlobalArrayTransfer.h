@@ -7,6 +7,7 @@
 #include <map>
 #include <cassert>
 #include <boost/shared_array.hpp>
+#include <iostream>
 
 class SimvascularGlobalArrayTransfer {
 public:
@@ -54,6 +55,7 @@ public:
 		// If SimvascularGlobalArrayTransfer is managing a pointer to this value (i.e. it's from C++),
 		// get the value from its true location in the class that owns it (e.g. compliance in the RCR class)	
 		synchronisePointerMapDPArraysIfNecessary_get(keyName, dataLocation);
+		// std::cout << "Return 1: " << keyName << " " << pointerMapDP_.at(keyName)[dataLocation] << std::endl;
 		return pointerMapDP_.at(keyName)[dataLocation];
 	}
 
@@ -65,10 +67,11 @@ public:
 	double* getRawPointerToSpecificValueRelatedToPointerMapDP(const std::string keyName, const int dataLocation)
 	{
 		double* ptrToReturn;
-		bool needToReturnUnderlyingPointerToCppClassData = synchronisatoinEnabled_.at(keyName);
+		bool needToReturnUnderlyingPointerToCppClassData = synchronisationEnabled_.at(keyName);
 		if (needToReturnUnderlyingPointerToCppClassData)
 		{
 			ptrToReturn = actualDataPointerMap_.at(keyName).at(dataLocation);
+			std::cout << "Return 2: " << keyName << " " << *ptrToReturn << std::endl;
 		}
 		else // else the pointer points to data which is held in a contiguous array (not a C++ class), so return that ptr:
 		{
@@ -104,7 +107,8 @@ public:
 		// WARNING: this array access is not synchronised, because some changes to it 
 		// appear to happen in fortran, and so we can't manage synchronisation from here
 		// currently. Instead, we ban /needing/ synchronisation here.
-		assert(!synchronisatoinEnabled_.at(keyName));
+		assert(!synchronisationEnabled_.at(keyName));
+		std::cout << "Return 3: " << keyName << " " << pointerMapDP_.at(keyName) << std::endl;
 		return pointerMapDP_.at(keyName);
 	}
 
@@ -116,7 +120,7 @@ public:
 		// pointerMapInt_.clear();
 		// pointerMapDP_.clear();
 		// actualDataPointerMap_.clear();
-		// synchronisatoinEnabled_.clear();
+		// synchronisationEnabled_.clear();
 		delete instance;
 		instance = NULL;
 	}
@@ -134,7 +138,7 @@ private:
 
 	void synchronisePointerMapDPArraysIfNecessary_get(const std::string& keyName, const int dataLocation)
 	{
-		if (synchronisatoinEnabled_.at(keyName))
+		if (synchronisationEnabled_.at(keyName))
 		{
 			// synchronise to actual underlying data:
 			pointerMapDP_.at(keyName)[dataLocation] = *(actualDataPointerMap_.at(keyName).at(dataLocation));
@@ -143,7 +147,7 @@ private:
 
 	void synchronisePointerMapDPArraysIfNecessary_set(const std::string& keyName, const int dataLocation)
 	{
-		if (synchronisatoinEnabled_.at(keyName))
+		if (synchronisationEnabled_.at(keyName))
 		{
 			// synchronise to actual underlying data:
 			 *(actualDataPointerMap_.at(keyName).at(dataLocation)) = pointerMapDP_.at(keyName)[dataLocation];
@@ -174,7 +178,7 @@ private:
 	// This may not be possible without making a much worse mess unless we
 	// get rid of the Fortran boundary conditions entriely.
 	std::map<std::string, std::vector<double*>> actualDataPointerMap_;
-	std::map<std::string, bool> synchronisatoinEnabled_;
+	std::map<std::string, bool> synchronisationEnabled_;
 
 	static SimvascularGlobalArrayTransfer* instance;
 };

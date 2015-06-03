@@ -27,11 +27,12 @@ class thinShellPressureController:
 		# else:
 		# 	newPeriodJustStarting = False
 
-		if self.time > 4000:
+		if self.time > 4800 + 50: # +50 to be completely certain the last stim was applied..
 			self.stimPeriod = 600
-
-		self.numberOfMuscleUnitsAroundCircumference = 205172 # Computed from Negroni96, equation (1), default constants[85] ( = L) and the circumference of a 100 ml sphere (to get Lm)
-		circumference = self.computeCircumference(dictionaryOfVolumesByComponentIndex[5])
+		LVVolume = dictionaryOfVolumesByComponentIndex[5]
+		# equivalentSphereVolume = 2.0 * LVVolume # considering the LV as a hemispherical shell
+		self.numberOfMuscleUnitsAroundCircumference = 205172#258500#205172 # Computed from Negroni96, equation (1), default constants[85] ( = L) and the circumference of a 100 ml sphere (to get Lm)
+		circumference = self.computeCircumference(LVVolume) # doubling so the actual volume is contained ina hemispherical shell
 		self.halfSarcomereLength =  circumference / self.numberOfMuscleUnitsAroundCircumference * 1000 # *1000 is to convert to um # originally this was: constants[85] = 0.9623799975411884
 		# self.halfSarcomereLength = halfSarcomereLength = 0.9623799975411884
 		print "halfSarcomereLength:", self.halfSarcomereLength
@@ -95,12 +96,12 @@ class thinShellPressureController:
 		# reportedTension = tension
 		print "reportedTension",reportedTension
 		
-		radius = self.computeRadius(dictionaryOfVolumesByComponentIndex[5]) # 100000
+		radius = self.computeRadius(LVVolume) # 100000
 		# pressure = max(1000.0* self.computePressureFromLaplace(radius,reportedTension), 490.0)
 		pressure = 1000.0* self.computePressureFromLaplace(radius,reportedTension)
 		if pressure < 533:
-			pressure = self.m_minimumElastance * dictionaryOfVolumesByComponentIndex[5]
-			
+			pressure = self.m_minimumElastance * LVVolume
+
 		print "pressure returing:", pressure
 
 		self.imposedPressureHistory[self.stepIndex] = pressure

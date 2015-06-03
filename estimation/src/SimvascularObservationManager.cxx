@@ -394,14 +394,35 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 
 	double error_variance_value_flow, error_variance_value_avgpress, error_variance_value_area;
 
-	configuration.Set("error.variance_flow", "v > 0", error_variance_value_flow);
-	std::cout << "error.variance_flow " << error_variance_value_flow << std::endl;
+	if (Nobservation_flow_ > 0)
+	{
+		configuration.Set("error.variance_flow", "v > 0", error_variance_value_flow);
+		std::cout << "error.variance_flow " << error_variance_value_flow << std::endl;
+	}
+	else
+	{
+		std::cout << "II: No flow observations set." << std::endl;
+	}
 
-	configuration.Set("error.variance_avgpress", "v > 0", error_variance_value_avgpress);
-	std::cout << "error.variance_avgpress " << error_variance_value_avgpress << std::endl;
+	if (Nobservation_avgpressure_ > 0)
+	{
+		configuration.Set("error.variance_avgpress", "v > 0", error_variance_value_avgpress);
+		std::cout << "error.variance_avgpress " << error_variance_value_avgpress << std::endl;
+	}
+	else
+	{
+		std::cout << "II: No pressure observations set." << std::endl;
+	}
 
-	configuration.Set("error.variance_area", "v > 0", error_variance_value_area);
-	std::cout << "error.variance_area " << error_variance_value_area << std::endl;
+	if (Nobservation_area_ > 0)
+	{
+		configuration.Set("error.variance_area", "v > 0", error_variance_value_area);
+		std::cout << "error.variance_area " << error_variance_value_area << std::endl;
+	}
+	else
+	{
+		std::cout << "II: No area observations set." << std::endl;
+	}
 
 	if (rank_ == 0) {
 		for (int kk = 0; kk < Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_; kk++) {

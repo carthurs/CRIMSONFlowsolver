@@ -20,6 +20,7 @@
 //#define VERDANDI_WITH_OMP
 
 //#define VERDANDI_LOGGING_LEVEL -7
+#include "Python.h"
 
 #include <fstream>
 #include <iomanip>
@@ -84,11 +85,20 @@ int main(int argc, char** argv)
 		cout << mesg << endl;
 		return 1;
 	}
-	else if (argc > 2) {
-		static volatile int debuggerPresent = 0;
-        std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
-		while (!debuggerPresent)
-			; // assign debuggerPresent=1
+	else if (argc >= 2) {
+           // Debugger snare:
+           const char* debuggerFlag = "1";
+           for(int ii=1; ii<argc; ii++)
+           {
+             // Look for a single "1" on the command line, indicating that we should
+             // wait for the debugger...
+             if(!strcmp(argv[ii], debuggerFlag))
+             {
+                 static volatile int debuggerPresent =0;
+                 std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
+                 while (!debuggerPresent ); // assign debuggerPresent=1
+             }
+           }
 	}
 
 #if defined(SELDON_WITH_MKL)
@@ -96,6 +106,11 @@ int main(int argc, char** argv)
 #endif
 
 	PetscInitialize(&argc, &argv, (char *)0, help);
+    
+    // Initialise Python integration
+    char pySearchPath[] = "/usr";
+    Py_SetPythonHome(pySearchPath);
+    Py_Initialize();
 
     std::string current_directory = getenv("PWD");
     std::string input_filename = argv[1];
@@ -119,6 +134,9 @@ int main(int argc, char** argv)
     driver.Finalize();
 
     END;
+
+    // Terminate Python integration
+    Py_Finalize();
 
     int ierr;
     ierr = PetscFinalize();

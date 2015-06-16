@@ -132,7 +132,7 @@ class abstractBoundaryCondition;
     std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubsections;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
 
-    std::unique_ptr<ControlSystemsManager> mp_controlSystemsManager;
+    boost::shared_ptr<ControlSystemsManager> mp_controlSystemsManager;
 
     static bool m_thisIsARestartedSimulation;
     int m_NumberOfRCRSurfaces;

@@ -790,7 +790,7 @@ void boundaryConditionManager::createControlSystems()
 {
   m_controlSystemsPresent = true;
   // Instantiate the manager
-  mp_controlSystemsManager = std::unique_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt));
+  mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt));
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
   NetlistReader* netlistReader_instance = NetlistReader::Instance();

@@ -11,6 +11,7 @@ class PureZeroDDriver
 public:
 	PureZeroDDriver()
 	{
+		boundaryConditionManager_instance = boundaryConditionManager::Instance();
 		checkIfThisIsARestartedSimulation();
 
 		m_deltHasBeenSet = false;
@@ -33,7 +34,7 @@ private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make
 	// a replacement for the 3D domain.
 	boost::shared_ptr<Netlist3DDomainReplacement> m_zeroDDomainLPN;
-	boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+	boundaryConditionManager* boundaryConditionManager_instance;
 	std::vector<std::pair<boundary_data_t,double>> m_pressuresOrFlowsAtBoundaries;
 	double* mp_interfaceFlowsToBeReadByBoundaryConditions;
 	double* mp_interfacePressuresToBeReadByBoundaryConditions;

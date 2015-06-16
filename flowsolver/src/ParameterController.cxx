@@ -82,7 +82,13 @@ void UserDefinedCustomPythonParameterController::initialise()
 		// currently using:
 		boost::filesystem::path currentDirectory( boost::filesystem::current_path() );
 		char* current_path = (char*) currentDirectory.string().c_str();
-		PySys_SetPath(current_path);
+		PyObject* sysPath = PySys_GetObject((char*)"path"); // this is a BORROWED reference, so do not DECREF it!
+                PyList_Append(sysPath, PyString_FromString(current_path));
+		int success = PySys_SetObject("path",  sysPath);
+		if (success != 0)
+ 		{
+			throw std::runtime_error("EE: Failed to append the working directory to the Python path. Contact the developers.\n");
+		}
 
 		// This is the name of the method that gets called on the class to update the control
 		// on each time-step

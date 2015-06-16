@@ -59,7 +59,8 @@
 #from random import getstate
 #from numpy import *
 #from scipy.integrate import ode
-import sys
+#import sys
+#sys.path.append('/usr/lib64/python2.6/lib-dynload/')
 from math import pi, cos
 
 class elastanceController:

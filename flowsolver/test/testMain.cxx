@@ -207,7 +207,7 @@ TEST_F(testMain, checkNetlistHeartModel) {
   EXPECT_NEAR(1003.49069102218,pressHistResult,1e-5);
   // ...second column
   pressHistResult = PressHistReader.getReadFileData(1,6);
-  EXPECT_NEAR(968.660015172370,pressHistResult,1e-7);
+  EXPECT_NEAR(968.660015172370,pressHistResult,1e-6);
   // ... third column
   pressHistResult = PressHistReader.getReadFileData(2,6);
   EXPECT_NEAR(964.764355883842,pressHistResult,1e-6);

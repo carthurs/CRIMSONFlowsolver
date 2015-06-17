@@ -2979,13 +2979,7 @@
 !
             ! allocate flow_nalf array, size 0:maxsurf
             allocate(a%flow(0:maxsurf))     
-            a%flow(0:maxsurf) = real(0.0,8)            
-            
-            do i = 1,num
-               call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
-               call givepressurepointertocpp(ids(i), c_loc(a%pressure(i)))
-            end do 
-            
+            a%flow(0:maxsurf) = real(0.0,8)                        
             
 !
             ! allocate flow_nalf derivative array, size 0:maxsurf
@@ -2999,7 +2993,13 @@
             allocate(a%stb_pres(0:maxsurf))     
             a%stb_pres(0:maxsurf) = real(0.0,8)
 !            
-        end if         
+        end if
+        ! Tell C++ where the pressures and flows are:
+        do i = 1,num
+            call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
+            call givepressurepointertocpp(ids(i), c_loc(a%pressure(i)))
+        end do      
+
       end if
 ! #if EXTRA_CONSOLE_OUTPUT == 1
 !       write(*,*) 'addsurfids: cor info', a%surfids(1:5) !\todo remove

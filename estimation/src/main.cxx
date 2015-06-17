@@ -44,8 +44,10 @@ int main(int argc, char **argv) {
    
    // char pySearchPath[] = "/usr/lib/Python2.7";
    char pySearchPath[] = "/usr";
-   Py_SetPythonHome(pySearchPath);
+   // const char* pySearchPath = std::getenv("PYTHONHOME");
    Py_Initialize();
+   Py_SetPythonHome(pySearchPath);
+   
 
    // save the communicator
    MPI_Comm iNewComm_C = MPI_COMM_WORLD;

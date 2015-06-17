@@ -74,6 +74,8 @@ GTEST_API_ int main(int argc, char **argv) {
   PetscInitialize(&fake_argc, &fake_argv, (char *)0, help);
   
   Py_Initialize();
+  char* pySearchPath = std::getenv("PYTHONHOME");
+  Py_SetPythonHome(pySearchPath);
   
   int testSuccess = 0;
 

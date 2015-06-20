@@ -27,7 +27,7 @@ class abstractBoundaryCondition
       hstep(hstep_in),
       delt(delt_in),
       alfi_local(alfi_in),
-      m_lstep(lstep),
+      m_currentTimestepIndex(lstep),
       m_maxsurf(maxsurf),
       m_nstep(nstep)
     {
@@ -44,7 +44,7 @@ class abstractBoundaryCondition
         numberOfConstructedBoundaryConditions++;
         index = numberOfConstructedBoundaryConditions;
 
-        if (m_lstep > 0)
+        if (m_currentTimestepIndex > 0)
         {
             thisIsARestartedSimulation = 1;
         }
@@ -74,6 +74,7 @@ class abstractBoundaryCondition
     void updpressure_n1_withflow();
     // virtual void finalizeLPNAtEndOfTimestep() = 0;
     double getSurfaceIndex() const {return surfaceIndex;}
+    void incrementTimestepIndex();
  protected:
  	double dp_dq;
  	double Hop;
@@ -94,7 +95,7 @@ class abstractBoundaryCondition
     // double implicitcoeff;
     // double implicitcoeff_n1; 
     const int hstep;
-    const int m_lstep;
+    int m_currentTimestepIndex;
     const double delt;
     const double alfi_local;
     const int m_maxsurf;

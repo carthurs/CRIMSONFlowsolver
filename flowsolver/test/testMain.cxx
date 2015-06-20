@@ -322,3 +322,12 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
     EXPECT_NEAR(-40465.8764272404,flowResult,1e-8);
   }
 }
+
+TEST_F(testMain, checkMixedNetlistAndRCRT)
+{
+  setSimDirectory("mainTests/legacy/netlistWithRCRTs");
+  clearOutOldFiles();
+
+  runSimulation();
+  MPI_Barrier(MPI_COMM_WORLD);
+}

@@ -61,8 +61,22 @@ void boundaryConditionManager::setAlfi(const double alfi)
 
 void boundaryConditionManager::setLstep(const int lstep)
 {
-  m_lstep = lstep;
-  m_lstepHasBeenSet = true;
+  m_currentTimestepIndex = lstep;
+  m_currentTimestepIndexHasBeenSet = true;
+}
+
+void boundaryConditionManager::incrementTimestepIndex()
+{
+  assert(m_currentTimestepIndexHasBeenSet);
+
+  // increment the internal timestep of the manager
+  m_currentTimestepIndex++;
+
+  // Tell all the bounddary conditions to increment too
+  for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
+  {
+    (*boundaryCondition)->incrementTimestepIndex();
+  }
 }
 
 void boundaryConditionManager::setNtout(const int ntout)
@@ -200,7 +214,7 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   assert(m_deltHasBeenSet);
   assert(m_hstepHasBeenSet);
   assert(m_alfiHasBeenSet);
-  assert(m_lstepHasBeenSet);
+  assert(m_currentTimestepIndexHasBeenSet);
   assert(m_ntoutHasBeenSet);
   assert(m_maxsurfHasBeenSet);
   assert(m_nstepHasBeenSet);
@@ -210,7 +224,7 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   m_hasSurfaceList = true;
 
   // Build a factory
-  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits);
+  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_currentTimestepIndex, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits);
 
   factory.createNetlistLoopClosingCircuits(m_netlistDownstreamLoopClosingSubsections);
 
@@ -359,7 +373,7 @@ void boundaryConditionManager::writePHistAndQHistRCR()
   qhistrcr_writer.setFileName("QHistRCR.dat");
 
   // Loop over all the updates since the last restart was written:
-  for (int i=m_lstep-m_ntout+int(1); i<m_lstep+int(1); i++)
+  for (int i=m_currentTimestepIndex-m_ntout+int(1); i<m_currentTimestepIndex+int(1); i++)
   {
     phistrcr_writer.writeStepIndex(i);
     qhistrcr_writer.writeStepIndex(i);

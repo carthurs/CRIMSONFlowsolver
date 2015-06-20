@@ -15,17 +15,17 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
   // Create fake (i.e. non-FORTRAN) pointer manager
   fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
 
-  fortranPointerManager_instance->boundaryFlows.clear();
-  fortranPointerManager_instance->boundaryPressures.clear();
+  fortranPointerManager_instance->m_boundaryFlows.clear();
+  fortranPointerManager_instance->m_boundaryPressures.clear();
 
   double fakeFlow = 0.0;
   double fakePressure = 0.0;
   // Insert fake pointer data:
-  fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(2,&fakeFlow));
-  fortranPointerManager_instance->hasBoundaryFlows = true;
+  fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(2,&fakeFlow));
+  fortranPointerManager_instance->m_hasBoundaryFlows = true;
 
-  fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(2,&fakePressure));
-  fortranPointerManager_instance->hasBoundaryPressures = true;
+  fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(2,&fakePressure));
+  fortranPointerManager_instance->m_hasBoundaryPressures = true;
 
   // Setup the netlist reader:
   netlistReader_instance = NetlistReader::Instance();
@@ -48,17 +48,17 @@ TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
   // Create fake (i.e. non-FORTRAN) pointer manager
   fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
 
-  fortranPointerManager_instance->boundaryFlows.clear();
-  fortranPointerManager_instance->boundaryPressures.clear();
+  fortranPointerManager_instance->m_boundaryFlows.clear();
+  fortranPointerManager_instance->m_boundaryPressures.clear();
 
   double fakeFlow = 0.0;
   double fakePressure = 0.0;
   // Insert fake pointer data:
-  fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(2,&fakeFlow));
-  fortranPointerManager_instance->hasBoundaryFlows = true;
+  fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(2,&fakeFlow));
+  fortranPointerManager_instance->m_hasBoundaryFlows = true;
 
-  fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(2,&fakePressure));
-  fortranPointerManager_instance->hasBoundaryPressures = true;
+  fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(2,&fakePressure));
+  fortranPointerManager_instance->m_hasBoundaryPressures = true;
 
   // Setup the netlist reader:
   netlistReader_instance = NetlistReader::Instance();

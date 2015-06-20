@@ -75,6 +75,7 @@ class abstractBoundaryCondition
     // virtual void finalizeLPNAtEndOfTimestep() = 0;
     double getSurfaceIndex() const {return surfaceIndex;}
     void incrementTimestepIndex();
+    virtual void setDirichletConditionsIfNecessary(int* const binaryMask);
  protected:
  	double dp_dq;
  	double Hop;

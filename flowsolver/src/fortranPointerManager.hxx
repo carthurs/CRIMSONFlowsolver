@@ -20,34 +20,18 @@ public:
 		return &instance;
 	}
 
-	double* getBoundaryFlows(int surfaceIndex)
-	{
-		assert(hasBoundaryFlows);
-		return boundaryFlows.at(surfaceIndex);
-	}
-	double* getBoundaryPressures(int surfaceIndex)
-	{
-		assert(hasBoundaryPressures);
-		return boundaryPressures.at(surfaceIndex);
-	}
-
-	void setBoundaryFlows(int surfaceIndex, double* flowPointer)
-	{
-		boundaryFlows.insert(std::pair<int,double*>(surfaceIndex,flowPointer));
-		hasBoundaryFlows = true;
-	}
-	void setBoundaryPressures(int surfaceIndex, double* pressPointer)
-	{
-		boundaryPressures.insert(std::pair<int,double*>(surfaceIndex,pressPointer));
-		hasBoundaryPressures = true;
-	}
+	double* getBoundaryFlows(int surfaceIndex);
+	double* getBoundaryPressures(int surfaceIndex);
+	void setBoundaryFlows(int surfaceIndex, double* flowPointer);
+	void setBoundaryPressures(int surfaceIndex, double* pressPointer);
+	
 private:
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Get().
 	fortranBoundaryDataPointerManager()
 	{
-		hasBoundaryPressures = false;
-		hasBoundaryFlows = false;
+		m_hasBoundaryPressures = false;
+		m_hasBoundaryFlows = false;
 	};
 
 	// Ban (via making private) the copy constructor
@@ -61,15 +45,17 @@ private:
 
 	void tearDown()
     {
-    	boundaryFlows.clear();
-    	boundaryPressures.clear();
+    	m_boundaryFlows.clear();
+    	m_boundaryPressures.clear();
     }
 
-    bool hasBoundaryPressures;
-    bool hasBoundaryFlows;
+    bool pointerNotDuplicated(double* pointerAboutToBeStored);
 
-    std::map<int,double*> boundaryFlows;
-	std::map<int,double*> boundaryPressures;
+    bool m_hasBoundaryPressures;
+    bool m_hasBoundaryFlows;
+
+    std::map<int,double*> m_boundaryFlows;
+	std::map<int,double*> m_boundaryPressures;
 };
 
 #endif

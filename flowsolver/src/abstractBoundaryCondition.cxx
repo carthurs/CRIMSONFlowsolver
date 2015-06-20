@@ -117,3 +117,17 @@ void abstractBoundaryCondition::incrementTimestepIndex()
 {
   m_currentTimestepIndex++;
 }
+
+// Processes the binaryMask for setting Dirichlet conditions.
+// This boundary condition knows which mesh nodes lie at its surface (checked by the assert),
+// and it sets 0 in binaryMask at the appropriate location for these nodes, if the boundary
+// condition type is currently Dirichlet.
+void abstractBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
+{
+  assert(hasListOfMeshNodesAtThisBoundary);
+  // set zero in the binaryMask at the locations necessary to impose Dirichlet at this surface
+  for (auto node=listOfMeshNodesAtThisBoundary.begin(); node!=listOfMeshNodesAtThisBoundary.end(); node++)
+  {
+    binaryMask[*node] = 0;
+  }
+}

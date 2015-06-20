@@ -2934,12 +2934,12 @@
 !     ! check if number of surfaces is > 0
       if (num .gt. int(0)) then
 !        ! check to see if the pointer is associated          
-         if (associated(a%surfids)) then
+         if (associated(a%surfids)) then ! The arrays already exist, so just add new data to them for this class of boundary
 !           ! check if id already exists
 !           ! loop over new list
             do i = 1, num
 !              ! loop over old list
-               do j = 1, a%surfnum
+               do j = 1, a%surfnum ! check this surface hasn't already been set up
                   if (ids(i) .eq. a%surfids(j)) then
                      addid = .false.
                      exit
@@ -2947,17 +2947,20 @@
                      addid = .true.
                   end if 
                end do 
+               ! If the surface wasn't already set up, add its info now:
                if (addid) then
                   ! add surface ids
                   a%surfids(a%surfnum+1) = ids(i)
                   ! update number of surfaces by one
                   !!a%surfnum = a%surfnum + num
                   a%surfnum = a%surfnum + int(1)
-!                  write(*,*) 'a%surfnum:',a%surfnum
-!                  write(*,*) 'a%surfid:',a%surfids(a%surfnum)
+
+                  ! Tell C++ where the pressures and flows are:
+                  call giveflowpointertocpp(ids(i), c_loc(a%flow(a%surfnum)))
+                  call givepressurepointertocpp(ids(i), c_loc(a%pressure(a%surfnum)))
                end if
             end do
-         else
+         else ! this is the first call to this function, so allocate the arrays, and insert their first set of values
 !
             ! allocate surfids array, size 0:maxsurf 
             allocate(a%surfids(0:maxsurf))     
@@ -2980,7 +2983,12 @@
             ! allocate flow_nalf array, size 0:maxsurf
             allocate(a%flow(0:maxsurf))     
             a%flow(0:maxsurf) = real(0.0,8)                        
-            
+
+            ! Tell C++ where the pressures and flows are:
+            do i = 1,num
+                call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
+                call givepressurepointertocpp(ids(i), c_loc(a%pressure(i)))
+            end do
 !
             ! allocate flow_nalf derivative array, size 0:maxsurf
             allocate(a%flowderivative(0:maxsurf))     
@@ -2994,11 +3002,6 @@
             a%stb_pres(0:maxsurf) = real(0.0,8)
 !            
         end if
-        ! Tell C++ where the pressures and flows are:
-        do i = 1,num
-            call giveflowpointertocpp(ids(i), c_loc(a%flow(i)))
-            call givepressurepointertocpp(ids(i), c_loc(a%pressure(i)))
-        end do      
 
       end if
 ! #if EXTRA_CONSOLE_OUTPUT == 1

@@ -625,8 +625,8 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
 // The purpose of this function is to detect when flow across the 3D interface is blocked due
 // to diode closure (or due to flows being prescribed -- still \todo).
 // It provides the Fortran code with an array of zeros and ones, one for each boundary node in the mesh;
-// a 1 indicates that the boundary should be left as-is from the initial input data state (meaning flow is allowed, and the BC is Neumann),
-// whereas a 0 indicates that it should be switched to Dirichlet.
+// a 1 indicates that the boundary codes should be left as-is (meaning flow is disallowed),
+// whereas a 0 indicates that it should be Neumann.
 void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength)
 {
   // Begin by setting the binary mask to all ones (i.e. flagging 1 to set Dirichlet boundary conditions at all nodes)
@@ -638,11 +638,7 @@ void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int*
   // Ask the boundary conditions to set zeros where they want Neumann conditions
   for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
-    if (typeid(**iterator)==typeid(NetlistBoundaryCondition))
-    {
-      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(iterator->get());
-      downcastNetlist->setDirichletConditionsIfNecessary(binaryMask);
-    }
+      (*iterator)->setDirichletConditionsIfNecessary(binaryMask);
   }
 }
 // ---WRAPPED BY--->

@@ -83,29 +83,29 @@
 	    // fortranBoundaryDataPointerManager* fortranPointerManager_instance;
 	    fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
 	    
-	    fortranPointerManager_instance->boundaryFlows.clear();
-	    fortranPointerManager_instance->boundaryPressures.clear();
+	    fortranPointerManager_instance->m_boundaryFlows.clear();
+	    fortranPointerManager_instance->m_boundaryPressures.clear();
 	    
 	    // Insert fake pointer data:
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(3,&flow1));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(7,&flow2));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(9,&flow3));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(11,&flow4));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(12,&flow4));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(13,&flow4));
-	    fortranPointerManager_instance->boundaryFlows.insert(std::pair<int,double*>(14,&flow4));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(3,&flow1));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(7,&flow2));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(9,&flow3));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(11,&flow4));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(12,&flow4));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(13,&flow4));
+	    fortranPointerManager_instance->m_boundaryFlows.insert(std::pair<int,double*>(14,&flow4));
 	    
-		fortranPointerManager_instance->hasBoundaryFlows = true;
+		fortranPointerManager_instance->m_hasBoundaryFlows = true;
 
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(3,&press1));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(7,&press2));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(9,&press3));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(11,&press4));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(12,&press4));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(13,&press4));
-	    fortranPointerManager_instance->boundaryPressures.insert(std::pair<int,double*>(14,&press4));        
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(3,&press1));
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(7,&press2));
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(9,&press3));
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(11,&press4));
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(12,&press4));
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(13,&press4));
+	    fortranPointerManager_instance->m_boundaryPressures.insert(std::pair<int,double*>(14,&press4));        
 
-	    fortranPointerManager_instance->hasBoundaryPressures = true;
+	    fortranPointerManager_instance->m_hasBoundaryPressures = true;
 
 	  	// Setup the file reader for the RCRTs
 		rcrtReader_instance = rcrtReader::Instance();

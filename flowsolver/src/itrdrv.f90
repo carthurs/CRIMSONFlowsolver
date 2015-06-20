@@ -983,7 +983,6 @@ subroutine rebuildMemLS_lhs()
             do k=1, numNetlistLPNSrfs
                 call callCPPDiscoverWhetherFlowPermittedAcrossSurface(indicesOfNetlistSurfaces(k),flowIsPermitted)
                 if (flowIsPermitted .eq. int(1)) then
-                    write(*,*) "Adding netlist", k, "to memLS_lhs in itrdrv.f90."
                     faIn = faIn + 1
                     call AddNeumannBCTomemLS(indicesOfNetlistSurfaces(k),faIn,memLS_lhs)
                 endif

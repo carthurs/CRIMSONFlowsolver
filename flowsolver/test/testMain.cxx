@@ -330,4 +330,83 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
 
   runSimulation();
   MPI_Barrier(MPI_COMM_WORLD);
+
+   // Check PressHist.dat
+  {
+    histFileReader pressHistData = histFileReader();
+    pressHistData.setFileName("PressHist.dat");
+    pressHistData.setNumColumns(3);
+    pressHistData.readFileInternalMetadata();
+    pressHistData.readAndSplitMultiSurfaceRestartFile();
+
+    // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+    double pressureResult = pressHistData.getReadFileData(0,6);
+    EXPECT_NEAR(790.498746283900,pressureResult,1e-5);
+    // ...second column
+    pressureResult = pressHistData.getReadFileData(1,6);
+    EXPECT_NEAR(7653.31439101382,pressureResult,1e-6);
+    // ... third column
+    pressureResult = pressHistData.getReadFileData(2,6);
+    EXPECT_NEAR(9376.67945078140,pressureResult,1e-6);
+  }
+
+  // Check FlowHist.dat
+  {
+    histFileReader flowHistData = histFileReader();
+    flowHistData.setFileName("FlowHist.dat");
+    flowHistData.setNumColumns(3);
+    flowHistData.readFileInternalMetadata();
+    flowHistData.readAndSplitMultiSurfaceRestartFile();
+    
+    // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+    double flowResult = flowHistData.getReadFileData(0,6);
+    EXPECT_NEAR(137208.420657606,flowResult,1e-8);
+    // ...second column
+    flowResult = flowHistData.getReadFileData(1,6);
+    EXPECT_NEAR(-97144.4580441544,flowResult,1e-4);
+    // ... third column
+    flowResult = flowHistData.getReadFileData(2,6);
+    EXPECT_NEAR(-40084.8691875509,flowResult,1e-5);
+  }
+
+  // Check netlistFlows_surface_5.dat
+  {
+    histFileReader zeroDDomainFlows = histFileReader();
+    zeroDDomainFlows.setFileName("netlistPressures_surface_5.dat");
+    zeroDDomainFlows.setNumColumns(7);
+    zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
+    // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+    double pressureResult = zeroDDomainFlows.getReadFileData(1,5);
+    EXPECT_NEAR(798.293386775323,pressureResult,1e-8);
+  }
+
+  {
+    histFileReader* PHistReader = new histFileReader();
+    PHistReader->setFileName("PHistRCR.dat");
+    PHistReader->setNumColumns(3);
+    PHistReader->readAndSplitMultiSurfaceRestartFile();
+
+    double finalPHistRCRValue = PHistReader->getReadFileData(1,5);//((PHistReader->m_dataReadFromFile).at(5))[1];
+    EXPECT_NEAR(finalPHistRCRValue,7664.81545745205,10e-5);
+
+    finalPHistRCRValue = PHistReader->getReadFileData(2,5);//((PHistReader->m_dataReadFromFile).at(5))[2];
+    EXPECT_NEAR(finalPHistRCRValue,9409.53605840001,10e-5);
+
+    delete PHistReader;
+  }  
+
+  {
+    histFileReader* QHistReader = new histFileReader();
+    QHistReader->setFileName("QHistRCR.dat");
+    QHistReader->setNumColumns(3);
+    QHistReader->readAndSplitMultiSurfaceRestartFile();
+
+    double finalPHistRCRValue = QHistReader->getReadFileData(1,5);//((QHistReader->m_dataReadFromFile).at(5))[1];
+    EXPECT_NEAR(finalPHistRCRValue,-97144.4580441544,10e-5);
+
+    finalPHistRCRValue = QHistReader->getReadFileData(2,5);//((QHistReader->m_dataReadFromFile).at(5))[2];
+    EXPECT_NEAR(finalPHistRCRValue,-40084.8691875509,10e-5);
+
+    delete QHistReader;
+  }
 }

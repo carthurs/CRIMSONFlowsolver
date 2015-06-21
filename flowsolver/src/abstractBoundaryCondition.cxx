@@ -82,9 +82,7 @@ void abstractBoundaryCondition::updatePressureAndFlowHistory()
 
 void abstractBoundaryCondition::updpressure_n1_withflow()
 {
-  std::cout << "pressure_n pre: " << pressure_n << std::endl;
   pressure_n = dp_dq_n1*(*(flow_n_ptrs.at(0))) + Hop_n1;
-  std::cout << "pressure_n post: " << pressure_n << std::endl;
 }
 
 void abstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)

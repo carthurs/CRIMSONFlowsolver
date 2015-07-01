@@ -431,6 +431,14 @@ double* CircuitPressureNode::getPressurePointer()
 	return pressurePointer;
 }
 
+double* CircuitPressureNode::getPointerToFixedPressurePrescription()
+{
+	// we should only be accessing this pointer for modification if it is a fixed-type pressure prescription
+	assert(prescribedPressureType == Pressure_Fixed);
+	double* pressurePointer = &m_fixedPressure;
+	return pressurePointer;
+}
+
 bool CircuitPressureNode::hasUserDefinedExternalPythonScriptParameterController() const
 {
 	return m_hasPythonParameterController;
@@ -1057,13 +1065,35 @@ bool CircuitPressureNode::isAtBoundary() const
 	return m_isAtBoundary;
 }
 
-double CircuitPressureNode::getPressure() const
+double CircuitPressureNode::getPressure()
 {
+	// If this is a prescribed fixed pressure, ensure we reset it to the original input value.
+	// This has the additional benefit of stopping any drift in a supposedly-prescribed value.
+	if (prescribedPressureType == Pressure_Fixed)
+	{
+		pressure = m_fixedPressure;
+	}
 	return pressure;
 }
+
 void CircuitPressureNode::setPressure(const double pressure_in)
 {
 	pressure = pressure_in;
+}
+
+void CircuitPressureNode::setPrescribedPressure(const double prescribedPressure)
+{
+	// We only do anything special with fixed-pressure values. There's nothing
+	// to do here with other types of prescribed pressure, as they don't
+	// remain fixed at a single value (so we needn't remember it in m_fixedPressure).
+	if (prescribedPressureType == Pressure_Fixed)
+	{
+		m_fixedPressure = prescribedPressure;
+	}
+	else
+	{
+		pressure = prescribedPressure;
+	}
 }
 
 void VolumeTrackingComponent::recordVolumeInHistory()

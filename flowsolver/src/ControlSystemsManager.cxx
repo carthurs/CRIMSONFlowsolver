@@ -107,7 +107,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			{
 				// get the component:
 				boost::shared_ptr<CircuitPressureNode> controlledNode = netlistCircuit->getNodeByInputDataIndex(nodeOrComponentIndex);
-				double* pressureToControl = controlledNode->getPressurePointer();
+				double* pressureToControl = controlledNode->getPointerToFixedPressurePrescription();
 				std::string externalPythonControllerName;
 				std::vector<std::pair<int,double*>> flowPointerPairs;
 				std::vector<std::pair<int,double*>> pressurePointerPairs;

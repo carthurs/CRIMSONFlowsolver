@@ -290,7 +290,7 @@ void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::
     // node->prescribedPressureType = typeOfPrescribedPressure;
     if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
     {
-        node->setPressure(retrievedValueOfPrescribedPressures.at(indexOfPrescribedPressure));
+        node->setPrescribedPressure(retrievedValueOfPrescribedPressures.at(indexOfPrescribedPressure));
     }
 }
 
@@ -919,7 +919,7 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     // node->prescribedPressureType = typeOfPrescribedPressure;
     if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
     {
-        node->setPressure(valueOfPrescribedPressures.at(indexOfPrescribedPressure));
+        node->setPrescribedPressure(valueOfPrescribedPressures.at(indexOfPrescribedPressure));
     }
 
     if (node->getIndex() <= m_numberOfNetlistsUsedAsBoundaryConditions)

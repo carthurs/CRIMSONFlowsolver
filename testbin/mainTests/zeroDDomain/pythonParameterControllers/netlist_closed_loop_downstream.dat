@@ -27,7 +27,7 @@ r
 # Indices of nodes with prescribed pressures:
 3
 # Prescribed pressure values / scalings (dependent on types, given by next component):
-0.01e0
+0.0e0
 # Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
 f
 # Number of prescribed flows:

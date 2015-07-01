@@ -181,10 +181,12 @@ public:
 	}
 
 	double* getPressurePointer();
+	double* getPointerToFixedPressurePrescription();
 	void setIsAtBoundary();
 	bool isAtBoundary() const;
-	double getPressure() const;
+	double getPressure();
 	void setPressure(const double pressure_in);
+	void setPrescribedPressure(const double prescribedPressure);
 	int getIndex() const;
 	void setPythonControllerName(const std::string pythonParameterControllerName);
 	bool hasUserDefinedExternalPythonScriptParameterController() const;
@@ -198,6 +200,7 @@ private:
 	const int m_indexInInputData;
 	bool m_hasPythonParameterController;
 	std::string m_pythonParameterControllerName;
+	double m_fixedPressure;
 };
 
 class CircuitData

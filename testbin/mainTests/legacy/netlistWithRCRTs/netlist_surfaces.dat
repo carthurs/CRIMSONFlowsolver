@@ -39,7 +39,7 @@ v
 5
 6
 # Prescribed pressure values / scalings (dependent on types, given by next component):
-533.3
+533.2
 0.0
 # Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
 f

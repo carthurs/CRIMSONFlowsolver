@@ -169,18 +169,25 @@ TEST_F(testFileReaders, checkNetlistReader) {
   netlistReader_instance->setFileName("netlist_surfaces.dat");
   netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
-  std::vector<std::vector<double>> returnedVectorOfDoubleVectors;
-  returnedVectorOfDoubleVectors = netlistReader_instance->getComponentParameterValues();
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),58.43089e0);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.001278473e0);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(2),1600.0e0);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),0.001278473e1);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(1),60.43089e1);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(2),1600.0e1);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(3),1e-4);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(4),1e2);
+  {
+    std::vector<double> returnedVectorOfDoubles;
+    returnedVectorOfDoubles = netlistReader_instance->getComponentParameterValues(0);
+    EXPECT_EQ(returnedVectorOfDoubles.at(0),58.43089e0);
+    EXPECT_EQ(returnedVectorOfDoubles.at(1),0.001278473e0);
+    EXPECT_EQ(returnedVectorOfDoubles.at(2),1600.0e0);
+  }
 
-  returnedVectorOfDoubleVectors = netlistReader_instance->getValueOfPrescribedPressures();
+  {
+    std::vector<double> returnedVectorOfDoubles;
+    returnedVectorOfDoubles = netlistReader_instance->getComponentParameterValues(1);
+    EXPECT_EQ(returnedVectorOfDoubles.at(0),0.001278473e1);
+    EXPECT_EQ(returnedVectorOfDoubles.at(1),60.43089e1);
+    EXPECT_EQ(returnedVectorOfDoubles.at(2),1600.0e1);
+    EXPECT_EQ(returnedVectorOfDoubles.at(3),1e-4);
+    EXPECT_EQ(returnedVectorOfDoubles.at(4),1e2);
+  }
+
+  std::vector<std::vector<double>> returnedVectorOfDoubleVectors = netlistReader_instance->getValueOfPrescribedPressures();
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),0.01e0);
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.11e0);
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(1).at(0),1.1e0);
@@ -291,13 +298,15 @@ TEST_F(testFileReaders, checkNetlistDownstreamCircuitReader)
   downstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
   downstreamReader_instance->readAndSplitMultiSurfaceInputFile();
 
-  std::vector<std::vector<double>> returnedVectorOfDoubleVectors;
-  returnedVectorOfDoubleVectors = downstreamReader_instance->getComponentParameterValues();
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),58.43089e0);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.001278473e0);
-  EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(2),1400.0e0);
+  {
+    std::vector<double> returnedVectorOfDoubles;
+    returnedVectorOfDoubles = downstreamReader_instance->getComponentParameterValues(0);
+    EXPECT_EQ(returnedVectorOfDoubles.at(0),58.43089e0);
+    EXPECT_EQ(returnedVectorOfDoubles.at(1),0.001278473e0);
+    EXPECT_EQ(returnedVectorOfDoubles.at(2),1400.0e0);
+  }
 
-  returnedVectorOfDoubleVectors = downstreamReader_instance->getValueOfPrescribedPressures();
+  std::vector<std::vector<double>> returnedVectorOfDoubleVectors = downstreamReader_instance->getValueOfPrescribedPressures();
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),0.01e0);
 
   // returnedVectorOfDoubleVectors = downstreamReader_instance->getValueOfPrescribedFlows();

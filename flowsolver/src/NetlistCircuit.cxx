@@ -160,7 +160,7 @@ void NetlistCircuit::createBasicCircuitDescription()
     std::reverse(retrievedComponentStartNodes.begin(), retrievedComponentStartNodes.end());
     std::vector<int> retrievedComponentEndNodes = mp_netlistFileReader->getComponentEndNodes().at(m_IndexOfThisNetlistLPNInInputFile);
     std::reverse(retrievedComponentEndNodes.begin(), retrievedComponentEndNodes.end());
-    std::vector<double> retrievedComponentParameterValues = mp_netlistFileReader->getComponentParameterValues().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<double> retrievedComponentParameterValues = mp_netlistFileReader->getComponentParameterValues(m_IndexOfThisNetlistLPNInInputFile);
     std::reverse(retrievedComponentParameterValues.begin(), retrievedComponentParameterValues.end());
 
     std::vector<int> retrievedListOfPrescribedFlows = mp_netlistFileReader->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);

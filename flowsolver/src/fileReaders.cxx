@@ -679,10 +679,10 @@ std::vector<std::vector<int>> NetlistReader::getComponentEndNodes()
 	assert(m_fileHasBeenRead);
 	return m_componentEndNodes;
 }
-std::vector<std::vector<double>> NetlistReader::getComponentParameterValues()
+std::vector<double> NetlistReader::getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const
 {
 	assert(m_fileHasBeenRead);
-	return m_componentParameterValues;
+	return m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile);
 }
 std::vector<int> NetlistReader::getNumberOfComponents()
 {

@@ -303,7 +303,7 @@ public:
 	std::vector<std::vector<circuit_component_t>> getComponentTypes();
 	std::vector<std::vector<int>> getComponentStartNodes();
 	std::vector<std::vector<int>> getComponentEndNodes();
-	std::vector<std::vector<double>> getComponentParameterValues();
+	std::vector<double> getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const;
 	std::vector<int> getNumberOfComponents();
 	std::vector<int> getNumberOfPrescribedPressures();
 	std::vector<int> getNumberOfPrescribedFlows();

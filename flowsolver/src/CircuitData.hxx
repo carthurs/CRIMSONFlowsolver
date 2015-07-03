@@ -111,11 +111,11 @@ private:
 class VolumeTrackingComponent : public CircuitComponent
 {
 public:
-	VolumeTrackingComponent(const int hstep, const bool thisIsARestartedSimulation)
-	: CircuitComponent(hstep, thisIsARestartedSimulation)
+	VolumeTrackingComponent(const int hstep, const bool thisIsARestartedSimulation, const double initialVolume)
+	: CircuitComponent(hstep, thisIsARestartedSimulation),
+	m_storedVolume(initialVolume)
 	{
 		assert(!thisIsARestartedSimulation);
-		m_storedVolume = 130000.0; // default; can be changed later if necessary
 		m_entireVolumeHistory.reserve(hstep);
 		m_enforceZeroVolumePrescription = false;
 	}
@@ -145,8 +145,8 @@ protected:
 class VolumeTrackingPressureChamber : public VolumeTrackingComponent
 {
 public:
-	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation)
-	: VolumeTrackingComponent(hstep, thisIsARestartedSimulation)
+	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation, const double initialVolume)
+	: VolumeTrackingComponent(hstep, thisIsARestartedSimulation, initialVolume)
 	{
 		assert(!thisIsARestartedSimulation);
 		m_unstressedVolume = 0.0; // default; can be changed later if necessary

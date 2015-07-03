@@ -416,7 +416,10 @@ void NetlistReader::readCircuitStructure()
 	std::vector<circuit_component_t> tempComponentTypes;
 	std::vector<int> tempComponentStartNodes;
 	std::vector<int> tempComponentEndNodes;
-	std::vector<double> tempComponentParameterValues;
+	
+	// Two nested vectors to allow for when componets have multiple parameters, given on the same netlist_surfaces.dat (or related file) and separated by spaces.
+	// Multiple parameter info should be documented just below.
+	std::vector<ComponentParameterContainer> tempComponentParameterValues;
 
 	m_numberOfComponents.push_back(atoi((*mp_currentLineSplitBySpaces).at(0).c_str()));
 
@@ -460,7 +463,19 @@ void NetlistReader::readCircuitStructure()
 		tempComponentEndNodes.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
 
 		readNextLine();
-		tempComponentParameterValues.push_back(atof(mp_currentLineSplitBySpaces->at(0).c_str()));
+		ComponentParameterContainer tempContainer;
+		tempContainer.setParameter(atof(mp_currentLineSplitBySpaces->at(0).c_str()));
+		// If this component has also an initial volume, put it in the ComponentParameterContainer:
+		if (tempComponentTypes.back() == Component_VolumeTracking || tempComponentTypes.back() == Component_VolumeTrackingPressureChamber)
+		{
+			if (mp_currentLineSplitBySpaces->size() < 2)
+			{ 
+				throw std::runtime_error("EE: Insufficient parameters given for one of the netlist volume-tracking components.");
+			}
+
+			tempContainer.setInitialVolume(atof(mp_currentLineSplitBySpaces->at(1).c_str()));
+		}
+		tempComponentParameterValues.push_back(tempContainer);
 	}
 	m_componentTypes.push_back(tempComponentTypes);
 	m_componentStartNodes.push_back(tempComponentStartNodes);
@@ -679,11 +694,28 @@ std::vector<std::vector<int>> NetlistReader::getComponentEndNodes()
 	assert(m_fileHasBeenRead);
 	return m_componentEndNodes;
 }
+
 std::vector<double> NetlistReader::getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const
 {
 	assert(m_fileHasBeenRead);
-	return m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile);
+
+	// We extract the component parameter values from their containers and place them
+	// in a vector in the order in which they appear in the netlist_surfaces.dat (or whichever input file they come from)
+	std::vector<double> allParametersForThisSurface;
+
+	for (auto parameterContainer = m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile).begin(); parameterContainer != m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile).end(); parameterContainer++)
+	{
+		allParametersForThisSurface.push_back(parameterContainer->getParameter());
+	}
+	
+	return allParametersForThisSurface;
 }
+
+double NetlistReader::getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const
+{
+	return m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile).at(componentIndexWithinNetlist).getInitialVolume();
+}
+
 std::vector<int> NetlistReader::getNumberOfComponents()
 {
 	assert(m_fileHasBeenRead);

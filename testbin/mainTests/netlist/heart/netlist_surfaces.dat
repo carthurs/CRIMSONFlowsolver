@@ -27,12 +27,12 @@ d
 5
 4
 0.1187e-4
-# component 5 type: (v=VolumeTrackingPressureChamber; its parameter value is the initial elastance)
+# component 5 type: (v=VolumeTrackingPressureChamber; its first parameter value is the initial elastance, second is initial volume)
 v
 # component 5 details:
 3
 6
-4.10246e-3
+4.10246e-3 130000.0
 # Number of prescribed pressure nodes:
 2
 # Indices of nodes with prescribed pressures:

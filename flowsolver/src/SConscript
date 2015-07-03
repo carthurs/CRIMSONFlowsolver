@@ -31,6 +31,7 @@ env.Append(LIBS=bop.PETSC_LIBSLIST+bop.PYTHON_LIBSLIST)
 # env.Append(Libs=[bop.SOLVERIO_LIBSLIST])
 
 sources=string.split("""
+	customCRIMSONContainers.cxx
 	newshape.cxx
 	Cinput.cxx
 	input_fform.cxx

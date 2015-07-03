@@ -14,6 +14,7 @@
 #include "gtest/gtest_prod.h"
 #include "debuggingToolsForCpp.hxx"
 #include "datatypesInCpp.hxx"
+#include "customCRIMSONContainers.hxx"
 
 class abstractFileReader
 {
@@ -304,6 +305,7 @@ public:
 	std::vector<std::vector<int>> getComponentStartNodes();
 	std::vector<std::vector<int>> getComponentEndNodes();
 	std::vector<double> getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const;
+	double getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const;
 	std::vector<int> getNumberOfComponents();
 	std::vector<int> getNumberOfPrescribedPressures();
 	std::vector<int> getNumberOfPrescribedFlows();
@@ -344,7 +346,7 @@ protected:
 	std::vector<std::vector<circuit_component_t>> m_componentTypes; // the data in here will be the stripped first column of the netlist, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
 	std::vector<std::vector<int>> m_componentStartNodes;
 	std::vector<std::vector<int>> m_componentEndNodes;
-	std::vector<std::vector<double>> m_componentParameterValues;
+	std::vector<std::vector<ComponentParameterContainer>> m_componentParameterValues;
 
 	std::vector<int> m_numberOfComponents;
 	std::vector<int> m_numberOfPrescribedPressures;

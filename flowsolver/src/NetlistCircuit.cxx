@@ -131,16 +131,18 @@ void NetlistCircuit::createBasicCircuitDescription()
 
     // Prepare space for the components in the circuit:
     assert(mp_circuitData->components.empty());
-    for (int ii=0; ii<mp_circuitData->numberOfComponents; ii++)
+    for (int componentIndex=0; componentIndex<mp_circuitData->numberOfComponents; componentIndex++)
     {
         CircuitComponent* toPushBack;
-        if (retrievedComponentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
+        if (retrievedComponentTypes.at(componentIndex) == Component_VolumeTrackingPressureChamber)
         {
-            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
+            double initialVolume = mp_netlistFileReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
+            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation, initialVolume);
         }
-        else if (retrievedComponentTypes.at(ii) == Component_VolumeTracking)
+        else if (retrievedComponentTypes.at(componentIndex) == Component_VolumeTracking)
         {
-            toPushBack = new VolumeTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
+            double initialVolume = mp_netlistFileReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
+            toPushBack = new VolumeTrackingComponent(m_hstep,m_thisIsARestartedSimulation, initialVolume);
         }
         else
         {
@@ -148,7 +150,7 @@ void NetlistCircuit::createBasicCircuitDescription()
         }
 
         mp_circuitData->components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
-        mp_circuitData->components.back()->setIndex(toOneIndexing(ii));
+        mp_circuitData->components.back()->setIndex(toOneIndexing(componentIndex));
     }
 
 
@@ -659,11 +661,13 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         CircuitComponent* toPushBack;
         if (componentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
-            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation);
+            double initialVolume = 130000.0; //\todo make adjustable
+            toPushBack = new VolumeTrackingPressureChamber(m_hstep, m_thisIsARestartedSimulation, initialVolume);
         }
         else if (componentTypes.at(ii) == Component_VolumeTracking)
         {
-            toPushBack = new VolumeTrackingComponent(m_hstep,m_thisIsARestartedSimulation);
+            double initialVolume = 130000.0; //\todo make adjustable
+            toPushBack = new VolumeTrackingComponent(m_hstep, m_thisIsARestartedSimulation, initialVolume);
         }
         else
         {

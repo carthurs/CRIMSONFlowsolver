@@ -73,11 +73,11 @@ c
 2
 60.43089e1
 # Component 3 type:
-r
+t
 # Component 3 details:
 2
 4
-1600.0e1
+1600.0e1 130000.0
 # component 4 type:
 i
 # component 4 details:
@@ -85,11 +85,11 @@ i
 5
 1e-4
 # component 5 type:
-r
+v
 # component 5 details:
 4
 6
-1e2
+1e2 140000.0
 # Number of prescribed pressure nodes:
 4
 # Indices of nodes with prescribed pressures:

@@ -187,6 +187,20 @@ TEST_F(testFileReaders, checkNetlistReader) {
     EXPECT_EQ(returnedVectorOfDoubles.at(4),1e2);
   }
 
+  {
+    double initialVolume = netlistReader_instance->getComponentInitialVolume(1,2);
+    EXPECT_EQ(initialVolume, 130000.0);
+  }
+
+  {
+    double initialVolume = netlistReader_instance->getComponentInitialVolume(1,4);
+    EXPECT_EQ(initialVolume, 140000.0);
+  }
+
+  {
+    EXPECT_THROW(netlistReader_instance->getComponentInitialVolume(1,3), std::runtime_error);
+  }
+
   std::vector<std::vector<double>> returnedVectorOfDoubleVectors = netlistReader_instance->getValueOfPrescribedPressures();
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(0),0.01e0);
   EXPECT_EQ(returnedVectorOfDoubleVectors.at(0).at(1),0.11e0);
@@ -284,9 +298,9 @@ TEST_F(testFileReaders, checkNetlistReader) {
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(0).at(2) == Component_Resistor);
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(0) == Component_Resistor);
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(1) == Component_Capacitor);
-  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(2) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(2) == Component_VolumeTracking);
   EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(3) == Component_Inductor);
-  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(4) == Component_Resistor);
+  EXPECT_TRUE(returnedVectorOfComponentTypes.at(1).at(4) == Component_VolumeTrackingPressureChamber);
 
   netlistReader_instance->Term();
 }

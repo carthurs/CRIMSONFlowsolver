@@ -83,8 +83,6 @@ private:
 
 // This class supports user-defined parameter controllers, which the 
 // user provides in an external Python script.
-//
-// Currently, it only supports
 class UserDefinedCustomPythonParameterController : public AbstractParameterController
 {
 public:

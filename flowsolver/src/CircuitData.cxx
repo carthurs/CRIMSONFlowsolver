@@ -485,6 +485,21 @@ void CircuitComponent::setIndex(const int index)
 	m_indexInInputData = index;
 }
 
+double CircuitComponent::getPrescribedFlow() const
+{
+	return m_valueOfPrescribedFlow;
+}
+
+void CircuitComponent::setPrescribedFlow(const double prescribedFlow)
+{
+	m_valueOfPrescribedFlow = prescribedFlow;
+}
+
+double* CircuitComponent::getPointerToFixedFlowPrescription()
+{
+	return &m_valueOfPrescribedFlow;
+}
+
 void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 {
 	bool previousStateOf_m_flowPermittedAcross3DInterface = m_flowPermittedAcross3DInterface;

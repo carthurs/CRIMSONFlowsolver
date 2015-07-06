@@ -225,7 +225,7 @@ void NetlistCircuit::createBasicCircuitDescription()
             if (retrievedListOfPrescribedFlows.at(prescribedFlow) == (*component)->getIndex())
             {
                 (*component)->prescribedFlowType = retrievedTypeOfPrescribedFlows.at(prescribedFlow);
-                (*component)->valueOfPrescribedFlow = retrievedValueOfPrescribedFlows.at(prescribedFlow);
+                (*component)->setPrescribedFlow(retrievedValueOfPrescribedFlows.at(prescribedFlow));
             }
         }
 
@@ -1694,7 +1694,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
            }
            else if (prescribedFlowComponent->second->prescribedFlowType == Flow_Fixed)
            {
-              errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,prescribedFlowComponent->second->valueOfPrescribedFlow, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+              errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,prescribedFlowComponent->second->getPrescribedFlow(), INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
            }
          // else if (prescribedFlowComponent->second->prescribedFlowType == Flow_Diode_FixedWhenClosed)
          // {

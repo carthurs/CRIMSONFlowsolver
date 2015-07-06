@@ -32,7 +32,6 @@ public:
 	
 	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
 	circuit_component_flow_prescription_t prescribedFlowType;
-	double valueOfPrescribedFlow;
 	double m_signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by its end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
 	double flow;
 	double historyFlow;
@@ -91,6 +90,9 @@ public:
 	int getIndex() const;
 	void setIndex(const int index);
 	bool permitsFlow() const;
+	double getPrescribedFlow() const;
+	void setPrescribedFlow(const double prescribedFlow);
+	double* getPointerToFixedFlowPrescription();
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	bool m_hasPythonParameterController;
@@ -98,6 +100,7 @@ protected:
 private:
 	circuit_component_t m_type;
 	bool m_permitsFlow; // for diodes in particular
+	double m_valueOfPrescribedFlow;
 	
 	int m_indexInInputData;
 	const int m_hstep;

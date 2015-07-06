@@ -2,7 +2,7 @@ from math import pi, cos
 
 class nodeController:
 
-	def __init__(self):
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;
@@ -10,7 +10,6 @@ class nodeController:
 		self.m_minimumElastance = 4.10246e-3;
 		self.m_maximumElastance = 3.0827e-1;
 		self.m_heartPeriod = 0.86;
-
 
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
@@ -21,6 +20,8 @@ class nodeController:
 		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
+
+		print self.m_name
 
 		return pressure
 

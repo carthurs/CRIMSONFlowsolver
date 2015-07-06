@@ -620,10 +620,17 @@ void NetlistReader::readControlSystemPrescriptions()
 		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("customPython") == 0)
 		{
-			controlType = Controller_CustomPythonComponent;
+			controlType = Controller_CustomPythonComponentParameter;
 			// Store the name of the Python script that controls this surface:
 			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
+		}
+		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicFlow") == 0)
+		{
+			controlType = Controller_CustomPythonComponentFlow;
+			// Store the name of the dat file that controls this surface:
+			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
+			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));	
 		}
 		else
 		{

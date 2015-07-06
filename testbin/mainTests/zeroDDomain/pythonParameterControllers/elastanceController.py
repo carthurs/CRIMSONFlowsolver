@@ -65,7 +65,7 @@ from math import pi, cos
 
 class elastanceController:
 
-	def __init__(self):
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 		# import io
 
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!

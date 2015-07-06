@@ -66,7 +66,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 			break;
 
-		case Controller_CustomPythonComponent:
+		case Controller_CustomPythonComponentParameter:
 			{
 				// get the component:
 				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
@@ -98,6 +98,51 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				}
 
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				m_controlSystems.push_back(controllerToPushBack);
+			}
+
+			break;
+
+		case Controller_CustomPythonComponentFlow:
+			{
+				// get the component:
+				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
+				double* flowToControl = controlledComponent->getPointerToFixedFlowPrescription();
+				std::string externalPythonControllerName;
+				std::vector<std::pair<int,double*>> flowPointerPairs;
+				std::vector<std::pair<int,double*>> pressurePointerPairs;
+				std::vector<std::pair<int,double*>> volumePointerPairs;
+
+				if (!controlledComponent->hasPrescribedFlow())
+				{
+					std::stringstream errorMessage;
+					errorMessage << "EE: Component " << nodeOrComponentIndex << " of the netlist boundary condition at surface " << netlistCircuit->getSurfaceIndex() << std::endl;
+					errorMessage << "was tagged has having a flow controller, but not as having prescribed flow. Please fix this." << std::endl;
+					throw std::runtime_error(errorMessage.str());
+				}
+
+				if (controlledComponent->hasUserDefinedExternalPythonScriptParameterController())
+				{
+					externalPythonControllerName = controlledComponent->getPythonControllerName();
+
+					// Gather the pressures and flows as pointers, so the CustomPython parameter
+					// controller can retrieve the pressure and flow values for each component
+					// of its netlist, and pass them to the Python controller for use by the user.
+					// They're indexed by the input data indices for the nodes / componnents:
+					flowPointerPairs = netlistCircuit->getComponentInputDataIndicesAndFlows();
+					pressurePointerPairs = netlistCircuit->getNodeInputDataIndicesAndPressures();
+					volumePointerPairs = netlistCircuit->getVolumeTrackingComponentInputDataIndicesAndVolumes();
+
+				}
+				else
+				{
+					std::stringstream errorMessage;
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
+					throw std::runtime_error(errorMessage.str());
+				}
+
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
 			}
 

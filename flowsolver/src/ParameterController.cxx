@@ -119,8 +119,11 @@ void UserDefinedCustomPythonParameterController::initialise()
 		// Instantiate the Python controller class:
 		if (PyCallable_Check(m_customPythonClass) == 1)
 		{
+			// Prepare the arguments to give to the controller's constructor:
+			PyObject* arguments = PyTuple_Pack(1,m_pythonScriptName);
 			// Instantiate the controller class
-			m_pythonParameterControllerInstance = PyObject_CallObject(m_customPythonClass, NULL);
+			m_pythonParameterControllerInstance = PyObject_CallObject(m_customPythonClass, arguments);
+			safe_Py_DECREF(arguments);
 		}
 		else
 		{

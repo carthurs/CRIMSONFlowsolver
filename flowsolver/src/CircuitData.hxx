@@ -57,6 +57,7 @@ public:
             m_hasPythonParameterController = false;
             hasTrackedVolume = false;
 			hasHistoryVolume = false;
+			m_hasPrescribedFlow = false;
 		}
 		else
 		{
@@ -66,6 +67,7 @@ public:
 			m_hasPythonParameterController = false; //\todo fix this for restart
 			hasTrackedVolume = false;
 			hasHistoryVolume = false;
+			m_hasPrescribedFlow = false;
 		}
 		prescribedFlowPointerIndex = 0;
 	}
@@ -93,6 +95,7 @@ public:
 	double getPrescribedFlow() const;
 	void setPrescribedFlow(const double prescribedFlow);
 	double* getPointerToFixedFlowPrescription();
+	bool hasPrescribedFlow() const;
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	bool m_hasPythonParameterController;
@@ -106,6 +109,8 @@ private:
 	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
 	bool m_connectsToNodeAtInterface;
+
+	bool m_hasPrescribedFlow;
 };
 
 // A slightly more complicated class of component, which prescribes its pressure

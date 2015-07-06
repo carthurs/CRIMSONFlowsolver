@@ -1001,7 +1001,7 @@ class thinShellPressureController:
 	    # return (voi, states, self.algebraic)
 		return states
 
-	def __init__(self):
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 		self.stepIndex = 0
 		self.tensionHistory = array([0.0]*200000)
 		self.sarcomereHalfLengthHistory = array([0.0]*200000)

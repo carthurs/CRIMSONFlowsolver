@@ -444,6 +444,11 @@ bool CircuitPressureNode::hasUserDefinedExternalPythonScriptParameterController(
 	return m_hasPythonParameterController;
 }
 
+bool CircuitComponent::hasPrescribedFlow() const
+{
+	return m_hasPrescribedFlow;
+}
+
 std::string CircuitPressureNode::getPythonControllerName() const
 {
 	assert(m_hasPythonParameterController);
@@ -487,16 +492,19 @@ void CircuitComponent::setIndex(const int index)
 
 double CircuitComponent::getPrescribedFlow() const
 {
+	assert(m_hasPrescribedFlow);
 	return m_valueOfPrescribedFlow;
 }
 
 void CircuitComponent::setPrescribedFlow(const double prescribedFlow)
 {
 	m_valueOfPrescribedFlow = prescribedFlow;
+	m_hasPrescribedFlow = true;
 }
 
 double* CircuitComponent::getPointerToFixedFlowPrescription()
 {
+	assert(m_hasPrescribedFlow);
 	return &m_valueOfPrescribedFlow;
 }
 

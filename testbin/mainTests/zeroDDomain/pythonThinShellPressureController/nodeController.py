@@ -2,7 +2,7 @@ from math import pi, cos
 
 class nodeController:
 
-	def __init__(self):
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;

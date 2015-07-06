@@ -21,8 +21,6 @@ class nodeController:
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 
-		print self.m_name
-
 		return pressure
 
 	def updatePeriodicTime(self, delt):

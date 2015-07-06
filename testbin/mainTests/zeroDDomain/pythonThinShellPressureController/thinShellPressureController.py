@@ -16,7 +16,7 @@ from math import pi, cos
 # except:
 # 	print "Unexpected error:", sys.exc_info()[0]
 
-class thinShellPressureController:
+class parameterController:
 
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 

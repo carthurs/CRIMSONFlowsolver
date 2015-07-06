@@ -1,72 +1,8 @@
-# def resolve_virtual_environment(override=None):
-#     """Fetch the virtual environment path in the
-#        process' environment or use an override."""
-#     path = os.getenv('VIRTUAL_ENV')
-#     if override:
-#         path = os.path.join(os.getcwd(), override)
-#     return path
-
-# def activate_virtual_environment(environment_root):
-#     """Configures the virtual environment starting at ``environment_root``."""
-#     activate_script = os.path.join(
-#         environment_root, 'Scripts', 'activate_this.py')
-#     execfile(activate_script, {'__file__': activate_script})
-
-# environment_root = resolve_virtual_environment(override)
-
-# import sys
-# sys.stderr = open('/home/carthurs/pyerrors.txt', 'w')
-# # sys.path.pop()
-# sys.path.append("/usr/lib/python2.7/")
-# sys.path.append("/usr/lib/python2.7/dist-packages/")
-# print sys.version_info
-# sys.path.append('../')
-# print sys.builtin_module_names
-# import imp
-# print imp.find_module('io')
-# print imp.find_module('os')
-# #print imp.find_module('numpy')
-# # import io
-# # sys.stdout = io.StringIO()
-# # sys.stderr.write(sys.stdout.getvalue())
-# # from math import *
-
-# try:
-# 	import numpy
-# except ImportError as e:
-# 	print "terrible thing happened!"
-# 	print e.message
-# 	print "terrible thing happened 2!"
-# except:
-# 	print "Unexpected error:", sys.exc_info()[0]
-
-# try:
-# 	import scipy
-# except ImportError as e:
-# 	print "terrible thing happened!"
-# 	print e.message
-# 	print "terrible thing happened 2!"
-# except:
-# 	print "Unexpected error:", sys.exc_info()[0]
-# # import io
-# # io = __import__('io', globals(), locals(), [], -1)
-# # import logging
-# sys.stderr.flush()
-# # imp.load_module('scipy',None,'/usr/lib/python2.7/dist-packages/scipy', ('', '', 5))
-# print sys.maxunicode
-# print sys.path
-#import io
-#from random import getstate
-#from numpy import *
-#from scipy.integrate import ode
-#import sys
-#sys.path.append('/usr/lib64/python2.6/lib-dynload/')
 from math import pi, cos
 
-class elastanceController:
+class parameterController:
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-		# import io
 
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;

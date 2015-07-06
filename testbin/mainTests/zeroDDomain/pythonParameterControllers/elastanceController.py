@@ -63,7 +63,7 @@
 #sys.path.append('/usr/lib64/python2.6/lib-dynload/')
 from math import pi, cos
 
-class elastanceController:
+class parameterController:
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 		# import io

@@ -66,6 +66,7 @@ void UserDefinedCustomPythonParameterController::initialise()
 	// Catch and report any Python errors:
 	try
 	{
+		m_controllerClassName = "parameterController";
 		m_updateControlNameString = "updateControl";
 
 		std::stringstream fullFileName;
@@ -93,7 +94,7 @@ void UserDefinedCustomPythonParameterController::initialise()
 		// This is the name of the method that gets called on the class to update the control
 		// on each time-step
 		m_updateControlPyobjectName = PyString_FromString(m_updateControlNameString.c_str());
-		m_pythonControllerClassName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
+		m_pythonControllerClassName = PyString_FromString(m_controllerClassName.c_str());
 		m_pythonScriptName = PyString_FromString(m_controllerPythonScriptBaseName.c_str());
 		m_customPythonModule = PyImport_Import(m_pythonScriptName);
 

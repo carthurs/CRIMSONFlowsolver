@@ -2,7 +2,7 @@ from math import pi, cos
 import numpy
 import scipy.interpolate
 
-class flowPrescriber:
+class parameterController:
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 

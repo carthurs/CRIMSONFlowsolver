@@ -124,6 +124,7 @@ private:
 
 	std::string m_updateControlNameString;
 	std::string m_controllerPythonScriptBaseName;
+	std::string m_controllerClassName;
 
 	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
 	const std::vector<std::pair<int,double*>> m_flowPointerPairs;

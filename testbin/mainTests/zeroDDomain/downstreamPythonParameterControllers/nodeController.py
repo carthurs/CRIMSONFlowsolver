@@ -1,6 +1,6 @@
 from math import pi, cos
 
-class nodeController:
+class parameterController:
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 

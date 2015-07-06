@@ -362,46 +362,100 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 // This test includes Python controllers on both pressure nodes
 // and resistances in the downstream closed loop.
 TEST_F(testMainWithZeroDDomain, checkDownstreamPythonElastanceController) {
-  setSimDirectory("mainTests/zeroDDomain/downstreamPythonParameterControllers");
+	  setSimDirectory("mainTests/zeroDDomain/downstreamPythonParameterControllers");
+	  clearOutOldFiles();
+
+	  runSimulation();
+	  MPI_Barrier(MPI_COMM_WORLD);
+
+	  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
+	  {
+	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
+	  	closedLoopDownstreamPressures.setNumColumns(5);
+	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+	  	double pressureResult = closedLoopDownstreamPressures.getReadFileData(1,1000);
+	  	EXPECT_NEAR(498.519721797159,pressureResult,1e-8);
+
+	  	pressureResult = closedLoopDownstreamPressures.getReadFileData(2,1000);
+	  	EXPECT_NEAR(498.519721797159,pressureResult,1e-8);
+
+	  	pressureResult = closedLoopDownstreamPressures.getReadFileData(3,1000);
+	  	EXPECT_NEAR(0.990355044196067,pressureResult,1e-8);
+
+	  	pressureResult = closedLoopDownstreamPressures.getReadFileData(4,1000);
+	  	EXPECT_NEAR(5489.82349624579,pressureResult,1e-8);
+	  }
+
+	  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
+	  {
+	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
+	  	closedLoopDownstreamPressures.setNumColumns(4);
+	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+	  	double flowResult = closedLoopDownstreamPressures.getReadFileData(1,1000);
+	  	EXPECT_NEAR(0.0,flowResult,1e-8);
+
+	  	flowResult = closedLoopDownstreamPressures.getReadFileData(2,1000);
+	  	EXPECT_NEAR(49913.0377444863,flowResult,1e-8);
+
+	  	flowResult = closedLoopDownstreamPressures.getReadFileData(3,1000);
+	  	EXPECT_NEAR(-49913.0377444863,flowResult,1e-8);
+	  }
+  }
+
+// This test includes a Python prescribed flow controller on one of the Windkessels.
+// There's no closed loop.
+TEST_F(testMainWithZeroDDomain, checkPythonFlowPrescriber) 
+{
+  setSimDirectory("mainTests/zeroDDomain/pythonFlowPrescriptions");
   clearOutOldFiles();
 
   runSimulation();
   MPI_Barrier(MPI_COMM_WORLD);
 
-  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
+  // Check netlistPressures_surface_7.dat (the Windkessel that has a flow controller on its distal resistor)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
-  	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
-  	closedLoopDownstreamPressures.setNumColumns(5);
-  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+  	histFileReader flowControlledWindkesselPressures = histFileReader();
+  	flowControlledWindkesselPressures.setFileName("netlistPressures_surface_7.dat");
+  	flowControlledWindkesselPressures.setNumColumns(5);
+  	flowControlledWindkesselPressures.readAndSplitMultiSurfaceRestartFile();
 
-  	double pressureResult = closedLoopDownstreamPressures.getReadFileData(1,1000);
-  	EXPECT_NEAR(498.519721797159,pressureResult,1e-8);
+  	double pressureResult = flowControlledWindkesselPressures.getReadFileData(1,1000);
+  	EXPECT_NEAR(26060.1257730391,pressureResult,1e-8);
 
-  	pressureResult = closedLoopDownstreamPressures.getReadFileData(2,1000);
-  	EXPECT_NEAR(498.519721797159,pressureResult,1e-8);
+  	pressureResult = flowControlledWindkesselPressures.getReadFileData(2,1000);
+  	EXPECT_NEAR(15738.7041709838,pressureResult,1e-8);
 
-  	pressureResult = closedLoopDownstreamPressures.getReadFileData(3,1000);
-  	EXPECT_NEAR(0.990355044196067,pressureResult,1e-8);
+  	pressureResult = flowControlledWindkesselPressures.getReadFileData(3,1000);
+  	EXPECT_NEAR(15441.7041709838,pressureResult,1e-8);
 
-  	pressureResult = closedLoopDownstreamPressures.getReadFileData(4,1000);
-  	EXPECT_NEAR(5489.82349624579,pressureResult,1e-8);
+  	pressureResult = flowControlledWindkesselPressures.getReadFileData(4,1000);
+  	EXPECT_EQ(0.0,pressureResult);
   }
 
-  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
+  // Check netlistFlows_surface_5.dat (the heart model circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
-  	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
-  	closedLoopDownstreamPressures.setNumColumns(4);
-  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+  	histFileReader heartModelFlows = histFileReader();
+  	heartModelFlows.setFileName("netlistFlows_surface_5.dat");
+  	heartModelFlows.setNumColumns(6);
+  	heartModelFlows.readAndSplitMultiSurfaceRestartFile();
 
-  	double flowResult = closedLoopDownstreamPressures.getReadFileData(1,1000);
-  	EXPECT_NEAR(0.0,flowResult,1e-8);
+  	double flowResult = heartModelFlows.getReadFileData(1,1000);
+  	EXPECT_NEAR(-749259.15077706,flowResult,1e-8);
 
-  	flowResult = closedLoopDownstreamPressures.getReadFileData(2,1000);
-  	EXPECT_NEAR(49913.0377444863,flowResult,1e-8);
+  	flowResult = heartModelFlows.getReadFileData(2,1000);
+  	EXPECT_NEAR(749259.15077706,flowResult,1e-8);
 
-  	flowResult = closedLoopDownstreamPressures.getReadFileData(3,1000);
-  	EXPECT_NEAR(-49913.0377444863,flowResult,1e-8);
+  	flowResult = heartModelFlows.getReadFileData(3,1000);
+  	EXPECT_EQ(0.0,flowResult);
+
+  	flowResult = heartModelFlows.getReadFileData(4,1000);
+  	EXPECT_EQ(0.0,flowResult);
+
+  	flowResult = heartModelFlows.getReadFileData(5,1000);
+  	EXPECT_NEAR(-749259.15077706,flowResult,1e-8);
   }
 }

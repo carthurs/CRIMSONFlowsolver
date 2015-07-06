@@ -107,7 +107,6 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			{
 				// get the component:
 				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
-				double* flowToControl = controlledComponent->getPointerToFixedFlowPrescription();
 				std::string externalPythonControllerName;
 				std::vector<std::pair<int,double*>> flowPointerPairs;
 				std::vector<std::pair<int,double*>> pressurePointerPairs;
@@ -120,6 +119,8 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					errorMessage << "was tagged has having a flow controller, but not as having prescribed flow. Please fix this." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
+
+				double* flowToControl = controlledComponent->getPointerToFixedFlowPrescription();
 
 				if (controlledComponent->hasUserDefinedExternalPythonScriptParameterController())
 				{

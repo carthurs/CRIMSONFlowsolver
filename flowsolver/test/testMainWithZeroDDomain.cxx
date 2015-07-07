@@ -408,7 +408,7 @@ TEST_F(testMainWithZeroDDomain, checkDownstreamPythonElastanceController) {
 
 // This test includes a Python prescribed flow controller on one of the Windkessels.
 // There's no closed loop.
-TEST_F(testMainWithZeroDDomain, checkPythonFlowPrescriber) 
+TEST_F(testMainWithZeroDDomain, checkPythonFlowDatFilePrescriber) 
 {
   setSimDirectory("mainTests/zeroDDomain/pythonFlowPrescriptions");
   clearOutOldFiles();
@@ -457,5 +457,60 @@ TEST_F(testMainWithZeroDDomain, checkPythonFlowPrescriber)
 
   	flowResult = heartModelFlows.getReadFileData(5,1000);
   	EXPECT_NEAR(-749259.15077706,flowResult,1e-8);
+  }
+}
+
+// This test includes a Python prescribed pressure controller on one of the Windkessels.
+// There's no closed loop.
+TEST_F(testMainWithZeroDDomain, checkPythonPressureDatFilePrescriber) 
+{
+  setSimDirectory("mainTests/zeroDDomain/pythonPressurePrescriptions");
+  clearOutOldFiles();
+
+  runSimulation();
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Check netlistPressures_surface_5.dat (the heart model circuit)
+  {
+  	histFileReader heartPressureFile = histFileReader();
+  	heartPressureFile.setFileName("netlistPressures_surface_5.dat");
+  	heartPressureFile.setNumColumns(7);
+  	heartPressureFile.readAndSplitMultiSurfaceRestartFile();
+
+  	double heartModelPressure = heartPressureFile.getReadFileData(1,1000);
+  	EXPECT_NEAR(26463.9215456089,heartModelPressure,1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(2,1000);
+  	EXPECT_NEAR(26526.8020490521,heartModelPressure,1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(3,1000);
+  	EXPECT_NEAR(26535.1245604121,heartModelPressure,1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(4,1000);
+  	EXPECT_NEAR(26535.1245604121,heartModelPressure, 1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(5,1000);
+  	EXPECT_EQ(533.2,heartModelPressure);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(6,1000);
+  	EXPECT_NEAR(0.990355044196067,heartModelPressure, 1e-8);
+  }
+
+  // Check netlistFlows_surface_7.dat (the Windkessel that has a Python pressures controller on its downstream pressure node)
+  {
+  	histFileReader windkesselFlows = histFileReader();
+  	windkesselFlows.setFileName("netlistFlows_surface_7.dat");
+  	windkesselFlows.setNumColumns(4);
+  	windkesselFlows.readAndSplitMultiSurfaceRestartFile();
+
+  	double flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(1,1000);
+  	EXPECT_NEAR(407584.54276605,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+
+  	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(2,1000);
+  	EXPECT_NEAR(39466.4517277277,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+
+  	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(3,1000);
+  	EXPECT_EQ(368118.091038322,flowInWindkesselThatHasPythonPrescribedPressure);
+
   }
 }

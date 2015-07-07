@@ -19,7 +19,8 @@ class ControlSystemsManager
 {
 public:
 	ControlSystemsManager(const double delt)
-	: m_delt(delt)
+	: m_delt(delt),
+	m_workingDirectory(boost::filesystem::current_path())
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
 	}
@@ -35,9 +36,11 @@ private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;
 	const double m_delt;
 	int m_rank;
-	void setupWorkingDirAndPythonBoilerplateScriptPaths();
-	boost::filesystem::path m_pathToBoilerplatePythonScripts;
-	boost::filesystem::path m_workingDirectory;
+	void setupPythonBoilerplateScriptPaths();
+	void copyFileToWorkingDirectory(const boost::filesystem::path sourcePath, const std::string targetFileName) const;
+	boost::filesystem::path m_pathToBoilerplatePythonFlowPrescriberScript;
+	boost::filesystem::path m_pathToBoilerplatePythonPressurePrescriberScript;
+	const boost::filesystem::path m_workingDirectory;
 
 };
 

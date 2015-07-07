@@ -662,6 +662,13 @@ void NetlistReader::readControlSystemPrescriptions()
 			int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 			userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));
 		}
+		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicPressure") == 0)
+		{
+			controlType = Controller_CustomPythonNodePressureFile;
+			// Store the name of the dat file that controls this surface:
+			int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
+			userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));	
+		}
 		else
 		{
 			std::stringstream error;

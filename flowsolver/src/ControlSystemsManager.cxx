@@ -107,11 +107,6 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 		case Controller_CustomPythonComponentFlowFile:
 			{
-				// Begin by getting the Python flow control script and copying it into the working directory, if
-				// it doesn't exist there yet:
-				setupWorkingDirAndPythonBoilerplateScriptPaths();
-				// we'll do the actual copy of the boilerplate Python script in a moment once we have aname for our destination file...
-
 				// get the component:
 				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
 				std::string externalPythonControllerName;
@@ -133,18 +128,13 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				{
 					externalPythonControllerName = controlledComponent->getPythonControllerName();
 
-					// ... finish the copy that we began above, but didn't yet have the correct file name:
+					// Begin by getting the Python flow control script and copying it into the working directory, if
+					// it doesn't exist there yet:
+					setupPythonBoilerplateScriptPaths();
+
 					std::string targetFileName_string = externalPythonControllerName;
 					targetFileName_string.append(".py");
-
-					boost::filesystem::path targetFileName_path = boost::filesystem::path(targetFileName_string.c_str());
-
-					// Ensure only rank 0 does the copy:
-					if (m_rank == 0)
-					{
-						boost::filesystem::copy_file(m_pathToBoilerplatePythonScripts, m_workingDirectory /= targetFileName_path);
-					}
-					MPI_Barrier(MPI_COMM_WORLD);
+					copyFileToWorkingDirectory(m_pathToBoilerplatePythonFlowPrescriberScript, targetFileName_string);
 
 					// Gather the pressures and flows as pointers, so the CustomPython parameter
 					// controller can retrieve the pressure and flow values for each component
@@ -205,7 +195,50 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			}
 
 			break;
-		case Controller_CustomPythonNodePressureFile
+		case Controller_CustomPythonNodePressureFile:
+			{
+				// get the component:
+				boost::shared_ptr<CircuitPressureNode> controlledNode = netlistCircuit->getNodeByInputDataIndex(nodeOrComponentIndex);
+				double* pressureToControl = controlledNode->getPointerToFixedPressurePrescription();
+				std::string externalPythonControllerName;
+				std::vector<std::pair<int,double*>> flowPointerPairs;
+				std::vector<std::pair<int,double*>> pressurePointerPairs;
+				std::vector<std::pair<int,double*>> volumePointerPairs;
+
+				if (controlledNode->hasUserDefinedExternalPythonScriptParameterController())
+				{
+					externalPythonControllerName = controlledNode->getPythonControllerName();
+
+					// Begin by getting the Python flow control script and copying it into the working directory, if
+					// it doesn't exist there yet:
+					setupPythonBoilerplateScriptPaths();
+					std::string targetFileName_string = externalPythonControllerName;
+					targetFileName_string.append(".py");
+					copyFileToWorkingDirectory(m_pathToBoilerplatePythonPressurePrescriberScript, targetFileName_string);
+
+					// Gather the pressures and flows as pointers, so the CustomPython parameter
+					// controller can retrieve the pressure and flow values for each component
+					// of its netlist, and pass them to the Python controller for use by the user.
+					// They're indexed by the input data indices for the nodes / componnents:
+					flowPointerPairs = netlistCircuit->getComponentInputDataIndicesAndFlows();
+					pressurePointerPairs = netlistCircuit->getNodeInputDataIndicesAndPressures();
+					volumePointerPairs = netlistCircuit->getVolumeTrackingComponentInputDataIndicesAndVolumes();
+
+				}
+				else
+				{
+					std::stringstream errorMessage;
+					errorMessage << "EE: A node of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex();
+					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
+					throw std::runtime_error(errorMessage.str());
+				}
+
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				m_controlSystems.push_back(controllerToPushBack);
+			}
+			
+			break;
+
 		default:
 			std::stringstream errorMessage;
 			errorMessage << "EE: Unknown control parameter type (controllerType) requested for Netlist boundary condition for surface " << netlistCircuit->getSurfaceIndex() << "." << std::endl;
@@ -213,7 +246,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 	}
 }
 
-void ControlSystemsManager::setupWorkingDirAndPythonBoilerplateScriptPaths()
+void ControlSystemsManager::setupPythonBoilerplateScriptPaths()
 {
 	char* crimsonFlowsolverHome;
 	crimsonFlowsolverHome = getenv("CRIMSON_FLOWSOLVER_HOME");
@@ -229,9 +262,39 @@ void ControlSystemsManager::setupWorkingDirAndPythonBoilerplateScriptPaths()
 	}
 
 	// Construct a relative path with the location of the python flow control script we need:
-	boost::filesystem::path pathOfPythonScriptRelativeToCrimsonFlowsolverHome("basicControlScripts/flowPrescriber.py");
+	boost::filesystem::path pathOfPythonFlowPrescriberScriptRelativeToCrimsonFlowsolverHome("basicControlScripts/flowPrescriber.py");
 	// Append to crimsonFlowsolverHomePath to get to the location of the python script we need:
-	m_pathToBoilerplatePythonScripts = crimsonFlowsolverHomePath /= pathOfPythonScriptRelativeToCrimsonFlowsolverHome;
+	m_pathToBoilerplatePythonFlowPrescriberScript = crimsonFlowsolverHomePath;
+	m_pathToBoilerplatePythonFlowPrescriberScript /= pathOfPythonFlowPrescriberScriptRelativeToCrimsonFlowsolverHome;
 
-	m_workingDirectory = boost::filesystem::current_path();
+	boost::filesystem::path pathOfPythonPressurePrescriberScriptRelativeToCrimsonFlowsolverHome("basicControlScripts/pressurePrescriber.py");
+	m_pathToBoilerplatePythonPressurePrescriberScript = crimsonFlowsolverHomePath;
+	m_pathToBoilerplatePythonPressurePrescriberScript /= pathOfPythonPressurePrescriberScriptRelativeToCrimsonFlowsolverHome;
+}
+
+void ControlSystemsManager::copyFileToWorkingDirectory(const boost::filesystem::path sourcePath, const std::string targetFileName) const
+{
+	boost::filesystem::path targetFileName_path = boost::filesystem::path(targetFileName.c_str());
+
+	// Ensure only rank 0 does the copy:
+	if (m_rank == 0)
+	{
+		boost::filesystem::path copyOfWorkingDir = m_workingDirectory;
+		try
+		{
+			boost::filesystem::copy_file(sourcePath, copyOfWorkingDir /= targetFileName_path);
+		}
+		catch (boost::filesystem::filesystem_error error)
+		{
+			if (error.code() == boost::system::errc::errc_t::file_exists)
+			{
+				std::cerr << "WW: Not copying file from " << sourcePath << " as the target " << targetFileName_path << " exists. If this is unwanted, delete the target." << std::endl;
+			}
+			else
+			{
+				throw;
+			}
+		}
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
 }

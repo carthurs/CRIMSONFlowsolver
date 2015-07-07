@@ -1,5 +1,7 @@
 #include "ControlSystemsManager.hxx"
 #include <sstream>
+#include <cstdlib>
+#include <boost/filesystem.hpp>
 
 void ControlSystemsManager::updateAllControlSystems()
 {
@@ -105,6 +107,30 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 		case Controller_CustomPythonComponentFlow:
 			{
+				// Begin by getting the Python flow control script and copying it into the working directory, if
+				// it doesn't exist there yet:
+				char* crimsonFlowsolverHome;
+				crimsonFlowsolverHome = getenv("CRIMSON_FLOWSOLVER_HOME");
+				if (crimsonFlowsolverHome == NULL)
+				{
+					throw std::runtime_error("EE: Please set environmental variable CRIMSON_FLOWSOLVER_HOME to the root of the CRIMSON flowsolver source tree\n");
+				}
+
+				boost::filesystem::path crimsonFlowsolverHomePath(crimsonFlowsolverHome);
+				if (!boost::filesystem::exists(crimsonFlowsolverHomePath))
+				{
+					throw std::runtime_error("EE: Error relating to environmental variable CRIMSON_FLOWSOLVER_HOME. Please check it is correctly set.\n");
+				}
+
+				// Construct a relative path with the location of the python flow control script we need:
+				boost::filesystem::path pathOfPythonScriptRelativeToCrimsonFlowsolverHome("basicControlScripts/flowPrescriber.py");
+				// Append to crimsonFlowsolverHomePath to get to the location of the python script we need:
+				boost::filesystem::path pathToPythonScript = crimsonFlowsolverHomePath /= pathOfPythonScriptRelativeToCrimsonFlowsolverHome;
+
+				boost::filesystem::path workingDirectory( boost::filesystem::current_path() );
+				// we'll do the actual copy in a moment once we have aname for our destination file...
+
+
 				// get the component:
 				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
 				std::string externalPythonControllerName;
@@ -125,6 +151,19 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				if (controlledComponent->hasUserDefinedExternalPythonScriptParameterController())
 				{
 					externalPythonControllerName = controlledComponent->getPythonControllerName();
+
+					// ... finish the copy that we began above, but didn't yet have the correct file name:
+					std::string targetFileName_string = externalPythonControllerName;
+					targetFileName_string.append(".py");
+
+					boost::filesystem::path targetFileName_path = boost::filesystem::path(targetFileName_string.c_str());
+
+					// Ensure only rank 0 does the copy:
+					if (m_rank == 0)
+					{
+						boost::filesystem::copy_file(pathToPythonScript, workingDirectory /= targetFileName_path);
+					}
+					MPI_Barrier(MPI_COMM_WORLD);
 
 					// Gather the pressures and flows as pointers, so the CustomPython parameter
 					// controller can retrieve the pressure and flow values for each component

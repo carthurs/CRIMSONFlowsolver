@@ -35,6 +35,9 @@ private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;
 	const double m_delt;
 	int m_rank;
+	void setupWorkingDirAndPythonBoilerplateScriptPaths();
+	boost::filesystem::path m_pathToBoilerplatePythonScripts;
+	boost::filesystem::path m_workingDirectory;
 
 };
 

@@ -627,7 +627,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicFlow") == 0)
 		{
-			controlType = Controller_CustomPythonComponentFlow;
+			controlType = Controller_CustomPythonComponentFlowFile;
 			// Store the name of the dat file that controls this surface:
 			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));	

@@ -105,31 +105,12 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 			break;
 
-		case Controller_CustomPythonComponentFlow:
+		case Controller_CustomPythonComponentFlowFile:
 			{
 				// Begin by getting the Python flow control script and copying it into the working directory, if
 				// it doesn't exist there yet:
-				char* crimsonFlowsolverHome;
-				crimsonFlowsolverHome = getenv("CRIMSON_FLOWSOLVER_HOME");
-				if (crimsonFlowsolverHome == NULL)
-				{
-					throw std::runtime_error("EE: Please set environmental variable CRIMSON_FLOWSOLVER_HOME to the root of the CRIMSON flowsolver source tree\n");
-				}
-
-				boost::filesystem::path crimsonFlowsolverHomePath(crimsonFlowsolverHome);
-				if (!boost::filesystem::exists(crimsonFlowsolverHomePath))
-				{
-					throw std::runtime_error("EE: Error relating to environmental variable CRIMSON_FLOWSOLVER_HOME. Please check it is correctly set.\n");
-				}
-
-				// Construct a relative path with the location of the python flow control script we need:
-				boost::filesystem::path pathOfPythonScriptRelativeToCrimsonFlowsolverHome("basicControlScripts/flowPrescriber.py");
-				// Append to crimsonFlowsolverHomePath to get to the location of the python script we need:
-				boost::filesystem::path pathToPythonScript = crimsonFlowsolverHomePath /= pathOfPythonScriptRelativeToCrimsonFlowsolverHome;
-
-				boost::filesystem::path workingDirectory( boost::filesystem::current_path() );
-				// we'll do the actual copy in a moment once we have aname for our destination file...
-
+				setupWorkingDirAndPythonBoilerplateScriptPaths();
+				// we'll do the actual copy of the boilerplate Python script in a moment once we have aname for our destination file...
 
 				// get the component:
 				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
@@ -161,7 +142,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					// Ensure only rank 0 does the copy:
 					if (m_rank == 0)
 					{
-						boost::filesystem::copy_file(pathToPythonScript, workingDirectory /= targetFileName_path);
+						boost::filesystem::copy_file(m_pathToBoilerplatePythonScripts, m_workingDirectory /= targetFileName_path);
 					}
 					MPI_Barrier(MPI_COMM_WORLD);
 
@@ -224,9 +205,33 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			}
 
 			break;
+		case Controller_CustomPythonNodePressureFile
 		default:
 			std::stringstream errorMessage;
 			errorMessage << "EE: Unknown control parameter type (controllerType) requested for Netlist boundary condition for surface " << netlistCircuit->getSurfaceIndex() << "." << std::endl;
 			throw std::runtime_error(errorMessage.str());
 	}
+}
+
+void ControlSystemsManager::setupWorkingDirAndPythonBoilerplateScriptPaths()
+{
+	char* crimsonFlowsolverHome;
+	crimsonFlowsolverHome = getenv("CRIMSON_FLOWSOLVER_HOME");
+	if (crimsonFlowsolverHome == NULL)
+	{
+		throw std::runtime_error("EE: Please set environmental variable CRIMSON_FLOWSOLVER_HOME to the root of the CRIMSON flowsolver source tree\n");
+	}
+
+	boost::filesystem::path crimsonFlowsolverHomePath(crimsonFlowsolverHome);
+	if (!boost::filesystem::exists(crimsonFlowsolverHomePath))
+	{
+		throw std::runtime_error("EE: Error relating to environmental variable CRIMSON_FLOWSOLVER_HOME. Please check it is correctly set.\n");
+	}
+
+	// Construct a relative path with the location of the python flow control script we need:
+	boost::filesystem::path pathOfPythonScriptRelativeToCrimsonFlowsolverHome("basicControlScripts/flowPrescriber.py");
+	// Append to crimsonFlowsolverHomePath to get to the location of the python script we need:
+	m_pathToBoilerplatePythonScripts = crimsonFlowsolverHomePath /= pathOfPythonScriptRelativeToCrimsonFlowsolverHome;
+
+	m_workingDirectory = boost::filesystem::current_path();
 }

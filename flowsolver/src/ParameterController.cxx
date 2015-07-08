@@ -1,6 +1,11 @@
 #include "ParameterController.hxx"
 #include <iostream>
 
+int AbstractParameterController::getIndexOfAssociatedSurface() const
+{
+	return m_surfaceIndex;
+}
+
 void LeftVentricularElastanceController::updateControl()
 {
 	updatePeriodicTime();
@@ -219,6 +224,62 @@ void UserDefinedCustomPythonParameterController::updateControl()
 		if (PyErr_Occurred())
 		{
 			std::cout << std::endl << "EE: An error occurred when constructing the Python parameter controller "
+					  << m_controllerPythonScriptBaseName << ".py. Details below:" << std::endl;
+			PyErr_Print();
+		}
+		// Rethrow the original exception (whether or not it was Python's).
+		throw;
+	}
+}
+
+void UserDefinedCustomPythonParameterController::getBroadcastStateData(PyObject*& stateDataBroadcastByThisController)
+{
+	char* broadcastMethodNameInPython = "broadcastStateDataToOtherParameterControllers";
+	try
+	{
+		PyObject* broadcastMethodNameInPython_asPyString = PyString_FromString(broadcastMethodNameInPython);
+		stateDataBroadcastByThisController = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, broadcastMethodNameInPython_asPyString, NULL);
+		if (stateDataBroadcastByThisController == NULL)
+		{
+			throw std::runtime_error("EE: Internal error int getBroadcastStateData.");
+		}
+
+		safe_Py_DECREF(broadcastMethodNameInPython_asPyString);
+	}
+	catch(...) // Catch any exception
+	{
+		if (PyErr_Occurred())
+		{
+			std::cout << std::endl << "EE: An error occurred when calling " << broadcastMethodNameInPython << " in the Python parameter controller "
+					  << m_controllerPythonScriptBaseName << ".py. Details below:" << std::endl;
+			PyErr_Print();
+		}
+		// Rethrow the original exception (whether or not it was Python's).
+		throw;
+	}
+}
+
+void UserDefinedCustomPythonParameterController::giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData)
+{
+	assert(allPackagedBroadcastData != NULL);
+	char* receiveMethodNameInPython = "receiveStateDataFromAllOtherParameterControllers";
+	try
+	{
+		PyObject* receiveMethodNameInPython_asPyString = PyString_FromString(receiveMethodNameInPython);
+
+		PyObject* success = PyObject_CallMethodObjArgs(m_pythonParameterControllerInstance, receiveMethodNameInPython_asPyString, allPackagedBroadcastData, NULL);
+		if (success == NULL)
+		{
+			throw std::runtime_error("EE: Internal error int receiveStateDataFromAllOtherParameterControllers.");
+		}
+		Py_XDECREF(success);
+		Py_XDECREF(receiveMethodNameInPython_asPyString);
+	}
+	catch(...) // Catch any exception
+	{
+		if (PyErr_Occurred())
+		{
+			std::cout << std::endl << "EE: An error occurred when calling " << receiveMethodNameInPython << " in the Python parameter controller "
 					  << m_controllerPythonScriptBaseName << ".py. Details below:" << std::endl;
 			PyErr_Print();
 		}

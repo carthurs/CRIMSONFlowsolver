@@ -1,9 +1,11 @@
+from CRIMSONPython import *
 from math import pi, cos
 
-class parameterController:
+class parameterController(abstractParameterController):
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+		self.m_baseNameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;
 		self.m_timeToRelax = 0.1391;
@@ -15,6 +17,12 @@ class parameterController:
 
 		self.updatePeriodicTime(delt)
 		elastance = self.getElastance(currentParameterValue)
+
+		self.clearBroadcastData()
+		self.addBroadcastVariable('foo', 1234.5)
+		self.addBroadcastVariable('bar',55646)
+		self.addBroadcastVariable('beans','heinz')
+		self.addBroadcastVariable('cutlery','useful')
 
 		# for key in dictionaryOfPressuresByComponentIndex:
 		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]

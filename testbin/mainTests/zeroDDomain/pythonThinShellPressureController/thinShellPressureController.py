@@ -1,5 +1,6 @@
 # Role of Individual Ionic Current Systems in Ventricular Cells Hypothesized by a Model Study, Matsuoka S, Sarai N, Kuratomi S, Ono K, and Noma A, 2003, The Japanese Journal of Physiology, 53, 105-123. PubMed ID: 12877767
 # https://models.cellml.org/exposure/398d5dc7db9f2b9809abc29f440bd456/matsuoka_sarai_kuratomi_ono_noma_2003.cellml/view
+from CRIMSONPython import *
 import sys
 sys.path.append("/usr/lib/python2.7/")
 sys.path.append("/usr/lib/python2.7/dist-packages/")
@@ -16,7 +17,7 @@ from math import pi, cos
 # except:
 # 	print "Unexpected error:", sys.exc_info()[0]
 
-class parameterController:
+class parameterController(abstractParameterController):
 
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
@@ -1002,6 +1003,7 @@ class parameterController:
 		return states
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
 		self.stepIndex = 0
 		self.tensionHistory = array([0.0]*200000)
 		self.sarcomereHalfLengthHistory = array([0.0]*200000)

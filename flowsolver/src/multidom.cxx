@@ -35,6 +35,7 @@ void multidom_initialise(){
   boundaryConditionManager_instance->setNumberOfControlledCoronarySurfaces(nomodule.numControlledCoronarySrfs);
   boundaryConditionManager_instance->setNumberOfNetlistSurfaces(nomodule.numNetlistLPNSrfs);
   boundaryConditionManager_instance->setNumLoopClosingnetlistCircuits(nomodule.numLoopClosingCircuits);
+  boundaryConditionManager_instance->setMasterControlScriptPresent(nomodule.hasMasterPythonControlScript);
 
   boundaryConditionManager_instance->ifRestartingLoadNecessaryData();
 

@@ -541,6 +541,7 @@
          int geombcHasObservationFields;
          int geombcHasNodeTags;
          int pureZeroDSimulation;
+         int hasMasterPythonControlScript;
       } nomodule;
 
 

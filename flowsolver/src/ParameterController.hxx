@@ -15,9 +15,10 @@
 class AbstractParameterController
 {
 public:
-	AbstractParameterController(double* const parameterToControl)
+	AbstractParameterController(double* const parameterToControl, const int surfaceIndex)
 	: mp_parameterToControl(parameterToControl), // Set the pointer to the parameter we will control
-	m_originalValueOfParameter(*parameterToControl) // Save the original state of the parameter
+	m_originalValueOfParameter(*parameterToControl), // Save the original state of the parameter
+	m_surfaceIndex(surfaceIndex)
 	{
 	}
 	virtual ~AbstractParameterController()
@@ -26,17 +27,20 @@ public:
 
 	// Function to adjust the controlled parameter as necessary.
 	virtual void updateControl() = 0;
+
+	int getIndexOfAssociatedSurface() const;
 protected:
 	double* const mp_parameterToControl;
 	const double m_originalValueOfParameter;
+	const int m_surfaceIndex;
 };
 
 
 class LeftVentricularElastanceController : public AbstractParameterController
 {
 public:
-	LeftVentricularElastanceController(double* const parameterToControl, const double delt)
-	: AbstractParameterController(parameterToControl),
+	LeftVentricularElastanceController(double* const parameterToControl, const int surfaceIndex, const double delt)
+	: AbstractParameterController(parameterToControl, surfaceIndex),
 	m_delt(delt)
 	{
 		m_periodicTime = 0.0; //\todo think about this for restarts!
@@ -68,8 +72,8 @@ private:
 class BleedController : public AbstractParameterController
 {
 public:
-	BleedController(double* const parameterToControl)
-	: AbstractParameterController(parameterToControl)
+	BleedController(double* const parameterToControl, const int surfaceIndex)
+	: AbstractParameterController(parameterToControl, surfaceIndex)
 	{
 		int initialTimestep = 0; //\todo sort the restarts for this
 		int triggerTimestep = 1600;
@@ -81,13 +85,25 @@ private:
 	bool m_bleedingOn;
 };
 
+class PythonController
+{
+public:
+
+	virtual ~PythonController()
+	{
+	}
+protected:
+
+private:
+};
+
 // This class supports user-defined parameter controllers, which the 
 // user provides in an external Python script.
 class UserDefinedCustomPythonParameterController : public AbstractParameterController
 {
 public:
-	UserDefinedCustomPythonParameterController(double* const parameterToControl, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs)
-	: AbstractParameterController(parameterToControl),
+	UserDefinedCustomPythonParameterController(double* const parameterToControl, const int surfaceIndex, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs)
+	: AbstractParameterController(parameterToControl, surfaceIndex),
 	m_delt(PyFloat_FromDouble(delt)),
 	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName),
 	m_pressurePointerPairs(pressurePointerPairs),
@@ -96,6 +112,9 @@ public:
 	{
 		initialise();
 	}
+
+	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);
+	void giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData);
 
 
 	~UserDefinedCustomPythonParameterController()

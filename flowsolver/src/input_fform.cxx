@@ -1120,6 +1120,15 @@ int input_fform() {
 
 			}
 
+			if ((string) inp.GetValue("Has masterController.py Control Script") == True)
+			{
+				nomodule.hasMasterPythonControlScript = 1;
+			}
+			else
+			{
+				nomodule.hasMasterPythonControlScript = 1;	
+			}
+
 			if ((string) inp.GetValue("Wall Damping Term") == "True") {
 				nomodule.iwalldamp = 1;
 				nomodule.tissSuppDampCoeff = inp.GetValue("Damping Coefficient for Tissue Support");

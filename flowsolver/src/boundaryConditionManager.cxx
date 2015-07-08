@@ -41,6 +41,18 @@ void boundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLP
   m_NumberOfNetlistSurfaces = numNetlistLPNSrfs;
 }
 
+void boundaryConditionManager::setMasterControlScriptPresent(const int masterControlScriptPresent)
+{
+  if (masterControlScriptPresent == 1)
+  {
+    m_masterControlScriptPresent = true;
+  }
+  else
+  {
+    m_masterControlScriptPresent = false;
+  }
+}
+
 void boundaryConditionManager::setDelt(const double delt)
 {
   m_delt = delt;

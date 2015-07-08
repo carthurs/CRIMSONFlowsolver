@@ -98,6 +98,7 @@ class abstractBoundaryCondition;
     void setMaxsurf(const int maxsurf);
     void setNstep(const int nstep);
     void setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits);
+    void setMasterControlScriptPresent(const int masterControlScriptPresent);
 
     void createControlSystems();
     void updateAllControlSystems();
@@ -128,6 +129,7 @@ class abstractBoundaryCondition;
 
         m_hasSurfaceList = false;
         m_controlSystemsPresent = false;
+        m_masterControlScriptPresent = false;
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> m_boundaryConditions;
     std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubsections;
@@ -156,6 +158,7 @@ class abstractBoundaryCondition;
     bool m_maxsurfHasBeenSet;
     bool m_nstepHasBeenSet;
     bool m_numLoopClosingNetlistCircuitsHasBeenSet;
+    bool m_masterControlScriptPresent;
 
     bool m_hasSurfaceList;
     bool m_controlSystemsPresent;

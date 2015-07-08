@@ -18,9 +18,10 @@
 class ControlSystemsManager
 {
 public:
-	ControlSystemsManager(const double delt)
+	ControlSystemsManager(const double delt, const bool masterControlScriptPresent)
 	: m_delt(delt),
-	m_workingDirectory(boost::filesystem::current_path())
+	m_workingDirectory(boost::filesystem::current_path()),
+	m_hasMasterPythonController(masterControlScriptPresent)
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
 	}
@@ -34,6 +35,8 @@ public:
 	}
 private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;
+	std::vector<boost::shared_ptr<AbstractParameterController>> m_pythonControlSystems; // This vector is for convenience only; it duplicates some elements of m_controlSystems
+	std::vector<PyObject*> m_pythonBroadcastDataFromEachController;
 	const double m_delt;
 	int m_rank;
 	void setupPythonBoilerplateScriptPaths();
@@ -41,6 +44,9 @@ private:
 	boost::filesystem::path m_pathToBoilerplatePythonFlowPrescriberScript;
 	boost::filesystem::path m_pathToBoilerplatePythonPressurePrescriberScript;
 	const boost::filesystem::path m_workingDirectory;
+	void updateAndPassStateInformationBetweenPythonParameterControllers();
+	bool m_hasMasterPythonController;
+	boost::shared_ptr<UserDefinedCustomPythonParameterController> mp_masterPythonController;
 
 };
 

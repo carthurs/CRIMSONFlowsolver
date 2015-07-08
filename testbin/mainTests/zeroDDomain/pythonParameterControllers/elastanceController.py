@@ -61,13 +61,14 @@
 #from scipy.integrate import ode
 #import sys
 #sys.path.append('/usr/lib64/python2.6/lib-dynload/')
+from CRIMSONPython import *
 from math import pi, cos
 
-class parameterController:
+class parameterController(abstractParameterController):
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
 		# import io
-
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;
 		self.m_timeToRelax = 0.1391;

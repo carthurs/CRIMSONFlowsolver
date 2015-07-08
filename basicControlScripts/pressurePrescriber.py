@@ -1,16 +1,23 @@
+from CRIMSONPython import *
 from math import pi, cos
 import numpy
 import scipy.interpolate
 
-class parameterController:
+class parameterController(abstractParameterController):
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_nameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
 		self.getPeriodicPressurePrescriberData()
 
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+
+		self.clearBroadcastData()
+		self.addBroadcastVariable('foo', 1234.5)
+		self.addBroadcastVariable('bar',55646)
+		self.addBroadcastVariable('beans','heinz')
+		self.addBroadcastVariable('cutlery','useful')
 
 		self.updatePeriodicTime(delt)	
 		prescribedFlow = self.pressureFunction(self.m_periodicTime)

@@ -68,6 +68,7 @@
 		boundaryConditionManager_instance->setMaxsurf(MAXSURF);
 		boundaryConditionManager_instance->setNstep(5);
 		boundaryConditionManager_instance->setNumLoopClosingnetlistCircuits(0);
+		boundaryConditionManager_instance->setMasterControlScriptPresent(0);
 	  	
 	  	press1 = 1000;
 	    press2 = 2000;

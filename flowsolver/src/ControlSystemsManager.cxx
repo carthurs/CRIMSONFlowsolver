@@ -5,10 +5,68 @@
 
 void ControlSystemsManager::updateAllControlSystems()
 {
+	updateAndPassStateInformationBetweenPythonParameterControllers();
+
 	for (auto controlSystem = m_controlSystems.begin(); controlSystem != m_controlSystems.end(); controlSystem++)
 	{
 		(*controlSystem)->updateControl();
 	}
+}
+
+void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterControllers()
+{
+	// Gather all the state data broadcasts from the boundary condition controllers
+	for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
+	{
+		boost::shared_ptr<UserDefinedCustomPythonParameterController> downcastPythonControlSystem = boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (*pythonControlSystem);
+		PyObject* thisScriptsBroadcastData = NULL;
+		downcastPythonControlSystem->getBroadcastStateData(thisScriptsBroadcastData);
+		assert(thisScriptsBroadcastData != NULL);
+		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
+
+		// Py_XDECREF(thisScriptsBroadcastData);
+	}
+
+	PyObject* gatheredBroadcastData = PyDict_New();
+	assert(gatheredBroadcastData != NULL);
+	// Package the broadcast data:
+	for (auto broadcastData = m_pythonBroadcastDataFromEachController.begin(); broadcastData != m_pythonBroadcastDataFromEachController.end(); broadcastData++)
+	{
+		int errCode = PyDict_Merge(gatheredBroadcastData, *broadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
+		assert(errCode == 0);
+	}
+
+	// Update from the master control system script (not assoicated with any boundary)
+	if(m_hasMasterPythonController)
+	{
+		mp_masterPythonController->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
+		mp_masterPythonController->updateControl();
+
+		PyObject* thisScriptsBroadcastData = NULL;
+		mp_masterPythonController->getBroadcastStateData(thisScriptsBroadcastData);
+		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
+		// add the info from the master control script to the broadcast data:
+		int errCode = PyDict_Merge(gatheredBroadcastData, thisScriptsBroadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
+		assert(errCode == 0);
+		
+		// Py_XDECREF(thisScriptsBroadcastData);
+	}
+
+	assert(gatheredBroadcastData != NULL);
+	// Send the packaged broadcast data to all controllers
+	for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
+	{
+		boost::shared_ptr<UserDefinedCustomPythonParameterController> downcastPythonControlSystem = boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (*pythonControlSystem);
+		downcastPythonControlSystem->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
+	}
+
+	// Clean up:
+	Py_XDECREF(gatheredBroadcastData);
+	for (auto broadcastData = m_pythonBroadcastDataFromEachController.begin(); broadcastData != m_pythonBroadcastDataFromEachController.end(); broadcastData++)
+	{
+		Py_XDECREF(*broadcastData);
+	}
+	m_pythonBroadcastDataFromEachController.clear();
 }
 
 void ControlSystemsManager::createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> netlistCircuit, const int nodeOrComponentIndex)
@@ -33,8 +91,8 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 				// Get the pointer to the compliance which needs to be controlled (in this case, the compliance of the pressure chamber):
 				double* parameterToControl = component->getParameterPointer();
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl,m_delt));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl, surfaceIndex, m_delt));
 				m_controlSystems.push_back(controllerToPushBack);
 			}
 
@@ -47,8 +105,8 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				assert(resistor->getType() == Component_Resistor);
 
 				double* resistanceToControl = resistor->getParameterPointer();
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl, surfaceIndex));
 				m_controlSystems.push_back(controllerToPushBack);
 			}
 
@@ -61,8 +119,8 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				assert(capacitor->getType() == Component_Capacitor);
 
 				double* complianceToControl = capacitor->getParameterPointer();
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl, surfaceIndex));
 				m_controlSystems.push_back(controllerToPushBack);
 			}
 
@@ -98,9 +156,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(controllerToPushBack);
 			}
 
 			break;
@@ -152,9 +211,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(controllerToPushBack);
 			}
 
 			break;
@@ -189,9 +249,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(controllerToPushBack);
 			}
 
 			break;
@@ -232,9 +293,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
-
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(controllerToPushBack);
 			}
 			
 			break;
@@ -244,6 +306,43 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			errorMessage << "EE: Unknown control parameter type (controllerType) requested for Netlist boundary condition for surface " << netlistCircuit->getSurfaceIndex() << "." << std::endl;
 			throw std::runtime_error(errorMessage.str());
 	}
+}
+
+void ControlSystemsManager::createMasterPythonController()
+{
+	m_hasMasterPythonController
+
+	// boost::shared_ptr<CircuitPressureNode> controlledNode = netlistCircuit->getNodeByInputDataIndex(nodeOrComponentIndex);
+	// double* pressureToControl = controlledNode->getPointerToFixedPressurePrescription();
+	std::string externalPythonControllerName("masterController");
+	// std::vector<std::pair<int,double*>> flowPointerPairs;
+	// std::vector<std::pair<int,double*>> pressurePointerPairs;
+	// std::vector<std::pair<int,double*>> volumePointerPairs;
+
+	// if (controlledNode->hasUserDefinedExternalPythonScriptParameterController())
+	// {
+		// externalPythonControllerName = controlledNode->getPythonControllerName();
+
+		// Gather the pressures and flows as pointers, so the CustomPython parameter
+		// controller can retrieve the pressure and flow values for each component
+		// of its netlist, and pass them to the Python controller for use by the user.
+		// They're indexed by the input data indices for the nodes / componnents:
+		// flowPointerPairs = netlistCircuit->getComponentInputDataIndicesAndFlows();
+		// pressurePointerPairs = netlistCircuit->getNodeInputDataIndicesAndPressures();
+		// volumePointerPairs = netlistCircuit->getVolumeTrackingComponentInputDataIndicesAndVolumes();
+
+	// }
+	// else
+	// {
+	// 	std::stringstream errorMessage;
+	// 	errorMessage << "EE: A node of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+	// 	errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
+	// 	throw std::runtime_error(errorMessage.str());
+	// }
+	// int surfaceIndex = netlistCircuit->getSurfaceIndex();
+	boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+	m_controlSystems.push_back(controllerToPushBack);
+	m_pythonControlSystems.push_back(controllerToPushBack);
 }
 
 void ControlSystemsManager::setupPythonBoilerplateScriptPaths()

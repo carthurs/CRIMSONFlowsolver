@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <boost/filesystem.hpp>
 
-void ControlSystemsManager::updateAllControlSystems()
+void ControlSystemsManager::updateBoundaryConditionControlSystems()
 {
 	updateAndPassStateInformationBetweenPythonParameterControllers();
 
@@ -159,7 +159,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
 			}
 
 			break;
@@ -214,7 +214,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
 			}
 
 			break;
@@ -252,7 +252,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
 			}
 
 			break;
@@ -296,7 +296,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
 				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
 			}
 			
 			break;
@@ -310,8 +310,6 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 void ControlSystemsManager::createMasterPythonController()
 {
-	m_hasMasterPythonController
-
 	// boost::shared_ptr<CircuitPressureNode> controlledNode = netlistCircuit->getNodeByInputDataIndex(nodeOrComponentIndex);
 	// double* pressureToControl = controlledNode->getPointerToFixedPressurePrescription();
 	std::string externalPythonControllerName("masterController");
@@ -340,9 +338,8 @@ void ControlSystemsManager::createMasterPythonController()
 	// 	throw std::runtime_error(errorMessage.str());
 	// }
 	// int surfaceIndex = netlistCircuit->getSurfaceIndex();
-	boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
-	m_controlSystems.push_back(controllerToPushBack);
-	m_pythonControlSystems.push_back(controllerToPushBack);
+	boost::shared_ptr<GenericPythonController> newMasterController(new GenericPythonController(m_delt, externalPythonControllerName));
+	mp_masterPythonController = newMasterController;
 }
 
 void ControlSystemsManager::setupPythonBoilerplateScriptPaths()

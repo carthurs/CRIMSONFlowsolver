@@ -794,25 +794,25 @@ extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
 }
 
 // Control systems specific functions
-void boundaryConditionManager::updateAllControlSystems()
+void boundaryConditionManager::updateBoundaryConditionControlSystems()
 {
   if (m_controlSystemsPresent)
   {
-    mp_controlSystemsManager->updateAllControlSystems();
+    mp_controlSystemsManager->updateBoundaryConditionControlSystems();
   }
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPUpdateAllControlSystems()
+extern "C" void callCPPUpdateBoundaryConditionControlSystems()
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->updateAllControlSystems();
+  boundaryConditionManager_instance->updateBoundaryConditionControlSystems();
 }
 
 void boundaryConditionManager::createControlSystems()
 {
   m_controlSystemsPresent = true;
   // Instantiate the manager
-  mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt));
+  mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt, m_masterControlScriptPresent));
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
   NetlistReader* netlistReader_instance = NetlistReader::Instance();

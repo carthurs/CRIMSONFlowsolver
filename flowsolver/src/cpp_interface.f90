@@ -204,9 +204,9 @@ module cpp_interface
 !   ============= Control Systems Block Start =============
 
     interface
-            subroutine callCPPUpdateAllControlSystems() bind(c,name="callCPPUpdateAllControlSystems")
+            subroutine callCPPUpdateBoundaryConditionControlSystems() bind(c,name="callCPPUpdateBoundaryConditionControlSystems")
                 use iso_c_binding
-            end subroutine callCPPUpdateAllControlSystems
+            end subroutine callCPPUpdateBoundaryConditionControlSystems
     end interface
     
 

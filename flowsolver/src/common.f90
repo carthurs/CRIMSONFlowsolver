@@ -78,7 +78,8 @@ module phcommonvars
         numNetlistLPNSrfs, indicesOfNetlistSurfaces(0:MAXSURF), &
         numLoopClosingCircuits, &
         inputHRandSP, geombcHasObservationFields, &
-        geombcHasNodeTags, pureZeroDSimulation
+        geombcHasNodeTags, pureZeroDSimulation, &
+        hasMasterPythonControlScript
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -116,7 +117,8 @@ module phcommonvars
         numNetlistLPNSrfs, indicesOfNetlistSurfaces, &
         numLoopClosingCircuits, &
         inputHRandSP, geombcHasObservationFields, &
-        geombcHasNodeTags, pureZeroDSimulation
+        geombcHasNodeTags, pureZeroDSimulation, &
+        hasMasterPythonControlScript
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 

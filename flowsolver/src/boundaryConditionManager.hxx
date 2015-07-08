@@ -101,7 +101,7 @@ class abstractBoundaryCondition;
     void setMasterControlScriptPresent(const int masterControlScriptPresent);
 
     void createControlSystems();
-    void updateAllControlSystems();
+    void updateBoundaryConditionControlSystems();
 
     void markClosedLoopLinearSystemsForRebuilding();
 

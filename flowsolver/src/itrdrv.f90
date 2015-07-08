@@ -1826,7 +1826,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         rerr(:,10)=rerr(:,10)+(yold(:,4)-ybar(:,4))**2
     endif
 
-    call callCPPUpdateAllControlSystems()
+    call callCPPUpdateBoundaryConditionControlSystems()
 
  !if(istop.eq.1000) exit ! stop when delta small (see rstatic)
 

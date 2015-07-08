@@ -24,9 +24,13 @@ public:
 	m_hasMasterPythonController(masterControlScriptPresent)
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+		if (m_hasMasterPythonController)
+		{
+			createMasterPythonController();
+		}
 	}
 	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex);
-	void updateAllControlSystems();
+	void updateBoundaryConditionControlSystems();
 
 	~ControlSystemsManager()
 	{
@@ -35,7 +39,7 @@ public:
 	}
 private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;
-	std::vector<boost::shared_ptr<AbstractParameterController>> m_pythonControlSystems; // This vector is for convenience only; it duplicates some elements of m_controlSystems
+	std::vector<boost::shared_ptr<UserDefinedCustomPythonParameterController>> m_pythonControlSystems; // This vector is for convenience only; it duplicates some elements of m_controlSystems
 	std::vector<PyObject*> m_pythonBroadcastDataFromEachController;
 	const double m_delt;
 	int m_rank;
@@ -46,7 +50,8 @@ private:
 	const boost::filesystem::path m_workingDirectory;
 	void updateAndPassStateInformationBetweenPythonParameterControllers();
 	bool m_hasMasterPythonController;
-	boost::shared_ptr<UserDefinedCustomPythonParameterController> mp_masterPythonController;
+	boost::shared_ptr<GenericPythonController> mp_masterPythonController;
+	void createMasterPythonController();
 
 };
 

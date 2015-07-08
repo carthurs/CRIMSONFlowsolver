@@ -109,7 +109,7 @@ void PureZeroDDriver::iter_init()
 	assert(m_ntoutHasBeenSet);
 	m_zeroDDomainLPN->initialiseAtStartOfTimestep();
 	boundaryConditionManager_instance->initialiseLPNAtStartOfTimestep_netlist();
-	boundaryConditionManager_instance->updateAllControlSystems();
+	boundaryConditionManager_instance->updateBoundaryConditionControlSystems();
 }
 
 void PureZeroDDriver::iter_step()

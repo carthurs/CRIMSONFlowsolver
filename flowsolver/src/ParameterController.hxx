@@ -85,27 +85,57 @@ private:
 	bool m_bleedingOn;
 };
 
-class PythonController
+
+class GenericPythonController
 {
 public:
-
-	virtual ~PythonController()
+	GenericPythonController(const double delt, const std::string controllerPythonScriptBaseName)
+	: m_delt(PyFloat_FromDouble(delt)),
+	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName)
 	{
+		initialise();
 	}
-protected:
+	virtual ~GenericPythonController()
+	{
+		Py_XDECREF(m_delt);
+		Py_XDECREF(m_pythonScriptName);
+		Py_XDECREF(m_pythonControllerClassName);
+		Py_XDECREF(m_updateControlPyobjectName);
+		Py_XDECREF(m_customPythonClass);
+		Py_XDECREF(m_customPythonModule);
+		Py_XDECREF(m_pythonControllerInstance);
+	}
 
+	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);
+	void giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData);
+	virtual void updateControl();
+protected:
+	void initialise();
+
+
+	std::string m_controllerPythonScriptBaseName;
+	std::string m_updateControlNameString;
+	std::string m_controllerClassName;
+
+	PyObject* m_delt;
+	PyObject* m_pythonScriptName;
+	PyObject* m_pythonControllerClassName;
+	PyObject* m_updateControlPyobjectName;
+	PyObject* m_customPythonClass;
+	PyObject* m_customPythonModule;
+	PyObject* m_pythonControllerInstance;
 private:
 };
 
+
 // This class supports user-defined parameter controllers, which the 
 // user provides in an external Python script.
-class UserDefinedCustomPythonParameterController : public AbstractParameterController
+class UserDefinedCustomPythonParameterController : public AbstractParameterController, public GenericPythonController
 {
 public:
 	UserDefinedCustomPythonParameterController(double* const parameterToControl, const int surfaceIndex, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs)
 	: AbstractParameterController(parameterToControl, surfaceIndex),
-	m_delt(PyFloat_FromDouble(delt)),
-	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName),
+	GenericPythonController(delt, controllerPythonScriptBaseName)	,
 	m_pressurePointerPairs(pressurePointerPairs),
 	m_flowPointerPairs(flowPointerPairs),
 	m_volumePointerPairs(volumePointerPairs)
@@ -113,46 +143,22 @@ public:
 		initialise();
 	}
 
-	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);
-	void giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData);
-
+	void updateControl();
 
 	~UserDefinedCustomPythonParameterController()
 	{
 		// Py_DECREF(); is like deleting stuff (marking it for deletion by Python garbage
 		// collection by decrementing the reference count - deletion happens when
 		// the ref count reaches zero, and these calls should make them zero.)
-		safe_Py_DECREF(m_delt);
-		safe_Py_DECREF(m_pythonScriptName);
-		safe_Py_DECREF(m_pythonControllerClassName);
-		safe_Py_DECREF(m_updateControlPyobjectName);
-		safe_Py_DECREF(m_customPythonClass);
-		safe_Py_DECREF(m_customPythonModule);
-		safe_Py_DECREF(m_pythonParameterControllerInstance);
 	}
 
-	void updateControl();
 private:
-	PyObject* m_delt;
-	PyObject* m_pythonScriptName;
-	PyObject* m_pythonControllerClassName;
-	PyObject* m_updateControlPyobjectName;
-	PyObject* m_customPythonClass;
-	PyObject* m_customPythonModule;
-	PyObject* m_pythonParameterControllerInstance;
-
-	std::string m_updateControlNameString;
-	std::string m_controllerPythonScriptBaseName;
-	std::string m_controllerClassName;
 
 	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
 	const std::vector<std::pair<int,double*>> m_flowPointerPairs;
 	const std::vector<std::pair<int,double*>> m_volumePointerPairs;
 
 	int errFlag;
-
-	void initialise();
-	void safe_Py_DECREF(PyObject* toBeDeleted);
 
 };
 

@@ -24,7 +24,7 @@ void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterC
 		assert(thisScriptsBroadcastData != NULL);
 		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
 
-		// Py_XDECREF(thisScriptsBroadcastData);
+		// safe_Py_DECREF(thisScriptsBroadcastData);
 	}
 
 	PyObject* gatheredBroadcastData = PyDict_New();
@@ -49,7 +49,7 @@ void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterC
 		int errCode = PyDict_Merge(gatheredBroadcastData, thisScriptsBroadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
 		assert(errCode == 0);
 		
-		// Py_XDECREF(thisScriptsBroadcastData);
+		// safe_Py_DECREF(thisScriptsBroadcastData);
 	}
 
 	assert(gatheredBroadcastData != NULL);
@@ -61,10 +61,10 @@ void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterC
 	}
 
 	// Clean up:
-	Py_XDECREF(gatheredBroadcastData);
+	safe_Py_DECREF(gatheredBroadcastData);
 	for (auto broadcastData = m_pythonBroadcastDataFromEachController.begin(); broadcastData != m_pythonBroadcastDataFromEachController.end(); broadcastData++)
 	{
-		Py_XDECREF(*broadcastData);
+		safe_Py_DECREF(*broadcastData);
 	}
 	m_pythonBroadcastDataFromEachController.clear();
 }

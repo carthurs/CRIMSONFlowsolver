@@ -514,3 +514,113 @@ TEST_F(testMainWithZeroDDomain, checkPythonPressureDatFilePrescriber)
 
   }
 }
+
+// This test has a masterController.py, which is not associated
+// to any Netlist surface, but it sends a master control signal to
+// all other surfaces, which use it to adjust their control output.
+//
+// We have a closed loop (downstream) circuit, and there is a 
+// controller in there too, recieving the masterController broadcast.
+TEST_F(testMainWithZeroDDomain, checkPythonControlBroadcastsAndMasterController) 
+{
+  setSimDirectory("mainTests/zeroDDomain/pythonBroadcastCommunications");
+  clearOutOldFiles();
+
+  runSimulation();
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Check netlistPressures_surface_5.dat (the heart model circuit)
+  {
+  	histFileReader heartPressureFile = histFileReader();
+  	heartPressureFile.setFileName("netlistPressures_surface_5.dat");
+  	heartPressureFile.setNumColumns(7);
+  	heartPressureFile.readAndSplitMultiSurfaceRestartFile();
+
+  	double heartModelPressure = heartPressureFile.getReadFileData(1,1000);
+  	EXPECT_NEAR(20044.9904142384,heartModelPressure,1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(2,1000);
+  	EXPECT_NEAR(20114.4151803054,heartModelPressure,1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(3,1000);
+  	EXPECT_NEAR(20118.0514049299,heartModelPressure,1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(4,1000);
+  	EXPECT_NEAR(20118.0514049299,heartModelPressure, 1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(5,1000);
+  	EXPECT_NEAR(540.802034459378,heartModelPressure, 1e-8);
+
+  	heartModelPressure = heartPressureFile.getReadFileData(6,1000);
+  	EXPECT_NEAR(0.990355044196067,heartModelPressure, 1e-8);
+  }
+
+  // Check netlistFlows_surface_7.dat (the Windkessel that has a Python pressures controller on its downstream pressure node)
+  {
+  	histFileReader windkesselFlows = histFileReader();
+  	windkesselFlows.setFileName("netlistFlows_surface_7.dat");
+  	windkesselFlows.setNumColumns(4);
+  	windkesselFlows.readAndSplitMultiSurfaceRestartFile();
+
+  	double flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(1,1000);
+  	EXPECT_NEAR(174767.004330894,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+
+  	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(2,1000);
+  	EXPECT_NEAR(27077.5494999395,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+
+  	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(3,1000);
+  	EXPECT_NEAR(147689.454830954,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+  }
+
+  // Check netlistPressures_zeroDDomainReplacement.dat
+  {
+  	histFileReader zeroDDomainReplacementPressureFile = histFileReader();
+  	zeroDDomainReplacementPressureFile.setFileName("netlistPressures_zeroDDomainReplacement.dat");
+  	zeroDDomainReplacementPressureFile.setNumColumns(9);
+  	zeroDDomainReplacementPressureFile.readAndSplitMultiSurfaceRestartFile();
+
+  	double zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(1,1000);
+  	EXPECT_NEAR(23769.3996600964,zeroDDomainNodalPressure,1e-8);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(2,1000);
+  	EXPECT_NEAR(14049.1436358498,zeroDDomainNodalPressure,1e-8);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(3,1000);
+  	EXPECT_NEAR(14049.1436358498,zeroDDomainNodalPressure,1e-8);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(4,1000);
+  	EXPECT_EQ(0.0,zeroDDomainNodalPressure);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(5,1000);
+  	EXPECT_NEAR(19606.4633221664,zeroDDomainNodalPressure, 1e-8);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(6,1000);
+  	EXPECT_NEAR(19976.7484056073,zeroDDomainNodalPressure, 1e-8);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(7,1000);
+  	EXPECT_NEAR(19428.1963177128,zeroDDomainNodalPressure, 1e-8);
+
+  	zeroDDomainNodalPressure = zeroDDomainReplacementPressureFile.getReadFileData(8,1000);
+  	EXPECT_NEAR(19428.1963177128,zeroDDomainNodalPressure, 1e-8);
+  }
+
+   // Check netlistPressures_downstreamCircuit_0.dat
+  {
+  	histFileReader downstreamCircuitNodalPressureFile = histFileReader();
+  	downstreamCircuitNodalPressureFile.setFileName("netlistPressures_downstreamCircuit_0.dat");
+  	downstreamCircuitNodalPressureFile.setNumColumns(5);
+  	downstreamCircuitNodalPressureFile.readAndSplitMultiSurfaceRestartFile();
+
+  	double downstreamCircuitNodalPressure = downstreamCircuitNodalPressureFile.getReadFileData(1,1000);
+  	EXPECT_NEAR(540.802034459378,downstreamCircuitNodalPressure, 1e-8);
+
+  	downstreamCircuitNodalPressure = downstreamCircuitNodalPressureFile.getReadFileData(2,1000);
+  	EXPECT_NEAR(540.802034459378,downstreamCircuitNodalPressure, 1e-8);
+
+  	downstreamCircuitNodalPressure = downstreamCircuitNodalPressureFile.getReadFileData(3,1000);
+  	EXPECT_NEAR(0.990355044196067,downstreamCircuitNodalPressure, 1e-8);
+
+  	downstreamCircuitNodalPressure = downstreamCircuitNodalPressureFile.getReadFileData(4,1000);
+  	EXPECT_NEAR(5956.31193444729,downstreamCircuitNodalPressure, 1e-8);
+  }
+}

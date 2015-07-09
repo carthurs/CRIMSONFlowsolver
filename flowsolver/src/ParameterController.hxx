@@ -1,7 +1,7 @@
 #ifndef PARAMETERCONTROLLER_HXX_
 #define PARAMETERCONTROLLER_HXX_
 
-#include <Python.h>
+#include "CRIMSONPython.hxx"
 #include <cmath>
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -97,13 +97,13 @@ public:
 	}
 	virtual ~GenericPythonController()
 	{
-		Py_XDECREF(m_delt);
-		Py_XDECREF(m_pythonScriptName);
-		Py_XDECREF(m_pythonControllerClassName);
-		Py_XDECREF(m_updateControlPyobjectName);
-		Py_XDECREF(m_customPythonClass);
-		Py_XDECREF(m_customPythonModule);
-		Py_XDECREF(m_pythonControllerInstance);
+		safe_Py_DECREF(m_delt);
+		safe_Py_DECREF(m_pythonScriptName);
+		safe_Py_DECREF(m_pythonControllerClassName);
+		safe_Py_DECREF(m_updateControlPyobjectName);
+		safe_Py_DECREF(m_customPythonClass);
+		safe_Py_DECREF(m_customPythonModule);
+		safe_Py_DECREF(m_pythonControllerInstance);
 	}
 
 	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);

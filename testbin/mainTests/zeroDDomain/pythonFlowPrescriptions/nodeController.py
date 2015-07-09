@@ -11,6 +11,7 @@ class parameterController(abstractParameterController):
 		self.m_minimumElastance = 4.10246e-3;
 		self.m_maximumElastance = 3.0827e-1;
 		self.m_heartPeriod = 0.86;
+		self.finishSetup()
 
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 

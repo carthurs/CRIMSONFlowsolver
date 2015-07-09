@@ -26,6 +26,8 @@
 
 #include "debuggingToolsForCpp.hxx"
 #include <boost/filesystem/path.hpp>
+#include "CRIMSONPython.hxx"
+#include "Python.h"
 
 #ifdef intel
 #include <direct.h>
@@ -43,7 +45,7 @@
 	  // is empty.
 	 	std::string dirBinaryCalledFrom;
 
-	 	// This constructor should just do exactly what main.cxx does in estimation/src/main.cxx
+	 	// This test environment should setup exactly as main.cxx does in estimation/src/main.cxx
 		testMainWithZeroDDomain() {
 			MPI_Barrier(MPI_COMM_WORLD);
 			dirBinaryCalledFrom = get_current_dir_name();
@@ -80,6 +82,8 @@
 		   int numProcs;
 		   int ierr = 0;
 		   char pathToProcsCaseDir[100];
+
+		   initialisePython();
 
 		   // The zero-D domain should just be run single-threaded
 		   // if (m_rank==0)
@@ -157,6 +161,7 @@
 		           
 		    }
 		    MPI_Barrier(m_iNewComm_C);
+		    Py_Finalize();
 		}
 
 	  virtual ~testMainWithZeroDDomain() {

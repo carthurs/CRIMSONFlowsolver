@@ -1,11 +1,12 @@
 from CRIMSONPython import *
 from math import pi, cos
 
+# The parameter controller must have exactly this name
 class parameterController(abstractParameterController):
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
+		# import io
 		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
-		self.m_baseNameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;
 		self.m_timeToRelax = 0.1391;
@@ -14,16 +15,38 @@ class parameterController(abstractParameterController):
 		self.m_heartPeriod = 0.86;
 		self.finishSetup()
 
+	# This method must have exactly this name
+	def setFirstTimestepBroadcastValues(self):
+		self.clearBroadcastData()
+		self.addBroadcastVariable('five', 5)
+		self.addBroadcastVariable('six', 6)
+		self.addBroadcastVariable('LeftVentricularVolume', 100000.0)
+		self.addBroadcastVariable('AorticValveFlow', 0.0)
+		
+	# This method must have exactly this name
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.clearBroadcastData()
-		self.addBroadcastVariable('foo', 1234.5)
-		self.addBroadcastVariable('bar',55646)
-		self.addBroadcastVariable('beans','heinz')
-		self.addBroadcastVariable('cutlery','useful')
+		self.addBroadcastVariable('five', 5)
+		self.addBroadcastVariable('six', 6)
+		LeftVentricularVolume = dictionaryOfVolumesByComponentIndex[5]
+		self.addBroadcastVariable('LeftVentricularVolume', LeftVentricularVolume)
+		AorticValveFlow = dictionaryOfFlowsByComponentIndex[1]
+		self.addBroadcastVariable('AorticValveFlow', AorticValveFlow)
+		# print "Elastance Controller Reporting!"
+		# self.printAllRecievedData()
 
-		self.updatePeriodicTime(delt)
-		elastance = self.getElastance(currentParameterValue)
+		controlSignal = self.getRecievedBroadcastValue('masterController','masterControlSignal')
+		# print "in elastance:", controlSignal
+
+		# Only update the time if this controller is receiving the (otherwise-unused)
+		# broadcasts from other controllers. The only purpose of this is to
+		# make the test fail (due to the time not being updated properly) if
+		# there is a problem with the broadcast reception.
+		if self.getRecievedBroadcastValue('nodeController','four') == 4 and self.getRecievedBroadcastValue('nodeController_downstream','seven') == 7:
+			self.updatePeriodicTime(delt)
+
+		elastance = self.getElastance(currentParameterValue) * (abs(controlSignal) + 0.5)
 
 		# for key in dictionaryOfPressuresByComponentIndex:
 		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]

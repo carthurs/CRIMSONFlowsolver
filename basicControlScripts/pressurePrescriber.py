@@ -10,6 +10,7 @@ class parameterController(abstractParameterController):
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_nameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
 		self.getPeriodicPressurePrescriberData()
+		self.finishSetup()
 
 	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 

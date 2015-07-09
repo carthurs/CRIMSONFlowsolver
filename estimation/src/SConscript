@@ -72,6 +72,7 @@ env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
 env_local.Append(LIBS=bop.PETSC_LIBSLIST)
 
 CXXSRCS=string.split("""
+	CRIMSONPython.cxx
 	SimvascularGlobalArrayTransfer.cxx
 	SimvascularAugStatePart.cxx
 	dateTools.cxx

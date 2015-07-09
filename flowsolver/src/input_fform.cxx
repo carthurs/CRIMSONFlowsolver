@@ -1040,6 +1040,16 @@ int input_fform() {
 			nomodule.ResCriteria = inp.GetValue("Residual Criteria");
 			nomodule.MinNumIter = inp.GetValue("Minimum Required Iterations");
 		}
+
+		if ((string) inp.GetValue("Has masterController.py Control Script") == "True")
+		{
+			nomodule.hasMasterPythonControlScript = 1;
+		}
+		else
+		{
+			nomodule.hasMasterPythonControlScript = 0;	
+		}
+
 		nomodule.ideformwall = 0;
 		if ((string) inp.GetValue("Deformable Wall") == "True") {
 			nomodule.ideformwall = 1;
@@ -1118,15 +1128,6 @@ int input_fform() {
 				nomodule.evw = inp.GetValue("Young Mod of Vessel Wall");
 				nomodule.thicknessvw = inp.GetValue("Thickness of Vessel Wall");
 
-			}
-
-			if ((string) inp.GetValue("Has masterController.py Control Script") == "True")
-			{
-				nomodule.hasMasterPythonControlScript = 1;
-			}
-			else
-			{
-				nomodule.hasMasterPythonControlScript = 0;	
 			}
 
 			if ((string) inp.GetValue("Wall Damping Term") == "True") {

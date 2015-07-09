@@ -129,7 +129,7 @@ void GenericPythonController::initialise()
 			PyObject* arguments = PyTuple_Pack(1,m_pythonScriptName);
 			// Instantiate the controller class
 			m_pythonControllerInstance = PyObject_CallObject(m_customPythonClass, arguments);
-			Py_XDECREF(arguments);
+			safe_Py_DECREF(arguments);
 		}
 		else
 		{
@@ -165,11 +165,11 @@ void GenericPythonController::updateControl()
 		{
 			std::stringstream errorMessage;
 			errorMessage << "EE: Failed to call a method named " << m_updateControlNameString;
-			errorMessage << " of a class named " << m_controllerPythonScriptBaseName.c_str();
+			errorMessage << " of a class named " << m_controllerClassName.c_str();
 			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
 			throw std::runtime_error(errorMessage.str());
 		}
-		Py_XDECREF(returnStatus);
+		safe_Py_DECREF(returnStatus);
 	}
 	catch(...) // Catch any exception
 	{
@@ -199,8 +199,8 @@ void UserDefinedCustomPythonParameterController::updateControl()
 			errFlag = PyDict_SetItem(pressuresInThisNetlist, nodeIndexInInputData, pressurePointer);
 			assert(errFlag == 0);
 
-			Py_XDECREF(nodeIndexInInputData);
-			Py_XDECREF(pressurePointer);
+			safe_Py_DECREF(nodeIndexInInputData);
+			safe_Py_DECREF(pressurePointer);
 		}
 
 		PyObject* flowsInThisNetlist = PyDict_New();
@@ -211,8 +211,8 @@ void UserDefinedCustomPythonParameterController::updateControl()
 			errFlag = PyDict_SetItem(flowsInThisNetlist, componentIndexInInputData, flowPointer);
 			assert(errFlag == 0);
 
-			Py_XDECREF(componentIndexInInputData);
-			Py_XDECREF(flowPointer);
+			safe_Py_DECREF(componentIndexInInputData);
+			safe_Py_DECREF(flowPointer);
 		}
 
 		PyObject* volumesInThisNetlist = PyDict_New();
@@ -223,8 +223,8 @@ void UserDefinedCustomPythonParameterController::updateControl()
 			errFlag = PyDict_SetItem(volumesInThisNetlist, componentIndexInInputData, volumePointer);
 			assert(errFlag == 0);
 
-			Py_XDECREF(componentIndexInInputData);
-			Py_XDECREF(volumePointer);
+			safe_Py_DECREF(componentIndexInInputData);
+			safe_Py_DECREF(volumePointer);
 		}
 
 
@@ -236,18 +236,18 @@ void UserDefinedCustomPythonParameterController::updateControl()
 		{
 			std::stringstream errorMessage;
 			errorMessage << "EE: Failed to call a method named " << m_updateControlNameString;
-			errorMessage << " of a class named " << m_controllerPythonScriptBaseName.c_str();
+			errorMessage << " of a class named " << m_controllerClassName.c_str();
 			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
 			throw std::runtime_error(errorMessage.str());
 		}
 		// Place the newly-computed parameter value object being controlled:
 		*mp_parameterToControl = PyFloat_AsDouble(newParameterValue);
 
-		Py_XDECREF(parameterValue);
-		Py_XDECREF(newParameterValue);
-		Py_XDECREF(pressuresInThisNetlist);
-		Py_XDECREF(flowsInThisNetlist);
-		Py_XDECREF(volumesInThisNetlist);
+		safe_Py_DECREF(parameterValue);
+		safe_Py_DECREF(newParameterValue);
+		safe_Py_DECREF(pressuresInThisNetlist);
+		safe_Py_DECREF(flowsInThisNetlist);
+		safe_Py_DECREF(volumesInThisNetlist);
 	}
 	catch(...) // Catch any exception
 	{
@@ -274,7 +274,7 @@ void GenericPythonController::getBroadcastStateData(PyObject*& stateDataBroadcas
 			throw std::runtime_error("EE: Internal error int getBroadcastStateData.");
 		}
 
-		Py_XDECREF(broadcastMethodNameInPython_asPyString);
+		safe_Py_DECREF(broadcastMethodNameInPython_asPyString);
 	}
 	catch(...) // Catch any exception
 	{
@@ -302,8 +302,8 @@ void GenericPythonController::giveStateDataFromOtherPythonControllers(PyObject* 
 		{
 			throw std::runtime_error("EE: Internal error int receiveStateDataFromAllOtherParameterControllers.");
 		}
-		Py_XDECREF(success);
-		Py_XDECREF(receiveMethodNameInPython_asPyString);
+		safe_Py_DECREF(success);
+		safe_Py_DECREF(receiveMethodNameInPython_asPyString);
 	}
 	catch(...) // Catch any exception
 	{

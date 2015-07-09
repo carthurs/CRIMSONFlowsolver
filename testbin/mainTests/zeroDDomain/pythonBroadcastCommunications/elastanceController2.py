@@ -43,7 +43,7 @@ class parameterController(abstractParameterController):
 		# broadcasts from other controllers. The only purpose of this is to
 		# make the test fail (due to the time not being updated properly) if
 		# there is a problem with the broadcast reception.
-		if self.getRecievedBroadcastValue('nodeController','four') == 4 and self.getRecievedBroadcastValue('nodeController_downstream','seven') == 7:
+		if self.getRecievedBroadcastValue('nodeController2','four') == 4 and self.getRecievedBroadcastValue('nodeController_downstream','seven') == 7:
 			self.updatePeriodicTime(delt)
 
 		elastance = self.getElastance(currentParameterValue) * (abs(controlSignal) + 0.5)

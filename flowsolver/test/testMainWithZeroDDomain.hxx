@@ -26,8 +26,6 @@
 
 #include "debuggingToolsForCpp.hxx"
 #include <boost/filesystem/path.hpp>
-#include "CRIMSONPython.hxx"
-#include "Python.h"
 
 #ifdef intel
 #include <direct.h>
@@ -82,8 +80,6 @@
 		   int numProcs;
 		   int ierr = 0;
 		   char pathToProcsCaseDir[100];
-
-		   initialisePython();
 
 		   // The zero-D domain should just be run single-threaded
 		   // if (m_rank==0)
@@ -161,7 +157,6 @@
 		           
 		    }
 		    MPI_Barrier(m_iNewComm_C);
-		    Py_Finalize();
 		}
 
 	  virtual ~testMainWithZeroDDomain() {

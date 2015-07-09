@@ -20,7 +20,7 @@ class parameterController(abstractParameterController):
 	def updateControl(self, delt):
 		# print "Master Controller Reporting!"
 		# self.printAllRecievedData()
-		if self.getRecievedBroadcastValue('elastanceController','six') == 6 and self.getRecievedBroadcastValue('nodeController_downstream','eight') == 8:
+		if self.getRecievedBroadcastValue('elastanceController2','six') == 6 and self.getRecievedBroadcastValue('nodeController_downstream','eight') == 8:
 			self.updatePeriodicTime(delt)
 
 		self.controlSignal = cos(self.m_periodicTime)

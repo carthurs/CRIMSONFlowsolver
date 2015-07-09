@@ -27,7 +27,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Python.h>
+#include "CRIMSONPython.hxx"
 #include <cstdlib>
 #include <stdio.h>
 #include "mpi.h"
@@ -73,6 +73,8 @@ GTEST_API_ int main(int argc, char **argv) {
 
   // MPI_Init(&fake_argc,(char***)&fake_argv);
   PetscInitialize(&fake_argc, &fake_argv, (char *)0, help);
+
+  initialisePython();
 
   int testSuccess = 0;
 

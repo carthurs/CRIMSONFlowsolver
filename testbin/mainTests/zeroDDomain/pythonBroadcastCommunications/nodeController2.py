@@ -28,7 +28,7 @@ class parameterController(abstractParameterController):
 		# broadcasts from other controllers. The only purpose of this is to
 		# make the test fail (due to the time not being updated properly) if
 		# there is a problem with the broadcast reception.
-		if self.getRecievedBroadcastValue('elastanceController','six') == 6 and self.getRecievedBroadcastValue('nodeController_downstream','eight') == 8:
+		if self.getRecievedBroadcastValue('elastanceController2','six') == 6 and self.getRecievedBroadcastValue('nodeController_downstream','eight') == 8:
 			self.updatePeriodicTime(delt)
 
 		pressure = self.getRecievedBroadcastValue('masterController','masterControlSignal')

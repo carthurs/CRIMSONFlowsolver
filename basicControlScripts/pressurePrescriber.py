@@ -23,10 +23,10 @@ class parameterController(abstractParameterController):
 		self.updatePeriodicTime(delt)	
 		prescribedFlow = self.pressureFunction(self.m_periodicTime)
 
-		return prescribedFlow.astype(float)
+		return prescribedFlow#.astype(float)
 
 	def updatePeriodicTime(self, delt):
-	
+
 		self.m_periodicTime = self.m_periodicTime + delt
 		# Keep m_periodicTime in the range [0,self.endTime):
 		if self.m_periodicTime >= self.endTime:

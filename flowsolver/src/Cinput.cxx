@@ -142,8 +142,24 @@ void CInput::build_map(map<string,string> *inmap,
       string keyval = textline.substr( pos+1, textline.length() - pos);
       trim_string(&keyval);
       
-      // put the pair into the map
-      (*inmap)[keywd] = keyval;
+
+      // Detect if we are about to try to insert the same entry a second time
+      // (i.e. if the solver.inp contains duplicate entries).
+      //
+      // Only insert it into the inmap of key/value pairs from solver.inp
+      // if its not a duplicate of an existing key
+      if (inmap->count(keywd) == 0)
+      {
+        // put the pair into the map
+        (*inmap)[keywd] = keyval;
+      }
+      else
+      {
+        std::stringstream errorMessage;
+        errorMessage << "EE: Duplicated entry in solver.inp: " << keywd << "." << std::endl;
+        throw std::runtime_error(errorMessage.str());
+      }
+
       
     }
   }

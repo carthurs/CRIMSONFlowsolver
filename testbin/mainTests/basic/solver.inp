@@ -11,6 +11,7 @@
     Density: 0.00106               # ditto
 }
 
+
 # OUTPUT CONTROL
 {
     Number of Timesteps between Restarts: 5 #replaces nout/ntout

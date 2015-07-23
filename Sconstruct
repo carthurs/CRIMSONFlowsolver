@@ -10,6 +10,7 @@ env.Replace(PATH = '')
 env.Replace(LD_LIBRARY_PATH = '')
 env.Append(LINKFLAGS = bop.PYTHON_LDMODULEFLAGS)
 
+
 env.Prepend(LIBPATH = bop.EFENCE_INCDIR)
 env.Prepend(LIBS = bop.EFENCE_LIBSLIST)
 
@@ -21,10 +22,14 @@ env.Replace(F90=bop.F90)
 env.Replace(FORTRAN=bop.F90)
 env.Replace(AR=bop.AR)
 
-
-
+# Get command line arguments:
 debug = ARGUMENTS.get('debug', 0)
 test = ARGUMENTS.get('test', 0)
+profileOn = ARGUMENTS.get('profile',0)
+
+if int(profileOn) and not int(debug):
+      print("WARNING: The user requested profiling without debug, so I'm enabling debug too.")
+      debug = 1
 if int(debug):
    env.Append(CFLAGS=['-g'])
    print("Performing debug build...")
@@ -37,6 +42,12 @@ else:
    bop.GLOBAL_CXXFLAGS = bop.BUILDFLAGS+bop.OPT_FLAGS
    bop.GLOBAL_CFLAGS   = bop.BUILDFLAGS+bop.OPT_FLAGS
    bop.GLOBAL_FFLAGS   = bop.BUILDFLAGS+bop.OPT_FFLAGS
+
+if int(profileOn):
+   env.Append(LINKFLAGS = ['-pg'])
+   bop.GLOBAL_CXXFLAGS = bop.GLOBAL_CXXFLAGS + ['-pg']
+   bop.GLOBAL_CFLAGS   = bop.GLOBAL_CFLAGS + ['-pg']
+   bop.GLOBAL_FFLAGS   = bop.GLOBAL_FFLAGS + ['-pg']
 
 env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
 env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)

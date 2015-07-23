@@ -1,4 +1,3 @@
-Global Node Numbering: True
 Geombc Has Observation Fields: False
 Geombc Has Node Tags: False
 Simulate in Purely Zero Dimensions: True
@@ -62,6 +61,6 @@ Simulate in Purely Zero Dimensions: True
 # SOLUTION CONTROL
 # {
     Equation of State : Incompressible
-    Number of Timesteps : 30000
-    Time Step Size : 0.0005
+    Number of Timesteps : 5000
+    Time Step Size : 0.001
 # }

@@ -25,6 +25,7 @@
       use specialBC ! filling acs here
       use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      real*8, allocatable :: BCtmp(:,:)
 !
       dimension iBC(nshg),                nsurf(nshg), &
                 BC(nshg,ndofBC), &
@@ -39,7 +40,11 @@
 ! Arrays in the following 1 line are now dimensioned in readnblk
 !        dimension BCinp(numpbc,ndof+7)
 !  
-      dimension BCtmp(nshg,ndof+7)
+      ! dimension BCtmp(nshg,ndof+7)
+      if (allocated(BCtmp)) then
+         deallocate(BCtmp)
+      endif
+      allocate(BCtmp(nshg,ndof+7))
 !
 ! ndof+7= 3(thermos) + (nsd-1)*(nsd+1) + nscalars + 1 (theta)
 !                       #vect *(vec dir +mag)
@@ -48,7 +53,7 @@
 !
 !.... convert boundary condition data
 !
-      BCtmp = zero
+      BCtmp = 0!zero
 !
       if(numpbc.ne.0) then  
          do i = 1, ndof+7
@@ -153,7 +158,9 @@
       dimension iBC(nshg),                  iper(nshg), &
                   x(numnp,nsd),             ilwork(nlwork)
 !
-      dimension  BCtmpSAV(nshg,ndof+7)
+      ! dimension  BCtmpSAV(nshg,ndof+7)
+      real*8, allocatable :: BCtmpSAV(:,:)
+
       dimension  BCtmp(nshg,ndof+7),      fBC(nshg,ndofBC), &
                   e1(3),                    e2(3), &
                   elnrm(3),                 asum(numnp)
@@ -174,6 +181,12 @@
         deallocate ( wnrm )
       endif
       allocate ( wnrm(nshg,3) )
+      
+
+      if (allocated(BCtmpSAV)) then
+         deallocate(BCtmpSAV)
+      endif
+      allocate(BCtmpSAV(nshg,ndof+7))
 !
 !.... ----------------------> Wall Normals  <--------------------------
 ! (calculate the normal and adjust BCinp to the true normal as needed)

@@ -28,23 +28,20 @@ d
 4
 0.1187e-4
 # component 5 type: (v=VolumeTrackingPressureChamber; its first parameter value is the initial elastance, its second is the initial volume)
-t
+v
 # component 5 details:
 3
 6
 4.10246e-3 130000.0
 # Number of prescribed pressure nodes:
-3
+2
 # Indices of nodes with prescribed pressures:
-3
 5
 6
 # Prescribed pressure values / scalings (dependent on types, given by next component):
-533.2
-533.2
+250.2
 0.0
 # Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
-f
 f
 f
 # Number of prescribed flows:
@@ -67,13 +64,13 @@ t
 # index of node  at 3D interface
 1
 # Number of components with control
-0
-# detains of components with control (component index, control type char; l=LV elastance)
-#5 l
-# number of nodes with control
 1
+# details of components with control (component index, control type char; l=LV elastance)
+5 l
+# number of nodes with control
+0
 # details of nodes with control (l= lv elastance):
-3 customPython thinShellPressureController
+#3 customPython thinShellPressureController
 #5 customPython nodeController
 ### Begin SECOND netlist boundary condition model
 # Number of Components
@@ -83,19 +80,19 @@ r
 # Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
 1
 2
-0.008
+0.05
 # component 2 type:
 c
 # component 2 details:
 2
 3
-8.074
+2.074
 # component 3 type:
 r
 # component 3 details:
 2
 4
-0.3
+1.0
 # Number of prescribed pressure nodes:
 2
 # Indices of nodes with prescribed pressures:
@@ -137,19 +134,19 @@ r
 # Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
 1
 2
-0.008
+0.05
 #component 2 type
 r
 # component 2 details
 2
 3
-0.3
+1.0
 # component 3 type
 c
 # component 3 details:
 2
 4
-8.074
+2.074
 # Number of prescribed pressure nodes:
 2
 # Indices of nodes with prescribed pressures:

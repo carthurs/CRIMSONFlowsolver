@@ -29,7 +29,7 @@ class parameterController(abstractParameterController):
 		# 	newPeriodJustStarting = False
 
 		if self.time > 4800 + 50: # +50 to be completely certain the last stim was applied..
-			self.stimPeriod = 600
+			self.stimPeriod = 400
 		LVVolume = dictionaryOfVolumesByComponentIndex[5]
 		# equivalentSphereVolume = 2.0 * LVVolume # considering the LV as a hemispherical shell
 		self.numberOfMuscleUnitsAroundCircumference = 205172#258500#205172 # Computed from Negroni96, equation (1), default constants[85] ( = L) and the circumference of a 100 ml sphere (to get Lm)

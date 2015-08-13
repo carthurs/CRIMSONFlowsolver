@@ -1264,7 +1264,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 ! ...
                 ! This replaces the old method used for the stand-alone heart model, which worked
                 ! with two memLS systems, one for systole, and one for diastole.
-                if (numNetlistLPNSrfs .gt. int(0)) then
+                if ( (memLSFlag .EQ. 1) .and. (numNetlistLPNSrfs .gt. int(0))) then
                     ! if a rebuild is needed:
                     ! call callCPPHaveBoundaryConditionTypesChanged(boundaryConditionRebuildNeeded)
                     ! write(*,*) "BC state change flag: ", boundaryConditionRebuildNeeded

@@ -1317,7 +1317,7 @@
         if(sign.lt.zero) then
           do j = 1,numNetlistLPNSrfs
               p(j)= sign*(p(j)*implicitcoeffs(j,1)) 
-              p(j)= p(j) - implicitcoeffs(j,2)
+              p(j)= p(j) + sign*implicitcoeffs(j,2)
           enddo
           ! Pass the netlist surface pressures to CPP
           ! call callCppSetSurfacePressure_netlistLPNs(c_loc(p))

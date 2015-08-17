@@ -14,7 +14,7 @@ class parameterController(abstractParameterController):
 		self.m_heartPeriod = 0.86;
 		self.finishSetup()
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.updatePeriodicTime(delt)
 		elastance = self.getElastance(currentParameterValue)
@@ -25,8 +25,8 @@ class parameterController(abstractParameterController):
 		self.addBroadcastVariable('beans','heinz')
 		self.addBroadcastVariable('cutlery','useful')
 
-		# for key in dictionaryOfPressuresByComponentIndex:
-		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
+		# for key in dictionaryOfPressuresByNodeIndex:
+		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByNodeIndex[key]
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 		# for key in dictionaryOfVolumesByComponentIndex:

@@ -111,6 +111,19 @@ void abstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
     pressure_n = *(pressure_n_ptrs.at(0));
 }
 
+// void abstractBoundaryCondition::storeFlowAndPressureAtStartOfTimestep()
+// {
+//   assert(flow_n_ptrs.at(0) != NULL);
+//   std::cout << "flow_n pre: "<<flow_n<<std::endl;
+//   flow_n = *(flow_n_ptrs.at(0));
+//   std::cout << "flow_n post: "<<flow_n<<std::endl;
+
+//   assert(flow_n_ptrs.at(0) != NULL);
+//   std::cout << "pressure_n pre: "<<pressure_n<<std::endl;
+//   pressure_n = *(pressure_n_ptrs.at(0));
+//   std::cout << "pressure_n post: "<<pressure_n<<std::endl;
+// }
+
 void abstractBoundaryCondition::incrementTimestepIndex()
 {
   m_currentTimestepIndex++;

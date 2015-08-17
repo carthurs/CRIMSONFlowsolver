@@ -220,6 +220,14 @@ extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
   boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 }
 
+// void boundaryConditionManager::storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep()
+// {
+//   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
+//   {
+//     (*boundaryCondition)->storeFlowAndPressureAtStartOfTimestep();
+//   }
+// }
+
 void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,boundary_condition_t>> surfaceList)
 {
   // Defensive:

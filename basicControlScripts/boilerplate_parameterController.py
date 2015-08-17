@@ -27,13 +27,13 @@ class parameterController(abstractParameterController): #NECESSARY
 	# OR the prescribed flow through the component
 	#
 	# This depends on how this controller was described in netlist_surfaces.dat or netlist_closed_loop_downstream.dat
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex): #NECESSARY
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex): #NECESSARY
 
 		# Uncomment to see what the recieved pressures, flows and volumes in the associated netlist
 		# circuit were:
 		#
-		# for key in dictionaryOfPressuresByComponentIndex:
-		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
+		# for key in dictionaryOfPressuresByNodeIndex:
+		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByNodeIndex[key]
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 

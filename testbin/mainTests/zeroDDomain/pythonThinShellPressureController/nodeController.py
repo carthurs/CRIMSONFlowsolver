@@ -13,13 +13,13 @@ class parameterController(abstractParameterController):
 		self.m_heartPeriod = 0.86;
 
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.updatePeriodicTime(delt)
 		pressure = 533.0*cos(self.m_periodicTime)
 
-		# for key in dictionaryOfPressuresByComponentIndex:
-		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
+		# for key in dictionaryOfPressuresByNodeIndex:
+		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByNodeIndex[key]
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 

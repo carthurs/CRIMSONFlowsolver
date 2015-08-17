@@ -12,7 +12,7 @@ class parameterController(abstractParameterController):
 		self.getPeriodicPressurePrescriberData()
 		self.finishSetup()
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.clearBroadcastData()
 		self.addBroadcastVariable('foo', 1234.5)

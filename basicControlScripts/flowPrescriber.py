@@ -12,7 +12,7 @@ class parameterController(abstractParameterController):
 		self.getPeriodicFlowPrescriberData()
 		self.finishSetup()
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.updatePeriodicTime(delt)	
 		prescribedFlow = self.flowFunction(self.m_periodicTime)

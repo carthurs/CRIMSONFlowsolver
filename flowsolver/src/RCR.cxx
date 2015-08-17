@@ -232,7 +232,7 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
 
   temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
 
-  temp2 = pressure_n + pdistn_1 - pdistn - rp*(*(flow_n_ptrs.at(0)));
+  temp2 = pressure_n + pdistn_1 - pdistn - rp * (*flow_n_ptrs.at(0));
   temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
 
   returnCoeffs.first = temp1 / denom;

@@ -76,6 +76,7 @@ class abstractBoundaryCondition
     double getSurfaceIndex() const {return surfaceIndex;}
     void incrementTimestepIndex();
     virtual void setDirichletConditionsIfNecessary(int* const binaryMask);
+    // void storeFlowAndPressureAtStartOfTimestep();
  protected:
  	double dp_dq;
  	double Hop;

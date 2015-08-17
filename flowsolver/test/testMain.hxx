@@ -151,8 +151,11 @@
 		   fortranBoundaryDataPointerManager* pointerManager;
 		   pointerManager = fortranBoundaryDataPointerManager::Get();
 		   for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
+		   	   multidom_iter_initialise();
 			   itrdrv_iter_init();
+
 			   itrdrv_iter_step();
+
 			   itrdrv_iter_finalize();
 			   multidom_iter_finalise();
 		   }

@@ -17,7 +17,7 @@ class parameterController(abstractParameterController):
 		self.addBroadcastVariable('four', 4) # just a non-functional example broadcast
 
 	# This method must have exactly this name
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 		self.clearBroadcastData()
 		self.addBroadcastVariable('three', 3) # just a non-functional example broadcast
 		self.addBroadcastVariable('four', 4) # just a non-functional example broadcast
@@ -34,8 +34,8 @@ class parameterController(abstractParameterController):
 		pressure = self.getRecievedBroadcastValue('masterController','masterControlSignal')
 		# print "in nodecontroller:", pressure
 
-		# for key in dictionaryOfPressuresByComponentIndex:
-		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
+		# for key in dictionaryOfPressuresByNodeIndex:
+		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByNodeIndex[key]
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 

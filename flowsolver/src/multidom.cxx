@@ -109,18 +109,20 @@ void multidom_initialise(){
 }
 
 
-// set pointer to fortran arrays
-void multidom_iter_initialise(){
 
+void multidom_iter_initialise()
+{
 }
 
-void multidom_iter_step(){
-
+void multidom_iter_step()
+{
 }
 
-void multidom_iter_finalise(){
+void multidom_iter_finalise()
+{
   boundaryConditionManager::Instance()->markClosedLoopLinearSystemsForRebuilding();
   boundaryConditionManager::Instance()->incrementTimestepIndex();
+  // boundaryConditionManager::Instance()->storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep();
 }
 
 void multidom_finalise(){

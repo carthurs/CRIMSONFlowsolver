@@ -24,7 +24,7 @@ class parameterController(abstractParameterController):
 		self.addBroadcastVariable('AorticValveFlow', 0.0)
 		
 	# This method must have exactly this name
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.clearBroadcastData()
 		self.addBroadcastVariable('five', 5)
@@ -48,8 +48,8 @@ class parameterController(abstractParameterController):
 
 		elastance = self.getElastance(currentParameterValue) * (abs(controlSignal) + 0.5)
 
-		# for key in dictionaryOfPressuresByComponentIndex:
-		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByComponentIndex[key]
+		# for key in dictionaryOfPressuresByNodeIndex:
+		# 	print "Pressure ", key, " was ", dictionaryOfPressuresByNodeIndex[key]
 		# for key in dictionaryOfFlowsByComponentIndex:
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 		# for key in dictionaryOfVolumesByComponentIndex:

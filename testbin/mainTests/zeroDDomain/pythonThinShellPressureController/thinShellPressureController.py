@@ -19,7 +19,7 @@ from math import pi, cos
 
 class parameterController(abstractParameterController):
 
-	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByComponentIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
+	def updateControl(self, currentParameterValue, delt, dictionaryOfPressuresByNodeIndex, dictionaryOfFlowsByComponentIndex, dictionaryOfVolumesByComponentIndex):
 
 		self.time = self.time + delt * 1000
 		# print "rem:",(self.time - self.stimStartTime) % self.stimPeriod

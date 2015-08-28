@@ -117,7 +117,11 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
         
         downcastCircuit->getMatrixContribution(alfi_delt, matrixContribution);
-        m_matrixContributionsFromUpstreamBoundaryConditions.push(matrixContribution);
+        // Get some metadata (the index amongst netlists) with which to tag this circuit's matrixContribution, for convenience later.
+        int indexAmongstNetlists = downcastCircuit->getIndexAmongstNetlists();
+        // package the just-obtained data and push it onto the queue:
+        std::pair<int, Mat> matrixContributionTaggedWithIndexAmongstNetlistBCs = std::make_pair(indexAmongstNetlists, matrixContribution);
+        m_matrixContributionsFromUpstreamBoundaryConditions.push(matrixContributionTaggedWithIndexAmongstNetlistBCs);
         
         downcastCircuit->getRHSContribution(timestepNumber, rhsContribuiton);
         m_rhsContributionsFromUpstreamBoundaryConditions.push(rhsContribuiton);
@@ -184,7 +188,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
 
         for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
         {
-            Mat nextMatrixToAddToSystem = m_matrixContributionsFromUpstreamBoundaryConditions.front();
+            std::pair<int, Mat> indexAmongstNetlistTagAndMatrix = m_matrixContributionsFromUpstreamBoundaryConditions.front();
+            Mat nextMatrixToAddToSystem = indexAmongstNetlistTagAndMatrix.second;
 
             // std::cout << "System matrix for upstream circuit " << upstreamCircuit << ":" << std::endl;
             // errFlag = MatView(nextMatrixToAddToSystem,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -262,11 +267,12 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
 
             errFlag = MatSetValues(m_closedLoopSystemMatrix, numberOfRows, globalRowIndices, numberOfColumns, globalColumnIndices, transposedRawDataInNextMatrixToAddToSystem, INSERT_VALUES);
             delete[] transposedRawDataInNextMatrixToAddToSystem;
-            
-            m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.push_back(m_nextBlankSystemMatrixRow);
+
+            int indexAmongstNetlists = indexAmongstNetlistTagAndMatrix.first;            
+            m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.insert(std::make_pair(indexAmongstNetlists, m_nextBlankSystemMatrixRow));
             m_nextBlankSystemMatrixRow += numberOfRows;
 
-            m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.push_back(m_nextBlankSystemMatrixColumn);
+            m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.insert(std::make_pair(indexAmongstNetlists, m_nextBlankSystemMatrixColumn));
             m_nextBlankSystemMatrixColumn += numberOfColumns;
         }
 
@@ -276,9 +282,10 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         // errFlag = MatView(m_closedLoopSystemMatrix,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
         // This adds the location of the first row of the downstream closed loop circuit in m_closedLoopSystemMatrix.
-        m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.push_back(m_nextBlankSystemMatrixRow);
+        int minusOneToIndicateDownstreamCircuitNotBC = -1;
+        m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.insert(std::make_pair(minusOneToIndicateDownstreamCircuitNotBC, m_nextBlankSystemMatrixRow));
         // This adds the location of the first column of the downstream closed loop circuit in m_closedLoopSystemMatrix.
-        m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.push_back(m_nextBlankSystemMatrixColumn);
+        m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.insert(std::make_pair(minusOneToIndicateDownstreamCircuitNotBC, m_nextBlankSystemMatrixColumn));
 
         // Scoping unit containing just the addition of the closed loop downstream circuit matrix to the full system matrix, m_closedLoopSystemMatrix:
         {
@@ -651,7 +658,8 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircui
         // which corresponds to the components incident at multipleIndidentCurrentNode in
         // the downstream closed loop subsection circuit:
         int numberOfHistoryPressures_downstreamCircuit = mp_NetlistCircuit->getNumberOfHistoryPressures();
-        int columnOffsetOfDownstreamClosedLoopCircuit = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.back();
+        int minusOneToIndicateDownstreamCircuitNotBC = -1;
+        int columnOffsetOfDownstreamClosedLoopCircuit = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(minusOneToIndicateDownstreamCircuitNotBC);
         boost::shared_ptr<CircuitData> downstreamCircuitData = mp_NetlistCircuit->getCircuitDescription();
         writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(downstreamCircuitData, *downstreamInterfaceNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_downstreamCircuit, columnOffsetOfDownstreamClosedLoopCircuit);
         
@@ -745,7 +753,8 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
         {
             assert(m_nextBlankSystemMatrixRow < m_systemSize);
             int downstreamNodeIndex = downstreamNodeIndices.at(sharedNodeIndex);
-            int column = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.back() + toZeroIndexing(downstreamNodeIndex);
+            int minusOneToIndicateDownstreamCircuitNotBC = -1;
+            int column = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(minusOneToIndicateDownstreamCircuitNotBC) + toZeroIndexing(downstreamNodeIndex);
             assert(column < m_systemSize);
             errFlag = MatSetValue(m_closedLoopSystemMatrix,m_nextBlankSystemMatrixRow,column,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             // std::cout << "just wrote to row " << m_nextBlankSystemMatrixRow << " and column " << column << " in enforcePressure." << std::endl;

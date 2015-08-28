@@ -88,7 +88,7 @@ private:
 	int m_nextBlankRhsRow; // zero-indexed
 	std::pair<int,int> m_boundsOfDownstreamSolutionDataInSolutionVector;
 
-	std::queue<Mat> m_matrixContributionsFromUpstreamBoundaryConditions;
+	std::queue<std::pair<int, Mat>> m_matrixContributionsFromUpstreamBoundaryConditions;
 	std::queue<Vec> m_rhsContributionsFromUpstreamBoundaryConditions;
 	std::map<int,int> m_indicesOf3DInterfaceComputedFlowsInUpstreamSolutionVectors; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
 	std::map<int,int> m_columnIndicesOf3DInterfacePrescribedFlowsInUpstreamLinearSystems; // zero-indexed; by upstream index (i.e. order in netlist_surfaces.dat, not surfaceIndex from solver.inp).
@@ -98,8 +98,8 @@ private:
 	std::vector<boost::shared_ptr<NetlistCircuit>> m_upstreamBoundaryConditionCircuits;
 	boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> mp_NetlistCircuit;
 
-	std::vector<int> m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
-	std::vector<int> m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
+	std::map<int,int> m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
+	std::map<int,int> m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix; // zero indexed
 
 	std::map<int,std::set<int>> m_mapOfSurfaceIndicesConnectedToEachDownstreamInterfaceNode;
 	std::map<int,std::pair<int,int>> m_mapOfSurfaceIndicesToRangeOfEntriesInSolutionVector;

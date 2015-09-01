@@ -79,6 +79,7 @@ module phcommonvars
         numLoopClosingCircuits, &
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation, &
+        num3DConnectedComponents, surfacesOfEachConnectedComponent(0:MAXSURF), &
         hasMasterPythonControlScript
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
@@ -118,6 +119,7 @@ module phcommonvars
         numLoopClosingCircuits, &
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation, &
+        num3DConnectedComponents, surfacesOfEachConnectedComponent, &
         hasMasterPythonControlScript
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------

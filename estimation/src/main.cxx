@@ -157,15 +157,43 @@ int main(int argc, char **argv) {
       pureZeroDDriver.setAlfi(timdat.alfi);
       pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
       pureZeroDDriver.setNtout(outpar.ntout);
+      pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
 
-      // connected component info:
-      // fake for now:
-      std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
-      for (int indexAmongstNetlists = 0; indexAmongstNetlists < nomodule.numNetlistLPNSrfs; indexAmongstNetlists++)
-      {
-          mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, 1));
-      }
-      pureZeroDDriver.setMapFromNetlistIndexToConnectedComponents(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex);
+      
+      // // Split the zero D domain replacement, in the case
+      // // where there are multiple connected components of the 3D domain:
+      // std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
+      // // if (nomodule.num3DConnectedComponents > 1)
+      // {
+      //   // As a preliminary, build this map. Not strictly necessary here, but it makes things clearer later:
+      //   std::map<int,int> mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData;
+      //   for (int netlistSurfaceIndexInInputData = 0; netlistSurfaceIndexInInputData < nomodule.numNetlistLPNSrfs; netlistSurfaceIndexInInputData++)
+      //   {
+      //     mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.insert(std::make_pair(nomodule.indicesOfNetlistSurfaces[netlistSurfaceIndexInInputData], netlistSurfaceIndexInInputData));
+      //   }
+
+      //   int connectedComponentIndex = 1;
+      //   // Loop the input data from solver.inp's "List of Surfaces In Each Connected Component Separated by -1s":
+      //   for (int index = 0; index < nomodule.numNetlistLPNSrfs + nomodule.num3DConnectedComponents - 1; index++)
+      //   {
+      //     // If it's not a separator symbol "-1", used to mark the end of a connected component, 
+      //     int surfaceIndexOrNextConnectedComponentFlag = nomodule.surfacesOfEachConnectedComponent[index];
+      //     bool isANextConnectedComponentFlag = (surfaceIndexOrNextConnectedComponentFlag == -1);
+      //     if (!isANextConnectedComponentFlag)
+      //     {
+      //       int surfaceIndex = surfaceIndexOrNextConnectedComponentFlag;
+      //       int indexAmongstNetlists = mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.at(surfaceIndex);
+      //       mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, connectedComponentIndex));
+      //       indexAmongstNetlists++;
+      //     }
+      //     else
+      //     {
+      //       connectedComponentIndex++;
+      //     }
+      //   }
+      // }
+      
+      // pureZeroDDriver.setMapFromNetlistIndexToConnectedComponents(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex);
 
       pureZeroDDriver.init();
 

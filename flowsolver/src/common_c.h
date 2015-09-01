@@ -541,6 +541,8 @@
          int geombcHasObservationFields;
          int geombcHasNodeTags;
          int pureZeroDSimulation;
+         int num3DConnectedComponents;
+         int surfacesOfEachConnectedComponent[MAXSURF+1];
          int hasMasterPythonControlScript;
       } nomodule;
 

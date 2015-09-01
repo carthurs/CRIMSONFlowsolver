@@ -30,7 +30,7 @@ public:
 	void setAlfi(const double alfi);
 	void setHstep(const int hstep);
 	void setNtout(const int ntout);
-	void setMapFromNetlistIndexToConnectedComponents(const std::map<int,int> map);
+	void setupConnectedComponents(const int num3DConnectedComponents, const int* const surfacesOfEachConnectedComponent, const int* const indicesOfNetlistSurfaces);
 
 private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make

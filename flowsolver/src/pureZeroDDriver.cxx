@@ -103,12 +103,6 @@ void PureZeroDDriver::setNtout(const int ntout)
 	m_ntoutHasBeenSet = true;
 }
 
-void PureZeroDDriver::setMapFromNetlistIndexToConnectedComponents(const std::map<int,int> map)
-{
-	m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex = map;
-	m_mapFromNetlistIndexToConnectedComponentsHasBeenSet = true;
-}
-
 void PureZeroDDriver::iter_init()
 {
 	std::cout << "============ Doing timestep number " << m_timestepNumber << " ============" << std::endl;
@@ -228,4 +222,40 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 		}
 	}
 	
+}
+
+
+void PureZeroDDriver::setupConnectedComponents(const int num3DConnectedComponents, const int* const surfacesOfEachConnectedComponent, const int* const indicesOfNetlistSurfaces)
+{
+	int numberOfNetlistSurfaces = boundaryConditionManager_instance->getNumberOfNetlistSurfaces();
+	// Split the zero D domain replacement, in the case
+	// where there are multiple connected components of the 3D domain:
+	// As a preliminary, build this map. Not strictly necessary here, but it makes things clearer later:
+	std::map<int,int> mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData;
+	for (int netlistSurfaceIndexInInputData = 0; netlistSurfaceIndexInInputData < numberOfNetlistSurfaces; netlistSurfaceIndexInInputData++)
+	{
+	  mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.insert(std::make_pair(indicesOfNetlistSurfaces[netlistSurfaceIndexInInputData], netlistSurfaceIndexInInputData));
+	}
+
+	int connectedComponentIndex = 1;
+	// Loop the input data from solver.inp's "List of Surfaces In Each Connected Component Separated by -1s":
+	for (int index = 0; index < numberOfNetlistSurfaces + num3DConnectedComponents - 1; index++)
+	{
+	  // If it's not a separator symbol "-1", used to mark the end of a connected component, 
+	  int surfaceIndexOrNextConnectedComponentFlag = surfacesOfEachConnectedComponent[index];
+	  bool isANextConnectedComponentFlag = (surfaceIndexOrNextConnectedComponentFlag == -1);
+	  if (!isANextConnectedComponentFlag)
+	  {
+	    int surfaceIndex = surfaceIndexOrNextConnectedComponentFlag;
+	    int indexAmongstNetlists = mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.at(surfaceIndex);
+	    m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, connectedComponentIndex));
+	    indexAmongstNetlists++;
+	  }
+	  else
+	  {
+	    connectedComponentIndex++;
+	  }
+	}
+
+	m_mapFromNetlistIndexToConnectedComponentsHasBeenSet = true;
 }

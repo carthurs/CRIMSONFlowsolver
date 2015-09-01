@@ -137,15 +137,7 @@
 			    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
 			    pureZeroDDriver.setNtout(1);
 
-			    // connected component info:
-			    // fake for now:
-			    std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
-			    for (int indexAmongstNetlists = 0; indexAmongstNetlists < nomodule.numNetlistLPNSrfs; indexAmongstNetlists++)
-			    {
-			        mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, 1));
-			    }
-			    // mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.at(2) = 2;
-			    pureZeroDDriver.setMapFromNetlistIndexToConnectedComponents(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex);
+			    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
 
 				pureZeroDDriver.init();
 

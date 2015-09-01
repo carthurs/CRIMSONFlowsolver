@@ -234,7 +234,7 @@ void PureZeroDDriver::setupConnectedComponents(const int num3DConnectedComponent
 	std::map<int,int> mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData;
 	for (int netlistSurfaceIndexInInputData = 0; netlistSurfaceIndexInInputData < numberOfNetlistSurfaces; netlistSurfaceIndexInInputData++)
 	{
-	  mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.insert(std::make_pair(indicesOfNetlistSurfaces[netlistSurfaceIndexInInputData], netlistSurfaceIndexInInputData));
+	  mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.insert(std::make_pair(indicesOfNetlistSurfaces[netlistSurfaceIndexInInputData+1], netlistSurfaceIndexInInputData)); // +1 because the input_fform.cxx arrays start at their 1th entry (!)
 	}
 
 	int connectedComponentIndex = 1;
@@ -242,7 +242,7 @@ void PureZeroDDriver::setupConnectedComponents(const int num3DConnectedComponent
 	for (int index = 0; index < numberOfNetlistSurfaces + num3DConnectedComponents - 1; index++)
 	{
 	  // If it's not a separator symbol "-1", used to mark the end of a connected component, 
-	  int surfaceIndexOrNextConnectedComponentFlag = surfacesOfEachConnectedComponent[index];
+	  int surfaceIndexOrNextConnectedComponentFlag = surfacesOfEachConnectedComponent[index+1]; // +1 because the input_fform.cxx arrays start at their 1th entry (!)
 	  bool isANextConnectedComponentFlag = (surfaceIndexOrNextConnectedComponentFlag == -1);
 	  if (!isANextConnectedComponentFlag)
 	  {

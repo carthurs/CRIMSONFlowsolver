@@ -643,7 +643,6 @@ void NetlistZeroDDomainCircuit::findNumberOfConnectedComponentsOf3DDomain()
     }
 
     m_numberOfConnectedComponentsOf3DDomain = maxConnectedComponentIndex;
-    std::cout << "m_numberOfConnectedComponentsOf3DDomain: " << m_numberOfConnectedComponentsOf3DDomain << std::endl;
 }
 
 void NetlistZeroDDomainCircuit::createCircuitDescription()
@@ -672,8 +671,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     	componentTypes.push_back(Component_Resistor);
         componentTypes.push_back(Component_Resistor);
     }
-    // componentTypes.push_back(Component_VolumeTrackingPressureChamber);
-    std::cout << "m_numberOfConnectedComponentsOf3DDomain: " << m_numberOfConnectedComponentsOf3DDomain << std::endl;
+
     for (int connectedComponentIndex = 0; connectedComponentIndex < m_numberOfConnectedComponentsOf3DDomain; connectedComponentIndex++)
     {
         componentTypes.push_back(Component_Capacitor);
@@ -703,11 +701,6 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         mp_circuitData->components.back()->setIndex(toOneIndexing(ii));
     }
 
-    for (auto iterator=componentTypes.begin(); iterator!=componentTypes.end(); iterator++)
-    {
-        std::cout<< "component: " << *iterator << std::endl;
-    }
-
     // Obtain the component- and node-level data for the circuit, for moving into the appropriate data structure CircuitData
     // We want to pop off the component types as we use them, but starting from the beginning of the vector. To do this, we reverse
     // the vector and then pop from the new end.
@@ -733,10 +726,10 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     {
         componentEndNodes.push_back(dpDqResistorIndex);
     }
-    // The next two node indices are used for the domain central node (it's basically star-shaped),
-    // and the end-node singleton for the bottom of the compliance chamber.
+    // The next 2*m_numberOfConnectedComponentsOf3DDomain node indices are used for the domain central node of each connected component
+    // (it's basically star-shaped in each connected component), and the end-node singleton for the bottom of each compliance chamber.
     //
-    // Skip these two, and now do the end nodes for the resistors which represent
+    // Skip these, and now do the end nodes for the resistors which represent
     // the resistance of the 3D domain itself.
     for (int internalDomainResistorEndNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; internalDomainResistorEndNodeIndex <= mp_circuitData->numberOfPressureNodes; internalDomainResistorEndNodeIndex++)
     {
@@ -749,16 +742,6 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions - 1;
         componentEndNodes.push_back(endNodeIndexForThisComplianceUnit);
     }
-    // for(int complianceChamberBaseNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1; complianceChamberBaseNodeIndex < m_numberOfNetlistsUsedAsBoundaryConditions + 1 + m_numberOfConnectedComponentsOf3DDomain; complianceChamberBaseNodeIndex++)
-    // {
-    //     componentEndNodes.push_back(complianceChamberBaseNodeIndex);
-    // }
-
-    for (auto iterator=componentEndNodes.begin(); iterator!=componentEndNodes.end(); iterator++)
-    {
-        std::cout<< "componentEndNodes: " << *iterator << std::endl;
-    }
-
 
     std::vector<int> componentStartNodes;
     // All the components, except for the dP/dQ resistors, have the same
@@ -791,11 +774,6 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex - totalNumberOfResistorsIn3DDomainReplacementCircuit;
         int startNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions;
         componentStartNodes.push_back(startNodeIndexForThisComplianceUnit);
-    }
-
-    for (auto iterator=componentStartNodes.begin(); iterator!=componentStartNodes.end(); iterator++)
-    {
-        std::cout<< "componentStartNodes: " << *iterator << std::endl;
     }
 
     std::reverse(componentStartNodes.begin(), componentStartNodes.end()); // actually no point in this call, but it's tidier to leave it here for symmetry with the related calls below.
@@ -834,11 +812,6 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     for (int complianceUnit = 0; complianceUnit < m_numberOfConnectedComponentsOf3DDomain; complianceUnit++)
     {
         componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
-    }
-
-    for (auto iterator=componentParameterValues.begin(); iterator!=componentParameterValues.end(); iterator++)
-    {
-        std::cout<< "componentParameterValues: " << *iterator << std::endl;
     }
 
     std::reverse(componentParameterValues.begin(), componentParameterValues.end());
@@ -884,11 +857,6 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         initialPressures.insert(std::make_pair(nodeIndex, m_initialDomainPressure));
     }
 
-    for (auto iterator=initialPressures.begin(); iterator!=initialPressures.end(); iterator++)
-    {
-        std::cout<< "initialPressures: " << iterator->first << " " << iterator->second << std::endl;
-    }
-    
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_circuitData->components.begin(); component != mp_circuitData->components.end(); component++)
     {
@@ -1465,7 +1433,6 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             // Insert the volume history term:
             {
               int columnIndex = componentIndexToVolumeHistoryComponentOrderingMap.at(zeroIndexOfThisComponent) + m_numberOfTrackedVolumes + mp_circuitData->numberOfPressureNodes + m_numberOfHistoryPressures + mp_circuitData->numberOfComponents + numberOfHistoryFlows;
-              // std::cout << "setting in NetlistSubcircuit.cxx row and column: " << row << " " << columnIndex << std::endl;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
             row++; // done twice in this if-case, because there are 2 equations to create for the VolumeTrackingPressureChamber
@@ -1516,7 +1483,6 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             // Insert the volume history term:
             {
               int columnIndex = componentIndexToVolumeHistoryComponentOrderingMap.at(zeroIndexOfThisComponent) + m_numberOfTrackedVolumes + mp_circuitData->numberOfPressureNodes + m_numberOfHistoryPressures + mp_circuitData->numberOfComponents + numberOfHistoryFlows;
-              // std::cout << "setting in NetlistSubcircuit.cxx row and column: " << row << " " << columnIndex << std::endl;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
             row++;

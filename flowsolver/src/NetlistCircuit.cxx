@@ -621,38 +621,63 @@ void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
     cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
+// This function takes a resistor which connects directly to one of the compliance units, and works
+// out which connected component it belongs to (so it can be attached to the appropriate compliance unit)
+int NetlistZeroDDomainCircuit::getConnectedTopologicalComponentIndexForInnerResistor(const int componentIndex) const
+{
+    assert(componentIndex > m_numberOfNetlistsUsedAsBoundaryConditions);
+    assert(componentIndex <= 2*m_numberOfNetlistsUsedAsBoundaryConditions);
+    int indexOfNetlistBoundaryConditionConnectedToThisBranch = toZeroIndexing(componentIndex - m_numberOfNetlistsUsedAsBoundaryConditions);
+    return m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.at(indexOfNetlistBoundaryConditionConnectedToThisBranch);
+}
+
+void NetlistZeroDDomainCircuit::findNumberOfConnectedComponentsOf3DDomain()
+{
+    int maxConnectedComponentIndex = 0;
+    for (auto netlistBoundaryConditionData = m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.begin(); netlistBoundaryConditionData != m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.end(); netlistBoundaryConditionData++)
+    {
+        if (netlistBoundaryConditionData->second > maxConnectedComponentIndex)
+        {
+            maxConnectedComponentIndex = netlistBoundaryConditionData->second;
+        }
+    }
+
+    m_numberOfConnectedComponentsOf3DDomain = maxConnectedComponentIndex;
+    std::cout << "m_numberOfConnectedComponentsOf3DDomain: " << m_numberOfConnectedComponentsOf3DDomain << std::endl;
+}
+
 void NetlistZeroDDomainCircuit::createCircuitDescription()
 {
     // This function creates the internal CircuitData class format for a zero-D
     // Netlist, non-boundary-condition replacement for the 3D domain, for pure zero-D simulation.
 
-    // Get the reader class for the netlist data file, and ask it for the circuit description data:
-    mp_netlistFileReader = NetlistReader::Instance();
-
-    // Make the appropriate class to store the 3D domain replacement circuit data:
-    // mp_circuitData = boost::shared_ptr<Netlist3DDomainReplacementCircuitData> (new Netlist3DDomainReplacementCircuitData(m_hstep,m_numberOfNetlistsUsedAsBoundaryConditions));
-
-    // we'll have a resistor for each netlist used as a boundary condition, plus one VolumeTrackingComponent:
-    mp_circuitData->numberOfComponents = 2*m_numberOfNetlistsUsedAsBoundaryConditions + 1;
+    const int totalNumberOfResistorsIn3DDomainReplacementCircuit = 2 * m_numberOfNetlistsUsedAsBoundaryConditions;
+    // we'll have a resistor for each netlist used as a boundary condition, plus one VolumeTrackingComponent for each connected component:
+    mp_circuitData->numberOfComponents = totalNumberOfResistorsIn3DDomainReplacementCircuit + m_numberOfConnectedComponentsOf3DDomain;
 
     // The components will be arranged in a star (all start-nodes are connected together at a single point, all end-nodes only connect to one component)
-    mp_circuitData->numberOfPressureNodes = 2*m_numberOfNetlistsUsedAsBoundaryConditions + 2;
+    int numberOfAdditionalNodesDueToMultipleConnectedComponentsExisting = 2*(m_numberOfConnectedComponentsOf3DDomain - 1); // -1 because if there's only one connected component, there are no additional nodes created by splitting the 3D domain replacement circuit into disjoint pieces
+    mp_circuitData->numberOfPressureNodes = totalNumberOfResistorsIn3DDomainReplacementCircuit + 2 + numberOfAdditionalNodesDueToMultipleConnectedComponentsExisting;
 
     // The pressures will initially be received from the boundary conditions at the boundary condition interface nodes,
-    // plus the zero-pressure prescription on the base of the VolumeTrackingComponent:
-    mp_circuitData->numberOfPrescribedPressures = 1;
+    // plus the zero-pressure prescription on the base of the VolumeTrackingComponent (one for each connected component:
+    mp_circuitData->numberOfPrescribedPressures = m_numberOfConnectedComponentsOf3DDomain;
     // None initially:
     mp_circuitData->numberOfPrescribedFlows = m_numberOfNetlistsUsedAsBoundaryConditions;
 
     // Create the component data:
     std::vector<circuit_component_t> componentTypes;
-    for (int boundary=0; boundary<m_numberOfNetlistsUsedAsBoundaryConditions; boundary++)
+    for (int boundary=0; boundary < m_numberOfNetlistsUsedAsBoundaryConditions; boundary++)
     {
     	componentTypes.push_back(Component_Resistor);
         componentTypes.push_back(Component_Resistor);
     }
     // componentTypes.push_back(Component_VolumeTrackingPressureChamber);
-    componentTypes.push_back(Component_Capacitor);
+    std::cout << "m_numberOfConnectedComponentsOf3DDomain: " << m_numberOfConnectedComponentsOf3DDomain << std::endl;
+    for (int connectedComponentIndex = 0; connectedComponentIndex < m_numberOfConnectedComponentsOf3DDomain; connectedComponentIndex++)
+    {
+        componentTypes.push_back(Component_Capacitor);
+    }
 
     // Prepare space for the components in the circuit:
     assert(mp_circuitData->components.empty());
@@ -676,6 +701,11 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
 
         mp_circuitData->components.push_back(boost::shared_ptr<CircuitComponent> (toPushBack));
         mp_circuitData->components.back()->setIndex(toOneIndexing(ii));
+    }
+
+    for (auto iterator=componentTypes.begin(); iterator!=componentTypes.end(); iterator++)
+    {
+        std::cout<< "component: " << *iterator << std::endl;
     }
 
     // Obtain the component- and node-level data for the circuit, for moving into the appropriate data structure CircuitData
@@ -708,26 +738,64 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     //
     // Skip these two, and now do the end nodes for the resistors which represent
     // the resistance of the 3D domain itself.
-    for (int internalDomainResistorEndNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 3; internalDomainResistorEndNodeIndex <= mp_circuitData->numberOfPressureNodes; internalDomainResistorEndNodeIndex++)
+    for (int internalDomainResistorEndNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; internalDomainResistorEndNodeIndex <= mp_circuitData->numberOfPressureNodes; internalDomainResistorEndNodeIndex++)
     {
         componentEndNodes.push_back(internalDomainResistorEndNodeIndex);
     }
-    // Finally, do the end-node at the base of the compliance chamber:
-    componentEndNodes.push_back(m_numberOfNetlistsUsedAsBoundaryConditions + 1);
+    // Finally, do the end-node at the base of the compliance chambers:
+    for (int complianceUnitIndex = totalNumberOfResistorsIn3DDomainReplacementCircuit+1; complianceUnitIndex <= mp_circuitData->numberOfComponents; complianceUnitIndex++)
+    {
+        int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex - totalNumberOfResistorsIn3DDomainReplacementCircuit;
+        int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions - 1;
+        componentEndNodes.push_back(endNodeIndexForThisComplianceUnit);
+    }
+    // for(int complianceChamberBaseNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1; complianceChamberBaseNodeIndex < m_numberOfNetlistsUsedAsBoundaryConditions + 1 + m_numberOfConnectedComponentsOf3DDomain; complianceChamberBaseNodeIndex++)
+    // {
+    //     componentEndNodes.push_back(complianceChamberBaseNodeIndex);
+    // }
+
+    for (auto iterator=componentEndNodes.begin(); iterator!=componentEndNodes.end(); iterator++)
+    {
+        std::cout<< "componentEndNodes: " << *iterator << std::endl;
+    }
 
 
     std::vector<int> componentStartNodes;
     // All the components, except for the dP/dQ resistors, have the same
     // start-node (the centre-point of the star-shape of this domain).
     // We do the dP/dQ resistors first:
-    for (int dpDqResistorStartNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions+3; dpDqResistorStartNodeIndex <= mp_circuitData->numberOfPressureNodes; dpDqResistorStartNodeIndex++)
+    //
+    // the "+2*m_numberOfConnectedComponentsOf3D domain" is to make space for a compliance
+    // chanmber for each connected component
+    for (int dpDqResistorStartNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; dpDqResistorStartNodeIndex <= mp_circuitData->numberOfPressureNodes; dpDqResistorStartNodeIndex++)
     {
         componentStartNodes.push_back(dpDqResistorStartNodeIndex);
     }
-    // All the other components share the same start node, at the centre of the star-shaped domain:
-    for (int componentIndex = m_numberOfNetlistsUsedAsBoundaryConditions+1; componentIndex <= mp_circuitData->numberOfComponents; componentIndex++)
+    // All the remaining components (compliance units & inner resistors) share the same start node, at the centre of the star-shaped domain (if there's
+    // only one connected topological component of the 3D domain).
+    //
+    // If there's multiple topological connected components, all the remaining components /which are part of the same connected component/ have
+    // the same start node. We set these indices now, as appropriate:
+    //
+    // resistors first....:
+    for (int resistorIndex = m_numberOfNetlistsUsedAsBoundaryConditions+1; resistorIndex <= totalNumberOfResistorsIn3DDomainReplacementCircuit; resistorIndex++)
     {
-        componentStartNodes.push_back(m_numberOfNetlistsUsedAsBoundaryConditions+2);
+        // componentStartNodes.push_back(m_numberOfNetlistsUsedAsBoundaryConditions+2);
+        int connectedTopologicalComponentOfThisInnerResistor = getConnectedTopologicalComponentIndexForInnerResistor(resistorIndex);
+        int startNodeIndexForThisInnerResistor = 2*connectedTopologicalComponentOfThisInnerResistor + m_numberOfNetlistsUsedAsBoundaryConditions;
+        componentStartNodes.push_back(startNodeIndexForThisInnerResistor);
+    }
+    // ... then the compliance units:
+    for (int complianceUnitIndex = totalNumberOfResistorsIn3DDomainReplacementCircuit+1; complianceUnitIndex <= mp_circuitData->numberOfComponents; complianceUnitIndex++)
+    {
+        int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex - totalNumberOfResistorsIn3DDomainReplacementCircuit;
+        int startNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions;
+        componentStartNodes.push_back(startNodeIndexForThisComplianceUnit);
+    }
+
+    for (auto iterator=componentStartNodes.begin(); iterator!=componentStartNodes.end(); iterator++)
+    {
+        std::cout<< "componentStartNodes: " << *iterator << std::endl;
     }
 
     std::reverse(componentStartNodes.begin(), componentStartNodes.end()); // actually no point in this call, but it's tidier to leave it here for symmetry with the related calls below.
@@ -763,11 +831,17 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
-    componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
+    for (int complianceUnit = 0; complianceUnit < m_numberOfConnectedComponentsOf3DDomain; complianceUnit++)
+    {
+        componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
+    }
+
+    for (auto iterator=componentParameterValues.begin(); iterator!=componentParameterValues.end(); iterator++)
+    {
+        std::cout<< "componentParameterValues: " << *iterator << std::endl;
+    }
 
     std::reverse(componentParameterValues.begin(), componentParameterValues.end());
-
-    
 
     std::vector<circuit_component_flow_prescription_t> typeOfPrescribedFlows;
     std::vector<double> valueOfPrescribedFlows;
@@ -780,19 +854,40 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     }
     
     std::map<int,double> initialPressures;
+    // Do the nodes at the outside points of the domain which belong to resistors:
     for (int node=1; node <= m_numberOfNetlistsUsedAsBoundaryConditions; node++)
     {
     	initialPressures.insert(std::make_pair(node,m_initialDomainPressure));
     }
-    // Do the node at the base of the pressure chamber:
-    initialPressures.insert(std::make_pair(m_numberOfNetlistsUsedAsBoundaryConditions+1, 0.0));
-    for (int node=m_numberOfNetlistsUsedAsBoundaryConditions+2; node <= mp_circuitData->numberOfPressureNodes; node++)
+    
+    // Do the nodes at the bases of the pressure chambers:
+    for (int complianceUnitIndex = 1; complianceUnitIndex <= m_numberOfConnectedComponentsOf3DDomain; complianceUnitIndex++)
     {
-        initialPressures.insert(std::make_pair(node,m_initialDomainPressure));
+        int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex;
+        int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions - 1;
+        initialPressures.insert(std::make_pair(endNodeIndexForThisComplianceUnit, 0.0));
     }
 
-    // Do the final node (at the base of the pressure chamber):
-    // initialPressures.insert(std::make_pair(mp_circuitData->numberOfPressureNodes, 0.0));
+    // Do the initial pressures at the centres of the star (top nodes of the compliance units):
+    {
+        int nodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 2;
+        for (int loopIndex = 0; loopIndex < m_numberOfConnectedComponentsOf3DDomain; loopIndex++)
+        {
+            initialPressures.insert(std::make_pair(nodeIndex,m_initialDomainPressure));
+            nodeIndex += 2;
+        }
+    }
+
+    // Do the initial pressures at the points between the pairs of resistors
+    for (int nodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 2 * m_numberOfConnectedComponentsOf3DDomain; nodeIndex <= mp_circuitData->numberOfPressureNodes; nodeIndex++)
+    {
+        initialPressures.insert(std::make_pair(nodeIndex, m_initialDomainPressure));
+    }
+
+    for (auto iterator=initialPressures.begin(); iterator!=initialPressures.end(); iterator++)
+    {
+        std::cout<< "initialPressures: " << iterator->first << " " << iterator->second << std::endl;
+    }
     
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_circuitData->components.begin(); component != mp_circuitData->components.end(); component++)
@@ -881,9 +976,19 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
 void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
 {
     std::vector<int> listOfPrescribedPressures;
-    for (int pressureNodeIndex=0; pressureNodeIndex < m_numberOfNetlistsUsedAsBoundaryConditions+1; pressureNodeIndex++)
+    // Do the Mop nodes (nodes at the edge of the NetlistZeroDDomainCircuit which attach to a dp/dq resistor)
+    for (int pressureNodeIndex=1; pressureNodeIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; pressureNodeIndex++)
     {
-    	listOfPrescribedPressures.push_back(pressureNodeIndex+1);
+    	listOfPrescribedPressures.push_back(pressureNodeIndex);
+    }
+
+    // Now add the nodes at the base of the compliance units:
+    {
+        int highestIndexAmongstComplianceUnitBaseNodes = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*(m_numberOfConnectedComponentsOf3DDomain-1);
+        for (int pressureNodeIndex=m_numberOfNetlistsUsedAsBoundaryConditions + 1; pressureNodeIndex <= highestIndexAmongstComplianceUnitBaseNodes; pressureNodeIndex+=2)
+        {
+            listOfPrescribedPressures.push_back(pressureNodeIndex);
+        }
     }
 
     // All but one of the prescribed pressures are at the boundary interfaces:
@@ -892,8 +997,11 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     {
     	typeOfPrescribedPressures.push_back(Pressure_3DInterface);
     }
-    // The last prescribed pressure is the one at the base of the VolumeTrackingComponent
-    typeOfPrescribedPressures.push_back(Pressure_Fixed);
+    // The last prescribed pressures are all the ones at the bases of the VolumeTrackingComponent (or "compliance units" - they're now not always VolumeTrackingComponents)
+    for (int complianceUnitIndex=0; complianceUnitIndex < m_numberOfConnectedComponentsOf3DDomain; complianceUnitIndex++)
+    {
+        typeOfPrescribedPressures.push_back(Pressure_Fixed);
+    }
 
     std::vector<double> valueOfPrescribedPressures;
     // All but one of the prescribed pressures are at the boundary interfaces.
@@ -902,8 +1010,11 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
         //\todo remove \hardcoded to millimetres! units: 10^0 x Pa here
     	valueOfPrescribedPressures.push_back(1332.0); // ~10 mmHg
     }
-    // The last prescribed pressure is the one at the base of the VolumeTrackingComponent
-    valueOfPrescribedPressures.push_back(0.0);
+    // The last prescribed pressures are all the ones at the bases of the VolumeTrackingComponent (or "compliance units" - they're now not always VolumeTrackingComponents)
+    for (int complianceUnitIndex=0; complianceUnitIndex < m_numberOfConnectedComponentsOf3DDomain; complianceUnitIndex++)
+    {
+        valueOfPrescribedPressures.push_back(0.0);
+    }
 
 
     // Discover whether this node has a prescribed pressure, and if so, what type:

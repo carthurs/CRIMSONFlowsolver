@@ -158,6 +158,15 @@ int main(int argc, char **argv) {
       pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
       pureZeroDDriver.setNtout(outpar.ntout);
 
+      // connected component info:
+      // fake for now:
+      std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
+      for (int indexAmongstNetlists = 0; indexAmongstNetlists < nomodule.numNetlistLPNSrfs; indexAmongstNetlists++)
+      {
+          mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, 1));
+      }
+      pureZeroDDriver.setMapFromNetlistIndexToConnectedComponents(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex);
+
       pureZeroDDriver.init();
 
       // pointer manager?      

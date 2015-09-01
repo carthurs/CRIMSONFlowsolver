@@ -214,13 +214,16 @@ private:
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
-	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure)
+	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex)
 	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
 	m_elastanceToGiveCentralCapacitor(complianceToGiveCentralCapacitor),
 	m_initialDomainPressure(initialDomainPressure),
-	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
+	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions),
+	m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex)
 	{
+		findNumberOfConnectedComponentsOf3DDomain();
+
 		mp_circuitData = boost::shared_ptr<CircuitData> (new Netlist3DDomainReplacementCircuitData(hstep, numberOfNetlistsUsedAsBoundaryConditions));
 		m_PressureHistoryFileName.clear(); // Defensive
 		m_PressureHistoryFileName.append("netlistPressures_zeroDDomainReplacement.dat");
@@ -240,10 +243,15 @@ public:
 	void initialiseAtStartOfTimestep();
 private:
 	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
+
+	int getConnectedTopologicalComponentIndexForInnerResistor(const int componentIndex) const;
+	void findNumberOfConnectedComponentsOf3DDomain();
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveCentralCapacitor;
 	const double m_initialDomainPressure;
+	int m_numberOfConnectedComponentsOf3DDomain;
+	const std::map<int,int> m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
 };
 
 #endif

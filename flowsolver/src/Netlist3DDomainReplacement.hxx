@@ -10,11 +10,11 @@
 class Netlist3DDomainReplacement
 {
 public:
-	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt)
+	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex)
 	: m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
 		bool thisIsARestartedSimulation = false; //\todo fix this!
-		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure));
+		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure, mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex));
 	}
 
 	void setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate);

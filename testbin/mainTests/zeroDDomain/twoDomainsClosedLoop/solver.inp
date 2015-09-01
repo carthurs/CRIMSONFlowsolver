@@ -1,0 +1,78 @@
+Number of Dirichlet Surfaces Which Output Pressure and Flow : 0
+Geombc Has Observation Fields: False
+Geombc Has Node Tags: False
+Simulate in Purely Zero Dimensions: True
+Number of Connected Components of 3D Domain: 2
+List of Surfaces In Each Connected Component Separated by -1s: 4 6 -1 5 7
+
+# CARDIOVASCULAR MODELING PARAMETERS
+# {
+    Global Node Numbering : True
+    Influx Coefficient : 0.5
+    Residual Control : True
+    Residual Criteria : 0.001
+    Minimum Required Iterations : 2
+    Deformable Wall : False
+    Number of Coupled Surfaces : 2
+    Pressure Coupling : Implicit
+    Number of Surfaces which Output Pressure and Flow : 4
+    List of Output Surfaces : 4 6 5 7
+# }
+
+
+# CARDIOVASCULAR MODELING PARAMETERS: RCR
+# {
+    Number of Netlist LPN Surfaces : 4
+    List of Netlist LPN Surfaces : 4 6 5 7
+    Number of Loop Closing Netlist Circuits: 2
+    # experimental RCR Values From File : True
+    # Number of experimental RCR Surfaces : 2
+    # List of experimental RCR Surfaces : 6 7
+# }
+
+
+# DISCRETIZATION CONTROL
+# {
+    Basis Function Order : 1
+    Quadrature Rule on Interior : 2
+    Quadrature Rule on Boundary : 2
+    Include Viscous Correction in Stabilization : True
+    Lumped Mass Fraction on Left-hand-side : 0.0
+    Lumped Mass Fraction on Right-hand-side : 0.0
+    Time Integration Rule : Second Order
+    Time Integration Rho Infinity : 0.0
+    Flow Advection Form : Convective
+# }
+
+
+# LINEAR SOLVER
+# {
+    Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1# this is the standard 5 iteration
+    Solver Type : memLS
+#    Solver Type : ACUSIM with P Projection
+# }
+
+
+# MATERIAL PROPERTIES
+# {
+    Viscosity : 0.004
+    Density : 0.00106
+# }
+
+
+# OUTPUT CONTROL
+# {
+    Print Error Indicators : True
+    Number of Timesteps between Restarts : 2
+    Print ybar : True
+    Number of Force Surfaces : 0
+#    Surface ID's for Force Calculation : 2 3
+# }
+
+
+# SOLUTION CONTROL
+# {
+    Equation of State : Incompressible
+    Number of Timesteps : 1000
+    Time Step Size : 0.001
+# }

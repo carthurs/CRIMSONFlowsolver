@@ -51,8 +51,6 @@ DAMAGE.
 #define DOUBLE 3
 #define swap_char(A,B) { ucTmp = A; A = B ; B = ucTmp; }
 
-#define PHASTA_OK 1
-#define PHASTA_ERROR 0
 #define PHASTA_MAGIC_NUMBER 362436
 
 phastaIO** phastaIOfp = NULL;
@@ -638,16 +636,15 @@ void closefile_( int* fileDescriptor,
     return;
 }
 
-void readheader_( int* fileDescriptor,
+int readheader_( int* fileDescriptor,
                   const char* keyphrase,
                   void* valueArray,
                   int*  nItems,
                   const char*  datatype,
                   const char*  iotype ) {
     int num = *nItems;
-    phastaIOfp[(*fileDescriptor)]->readHeader(keyphrase,(int*)valueArray,
+    return phastaIOfp[(*fileDescriptor)]->readHeader(keyphrase,(int*)valueArray,
                                             num,datatype,iotype);
-    return;
 }
 
 void readdatablock_( int*  fileDescriptor,

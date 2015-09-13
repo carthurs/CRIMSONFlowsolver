@@ -9,6 +9,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+//#include <boost/optional/optional.hpp>
+//#include <tuple>
+
 #include "cvSolverIO.h"
 #include "common_c.h"
 
@@ -116,6 +119,40 @@ void generate_keyphrase(char* target, const char* prefix, block& tpblock) {
 		strcat(target, "pyramid triface ");
 		break;
 	}
+/*}
+
+enum {
+	daHeaderData,
+	daArrayData
+};
+
+template<typename T>
+const char* PhastaTypeName();
+
+template<>
+const char* PhastaTypeName<int>()  {return "integer";}
+
+template<>
+const char* PhastaTypeName<double>()  {return "double";}
+
+template<typename T, typename SizeComputeFunction>
+boost::optional<std::tuple<std::vector<int>, std::vector<T>>> 
+readDataArray(int fileId, const char* format, const char* arrayName, int nIntsInHeader, SizeComputeFunction&& sizeCompute)
+{
+	boost::optional<std::tuple<std::vector<int>, std::vector<T>>> result;
+
+	std::vector<int> headerData(nIntsInHeader);
+	if (readheader_(&fileId, arrayName, (void*) headerData.data(), &nIntsInHeader, PhastaTypeName<int>(), format) != PHASTA_OK) {
+		return result;
+	}
+
+	int isize = sizeCompute(headerData);
+	std::vector<T> arrayData(isize);
+
+	readdatablock_(&fileId, arrayName, (void*) arrayData.data(), &isize, PhastaTypeName<T>(), format);
+
+	result = std::make_tuple(std::move(headerData), std::move(arrayData));
+	return result; */
 }
 
 void Partition_Problem(int numProcs) {
@@ -352,6 +389,22 @@ void Partition_Problem(int numProcs) {
 
 	for (int b = 0; b < nblock; b++) {
 
+/*		auto connectivityHeaderAndData = readDataArray<int>(igeombc, iformat, "connectivity interior?", 7, 
+			[](const std::vector<int>& headerData) {
+				return headerData[0] * headerData[3];
+			});	
+
+
+		assert(connectivityHeaderAndData);
+
+		block CurrentBlock;
+		for (int w = 1; w < 7; w++)
+			CurrentBlock.push_back(std::get<daHeaderData>(*connectivityHeaderAndData)[w]);
+
+		const std::vector<int>& connectivityData = std::get<daArrayData>(*connectivityHeaderAndData);
+*/
+
+
 		readheader_(&igeombc, "connectivity interior?", (void*) iarray, &iseven,
 				"integer", iformat);
 		block CurrentBlock;
@@ -375,6 +428,7 @@ void Partition_Problem(int numProcs) {
 			vector<int> element;
 			for (int d = 0; d < iarray[3]; d++) {
 				element.push_back(ient[d * iarray[0] + c]);
+//				element.push_back(connectivityData[d * iarray[0] + c]);
 			}
 			int gid = ient_sms[c];
 			int pid = epart[gid];
@@ -392,7 +446,7 @@ void Partition_Problem(int numProcs) {
 			}
 			element.clear();
 		}
-		delete[] ient;
+//		delete[] ient;
 		delete[] ient_sms;
 	}
 
@@ -1999,16 +2053,16 @@ void Partition_Problem(int numProcs) {
 	}
 
 	delete[] solution;
-
-	readheader_(&irestart, "time derivative of solution?", (void*) iarray, &ithree, "double",
+	iarray[0] = 0;
+	int headerFound = readheader_(&irestart, "time derivative of solution?", (void*) iarray, &ithree, "double",
 				iformat);
 
-	int iexistAccel = 0;
+	bool existAccel = (headerFound == PHASTA_OK);
 
-	double* fAccel;
+	double* fAccel = NULL;
 	vector < map<int, vector<double> > > accelPart(numProcs);
 
-	if (iarray[0] != 0) {
+	if (existAccel) {
 
 		nshg = iarray[0];
 		ndof = iarray[1];
@@ -2029,9 +2083,8 @@ void Partition_Problem(int numProcs) {
 		}
 
 		delete [] accel;
-
-		iexistAccel = 1;
 	}
+
 
 	int nsd = 3;
 	double* displacement;
@@ -2103,7 +2156,7 @@ void Partition_Problem(int numProcs) {
 		int nshgLocal = solPart[a].size();
 		double* fSolution = new double[nshgLocal * ndof];
 
-		if (iexistAccel) {
+		if (existAccel) {
 			fAccel = new double[nshgLocal * ndof];
 		}
 
@@ -2149,7 +2202,7 @@ void Partition_Problem(int numProcs) {
 
 		solPart[a].clear();
 
-		if (iexistAccel) {
+		if (existAccel) {
 			for (int w = 0; w < ndof; w++)
 				for (int y = 1; y < nshgLocal + 1; y++) {
 					fAccel[w * nshgLocal + (y - 1)] = accelPart[a][y][w];
@@ -2216,7 +2269,7 @@ void Partition_Problem(int numProcs) {
 		writedatablock_(&frest, "solution ", (void*) (fSolution), &nitems,
 				"double", oformat);
 
-		if (iexistAccel) {
+		if (existAccel) {
 			isize = nshgLocal * ndof;
 			nitems = 3;
 			iarray[0] = nshgLocal;

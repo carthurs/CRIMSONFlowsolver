@@ -39,6 +39,9 @@ DAMAGE.
 #ifndef CVSOLVERIO_H
 #define CVSOLVERIO_H
 
+#define PHASTA_OK 1
+#define PHASTA_ERROR 0
+
 #include <stdio.h>
 #include <string>
 #include <cstring>
@@ -142,7 +145,7 @@ void openfile_( const char* filename,
 void closefile_( int* fileDescriptor, 
                  const char* mode );
 
-void readheader_( int* fileDescriptor,
+int readheader_( int* fileDescriptor,
                   const char* keyphrase,
                   void* valueArray,
                   int*  nItems,

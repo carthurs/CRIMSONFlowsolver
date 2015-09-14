@@ -226,7 +226,7 @@ TEST_F(testMain, checkNetlistHeartModel) {
   EXPECT_NEAR(73.4892153364009,flowHistResult,1e-5);
   // ...third column:
   flowHistResult = FlowHistReader.getReadFileData(2,6);
-  EXPECT_NEAR(-62.2259850634413,flowHistResult,1e-5);
+  EXPECT_NEAR(-62.2259850634413,flowHistResult,2e-5);
 }
 
 TEST_F(testMain, checkClosedLoopWithHeart) {

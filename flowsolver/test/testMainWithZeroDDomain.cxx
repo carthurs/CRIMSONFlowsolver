@@ -154,25 +154,25 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
 	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
 	  double flowResult = zeroDDomainFlows.getReadFileData(1,1000);
-	  EXPECT_NEAR(-253550.566278505,flowResult,1e-8);
+	  EXPECT_NEAR(-253550.566278505,flowResult,2e-7);
 	  // ... 2nd column:
 	  flowResult = zeroDDomainFlows.getReadFileData(2,1000);
-	  EXPECT_NEAR(119440.938383164,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383164,flowResult,2e-7);
 	  // ...third column:
 	  flowResult = zeroDDomainFlows.getReadFileData(3,1000);
-	  EXPECT_NEAR(119440.938383163,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383163,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(4,1000);
-	  EXPECT_NEAR(-253550.566278505,flowResult,1e-8);
+	  EXPECT_NEAR(-253550.566278505,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(5,1000);
-	  EXPECT_NEAR(119440.938383164,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383164,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(6,1000);
-	  EXPECT_NEAR(119440.938383163,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383163,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(7,1000);
-	  EXPECT_NEAR(14668.6895121776,flowResult,1e-8);
+	  EXPECT_NEAR(14668.6895121776,flowResult,2e-7);
   }
 
   // Check netlistFlows_surface_5.dat
@@ -183,7 +183,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
 		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
 		double pressureResult = zeroDDomainFlows.getReadFileData(1,1000);
-		EXPECT_NEAR(-245488.583296014,pressureResult,1e-8);
+		EXPECT_NEAR(-245488.583296014,pressureResult,2e-7);
   }
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
@@ -272,25 +272,25 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
 	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
 	  double flowResult = zeroDDomainFlows.getReadFileData(1,1000);
-	  EXPECT_NEAR(-253550.566278505,flowResult,1e-8);
+	  EXPECT_NEAR(-253550.566278505,flowResult,2e-7);
 	  // ... 2nd column:
 	  flowResult = zeroDDomainFlows.getReadFileData(2,1000);
-	  EXPECT_NEAR(119440.938383164,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383164,flowResult,2e-7);
 	  // ...third column:
 	  flowResult = zeroDDomainFlows.getReadFileData(3,1000);
-	  EXPECT_NEAR(119440.938383163,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383163,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(4,1000);
-	  EXPECT_NEAR(-253550.566278505,flowResult,1e-8);
+	  EXPECT_NEAR(-253550.566278505,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(5,1000);
-	  EXPECT_NEAR(119440.938383164,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383164,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(6,1000);
-	  EXPECT_NEAR(119440.938383163,flowResult,1e-8);
+	  EXPECT_NEAR(119440.938383163,flowResult,2e-7);
 
 	  flowResult = zeroDDomainFlows.getReadFileData(7,1000);
-	  EXPECT_NEAR(14668.6895121776,flowResult,1e-8);
+	  EXPECT_NEAR(14668.6895121776,flowResult,2e-7);
   }
 
   // Check netlistFlows_surface_5.dat
@@ -301,7 +301,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
 		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
 		double flowResult = zeroDDomainFlows.getReadFileData(1,1000);
-		EXPECT_NEAR(-245488.583296014,flowResult,1e-8);
+		EXPECT_NEAR(-245488.583296014,flowResult,2e-7);
   }
 
   // Check netlistPressures_surface_5.dat - this is really a very minimal
@@ -444,10 +444,10 @@ TEST_F(testMainWithZeroDDomain, checkPythonFlowDatFilePrescriber)
   	heartModelFlows.readAndSplitMultiSurfaceRestartFile();
 
   	double flowResult = heartModelFlows.getReadFileData(1,1000);
-  	EXPECT_NEAR(-749259.15077706,flowResult,1e-8);
+  	EXPECT_NEAR(-749259.15077706,flowResult,2e-8);
 
   	flowResult = heartModelFlows.getReadFileData(2,1000);
-  	EXPECT_NEAR(749259.15077706,flowResult,1e-8);
+  	EXPECT_NEAR(749259.15077706,flowResult,2e-8);
 
   	flowResult = heartModelFlows.getReadFileData(3,1000);
   	EXPECT_EQ(0.0,flowResult);
@@ -456,7 +456,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonFlowDatFilePrescriber)
   	EXPECT_EQ(0.0,flowResult);
 
   	flowResult = heartModelFlows.getReadFileData(5,1000);
-  	EXPECT_NEAR(-749259.15077706,flowResult,1e-8);
+  	EXPECT_NEAR(-749259.15077706,flowResult,2e-8);
   }
 }
 
@@ -510,7 +510,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonPressureDatFilePrescriber)
   	EXPECT_NEAR(39466.4517277277,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
 
   	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(3,1000);
-  	EXPECT_EQ(368118.091038322,flowInWindkesselThatHasPythonPrescribedPressure);
+  	EXPECT_NEAR(368118.091038322,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
 
   }
 }
@@ -563,13 +563,13 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlBroadcastsAndMasterController)
   	windkesselFlows.readAndSplitMultiSurfaceRestartFile();
 
   	double flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(1,1000);
-  	EXPECT_NEAR(174767.004330894,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+  	EXPECT_NEAR(174767.004330894,flowInWindkesselThatHasPythonPrescribedPressure,1e-7);
 
   	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(2,1000);
   	EXPECT_NEAR(27077.5494999395,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
 
   	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(3,1000);
-  	EXPECT_NEAR(147689.454830954,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+  	EXPECT_NEAR(147689.454830954,flowInWindkesselThatHasPythonPrescribedPressure,1e-7);
   }
 
   // Check netlistPressures_zeroDDomainReplacement.dat

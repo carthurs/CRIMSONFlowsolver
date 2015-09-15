@@ -312,7 +312,7 @@
       endif                     ! any 3 component nodes
       itvn=ic
       close(567)
-      write(*,*)'myrank=',myrank,' and I found ',ic,' nodes.'
+      write(*,*)'myrank=',myrank,' and I own ',ic,' nodes for bct.dat.'
 
 
       return

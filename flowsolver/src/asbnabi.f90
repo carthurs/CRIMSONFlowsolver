@@ -11,6 +11,7 @@
       use pvsQbi
       use phcommonvars  
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+        real*8, allocatable :: locationsInbnormToZeroOut(:)
 !
         dimension xlb(npro,nenl,nsd),    bnorm(npro,nsd), &
                   rl(npro,nshl,nsd),     WdetJb(npro)
@@ -103,18 +104,30 @@
               WdetJb     = Qwtb(lcsyst,intp) / (four*temp)
            endif
 
-
            if (numDirCalcSrfs.gt.zero) then
+              ! An array to use to remember the locations that we dont want to zero out in bnorm as we find them
+              allocate(locationsInbnormToZeroOut(npro))
+              locationsInbnormToZeroOut = 1
+
               do iel=1,npro
                  do i=1, numDirCalcSrfs
-                    if (btest(iBCB(iel,1),1) .or. &
-                       iBCB(iel,2).eq.nsrflistDirCalc(i)) then
+                    if (btest(iBCB(iel,1),1) .or. iBCB(iel,2).eq.nsrflistDirCalc(i)) then
                        bnorm(iel,1:3)=bnorm(iel,1:3)*WdetJb(iel)
-                    else
-                        bnorm(iel,:) = zero  ! we want zeros where we are not integrating
+                       locationsInbnormToZeroOut(iel) = 0 ! Mark that we want to keep (i.e. dont want to zero out) bnorm for this element.
+                       exit ! we've done what needs to be done on this iteration
+                    ! else
+                    !     bnorm(iel,:) = zero  ! we want zeros where we are not integrating
                     endif
                  enddo
               enddo
+
+              do iel=1,npro
+                if (locationsInbnormToZeroOut(iel) .eq. 1) then
+                  bnorm(iel,:) = 0
+                endif
+              enddo
+
+              deallocate(locationsInbnormToZeroOut)
            else
               do iel=1,npro
                  if (btest(iBCB(iel,1),1)) then 
@@ -189,6 +202,7 @@
       use pvsQbi
       use phcommonvars  
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+        real*8, allocatable :: locationsInWdetJbToZeroOut(:)
 !
         dimension xlb(npro,nenl,nsd), &
                   rl(npro,nshl),     WdetJb(npro)
@@ -280,15 +294,22 @@
 
 !......here I only want the d Gamma, not the n_i
            if (numDirCalcSrfs.gt.zero) then
+              
+              ! An array to use to remember the locations that we dont want to zero out in WdetJb as we find them
+              allocate(locationsInWdetJbToZeroOut(npro))
+              locationsInWdetJbToZeroOut = 1
+
               do iel=1,npro
                  do i=1, numDirCalcSrfs
-                    if (btest(iBCB(iel,1),1) .or. &
-                       iBCB(iel,2).eq.nsrflistDirCalc(i)) then
-                    else
-                       WdetJb(iel) = zero  ! we want zeros where we are not integrating
+                    if (btest(iBCB(iel,1),1) .or. iBCB(iel,2).eq.nsrflistDirCalc(i)) then
+                       locationsInWdetJbToZeroOut(iel) = 0 ! Mark that we want to keep (i.e. dont want to zero out) WdetJb for this element.
                     endif
                  enddo
               enddo
+              
+              where(locationsInWdetJbToZeroOut .eq. 1) WdetJb = 0 ! we want zeros where we are not integrating
+
+              deallocate(locationsInWdetJbToZeroOut)
            else
               do iel=1,npro
                  if (btest(iBCB(iel,1),1)) then 

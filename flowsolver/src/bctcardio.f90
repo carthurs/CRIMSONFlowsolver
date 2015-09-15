@@ -564,9 +564,9 @@
       CalcArea(1:numSrfs) = CoupleArea(1:numSrfs)
 
       do i = 1, numSrfs
-        write(*,*) i,' ',srfIdList(i),' ',CalcArea(i)       
+        write(*,*) 'Surface area of surface',srfIdList(i),':',CalcArea(i)
         CalcArea(i) = area(srfIdList(i))
-        write(*,*) i,' ',srfIdList(i),' ',CalcArea(i) 
+        write(*,*) 'Surface area of surface',srfIdList(i),':',CalcArea(i)
       end do
 
 

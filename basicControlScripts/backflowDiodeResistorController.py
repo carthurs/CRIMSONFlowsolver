@@ -15,7 +15,7 @@ class parameterController(abstractParameterController): #NECESSARY
 		self.indexOfStartNodeOfControlledResistor = 
 		self.indexOfEndNodeOfControlledResistor = 
 		self.resistanceToForwardFlow = 0.0001
-		self.maxResistanceWithClosedValve = sys.float_info.max
+		self.maxResistanceWithClosedValve = 0.1#sys.float_info.max
 
 	# def setFirstTimestepBroadcastValues(self): #NECESSARY - note that the masterController.py (i.e. this example controller)
 	# 	self.clearBroadcastData()
@@ -45,7 +45,7 @@ class parameterController(abstractParameterController): #NECESSARY
 		if (pressureGradientAcrossResistor > 0.0):
 			resistanceToSet = self.resistanceToForwardFlow
 		elif (pressureGradientAcrossResistor <= 0.0):
-			resistanceToSet = self.maxResistanceWithClosedValve * exp(pressureGradientAcrossResistor)
+			resistanceToSet = self.maxResistanceWithClosedValve
 
 
 		return resistanceToSet

@@ -41,8 +41,8 @@ Surface ID's for Force Calculation: 1 #'
 # LINEAR SOLVER
 # {
     Solver Type : memLS
-    Step Construction : 0 1 0 1 0 1 0 1 0 1 # this is the standard 5 iteration
-#  Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 # this is the standard 20 iteration
+#    Step Construction : 0 1 0 1 0 1 0 1 0 1 # this is the standard 5 iteration
+  Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 # this is the standard 20 iteration
 
 # }
 
@@ -64,6 +64,6 @@ Surface ID's for Force Calculation: 1 #'
 # SOLUTION CONTROL
 # {
     Equation of State : Incompressible
-    Number of Timesteps : 5
+    Number of Timesteps : 10
     Time Step Size : 0.001
 # }

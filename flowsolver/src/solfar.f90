@@ -137,77 +137,77 @@
 
 
       IF (memLSFlag .EQ. 1) THEN
-!####################################################################
-!     Here calling memLS
+  !####################################################################
+  !     Here calling memLS
 
-      ! *** these allocates are now contained in the section below *** !
+        ! *** these allocates are now contained in the section below *** !
 
-      ! ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
-      ! CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+        ! ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
+        ! CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
 
-      ! ************** !
-      ! if heart model ! 
-      ! ************** !
+        ! ************** !
+        ! if heart model ! 
+        ! ************** !
 
-      IF (iheart .GT. int(0)) THEN 
-        IF (hrt%isavopen()) THEN
-          memLS_nFaces_s = memLS_nFaces + int(1)
-          ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s))
-          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)
+        IF (iheart .GT. int(0)) THEN 
+          IF (hrt%isavopen()) THEN
+            memLS_nFaces_s = memLS_nFaces + int(1)
+            ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s))
+            CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)
+          ELSE
+            ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
+            CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+          END IF
+        ! else flow 
         ELSE
-          ALLOCATE(faceRes(memLS_nFaces), incL(memLS_nFaces))
-          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces)
+          ! Count any Netlist boundary which is currently in a state which stops flow
+          ! across the boundary, due to closed diodes
+          ! numBCsWhichAllowFlow = int(0)
+          ! call callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow(numBCsWhichAllowFlow)
+
+          memLS_nFaces_s = memLS_nFaces! + numBCsWhichAllowFlow
+          ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s)) ! 
+          CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)
         END IF
-      ! else flow 
-      ELSE
-        ! Count any Netlist boundary which is currently in a state which stops flow
-        ! across the boundary, due to closed diodes
-        ! numBCsWhichAllowFlow = int(0)
-        ! call callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow(numBCsWhichAllowFlow)
 
-        memLS_nFaces_s = memLS_nFaces! + numBCsWhichAllowFlow
-        ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s)) ! 
-        CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)
-      END IF
+        ! ************** !
+        ! ************** !
 
-      ! ************** !
-      ! ************** !
+        incL = 1
+        dof = 4
+        IF (.NOT.ALLOCATED(Res4)) THEN
+           ALLOCATE (Res4(dof,nshg), Val4(dof*dof,nnz_tot))
+        END IF
 
-      incL = 1
-      dof = 4
-      IF (.NOT.ALLOCATED(Res4)) THEN
-         ALLOCATE (Res4(dof,nshg), Val4(dof*dof,nnz_tot))
-      END IF
+        DO i=1, nshg
+           Res4(1:dof,i) = res(i,1:dof)
+        END DO
 
-      DO i=1, nshg
-         Res4(1:dof,i) = res(i,1:dof)
-      END DO
+        DO i=1, nnz_tot
+           Val4(1:3,i)   = lhsK(1:3,i)
+           Val4(5:7,i)   = lhsK(4:6,i)
+           Val4(9:11,i)  = lhsK(7:9,i)
+           Val4(13:15,i) = lhsP(1:3,i)
+           Val4(16,i)    = lhsP(4,i)
+        END DO
 
-      DO i=1, nnz_tot
-         Val4(1:3,i)   = lhsK(1:3,i)
-         Val4(5:7,i)   = lhsK(4:6,i)
-         Val4(9:11,i)  = lhsK(7:9,i)
-         Val4(13:15,i) = lhsP(1:3,i)
-         Val4(16,i)    = lhsP(4,i)
-      END DO
-
-      !Val4(4:12:4,:) = -lhsP(1:3,:)^t
-      DO i=1, nshg
-         Do j=colm(i), colm(i+1) - 1
-            k = rowp(j)
-            DO l=colm(k), colm(k+1) - 1
-               IF (rowp(l) .EQ. i) THEN
-                  Val4(4:12:4,l) = -lhsP(1:3,j)
-                  EXIT
-               END IF
-            END DO
-         END DO
-      END DO
+        !Val4(4:12:4,:) = -lhsP(1:3,:)^t
+        DO i=1, nshg
+           Do j=colm(i), colm(i+1) - 1
+              k = rowp(j)
+              DO l=colm(k), colm(k+1) - 1
+                 IF (rowp(l) .EQ. i) THEN
+                    Val4(4:12:4,l) = -lhsP(1:3,j)
+                    EXIT
+                 END IF
+              END DO
+           END DO
+        END DO
       CALL memLS_SOLVE(memLS_lhs, memLS_ls, dof, Res4, Val4, incL, faceRes)
 
-      DO i=1, nshg
-         solinc(i,1:dof) = Res4(1:dof,i)
-      END DO
+        DO i=1, nshg
+           solinc(i,1:dof) = Res4(1:dof,i)
+        END DO
 
 !####################################################################
       ELSE

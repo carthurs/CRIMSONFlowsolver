@@ -87,6 +87,7 @@ class abstractBoundaryCondition;
     int getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
     int getNumberOfControlledCoronarySurfaces(){return m_NumberOfControlledCoronarySurfaces;}
     int getNumberOfDownsreamClosedLoopCircuits(){return m_numLoopClosingNetlistCircuits;}
+    void getNumberOfBoundaryConditionManagerBoundaryConditions_reference(int& totalNumberOfManagedBoundaryConditions) const;
 
     void setNumberOfRCRSurfaces(const int numGRCRSrfs);
     void setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs);
@@ -121,6 +122,12 @@ class abstractBoundaryCondition;
         checkIfThisIsARestartedSimulation();
         m_nextTimestepWrite_netlistBoundaries_start = 0;
 
+        m_numberOfBoundaryConditionsManaged = 0;
+
+        m_NumberOfRCRSurfaces = 0;
+        m_NumberOfNetlistSurfaces = 0;
+        m_NumberOfControlledCoronarySurfaces = 0;
+
         m_deltHasBeenSet = false;
         m_hstepHasBeenSet = false;
         m_alfiHasBeenSet = false;
@@ -140,6 +147,7 @@ class abstractBoundaryCondition;
     boost::shared_ptr<ControlSystemsManager> mp_controlSystemsManager;
 
     static bool m_thisIsARestartedSimulation;
+    int m_numberOfBoundaryConditionsManaged;
     int m_NumberOfRCRSurfaces;
     int m_NumberOfNetlistSurfaces;
     int m_NumberOfControlledCoronarySurfaces;

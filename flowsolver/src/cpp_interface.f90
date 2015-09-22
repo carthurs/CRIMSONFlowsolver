@@ -47,6 +47,13 @@ module cpp_interface
     end interface
 
     interface
+        subroutine callCPPGetNumberOfCppManagedBoundaryConditions(numManagedBCs) bind(c,name="callCPPGetNumberOfCppManagedBoundaryConditions")
+            use iso_c_binding
+            integer(c_int) :: numManagedBCs
+        end subroutine callCPPGetNumberOfCppManagedBoundaryConditions
+    end interface
+
+    interface
             subroutine callCPPDiscoverWhetherFlowPermittedAcrossSurface(queriedSurfaceIndex,flowIsPermitted) bind(c,name="callCPPDiscoverWhetherFlowPermittedAcrossSurface")
                 use iso_c_binding
                 integer(c_int) :: queriedSurfaceIndex

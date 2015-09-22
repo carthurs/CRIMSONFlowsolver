@@ -288,7 +288,7 @@
                   dd= distds(x1,x2,x3,x(i,1),x(i,2),x(i,3))
                   if(dd.lt.epsd) then
                      ic=ic+1
-                     nBCt(ic)=i ! the pointer to this point
+                     nBCt(ic)=i ! the index of this node amongst those on this processor
                      numBCt(ic)=ntpts ! the number of time series
                      do j=1,ntpts
 !                        read(567,*) BCt(ic,j,4),(BCt(ic,j,n),n=1,3)

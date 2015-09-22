@@ -129,6 +129,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     character*1024    servername ! init
     character*20        license_f_name ! init
 
+    integer numberOfCppManagedBoundaryConditions
+
 
 !--------------------------------------------------------------------
 !   Setting up memLS
@@ -269,6 +271,42 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !     memory space
     !
     call genadj(colm, rowp, icnt )  ! preprocess the adjacency list
+
+    numberOfCppManagedBoundaryConditions = 0
+    call callCPPGetNumberOfCppManagedBoundaryConditions(numberOfCppManagedBoundaryConditions)
+
+    ! If there are netlist boundary conditions, we will get CPP to provide the
+    ! details on how iBC should be edited in order to implement Dirichlet
+    ! or Neumann boundary conditions on a surface, dependent on whether
+    ! flow is permitted (or prescribed!) across that surface.
+    !
+    ! The major reason for this functionality is for netlists which have valves;
+    ! in this case there will be a switching of the boundary condition type
+    ! if the valves block the flow across the 3D interface.
+
+    ! Tell the boundary condition objects which boundary nodes belong to their surface:
+    call callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(c_loc(ndsurf), nshg)
+    ! Get the correct boundary condition type flag array iBC for the current valve state
+    ! in the netlists:
+    if (numberOfCppManagedBoundaryConditions .gt. int(0)) then
+        if (.not. allocated(iBC_original)) then
+            allocate(iBC_original(nshg))
+        endif
+        iBC_original = iBC
+
+        ! Fill out the array with ones
+        binaryMask = 1
+        ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions shouldbe applied:
+        call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
+        ! Reset iBC, so we work with a clean copy
+        iBC = iBC_original
+        ! zero out the entries of iBC where the boundary condition type has become
+        ! Neuman at that node, as annotated by binaryMask from the CPP boundary
+        ! condition objects.
+        where(binaryMask .eq. int(0))
+            iBC = int(0)
+        end where
+    endif
 
     nnz_tot=icnt ! this is exactly the number of non-zero blocks on
                  ! this proc
@@ -530,40 +568,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         end do
     end if
 
-    ! If there are netlist boundary conditions, we will get CPP to provide the
-    ! details on how iBC should be edited in order to implement Dirichlet
-    ! or Neumann boundary conditions on a surface, dependent on whether
-    ! flow is permitted (or prescribed!) across that surface.
-    !
-    ! The major reason for this functionality is for netlists which have valves;
-    ! in this case there will be a switching of the boundary condition type
-    ! if the valves block the flow across the 3D interface.
-    if (numNetlistLPNSrfs .gt. int(0)) then
-        if (.not. allocated(iBC_original)) then
-            allocate(iBC_original(nshg))
-        endif
-        iBC_original = iBC
-    endif
-
-    ! Tell the boundary condition objects which boundary nodes belong to their surface:
-    call callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(c_loc(ndsurf), nshg)
-
-    ! Get the correct boundary condition type flag array iBC for the current valve state
-    ! in the netlists:
-    if (numNetlistLPNSrfs .gt. int(0)) then
-        ! Fill out the array with ones
-        binaryMask = 1
-        ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions shouldbe applied:
-        call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
-        ! Reset iBC, so we work with a clean copy
-        iBC = iBC_original
-        ! zero out the entries of iBC where the boundary condition type has become
-        ! Neuman at that node, as annotated by binaryMask from the CPP boundary
-        ! condition objects.
-        where(binaryMask .eq. int(0))
-            iBC = int(0)
-        end where
-    endif
    
     if(iheart .gt. int(0)) then
         
@@ -884,6 +888,7 @@ subroutine rebuildMemLS_lhs()
         integer thisIsANetlistSurface
         integer thisSurfacePermitsFlow
         integer surface
+        integer numNodesNoFlowPermitted
 
         IF  (ipvsq .GE. 2) THEN
             call callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow)
@@ -904,8 +909,10 @@ subroutine rebuildMemLS_lhs()
         ! here we are counting the number of dirchlet nodes excluding the Netlists
         faIn = 1
         facenNo = 0
+        numNodesNoFlowPermitted = 0
         DO i=1, nshg
             IF (IBITS(iBC(i),3,3) .NE. 0)  then
+                numNodesNoFlowPermitted = numNodesNoFlowPermitted + 1
                 ! Check whether this node is on one a surface belonging to a Netlist boundary condition:
                 thisIsANetlistSurface = int(0)
                 thisSurfacePermitsFlow = int(1)
@@ -917,7 +924,7 @@ subroutine rebuildMemLS_lhs()
                 end do
 
                 ! If this is not a netlist surface:
-                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(0))) then
+                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(1))) then
                     facenNo = facenNo + 1
                 endif
             ENDIF
@@ -948,7 +955,7 @@ subroutine rebuildMemLS_lhs()
                 end do
 
                 ! If this is not a netlist surface:
-                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(0))) then
+                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(1))) then
                     j = j + 1
                     gNodes(j) = i
                     IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0
@@ -1024,6 +1031,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer, dimension(nshg) :: binaryMask
+    integer numberOfCppManagedBoundaryConditions
 
     ! ! Ensure that the CurrentIter counter has been reset (detects e.g. problems with
     ! ! solver.inp requesting a MinNumIter which exceeds the number of steps in the
@@ -1050,7 +1058,9 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
         ! Get the correct boundary condition type flag array iBC for the current valve state
         ! in the netlists:
-        if (numNetlistLPNSrfs .gt. int(0)) then
+        numberOfCppManagedBoundaryConditions = 0
+        call callCPPGetNumberOfCppManagedBoundaryConditions(numberOfCppManagedBoundaryConditions)
+        if (numberOfCppManagedBoundaryConditions .gt. int(0)) then
             ! Fill out the array with zeros
             binaryMask = 1
             ! Set the apprporiate zeros for the nodes where where the Neumann conditions should be applied:

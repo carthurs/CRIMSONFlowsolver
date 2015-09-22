@@ -69,7 +69,6 @@
                      ifath,    velbar,         nsons )      
         deallocate(ifath) ! \todo-binary WARNING - remove if you ever want to actually use ifath -this is an empty dummy to avoid memory issues for now
         deallocate(nsons) ! \todo-binary WARNING - remove if you ever want to actually use nsons -this is an empty dummy to avoid memory issues for now
-
         call setper(nshg)
         
         call perprep(iBC,iper,nshg)

@@ -1173,8 +1173,8 @@
                 ! write(*,*) "implcoeff from c++: ", implicitcoeffs(1:numGRCRSrfs,1:2)
                                   
                 ! if sign -ve, add to the right hand side                                  
-                if (sign .lt. zero) then 
-                  
+                if (sign .lt. zero) then
+
                   p(j) = sign*(p(j)*implicitcoeffs(j,1)) 
                   p(j) = p(j) - implicitcoeffs(j,2)
                   

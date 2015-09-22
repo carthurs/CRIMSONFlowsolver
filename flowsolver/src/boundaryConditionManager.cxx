@@ -27,18 +27,24 @@ bool boundaryConditionManager::m_thisIsARestartedSimulation = 0;
 // Functions which affect features of the abstract class:
 void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
 {
+  assert(m_NumberOfRCRSurfaces == 0);
   m_NumberOfRCRSurfaces = numGRCRSrfs;
+  m_numberOfBoundaryConditionsManaged += m_NumberOfRCRSurfaces;
   SimvascularGlobalArrayTransfer::Get()->initialiseForRCRFiltering(numGRCRSrfs);
 }
 
 void boundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)
 {
+  assert(m_NumberOfControlledCoronarySurfaces == 0);
   m_NumberOfControlledCoronarySurfaces = numControlledCoronarySrfs;
+  m_numberOfBoundaryConditionsManaged += numControlledCoronarySrfs;
 }
 
 void boundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs)
 {
+  assert(m_NumberOfNetlistSurfaces == 0);
   m_NumberOfNetlistSurfaces = numNetlistLPNSrfs;
+  m_numberOfBoundaryConditionsManaged += m_NumberOfNetlistSurfaces;
 }
 
 void boundaryConditionManager::setMasterControlScriptPresent(const int masterControlScriptPresent)
@@ -692,6 +698,17 @@ extern "C" void callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(i
   boundaryConditionManager_instance->getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow);
 }
 
+void boundaryConditionManager::getNumberOfBoundaryConditionManagerBoundaryConditions_reference(int& totalNumberOfManagedBoundaryConditions) const
+{
+  totalNumberOfManagedBoundaryConditions = m_numberOfBoundaryConditionsManaged;
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPGetNumberOfCppManagedBoundaryConditions(int& totalNumberOfManagedBoundaryConditions)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getNumberOfBoundaryConditionManagerBoundaryConditions_reference(totalNumberOfManagedBoundaryConditions);
+}
+
 void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(int& numBCsWhichAllowFlow)
 {
   // Ensure we start from zero, before we count the surfaces which allow flow due to closed valves (so we have to switch to Dirichlet)
@@ -729,7 +746,7 @@ void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const i
     if ((*boundaryCondition)->surfaceIndex == queriedSurfaceIndex && thisIsANetlist)
     {
       // Discover whether we should report that flow is permitted or not:
-      NetlistBoundaryCondition* downcastNetlist = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+      NetlistBoundaryCondition* downcastNetlist = static_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
       if (!(downcastNetlist->flowPermittedAcross3DInterface()))
       {
         flowIsPermitted = 0;

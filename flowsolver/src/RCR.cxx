@@ -66,138 +66,16 @@ ZZZZZ$  :888888888888888888888888   ZZZZZZZZ  8888888888888888888888887        I
 */
 void RCR::initialiseModel()
 {
-
-
-    
-    
-    // class(numericalrcr), intent(inout) :: this
-    //   integer :: surfnum
-    //   integer :: surflist(0:maxsurf)
-    //   real*8 :: rcrcoeff(surfnum,3)
-    //   integer :: pdmax, hstep
-//       real*8 :: pdval(pdmax,2,surfnum) ! this array is initialised as zero
-// !                                      ! then filled in, therefore values 
-//                                       ! that are 0 then the index is > 2 
-//                                       ! should be ignored  
-    //   integer :: initrcr, ierr, fnum
-    //   integer :: i, j ,k
-    //   this%isactive = int(1)
     isactive = int(1);
+    // History arrays      
+    for(int ii=0; ii<hstep; ii++)
+    {
+        flowhist[ii] = 0.0;
+        pressurehist[ii] = 0.0;
+    }
 
-    //   ! A label so we can identify this class (avoids a world of pain when working with a tower of derived types)
-    //   this%classNameString = 'numericalrcr'  
-// !     ! set surface numbers and lists   
-//       this%surfnum = surfnum
-
-    //   allocate(this%surfids(surfnum))
-    //   this%surfids(1:surfnum) = surflist(1:surfnum)
-    //   ! allocate history arrays
-    //   if (lstep .gt. int(0)) then
-    //      hstep = nstep + lstep
-    //   else
-    //      hstep = nstep
-    //   end if      
-    // allocate(this%flowhist(hstep+1,surfnum))       
-    // allocate(this%pressurehist(hstep+1,surfnum))             
-
-
-    //   ! zero history arrays
-    //   this%flowhist(:,:) = real(0.0,8)
-      // flowhist = new double [hstep];
-      // pressurehist = new double [hstep];
-      
-      for(int ii=0; ii<hstep; ii++)
-      {
-          flowhist[ii] = 0.0;
-          pressurehist[ii] = 0.0;
-      }
-
-    //   this%pressurehist(:,:) = real(0.0,8)
-    //   ! set flow and pressure file names
-
-    //   write(this%flowfile,'(a)') 'QHistRCR.dat'
     flowfile = "QHistRCR.dat";
-
-    //   write(this%pressurefile,'(a)') 'PHistRCR.dat'      
     pressurefile = "PHistRCR.dat";
-
-    //   ! allocate arrays for input parameters & data
-    //   allocate(this%rcrparams(surfnum))
-    //   allocate(this%parameters_RCR(3,surfnum)) ! testing
-    //   ! allocate and zero other arrays 
-    // allocate(this%surfarea(surfnum))
-    // allocate(this%flow_n(surfnum))
-    // allocate(this%flow_n1(surfnum)) !! flow at n+1 / n+alf NOT USED
-    // allocate(this%pressure_n(surfnum))      
-    // allocate(this%implicitcoeff(surfnum,2)) 
-    // allocate(this%implicitcoeff_n1(surfnum,2)) 
-    
-    // if (thisIsARestartedSimulation)
-    // {
-    //   // Initialise the pressure using the value from the PHistRCR.dat.
-    //   pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1,timdat.lstep);
-    // }
-    // else
-    // {
-    //   // pressure_n = *pressure_n_ptr;
-    //   m_needsPressureToBeInitialisedFromFortran = true;
-    // }
-
-    // These are Hop and dp_dq now.
-    // implicitcoeff = 0.0;
-    // implicitcoeff_n1 = 0.0; 
-
-    // ! initialise reservoir pressure  
-    // if (initrcr) then
-      //    ! set int
-      //    this%init_pRes = 1
-      //    allocate(this%pRes_n(surfnum))
-      //    ! open rcr.x.dat
-      //    open(fnum, file='rcrt.x.dat', status='old', iostat=ierr)         
-      //    do i = 1, surfnum
-      //       read(fnum,*) this%pRes_n(i)
-      //    end do
-      //    close(fnum)
-      // else 
-      //    this%init_pRes = 0
-      // end if
-
-      // ! zero variables 
-      // this%surfarea(:) = real(0.0,8)
-      // this%flow_n(:) = real(0.0,8)
-      // this%flow_n1(:) = real(0.0,8)
-      // this%pressure_n(:) = real(0.0,8)
-      // this%implicitcoeff(:,:) = real(0.0,8)
-      // this%implicitcoeff_n1(:,:) = real(0.0,8)
-
-
-
-      // do i = 1, surfnum
-      //    ! set rcr parameters
-      //    this%rcrparams(i)%rp = rcrcoeff(i,1)
-      //    this%rcrparams(i)%c = rcrcoeff(i,2)
-      //    this%rcrparams(i)%rd = rcrcoeff(i,3)
-      //    this%parameters_RCR(3,i) = rcrcoeff(i,3)
-      //    this%parameters_RCR(1,i) = rcrcoeff(i,1)
-      //    this%parameters_RCR(2,i) = rcrcoeff(i,2)
-      //    ! count time points 
-      //    k = int(1)
-      //    do j = 2, pdmax
-      //      if (pdval(j,1,i) .lt. pdval(j-1,1,i)) then
-      //         exit
-      //      else
-      //         k = k + 1
-      //      end if
-      //    end do        
-      //    ! allocate i'th entry with k x 2 size
-      //    allocate(this%rcrparams(i)%pd%v(k,2))     
-      //    ! set values
-      //    do j = 1, k
-      //       this%rcrparams(i)%pd%v(j,1) = pdval(j,1,i)
-      //       this%rcrparams(i)%pd%v(j,2) = pdval(j,2,i)
-      //    end do
-      // end do
-
 }
 
 // Here we step the actual discretised ODE for the RCR:
@@ -215,9 +93,6 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
 
   double pdistn = linInterpolateTimeData(timeAtStepN,lengthOftimeDataPdist);
   double pdistn_1 = linInterpolateTimeData(timeAtStepNplus1,lengthOftimeDataPdist);
-
-  // double pdistn = linInterpolateTimeData(timeDataPdist,timeAtStepN,lengthOftimeDataPdist);
-  // double pdistn_1 = linInterpolateTimeData(timeDataPdist,timeAtStepNplus1,lengthOftimeDataPdist);
 
   // // parameters overwritten
   // // dirty hack for filtering
@@ -237,7 +112,7 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
 
   returnCoeffs.first = temp1 / denom;
   returnCoeffs.second = temp2 / denom;
-  
+
   return returnCoeffs;
 }
 
@@ -277,8 +152,6 @@ void RCR::getPressureAndFlowPointersFromFortran()
     }
     else
     {
-      // pressure_n = *pressure_n_ptr;
       m_needsPressureToBeInitialisedFromFortran = true;
     }
-    // pressure_n = *pressure_n_ptr;
 }

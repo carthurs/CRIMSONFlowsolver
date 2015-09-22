@@ -220,7 +220,7 @@ TEST_F(testMain, checkNetlistHeartModel) {
   FlowHistReader.readAndSplitMultiSurfaceRestartFile();
   // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
   double flowHistResult = FlowHistReader.getReadFileData(0,11);
-  EXPECT_NEAR(-26398.8112140402,flowHistResult,1e-7);
+  EXPECT_NEAR(-26398.8112140402,flowHistResult,1e-6);
   // ... 2nd column:
   flowHistResult = FlowHistReader.getReadFileData(1,11);
   EXPECT_NEAR(14139.5136518040,flowHistResult,1e-5);

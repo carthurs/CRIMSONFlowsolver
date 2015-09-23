@@ -888,7 +888,6 @@ subroutine rebuildMemLS_lhs()
         integer thisIsANetlistSurface
         integer thisSurfacePermitsFlow
         integer surface
-        integer numNodesNoFlowPermitted
 
         IF  (ipvsq .GE. 2) THEN
             call callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow)
@@ -909,10 +908,8 @@ subroutine rebuildMemLS_lhs()
         ! here we are counting the number of dirchlet nodes excluding the Netlists
         faIn = 1
         facenNo = 0
-        numNodesNoFlowPermitted = 0
         DO i=1, nshg
             IF (IBITS(iBC(i),3,3) .NE. 0)  then
-                numNodesNoFlowPermitted = numNodesNoFlowPermitted + 1
                 ! Check whether this node is on one a surface belonging to a Netlist boundary condition:
                 thisIsANetlistSurface = int(0)
                 thisSurfacePermitsFlow = int(1)
@@ -924,7 +921,7 @@ subroutine rebuildMemLS_lhs()
                 end do
 
                 ! If this is not a netlist surface:
-                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(1))) then
+                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(0))) then
                     facenNo = facenNo + 1
                 endif
             ENDIF
@@ -955,7 +952,7 @@ subroutine rebuildMemLS_lhs()
                 end do
 
                 ! If this is not a netlist surface:
-                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(1))) then
+                if((thisIsANetlistSurface .eq. int(0)) .or. (thisSurfacePermitsFlow .eq. int(0))) then
                     j = j + 1
                     gNodes(j) = i
                     IF (.NOT.BTEST(iBC(i),3)) sV(1,j) = 1D0

@@ -40,7 +40,8 @@ Surface ID's for Force Calculation: 1 #'
 
 # LINEAR SOLVER
 # {
-    Solver Type : memLS
+#    Solver Type : memLS
+    Solver Type : ACUSIM with P Projection
 #    Step Construction : 0 1 0 1 0 1 0 1 0 1 # this is the standard 5 iteration
   Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 # this is the standard 20 iteration
 

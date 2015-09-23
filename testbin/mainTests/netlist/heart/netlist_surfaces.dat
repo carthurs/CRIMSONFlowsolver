@@ -114,7 +114,7 @@ t
 4
 # Initial pressures at the pressure nodes:
 1 10664.0
-2 969.4545
+2 540.0
 3 0.0
 4 0.0
 # index of node  at 3D interface
@@ -168,7 +168,7 @@ t
 4
 # Initial pressures at the pressure nodes:
 1 10664.0
-2 969.4545
+2 540.0
 3 0.0
 4 0.0
 # index of node at 3D interface

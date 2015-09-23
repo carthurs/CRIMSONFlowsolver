@@ -207,10 +207,10 @@ TEST_F(testMain, checkNetlistHeartModel) {
   EXPECT_NEAR(632.670675940888,pressHistResult,1e-5);
   // ...second column
   pressHistResult = PressHistReader.getReadFileData(1,11);
-  EXPECT_NEAR(556.262903111148,pressHistResult,1e-6);
+  EXPECT_NEAR(556.262903111148,pressHistResult,1e-5);
   // ... third column
   pressHistResult = PressHistReader.getReadFileData(2,11);
-  EXPECT_NEAR(544.651629587945,pressHistResult,1e-6);
+  EXPECT_NEAR(544.651629587945,pressHistResult,1e-5);
 
   // Check FlowHist.dat
   histFileReader FlowHistReader = histFileReader();
@@ -220,13 +220,13 @@ TEST_F(testMain, checkNetlistHeartModel) {
   FlowHistReader.readAndSplitMultiSurfaceRestartFile();
   // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
   double flowHistResult = FlowHistReader.getReadFileData(0,11);
-  EXPECT_NEAR(-889.383031270501,flowHistResult,1e-6);
+  EXPECT_NEAR(-889.383031270501,flowHistResult,1e-3);
   // ... 2nd column:
   flowHistResult = FlowHistReader.getReadFileData(1,11);
-  EXPECT_NEAR(636.889350513117,flowHistResult,1e-5);
+  EXPECT_NEAR(636.889350513117,flowHistResult,1e-2);
   // ...third column:
   flowHistResult = FlowHistReader.getReadFileData(2,11);
-  EXPECT_NEAR(252.486584230077,flowHistResult,2e-5);
+  EXPECT_NEAR(252.486584230077,flowHistResult,2e-3);
 
   // valve closed case:
   flowHistResult = FlowHistReader.getReadFileData(0,5);

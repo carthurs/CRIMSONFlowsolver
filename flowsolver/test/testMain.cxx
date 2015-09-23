@@ -207,10 +207,10 @@ TEST_F(testMain, checkNetlistHeartModel) {
   EXPECT_NEAR(632.670675940888,pressHistResult,1e-5);
   // ...second column
   pressHistResult = PressHistReader.getReadFileData(1,11);
-  EXPECT_NEAR(556.262903111148,pressHistResult,1e-5);
+  EXPECT_NEAR(556.262903111148,pressHistResult,1e-4);
   // ... third column
   pressHistResult = PressHistReader.getReadFileData(2,11);
-  EXPECT_NEAR(544.651629587945,pressHistResult,1e-5);
+  EXPECT_NEAR(544.651629587945,pressHistResult,1e-4);
 
   // Check FlowHist.dat
   histFileReader FlowHistReader = histFileReader();

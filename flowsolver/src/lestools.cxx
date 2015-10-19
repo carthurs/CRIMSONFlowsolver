@@ -629,6 +629,8 @@ void lesBlkDot2 ( UsrHd   usrHd,
     drvAllreduce ( valuesp,
                    values,
                    &mDims ) ;
+
+    free(valuesp);
 }
 
 /*-----------------------------------------------------------------------
@@ -831,6 +833,8 @@ void lesVdimDot2 ( UsrHd   usrHd,
     drvAllreduce ( coefp,
                    coef,
                    &nDims ) ;
+
+    free(coefp);
 }
 
 /*-----------------------------------------------------------------------

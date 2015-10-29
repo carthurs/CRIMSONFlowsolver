@@ -1002,8 +1002,8 @@ class parameterController(abstractParameterController):
 	    # return (voi, states, self.algebraic)
 		return states
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
 		self.stepIndex = 0
 		self.tensionHistory = array([0.0]*200000)
 		self.sarcomereHalfLengthHistory = array([0.0]*200000)

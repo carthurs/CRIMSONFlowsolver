@@ -4,8 +4,9 @@ from math import pi, cos
 # The parameter controller must have exactly this name
 class parameterController(abstractParameterController):
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
+		self.controllerPriority = 4
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_heartPeriod = 0.86;
 		self.finishSetup()

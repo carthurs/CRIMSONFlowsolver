@@ -4,8 +4,9 @@ from math import pi, cos
 # The parameter controller must have exactly this name
 class parameterController(abstractParameterController):
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
+		self.controllerPriority = 3
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_heartPeriod = 0.86;
 		self.finishSetup()
@@ -28,7 +29,7 @@ class parameterController(abstractParameterController):
 		# broadcasts from other controllers. The only purpose of this is to
 		# make the test fail (due to the time not being updated properly) if
 		# there is a problem with the broadcast reception.
-		if self.getRecievedBroadcastValue('elastanceController2','six') == 6 and self.getRecievedBroadcastValue('nodeController_downstream','eight') == 8:
+		if self.getRecievedBroadcastValue('elastanceController2','six') == 6:
 			self.updatePeriodicTime(delt)
 
 		pressure = self.getRecievedBroadcastValue('masterController','masterControlSignal')

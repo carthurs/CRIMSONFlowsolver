@@ -1,3 +1,5 @@
+import copy
+
 class stateDataContainer:
 	
 	def __init__(self, containerNameTag):
@@ -15,12 +17,15 @@ class stateDataContainer:
 		# identifies this script as its source:
 		returnValue = dict()
 		returnValue[self.containerNameTag] = self.stateDataInternal
-		return returnValue
+		# deepcopy it so the data can't be changed after broadcast.
+		return copy.deepcopy(returnValue)
 
 class abstractParameterController:
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
 		self.m_baseNameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
+		self.MPIRank = MPIRank
 		self.m_stateDataContainer = stateDataContainer(self.m_baseNameOfThisScript)
+		self.controllerPriority = 0 # See the method getControllerPriority, below. Override this in your controller if you want to change priorities.
 
 	def finishSetup(self):
 		# Handle the case where the user doesn't need broadcasts
@@ -49,7 +54,17 @@ class abstractParameterController:
 	def receiveStateDataFromAllOtherParameterControllers(self, stateDataFromAllPythonControllers):
 		self.m_stateDataFromAllPythonControllers = stateDataFromAllPythonControllers
 
-	# If you want to broadcast anything, add a class like this in your controller.
+	# Priorities are used by c++ to determine the order in which controllers get updated
+	# on each time step. Controllers with values closer to -infinity have higher priortiy,
+	# numbers closer to +infinity are lower priority.
+	#
+	# This is useful e.g. when using the control broadcast system, to ensure the value
+	# you want has been broadcast before the time when you want to use it in another
+	# controller.
+	def getControllerPriority(self):
+		return self.controllerPriority
+
+	# If you want to broadcast anything fixed on the first timestep, add a class like this in your controller.
 	# Some example entries are commented out here.
 	#
 	# Note that this gets called before the concrete controller's constructor (__init__() method),

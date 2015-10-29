@@ -38,8 +38,8 @@ public:
 		// Py_Finalize();
 	}
 private:
-	std::vector<boost::shared_ptr<AbstractParameterController>> m_controlSystems;
-	std::vector<boost::shared_ptr<UserDefinedCustomPythonParameterController>> m_pythonControlSystems; // This vector is for convenience only; it duplicates some elements of m_controlSystems
+	std::vector<boost::shared_ptr<AbstractParameterController>> m_nonPythonControlSystems;
+	std::vector<boost::shared_ptr<GenericPythonController>> m_pythonControlSystems; // This vector is for convenience only; it duplicates some elements of m_controlSystems
 	std::vector<PyObject*> m_pythonBroadcastDataFromEachController;
 	const double m_delt;
 	int m_rank;
@@ -52,7 +52,7 @@ private:
 	bool m_hasMasterPythonController;
 	boost::shared_ptr<GenericPythonController> mp_masterPythonController;
 	void createMasterPythonController();
-
+	void sortPythonControlSystemsByPriority();
 };
 
 #endif

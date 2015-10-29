@@ -108,10 +108,10 @@ public:
 
 	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);
 	void giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData);
+	long getPriority();
 	virtual void updateControl();
 protected:
 	void initialise();
-
 
 	std::string m_controllerPythonScriptBaseName;
 	std::string m_updateControlNameString;
@@ -135,7 +135,7 @@ class UserDefinedCustomPythonParameterController : public AbstractParameterContr
 public:
 	UserDefinedCustomPythonParameterController(double* const parameterToControl, const int surfaceIndex, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs)
 	: AbstractParameterController(parameterToControl, surfaceIndex),
-	GenericPythonController(delt, controllerPythonScriptBaseName)	,
+	GenericPythonController(delt, controllerPythonScriptBaseName),
 	m_pressurePointerPairs(pressurePointerPairs),
 	m_flowPointerPairs(flowPointerPairs),
 	m_volumePointerPairs(volumePointerPairs)

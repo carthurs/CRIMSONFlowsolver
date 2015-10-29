@@ -11,13 +11,13 @@ from math import pi, cos
 
 class parameterController(abstractParameterController): #NECESSARY
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile): #NECESSARY
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile) #NECESSARY
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank): #NECESSARY
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank) #NECESSARY
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_heartPeriod = 0.86;
 		self.finishSetup() #NECESSARY
 
-	def setFirstTimestepBroadcastValues(self): #NECESSARY - note that the masterController.py (i.e. this example controller)
+	def setFirstTimestepBroadcastValues(self):
 		self.clearBroadcastData()
 		self.addBroadcastVariable('three', 3) # just a non-functional example broadcast
 		self.addBroadcastVariable('four', 4) # just a non-functional example broadcast

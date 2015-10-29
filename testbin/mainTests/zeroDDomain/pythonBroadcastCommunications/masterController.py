@@ -4,11 +4,12 @@ from math import pi, cos
 # The parameter controller must have exactly this name
 class parameterController(abstractParameterController):
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_heartPeriod = 0.86;
 		self.controlSignal = 0.0 #an intiial value
+		self.controllerPriority = 1
 		self.finishSetup()
 
 	# This method must have exactly this name
@@ -20,8 +21,7 @@ class parameterController(abstractParameterController):
 	def updateControl(self, delt):
 		# print "Master Controller Reporting!"
 		# self.printAllRecievedData()
-		if self.getRecievedBroadcastValue('elastanceController2','six') == 6 and self.getRecievedBroadcastValue('nodeController_downstream','eight') == 8:
-			self.updatePeriodicTime(delt)
+		self.updatePeriodicTime(delt)
 
 		self.controlSignal = cos(self.m_periodicTime)
 

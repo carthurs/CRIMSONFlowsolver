@@ -5,8 +5,8 @@ import scipy.interpolate
 
 class parameterController(abstractParameterController):
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_nameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
 		self.getPeriodicPressurePrescriberData()

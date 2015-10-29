@@ -4,9 +4,10 @@ from math import pi, cos
 # The parameter controller must have exactly this name
 class parameterController(abstractParameterController):
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile):
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
 		# import io
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile)
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
+		self.controllerPriority = 2
 		self.m_periodicTime = 0.0; #\todo think about this for restarts!
 		self.m_timeToMaximumElastance = 0.2782;
 		self.m_timeToRelax = 0.1391;
@@ -39,12 +40,7 @@ class parameterController(abstractParameterController):
 		controlSignal = self.getRecievedBroadcastValue('masterController','masterControlSignal')
 		# print "in elastance:", controlSignal
 
-		# Only update the time if this controller is receiving the (otherwise-unused)
-		# broadcasts from other controllers. The only purpose of this is to
-		# make the test fail (due to the time not being updated properly) if
-		# there is a problem with the broadcast reception.
-		if self.getRecievedBroadcastValue('nodeController2','four') == 4 and self.getRecievedBroadcastValue('nodeController_downstream','seven') == 7:
-			self.updatePeriodicTime(delt)
+		self.updatePeriodicTime(delt)
 
 		elastance = self.getElastance(currentParameterValue) * (abs(controlSignal) + 0.5)
 

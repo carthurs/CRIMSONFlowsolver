@@ -1,5 +1,6 @@
 #include "ParameterController.hxx"
 #include <iostream>
+#include "mpi.h"
 
 int AbstractParameterController::getIndexOfAssociatedSurface() const
 {
@@ -121,12 +122,16 @@ void GenericPythonController::initialise()
 			throw std::runtime_error(errorMessage.str());
 		}
 
+		int rank;
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+		PyObject* pyMPIRank = PyInt_FromLong((long)rank);
 
 		// Instantiate the Python controller class:
 		if (PyCallable_Check(m_customPythonClass) == 1)
 		{
 			// Prepare the arguments to give to the controller's constructor:
-			PyObject* arguments = PyTuple_Pack(1,m_pythonScriptName);
+			PyObject* arguments = PyTuple_Pack(2,m_pythonScriptName,pyMPIRank);
 			// Instantiate the controller class
 			m_pythonControllerInstance = PyObject_CallObject(m_customPythonClass, arguments);
 			safe_Py_DECREF(arguments);
@@ -176,6 +181,38 @@ void GenericPythonController::updateControl()
 		if (PyErr_Occurred())
 		{
 			std::cout << std::endl << "EE: An error occurred when constructing the Python controller "
+					  << m_controllerPythonScriptBaseName << ".py. Details below:" << std::endl;
+			PyErr_Print();
+		}
+		// Rethrow the original exception (whether or not it was Python's).
+		throw;
+	}
+}
+
+long GenericPythonController::getPriority()
+{
+	char* getPriorityMethodNameInPython = "getControllerPriority";
+	try
+	{
+		PyObject* getPriorityMethodNameInPython_asPyString = PyString_FromString(getPriorityMethodNameInPython);
+		PyObject* priorityOfThisController = PyObject_CallMethodObjArgs(m_pythonControllerInstance, getPriorityMethodNameInPython_asPyString, NULL);
+		if (priorityOfThisController == NULL)
+		{
+			throw std::runtime_error("EE: Internal error int getPriority.");
+		}
+
+		long priorityOfThisController_integer = PyInt_AsLong(priorityOfThisController);
+
+		safe_Py_DECREF(getPriorityMethodNameInPython_asPyString);
+		safe_Py_DECREF(priorityOfThisController);
+
+		return priorityOfThisController_integer;
+	}
+	catch(...) // Catch any exception
+	{
+		if (PyErr_Occurred())
+		{
+			std::cout << std::endl << "EE: An error occurred when calling " << getPriorityMethodNameInPython << " in the Python parameter controller "
 					  << m_controllerPythonScriptBaseName << ".py. Details below:" << std::endl;
 			PyErr_Print();
 		}

@@ -7,8 +7,8 @@ import sys
 
 class parameterController(abstractParameterController): #NECESSARY
 
-	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile): #NECESSARY
-		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile) #NECESSARY
+	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank): #NECESSARY
+		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank) #NECESSARY
 		self.finishSetup() #NECESSARY
 
 		# SET THSE YOURSELF!:

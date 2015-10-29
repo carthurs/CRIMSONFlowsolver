@@ -1,13 +1,15 @@
 #include "ControlSystemsManager.hxx"
 #include <sstream>
 #include <cstdlib>
+#include <algorithm>
 #include <boost/filesystem.hpp>
 
 void ControlSystemsManager::updateBoundaryConditionControlSystems()
 {
 	updateAndPassStateInformationBetweenPythonParameterControllers();
 
-	for (auto controlSystem = m_controlSystems.begin(); controlSystem != m_controlSystems.end(); controlSystem++)
+	// Update the non-python control systems
+	for (auto controlSystem = m_nonPythonControlSystems.begin(); controlSystem != m_nonPythonControlSystems.end(); controlSystem++)
 	{
 		(*controlSystem)->updateControl();
 	}
@@ -15,49 +17,27 @@ void ControlSystemsManager::updateBoundaryConditionControlSystems()
 
 void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterControllers()
 {
-	// Gather all the state data broadcasts from the boundary condition controllers
+	// Create a place to store the broadcast data as we gather it, and to use to send it to all controllers
+	PyObject* gatheredBroadcastData = PyDict_New();
+	assert(gatheredBroadcastData != NULL);
+
+	// As we loop, the gatheredBroadcastData gets progressively larger, always containing all of the currently-avaialble (i.e. has-been-computed)
+	// broadcast data. Control the order of this loop by using controllerPriority in the python control scripts.
 	for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
 	{
 		boost::shared_ptr<UserDefinedCustomPythonParameterController> downcastPythonControlSystem = boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (*pythonControlSystem);
+		// First we give the current controller all of the broadcast data that is available so far:
+		downcastPythonControlSystem->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
+
+		(*pythonControlSystem)->updateControl();
+
 		PyObject* thisScriptsBroadcastData = NULL;
 		downcastPythonControlSystem->getBroadcastStateData(thisScriptsBroadcastData);
 		assert(thisScriptsBroadcastData != NULL);
 		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
 
-		// safe_Py_DECREF(thisScriptsBroadcastData);
-	}
-
-	PyObject* gatheredBroadcastData = PyDict_New();
-	assert(gatheredBroadcastData != NULL);
-	// Package the broadcast data:
-	for (auto broadcastData = m_pythonBroadcastDataFromEachController.begin(); broadcastData != m_pythonBroadcastDataFromEachController.end(); broadcastData++)
-	{
-		int errCode = PyDict_Merge(gatheredBroadcastData, *broadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
+		int errCode = PyDict_Merge(gatheredBroadcastData, m_pythonBroadcastDataFromEachController.back(), 0); // Final "0" sets the merge not to over-write existing values with same key during dictionary merge
 		assert(errCode == 0);
-	}
-
-	// Update from the master control system script (not assoicated with any boundary)
-	if(m_hasMasterPythonController)
-	{
-		mp_masterPythonController->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
-		mp_masterPythonController->updateControl();
-
-		PyObject* thisScriptsBroadcastData = NULL;
-		mp_masterPythonController->getBroadcastStateData(thisScriptsBroadcastData);
-		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
-		// add the info from the master control script to the broadcast data:
-		int errCode = PyDict_Merge(gatheredBroadcastData, thisScriptsBroadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
-		assert(errCode == 0);
-		
-		// safe_Py_DECREF(thisScriptsBroadcastData);
-	}
-
-	assert(gatheredBroadcastData != NULL);
-	// Send the packaged broadcast data to all controllers
-	for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
-	{
-		boost::shared_ptr<UserDefinedCustomPythonParameterController> downcastPythonControlSystem = boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (*pythonControlSystem);
-		downcastPythonControlSystem->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
 	}
 
 	// Clean up:
@@ -68,6 +48,62 @@ void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterC
 	}
 	m_pythonBroadcastDataFromEachController.clear();
 }
+
+// void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterControllers()
+// {
+// 	// Gather all the state data broadcasts from the boundary condition controllers
+// 	for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
+// 	{
+// 		boost::shared_ptr<UserDefinedCustomPythonParameterController> downcastPythonControlSystem = boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (*pythonControlSystem);
+// 		PyObject* thisScriptsBroadcastData = NULL;
+// 		downcastPythonControlSystem->getBroadcastStateData(thisScriptsBroadcastData);
+// 		assert(thisScriptsBroadcastData != NULL);
+// 		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
+
+// 		// safe_Py_DECREF(thisScriptsBroadcastData);
+// 	}
+
+// 	PyObject* gatheredBroadcastData = PyDict_New();
+// 	assert(gatheredBroadcastData != NULL);
+// 	// Package the broadcast data:
+// 	for (auto broadcastData = m_pythonBroadcastDataFromEachController.begin(); broadcastData != m_pythonBroadcastDataFromEachController.end(); broadcastData++)
+// 	{
+// 		int errCode = PyDict_Merge(gatheredBroadcastData, *broadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
+// 		assert(errCode == 0);
+// 	}
+
+// 	// Update from the master control system script (not associated with any boundary)
+// 	if(m_hasMasterPythonController)
+// 	{
+// 		mp_masterPythonController->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
+// 		mp_masterPythonController->updateControl();
+
+// 		PyObject* thisScriptsBroadcastData = NULL;
+// 		mp_masterPythonController->getBroadcastStateData(thisScriptsBroadcastData);
+// 		m_pythonBroadcastDataFromEachController.push_back(thisScriptsBroadcastData);
+// 		// add the info from the master control script to the broadcast data:
+// 		int errCode = PyDict_Merge(gatheredBroadcastData, thisScriptsBroadcastData, 0); // Final "0" sets the merge to not over-write existing values with same key during dictionary merge
+// 		assert(errCode == 0);
+		
+// 		// safe_Py_DECREF(thisScriptsBroadcastData);
+// 	}
+
+// 	assert(gatheredBroadcastData != NULL);
+// 	// Send the packaged broadcast data to all controllers
+// 	for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
+// 	{
+// 		boost::shared_ptr<UserDefinedCustomPythonParameterController> downcastPythonControlSystem = boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (*pythonControlSystem);
+// 		downcastPythonControlSystem->giveStateDataFromOtherPythonControllers(gatheredBroadcastData);
+// 	}
+
+// 	// Clean up:
+// 	safe_Py_DECREF(gatheredBroadcastData);
+// 	for (auto broadcastData = m_pythonBroadcastDataFromEachController.begin(); broadcastData != m_pythonBroadcastDataFromEachController.end(); broadcastData++)
+// 	{
+// 		safe_Py_DECREF(*broadcastData);
+// 	}
+// 	m_pythonBroadcastDataFromEachController.clear();
+// }
 
 void ControlSystemsManager::createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> netlistCircuit, const int nodeOrComponentIndex)
 {
@@ -93,7 +129,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				double* parameterToControl = component->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl, surfaceIndex, m_delt));
-				m_controlSystems.push_back(controllerToPushBack);
+				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 
 			break;
@@ -107,7 +143,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				double* resistanceToControl = resistor->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl, surfaceIndex));
-				m_controlSystems.push_back(controllerToPushBack);
+				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 
 			break;
@@ -121,7 +157,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				double* complianceToControl = capacitor->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl, surfaceIndex));
-				m_controlSystems.push_back(controllerToPushBack);
+				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 
 			break;
@@ -157,9 +193,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
-				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				// m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				sortPythonControlSystemsByPriority();
 			}
 
 			break;
@@ -212,9 +249,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
-				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				// m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				sortPythonControlSystemsByPriority();
 			}
 
 			break;
@@ -250,9 +288,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
-				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				// m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				sortPythonControlSystemsByPriority();
 			}
 
 			break;
@@ -294,9 +333,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
-				m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<UserDefinedCustomPythonParameterController> (controllerToPushBack));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				// m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				sortPythonControlSystemsByPriority();
 			}
 			
 			break;
@@ -306,6 +346,13 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			errorMessage << "EE: Unknown control parameter type (controllerType) requested for Netlist boundary condition for surface " << netlistCircuit->getSurfaceIndex() << "." << std::endl;
 			throw std::runtime_error(errorMessage.str());
 	}
+}
+
+void ControlSystemsManager::sortPythonControlSystemsByPriority()
+{
+	std::sort(m_pythonControlSystems.begin(), m_pythonControlSystems.end(), 
+		              [](boost::shared_ptr<GenericPythonController> controlSystem1ToCompare, boost::shared_ptr<GenericPythonController> controlSystem2ToCompare)
+		                 {return (controlSystem1ToCompare->getPriority() < controlSystem2ToCompare->getPriority());});
 }
 
 void ControlSystemsManager::createMasterPythonController()
@@ -340,6 +387,8 @@ void ControlSystemsManager::createMasterPythonController()
 	// int surfaceIndex = netlistCircuit->getSurfaceIndex();
 	boost::shared_ptr<GenericPythonController> newMasterController(new GenericPythonController(m_delt, externalPythonControllerName));
 	mp_masterPythonController = newMasterController;
+	m_pythonControlSystems.push_back(mp_masterPythonController);
+	sortPythonControlSystemsByPriority();
 }
 
 void ControlSystemsManager::setupPythonBoilerplateScriptPaths()

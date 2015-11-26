@@ -714,3 +714,50 @@ TEST_F(testMainWithZeroDDomain, checkTwoDomainsWithClosedLoop) {
   	EXPECT_NEAR(3913.83581629739,pressureResult,1e-8);
   }
 }
+
+TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
+	setSimDirectory("mainTests/netlist/coronaryControlPython");
+	clearOutOldFiles();
+	runSimulation();
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	{
+		histFileReader mvo2HistoryReader = histFileReader();
+		mvo2HistoryReader.setFileName("MVO2History.dat");
+		mvo2HistoryReader.setNumColumns(1);
+		mvo2HistoryReader.readAndSplitMultiSurfaceRestartFile();
+
+		double mvo2Result = mvo2HistoryReader.getReadFileData(0,13);
+		EXPECT_NEAR(4.518717470399062108e+01, mvo2Result, 1e-8);
+	}
+
+	{
+		histFileReader r_d_historyReader = histFileReader();
+		r_d_historyReader.setFileName("R_d_history.dat");
+		r_d_historyReader.setNumColumns(1);
+		r_d_historyReader.readAndSplitMultiSurfaceRestartFile();
+
+		double r_d_result = r_d_historyReader.getReadFileData(0,6640);
+		EXPECT_NEAR(1.943815387757063817e+01, r_d_result, 1e-8);
+	}
+	
+	{
+		histFileReader r_p_historyReader = histFileReader();
+		r_p_historyReader.setFileName("R_p_history.dat");
+		r_p_historyReader.setNumColumns(1);
+		r_p_historyReader.readAndSplitMultiSurfaceRestartFile();
+
+		double r_p_result = r_p_historyReader.getReadFileData(0,6640);
+		EXPECT_NEAR(5.913031561811178172, r_p_result, 1e-8);
+	}
+
+	{
+		histFileReader flowHistReader = histFileReader();
+		flowHistReader.setFileName("netlistFlows_surface_6.dat");
+		flowHistReader.setNumColumns(6);
+		flowHistReader.readAndSplitMultiSurfaceRestartFile();
+
+		double lastTimestepCoronaryFlow = flowHistReader.getReadFileData(1,7000);
+		EXPECT_NEAR(1155.89051134339, lastTimestepCoronaryFlow, 1e-8);
+	}	
+}

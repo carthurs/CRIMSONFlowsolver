@@ -67,7 +67,7 @@ t
 # Number of components with control
 1
 # detains of components with control (component index, control type char; l=LV elastance)
-5 l
+5 customPython lvElastanceController
 # number of nodes with control
 1
 # details of nodes with control (l= lv elastance):

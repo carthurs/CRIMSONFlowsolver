@@ -25,7 +25,7 @@ class parameterController(abstractParameterController): #NECESSARY
 		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank) #NECESSARY
 		self.controllerPriority = -1
 		self.m_periodicTime = 0.0
-		self.m_heartPeriod = 0.86
+		# self.m_heartPeriod = 0.86
 		self.finishSetup() #NECESSARY
 		self.setupControlSystemVariables()
 
@@ -88,6 +88,8 @@ class parameterController(abstractParameterController): #NECESSARY
 		leftVentricularPressure = self.getRecievedBroadcastValue('ventricularPressureObserver','leftVentricularPressure')
 		leftVentricularVolume = self.getRecievedBroadcastValue('ventricularPressureObserver','leftVentricularVolume')
 		self.recordPressureAndVolume(leftVentricularPressure, leftVentricularVolume)
+
+		self.m_heartPeriod = self.getRecievedBroadcastValue('lvElastanceController','heartPeriod')
 
 		if self.currentBeatIndex > 0:
 			# only if there's enough data to interpolate:

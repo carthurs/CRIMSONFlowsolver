@@ -161,7 +161,12 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 		setIndicesOfNodesAtInterface(vectorToSet);
 	}
 	// tag the node at the 3D interface:
-    mapOfPressureNodes.at(threeDInterfaceNodeIndex)->setIsAtBoundary();
+	try {
+    	mapOfPressureNodes.at(threeDInterfaceNodeIndex)->setIsAtBoundary();
+    } catch (const std::exception& e) {
+    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+    	throw e;
+    }
 
 	int numberOfComponentsTaggedFor3DFlow = 0; //a counter to verify there exists a unique 3D flow-tagged component
 	for (auto component=components.begin(); component!=components.end(); component++)
@@ -326,9 +331,23 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseCons
 	{
 		// add the pressure node to the list of neighbours, so the node knows which components are attached to it:
 		boost::weak_ptr<CircuitComponent> componentToPushBack(componentNeighbouringThisNode);
-		mapOfPressureNodes.at(indexInInputData_in)->listOfComponentstAttachedToThisNode.push_back(componentToPushBack);
+		try {
+			mapOfPressureNodes.at(indexInInputData_in)->listOfComponentstAttachedToThisNode.push_back(componentToPushBack);
+		} catch (const std::exception& e) {
+	    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    	throw e;
+	    }
+		
 		// Return this existing node:
-		return mapOfPressureNodes.at(indexInInputData_in);
+		boost::shared_ptr<CircuitPressureNode> returnValue;
+		try {
+			returnValue = mapOfPressureNodes.at(indexInInputData_in);
+		} catch (const std::exception& e) {
+	    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    	throw e;
+	    }
+
+		return returnValue;
 	}
 	else // node not already constructed
 	{
@@ -425,6 +444,11 @@ double* CircuitComponent::getFlowPointer()
 	return flowPointer;
 }
 
+void CircuitComponent::setRestartFlowFromHistory()
+{
+	flow = m_entireFlowHistory.back();
+}
+
 double* CircuitPressureNode::getPressurePointer()
 {
 	double* pressurePointer = &pressure;
@@ -508,6 +532,16 @@ double* CircuitComponent::getPointerToFixedFlowPrescription()
 	return &m_valueOfPrescribedFlow;
 }
 
+void CircuitComponent::setHasHistoryVolume(const bool hasHistoryVolume)
+{
+	m_hasHistoryVolume = hasHistoryVolume;
+}
+
+bool CircuitComponent::getHasHistoryVolume()
+{
+	return m_hasHistoryVolume;
+}
+
 void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 {
 	bool previousStateOf_m_flowPermittedAcross3DInterface = m_flowPermittedAcross3DInterface;
@@ -525,7 +559,13 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 	assert(indexOfComponentAt3DInterface != -1);
 
 	std::stack<boost::weak_ptr<CircuitComponent>> componentsNeedingChecking;
-	boost::weak_ptr<CircuitComponent> toPushOntoStack(mapOfComponents.at(indexOfComponentAt3DInterface));
+	boost::weak_ptr<CircuitComponent> toPushOntoStack;
+	try {
+		toPushOntoStack = boost::weak_ptr<CircuitComponent>(mapOfComponents.at(indexOfComponentAt3DInterface));
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
 	componentsNeedingChecking.push(toPushOntoStack);
 	// To keep track of which components have been already checked:
 	std::vector<bool> componentsWhichHaveBeenChecked(components.size(),false);
@@ -536,38 +576,43 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 		componentsNeedingChecking.pop();
 		// For the current component:
 		// Ensure we've not done this component yet (avoids circular problems)
-		if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) == false)
-		{
-			// note that we're checking this component:
-			componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) = true;
-
-			// Don't parse the neighbours if flow is banned (i.e. if there's a closed diode)
-			if (currentComponent.lock()->permitsFlow())
-			{
-				// Discover whether currentComponent has no neighbours at one end (i.e. it's a flow sink), so there is
-				// somewhere for flow coming in at the 3D domain to go (i.e. it's OK for the surface to have a Dirichlet boundary condition).
-				// We also ensure that we haven't accidentally detected the 3D interface node itself, using the bools.
-				int numberOfStartNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtStartNode.size();
-				bool startNodeNotAt3DInterface = !(currentComponent.lock()->startNode->isAtBoundary());
-				int numberOfEndNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtEndNode.size();
-				bool endNodeNotAt3DInterface = !(currentComponent.lock()->endNode->isAtBoundary());
-				if ((numberOfStartNodeNeighbours == 0 && startNodeNotAt3DInterface) || (numberOfEndNodeNeighbours == 0 && endNodeNotAt3DInterface))
+		try {
+			if (componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) == false)
 				{
-					m_flowPermittedAcross3DInterface = true;
-					// we've found  what we were looking for, so break out
-					break;
+					// note that we're checking this component:
+					componentsWhichHaveBeenChecked.at(toZeroIndexing(currentComponent.lock()->getIndex())) = true;
+		
+					// Don't parse the neighbours if flow is banned (i.e. if there's a closed diode)
+					if (currentComponent.lock()->permitsFlow())
+					{
+						// Discover whether currentComponent has no neighbours at one end (i.e. it's a flow sink), so there is
+						// somewhere for flow coming in at the 3D domain to go (i.e. it's OK for the surface to have a Dirichlet boundary condition).
+						// We also ensure that we haven't accidentally detected the 3D interface node itself, using the bools.
+						int numberOfStartNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtStartNode.size();
+						bool startNodeNotAt3DInterface = !(currentComponent.lock()->startNode->isAtBoundary());
+						int numberOfEndNodeNeighbours = currentComponent.lock()->neighbouringComponentsAtEndNode.size();
+						bool endNodeNotAt3DInterface = !(currentComponent.lock()->endNode->isAtBoundary());
+						if ((numberOfStartNodeNeighbours == 0 && startNodeNotAt3DInterface) || (numberOfEndNodeNeighbours == 0 && endNodeNotAt3DInterface))
+						{
+							m_flowPermittedAcross3DInterface = true;
+							// we've found  what we were looking for, so break out
+							break;
+						}
+		
+						// Put all the neighbours on a stack
+						for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtEndNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtEndNode.end(); neighbouringComponent++)
+						{
+							componentsNeedingChecking.push(*neighbouringComponent);
+						}
+						for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtStartNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtStartNode.end(); neighbouringComponent++)
+						{
+							componentsNeedingChecking.push(*neighbouringComponent);
+						}
+					}
 				}
-
-				// Put all the neighbours on a stack
-				for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtEndNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtEndNode.end(); neighbouringComponent++)
-				{
-					componentsNeedingChecking.push(*neighbouringComponent);
-				}
-				for (auto neighbouringComponent=currentComponent.lock()->neighbouringComponentsAtStartNode.begin(); neighbouringComponent!=currentComponent.lock()->neighbouringComponentsAtStartNode.end(); neighbouringComponent++)
-				{
-					componentsNeedingChecking.push(*neighbouringComponent);
-				}
-			}
+		} catch (const std::exception& e) {
+		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+		    throw e;
 		}
 	}
 	// Check whether flow has just become possible across this boundary (or vice-versa), when compared to the previous time-step.
@@ -697,7 +742,12 @@ void CircuitData::setIndicesOfNodesAtInterface(std::vector<int> indicesToSet)
 
 int CircuitData::getIndexOfNodeAtInterface()
 {
-	return m_indexOfNodeAt3DInterface.at(0); // The basic netlist boundary condition currently only uses the 0th entry of m_indexOfNodeAt3DInterface.
+	try {
+		return m_indexOfNodeAt3DInterface.at(0); // The basic netlist boundary condition currently only uses the 0th entry of m_indexOfNodeAt3DInterface.
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
 }
 
 circuit_component_t& CircuitComponent::getType()
@@ -744,12 +794,22 @@ bool CircuitData::hasPrescribedPressureAcrossInterface() const
 
 boost::shared_ptr<CircuitComponent> CircuitData::getComponentByInputDataIndex(const int componentIndex)
 {
-	return mapOfComponents.at(componentIndex);
+	try {
+		return mapOfComponents.at(componentIndex);
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
 }
 
 boost::shared_ptr<CircuitPressureNode> CircuitData::getNodeByInputDataIndex(const int componentIndex)
 {
-	return mapOfPressureNodes.at(componentIndex);
+	try {
+		return mapOfPressureNodes.at(componentIndex);
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
 }
 
 std::vector<std::pair<int,double*>> CircuitData::getComponentInputDataIndicesAndFlows() const
@@ -813,7 +873,12 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 	// tag the nodes at the 3D interface:
 	for (auto threeDInterfaceNodeIndex = threeDInterfaceNodeIndices.begin(); threeDInterfaceNodeIndex != threeDInterfaceNodeIndices.end(); threeDInterfaceNodeIndex++)
 	{
-    	mapOfPressureNodes.at(*threeDInterfaceNodeIndex)->setIsAtBoundary();
+    	try {
+    		mapOfPressureNodes.at(*threeDInterfaceNodeIndex)->setIsAtBoundary();
+    	} catch (const std::exception& e) {
+    	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+    	    throw e;
+    	}
     }
 
 	int numberOfComponentsTaggedAsBeingAtInterfaces = 0; //a counter to verify we get m_numberOfNetlistsUsedAsBoundaryConditions of these.
@@ -946,10 +1011,21 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 	{
 		// Scoping unit to avoid errors:
 		{
-			bool flowIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Flow);
+			bool flowIsGivenTo0DReplacementDomainAtThisBoundary;
+			try {
+				flowIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Flow);
+			} catch (const std::exception& e) {
+			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+			    throw e;
+			}
 			if (flowIsGivenTo0DReplacementDomainAtThisBoundary)
 			{
-				givePrescribedFlowToBoundaryComponent(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
+				try {
+					givePrescribedFlowToBoundaryComponent(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
+				} catch (const std::exception& e) {
+				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+				    throw e;
+				}
 			}
 			bool flowWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary = (mapOfPrescribedFlowComponents.find(toOneIndexing(componentAtBoundaryIndex)) == mapOfPrescribedFlowComponents.end());
 			bool flowNewlyPrescribedAtThisBoundary = (flowIsGivenTo0DReplacementDomainAtThisBoundary && flowWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary);
@@ -990,10 +1066,21 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 		}
 		// Scoping unit to avoid errors:
 		{
-			bool pressureIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Pressure);
+			bool pressureIsGivenTo0DReplacementDomainAtThisBoundary;
+			try {
+				pressureIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Pressure);
+			} catch (const std::exception& e) {
+			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+			    throw e;
+			}
 			if(pressureIsGivenTo0DReplacementDomainAtThisBoundary)
 			{
-				givePrescribedPressureToBoundaryNode(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
+				try {
+					givePrescribedPressureToBoundaryNode(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
+				} catch (const std::exception& e) {
+			    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+			    	throw e;
+		    	}
 			}
 			bool pressureWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary = (mapOfPrescribedPressureNodes.find(toOneIndexing(componentAtBoundaryIndex)) == mapOfPrescribedPressureNodes.end());
 			bool pressureNewlyPrescribedAtThisBoundary = (pressureIsGivenTo0DReplacementDomainAtThisBoundary && pressureWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary);
@@ -1050,12 +1137,22 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 
 void Netlist3DDomainReplacementCircuitData::givePrescribedPressureToBoundaryNode(int nodeIndex, double prescribedPressure)
 {
-	mapOfPressureNodes.at(nodeIndex)->setPressure(prescribedPressure);
+	try {
+		mapOfPressureNodes.at(nodeIndex)->setPressure(prescribedPressure);
+	} catch (const std::exception& e) {
+    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+    	throw e;
+    }
 }
 
 void Netlist3DDomainReplacementCircuitData::givePrescribedFlowToBoundaryComponent(int componentIndex, double prescribedFlow)
 {
-	mapOfComponents.at(componentIndex)->flow = prescribedFlow;
+	try {
+		mapOfComponents.at(componentIndex)->flow = prescribedFlow;
+	} catch (const std::exception& e) {
+    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+    	throw e;
+    }
 }
 
 boost::shared_ptr<CircuitComponent> Netlist3DDomainReplacementCircuitData::getDpDqResistorByIndex(int index)
@@ -1119,6 +1216,11 @@ void CircuitPressureNode::setPrescribedPressure(const double prescribedPressure)
 	}
 }
 
+void CircuitPressureNode::setRestartPressureFromHistory()
+{
+	pressure = m_entirePressureHistory.back();
+}
+
 void VolumeTrackingComponent::recordVolumeInHistory()
 {
 	m_entireVolumeHistory.push_back(m_storedVolume);
@@ -1127,6 +1229,11 @@ void VolumeTrackingComponent::recordVolumeInHistory()
 double VolumeTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
 {
 	return m_entireVolumeHistory.at(timestep);
+}
+
+void VolumeTrackingComponent::setVolumeHistoryAtTimestep(double historyVolume)
+{
+	m_entireVolumeHistory.push_back(historyVolume);
 }
 
 void VolumeTrackingComponent::setStoredVolume(const double newVolume)
@@ -1179,6 +1286,11 @@ void VolumeTrackingComponent::enforceZeroVolumePrescription()
 void VolumeTrackingComponent::resetZeroVolumePrescription()
 {
 	m_enforceZeroVolumePrescription = false;
+}
+
+void VolumeTrackingComponent::setRestartVolumeFromHistory()
+{
+	m_storedVolume = m_entireVolumeHistory.back();
 }
 
 void VolumeTrackingPressureChamber::passPressureToStartNode()

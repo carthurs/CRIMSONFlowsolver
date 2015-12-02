@@ -326,63 +326,156 @@ void NetlistCircuit::rebuildCircuitMetadata()
 	mp_circuitData->rebuildCircuitMetadata();
 }
 
-// nextTimestepWrite_start will be updated and returned to caller of this function.
-void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
+void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
 {
-	// All the following writes can use the same nextTimestepWrite_end to determine how far to go when looking for data to write to the file:
-      int nextTimestepWrite_end = mp_circuitData->getLengthOfHistoryData();
-      
-      {
-        // Write the netlistPressures_zeroDDomainReplacement.dat
-        basicFileWriter boundaryConditionPressureHistoryWriter;
-        boundaryConditionPressureHistoryWriter.setFileName(m_PressureHistoryFileName);
-
-        for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
+    if (startingTimeStepIndex > 0)
+    {
         {
-          boundaryConditionPressureHistoryWriter.writeStepIndex(stepToWrite);
-          for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
+          // Write the netlistPressures_zeroDDomainReplacement.dat
+          histFileReader boundaryConditionPressureHistoryReader;
+          boundaryConditionPressureHistoryReader.setFileName(m_PressureHistoryFileName);
+          boundaryConditionPressureHistoryReader.setNumColumns(mp_circuitData->numberOfPressureNodes + 1); // +1 for the timestep indexing column
+          boundaryConditionPressureHistoryReader.readAndSplitMultiSurfaceRestartFile();
+
+          for (int stepToRead=0; stepToRead<startingTimeStepIndex; stepToRead++)
           {
-            boundaryConditionPressureHistoryWriter.writeToFile(node->second->m_entirePressureHistory.at(stepToWrite));
+            boundaryConditionPressureHistoryReader.getNextDatum(); // ditch the timestep index
+            for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
+            {
+              node->second->m_entirePressureHistory.push_back(boundaryConditionPressureHistoryReader.getNextDatum());
+            }
           }
-          boundaryConditionPressureHistoryWriter.writeEndLine();
+
+          // Set the restarted nodal pressures:
+          for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
+            {
+              node->second->setRestartPressureFromHistory();
+            }
         }
-      }
 
-      {
-        // Write the netlistFlows_surface_X.dat
-        basicFileWriter boundaryConditionFlowHistoryWriter;
-        boundaryConditionFlowHistoryWriter.setFileName(m_FlowHistoryFileName);
-
-        for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
         {
-          boundaryConditionFlowHistoryWriter.writeStepIndex(stepToWrite);
+          // Write the netlistFlows_surface_X.dat
+          histFileReader boundaryConditionFlowistoryReader;
+          boundaryConditionFlowistoryReader.setFileName(m_FlowHistoryFileName);
+          boundaryConditionFlowistoryReader.setNumColumns(mp_circuitData->numberOfComponents + 1); // +1 for the timestep indexing column
+          boundaryConditionFlowistoryReader.readAndSplitMultiSurfaceRestartFile();
+
+          for (int stepToRead=0; stepToRead<startingTimeStepIndex; stepToRead++)
+          {
+            boundaryConditionFlowistoryReader.getNextDatum(); // ditch the timestep index
+            for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
+            {
+              (*component)->m_entireFlowHistory.push_back(boundaryConditionFlowistoryReader.getNextDatum());
+            }
+          }
+
+          // Set the restarted component flow:
           for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
           {
-            boundaryConditionFlowHistoryWriter.writeToFile((*component)->m_entireFlowHistory.at(stepToWrite));
+            (*component)->setRestartFlowFromHistory();
           }
-          boundaryConditionFlowHistoryWriter.writeEndLine();
         }
-      }
 
 
-      {
-        // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
-        basicFileWriter boundaryConditionVolumeHistoryWriter;
-        boundaryConditionVolumeHistoryWriter.setFileName(m_VolumeHistoryFileName);
-        for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
+        if (mp_circuitData->m_numberOfVolumeTrackingComponenets > 0)
         {
-          boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
+          // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
+          histFileReader boundaryConditionVolumeHistoryReader;
+          boundaryConditionVolumeHistoryReader.setFileName(m_VolumeHistoryFileName);
+          boundaryConditionVolumeHistoryReader.setNumColumns(mp_circuitData->m_numberOfVolumeTrackingComponenets);
+          boundaryConditionVolumeHistoryReader.readAndSplitMultiSurfaceRestartFile();
+
+          for (int stepToRead=0; stepToRead<startingTimeStepIndex; stepToRead++)
+          {
+            boundaryConditionVolumeHistoryReader.getNextDatum(); // ditch the timestep index
+            for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
+            {
+              VolumeTrackingComponent* volumeTrackingComponent = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
+              // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
+              if (volumeTrackingComponent != NULL)
+              {
+                double readVolumeValue = boundaryConditionVolumeHistoryReader.getNextDatum();
+                volumeTrackingComponent->setVolumeHistoryAtTimestep(readVolumeValue);
+              }
+            }
+          }
+
+          // Set the restarted stored volumes:
           for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
           {
             VolumeTrackingComponent* volumeTrackingComponent = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
             // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
             if (volumeTrackingComponent != NULL)
             {
-              boundaryConditionVolumeHistoryWriter.writeToFile(volumeTrackingComponent->getVolumeHistoryAtTimestep(stepToWrite));
+              volumeTrackingComponent->setRestartVolumeFromHistory();
             }
           }
-          boundaryConditionVolumeHistoryWriter.writeEndLine();
         }
+    }
+}
+
+// nextTimestepWrite_start will be updated and returned to caller of this function.
+void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
+{
+	// All the following writes can use the same nextTimestepWrite_end to determine how far to go when looking for data to write to the file:
+      int nextTimestepWrite_end = mp_circuitData->getLengthOfHistoryData();
+
+      try {
+            {
+              // Write the netlistPressures_zeroDDomainReplacement.dat
+              basicFileWriter boundaryConditionPressureHistoryWriter;
+              boundaryConditionPressureHistoryWriter.setFileName(m_PressureHistoryFileName);
+      
+              for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
+              {
+                boundaryConditionPressureHistoryWriter.writeStepIndex(stepToWrite);
+                for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
+                {
+                  boundaryConditionPressureHistoryWriter.writeToFile(node->second->m_entirePressureHistory.at(stepToWrite));
+                }
+                boundaryConditionPressureHistoryWriter.writeEndLine();
+              }
+            }
+      
+            {
+              // Write the netlistFlows_surface_X.dat
+              basicFileWriter boundaryConditionFlowHistoryWriter;
+              boundaryConditionFlowHistoryWriter.setFileName(m_FlowHistoryFileName);
+      
+              for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
+              {
+                boundaryConditionFlowHistoryWriter.writeStepIndex(stepToWrite);
+                for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
+                {
+                  boundaryConditionFlowHistoryWriter.writeToFile((*component)->m_entireFlowHistory.at(stepToWrite));
+                }
+                boundaryConditionFlowHistoryWriter.writeEndLine();
+              }
+            }
+      
+      
+            {
+              // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
+              basicFileWriter boundaryConditionVolumeHistoryWriter;
+              boundaryConditionVolumeHistoryWriter.setFileName(m_VolumeHistoryFileName);
+              for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
+              {
+                boundaryConditionVolumeHistoryWriter.writeStepIndex(stepToWrite);
+                for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
+                {
+                  VolumeTrackingComponent* volumeTrackingComponent = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
+                  // If this component is actually a volume chamber, so it actually has a volume history we can write to the file:
+                  if (volumeTrackingComponent != NULL)
+                  {
+                    boundaryConditionVolumeHistoryWriter.writeToFile(volumeTrackingComponent->getVolumeHistoryAtTimestep(stepToWrite));
+                  }
+                }
+                boundaryConditionVolumeHistoryWriter.writeEndLine();
+              }
+            }
+      } catch (const std::exception& e) {
+          std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+          throw e;
       }
 
       // Set the starting place for the write on the next iteration (nextTimestepWrite_start is returned to the caller, by reference).
@@ -1267,7 +1360,7 @@ void NetlistCircuit::getMapOfVolumeHistoriesToCorrectComponents()
      if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (mp_circuitData->components.at(ii)))
      {
         listOfHistoryVolumes.insert(ii);
-        mp_circuitData->components.at(ii)->hasHistoryVolume = true;
+        mp_circuitData->components.at(ii)->setHasHistoryVolume(true);
      }
   }
 
@@ -1291,7 +1384,7 @@ void NetlistCircuit::getMapOfTrackedVolumesToCorrectComponents()
      if (boost::dynamic_pointer_cast<VolumeTrackingComponent> (mp_circuitData->components.at(ii)))
      {
         listOfTrackedVolumes.insert(ii);
-        mp_circuitData->components.at(ii)->hasTrackedVolume = true;
+        // mp_circuitData->components.at(ii)->setHasTrackedVolume(true);
      }
   }
 
@@ -1670,8 +1763,13 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
             // We only do this if the netlist is in Dirichlet BC mode:
             if (mp_circuitData->hasPrescribedPressureAcrossInterface())
             {
-              double* pressurePointerToSet = pressure_n_ptrs.at(prescribedPressureNode->second->prescribedPressurePointerIndex);
-              errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+              try {
+                double* pressurePointerToSet = pressure_n_ptrs.at(prescribedPressureNode->second->prescribedPressurePointerIndex);
+                errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+              } catch (const std::exception& e) {
+                std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+                throw e;
+              }
               // columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
               // nextPressurePointerIndex++;
             }
@@ -1759,7 +1857,13 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
            {
             if (mp_circuitData->hasPrescribedFlowAcrossInterface())
             {
-              double* flowPointerToSet = flow_n_ptrs.at(prescribedFlowComponent->second->prescribedFlowPointerIndex);
+              double* flowPointerToSet;
+              try {
+                flowPointerToSet = flow_n_ptrs.at(prescribedFlowComponent->second->prescribedFlowPointerIndex);
+              } catch (const std::exception& e) {
+                std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+                throw e;
+              }
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
               double threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
               assert(!isnan(threeDFlowValue));
@@ -1836,7 +1940,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
       int ll=0;
       for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
       {
-        if ((*component)->hasHistoryVolume)
+        if ((*component)->getHasHistoryVolume())
         {
           // currently, only VolumeTrackingComponents have history volumes. We might want to change this cast later, if new component types
           // with history volumes get added.

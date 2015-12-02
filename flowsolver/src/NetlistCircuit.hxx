@@ -18,13 +18,14 @@ class NetlistCircuit
 	FRIEND_TEST(testMultidom, checkClosedDiodeWithRemainingOpenPathDetected);
 	FRIEND_TEST(testMultidom, checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
-	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt)
+	NetlistCircuit(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const int startingTimestepIndex)
 	: m_surfaceIndex(surfaceIndex),
 	m_IndexOfThisNetlistLPNInInputFile(indexOfThisNetlistLPN),
 	m_hstep(hstep),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
-	m_alfi(alfi)
+	m_alfi(alfi),
+	m_startingTimestepIndex(startingTimestepIndex)
 	{
 		initialisePetscArrayNames();
 
@@ -86,6 +87,7 @@ public:
 	void setPointersToBoundaryPressuresAndFlows(double* const interfacePressures, double* const interfaceFlows, const int& numberOfPointers);
 
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
+	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
 
 	virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 	virtual void updateLPN(const int timestepNumber);
@@ -96,13 +98,14 @@ public:
 	int getNumberOfHistoryPressures() const;
 protected:
 	// Overload constructor for subclasses to call:
-	NetlistCircuit(const int hstep, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt)
+	NetlistCircuit(const int hstep, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const int startingTimestepIndex)
 	: m_hstep(hstep),
 	m_surfaceIndex(-1),
 	m_IndexOfThisNetlistLPNInInputFile(indexOfThisNetlistLPN),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
-	m_alfi(alfi)
+	m_alfi(alfi),
+	m_startingTimestepIndex(startingTimestepIndex)
 	{
 		initialisePetscArrayNames();
 	}
@@ -115,6 +118,7 @@ protected:
 	const double m_delt;
 	const double m_alfi;
 	const int m_hstep;
+	const int m_startingTimestepIndex;
 	std::vector<double*> pressure_n_ptrs;
 	std::vector<double*> flow_n_ptrs;
 	int m_NumberOfAtomicSubcircuits;
@@ -214,8 +218,8 @@ private:
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
-	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex)
-	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt),
+	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex, const int startingTimestepIndex)
+	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt, startingTimestepIndex),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
 	m_elastanceToGiveCentralCapacitor(complianceToGiveCentralCapacitor),
 	m_initialDomainPressure(initialDomainPressure),

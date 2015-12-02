@@ -10,11 +10,11 @@
 class Netlist3DDomainReplacement
 {
 public:
-	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex)
+	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex, const int startingTimestepIndex)
 	: m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
 		bool thisIsARestartedSimulation = false; //\todo fix this!
-		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure, mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex));
+		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure, mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex, startingTimestepIndex));
 	}
 
 	void setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate);
@@ -33,6 +33,7 @@ public:
 	boost::shared_ptr<NetlistZeroDDomainCircuit> getCircuit();
 
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_zeroDBoundaries_start);
+	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimestepIndex);
 
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 

@@ -11,7 +11,12 @@ void NetlistBoundaryCondition::initialiseModel()
 {
     {
         int numberOfPointers = 1;
-        mp_NetlistCircuit->setPointersToBoundaryPressuresAndFlows(pressure_n_ptrs.at(0), flow_n_ptrs.at(0), numberOfPointers);
+        try {
+            mp_NetlistCircuit->setPointersToBoundaryPressuresAndFlows(pressure_n_ptrs.at(0), flow_n_ptrs.at(0), numberOfPointers);
+        } catch (const std::exception& e) {
+            std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+            throw e;
+        }
     }
     // Get the input data
     mp_NetlistCircuit->createCircuitDescription();
@@ -69,6 +74,11 @@ void NetlistBoundaryCondition::writePressuresFlowsAndVolumes(int& nextTimestepWr
     mp_NetlistCircuit->writePressuresFlowsAndVolumes(nextTimestepWrite_start);
 }
 
+void NetlistBoundaryCondition::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
+{
+    mp_NetlistCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+}
+
 // Processes the binaryMask for setting Dirichlet conditions.
 // This boundary condition knows which mesh nodes lie at its surface (checked by the assert),
 // and it sets 0 in binaryMask at the appropriate location for these nodes, if the boundary
@@ -92,7 +102,7 @@ void NetlistBoundaryCondition::setPressureAndFlowPointers(double* pressurePointe
     // are duplicated here and in the NetlistCircuit.
     //
     // We may not even need vectors here any more...
-    mp_NetlistCircuit->setPressureAndFlowPointers(pressurePointer,flowPointer);
+    // mp_NetlistCircuit->setPressureAndFlowPointers(pressurePointer,flowPointer);
     flow_n_ptrs.clear();
     flow_n_ptrs.push_back(flowPointer);
 

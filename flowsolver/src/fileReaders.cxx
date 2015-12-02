@@ -80,7 +80,7 @@ bool abstractFileReader::readNextLine()
 
 bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 {
-
+	assert(m_hasNumberOfColumns);
 	int index;
 	double value;
 
@@ -116,8 +116,35 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
  	}
 
  	// return false case is guarded by an if above
- 	return true;
+ 	if (m_numColumns > 0)
+ 	{
+ 		return true;
+ 	} else {
+ 		return false; // for the case where the file is empty anyway
+ 	}
 
+}
+
+double abstractFileReader::getNextDatum()
+{
+	assert(m_hasNumberOfColumns);
+
+	if (!m_fileHasBeenRead)
+	{
+		std::stringstream error;
+		error << "Attempted to access data in file " << m_fileName << " before it has been read. Terminating.";
+		throw std::runtime_error(error.str());
+	}
+
+	double returnValue = getReadFileData(m_nextColumnReadLocation, m_nextRowReadLoacation);
+	m_nextColumnReadLocation = (m_nextColumnReadLocation + 1) % m_numColumns;
+	
+	if (m_nextColumnReadLocation == 0) // if the row counter was just reset
+	{
+		m_nextRowReadLoacation++;
+	}
+
+	return returnValue;
 }
 
 // The columnIndex refers to the file columns. It's zero-indexed.
@@ -130,7 +157,15 @@ double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 		throw std::runtime_error(error.str());
 	}
 
-	return ((m_dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
+	double returnValue;
+	try {
+		returnValue = ((m_dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
+
+	return returnValue;
 }
 
 void abstractFileReader::readFileInternalMetadata()

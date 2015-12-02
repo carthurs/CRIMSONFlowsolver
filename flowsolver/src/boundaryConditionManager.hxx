@@ -82,6 +82,7 @@ class abstractBoundaryCondition;
     void getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled);
     std::map<int,std::pair<double,double>> getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement();
     void writeAllNetlistComponentFlowsAndNodalPressures();
+    void loadAllNetlistComponentFlowsAndNodalPressures();
 
     int getNumberOfRCRSurfaces(){return m_NumberOfRCRSurfaces;}
     int getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
@@ -95,13 +96,16 @@ class abstractBoundaryCondition;
     void setDelt(const double delt);
     void setHstep(const int hstep);
     void setAlfi(const double alfi);
-    void setLstep(const int lstep);
+    // void setLstep(const int lstep);
+    void setStartingTimestepIndex(const int startingTimestepIndex);
     void incrementTimestepIndex();
     void setNtout(const int ntout);
     void setMaxsurf(const int maxsurf);
     void setNstep(const int nstep);
     void setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits);
     void setMasterControlScriptPresent(const int masterControlScriptPresent);
+
+    void setSimulationModePurelyZeroD(const int simulationIsPurelyZeroD);
 
     void createControlSystems();
     void updateBoundaryConditionControlSystems();
@@ -119,8 +123,7 @@ class abstractBoundaryCondition;
  private:
     boundaryConditionManager()
     {
-        checkIfThisIsARestartedSimulation();
-        m_nextTimestepWrite_netlistBoundaries_start = 0;
+        m_nextTimestepWrite_netlistBoundaries_start;
 
         m_numberOfBoundaryConditionsManaged = 0;
 
@@ -135,16 +138,23 @@ class abstractBoundaryCondition;
         m_maxsurfHasBeenSet = false;
         m_nstepHasBeenSet = false;
         m_numLoopClosingNetlistCircuitsHasBeenSet = false;
+        m_startingTimestepIndexHasBeenSet = false;
 
         m_hasSurfaceList = false;
         m_controlSystemsPresent = false;
         m_masterControlScriptPresent = false;
+
+        m_simulationIsPurelyZeroD = false;
+
+        checkIfThisIsARestartedSimulation();
     }
     std::vector<boost::shared_ptr<abstractBoundaryCondition>> m_boundaryConditions;
     std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubsections;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
 
     boost::shared_ptr<ControlSystemsManager> mp_controlSystemsManager;
+
+    bool m_simulationIsPurelyZeroD;
 
     static bool m_thisIsARestartedSimulation;
     int m_numberOfBoundaryConditionsManaged;
@@ -158,6 +168,7 @@ class abstractBoundaryCondition;
     int m_ntout;
     int m_maxsurf;
     int m_nstep;
+    int m_startingTimestepIndex;
     int m_numLoopClosingNetlistCircuits;
 
     bool m_deltHasBeenSet;
@@ -169,6 +180,7 @@ class abstractBoundaryCondition;
     bool m_nstepHasBeenSet;
     bool m_numLoopClosingNetlistCircuitsHasBeenSet;
     bool m_masterControlScriptPresent;
+    bool m_startingTimestepIndexHasBeenSet;
 
     bool m_hasSurfaceList;
     bool m_controlSystemsPresent;

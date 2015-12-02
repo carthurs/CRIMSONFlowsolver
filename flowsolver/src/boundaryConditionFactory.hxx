@@ -12,14 +12,15 @@ class abstractBoundaryCondition;
 class boundaryConditionFactory
 {
  public:
- 	boundaryConditionFactory(const double hstep, const double delt, const double alfi, const double lstep, const int maxsurf, const int nstep, const int numLoopClosingCircuits)
+ 	boundaryConditionFactory(const double hstep, const double delt, const double alfi, const int maxsurf, const int nstep, const int numLoopClosingCircuits, const bool simulationIsPurelyZeroD, const int startingTimestepIndex)
  	: m_hstep(hstep),
  	m_delt(delt),
  	m_alfi(alfi),
- 	m_lstep(lstep),
  	m_maxsurf(maxsurf),
  	m_nstep(nstep),
- 	m_numLoopClosingNetlistCircuits(numLoopClosingCircuits)
+ 	m_numLoopClosingNetlistCircuits(numLoopClosingCircuits),
+ 	m_simulationIsPurelyZeroD(simulationIsPurelyZeroD),
+ 	m_startingTimestepIndex(startingTimestepIndex)
  	{
  		m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt = false;
  	}
@@ -39,10 +40,11 @@ class boundaryConditionFactory
 	const double m_hstep;
 	const double m_delt;
 	const double m_alfi;
-	const double m_lstep;
 	const int m_maxsurf;
 	const int m_nstep;
 	const int m_numLoopClosingNetlistCircuits;
+	const bool m_simulationIsPurelyZeroD;
+	const int m_startingTimestepIndex;
 	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> mp_netlistDownstreamLoopClosingSubsectionsWeakPointers;
 
 	bool m_anyNeededNetlistLoopClosingCircuitsHaveBeenBuilt;

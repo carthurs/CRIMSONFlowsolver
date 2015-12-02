@@ -19,7 +19,7 @@ double abstractBoundaryCondition::getdp_dq()
 
 // void abstractBoundaryCondition::setLPNInflowPressure(double inflowPressure)
 // {
-// 	// This will not be needed by all subclasses!
+//  // This will not be needed by all subclasses!
 //     LPNInflowPressure = inflowPressure;
 // }
 
@@ -33,10 +33,10 @@ void abstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNum
 {
   if (flowPermittedAcross3DInterface())
   {
-    std::pair<double,double> temp;
+    std::pair<double, double> temp;
 
-    double timeAtStepNplus1 = delt*((double)timestepNumber+alfi_local);
-    double alfi_delt = alfi_local*delt;
+    double timeAtStepNplus1 = delt * ((double)timestepNumber + alfi_local);
+    double alfi_delt = alfi_local * delt;
 
     temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
 
@@ -56,9 +56,9 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
 {
   if (flowPermittedAcross3DInterface())
   {
-    std::pair<double,double> temp;
+    std::pair<double, double> temp;
 
-    double timeAtStepNplus1 = delt*((double)timestepNumber+1.0);
+    double timeAtStepNplus1 = delt * ((double)timestepNumber + 1.0);
 
     temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, delt);
 
@@ -77,38 +77,43 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
 void abstractBoundaryCondition::updatePressureAndFlowHistory()
 {
   pressurehist[m_currentTimestepIndex] = pressure_n;
-  flowhist[m_currentTimestepIndex] = *(flow_n_ptrs.at(0));
+  try {
+    flowhist[m_currentTimestepIndex] = *(flow_n_ptrs.at(0));
+  } catch (const std::exception& e) {
+    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+    throw e;
+  }
 }
 
 void abstractBoundaryCondition::updpressure_n1_withflow()
 {
-  pressure_n = dp_dq_n1*(*(flow_n_ptrs.at(0))) + Hop_n1;
+  pressure_n = dp_dq_n1 * (*(flow_n_ptrs.at(0))) + Hop_n1;
 }
 
 void abstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
-  for (int node=0; node<lengthOfNodeToBoundaryAssociationArray; node++)
+  for (int node = 0; node < lengthOfNodeToBoundaryAssociationArray; node++)
   {
     if (ndsurf_nodeToBoundaryAssociationArray[node] == surfaceIndex)
     {
       listOfMeshNodesAtThisBoundary.push_back(node);
     }
   }
-  hasListOfMeshNodesAtThisBoundary = true;   
+  hasListOfMeshNodesAtThisBoundary = true;
 }
 
 void abstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
 {
-    // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
-    // NB: Need to add a method in fortran to set a value for non-zero restarting!
-    assert(flow_n_ptrs.size()==0);
-    flow_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
-    assert(pressure_n_ptrs.size()==0);
-    pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
+  // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
+  // NB: Need to add a method in fortran to set a value for non-zero restarting!
+  assert(flow_n_ptrs.size() == 0);
+  flow_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
+  assert(pressure_n_ptrs.size() == 0);
+  pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
 
-    flow_n = *(flow_n_ptrs.at(0));
-    flow_n1 = 0.0;
-    pressure_n = *(pressure_n_ptrs.at(0));
+  flow_n = *(flow_n_ptrs.at(0));
+  flow_n1 = 0.0;
+  pressure_n = *(pressure_n_ptrs.at(0));
 }
 
 // void abstractBoundaryCondition::storeFlowAndPressureAtStartOfTimestep()
@@ -137,7 +142,7 @@ void abstractBoundaryCondition::setDirichletConditionsIfNecessary(int* const bin
 {
   assert(hasListOfMeshNodesAtThisBoundary);
   // set zero in the binaryMask at the locations necessary to impose Dirichlet at this surface
-  for (auto node=listOfMeshNodesAtThisBoundary.begin(); node!=listOfMeshNodesAtThisBoundary.end(); node++)
+  for (auto node = listOfMeshNodesAtThisBoundary.begin(); node != listOfMeshNodesAtThisBoundary.end(); node++)
   {
     binaryMask[*node] = 0;
   }

@@ -31,12 +31,22 @@ void fortranBoundaryDataPointerManager::setBoundaryPressures(int surfaceIndex, d
 double* fortranBoundaryDataPointerManager::getBoundaryFlows(int surfaceIndex)
 {
 	assert(m_hasBoundaryFlows);
-	return m_boundaryFlows.at(surfaceIndex);
+	try {
+		return m_boundaryFlows.at(surfaceIndex);
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
 }
 double* fortranBoundaryDataPointerManager::getBoundaryPressures(int surfaceIndex)
 {
 	assert(m_hasBoundaryPressures);
-	return m_boundaryPressures.at(surfaceIndex);
+	try {
+		return m_boundaryPressures.at(surfaceIndex);
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
 }
 
 bool fortranBoundaryDataPointerManager::pointerNotDuplicated(double* pointerAboutToBeStored)

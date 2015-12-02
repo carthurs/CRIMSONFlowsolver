@@ -145,6 +145,7 @@
 
 		   // initialise reduced order boundary conditions
 		   multidom_initialise();
+		   multidomSetupControlSystems();
 
 		   itrdrv_init(); // initialize solver
 

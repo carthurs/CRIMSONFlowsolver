@@ -24,10 +24,11 @@ void multidom_initialise(){
   // lower than the boundaryConditionManager - if you need something from 
   // the common block to use in a boundary condition, make a set method here
   // and pass it in explicitly to the BC. It's much easier to keep track of this way.
+  boundaryConditionManager_instance->setSimulationModePurelyZeroD(nomodule.pureZeroDSimulation);
   boundaryConditionManager_instance->setDelt(inpdat.Delt[0]);
   boundaryConditionManager_instance->setHstep(inpdat.nstep[0] + timdat.lstep);
   boundaryConditionManager_instance->setAlfi(timdat.alfi);
-  boundaryConditionManager_instance->setLstep(timdat.lstep);
+  // boundaryConditionManager_instance->setLstep(timdat.lstep);
   boundaryConditionManager_instance->setNtout(outpar.ntout);
   boundaryConditionManager_instance->setMaxsurf(MAXSURF);
   boundaryConditionManager_instance->setNstep(inpdat.nstep[0]);
@@ -87,25 +88,16 @@ void multidom_initialise(){
   // Write loops here for all the other surface types!
 
   boundaryConditionManager_instance->setSurfaceList(surfaceList);
+}
+
+void multidomSetupControlSystems()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
 
   if (boundaryConditionManager_instance->getNumberOfNetlistSurfaces() > 0)
   {
     boundaryConditionManager_instance->createControlSystems();
   }
-  
-  // std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
-  // retrievedBoundaryConditions = boundaryConditionManager_instance->getBoundaryConditions();
-
-
-  // if (grcrbccom.numGRCRSrfs > 0)
-  // {
-  //  for (int i=0; i < grcrbccom.numGRCRSrfs; i++)
-  //  {
-  //    std::cout << "writing here" << std::endl;
-  //    std::cout << grcrbccom.nsrflistGRCR[i+1] << std::endl;
-  //  }
-  // }
-
 }
 
 

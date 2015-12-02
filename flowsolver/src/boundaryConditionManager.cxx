@@ -22,7 +22,7 @@
 // Static class static member variables:
 boundaryConditionManager* boundaryConditionManager::instance = 0;
 histFileReader* boundaryConditionManager::PHistReader = NULL;
-bool boundaryConditionManager::m_thisIsARestartedSimulation = 0;
+bool boundaryConditionManager::m_thisIsARestartedSimulation = false;
 
 // Functions which affect features of the abstract class:
 void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
@@ -77,15 +77,36 @@ void boundaryConditionManager::setAlfi(const double alfi)
   m_alfiHasBeenSet = true;
 }
 
-void boundaryConditionManager::setLstep(const int lstep)
+void boundaryConditionManager::setSimulationModePurelyZeroD(const int simulationIsPurelyZeroD)
 {
-  m_currentTimestepIndex = lstep;
-  m_currentTimestepIndexHasBeenSet = true;
+  if (simulationIsPurelyZeroD == 1)
+  {
+    m_simulationIsPurelyZeroD = true;
+  }
+  else
+  {
+    m_simulationIsPurelyZeroD = false;
+  }
+  
 }
+
+// void boundaryConditionManager::setLstep(const int lstep)
+// {
+//   m_currentTimestepIndex = lstep;
+//   m_currentTimestepIndexHasBeenSet = true;
+// }
+
+void boundaryConditionManager::setStartingTimestepIndex(const int startingTimestepIndex)
+{
+  assert(!m_startingTimestepIndexHasBeenSet);
+  m_startingTimestepIndex = startingTimestepIndex;
+  m_currentTimestepIndex = startingTimestepIndex;
+  m_startingTimestepIndexHasBeenSet = true;
+} 
 
 void boundaryConditionManager::incrementTimestepIndex()
 {
-  assert(m_currentTimestepIndexHasBeenSet);
+  // assert(m_currentTimestepIndexHasBeenSet);
 
   // increment the internal timestep of the manager
   m_currentTimestepIndex++;
@@ -125,21 +146,24 @@ void boundaryConditionManager::checkIfThisIsARestartedSimulation()
 {
   SimpleFileReader numstartReader("numstart.dat");
 
-  bool success = false;
-  std::string numstartString = numstartReader.getNextDataSplitBySpacesOrEndOfLine(success);
-  assert(success);
+  bool successfullyReadNumstartDotDat = false;
+  std::string numstartString = numstartReader.getNextDataSplitBySpacesOrEndOfLine(successfullyReadNumstartDotDat);
+  assert(successfullyReadNumstartDotDat);
 
   int valueFromNumstartDotDat = boost::lexical_cast<int>(numstartString);
 
+  setStartingTimestepIndex(valueFromNumstartDotDat);
+
+  m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat;
   if (valueFromNumstartDotDat > 0)
   {
     m_thisIsARestartedSimulation = true;
-    m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat + 1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
+    //m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat + 1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
   }
   else
   {
     m_thisIsARestartedSimulation = false;
-    m_nextTimestepWrite_netlistBoundaries_start = 0;
+    //m_nextTimestepWrite_netlistBoundaries_start = 0;
   }
 }
 
@@ -240,17 +264,18 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   assert(m_deltHasBeenSet);
   assert(m_hstepHasBeenSet);
   assert(m_alfiHasBeenSet);
-  assert(m_currentTimestepIndexHasBeenSet);
+  // assert(m_currentTimestepIndexHasBeenSet);
   assert(m_ntoutHasBeenSet);
   assert(m_maxsurfHasBeenSet);
   assert(m_nstepHasBeenSet);
   assert(m_numLoopClosingNetlistCircuitsHasBeenSet);
+  assert(m_startingTimestepIndexHasBeenSet);
 
   assert(!m_hasSurfaceList);
   m_hasSurfaceList = true;
 
   // Build a factory
-  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_currentTimestepIndex, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits);
+  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits, m_simulationIsPurelyZeroD, m_startingTimestepIndex);
 
   factory.createNetlistLoopClosingCircuits(m_netlistDownstreamLoopClosingSubsections);
 
@@ -276,11 +301,13 @@ void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double
   {
     boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     assert(downcastNetlist != NULL);
-    
+
     // Get the (zero-indexed) Netlist index; this gives us the appropriate location of the pointers in the input variables
     int netlistIndex = downcastNetlist->getIndexAmongstNetlists();
     // Give the appropriate memory addresses of the pressures and flows to this NetlistBC:
     downcastNetlist->setPressureAndFlowPointers(&zeroDDomainPressures[netlistIndex], &zeroDDomainFlows[netlistIndex]);
+
+    downcastNetlist->initialiseModel();
   }
 }
 
@@ -818,6 +845,18 @@ extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
   boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
 }
 
+void boundaryConditionManager::loadAllNetlistComponentFlowsAndNodalPressures()
+{
+  assert(m_startingTimestepIndexHasBeenSet);
+  loadNetlistPressuresFlowsAndVolumesOnRestart(m_boundaryConditions, m_netlistDownstreamLoopClosingSubsections, m_startingTimestepIndex);
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->loadAllNetlistComponentFlowsAndNodalPressures();
+}
+
 // Control systems specific functions
 void boundaryConditionManager::updateBoundaryConditionControlSystems()
 {
@@ -863,14 +902,19 @@ void boundaryConditionManager::createControlSystems()
       // We now initialise all the controls which affect this netlist...
       int netlistIndex = currentNetlist->getIndexAmongstNetlists();
       // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
-      for (auto componentIndexAndControlType = mapsOfComponentControlTypes.at(netlistIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes.at(netlistIndex).end(); componentIndexAndControlType++)
-      {
-        mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
-      }
-      // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
-      for (auto nodeIndexAndControlType = mapsOfNodeControlTypes.at(netlistIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes.at(netlistIndex).end(); nodeIndexAndControlType++)
-      {
-        mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlistCircuit, nodeIndexAndControlType->first);
+      try {
+        for (auto componentIndexAndControlType = mapsOfComponentControlTypes.at(netlistIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes.at(netlistIndex).end(); componentIndexAndControlType++)
+          {
+            mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
+          }
+          // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+          for (auto nodeIndexAndControlType = mapsOfNodeControlTypes.at(netlistIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes.at(netlistIndex).end(); nodeIndexAndControlType++)
+          {
+            mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlistCircuit, nodeIndexAndControlType->first);
+          }
+      } catch (const std::exception& e) {
+          std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+          throw e;
       }
     }
   }
@@ -894,15 +938,20 @@ void boundaryConditionManager::createControlSystems()
       const int closedLoopIndex = (*loopClosingCircuit)->getIndexOfClosedLoop_zeroIndexed();
       boost::shared_ptr<NetlistCircuit> currentNetlistCircuit = (*loopClosingCircuit)->getNetlistCircuit();
 
-      // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
-      for (auto componentIndexAndControlType = mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).end(); componentIndexAndControlType++)
-      {
-        mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
-      }
-      // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
-      for (auto nodeIndexAndControlType = mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).end(); nodeIndexAndControlType++)
-      {
-        mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlistCircuit, nodeIndexAndControlType->first);
+      try {
+        // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+          for (auto componentIndexAndControlType = mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).end(); componentIndexAndControlType++)
+          {
+            mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
+          }
+          // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
+          for (auto nodeIndexAndControlType = mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).end(); nodeIndexAndControlType++)
+          {
+            mp_controlSystemsManager->createParameterController(nodeIndexAndControlType->second, currentNetlistCircuit, nodeIndexAndControlType->first);
+          }
+      } catch (const std::exception& e) {
+          std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+          throw e;
       }
     }
 

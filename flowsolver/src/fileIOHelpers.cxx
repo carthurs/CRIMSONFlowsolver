@@ -36,3 +36,22 @@ void writeNetlistFlowsPressuresAndVolumes(const std::vector<boost::shared_ptr<ab
   // so that we know which timestep to start writing data fromon the next call to this function
   nextTimestepWrite_start = nextTimestepWrite_inout;
 }
+
+void loadNetlistPressuresFlowsAndVolumesOnRestart(const std::vector<boost::shared_ptr<abstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, const int startingTimeStepIndex)
+{
+  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+  {
+    NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+    if (netlistBoundaryCondition != NULL) // if the boundaryCondition was a NetlistBoundaryCondition (or subclass thereof)
+    {
+      netlistBoundaryCondition->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+
+    }
+  }
+
+  // Write the downstream subsection pressures, flows and volumes:
+  for (auto closedLoopDownstreamCircuit = netlistDownstreamLoopClosingSubsections.begin(); closedLoopDownstreamCircuit != netlistDownstreamLoopClosingSubsections.end(); closedLoopDownstreamCircuit++)
+  {
+    (*closedLoopDownstreamCircuit)->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+  }
+}

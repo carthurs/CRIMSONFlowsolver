@@ -99,7 +99,6 @@ int main(int argc, char **argv) {
 
    // Preprocess data and run the problem
    // Partition the problem to the correct number of processors
-
    if( rank == 0 )
    {
       //cout << "number of procs " << numprocs_perparticle << endl;
@@ -130,6 +129,7 @@ int main(int argc, char **argv) {
 
    if (nomodule.pureZeroDSimulation == 0)
    {
+     multidomSetupControlSystems();
      itrdrv_init(); // initialize solver
 
      fortranBoundaryDataPointerManager* pointerManager;
@@ -159,43 +159,8 @@ int main(int argc, char **argv) {
       pureZeroDDriver.setNtout(outpar.ntout);
       pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
 
-      
-      // // Split the zero D domain replacement, in the case
-      // // where there are multiple connected components of the 3D domain:
-      // std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
-      // // if (nomodule.num3DConnectedComponents > 1)
-      // {
-      //   // As a preliminary, build this map. Not strictly necessary here, but it makes things clearer later:
-      //   std::map<int,int> mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData;
-      //   for (int netlistSurfaceIndexInInputData = 0; netlistSurfaceIndexInInputData < nomodule.numNetlistLPNSrfs; netlistSurfaceIndexInInputData++)
-      //   {
-      //     mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.insert(std::make_pair(nomodule.indicesOfNetlistSurfaces[netlistSurfaceIndexInInputData], netlistSurfaceIndexInInputData));
-      //   }
-
-      //   int connectedComponentIndex = 1;
-      //   // Loop the input data from solver.inp's "List of Surfaces In Each Connected Component Separated by -1s":
-      //   for (int index = 0; index < nomodule.numNetlistLPNSrfs + nomodule.num3DConnectedComponents - 1; index++)
-      //   {
-      //     // If it's not a separator symbol "-1", used to mark the end of a connected component, 
-      //     int surfaceIndexOrNextConnectedComponentFlag = nomodule.surfacesOfEachConnectedComponent[index];
-      //     bool isANextConnectedComponentFlag = (surfaceIndexOrNextConnectedComponentFlag == -1);
-      //     if (!isANextConnectedComponentFlag)
-      //     {
-      //       int surfaceIndex = surfaceIndexOrNextConnectedComponentFlag;
-      //       int indexAmongstNetlists = mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.at(surfaceIndex);
-      //       mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, connectedComponentIndex));
-      //       indexAmongstNetlists++;
-      //     }
-      //     else
-      //     {
-      //       connectedComponentIndex++;
-      //     }
-      //   }
-      // }
-      
-      // pureZeroDDriver.setMapFromNetlistIndexToConnectedComponents(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex);
-
       pureZeroDDriver.init();
+      multidomSetupControlSystems();
 
       // pointer manager?      
 

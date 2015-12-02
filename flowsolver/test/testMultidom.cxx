@@ -17,17 +17,27 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
   EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[1])==typeid(NetlistBoundaryCondition));
   EXPECT_TRUE(typeid(*(*retrievedBoundaryConditions)[2])==typeid(RCR));
 
-  EXPECT_EQ((*retrievedBoundaryConditions)[0]->surfaceIndex,3);
-  EXPECT_EQ((*retrievedBoundaryConditions)[1]->surfaceIndex,7);
-  EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,9);
+  try {
+  	EXPECT_EQ((*retrievedBoundaryConditions)[0]->surfaceIndex,3);
+    EXPECT_EQ((*retrievedBoundaryConditions)[1]->surfaceIndex,7);
+    EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,9);
+  } catch (const std::exception& e) {
+      std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+      throw e;
+  }
 
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->flow_n_ptrs.at(0)),flow1);
-  // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->flow_n_ptr),flow2); // uncomment once Netlist initialisation sets this pointer
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->flow_n_ptrs.at(0)),flow3);
-
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->pressure_n_ptrs.at(0)),press1);
-  // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->pressure_n_ptr),press2); // uncomment once Netlist initialisation sets this pointer
-  EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->pressure_n_ptrs.at(0)),press3);
+  try {
+  	EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->flow_n_ptrs.at(0)),flow1);
+    // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->flow_n_ptr),flow2); // uncomment once Netlist initialisation sets this pointer
+    EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->flow_n_ptrs.at(0)),flow3);
+  
+    EXPECT_EQ(*((*retrievedBoundaryConditions)[0]->pressure_n_ptrs.at(0)),press1);
+    // EXPECT_EQ(*((*retrievedBoundaryConditions)[1]->pressure_n_ptr),press2); // uncomment once Netlist initialisation sets this pointer
+    EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->pressure_n_ptrs.at(0)),press3);
+  } catch (const std::exception& e) {
+      std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+      throw e;
+  }
   
 }
 

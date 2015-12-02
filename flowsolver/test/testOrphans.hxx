@@ -64,11 +64,11 @@
 	  	// and we're not doing that during tests.
 	  	std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
 	  	std::cout << "Information -- The overrides are in testOrphans.hxx." << std::endl;
-	  	std::cout << "Information -- delt, hstep, alfi, lstep, ntout, numLoopClosingCircuits." << std::endl;
+	  	std::cout << "Information -- delt, hstep, alfi, m_startingTimestepIndex, ntout, numLoopClosingCircuits." << std::endl;
 	  	boundaryConditionManager_instance->setDelt(0.01);
 		boundaryConditionManager_instance->setHstep(5);
 		boundaryConditionManager_instance->setAlfi(0.5);
-		boundaryConditionManager_instance->setLstep(0);
+		// boundaryConditionManager_instance->setStartingTimestepIndex(0);
 		boundaryConditionManager_instance->setNtout(1);
 		boundaryConditionManager_instance->setMaxsurf(199);
 		boundaryConditionManager_instance->setNstep(5);

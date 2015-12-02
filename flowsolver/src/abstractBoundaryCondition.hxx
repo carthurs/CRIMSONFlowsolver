@@ -22,12 +22,12 @@ class abstractBoundaryCondition
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
  	FRIEND_TEST(testMultidom, checkFlowAndPressureSetters);
  public:
-    abstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep)
+    abstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
     : surfaceIndex(surfaceIndex_in),
       hstep(hstep_in),
       delt(delt_in),
       alfi_local(alfi_in),
-      m_currentTimestepIndex(lstep),
+      m_currentTimestepIndex(currentTimestepIndex),
       m_maxsurf(maxsurf),
       m_nstep(nstep)
     {
@@ -44,13 +44,15 @@ class abstractBoundaryCondition
         numberOfConstructedBoundaryConditions++;
         index = numberOfConstructedBoundaryConditions;
 
+        std::cout << "m_currentTimestepIndex: " << m_currentTimestepIndex << std::endl;
+
         if (m_currentTimestepIndex > 0)
         {
-            thisIsARestartedSimulation = 1;
+            m_thisIsARestartedSimulation = true;
         }
         else
         {
-            thisIsARestartedSimulation = 0;
+            m_thisIsARestartedSimulation = false;
         }
 
     }
@@ -102,7 +104,7 @@ class abstractBoundaryCondition
     const double alfi_local;
     const int m_maxsurf;
     const int m_nstep;
-    int thisIsARestartedSimulation;
+    bool m_thisIsARestartedSimulation;
     std::vector<int> listOfMeshNodesAtThisBoundary;
     bool hasListOfMeshNodesAtThisBoundary;
 

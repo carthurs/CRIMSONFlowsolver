@@ -97,7 +97,12 @@
 				if( m_rank == 0 )
 				{
 					//cout << "number of procs " << numprocs_perparticle << endl;
-					Partition_Problem( m_numProcsTotal );
+					try {
+						Partition_Problem( m_numProcsTotal );
+					} catch (const std::exception& e) {
+					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+					    throw e;
+					}
 				}
 
 				MPI_Barrier(m_iNewComm_C);
@@ -114,42 +119,77 @@
 			  	}
 				else
 				{
-				   std::cout << "changing directory to " << pathToProcsCaseDir << std::endl;			
+				   std::cout << "changing directory to " << pathToProcsCaseDir << std::endl;
 				}
 
-				input(&m_numProcsTotal, &m_rank);
-				proces();
+				// input(&m_numProcsTotal, &m_rank);
+				// proces();
 
-				{
+				try {
 					// just initialise the time values that the abstractBoundaryCondition needs (when it's called in multidom_initialise).
 					// This will be called again during itrdrv_init.
 					// This is really ugly, but a proper fix will take days - it's a BIG refactor.
 					int dummyInitialItseqValue=1;
 					callFortranSetupTimeParameters(dummyInitialItseqValue);
+				} catch (const std::exception& e) {
+				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+				    throw e;
 				}
 
 				// initialise reduced order boundary conditions
-				multidom_initialise();
+				try {
+					multidom_initialise();
+				} catch (const std::exception& e) {
+				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+				    throw e;
+				}
 
 				PureZeroDDriver pureZeroDDriver;
-				pureZeroDDriver.setDelt(inpdat.Delt[0]);
-			    pureZeroDDriver.setAlfi(timdat.alfi);
-			    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
-			    pureZeroDDriver.setNtout(1);
-
-			    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
-
-				pureZeroDDriver.init();
+				try {
+					pureZeroDDriver.setDelt(inpdat.Delt[0]);
+				    pureZeroDDriver.setAlfi(timdat.alfi);
+				    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
+				    pureZeroDDriver.setNtout(1);
+	
+				    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
+	
+					pureZeroDDriver.init();
+	
+					multidomSetupControlSystems();
+				} catch (const std::exception& e) {
+				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+				    throw e;
+				}
 
 				// pointer manager?      
 				std::cout << "time info was: --------------" << inpdat.nstep[0] << std::endl;
 
 				for (int kk = 1; kk <= inpdat.nstep[0]; kk++)
 				{
-					pureZeroDDriver.iter_init();
-					pureZeroDDriver.iter_step();
-					pureZeroDDriver.iter_finalize();
-					multidom_iter_finalise();
+					try {
+						pureZeroDDriver.iter_init();
+					} catch (const std::exception& e) {
+					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+					    throw e;
+					}
+					try {
+						pureZeroDDriver.iter_step();
+					} catch (const std::exception& e) {
+					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+					    throw e;
+					}
+					try {
+						pureZeroDDriver.iter_finalize();
+					} catch (const std::exception& e) {
+					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+					    throw e;
+					}
+					try {
+						multidom_iter_finalise();
+					} catch (const std::exception& e) {
+					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+					    throw e;
+					}
 				}
 
 				pureZeroDDriver.finalize();

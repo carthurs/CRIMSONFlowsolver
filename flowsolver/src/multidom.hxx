@@ -17,6 +17,7 @@
 #include "debuggingToolsForCpp.hxx"
 
 void multidom_initialise();
+void multidomSetupControlSystems();
 extern "C" void multidom_link(int);
 void multidom_iter_initialise();
 void multidom_iter_step();

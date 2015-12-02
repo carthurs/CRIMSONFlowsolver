@@ -27,6 +27,9 @@ public:
 	{
 		m_fileHasBeenRead = false;
 		m_metadataOnNumberOfLinesInFileAvailable = false;
+		m_hasNumberOfColumns = false;
+		m_nextColumnReadLocation = 0;
+		m_nextRowReadLoacation = 0;
 		mp_currentLineSplitBySpaces = new std::vector<std::string>;
 		mp_file = new std::ifstream();
 	}
@@ -49,6 +52,7 @@ public:
 	void setNumColumns(int numberOfColumns)
 	{
 		m_numColumns = numberOfColumns;
+		m_hasNumberOfColumns = true;
 	}
 	
 	virtual ~abstractFileReader()
@@ -60,6 +64,7 @@ public:
 	}
 
 	double getReadFileData(int columnIndex, int timestepNumber);
+	double getNextDatum();
 
 	void readFileInternalMetadata();
 
@@ -75,12 +80,15 @@ protected:
 	bool readNextLine();
 
 	int m_numColumns;
+	bool m_hasNumberOfColumns;
 	std::vector<double> m_dataReadFromFile_line;
 	bool m_fileHasBeenRead;
 	bool readNextLineWithKnownNumberOfColumns();
 
 	int m_expectedNumberOfLinesInFile;
 	bool m_metadataOnNumberOfLinesInFileAvailable;
+	int m_nextColumnReadLocation;
+	int m_nextRowReadLoacation;
 private:
 };
 
@@ -139,6 +147,7 @@ class histFileReader : public abstractFileReader
 public:
 	histFileReader()
 	{
+		m_nextRowReadLoacation = 1; // indexing is 1-indexed for hist files, so we override this value from the abstractFileReader constructor.
 	}
 	void readAndSplitMultiSurfaceRestartFile();
 };

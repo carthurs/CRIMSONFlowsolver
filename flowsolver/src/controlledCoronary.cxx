@@ -79,7 +79,7 @@ void controlledCoronary::initialiseModel()
     intramyocardialCapacitorTopPressure = intramyocardialCapacitorTopPressure_acceptedAtEndOfLastTimestep;
 
 
-	if (thisIsARestartedSimulation)
+	if (m_thisIsARestartedSimulation)
     {
 		// Initialise the pressure using the value from the PHistRCR.dat.
 		std::cout << "this is all wrong... restart not set up yet!" << std::endl;

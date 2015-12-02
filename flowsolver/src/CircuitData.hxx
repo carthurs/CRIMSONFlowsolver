@@ -36,8 +36,7 @@ public:
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
-	bool hasTrackedVolume;
-	bool hasHistoryVolume;
+	// bool hasTrackedVolume;
 	std::vector<double> m_entireFlowHistory;
 	CircuitComponent(const int hstep, const bool thisIsARestartedSimulation)
 	: m_hstep(hstep),
@@ -47,28 +46,28 @@ public:
 		prescribedFlowType = Flow_Null;
 		hasHistoryFlow = false;
 		m_entireFlowHistory.reserve(m_hstep);
-		if (m_thisIsARestartedSimulation)
-		{
-			bool fixThisForRestart=false;
-            assert(fixThisForRestart);
-            flow = -1.0;
-            m_permitsFlow = true;
-            m_connectsToNodeAtInterface = false;
-            m_hasPythonParameterController = false;
-            hasTrackedVolume = false;
-			hasHistoryVolume = false;
-			m_hasPrescribedFlow = false;
-		}
-		else
-		{
+		// if (m_thisIsARestartedSimulation)
+		// {
+		// 	bool fixThisForRestart=false;
+  //           assert(fixThisForRestart);
+  //           flow = -1.0;
+  //           m_permitsFlow = true;
+  //           m_connectsToNodeAtInterface = false;
+  //           m_hasPythonParameterController = false;
+  //           // hasTrackedVolume = false;
+		// 	// hasHistoryVolume = false;
+		// 	m_hasPrescribedFlow = false;
+		// }
+		// else
+		// {
 			flow = 0.0;
 			m_permitsFlow = true;
 			m_connectsToNodeAtInterface = false;
 			m_hasPythonParameterController = false; //\todo fix this for restart
-			hasTrackedVolume = false;
-			hasHistoryVolume = false;
+			// hasTrackedVolume = false;
+			m_hasHistoryVolume = false;
 			m_hasPrescribedFlow = false;
-		}
+		// }
 		prescribedFlowPointerIndex = 0;
 	}
 
@@ -96,6 +95,9 @@ public:
 	void setPrescribedFlow(const double prescribedFlow);
 	double* getPointerToFixedFlowPrescription();
 	bool hasPrescribedFlow() const;
+	void setRestartFlowFromHistory();
+	void setHasHistoryVolume(const bool hasHistoryVolume);
+	bool getHasHistoryVolume();
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	bool m_hasPythonParameterController;
@@ -104,6 +106,7 @@ private:
 	circuit_component_t m_type;
 	bool m_permitsFlow; // for diodes in particular
 	double m_valueOfPrescribedFlow;
+	bool m_hasHistoryVolume;
 	
 	int m_indexInInputData;
 	const int m_hstep;
@@ -123,12 +126,13 @@ public:
 	: CircuitComponent(hstep, thisIsARestartedSimulation),
 	m_storedVolume(initialVolume)
 	{
-		assert(!thisIsARestartedSimulation);
+		//assert(!thisIsARestartedSimulation);
 		m_entireVolumeHistory.reserve(hstep);
 		m_enforceZeroVolumePrescription = false;
 	}
 
 	double getVolumeHistoryAtTimestep(int timestep);
+	void setVolumeHistoryAtTimestep(double historyVolume);
 	virtual void setStoredVolume(const double newVolume);
 	void setProposedVolume(const double proposedVolume);
 	double getVolume();
@@ -141,6 +145,7 @@ public:
 	void enforceZeroVolumePrescription();
 	void resetZeroVolumePrescription();
 	void recordVolumeInHistory();
+	void setRestartVolumeFromHistory();
 protected:
 	double m_pressure;
 	double m_storedVolume;
@@ -156,7 +161,7 @@ public:
 	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation, const double initialVolume)
 	: VolumeTrackingComponent(hstep, thisIsARestartedSimulation, initialVolume)
 	{
-		assert(!thisIsARestartedSimulation);
+		//assert(!thisIsARestartedSimulation);
 		m_unstressedVolume = 0.0; // default; can be changed later if necessary
 	}
 	
@@ -195,6 +200,7 @@ public:
 	double getPressure();
 	void setPressure(const double pressure_in);
 	void setPrescribedPressure(const double prescribedPressure);
+	void setRestartPressureFromHistory();
 	int getIndex() const;
 	void setPythonControllerName(const std::string pythonParameterControllerName);
 	bool hasUserDefinedExternalPythonScriptParameterController() const;
@@ -232,7 +238,12 @@ public:
 
 	int getLengthOfHistoryData()
 	{
-		return components.at(0)->m_entireFlowHistory.size();
+		try {
+			return components.at(0)->m_entireFlowHistory.size();
+		} catch (const std::exception& e) {
+		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+		    throw e;
+		}
 	}
 	
 	// Begin metadata, updated with rebuildCircuitMetadata.

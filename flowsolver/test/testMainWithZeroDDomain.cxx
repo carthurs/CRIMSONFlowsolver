@@ -228,7 +228,12 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
   setSimDirectory("mainTests/zeroDDomain/pythonParameterControllers");
   clearOutOldFiles();
 
-  runSimulation();
+  try {
+  	runSimulation();
+  } catch (const std::exception& e) {
+      std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+      throw e;
+  }
   MPI_Barrier(MPI_COMM_WORLD);
 
   // Check netlistPressures_zeroDDomainReplacement.dat
@@ -760,4 +765,85 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 		double lastTimestepCoronaryFlow = flowHistReader.getReadFileData(1,7000);
 		EXPECT_NEAR(1155.89051134339, lastTimestepCoronaryFlow, 1e-8);
 	}	
+}
+
+TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
+  setSimDirectory("mainTests/zeroDDomain/restartNetlistRCRs");
+  clearOutOldFiles();
+
+  try {
+  	runSimulation();
+  } catch (const std::exception& e) {
+      std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+      throw e;
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Check netlistPressures_surface_-1.dat.dat
+  {
+	  histFileReader zeroDDomainPressures = histFileReader();
+	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
+	  zeroDDomainPressures.setNumColumns(9);
+	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
+	  
+	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+	  double pressureResult = zeroDDomainPressures.getReadFileData(1,11);
+	  EXPECT_NEAR(9999.80845698841,pressureResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_-1.dat
+  {
+	  histFileReader zeroDDomainFlows = histFileReader();
+	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
+	  zeroDDomainFlows.setNumColumns(8);
+	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
+	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+	  // ...third column:
+	  double flowResult = zeroDDomainFlows.getReadFileData(3,11);
+	  EXPECT_NEAR(7791.68348266783,flowResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_5.dat
+  {
+		histFileReader netlist1Flow = histFileReader();
+		netlist1Flow.setFileName("netlistFlows_surface_5.dat");
+		netlist1Flow.setNumColumns(4);
+		netlist1Flow.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double flowResult = netlist1Flow.getReadFileData(1,11);
+		EXPECT_NEAR(-657.680077994277,flowResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_6.dat
+  {
+		histFileReader netlist2Flow = histFileReader();
+		netlist2Flow.setFileName("netlistFlows_surface_6.dat");
+		netlist2Flow.setNumColumns(4);
+		netlist2Flow.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double flowResult = netlist2Flow.getReadFileData(1,11);
+		EXPECT_NEAR(7943.47173011129,flowResult,1e-8);
+  }
+  
+  // Check netlistFlows_surface_7.dat
+  {
+		histFileReader netlist3Flow = histFileReader();
+		netlist3Flow.setFileName("netlistFlows_surface_7.dat");
+		netlist3Flow.setNumColumns(4);
+		netlist3Flow.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double flowResult = netlist3Flow.getReadFileData(1,11);
+		EXPECT_NEAR(7943.47173011129,flowResult,1e-8);
+  }
+
+  // Check netlistPressures_surface_5.dat
+  {
+		histFileReader netlist1Pressure = histFileReader();
+		netlist1Pressure.setFileName("netlistPressures_surface_5.dat");
+		netlist1Pressure.setNumColumns(5);
+		netlist1Pressure.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double flowResult = netlist1Pressure.getReadFileData(1,11);
+		EXPECT_NEAR(9341.47083042585,flowResult,1e-8);
+  }
 }

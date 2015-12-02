@@ -20,15 +20,15 @@
 class ClosedLoopDownstreamSubsection
 {
 public:
-	ClosedLoopDownstreamSubsection(const int index, const int hstep, const double delt, const double alfi, const int lstep)
+	ClosedLoopDownstreamSubsection(const int index, const int hstep, const double delt, const double alfi, const int startingTimestepIndex)
 	: m_index(index),
 	m_hstep(hstep),
 	m_delt(delt),
 	m_alfi(alfi),
-	m_lstep(lstep)
+	m_startingTimestepIndex(startingTimestepIndex)
 	{
 		initialisePetscArrayNames();
-		if (m_lstep > 0)
+		if (m_startingTimestepIndex > 0)
 		{
 			m_thisIsARestartedSimulation = true;
 		}
@@ -41,7 +41,7 @@ public:
 		m_linearSystemAlreadyUpdatedOnThisTimestep = false;
 		m_systemSize = 0;
 
-		mp_NetlistCircuit = boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> (new NetlistClosedLoopDownstreamCircuit(m_hstep, m_thisIsARestartedSimulation, m_alfi, m_delt));
+		mp_NetlistCircuit = boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> (new NetlistClosedLoopDownstreamCircuit(m_hstep, m_thisIsARestartedSimulation, m_alfi, m_delt, m_startingTimestepIndex));
 		initialiseModel();
 	}
 
@@ -56,6 +56,7 @@ public:
 	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt);
 	void buildAndSolveLinearSystemForUpdateIfNotYetDone(const int timestepNumber, const double alfi_delt);
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
+	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
 	std::pair<double,double> getImplicitCoefficients(const int boundaryConditionIndex) const;
 	void markLinearSystemAsNeedingBuildingAgain();
 	void markLinearSystemAsNeedingUpdatingAgain();
@@ -73,7 +74,7 @@ private:
 	const int m_hstep;
 	const double m_delt;
 	const double m_alfi;
-	const int m_lstep;
+	const int m_startingTimestepIndex;
 
 	int m_systemSize;
 	int m_numberOfUpstreamCircuits;

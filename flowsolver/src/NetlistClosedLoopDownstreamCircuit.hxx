@@ -35,8 +35,8 @@ private:
 class NetlistClosedLoopDownstreamCircuit : public NetlistCircuit
 {
 public:
-	NetlistClosedLoopDownstreamCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt)
-	: NetlistCircuit(hstep, s_numberOfDownstreamCircuits, thisIsARestartedSimulation, alfi, delt)
+	NetlistClosedLoopDownstreamCircuit(const int hstep, const bool thisIsARestartedSimulation, const double alfi, const double delt, const int startingTimestepIndex)
+	: NetlistCircuit(hstep, s_numberOfDownstreamCircuits, thisIsARestartedSimulation, alfi, delt, startingTimestepIndex)
 	{
 		m_downstreamCircuitIndex = s_numberOfDownstreamCircuits;
 		s_numberOfDownstreamCircuits++;

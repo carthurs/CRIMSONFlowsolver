@@ -9,8 +9,8 @@ class ClosedLoopDownstreamSubsection;
 class NetlistBoundaryCircuitWhenDownstreamCircuitsExist : public NetlistCircuit
 {
 public:
-	NetlistBoundaryCircuitWhenDownstreamCircuitsExist(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> downstreamSubcircuits)
-	:NetlistCircuit(hstep, surfaceIndex, indexOfThisNetlistLPN, thisIsARestartedSimulation, alfi, delt),
+	NetlistBoundaryCircuitWhenDownstreamCircuitsExist(const int hstep, const int surfaceIndex, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> downstreamSubcircuits, const int startingTimestepIndex)
+	:NetlistCircuit(hstep, surfaceIndex, indexOfThisNetlistLPN, thisIsARestartedSimulation, alfi, delt, startingTimestepIndex),
 	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
 	{}
 	void initialiseCircuit();

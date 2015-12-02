@@ -12,9 +12,11 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
 
   if (boundaryType == BoundaryCondition_RCR)
   {
-    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new RCR(surfaceIndex, m_hstep, m_delt, m_alfi, m_startingTimestepIndex, m_maxsurf, m_nstep));
     
-    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    if (!m_simulationIsPurelyZeroD) {
+      boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    }
 
     return boundaryConditionToReturn;
   }
@@ -31,10 +33,17 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
       }
     }
 
-    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep, gatheredDownstreamSubcircuits));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new NetlistBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_startingTimestepIndex, m_maxsurf, m_nstep, gatheredDownstreamSubcircuits));
 
-    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
-    boundaryConditionToReturn->initialiseModel();
+    if (!m_simulationIsPurelyZeroD) {
+      boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+      // We can't yet initialise the model if this is a pure zero-d simulation,
+      // because the boundary pressure/flow pointers aren't ready yet.
+      // (because normally they're provided by Fortran, and zeroD doesn't use the Fortran code)
+      // Responsibility for this will be taken by the pureZeroDDriver instead, in the call to
+      // boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows().
+      boundaryConditionToReturn->initialiseModel();
+    }
 
     boost::shared_ptr<NetlistBoundaryCondition> downcastNetlistBoundaryCondition = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryConditionToReturn);
 
@@ -49,9 +58,11 @@ boost::shared_ptr<abstractBoundaryCondition> boundaryConditionFactory::createBou
   }
   else if (boundaryType == BoundaryCondition_ControlledCoronary)
   {
-    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_lstep, m_maxsurf, m_nstep));
+    boundaryConditionToReturn = boost::shared_ptr<abstractBoundaryCondition> (new controlledCoronary(surfaceIndex, m_hstep, m_delt, m_alfi, m_startingTimestepIndex, m_maxsurf, m_nstep));
 
-    boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    if (!m_simulationIsPurelyZeroD) {
+      boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    }
 
     return boundaryConditionToReturn;
   }
@@ -71,7 +82,7 @@ void boundaryConditionFactory::createNetlistLoopClosingCircuits(std::vector<boos
 
   for (int loopClosingCircuitIndex=1; loopClosingCircuitIndex <= m_numLoopClosingNetlistCircuits; loopClosingCircuitIndex++)
   {
-    boost::shared_ptr<ClosedLoopDownstreamSubsection> sharedPtrToPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex, m_hstep, m_delt, m_alfi, m_lstep));
+    boost::shared_ptr<ClosedLoopDownstreamSubsection> sharedPtrToPushBack(new ClosedLoopDownstreamSubsection(loopClosingCircuitIndex, m_hstep, m_delt, m_alfi, m_startingTimestepIndex));
     netlistDownstreamLoopClosingSubsections.push_back(sharedPtrToPushBack);
 
     // These weak pointers to the loop closing circuits will be given to the boundary conditions that connect to them.

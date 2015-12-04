@@ -77,18 +77,24 @@ int main(int argc, char **argv) {
    }
 
    // Debugger snare:
-   const char* debuggerFlag = "1";
-   for(int ii=1; ii<argc; ii++)
+   if (rank==0)
    {
-     // Look for a single "1" on the command line, indicating that we should
-     // wait for the debugger...
-     if(!strcmp(argv[ii], debuggerFlag))
+     const char* debuggerFlag = "1";
+     for(int ii=1; ii<argc; ii++)
      {
-         static volatile int debuggerPresent =0;
-         std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
-         while (!debuggerPresent ); // assign debuggerPresent=1
+       // Look for a single "1" on the command line, indicating that we should
+       // wait for the debugger...
+       if(!strcmp(argv[ii], debuggerFlag))
+       {
+           static volatile int debuggerPresent =0;
+           std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
+           while (!debuggerPresent ); // assign debuggerPresent=1
+       }
      }
    }
+
+   // wait for the debugger if to release MPI process with rank 0, if a debug flag was present:
+   MPI_Barrier(MPI_COMM_WORLD);
 
    // read configuration file
    int errFlag = input_fform();

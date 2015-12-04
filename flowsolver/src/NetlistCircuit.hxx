@@ -60,7 +60,7 @@ public:
 	void rebuildCircuitMetadata();
 
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
-	void cycleToSetHistoryPressuresFlowsAndVolumes();
+	void recordPressuresFlowsAndVolumesInHistoryArrays();
 
 	// void identifyAtomicSubcircuits();
 	virtual void initialiseAtStartOfTimestep();
@@ -87,7 +87,7 @@ public:
 	void setPointersToBoundaryPressuresAndFlows(double* const interfacePressures, double* const interfaceFlows, const int& numberOfPointers);
 
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
-	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
+	void loadPressuresFlowsAndVolumesOnRestart();
 
 	virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 	virtual void updateLPN(const int timestepNumber);
@@ -141,6 +141,7 @@ protected:
 	std::vector<double> getVolumesFromSolutionVector();
 	bool areThereNegativeVolumes(const int timestepNumber, const double alfi_delt);
 	void initialiseCircuit_common();
+	void setInternalHistoryPressureFlowsAndVolumes();
 
 	Mat m_systemMatrix;
 	Mat m_inverseOfSystemMatrix;

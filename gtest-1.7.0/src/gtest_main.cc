@@ -51,21 +51,6 @@ static int dummy5 =PullInMyLibraryTestMainWithZeroDDomain();
 static char help[] = "Google test, modified to work with CRIMSON.\n\n";
 
 GTEST_API_ int main(int argc, char **argv) {
-
-  // Debugger snare:
-  const char* debuggerFlag = "1";
-  for(int ii=1; ii<argc; ii++)
-  {
-  	  // Look for a single "1" on the command line, indicating that we should
-  	  // wait for the debugger...
-	  if(!strcmp(argv[ii], debuggerFlag))
-	  {
-		   static volatile int debuggerPresent =0;
-       std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
-		   while (!debuggerPresent ); // assign debuggerPresent=1
-	  }
-  }
-
   // Fake command line input for the flowsolver, so we don't have to pass it:
   int fake_argc = 2;
   char *fake_argv_temp[4] = {"testMain","1","solver.inp",NULL};
@@ -73,6 +58,30 @@ GTEST_API_ int main(int argc, char **argv) {
 
   // MPI_Init(&fake_argc,(char***)&fake_argv);
   PetscInitialize(&fake_argc, &fake_argv, (char *)0, help);
+  
+
+  int mpiRank = -1;
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+
+  // Debugger snare:
+  if (mpiRank==0) 
+  {
+    const char* debuggerFlag = "1";
+    for(int ii=1; ii<argc; ii++)
+    {
+    	  // Look for a single "1" on the command line, indicating that we should
+    	  // wait for the debugger...
+  	  if(!strcmp(argv[ii], debuggerFlag))
+  	  {
+  		   static volatile int debuggerPresent = 0;
+         std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
+  		   while (!debuggerPresent ); // assign debuggerPresent=1
+  	  }
+    }
+  }
+
+  // wait for the debugger if to release MPI process with rank 0, if a debug flag was present:
+  MPI_Barrier(MPI_COMM_WORLD);
 
   initialisePython();
 

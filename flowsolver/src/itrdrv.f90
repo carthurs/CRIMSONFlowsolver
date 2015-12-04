@@ -745,7 +745,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! order issues for the 3D and multidomain. If we want to avoid this,
     ! the Fortran code needs refactoring.
     call callCPPSetPressureFromFortran()
-    call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
+    ! call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 
     CONTAINS
 

@@ -200,11 +200,11 @@ module cpp_interface
             end subroutine callCPPWriteAllNetlistComponentFlowsAndNodalPressures
     end interface
 
-    interface
-            subroutine callCPPLoadAllNetlistComponentFlowsAndNodalPressures() bind(c,name="callCPPLoadAllNetlistComponentFlowsAndNodalPressures")
-                use iso_c_binding
-            end subroutine callCPPLoadAllNetlistComponentFlowsAndNodalPressures
-    end interface
+    ! interface
+    !         subroutine callCPPLoadAllNetlistComponentFlowsAndNodalPressures() bind(c,name="callCPPLoadAllNetlistComponentFlowsAndNodalPressures")
+    !             use iso_c_binding
+    !         end subroutine callCPPLoadAllNetlistComponentFlowsAndNodalPressures
+    ! end interface
 
     ! interface
     !         subroutine callCppSetSurfacePressure_netlistLPNs(netlistSurfacePressures) bind(c,name="callCppSetSurfacePressure_netlistLPNs")

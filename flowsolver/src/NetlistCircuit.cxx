@@ -326,9 +326,9 @@ void NetlistCircuit::rebuildCircuitMetadata()
 	mp_circuitData->rebuildCircuitMetadata();
 }
 
-void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
+void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
 {
-    if (startingTimeStepIndex > 0)
+    if (m_startingTimestepIndex > 0)
     {
         {
           // Write the netlistPressures_zeroDDomainReplacement.dat
@@ -337,7 +337,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart(const int startingTim
           boundaryConditionPressureHistoryReader.setNumColumns(mp_circuitData->numberOfPressureNodes + 1); // +1 for the timestep indexing column
           boundaryConditionPressureHistoryReader.readAndSplitMultiSurfaceRestartFile();
 
-          for (int stepToRead=0; stepToRead<startingTimeStepIndex; stepToRead++)
+          for (int stepToRead=0; stepToRead<m_startingTimestepIndex; stepToRead++)
           {
             boundaryConditionPressureHistoryReader.getNextDatum(); // ditch the timestep index
             for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
@@ -360,7 +360,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart(const int startingTim
           boundaryConditionFlowistoryReader.setNumColumns(mp_circuitData->numberOfComponents + 1); // +1 for the timestep indexing column
           boundaryConditionFlowistoryReader.readAndSplitMultiSurfaceRestartFile();
 
-          for (int stepToRead=0; stepToRead<startingTimeStepIndex; stepToRead++)
+          for (int stepToRead=0; stepToRead<m_startingTimestepIndex; stepToRead++)
           {
             boundaryConditionFlowistoryReader.getNextDatum(); // ditch the timestep index
             for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
@@ -385,7 +385,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart(const int startingTim
           boundaryConditionVolumeHistoryReader.setNumColumns(mp_circuitData->m_numberOfVolumeTrackingComponenets);
           boundaryConditionVolumeHistoryReader.readAndSplitMultiSurfaceRestartFile();
 
-          for (int stepToRead=0; stepToRead<startingTimeStepIndex; stepToRead++)
+          for (int stepToRead=0; stepToRead<m_startingTimestepIndex; stepToRead++)
           {
             boundaryConditionVolumeHistoryReader.getNextDatum(); // ditch the timestep index
             for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
@@ -624,15 +624,12 @@ void NetlistCircuit::setPointersToBoundaryPressuresAndFlows(double* const interf
     }
 }
 
-void NetlistCircuit::cycleToSetHistoryPressuresFlowsAndVolumes()
+void NetlistCircuit::setInternalHistoryPressureFlowsAndVolumes()
 {
     // for (auto node=mp_circuitDataWithoutDiodes.mapOfPressureNodes.begin(); node!=mp_circuitDataWithoutDiodes.mapOfPressureNodes.end(); node++)
     // Cycle and store the history pressures
     for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
     {
-        // Store the pressure for writing to output file:
-        node->second->m_entirePressureHistory.push_back(node->second->getPressure());
-
         if (node->second->hasHistoryPressure)
         {
             node->second->historyPressure = node->second->getPressure();
@@ -643,9 +640,6 @@ void NetlistCircuit::cycleToSetHistoryPressuresFlowsAndVolumes()
     // Cycle and store the history flows
     for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
     {
-        // Store the flow for writing to output file:
-        component->second->m_entireFlowHistory.push_back(component->second->flow);
-
         if (component->second->hasHistoryFlow)
         {
             component->second->historyFlow = component->second->flow;
@@ -660,13 +654,44 @@ void NetlistCircuit::cycleToSetHistoryPressuresFlowsAndVolumes()
         // Ensure this actually is a VolumeTrackingComponent before going further:
         if (pressureChamber != NULL)
         {
-            // Store the volume for writing to output file:
-            pressureChamber->recordVolumeInHistory();
-
             // Make the current volume into the new history volume:
             pressureChamber->cycleHistoryVolume();
         }
     }
+}
+
+void NetlistCircuit::recordPressuresFlowsAndVolumesInHistoryArrays()
+{
+    // for (auto node=mp_circuitDataWithoutDiodes.mapOfPressureNodes.begin(); node!=mp_circuitDataWithoutDiodes.mapOfPressureNodes.end(); node++)
+    // Cycle and store the history pressures
+    for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
+    {
+        // Store the pressure for writing to output file:
+        node->second->m_entirePressureHistory.push_back(node->second->getPressure());
+    }
+
+    // for (auto component=mp_circuitDataWithoutDiodes.mapOfComponents.begin(); component!=mp_circuitDataWithoutDiodes.mapOfComponents.end(); component++)
+    // Cycle and store the history flows
+    for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
+    {
+        // Store the flow for writing to output file:
+        component->second->m_entireFlowHistory.push_back(component->second->flow);
+    }
+
+    // Store the volumes (currently just for VolumeTrackingPressureChambers. Make this more generic if new volume-tracking components are added later
+    // - recommed using the hasHistoryVolume bool).
+    for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
+    {
+        VolumeTrackingComponent* pressureChamber = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
+        // Ensure this actually is a VolumeTrackingComponent before going further:
+        if (pressureChamber != NULL)
+        {
+            // Store the volume for writing to output file:
+            pressureChamber->recordVolumeInHistory();
+        }
+    }
+
+    setInternalHistoryPressureFlowsAndVolumes();
 }
 
 void NetlistCircuit::initialiseAtStartOfTimestep()
@@ -674,11 +699,12 @@ void NetlistCircuit::initialiseAtStartOfTimestep()
     // Idetify and construct the appropriate subcircuits for this timestep
     rebuildCircuitMetadata();
     detectWhetherClosedDiodesStopAllFlowAt3DInterface();
-    cycleToSetHistoryPressuresFlowsAndVolumes();
+    // cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
 void NetlistCircuit::finalizeLPNAtEndOfTimestep()
 {
+    recordPressuresFlowsAndVolumesInHistoryArrays();
     switchDiodeStatesIfNecessary();
 }
 
@@ -711,7 +737,7 @@ void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep
     rebuildCircuitMetadata();
-    cycleToSetHistoryPressuresFlowsAndVolumes();
+    // cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
 // This function takes a resistor which connects directly to one of the compliance units, and works
@@ -1204,6 +1230,13 @@ void NetlistCircuit::initialiseCircuit_common()
 
   // columnMapSize = m_numberOfHistoryPressures + numberOfHistoryFlows + numberOfPrescribedPressures + numberOfPrescribedFlows;
   createListOfNodesWithMultipleIncidentCurrents();
+
+  loadPressuresFlowsAndVolumesOnRestart();
+  setInternalHistoryPressureFlowsAndVolumes();
+  if (m_startingTimestepIndex == 0)
+  {
+    recordPressuresFlowsAndVolumesInHistoryArrays();
+  }
 }
 
 int NetlistCircuit::getNumberOfHistoryPressures() const

@@ -44,8 +44,8 @@ void PureZeroDDriver::init()
 	// m_zeroDDomainLPN->m_IndexOfThisNetlistLPNInInputFile = 0; // \todo remove, this is a hack to get the fake "file reader" to read from the right place
 	m_zeroDDomainLPN->initialiseModel();
 	m_zeroDDomainLPN->setPointersToBoundaryPressuresAndFlows(mp_interfacePressuresToBeReadBy3DDomainReplacement, mp_interfaceFlowsToBeReadBy3DDomainReplacement, m_numberOfNetlistsUsedAsBoundaryConditions);
-	m_zeroDDomainLPN->loadPressuresFlowsAndVolumesOnRestart(m_timestepNumber);
-	boundaryConditionManager_instance->loadAllNetlistComponentFlowsAndNodalPressures();
+	// m_zeroDDomainLPN->loadPressuresFlowsAndVolumesOnRestart(m_timestepNumber);
+	// boundaryConditionManager_instance->loadAllNetlistComponentFlowsAndNodalPressures();
 }
 
 void PureZeroDDriver::checkIfThisIsARestartedSimulation()
@@ -58,17 +58,15 @@ void PureZeroDDriver::checkIfThisIsARestartedSimulation()
 
   m_timestepNumber = boost::lexical_cast<int>(numstartString);
 
-  m_nextTimestepWrite_zeroDBoundaries_start = m_timestepNumber;
-
   if (m_timestepNumber > 0)
   {
     m_thisIsARestartedSimulation = true;
-    // m_nextTimestepWrite_zeroDBoundaries_start = m_timestepNumber + 1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
+    m_nextTimestepWrite_zeroDBoundaries_start = m_timestepNumber + 1;
   }
   else
   {
     m_thisIsARestartedSimulation = false;
-    // m_nextTimestepWrite_zeroDBoundaries_start = 0;
+    m_nextTimestepWrite_zeroDBoundaries_start = 0;
   }
 }
 

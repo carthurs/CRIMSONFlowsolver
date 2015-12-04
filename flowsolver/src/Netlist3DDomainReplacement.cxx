@@ -46,10 +46,10 @@ void Netlist3DDomainReplacement::writePressuresFlowsAndVolumes(int& nextTimestep
     mp_NetlistZeroDDomainCircuit->writePressuresFlowsAndVolumes(nextTimestepWrite_zeroDBoundaries_start);
 }
 
-void Netlist3DDomainReplacement::loadPressuresFlowsAndVolumesOnRestart(const int startingTimestepIndex)
-{
-    mp_NetlistZeroDDomainCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimestepIndex);
-}
+// void Netlist3DDomainReplacement::loadPressuresFlowsAndVolumesOnRestart(const int startingTimestepIndex)
+// {
+//     mp_NetlistZeroDDomainCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimestepIndex);
+// }
 
 void Netlist3DDomainReplacement::initialiseModel()
 {

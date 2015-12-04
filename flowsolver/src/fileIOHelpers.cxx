@@ -37,21 +37,21 @@ void writeNetlistFlowsPressuresAndVolumes(const std::vector<boost::shared_ptr<ab
   nextTimestepWrite_start = nextTimestepWrite_inout;
 }
 
-void loadNetlistPressuresFlowsAndVolumesOnRestart(const std::vector<boost::shared_ptr<abstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, const int startingTimeStepIndex)
-{
-  for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
-  {
-    NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
-    if (netlistBoundaryCondition != NULL) // if the boundaryCondition was a NetlistBoundaryCondition (or subclass thereof)
-    {
-      netlistBoundaryCondition->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+// void loadNetlistPressuresFlowsAndVolumesOnRestart(const std::vector<boost::shared_ptr<abstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, const int startingTimeStepIndex)
+// {
+//   for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
+//   {
+//     NetlistBoundaryCondition* netlistBoundaryCondition = dynamic_cast<NetlistBoundaryCondition*>(boundaryCondition->get());
+//     if (netlistBoundaryCondition != NULL) // if the boundaryCondition was a NetlistBoundaryCondition (or subclass thereof)
+//     {
+//       netlistBoundaryCondition->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
 
-    }
-  }
+//     }
+//   }
 
-  // Write the downstream subsection pressures, flows and volumes:
-  for (auto closedLoopDownstreamCircuit = netlistDownstreamLoopClosingSubsections.begin(); closedLoopDownstreamCircuit != netlistDownstreamLoopClosingSubsections.end(); closedLoopDownstreamCircuit++)
-  {
-    (*closedLoopDownstreamCircuit)->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
-  }
-}
+//   // Write the downstream subsection pressures, flows and volumes:
+//   for (auto closedLoopDownstreamCircuit = netlistDownstreamLoopClosingSubsections.begin(); closedLoopDownstreamCircuit != netlistDownstreamLoopClosingSubsections.end(); closedLoopDownstreamCircuit++)
+//   {
+//     (*closedLoopDownstreamCircuit)->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+//   }
+// }

@@ -154,16 +154,15 @@ void boundaryConditionManager::checkIfThisIsARestartedSimulation()
 
   setStartingTimestepIndex(valueFromNumstartDotDat);
 
-  m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat;
   if (valueFromNumstartDotDat > 0)
   {
     m_thisIsARestartedSimulation = true;
-    //m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat + 1; // +1 because numstart should contain the step just written before the program last terminated. So we need to start writing on the next (+1 th) time-step.
+    m_nextTimestepWrite_netlistBoundaries_start = valueFromNumstartDotDat + 1;
   }
   else
   {
     m_thisIsARestartedSimulation = false;
-    //m_nextTimestepWrite_netlistBoundaries_start = 0;
+    m_nextTimestepWrite_netlistBoundaries_start = 0;
   }
 }
 
@@ -550,6 +549,12 @@ void boundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
       downcastNetlist->finalizeLPNAtEndOfTimestep();
     }
   }
+
+  // Do the closed loop downstream subsections:
+  for (auto downstreamLoopClosingSubsection = m_netlistDownstreamLoopClosingSubsections.begin(); downstreamLoopClosingSubsection != m_netlistDownstreamLoopClosingSubsections.end(); downstreamLoopClosingSubsection++)
+  {
+    (*downstreamLoopClosingSubsection)->finalizeLPNAtEndOfTimestep();
+  }
 }
 // ---WRAPPED BY--->
 extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
@@ -845,17 +850,17 @@ extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
   boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
 }
 
-void boundaryConditionManager::loadAllNetlistComponentFlowsAndNodalPressures()
-{
-  assert(m_startingTimestepIndexHasBeenSet);
-  loadNetlistPressuresFlowsAndVolumesOnRestart(m_boundaryConditions, m_netlistDownstreamLoopClosingSubsections, m_startingTimestepIndex);
-}
-// ---WRAPPED BY--->
-extern "C" void callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
-{
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->loadAllNetlistComponentFlowsAndNodalPressures();
-}
+// void boundaryConditionManager::loadAllNetlistComponentFlowsAndNodalPressures()
+// {
+//   assert(m_startingTimestepIndexHasBeenSet);
+//   loadNetlistPressuresFlowsAndVolumesOnRestart(m_boundaryConditions, m_netlistDownstreamLoopClosingSubsections, m_startingTimestepIndex);
+// }
+// // ---WRAPPED BY--->
+// extern "C" void callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
+// {
+//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   boundaryConditionManager_instance->loadAllNetlistComponentFlowsAndNodalPressures();
+// }
 
 // Control systems specific functions
 void boundaryConditionManager::updateBoundaryConditionControlSystems()

@@ -74,10 +74,10 @@ void NetlistBoundaryCondition::writePressuresFlowsAndVolumes(int& nextTimestepWr
     mp_NetlistCircuit->writePressuresFlowsAndVolumes(nextTimestepWrite_start);
 }
 
-void NetlistBoundaryCondition::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
-{
-    mp_NetlistCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
-}
+// void NetlistBoundaryCondition::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
+// {
+//     mp_NetlistCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+// }
 
 // Processes the binaryMask for setting Dirichlet conditions.
 // This boundary condition knows which mesh nodes lie at its surface (checked by the assert),

@@ -93,7 +93,7 @@ void NetlistClosedLoopDownstreamCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep
     rebuildCircuitMetadata();
-    cycleToSetHistoryPressuresFlowsAndVolumes();
+    // cycleToSetHistoryPressuresFlowsAndVolumes();
 }
 
 void NetlistClosedLoopDownstreamCircuit::giveNodesAndComponentsTheirUpdatedValuesFromSolutionVector(const std::vector<PetscScalar> solutionEntriesForDownstreamCircuit)

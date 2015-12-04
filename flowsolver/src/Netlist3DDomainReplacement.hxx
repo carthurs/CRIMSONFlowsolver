@@ -33,7 +33,7 @@ public:
 	boost::shared_ptr<NetlistZeroDDomainCircuit> getCircuit();
 
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_zeroDBoundaries_start);
-	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimestepIndex);
+	// void loadPressuresFlowsAndVolumesOnRestart(const int startingTimestepIndex);
 
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 

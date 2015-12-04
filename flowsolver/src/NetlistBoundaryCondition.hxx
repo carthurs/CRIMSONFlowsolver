@@ -32,7 +32,6 @@ public:
 		m_IndexOfThisNetlistLPNInInputFile = numberOfInitialisedNetlistLPNs;
 		if (m_netlistDownstreamLoopClosingSubcircuits.size() > 0)
 		{
-			std::cout << "constructing in NetlistBoundaryCondition.hxx with parameter " << m_IndexOfThisNetlistLPNInInputFile << std::endl;
 			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, m_thisIsARestartedSimulation, alfi_local, delt, m_netlistDownstreamLoopClosingSubcircuits, startingTimestepIndex));
 		}
 		else
@@ -53,7 +52,7 @@ public:
 	void setDirichletConditionsIfNecessary(int* const binaryMask);
 	void finalizeLPNAtEndOfTimestep();
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
-	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
+	// void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
 	boost::shared_ptr<NetlistCircuit> getNetlistCircuit();
 
 	bool hasPrescribedPressureAcross3DInterface() const;

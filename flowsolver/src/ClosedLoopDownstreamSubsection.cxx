@@ -705,10 +705,10 @@ void ClosedLoopDownstreamSubsection::writePressuresFlowsAndVolumes(int& nextTime
     mp_NetlistCircuit->writePressuresFlowsAndVolumes(nextTimestepWrite_start);
 }
 
-void ClosedLoopDownstreamSubsection::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
-{
-    mp_NetlistCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
-}
+// void ClosedLoopDownstreamSubsection::loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex)
+// {
+//     mp_NetlistCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimeStepIndex);
+// }
 
 void ClosedLoopDownstreamSubsection::writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset)
 {
@@ -942,4 +942,9 @@ int ClosedLoopDownstreamSubsection::getIndexOfClosedLoop_oneIndexed() const
 boost::shared_ptr<NetlistClosedLoopDownstreamCircuit> ClosedLoopDownstreamSubsection::getNetlistCircuit() const
 {
     return mp_NetlistCircuit;
+}
+
+void ClosedLoopDownstreamSubsection::finalizeLPNAtEndOfTimestep()
+{
+    mp_NetlistCircuit->finalizeLPNAtEndOfTimestep();
 }

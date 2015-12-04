@@ -51,12 +51,13 @@ public:
 	}
 
 	void initialiseAtStartOfTimestep();
+	void finalizeLPNAtEndOfTimestep();
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 	void setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBC);
 	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt);
 	void buildAndSolveLinearSystemForUpdateIfNotYetDone(const int timestepNumber, const double alfi_delt);
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
-	void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
+	// void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
 	std::pair<double,double> getImplicitCoefficients(const int boundaryConditionIndex) const;
 	void markLinearSystemAsNeedingBuildingAgain();
 	void markLinearSystemAsNeedingUpdatingAgain();

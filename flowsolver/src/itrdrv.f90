@@ -291,17 +291,17 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     if (numberOfCppManagedBoundaryConditions .gt. int(0)) then
         if (.not. allocated(iBC_original)) then
             allocate(iBC_original(nshg))
+            iBC_original = iBC
         endif
-        iBC_original = iBC
 
         ! Fill out the array with ones
         binaryMask = 1
-        ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions shouldbe applied:
+        ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions should be applied:
         call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
         ! Reset iBC, so we work with a clean copy
         iBC = iBC_original
         ! zero out the entries of iBC where the boundary condition type has become
-        ! Neuman at that node, as annotated by binaryMask from the CPP boundary
+        ! Neumann at that node, as annotated by binaryMask from the CPP boundary
         ! condition objects.
         where(binaryMask .eq. int(0))
             iBC = int(0)
@@ -568,6 +568,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         end do
     end if
 
+    write(*,*) "max value of y: ", maxval(y)
+    write(*,*) "min value of y: ", minval(y)
    
     if(iheart .gt. int(0)) then
         
@@ -593,6 +595,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     end if
 
+    write(*,*) "5max value of y: ", maxval(y)
+    write(*,*) "5min value of y: ", minval(y)
+
     ! ******************************************************** !
     ! ***                                                  *** !
     ! ******************************************************** !
@@ -608,6 +613,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !.... loop through the time sequences
     !
 
+    write(*,*) "4max value of y: ", maxval(y)
+    write(*,*) "4min value of y: ", minval(y)
+
     itseq = 1
 
     !AD         tcorecp1 = second(0)
@@ -621,6 +629,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     dtol(:)= deltol(itseq,:)
 
     call itrSetup ( y, acold ) ! sets up alfi
+
+    write(*,*) "3max value of y: ", maxval(y)
+    write(*,*) "3min value of y: ", minval(y)
     
     !
     ! *** set \alpha_{i} in multidomain module
@@ -664,7 +675,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     endif
    !---------------------------------- Nan rcr
-
+   write(*,*) "2max value of y: ", maxval(y)
+    write(*,*) "2min value of y: ", minval(y)
     !
     !...calculate area and initial pressure and flow for CalcSurfaces
     !

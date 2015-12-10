@@ -128,7 +128,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				// Get the pointer to the compliance which needs to be controlled (in this case, the compliance of the pressure chamber):
 				double* parameterToControl = component->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl, surfaceIndex, m_delt));
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl, surfaceIndex, m_delt, m_startingTimestepIndex));
 				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 

@@ -337,7 +337,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
           boundaryConditionPressureHistoryReader.setNumColumns(mp_circuitData->numberOfPressureNodes + 1); // +1 for the timestep indexing column
           boundaryConditionPressureHistoryReader.readAndSplitMultiSurfaceRestartFile();
 
-          for (int stepToRead=0; stepToRead<m_startingTimestepIndex; stepToRead++)
+          for (int stepToRead=0; stepToRead <= m_startingTimestepIndex; stepToRead++)
           {
             boundaryConditionPressureHistoryReader.getNextDatum(); // ditch the timestep index
             for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
@@ -360,7 +360,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
           boundaryConditionFlowistoryReader.setNumColumns(mp_circuitData->numberOfComponents + 1); // +1 for the timestep indexing column
           boundaryConditionFlowistoryReader.readAndSplitMultiSurfaceRestartFile();
 
-          for (int stepToRead=0; stepToRead<m_startingTimestepIndex; stepToRead++)
+          for (int stepToRead=0; stepToRead <= m_startingTimestepIndex; stepToRead++)
           {
             boundaryConditionFlowistoryReader.getNextDatum(); // ditch the timestep index
             for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
@@ -385,7 +385,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
           boundaryConditionVolumeHistoryReader.setNumColumns(mp_circuitData->m_numberOfVolumeTrackingComponenets);
           boundaryConditionVolumeHistoryReader.readAndSplitMultiSurfaceRestartFile();
 
-          for (int stepToRead=0; stepToRead<m_startingTimestepIndex; stepToRead++)
+          for (int stepToRead=0; stepToRead <= m_startingTimestepIndex; stepToRead++)
           {
             boundaryConditionVolumeHistoryReader.getNextDatum(); // ditch the timestep index
             for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
@@ -411,6 +411,8 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
             }
           }
         }
+
+        switchDiodeStatesIfNecessary();
     }
 }
 
@@ -1235,6 +1237,7 @@ void NetlistCircuit::initialiseCircuit_common()
   setInternalHistoryPressureFlowsAndVolumes();
   if (m_startingTimestepIndex == 0)
   {
+    m_oneshotIgnoreIncorrectFortranFlow = true;
     recordPressuresFlowsAndVolumesInHistoryArrays();
   }
 }
@@ -1898,7 +1901,21 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
                 throw e;
               }
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
-              double threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
+              double threeDFlowValue;
+              if (m_oneshotIgnoreIncorrectFortranFlow)
+              {
+                // We know that we are in a restarted simulation, on the first
+                // restarted step. In this case, the flow from Fortran will be
+                // incorrect, so we use the value saved by the boundary condition
+                // at the end of the last simulation.
+                threeDFlowValue = prescribedFlowComponent->second->flow;
+                m_oneshotIgnoreIncorrectFortranFlow = false;
+              }
+              else
+              {
+                threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
+              }
+              std::cout << "setting 3D flow: " << threeDFlowValue << std::endl;
               assert(!isnan(threeDFlowValue));
               // Give the (possibly sign-corrected) flow to the linear system:
               errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);

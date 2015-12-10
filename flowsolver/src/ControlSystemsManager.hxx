@@ -18,10 +18,11 @@
 class ControlSystemsManager
 {
 public:
-	ControlSystemsManager(const double delt, const bool masterControlScriptPresent)
+	ControlSystemsManager(const double delt, const bool masterControlScriptPresent, const int startingTimestepIndex)
 	: m_delt(delt),
 	m_workingDirectory(boost::filesystem::current_path()),
-	m_hasMasterPythonController(masterControlScriptPresent)
+	m_hasMasterPythonController(masterControlScriptPresent),
+	m_startingTimestepIndex(startingTimestepIndex)
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
 		if (m_hasMasterPythonController)
@@ -32,11 +33,7 @@ public:
 	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex);
 	void updateBoundaryConditionControlSystems();
 
-	~ControlSystemsManager()
-	{
-		// Terminate the Python C extensions
-		// Py_Finalize();
-	}
+	~ControlSystemsManager(){}
 private:
 	std::vector<boost::shared_ptr<AbstractParameterController>> m_nonPythonControlSystems;
 	std::vector<boost::shared_ptr<GenericPythonController>> m_pythonControlSystems; // This vector is for convenience only; it duplicates some elements of m_controlSystems
@@ -53,6 +50,7 @@ private:
 	boost::shared_ptr<GenericPythonController> mp_masterPythonController;
 	void createMasterPythonController();
 	void sortPythonControlSystemsByPriority();
+	int m_startingTimestepIndex;
 };
 
 #endif

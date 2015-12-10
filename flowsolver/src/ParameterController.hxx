@@ -33,22 +33,24 @@ protected:
 	double* const mp_parameterToControl;
 	const double m_originalValueOfParameter;
 	const int m_surfaceIndex;
+	virtual void setupControlStateOnRestart() {};
 };
 
 
 class LeftVentricularElastanceController : public AbstractParameterController
 {
 public:
-	LeftVentricularElastanceController(double* const parameterToControl, const int surfaceIndex, const double delt)
+	LeftVentricularElastanceController(double* const parameterToControl, const int surfaceIndex, const double delt, const int startingTimestepIndex)
 	: AbstractParameterController(parameterToControl, surfaceIndex),
 	m_delt(delt)
 	{
-		m_periodicTime = 0.0; //\todo think about this for restarts!
+		m_periodicTime = startingTimestepIndex * delt;
 		m_timeToMaximumElastance = 0.2782;
 		m_timeToRelax = 0.1391;
 		m_minimumElastance = 4.10246e-3;
 		m_maximumElastance = 3.0827e-1;
 		m_heartPeriod = 0.86;
+		setupControlStateOnRestart();
 	}
 
 	void updateControl();
@@ -67,6 +69,7 @@ private:
 	double getElastance();
 
 	void updatePeriodicTime();
+	void setupControlStateOnRestart();
 };
 
 class BleedController : public AbstractParameterController

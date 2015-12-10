@@ -434,7 +434,7 @@ void CircuitComponent::enableDiodeFlow()
 void CircuitComponent::disableDiodeFlow()
 {
 	assert(m_type == Component_Diode);
-	m_currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open
+	m_currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open//NOT USED
 	m_permitsFlow = false;
 }
 

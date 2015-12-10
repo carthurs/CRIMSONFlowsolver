@@ -556,11 +556,12 @@
       real*8    Qini(0:MAXSURF) !initial flow rate
       real*8    PdistIni(0:MAXSURF)!initial distal pressure
       real*8    Pini(0:MAXSURF),CoupleArea(0:MAXSURF) ! initial pressure
-      real*8    VelOnly(nshg,3), POnly(nshg)
+      ! real*8    VelOnly(nshg,3), POnly(nshg)
+      real*8    Ones(nshg)
 !
 
-      POnly(:)= one ! one to get area
-      call integrScalar(CoupleArea,POnly,srfIdList,numSrfs) !get surf area
+      Ones(:)= one ! one to get area
+      call integrScalar(CoupleArea,Ones,srfIdList,numSrfs) !get surf area
       CalcArea(1:numSrfs) = CoupleArea(1:numSrfs)
 
       do i = 1, numSrfs
@@ -571,11 +572,11 @@
 
 
 
-      VelOnly(:,1:3)=y(:,1:3)
-      call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs) !get initial flow
+      ! VelOnly(:,1:3)=y(:,1:3)
+      call GetFlowQ(Qini,y(:,1:3),srfIdList,numSrfs) !get initial flow
       FlowHist(lstep+1,1:numSrfs)=Qini(1:numSrfs) !initialize QHistRCR
-      POnly(:)=y(:,4) ! pressure
-      call integrScalar(Pini,POnly,srfIdList,numSrfs) !get initial pressure integral
+      ! POnly(:)=y(:,4) ! pressure
+      call integrScalar(Pini,y(:,4),srfIdList,numSrfs) !get initial pressure integral
       Pini(1:numSrfs) = Pini(1:numSrfs)/CalcArea(1:numSrfs)
       PressHist(lstep+1,1:numSrfs)=Pini(1:numSrfs)
      

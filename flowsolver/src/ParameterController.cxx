@@ -57,6 +57,11 @@ void LeftVentricularElastanceController::updatePeriodicTime()
 	// std::cout << "m_periodicTime was: "<< m_periodicTime << std::endl;
 }
 
+void LeftVentricularElastanceController::setupControlStateOnRestart()
+{
+	*mp_parameterToControl = getElastance();
+}
+
 void BleedController::updateControl()
 {
 	bool m_bleedingOn = mp_timer->hasTheTimeCome();

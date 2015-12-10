@@ -879,9 +879,10 @@ extern "C" void callCPPUpdateBoundaryConditionControlSystems()
 
 void boundaryConditionManager::createControlSystems()
 {
+  assert(m_startingTimestepIndexHasBeenSet);
   m_controlSystemsPresent = true;
   // Instantiate the manager
-  mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt, m_masterControlScriptPresent));
+  mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt, m_masterControlScriptPresent, m_startingTimestepIndex));
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
   NetlistReader* netlistReader_instance = NetlistReader::Instance();

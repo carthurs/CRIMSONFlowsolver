@@ -29,6 +29,23 @@ public:
 	{
 		initialisePetscArrayNames();
 
+		// Fortran will report the wrong flow (zero) on the first timestep
+		// of a restarted simulation. In this case, we trust the value
+		// of flow that the boundary condition model already knows (it was
+		// saved at the point-of-restart during the last simulation).
+		//
+		// Once this flag is used, we set it to false again (i.e. its one-shot)
+		//
+		//\todo fix this in the Fortran code instead.
+		if (m_startingTimestepIndex > 0)
+		{
+			m_oneshotIgnoreIncorrectFortranFlow = true;
+		}
+		else
+		{
+			m_oneshotIgnoreIncorrectFortranFlow = false;
+		}
+
 		safetyCounterLimit = 1000;
 		mp_circuitData = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
 		// mp_circuitDataWithoutDiodes = boost::shared_ptr<CircuitData> (new CircuitData(m_hstep));
@@ -207,6 +224,7 @@ private:
 	// boost::shared_ptr<CircuitData> mp_circuitDataWithoutDiodes;
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
 	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_circuitDataWithoutDiodes
+	bool m_oneshotIgnoreIncorrectFortranFlow;
 
 	// std::vector<double> m_PressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
 	// std::vector<double> m_HistoryPressuresInLPN;                // As m_PressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.

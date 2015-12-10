@@ -1915,7 +1915,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
               {
                 threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
               }
-              std::cout << "setting 3D flow: " << threeDFlowValue << std::endl;
+              // std::cout << "setting 3D flow: " << threeDFlowValue << std::endl;
               assert(!isnan(threeDFlowValue));
               // Give the (possibly sign-corrected) flow to the linear system:
               errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);

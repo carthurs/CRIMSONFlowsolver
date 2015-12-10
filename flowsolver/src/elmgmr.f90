@@ -1316,7 +1316,7 @@
 
         if(sign.lt.zero) then
           do j = 1,numNetlistLPNSrfs
-              p(j)= sign*(p(j)*implicitcoeffs(j,1)) 
+              p(j)= sign*(p(j)*implicitcoeffs(j,1))
               p(j)= p(j) + sign*implicitcoeffs(j,2)
           enddo
           ! Pass the netlist surface pressures to CPP

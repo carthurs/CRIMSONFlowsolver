@@ -131,7 +131,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     integer numberOfCppManagedBoundaryConditions
 
-
 !--------------------------------------------------------------------
 !   Setting up memLS
 
@@ -568,9 +567,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         end do
     end if
 
-    write(*,*) "max value of y: ", maxval(y)
-    write(*,*) "min value of y: ", minval(y)
-   
+  
     if(iheart .gt. int(0)) then
         
         ! set pressures and flows at 3D/0D interface
@@ -595,9 +592,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     end if
 
-    write(*,*) "5max value of y: ", maxval(y)
-    write(*,*) "5min value of y: ", minval(y)
-
     ! ******************************************************** !
     ! ***                                                  *** !
     ! ******************************************************** !
@@ -605,16 +599,15 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !
     !.... satisfy the boundary conditions
     !
-    call itrBC (y, ac,  iBC, BC, iper, ilwork)
+    if (lstep .eq. 0 ) then
+        call itrBC (y, ac,  iBC, BC, iper, ilwork)
+    endif
     yold = y
     acold = ac
 
     !
     !.... loop through the time sequences
     !
-
-    write(*,*) "4max value of y: ", maxval(y)
-    write(*,*) "4min value of y: ", minval(y)
 
     itseq = 1
 
@@ -630,9 +623,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     call itrSetup ( y, acold ) ! sets up alfi
 
-    write(*,*) "3max value of y: ", maxval(y)
-    write(*,*) "3min value of y: ", minval(y)
-    
+   
     !
     ! *** set \alpha_{i} in multidomain module
     !
@@ -675,9 +666,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     endif
    !---------------------------------- Nan rcr
-   write(*,*) "2max value of y: ", maxval(y)
-    write(*,*) "2min value of y: ", minval(y)
-    !
+   !
     !...calculate area and initial pressure and flow for CalcSurfaces
     !
     if(numCalcSrfs.gt.zero) then
@@ -1917,6 +1906,8 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 !        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
 !        ((nsonmax.eq.1).and.iLES.gt.0))) &
 !        call rwvelb  ('out ',  velbar  ,ifail)
+        write(*,*) "OUT2 max value of y: ", maxval(y)
+        write(*,*) "OUT2 min value of y: ", minval(y)
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
             call write_displ(myrank, lstep, nshg, 3, u, uref )

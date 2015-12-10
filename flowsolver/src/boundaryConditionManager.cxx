@@ -664,8 +664,8 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
       
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
       // std::cout << "just got implicit dp_dq: " << implicitCoeffs_toBeFilled[writeLocation];
+
       // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
-      
       implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = (*iterator)->getHop();
       // std::cout << " and H operator: " << implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] << std::endl;
       

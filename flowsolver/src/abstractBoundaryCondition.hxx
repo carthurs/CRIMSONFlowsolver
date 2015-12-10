@@ -44,8 +44,6 @@ class abstractBoundaryCondition
         numberOfConstructedBoundaryConditions++;
         index = numberOfConstructedBoundaryConditions;
 
-        std::cout << "m_currentTimestepIndex: " << m_currentTimestepIndex << std::endl;
-
         if (m_currentTimestepIndex > 0)
         {
             m_thisIsARestartedSimulation = true;

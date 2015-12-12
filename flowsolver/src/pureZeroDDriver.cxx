@@ -3,6 +3,7 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include "mpi.h"
 
 void PureZeroDDriver::init()
 {
@@ -148,6 +149,7 @@ void PureZeroDDriver::iter_finalize()
 	bool thisIsAWritingStep = ( m_timestepNumber % m_ntout == 0);
 	if (thisIsAWritingStep)
 	{
+		writeNumstartDotDat();
 		boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
 	}
 
@@ -258,4 +260,28 @@ void PureZeroDDriver::setupConnectedComponents(const int num3DConnectedComponent
 	}
 
 	m_mapFromNetlistIndexToConnectedComponentsHasBeenSet = true;
+}
+
+void PureZeroDDriver::writeNumstartDotDat()
+{
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	if (rank == 0)
+	{
+		std::string numstartFileName = std::string("numstart.dat");
+
+		std::ofstream fileHandle = std::ofstream(numstartFileName.c_str(), std::ios::trunc);
+		
+		if (!fileHandle.is_open())
+		{
+			std::stringstream errorBuilder;
+			errorBuilder << "EE: Failed to open " << numstartFileName << " for writing!" << std::endl;
+			throw std::runtime_error(errorBuilder.str());
+		}
+
+		fileHandle << m_timestepNumber+1 << std::endl;
+
+		fileHandle.close();
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
 }

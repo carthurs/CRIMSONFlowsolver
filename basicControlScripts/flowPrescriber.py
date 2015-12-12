@@ -3,6 +3,13 @@ from math import pi, cos
 import numpy
 import scipy.interpolate
 
+# disable serialisation
+def loadClassOnRestart(fileName, MPIRank):
+	return None
+
+def saveClassForRestart(objectToIgnore):
+	pass
+
 class parameterController(abstractParameterController):
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):

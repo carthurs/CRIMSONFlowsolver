@@ -66,6 +66,7 @@ private:
 	void placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(std::vector<double> boundaryPressures, std::vector<double> boundaryFlows);
 	void placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainReplacement();
 	void checkIfThisIsARestartedSimulation();
+	void writeNumstartDotDat();
 };
 
 #endif

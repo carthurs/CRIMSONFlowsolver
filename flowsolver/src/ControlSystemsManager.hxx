@@ -18,17 +18,19 @@
 class ControlSystemsManager
 {
 public:
-	ControlSystemsManager(const double delt, const bool masterControlScriptPresent, const int startingTimestepIndex)
+	ControlSystemsManager(const double delt, const bool masterControlScriptPresent, const int startingTimestepIndex, const int timestepsBetweenRestarts)
 	: m_delt(delt),
 	m_workingDirectory(boost::filesystem::current_path()),
 	m_hasMasterPythonController(masterControlScriptPresent),
-	m_startingTimestepIndex(startingTimestepIndex)
+	m_startingTimestepIndex(startingTimestepIndex),
+	m_timestepsBetweenRestarts(timestepsBetweenRestarts)
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
 		if (m_hasMasterPythonController)
 		{
 			createMasterPythonController();
 		}
+		m_currentTimestepIndex = m_startingTimestepIndex;
 	}
 	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex);
 	void updateBoundaryConditionControlSystems();
@@ -46,11 +48,14 @@ private:
 	boost::filesystem::path m_pathToBoilerplatePythonPressurePrescriberScript;
 	const boost::filesystem::path m_workingDirectory;
 	void updateAndPassStateInformationBetweenPythonParameterControllers();
-	bool m_hasMasterPythonController;
+	const bool m_hasMasterPythonController;
 	boost::shared_ptr<GenericPythonController> mp_masterPythonController;
 	void createMasterPythonController();
 	void sortPythonControlSystemsByPriority();
-	int m_startingTimestepIndex;
+	const int m_startingTimestepIndex;
+	const int m_timestepsBetweenRestarts;
+	int m_currentTimestepIndex;
+	void writePythonControlSystemsRestarts();
 };
 
 #endif

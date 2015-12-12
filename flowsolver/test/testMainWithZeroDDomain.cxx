@@ -937,3 +937,54 @@ TEST_F(testMainWithZeroDDomain, checkRestartTwoDomainsWithClosedLoop) {
   	EXPECT_NEAR(3056.36087755523,pressureResult,1e-8);
   }
 }
+
+// Note that this test is imperfect for 2 reasons:
+// 1) Nobody checks the pickling, this is just a test of unpickling
+// 2) The results are checked against an initial run of this test,
+//    which gave values very close (within 1mmHg) to the non-restarted
+//    version of this test. So there is a slight discrepancy in the
+//    restart, and this should one day be investigated.
+TEST_F(testMainWithZeroDDomain, checkPythonUnpicklers) {
+	  setSimDirectory("mainTests/zeroDDomain/pythonPicklers");
+	  clearOutOldFiles();
+
+	  runSimulation();
+	  MPI_Barrier(MPI_COMM_WORLD);
+
+	  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
+	  {
+	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
+	  	closedLoopDownstreamPressures.setNumColumns(5);
+	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+                       
+	  	double pressureResult = closedLoopDownstreamPressures.getReadFileData(1,201);
+	  	EXPECT_NEAR(551.944803344236,pressureResult,1e-8);
+
+	  	pressureResult = closedLoopDownstreamPressures.getReadFileData(2,201);
+	  	EXPECT_NEAR(551.944803344236,pressureResult,1e-8);
+
+	  	pressureResult = closedLoopDownstreamPressures.getReadFileData(3,201);
+	  	EXPECT_NEAR(0.980066577841242,pressureResult,1e-8);
+
+	  	pressureResult = closedLoopDownstreamPressures.getReadFileData(4,201);
+	  	EXPECT_NEAR(5779.50484489326,pressureResult,1e-8);
+	  }
+
+	  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
+	  {
+	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
+	  	closedLoopDownstreamPressures.setNumColumns(4);
+	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
+
+	  	double flowResult = closedLoopDownstreamPressures.getReadFileData(1,201);
+	  	EXPECT_NEAR(0.0,flowResult,1e-8);
+
+	  	flowResult = closedLoopDownstreamPressures.getReadFileData(2,201);
+	  	EXPECT_NEAR(52275.6004154903,flowResult,1e-8);
+
+	  	flowResult = closedLoopDownstreamPressures.getReadFileData(3,201);
+	  	EXPECT_NEAR(-52275.6004154903,flowResult,1e-8);
+	  }
+  }

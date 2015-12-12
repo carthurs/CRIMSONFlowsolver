@@ -79,6 +79,7 @@ void GenericPythonController::initialise()
 	{
 		m_controllerClassName = "parameterController";
 		m_updateControlNameString = "updateControl";
+		m_passDataToPythonMethodName = "recieveExtraData";
 
 		std::stringstream fullFileName;
 		fullFileName << m_controllerPythonScriptBaseName << ".py";
@@ -127,19 +128,54 @@ void GenericPythonController::initialise()
 			throw std::runtime_error(errorMessage.str());
 		}
 
+
 		int rank;
 		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 		PyObject* pyMPIRank = PyInt_FromLong((long)rank);
 
+		// Prepare the arguments to give to the controller's constructor:
+		std::string controllerNameQualification = getControllerNameQualification();
+		PyObject* controllerNameQualification_py = PyString_FromString(controllerNameQualification.c_str());
+
+		std::string fullyQualifiedControllerName = m_controllerPythonScriptBaseName;
+		fullyQualifiedControllerName.append(controllerNameQualification);
+		PyObject* fullyQualifiedControllerName_py = PyString_FromString(fullyQualifiedControllerName.c_str());
+		
 		// Instantiate the Python controller class:
 		if (PyCallable_Check(m_customPythonClass) == 1)
 		{
-			// Prepare the arguments to give to the controller's constructor:
-			PyObject* arguments = PyTuple_Pack(2,m_pythonScriptName,pyMPIRank);
-			// Instantiate the controller class
-			m_pythonControllerInstance = PyObject_CallObject(m_customPythonClass, arguments);
-			safe_Py_DECREF(arguments);
+			bool picklingExplicitlyDisabledByController = false;
+			bool thisIsARestartedSimulation = (m_startingTimestepIndex_genericController != 0);
+			if (thisIsARestartedSimulation)
+			{	
+				if (rank ==0)
+				{
+					std::cout << "II: Unpickling saved Python controllers..." << std::endl;
+				}
+				m_unpickleMethodName = std::string("loadClassOnRestart");
+				PyObject* unpickleMethodName_py = PyString_FromString(m_unpickleMethodName.c_str());
+				PyObject* unpickleMethod = PyObject_GetAttr(m_customPythonModule, unpickleMethodName_py);
+				safe_Py_DECREF(unpickleMethodName_py);
+
+				m_pythonControllerInstance = PyObject_CallFunctionObjArgs(unpickleMethod, fullyQualifiedControllerName_py, pyMPIRank, NULL);
+				picklingExplicitlyDisabledByController = (m_pythonControllerInstance == Py_None);
+				safe_Py_DECREF(unpickleMethod);
+			}
+
+			if (picklingExplicitlyDisabledByController)
+			{
+				safe_Py_DECREF(m_pythonControllerInstance);
+				std::cout << "II: Reconstructing Python controller that has pickling explicitly disabled..." << std::endl;
+			}
+
+			if (!thisIsARestartedSimulation || picklingExplicitlyDisabledByController)
+			{
+				PyObject* arguments = PyTuple_Pack(2, m_pythonScriptName, pyMPIRank);
+				// Instantiate the controller class
+				m_pythonControllerInstance = PyObject_CallObject(m_customPythonClass, arguments);
+				safe_Py_DECREF(arguments);
+			}
 		}
 		else
 		{
@@ -148,6 +184,34 @@ void GenericPythonController::initialise()
 			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
 			throw std::runtime_error(errorMessage.str());
 		}
+
+		if (m_pythonControllerInstance != NULL)
+		{
+			PyObject* passDataToPythonMethodName_Pyobject = PyString_FromString(m_passDataToPythonMethodName.c_str());
+
+			// Package any other data that you need to give to the controllers here.
+			//
+			// There's a method in the abstract Python class which recieves this.
+			// This saves us from putting any new variables in the constructor, which 
+			// would break backward-compatibility.
+			PyObject_CallMethodObjArgs(m_pythonControllerInstance, passDataToPythonMethodName_Pyobject, controllerNameQualification_py, NULL);
+
+			safe_Py_DECREF(passDataToPythonMethodName_Pyobject);
+		}
+		else
+		{
+			std::stringstream errorMessage;
+			errorMessage << "EE: Failed to call a method named " << m_passDataToPythonMethodName << " of a class named " << m_controllerPythonScriptBaseName.c_str();
+			errorMessage << " in file " << m_controllerPythonScriptBaseName.c_str() << ".py" << std::endl;
+			throw std::runtime_error(errorMessage.str());
+		}
+
+		safe_Py_DECREF(controllerNameQualification_py);
+
+		// setup for pickling restarts:
+		std::string pickleMethodName("saveClassForRestart");
+		m_pickleMethodName_py = PyString_FromString(pickleMethodName.c_str());
+
 	}
 	catch(...) // Catch any exception
 	{
@@ -162,6 +226,12 @@ void GenericPythonController::initialise()
 		// Rethrow the original exception (whether or not it was Python's).
 		throw;
 	}
+}
+
+std::string GenericPythonController::getControllerNameQualification()
+{
+	std::string controllerNameQualification = std::string("_master");
+	return controllerNameQualification;
 }
 
 void GenericPythonController::updateControl()
@@ -194,6 +264,48 @@ void GenericPythonController::updateControl()
 	}
 }
 
+void GenericPythonController::picklePythonController()
+{
+	PyObject* pickleMethod = PyObject_GetAttr(m_customPythonModule, m_pickleMethodName_py);
+	if (pickleMethod==NULL)
+	{
+		std::stringstream errorMessage;
+		errorMessage << "EE: Pickling method from python controller was null" << m_controllerPythonScriptBaseName << std::endl;
+		throw std::runtime_error(errorMessage.str());
+	}
+	if (PyErr_Occurred())
+	{
+		std::stringstream errorMessage;
+		errorMessage << "EE: Failed to get pickling method from python controller " << m_controllerPythonScriptBaseName << std::endl;
+		PyErr_Print();
+
+		throw std::runtime_error(errorMessage.str());
+	}
+	if (PyCallable_Check(pickleMethod) == 1)
+	{
+		// PyObject* arguments = PyTuple_Pack(1, m_pythonControllerInstance);
+		PyObject_CallFunctionObjArgs(pickleMethod, m_pythonControllerInstance, NULL);
+		// safe_Py_DECREF(arguments);
+		safe_Py_DECREF(pickleMethod);
+	}
+	else
+	{
+		std::stringstream errorMessage;
+		errorMessage << "EE: Failed to get callable pickling method for Python controller " << m_controllerPythonScriptBaseName << std::endl;
+		PyErr_Print();
+
+		throw std::runtime_error(errorMessage.str());
+	}
+	if (PyErr_Occurred())
+	{
+		std::stringstream errorMessage;
+		errorMessage << "EE: Failed to pickle python controller " << m_controllerPythonScriptBaseName << std::endl;
+		PyErr_Print();
+
+		throw std::runtime_error(errorMessage.str());
+	}
+}
+
 long GenericPythonController::getPriority()
 {
 	char* getPriorityMethodNameInPython = "getControllerPriority";
@@ -203,7 +315,7 @@ long GenericPythonController::getPriority()
 		PyObject* priorityOfThisController = PyObject_CallMethodObjArgs(m_pythonControllerInstance, getPriorityMethodNameInPython_asPyString, NULL);
 		if (priorityOfThisController == NULL)
 		{
-			throw std::runtime_error("EE: Internal error int getPriority.");
+			throw std::runtime_error("EE: Internal error in getPriority.");
 		}
 
 		long priorityOfThisController_integer = PyInt_AsLong(priorityOfThisController);
@@ -313,7 +425,7 @@ void GenericPythonController::getBroadcastStateData(PyObject*& stateDataBroadcas
 		stateDataBroadcastByThisController = PyObject_CallMethodObjArgs(m_pythonControllerInstance, broadcastMethodNameInPython_asPyString, NULL);
 		if (stateDataBroadcastByThisController == NULL)
 		{
-			throw std::runtime_error("EE: Internal error int getBroadcastStateData.");
+			throw std::runtime_error("EE: Internal error in getBroadcastStateData");
 		}
 
 		safe_Py_DECREF(broadcastMethodNameInPython_asPyString);
@@ -342,7 +454,7 @@ void GenericPythonController::giveStateDataFromOtherPythonControllers(PyObject* 
 		PyObject* success = PyObject_CallMethodObjArgs(m_pythonControllerInstance, receiveMethodNameInPython_asPyString, allPackagedBroadcastData, NULL);
 		if (success == NULL)
 		{
-			throw std::runtime_error("EE: Internal error int receiveStateDataFromAllOtherParameterControllers.");
+			throw std::runtime_error("EE: Internal error in receiveStateDataFromAllOtherParameterControllers");
 		}
 		safe_Py_DECREF(success);
 		safe_Py_DECREF(receiveMethodNameInPython_asPyString);
@@ -358,4 +470,23 @@ void GenericPythonController::giveStateDataFromOtherPythonControllers(PyObject* 
 		// Rethrow the original exception (whether or not it was Python's).
 		throw;
 	}
+}
+
+std::string UserDefinedCustomPythonParameterController::getControllerNameQualification()
+{
+	// Append the surface index and node/component index to create the fully qualified name of this controller:
+	// (this is so that humans can see which controller certain data belongs to...)
+	std::string itemType;
+	if (m_typeOfControlledItem == circuit_item_t::Circuit_Component)
+	{
+		itemType = std::string("_component_");
+	}
+	else // (m_typeOfControlledItem == circuit_item_t::Circuit_Node)
+	{
+		itemType = std::string("_node_");
+	}
+	std::stringstream qualifiedNameMaker; 
+	qualifiedNameMaker << "_surface_" << m_surfaceIndex << itemType << m_nodeOrComponentIndex;
+	std::string controllerNameQualification = qualifiedNameMaker.str();
+	return controllerNameQualification;
 }

@@ -276,6 +276,9 @@ void Partition_Problem(int numProcs) {
 	sprintf(systemcmd, "cp *.py %s", _directory_name);
 	system(systemcmd);
 
+	sprintf(systemcmd, "cp *.pickle %s", _directory_name);
+	system(systemcmd);
+
 	if (numProcs < 2) {
 		sprintf(systemcmd, "cp *.1 %s", _directory_name);
 		system(systemcmd);

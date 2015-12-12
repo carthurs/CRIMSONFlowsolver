@@ -8,6 +8,7 @@
 #include "timers.hxx"
 #include <sstream>
 #include <iostream>
+#include "datatypesInCpp.hxx"
 
 // This class can be connected to a netlist LPN parameter
 // (e.g. resistance for a component, or compliance for a compliance chamber).
@@ -15,10 +16,13 @@
 class AbstractParameterController
 {
 public:
-	AbstractParameterController(double* const parameterToControl, const int surfaceIndex)
+	AbstractParameterController(double* const parameterToControl, const int surfaceIndex, const int nodeOrComponentIndex, const circuit_item_t typeOfControlledItem, const int startingTimestepIndex)
 	: mp_parameterToControl(parameterToControl), // Set the pointer to the parameter we will control
 	m_originalValueOfParameter(*parameterToControl), // Save the original state of the parameter
-	m_surfaceIndex(surfaceIndex)
+	m_surfaceIndex(surfaceIndex),
+	m_nodeOrComponentIndex(nodeOrComponentIndex),
+	m_typeOfControlledItem(typeOfControlledItem),
+	m_startingTimestepIndex(startingTimestepIndex)
 	{
 	}
 	virtual ~AbstractParameterController()
@@ -33,6 +37,9 @@ protected:
 	double* const mp_parameterToControl;
 	const double m_originalValueOfParameter;
 	const int m_surfaceIndex;
+	const int m_nodeOrComponentIndex;
+	const int m_startingTimestepIndex;
+	const circuit_item_t m_typeOfControlledItem;
 	virtual void setupControlStateOnRestart() {};
 };
 
@@ -40,11 +47,11 @@ protected:
 class LeftVentricularElastanceController : public AbstractParameterController
 {
 public:
-	LeftVentricularElastanceController(double* const parameterToControl, const int surfaceIndex, const double delt, const int startingTimestepIndex)
-	: AbstractParameterController(parameterToControl, surfaceIndex),
+	LeftVentricularElastanceController(double* const parameterToControl, const int surfaceIndex, const int nodeOrComponentIndex, const circuit_item_t typeOfControlledItem, const double delt, const int startingTimestepIndex)
+	: AbstractParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, typeOfControlledItem, startingTimestepIndex),
 	m_delt(delt)
 	{
-		m_periodicTime = startingTimestepIndex * delt;
+		m_periodicTime = m_startingTimestepIndex * delt;
 		m_timeToMaximumElastance = 0.2782;
 		m_timeToRelax = 0.1391;
 		m_minimumElastance = 4.10246e-3;
@@ -75,8 +82,8 @@ private:
 class BleedController : public AbstractParameterController
 {
 public:
-	BleedController(double* const parameterToControl, const int surfaceIndex)
-	: AbstractParameterController(parameterToControl, surfaceIndex)
+	BleedController(double* const parameterToControl, const int surfaceIndex, const int nodeOrComponentIndex, const circuit_item_t typeOfControlledItem, const int startingTimestepIndex)
+	: AbstractParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, typeOfControlledItem, startingTimestepIndex)
 	{
 		int initialTimestep = 0; //\todo sort the restarts for this
 		int triggerTimestep = 1600;
@@ -92,11 +99,13 @@ private:
 class GenericPythonController
 {
 public:
-	GenericPythonController(const double delt, const std::string controllerPythonScriptBaseName)
+	GenericPythonController(const double delt, const std::string controllerPythonScriptBaseName, const int startingTimestepIndex)
 	: m_delt(PyFloat_FromDouble(delt)),
-	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName)
+	m_controllerPythonScriptBaseName(controllerPythonScriptBaseName),
+	m_startingTimestepIndex_genericController(startingTimestepIndex)
 	{
-		initialise();
+		// moved to caller because polymorphic function calls dont work in constructors
+		// initialise(); 
 	}
 	virtual ~GenericPythonController()
 	{
@@ -107,18 +116,24 @@ public:
 		safe_Py_DECREF(m_customPythonClass);
 		safe_Py_DECREF(m_customPythonModule);
 		safe_Py_DECREF(m_pythonControllerInstance);
+		safe_Py_DECREF(m_pickleMethodName_py);
 	}
 
 	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);
 	void giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData);
 	long getPriority();
+	void picklePythonController();
 	virtual void updateControl();
-protected:
 	void initialise();
+protected:
 
-	std::string m_controllerPythonScriptBaseName;
+	const int m_startingTimestepIndex_genericController;
+
+	const std::string m_controllerPythonScriptBaseName;
 	std::string m_updateControlNameString;
 	std::string m_controllerClassName;
+	std::string m_passDataToPythonMethodName;
+	std::string m_unpickleMethodName;
 
 	PyObject* m_delt;
 	PyObject* m_pythonScriptName;
@@ -127,7 +142,9 @@ protected:
 	PyObject* m_customPythonClass;
 	PyObject* m_customPythonModule;
 	PyObject* m_pythonControllerInstance;
+	PyObject* m_pickleMethodName_py;
 private:
+	virtual std::string getControllerNameQualification();
 };
 
 
@@ -136,14 +153,15 @@ private:
 class UserDefinedCustomPythonParameterController : public AbstractParameterController, public GenericPythonController
 {
 public:
-	UserDefinedCustomPythonParameterController(double* const parameterToControl, const int surfaceIndex, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs)
-	: AbstractParameterController(parameterToControl, surfaceIndex),
-	GenericPythonController(delt, controllerPythonScriptBaseName),
+	UserDefinedCustomPythonParameterController(double* const parameterToControl, const int surfaceIndex, const int nodeOrComponentIndex, const circuit_item_t typeOfControlledItem, const double delt, const std::string controllerPythonScriptBaseName, const std::vector<std::pair<int,double*>> flowPointerPairs, const std::vector<std::pair<int,double*>> pressurePointerPairs, const std::vector<std::pair<int,double*>> volumePointerPairs, const int startingTimestepIndex)
+	: AbstractParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, typeOfControlledItem, startingTimestepIndex),
+	GenericPythonController(delt, controllerPythonScriptBaseName, startingTimestepIndex),
 	m_pressurePointerPairs(pressurePointerPairs),
 	m_flowPointerPairs(flowPointerPairs),
 	m_volumePointerPairs(volumePointerPairs)
 	{
-		initialise();
+		// moved to caller because polymorphic function calls dont work in constructors
+		// initialise();
 	}
 
 	void updateControl();
@@ -156,6 +174,7 @@ public:
 	}
 
 private:
+	std::string getControllerNameQualification();
 
 	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
 	const std::vector<std::pair<int,double*>> m_flowPointerPairs;

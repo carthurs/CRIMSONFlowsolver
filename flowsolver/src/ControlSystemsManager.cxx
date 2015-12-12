@@ -47,6 +47,21 @@ void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterC
 		safe_Py_DECREF(*broadcastData);
 	}
 	m_pythonBroadcastDataFromEachController.clear();
+
+	writePythonControlSystemsRestarts();
+}
+
+void ControlSystemsManager::writePythonControlSystemsRestarts()
+{
+	bool theSimulationWasJustRestarted = (m_currentTimestepIndex == m_startingTimestepIndex);
+	if (m_currentTimestepIndex % m_timestepsBetweenRestarts == 0 && !theSimulationWasJustRestarted)
+	{
+		for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
+		{
+			(*pythonControlSystem)->picklePythonController();
+		}
+	}
+	m_currentTimestepIndex++;
 }
 
 // void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterControllers()
@@ -128,7 +143,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				// Get the pointer to the compliance which needs to be controlled (in this case, the compliance of the pressure chamber):
 				double* parameterToControl = component->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl, surfaceIndex, m_delt, m_startingTimestepIndex));
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new LeftVentricularElastanceController(parameterToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, m_startingTimestepIndex));
 				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 
@@ -142,7 +157,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 				double* resistanceToControl = resistor->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl, surfaceIndex));
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(resistanceToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_startingTimestepIndex));
 				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 
@@ -156,7 +171,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 				double* complianceToControl = capacitor->getParameterPointer();
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl, surfaceIndex));
+				boost::shared_ptr<AbstractParameterController> controllerToPushBack(new BleedController(complianceToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_startingTimestepIndex));
 				m_nonPythonControlSystems.push_back(controllerToPushBack);
 			}
 
@@ -193,9 +208,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -249,9 +265,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -288,9 +305,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Node, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				controllerToPushBack->initialise();
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -333,9 +351,10 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					throw std::runtime_error(errorMessage.str());
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
-				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs));
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Node, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(boost::static_pointer_cast<GenericPythonController> (controllerToPushBack));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 			
@@ -385,8 +404,9 @@ void ControlSystemsManager::createMasterPythonController()
 	// 	throw std::runtime_error(errorMessage.str());
 	// }
 	// int surfaceIndex = netlistCircuit->getSurfaceIndex();
-	boost::shared_ptr<GenericPythonController> newMasterController(new GenericPythonController(m_delt, externalPythonControllerName));
+	boost::shared_ptr<GenericPythonController> newMasterController(new GenericPythonController(m_delt, externalPythonControllerName, m_startingTimestepIndex));
 	mp_masterPythonController = newMasterController;
+	mp_masterPythonController->initialise();
 	m_pythonControlSystems.push_back(mp_masterPythonController);
 	sortPythonControlSystemsByPriority();
 }

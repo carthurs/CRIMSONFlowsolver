@@ -1,4 +1,29 @@
 import copy
+import cPickle
+
+# This serializes the class so it can be re-loaded on restart.
+# OVERRIDE IN YOUR SUBCLASS IF YOU DONT WANT SERIALISATION
+# (I.E. IF YOU'RE USING UNSERIALISEABLE MEMBERS)
+def saveClassForRestart(objectToSave):
+	if objectToSave.MPIRank == 0:
+		fullFileName = objectToSave.m_baseNameOfThisScript + objectToSave.controllerNameQualification + ".pickle"
+		outputFile = open(fullFileName, "w")
+
+		cPickle.dump(objectToSave, outputFile, cPickle.HIGHEST_PROTOCOL)
+		outputFile.close()
+
+# OVERRIDE IN YOUR SUBCLASS IF YOU DONT WANT SERIALISATION
+# (I.E. IF YOU'RE USING UNSERIALISEABLE MEMBERS)
+# RETURN None IN THAT CASE, SO C++ WILL CONSTRUCT THE OBJECT
+# AFRESH ON RESTART.
+def loadClassOnRestart(fileName, MPIRank):
+	inputFile = open(fileName + ".pickle")
+	loadedObject = cPickle.load(inputFile)
+	inputFile.close()
+	# correct the MPI rank (the loaded class was pickled by the rank-zero thread, so need to reset it appropriately for each rank now).
+	loadedObject.MPIRank = MPIRank
+	return loadedObject
+
 
 class stateDataContainer:
 	
@@ -19,6 +44,7 @@ class stateDataContainer:
 		returnValue[self.containerNameTag] = self.stateDataInternal
 		# deepcopy it so the data can't be changed after broadcast.
 		return copy.deepcopy(returnValue)
+
 
 class abstractParameterController:
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
@@ -63,6 +89,14 @@ class abstractParameterController:
 	# controller.
 	def getControllerPriority(self):
 		return self.controllerPriority
+
+	# Package any other new data that you need to give to the controllers here.
+	# (and make corresponding changes in the C++)
+	#
+	# This saves us from putting any new variables in the constructor (in Python),
+	# which would break backward-compatibility.
+	def recieveExtraData(self, controllerNameQualification):
+		self.controllerNameQualification = controllerNameQualification
 
 	# If you want to broadcast anything fixed on the first timestep, add a class like this in your controller.
 	# Some example entries are commented out here.

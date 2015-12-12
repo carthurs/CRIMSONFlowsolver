@@ -2,6 +2,7 @@
 //main function - builds flowsolver binary
 /////////////////////////////////////////////////////////////////
 #include <Python.h>
+#include "CRIMSONPython.hxx"
 #include "mpi.h"
 
 #include <iostream>
@@ -22,7 +23,6 @@
 #include "pureZeroDDriver.hxx"
 #include <sstream>
 #include "boost/filesystem.hpp"
-#include "CRIMSONPython.hxx"
 
 #ifdef intel
 #include <direct.h>

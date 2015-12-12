@@ -15,4 +15,6 @@ enum parameter_controller_t {Controller_Null, Controller_LeftVentricularElastanc
 
 enum boundary_data_t {Boundary_Pressure, Boundary_Flow};
 
+enum circuit_item_t {Circuit_Component, Circuit_Node};
+
 #endif

@@ -1,0 +1,239 @@
+# List of components in a format similar to that for netlist.
+# Hash-commented lines are ignored.
+### Begin FIRST netlist boundary condition model
+# Number of Components
+5
+# Component 1 type (resistor here):
+i
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2
+0.1e-4
+# component 2 type:
+d
+# component 2 details:
+3
+2
+0.1e-4
+# component 3 type:
+i
+# component 3 details:
+4
+3
+0.6667e-4
+#component 4 type:
+d
+#component 4 details:
+5
+4
+0.1187e-4
+# component 5 type: (v=VolumeTrackingPressureChamber; its first parameter value is the initial elastance, second is initial volume)
+v
+# component 5 details:
+3
+6
+4.10246e-3 130000.0
+# Number of prescribed pressure nodes:
+1
+# Indices of nodes with prescribed pressures:
+6
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.0e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+6
+# Initial pressures at the pressure nodes:
+1 10664.0
+2 10664.0
+3 533.2
+4 533.2
+5 533.2
+6 0.0
+# index of node  at 3D interface
+1
+# Number of components with control
+1
+# detains of components with control (component index, control type char; l=LV elastance)
+5 l
+# number of nodes with control
+0
+# details of nodes with control (l= lv elastance):
+### Begin SECOND netlist boundary condition model
+# Number of Components
+3
+# Component 1 type (resistor here):
+r
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2
+0.03
+# component 2 type:
+c
+# component 2 details:
+2
+3
+5.74
+# component 3 type:
+r
+# component 3 details:
+2
+4
+0.3
+# Number of prescribed pressure nodes:
+1
+# Indices of nodes with prescribed pressures:
+3
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.0e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+4
+# Initial pressures at the pressure nodes:
+1 10664.0
+2 10664.0
+3 0.0
+4 533.0
+# index of node  at 3D interface
+1
+# Number of components with control
+0
+# number of nodes with control
+0
+### end SECOND netlist
+### Begin THIRD netlist boundary condition model
+# Number of Components
+5
+# Component 1 type (resistor here):
+i
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2
+0.1e-4
+# component 2 type:
+d
+# component 2 details:
+3
+2
+0.1e-5
+# component 3 type:
+i
+# component 3 details:
+4
+3
+0.6667e-4
+#component 4 type:
+d
+#component 4 details:
+5
+4
+0.1187e-4
+# component 5 type: (v=VolumeTrackingPressureChamber; its first parameter value is the initial elastance, second is initial volume)
+v
+# component 5 details:
+3
+6
+4.10246e-3 130000.0
+# Number of prescribed pressure nodes:
+1
+# Indices of nodes with prescribed pressures:
+6
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.0e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+6
+# Initial pressures at the pressure nodes:
+1 10664.0
+2 10664.0
+3 533.2
+4 533.2
+5 533.2
+6 0.0
+# index of node  at 3D interface
+1
+# Number of components with control
+1
+# detains of components with control (component index, control type char; l=LV elastance)
+5 l
+# number of nodes with control
+0
+# details of nodes with control (l= lv elastance):
+### End THIRD netlist
+### Begin FOURTH netlist boundary condition model
+# Number of Components
+3
+# Component 1 type (resistor here):
+r
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2
+0.03
+# component 2 type:
+c
+# component 2 details:
+2
+3
+4.74
+# component 3 type:
+r
+# component 3 details:
+2
+4
+0.3
+# Number of prescribed pressure nodes:
+1
+# Indices of nodes with prescribed pressures:
+3
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.0e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+4
+# Initial pressures at the pressure nodes:
+1 10664.0
+2 10664.0
+3 0.0
+4 533.0
+# index of node  at 3D interface
+1
+# Number of components with control
+0
+# number of nodes with control
+0
+### end FOURTH netlist

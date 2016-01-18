@@ -1301,6 +1301,11 @@ void VolumeTrackingPressureChamber::passPressureToStartNode()
 	startNode->setPressure(m_pressure);
 }
 
+double VolumeTrackingPressureChamber::getUnstressedVolume() 
+{
+	return m_unstressedVolume;
+}
+
 void VolumeTrackingPressureChamber::setStoredVolume(const double newVolume)
 {
 	m_storedVolume = newVolume;

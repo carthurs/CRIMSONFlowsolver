@@ -166,6 +166,7 @@ public:
 	}
 	
 	void setStoredVolume(const double newVolume);
+	double getUnstressedVolume();
 private:
 	double m_unstressedVolume;
 	void passPressureToStartNode();

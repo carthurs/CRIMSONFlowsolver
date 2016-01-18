@@ -225,6 +225,7 @@ private:
 	std::vector<boost::shared_ptr<CircuitData>> m_activeSubcircuitCircuitData;
 	std::vector<int> m_AtomicSubcircuitsComponentsBelongsTo; // This is indexed by component, as they appear in mp_circuitDataWithoutDiodes
 	bool m_oneshotIgnoreIncorrectFortranFlow;
+	std::vector<std::pair<int,double>> m_locationsInRHSForUnstressedVolumesAndTheirValues;
 
 	// std::vector<double> m_PressuresInLPN;                       // Pressure at each LPN node, using the same node indexing as in the netlist
 	// std::vector<double> m_HistoryPressuresInLPN;                // As m_PressuresInLPN, but for any nodes with histories. /Most/ of the entries in this array will never be used.

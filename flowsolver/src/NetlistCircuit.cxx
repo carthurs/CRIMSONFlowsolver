@@ -1468,6 +1468,8 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
     // This function assembles the system of (time-discretised) linear algebraic equations for the LPN.
     PetscErrorCode errFlag;
 
+    m_locationsInRHSForUnstressedVolumesAndTheirValues.clear();
+
     errFlag = MatZeroEntries(m_systemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     {
       int row = 0; // is the row in the matrix that we write to on each occasion
@@ -1565,7 +1567,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             }
             row++; // done twice in this if-case, because there are 2 equations to create for the VolumeTrackingPressureChamber
-
+            
             // Now do (2) (see comment block above, within this if-case)
             // Do the compliance term:
             boost::shared_ptr<VolumeTrackingPressureChamber> volumeTrackingPressureChamber = boost::dynamic_pointer_cast<VolumeTrackingPressureChamber> (*component);
@@ -1581,6 +1583,9 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
                 int columnIndex = componentIndexToTrackedVolumeComponentOrderingMap.at(zeroIndexOfThisComponent) + mp_circuitData->numberOfPressureNodes + m_numberOfHistoryPressures + mp_circuitData->numberOfComponents + numberOfHistoryFlows;
                 errFlag = MatSetValue(m_systemMatrix,row,columnIndex,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               }
+              // this is used to tell the RHS where to put the unstressed volume for this component:
+              boost::shared_ptr<VolumeTrackingPressureChamber> downcastVolumeTrackingPressureChamber = boost::static_pointer_cast<VolumeTrackingPressureChamber> (*component);
+              m_locationsInRHSForUnstressedVolumesAndTheirValues.push_back(std::make_pair(row, downcastVolumeTrackingPressureChamber->getUnstressedVolume() ) );
             }
             else //volumeTrackingPressureChamber->zeroVolumeShouldBePrescribed() == true, so instead of prescribing pressure based on volume, we allow the pressure to be a free variable, and prescribe zero volume for the chamber
             {
@@ -1591,7 +1596,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
               // if you're making changes.
               int columnIndex = componentIndexToTrackedVolumeComponentOrderingMap.at(zeroIndexOfThisComponent) + mp_circuitData->numberOfPressureNodes + m_numberOfHistoryPressures + mp_circuitData->numberOfComponents + numberOfHistoryFlows;
               errFlag = MatSetValue(m_systemMatrix,row,columnIndex,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-              // Reset the zero-volume marker on the component:
+              // Reset the zero-volume marker on the component:p
               volumeTrackingPressureChamber->resetZeroVolumePrescription();
             }
             row++; // done twice in this if-case, because there are 2 equations to create for the VolumeTrackingPressureChamber
@@ -2001,6 +2006,14 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
           ll++;
         }
       }
+    }
+
+    // Finally, add the unstressed volumes:
+    for (auto rowIndexAndUnstressedVolumePair = m_locationsInRHSForUnstressedVolumesAndTheirValues.begin(); rowIndexAndUnstressedVolumePair != m_locationsInRHSForUnstressedVolumesAndTheirValues.end(); rowIndexAndUnstressedVolumePair++)
+    {
+        int row = rowIndexAndUnstressedVolumePair->first;
+        double unstressedVolume = rowIndexAndUnstressedVolumePair->second;
+        errFlag = VecSetValue(m_RHS, row, unstressedVolume, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF, errFlag);
     }
  
     errFlag = VecAssemblyBegin(m_RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);

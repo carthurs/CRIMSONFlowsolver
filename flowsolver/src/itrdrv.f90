@@ -739,12 +739,13 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! the pressure pointer (pressure_n_ptr) to initialise with the 3D
     ! domain pressure at the surface.
     ! 
-    ! This is only done if this is not a restarted simulation (its internal)
-    ! logic guards this.
+    ! This is only done if this is not a restarted simulation (its internal
+    ! logic guards this).
     !
     ! It's a least-bad hack to get around the chicken-and-egg initialisation
     ! order issues for the 3D and multidomain. If we want to avoid this,
     ! the Fortran code needs refactoring.
+    write(*,*) "setting pressure for C++ RCRs"
     call callCPPSetPressureFromFortran()
     ! call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 
@@ -1042,6 +1043,9 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     ! end if
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
+
+    write(*,*) "setting pressure for C++ RCRs 2"
+    call callCPPSetPressureFromFortran()
 
 ! ********************************************* !
 ! *** heart model boundary condition switch *** !
@@ -2372,17 +2376,22 @@ subroutine initmultidomaincontainer(y,mdc)
 subroutine reset_flow_n(y,rom)
 
     use multidomain
-    use boundarymodule, only: GetFlowQ
+    use boundarymodule, only: GetFlowQ, integrScalar
     use phcommonvars
+    use cpp_interface
 
     real*8 :: y(nshg, ndof)
     type(reducedorder) :: rom
     integer :: nsurf 
     integer :: srflist(0:MAXSURF)
     real*8 :: currflow(0:MAXSURF)
+    real*8 :: POnly(nshg)
+    real*8 :: Pressures(0:MAXSURF)
+    real*8 :: CoupleArea(0:MAXSURF)
 
     ! get number of surfaces 
     nsurf = rom%getsurfnum()
+    write(*,*) "found ", nsurf, "surfaces in reset_flow_n"
 
     ! get surface list in 0:MAXSURF array
     srflist = rom%getsurfids()
@@ -2391,7 +2400,16 @@ subroutine reset_flow_n(y,rom)
     call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
 
     ! reset flow at step n in reduced order model
-    call rom%setflow_n(nsurf,currflow) 
+    call rom%setflow_n(nsurf,currflow)
+
+    POnly(:)=y(:,4) ! pressure
+    call integrScalar(Pressures,POnly,srflist,nsurf) !get surface pressure integral
+    call integrScalar(CoupleArea,POnly*0 + 1.0,srflist,nsurf)
+    ! Pressures(1:numSrfs) = Pressures(1:numSrfs)/CoupleArea(1:numSrfs)
+    Pressures(1) = Pressures(1)/CoupleArea(1) !(50.265) ! just a hack until i sort out the areas for netlists... one model only, and assuming radius is 4 units
+    write(*,*) "surface area for RCR was: ", CoupleArea(1), Pressures(1)
+
+    call callCPPSetFlowInRCR(currflow(1), Pressures(1))
 
 end subroutine reset_flow_n
 

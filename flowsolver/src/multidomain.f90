@@ -2731,8 +2731,12 @@
       implicit none
       class(reducedorder) :: a
       integer :: nflows
+      integer :: iii
       real*8 :: flows(0:maxsurf)
-      a%flow_n(1:nflows) = flows(1:nflows)     
+      a%flow_n(1:nflows) = flows(1:nflows)
+      do iii=1,nflows
+         write(*,*) "flow set: ", iii, a%flow_n(iii)
+      enddo
       return
       end subroutine 
 !
@@ -7108,9 +7112,9 @@
 
       class(numericalrcr) :: a
 
-      call PhAssignPointerDP(c_loc(a%parameters_RCR), c_char_"WindkesselRCR_Params"//c_null_char)
-      call PhAssignPointerDP(c_loc(a%parameters_Pd), c_char_"WindkesselRCR_Pdist"//c_null_char)
-      call PhAssignPointerDP(c_loc(a%pressure_n), c_char_"WindkesselRCR_P"//c_null_char)
+      ! call PhAssignPointerDP(c_loc(a%parameters_RCR), c_char_"WindkesselRCR_Params"//c_null_char)
+      ! call PhAssignPointerDP(c_loc(a%parameters_Pd), c_char_"WindkesselRCR_Pdist"//c_null_char)
+      ! call PhAssignPointerDP(c_loc(a%pressure_n), c_char_"WindkesselRCR_P"//c_null_char)
 
       end subroutine
 

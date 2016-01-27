@@ -3,7 +3,7 @@
 #include "boundaryConditionManager.hxx"
 
 // Statics
-int RCR::numberOfInitialisedRCRs = 0;
+int RCR::s_numberOfInitialisedRCRs = 0;
 
 double RCR::linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 {
@@ -81,37 +81,34 @@ void RCR::initialiseModel()
 // Here we step the actual discretised ODE for the RCR:
 std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt)
 {
-
-  double temp1;
-  double temp2;
-  std::pair<double,double> returnCoeffs;
   double timeAtStepN = delt*((double)timestepNumber);
-
-  double rdn_1 = r2;
-  double rp = r1;
-  double compliance = c;
 
   double pdistn = linInterpolateTimeData(timeAtStepN,lengthOftimeDataPdist);
   double pdistn_1 = linInterpolateTimeData(timeAtStepNplus1,lengthOftimeDataPdist);
 
   // // parameters overwritten
   // // dirty hack for filtering
-  //  rdn_1 = a%parameters_RCR(3,i)
-  //  rp = a%parameters_RCR(1,i)
-  //  compliance = a%parameters_RCR(2,i)
+  //  distalResistance = a%parameters_RCR(3,i)
+  //  proximalResistance = a%parameters_RCR(1,i)
+  //  capacitance = a%parameters_RCR(2,i)
 
   //  pdistn = a%parameters_Pd
   //  pdistn_1 = a%parameters_Pd
 
-  double denom = 1.0 + ((compliance*rdn_1)/alfi_delt);
+  std::cout << "C++ RCR compliance: " << capacitance << " rp: "  << proximalResistance << " rd: " << distalResistance << " timestep: " << timestepNumber << " flow: " << (*flow_n_ptrs.at(0))<< " pressure: " << pressure_n << std::endl;
+  std::cout << "pdistn: " << pdistn << "pdistn_1: " << pdistn_1 << std::endl;
 
-  temp1 = rdn_1 + rp*(1.0 + ((compliance*rdn_1)/alfi_delt));
+  std::pair<double,double> returnCoeffs;
 
-  temp2 = pressure_n + pdistn_1 - pdistn - rp * (*flow_n_ptrs.at(0));
-  temp2 = ((compliance*rdn_1)/alfi_delt)*temp2+ pdistn_1;
+  double denominator = 1.0 + ((capacitance*distalResistance)/alfi_delt);
 
-  returnCoeffs.first = temp1 / denom;
-  returnCoeffs.second = temp2 / denom;
+  double firstCoefficientNumerator = distalResistance + proximalResistance * (1.0 + ((capacitance*distalResistance)/alfi_delt));
+  returnCoeffs.first = firstCoefficientNumerator / denominator;
+
+  double temp2 = pressure_n + pdistn_1 - pdistn - proximalResistance * (*flow_n_ptrs.at(0));
+  temp2 = ((capacitance*distalResistance)/alfi_delt)*temp2+ pdistn_1;
+
+  returnCoeffs.second = temp2 / denominator;
 
   return returnCoeffs;
 }
@@ -124,10 +121,22 @@ void RCR::setPressureFromFortran()
 {
   // This is only called if this is a new simulation (the bool sees to that).
   // If it's a restarted sim, the pressure should be loaded properly anyway.
-  if (m_needsPressureToBeInitialisedFromFortran)
-  {
+  // if (m_needsPressureToBeInitialisedFromFortran)
+  // {
     pressure_n = *(pressure_n_ptrs.at(0));
+    pressure_n_savedForKalmanFilter = pressure_n; //\todo remove all refs to pressure_n_savedForKalmanFilter
+  // }
+}
+
+void RCR::setFlowAtLastTimestepInPointerArray(const double flow, const double pressure)
+{
+  std::cout << "mSetFlowAndPressureCallNumber: " << mSetFlowAndPressureCallNumber << std::endl;
+  if (mSetFlowAndPressureCallNumber > 3) {
+    *flow_n_ptrs.at(0) = flow;
+    pressure_n_savedForKalmanFilter = pressure;
+    pressure_n = pressure;
   }
+  mSetFlowAndPressureCallNumber ++;
 }
 
 // This overrides the base class version of this function call; on a restart, for the RCR, we need to make sure

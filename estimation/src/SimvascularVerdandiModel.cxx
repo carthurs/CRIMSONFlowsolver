@@ -51,6 +51,9 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
  	cp_rcr_estimate_prox_resistance_(0),
  	cp_rcr_estimate_pout_(0),
  	cp_rcr_estimate_pstates_(0),
+ 	cp_rcr_estimate_compliance_cpp_(0),
+	cp_rcr_estimate_proximal_resistance_cpp_(0),
+	cp_rcr_estimate_distal_resistance_cpp_(0),
  	rank_(0),
  	numProcs_(1),
  	iNewComm_C_(MPI_COMM_WORLD)
@@ -103,6 +106,13 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
 		configuration.Set("RCR_parameters_info.resistance_included",cp_rcr_include_resistance_);
 		configuration.Set("RCR_parameters_info.compliance_included",cp_rcr_include_compliance_);
 		configuration.Set("RCR_parameters_info.prox_resistance_included",cp_rcr_include_prox_resistance_);
+
+		// configuration.Set("CPP_RCR_parameters_info.estimate_distal_resistance",cp_rcr_estimate_distal_resistance_cpp_);
+		// configuration.Set("CPP_RCR_parameters_info.estimate_compliance",cp_rcr_estimate_compliance_cpp_);
+		// configuration.Set("CPP_RCR_parameters_info.estimate_prox_resistance",cp_rcr_estimate_proximal_resistance_cpp_);
+		// configuration.Set("CPP_RCR_parameters_info.compliance_included", cp_rcr_include_compliance_cpp_);
+		// configuration.Set("CPP_RCR_parameters_info.proximal_resistance_included", cp_rcr_include_proximal_resistance_cpp_);
+		// configuration.Set("CPP_RCR_parameters_info.distal_resistance_included", cp_rcr_include_distal_resistance_cpp_);
 
         configuration.Set("Heart_parameters_info.estimate_emax",cp_hrt_estimate_emax_);		
         configuration.Set("Heart_parameters_info.estimate_tmax",cp_hrt_estimate_tmax_);		
@@ -385,140 +395,216 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	}
 
 	// for lumped parameter model parameters
-	// for RCR
 	if (nreduced_has_coupled_parameters_) {
 
-		// for RCR C
-		if (cp_rcr_estimate_compliance_) {
+		initialiseFortranRCRFiltering();
+		// initialiseCppRCRFiltering();
 
-			state_part.Initialize("RCR C");
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+		initialiseHeartModelFiltering();
+	}
 
-				if (cp_rcr_include_compliance_[parIdx]) {
+
+	try {
+		for (std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+		{
+			dstrb_parts_map_.insert(std::make_pair(it->getName(), &(*it)));
+		}
+	
+		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		{
+			shared_parts_map_.insert(std::make_pair(it->getName(), &(*it)));
+		}
+	} catch (const std::exception& e) {
+	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    throw e;
+	}
+
+}
+
+// see also initialiseFortranRCRFiltering() .It depends which impementation (Cpp or Fortran)
+// of the same thing you're using.
+void SimvascularVerdandiModel::initialiseCppRCRFiltering() {
+	if (cp_rcr_estimate_compliance_cpp_) {
+		addParameterForEstimation("Cpp RCR C", "WindkesselRCR_Params_Cpp", grcrbccom.numGRCRSrfs, 1, 3, cp_rcr_include_compliance_cpp_);
+	}
+
+	if (cp_rcr_estimate_proximal_resistance_cpp_) {
+		addParameterForEstimation("Cpp RCR proximal R", "WindkesselRCR_Params_Cpp", grcrbccom.numGRCRSrfs, 2, 3, cp_rcr_include_proximal_resistance_cpp_);
+	}
+
+	if (cp_rcr_estimate_distal_resistance_cpp_) {
+		addParameterForEstimation("Cpp RCR distal R", "WindkesselRCR_Params_Cpp", grcrbccom.numGRCRSrfs, 0, 3, cp_rcr_include_distal_resistance_cpp_);
+	}
+
+}
+
+void SimvascularVerdandiModel::addParameterForEstimation(const char* parameterTypeName, const char* parameterArrayKeyInGlobalArrayTransfer, const int numberOfParametersToAdd, const int offsetOfPointerInArray, const int strideBetweenPointers, const std::vector<int> includeParameterFlag) {
+	SimvascularAugStatePart state_part;
+
+	state_part.Initialize(parameterTypeName);
+	for(int parIdx = 0; parIdx < numberOfParametersToAdd; parIdx++) {
+
+		try {
+			if (includeParameterFlag.at(parIdx)) {
+				int pointerLocationInArray = parIdx * strideBetweenPointers + offsetOfPointerInArray;
+				state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP(parameterArrayKeyInGlobalArrayTransfer, pointerLocationInArray) );
+				//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1] << endl;
+				state_part.addIsEstimated(1);
+			}
+		} catch (const std::exception& e) {
+		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+		    throw e;
+		}
+
+	}
+	shared_parts_.push_back(state_part);
+	// state_part.Clear();
+}
+
+// see also initialiseCppRCRFiltering() .It depends which impementation (Cpp or Fortran)
+// of the same thing you're using.
+void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
+	SimvascularAugStatePart state_part;
+	// for RCR C
+	if (cp_rcr_estimate_compliance_) {
+
+		state_part.Initialize("RCR C");
+		for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+
+			try {
+				if (cp_rcr_include_compliance_.at(parIdx)) {
 					state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Params", parIdx*3+1) );
 					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+1] << endl;
 					state_part.addIsEstimated(1);
 				}
-
+			} catch (const std::exception& e) {
+			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+			    throw e;
 			}
-			shared_parts_.push_back(state_part);
-			state_part.Clear();
 
 		}
+		shared_parts_.push_back(state_part);
+		state_part.Clear();
 
-		// for RCR R2
-		if (cp_rcr_estimate_resistance_) {
+	}
 
-			state_part.Initialize("RCR R2");
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+	// for RCR R2
+	if (cp_rcr_estimate_resistance_) {
 
-				if (cp_rcr_include_resistance_[parIdx]) {
+		state_part.Initialize("RCR R2");
+		for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+
+			try {
+				if (cp_rcr_include_resistance_.at(parIdx)) {
 					state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Params", parIdx*3+2) ) ;
 					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+2] << endl;
 					state_part.addIsEstimated(1);
 				}
-
+			} catch (const std::exception& e) {
+			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+			    throw e;
 			}
-			shared_parts_.push_back(state_part);
-			state_part.Clear();
 
 		}
+		shared_parts_.push_back(state_part);
+		state_part.Clear();
 
-		// for RCR R1
-		if (cp_rcr_estimate_prox_resistance_) {
+	}
 
-			state_part.Initialize("RCR R1");
-			for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+	// for RCR R1
+	if (cp_rcr_estimate_prox_resistance_) {
 
-				if (cp_rcr_include_prox_resistance_[parIdx]) {
+		state_part.Initialize("RCR R1");
+		for(int parIdx = 0; parIdx < grcrbccom.numGRCRSrfs; parIdx++) {
+
+			try {
+				if (cp_rcr_include_prox_resistance_.at(parIdx)) {
 					state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Params", parIdx*3+0) );
 					//std::cout << gat->pointerMapDP_["WindkesselRCR_Params"][parIdx*3+0] << endl;
 					state_part.addIsEstimated(1);
 				}
-
+			} catch (const std::exception& e) {
+			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+			    throw e;
 			}
-			shared_parts_.push_back(state_part);
-			state_part.Clear();
 
 		}
-
-		// for RCR Pdist
-		if (cp_rcr_estimate_pout_) {
-
-			state_part.Initialize("RCR Pdist");
-
-			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Pdist",0) );
-			std::cout << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Pdist",0)) << endl;
-			state_part.addIsEstimated(1);
-
-			shared_parts_.push_back(state_part);
-			state_part.Clear();
-
-		}
-
-        // for heart model EMax 
-		if (cp_hrt_estimate_emax_) {
-
-			// give it a name
-			state_part.Initialize("Heart EMax");
-
-            // single parameter, will be in the 0 index and print out 
-			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_EMax",0));           
-			std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_EMax",0)) << endl;
-			
-			// set this parameter to be estimated and add to shared_parts vector
-			state_part.addIsEstimated(1);
-			shared_parts_.push_back(state_part);
-
-			// clear object
-			state_part.Clear();
-		}
-
-        // for heart model TMax 
-		if (cp_hrt_estimate_tmax_) {
-
-			// give it a name
-			state_part.Initialize("Heart TMax");
-
-            // single parameter, will be in the 0 index and print out 
-			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TMax",0));           
-			std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TMax",0)) << endl;
-			
-			// set this parameter to be estimated and add to shared_parts vector
-			state_part.addIsEstimated(1);
-			shared_parts_.push_back(state_part);
-
-			// clear object
-			state_part.Clear();
-		}
-
-        // for heart model TRel 
-		if (cp_hrt_estimate_trel_) {
-
-			// give it a name
-			state_part.Initialize("Heart TRel");
-
-            // single parameter, will be in the 0 index and print out 
-			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TRel",0));           
-			std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TRel",0)) << endl;
-			
-			// set this parameter to be estimated and add to shared_parts vector
-			state_part.addIsEstimated(1);
-			shared_parts_.push_back(state_part);
-
-			// clear object
-			state_part.Clear();
-		}
+		shared_parts_.push_back(state_part);
+		state_part.Clear();
 
 	}
 
+	// for RCR Pdist
+	if (cp_rcr_estimate_pout_) {
 
-	for (std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
-		dstrb_parts_map_[it->getName()] = &(*it);
+		state_part.Initialize("RCR Pdist");
 
-	for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
-		shared_parts_map_[it->getName()] = &(*it);
+		state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Pdist",0) );
+		std::cout << "windkessel pdist estimation: " <<  *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("WindkesselRCR_Pdist",0)) << endl;
+		state_part.addIsEstimated(1);
 
+		shared_parts_.push_back(state_part);
+		state_part.Clear();
+
+	}
+}
+
+void SimvascularVerdandiModel::initialiseHeartModelFiltering() 
+{
+	SimvascularAugStatePart state_part;
+    // for heart model EMax 
+	if (cp_hrt_estimate_emax_) {
+
+		// give it a name
+		state_part.Initialize("Heart EMax");
+
+        // single parameter, will be in the 0 index and print out 
+		state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_EMax",0));           
+		std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_EMax",0)) << endl;
+		
+		// set this parameter to be estimated and add to shared_parts vector
+		state_part.addIsEstimated(1);
+		shared_parts_.push_back(state_part);
+
+		// clear object
+		state_part.Clear();
+	}
+
+    // for heart model TMax 
+	if (cp_hrt_estimate_tmax_) {
+
+		// give it a name
+		state_part.Initialize("Heart TMax");
+
+        // single parameter, will be in the 0 index and print out 
+		state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TMax",0));           
+		std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TMax",0)) << endl;
+		
+		// set this parameter to be estimated and add to shared_parts vector
+		state_part.addIsEstimated(1);
+		shared_parts_.push_back(state_part);
+
+		// clear object
+		state_part.Clear();
+	}
+
+    // for heart model TRel 
+	if (cp_hrt_estimate_trel_) {
+
+		// give it a name
+		state_part.Initialize("Heart TRel");
+
+        // single parameter, will be in the 0 index and print out 
+		state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TRel",0));           
+		std::cout << state_part.getName() << " " << *(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("Heart_TRel",0)) << endl;
+		
+		// set this parameter to be estimated and add to shared_parts vector
+		state_part.addIsEstimated(1);
+		shared_parts_.push_back(state_part);
+
+		// clear object
+		state_part.Clear();
+	}
 }
 
 /*
@@ -545,9 +631,9 @@ void SimvascularVerdandiModel::InitializeStep() {
 	if(dynamic_start_)
 	{
 		std::cout <<  "event_started_ = " << event_started_
-				<< " avopen = "         << *gat->pointerMapInt_["Heart_AVopen"] << std::endl;
+				<< " avopen = "         << *gat->pointerMapInt_.at("Heart_AVopen") << std::endl;
 
-		if(!event_started_ && *gat->pointerMapInt_["Heart_AVopen"]){
+		if(!event_started_ && *gat->pointerMapInt_.at("Heart_AVopen")) {
 			event_started_ = 1;
 		}
 	}
@@ -930,7 +1016,12 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
  */
 SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateDstrb(std::string name) const {
 
-    return *dstrb_parts_map_.at(name);
+    try {
+    	return *dstrb_parts_map_.at(name);
+    } catch (const std::exception& e) {
+        std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+        throw e;
+    }
 
 }
 
@@ -939,7 +1030,12 @@ SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateDstrb(std::string 
  */
 SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateShared(std::string name) const {
 
-    return *shared_parts_map_.at(name);
+    try {
+    	return *shared_parts_map_.at(name);
+    } catch (const std::exception& e) {
+        std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+        throw e;
+    }
 
 }
 

@@ -105,6 +105,8 @@ class abstractBoundaryCondition;
     void setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits);
     void setMasterControlScriptPresent(const int masterControlScriptPresent);
 
+    void setFlowInRCR(const double flow, const double pressure);
+
     void setSimulationModePurelyZeroD(const int simulationIsPurelyZeroD);
 
     void createControlSystems();

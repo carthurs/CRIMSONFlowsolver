@@ -13,30 +13,33 @@ public:
 	{
 		// Note the index of this RCR (zero-indexed), and count its existance
 		// (the order of these two lines is correct!)
-		indexOfThisRCR = numberOfInitialisedRCRs;
-		numberOfInitialisedRCRs++;
+		indexOfThisRCR = s_numberOfInitialisedRCRs;
+		s_numberOfInitialisedRCRs++;
 		m_needsPressureToBeInitialisedFromFortran = false;
 		
 		initialiseModel();
 		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
-		r1 = rcrtReader_instance->getR1()[indexOfThisRCR];
-		c = rcrtReader_instance->getC()[indexOfThisRCR];
-		r2 = rcrtReader_instance->getR2()[indexOfThisRCR];
+		proximalResistance = rcrtReader_instance->getR1()[indexOfThisRCR];
+		capacitance = rcrtReader_instance->getC()[indexOfThisRCR];
+		distalResistance = rcrtReader_instance->getR2()[indexOfThisRCR];
 		timeDataPdist = rcrtReader_instance->getTimeDataPdist()[indexOfThisRCR];
 		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[indexOfThisRCR];
 
+		mSetFlowAndPressureCallNumber = 0;
+
 		// Set up for Kalman filtering:
-		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselProximalResistance(&r1, indexOfThisRCR);
-		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselDistalResistance(&r2, indexOfThisRCR);
-		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselCompilance(&c, indexOfThisRCR);
+		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselProximalResistance(&proximalResistance, indexOfThisRCR);
+		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselDistalResistance(&distalResistance, indexOfThisRCR);
+		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselCompilance(&capacitance, indexOfThisRCR);
 		SimvascularGlobalArrayTransfer::Get()->setPointerToRCRSurfacePressure(&pressure_n, indexOfThisRCR);
 	}
 	
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 
  	void setPressureFromFortran();
-
+ 	void setFlowAtLastTimestepInPointerArray(const double flow, const double pressure);
  	void getPressureAndFlowPointersFromFortran();
+
 
 	
 //  	procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
@@ -47,19 +50,20 @@ public:
 
 	~RCR()
 	{
-		numberOfInitialisedRCRs--;
+		s_numberOfInitialisedRCRs--;
 	}
 protected:
 	double linInterpolateTimeData(const double &currentTime, const int timeDataLength);
 
 private:
+	int mSetFlowAndPressureCallNumber;
 	void initialiseModel();
-	static int numberOfInitialisedRCRs;
+	static int s_numberOfInitialisedRCRs;
 	int indexOfThisRCR;
 	int pdmax;
-	double r1; // Proximal resistance
-	double c; // Capacitance (compliance)
-	double r2; // Distal Resistance
+	double proximalResistance; // Proximal resistance
+	double capacitance; // Capacitance (compliance)
+	double distalResistance; // Distal Resistance
 	std::vector<std::pair<double,double>> timeDataPdist; // Time-varying disal pressure data
 	int lengthOftimeDataPdist;
 	bool m_needsPressureToBeInitialisedFromFortran;

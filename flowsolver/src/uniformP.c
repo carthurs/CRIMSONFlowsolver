@@ -5,6 +5,12 @@ extern "C" {
 #endif
 
   /* Calculate shape functions and derivative for tet elements */
+  //
+  // Previously this was not documented, so here's what I think the parameters are (CA 2016)
+  // p - polynomial order 
+  // par - quadrature point (or rather, evaluation point) on the reference element
+  // N - a list of values of each basis function at the evaluation point (index is the basis function's index)
+  // dN[basis function index][coordinate direction] -  the gradients of each basis function
 int TetShapeAndDrv(int p,double par[3],double N[],double dN[][3]) {
   static int TetEMAP[6][2]={{0,1},{1,2},{2,0},{0,3},{1,3},{2,3}};
   static int TetFMAP[4][3]={{0,1,2},{0,3,1},{1,3,2},{0,2,3}};

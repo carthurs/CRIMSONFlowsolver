@@ -221,6 +221,14 @@ module cpp_interface
                 use iso_c_binding
             end subroutine callCPPUpdateBoundaryConditionControlSystems
     end interface
+
+    interface
+        subroutine callCPPSetFlowInRCR(flow, pressure) bind(c,name="callCPPSetFlowInRCR")
+            use iso_c_binding
+            double precision :: flow
+            double precision :: pressure
+        end subroutine callCPPSetFlowInRCR
+    end interface
     
 
 end module cpp_interface

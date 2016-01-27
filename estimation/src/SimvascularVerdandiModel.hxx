@@ -93,6 +93,16 @@ protected:
 	std::vector<int> cp_rcr_include_prox_resistance_;
 
 
+	//! Flags to denote that individual CPP Windkessel-RCR R2 are estimated
+	std::vector<int> cp_rcr_include_compliance_cpp_;
+	
+	//! Flags to denote that individual CPP Windkessel-RCR C are estimated
+	std::vector<int> cp_rcr_include_proximal_resistance_cpp_;
+	
+	//! Flags to denote that individual CPP Windkessel-RCR R1 are estimated
+	std::vector<int> cp_rcr_include_distal_resistance_cpp_;
+
+
 	//! Pointer to the singleton instance of SimvascularGlobalArrayTransfer
 	SimvascularGlobalArrayTransfer *gat;
 
@@ -148,6 +158,16 @@ protected:
 
 	//! Flag to denote that Windkessel-RCR pressure state variables are estimated
 	int cp_rcr_estimate_pstates_;
+
+	//! Flag to denote that CPP Windkessel-RCR compliances are estimated
+	int cp_rcr_estimate_compliance_cpp_;
+
+	//! Flag to denote that CPP Windkessel-RCR proximal resistances are estimated
+	int cp_rcr_estimate_proximal_resistance_cpp_;
+
+	//! Flag to denote that CPP Windkessel-RCR distal resistances are estimated
+	int cp_rcr_estimate_distal_resistance_cpp_;
+
 
 	//! Flag to denote that Heart model EMax is estimated - KDL
 	int cp_hrt_estimate_emax_;
@@ -266,6 +286,11 @@ public:
 	//! Receives and handles a message.
 	void Message(string message);
 
+private:
+	void initialiseHeartModelFiltering();
+	void initialiseFortranRCRFiltering();
+	void initialiseCppRCRFiltering();
+	void addParameterForEstimation(const char* parameterTypeName, const char* parameterArrayKeyInGlobalArrayTransfer, const int numberOfParametersToAdd, const int offsetOfPointerInArray, const int strideBetweenPointers, const std::vector<int> includeParameterFlag);
 };
 
 

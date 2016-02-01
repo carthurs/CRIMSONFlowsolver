@@ -76,7 +76,6 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
 
 void abstractBoundaryCondition::updatePressureAndFlowHistory()
 {
-  pressure_n_savedForKalmanFilter = pressure_n;
   pressurehist[m_currentTimestepIndex] = pressure_n;
   try {
     flowhist[m_currentTimestepIndex] = *(flow_n_ptrs.at(0));
@@ -88,7 +87,6 @@ void abstractBoundaryCondition::updatePressureAndFlowHistory()
 
 void abstractBoundaryCondition::updpressure_n1_withflow()
 {
-  pressure_n_savedForKalmanFilter = pressure_n;
   pressure_n = dp_dq_n1 * (*(flow_n_ptrs.at(0))) + Hop_n1;
 }
 
@@ -115,7 +113,6 @@ void abstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
 
   flow_n = *(flow_n_ptrs.at(0));
   flow_n1 = 0.0;
-  pressure_n_savedForKalmanFilter = pressure_n;
   pressure_n = *(pressure_n_ptrs.at(0));
 }
 

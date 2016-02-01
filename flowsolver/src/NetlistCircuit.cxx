@@ -288,9 +288,8 @@ void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::
     }
     // Get the node (or create a new node if this one hasn't been made yet)
     node = mp_circuitData->ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
-    // node->getIndex() = indexOfNodeInInputData;
-    // node->prescribedPressureType = typeOfPrescribedPressure;
-    if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
+    
+    if (node->getPressurePrescriptionType() != Pressure_NotPrescribed && node->getPressurePrescriptionType() != Pressure_Null)
     {
         node->setPrescribedPressure(retrievedValueOfPrescribedPressures.at(indexOfPrescribedPressure));
     }
@@ -342,7 +341,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
             boundaryConditionPressureHistoryReader.getNextDatum(); // ditch the timestep index
             for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
             {
-              node->second->m_entirePressureHistory.push_back(boundaryConditionPressureHistoryReader.getNextDatum());
+              node->second->appendToPressureHistory(boundaryConditionPressureHistoryReader.getNextDatum());
             }
           }
 
@@ -433,7 +432,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
                 boundaryConditionPressureHistoryWriter.writeStepIndex(stepToWrite);
                 for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
                 {
-                  boundaryConditionPressureHistoryWriter.writeToFile(node->second->m_entirePressureHistory.at(stepToWrite));
+                  boundaryConditionPressureHistoryWriter.writeToFile(node->second->getFromPressureHistoryByTimestepIndex(stepToWrite));
                 }
                 boundaryConditionPressureHistoryWriter.writeEndLine();
               }
@@ -632,9 +631,9 @@ void NetlistCircuit::setInternalHistoryPressureFlowsAndVolumes()
     // Cycle and store the history pressures
     for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
     {
-        if (node->second->hasHistoryPressure)
+        if (node->second->hasHistoryPressure())
         {
-            node->second->historyPressure = node->second->getPressure();
+            node->second->copyPressureToHistoryPressure();
         }
     }
 
@@ -669,7 +668,7 @@ void NetlistCircuit::recordPressuresFlowsAndVolumesInHistoryArrays()
     for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
     {
         // Store the pressure for writing to output file:
-        node->second->m_entirePressureHistory.push_back(node->second->getPressure());
+        node->second->appendToPressureHistory(node->second->getPressure());
     }
 
     // for (auto component=mp_circuitDataWithoutDiodes.mapOfComponents.begin(); component!=mp_circuitDataWithoutDiodes.mapOfComponents.end(); component++)
@@ -1119,16 +1118,15 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     }
     // Get the node (or create a new node if this one hasn't been made yet)
     node = mp_circuitData->ifExistsGetNodeOtherwiseConstructNode(indexOfNodeInInputData,typeOfPrescribedPressure,componentNeighbouringThisNode);    
-    // node->getIndex() = indexOfNodeInInputData;
-    // node->prescribedPressureType = typeOfPrescribedPressure;
-    if (node->prescribedPressureType!=Pressure_NotPrescribed && node->prescribedPressureType!=Pressure_Null)
+
+    if (node->getPressurePrescriptionType() != Pressure_NotPrescribed && node->getPressurePrescriptionType() != Pressure_Null)
     {
         node->setPrescribedPressure(valueOfPrescribedPressures.at(indexOfPrescribedPressure));
     }
 
     if (node->getIndex() <= m_numberOfNetlistsUsedAsBoundaryConditions)
     {
-        node->prescribedPressurePointerIndex = node->getIndex()-1;
+        node->setPrescribedPressurePointerIndex(node->getIndex()-1);
     }
 }
 
@@ -1345,9 +1343,10 @@ void NetlistCircuit::getMapOfPressHistoriesToCorrectPressNodes()
        if (mp_circuitData->components.at(ii)->getType() == Component_Capacitor)
        {
             listOfHistoryPressures.insert(mp_circuitData->components.at(ii)->startNode->getIndex());
-          mp_circuitData->components.at(ii)->startNode->hasHistoryPressure = true;
+            mp_circuitData->components.at(ii)->startNode->setHasHistoryPressure(true);
+            
             listOfHistoryPressures.insert(mp_circuitData->components.at(ii)->endNode->getIndex());
-          mp_circuitData->components.at(ii)->endNode->hasHistoryPressure = true;
+            mp_circuitData->components.at(ii)->endNode->setHasHistoryPressure(true);
        }
     }
 
@@ -1709,7 +1708,7 @@ void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
     m_columnOf3DInterfacePrescribedPressureInLinearSystem.clear();
     m_locationOf3DInterfaceComputedPressureInSolutionVector.clear();
     if (mp_circuitData->hasPrescribedPressureAcrossInterface())
-    {//\friday m_numberOfTrackedVolumes swapped for m_numberOfVolumeTrackingPressureChambers
+    {// m_numberOfTrackedVolumes swapped for m_numberOfVolumeTrackingPressureChambers
         const int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfVolumeTrackingPressureChambers;
         int ll=0;
         for (auto prescribedPressureNode=mp_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=mp_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
@@ -1789,23 +1788,23 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
       for (auto prescribedPressureNode=mp_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=mp_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
       {
         // Coming from 'f' for 'fixed' in the input data:
-        if (prescribedPressureNode->second->prescribedPressureType == Pressure_Fixed)
+        if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_Fixed)
         {
             errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,prescribedPressureNode->second->getPressure(),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);    
         }
         // Coming from 'l' for 'left-ventricular' in the input data:
-        else if (prescribedPressureNode->second->prescribedPressureType == Pressure_LeftVentricular)
+        else if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_LeftVentricular)
         {
             std::cerr << "this requires heart model. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
             std::exit(1);
         }
-        else if (prescribedPressureNode->second->prescribedPressureType == Pressure_3DInterface)
+        else if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_3DInterface)
         {
             // We only do this if the netlist is in Dirichlet BC mode:
             if (mp_circuitData->hasPrescribedPressureAcrossInterface())
             {
               try {
-                double* pressurePointerToSet = pressure_n_ptrs.at(prescribedPressureNode->second->prescribedPressurePointerIndex);
+                double* pressurePointerToSet = pressure_n_ptrs.at(prescribedPressureNode->second->getPrescribedPressurePointerIndex());
                 errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               } catch (const std::exception& e) {
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
@@ -1873,9 +1872,9 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
         int lll=0;
         for (auto node=mp_circuitData->mapOfPressureNodes.begin(); node!=mp_circuitData->mapOfPressureNodes.end(); node++)
         {
-            if (node->second->hasHistoryPressure)
+            if (node->second->hasHistoryPressure())
             {
-                errFlag = VecSetValue(m_RHS,lll+tempIndexingShift,node->second->historyPressure,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+                errFlag = VecSetValue(m_RHS,lll+tempIndexingShift,node->second->getHistoryPressure(),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
                 lll++;
             }
         }

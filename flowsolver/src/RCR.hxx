@@ -25,8 +25,6 @@ public:
 		timeDataPdist = rcrtReader_instance->getTimeDataPdist()[indexOfThisRCR];
 		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[indexOfThisRCR];
 
-		mSetFlowAndPressureCallNumber = 0;
-
 		// Set up for Kalman filtering:
 		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselProximalResistance(&proximalResistance, indexOfThisRCR);
 		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselDistalResistance(&distalResistance, indexOfThisRCR);
@@ -37,7 +35,7 @@ public:
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 
  	void setPressureFromFortran();
- 	void setFlowAtLastTimestepInPointerArray(const double flow, const double pressure);
+ 	void setFlowAtLastTimestepInPointerArray(const double flow, const double pressure, const int timestepNumber);
  	void getPressureAndFlowPointersFromFortran();
 
 
@@ -56,7 +54,6 @@ protected:
 	double linInterpolateTimeData(const double &currentTime, const int timeDataLength);
 
 private:
-	int mSetFlowAndPressureCallNumber;
 	void initialiseModel();
 	static int s_numberOfInitialisedRCRs;
 	int indexOfThisRCR;

@@ -223,10 +223,11 @@ module cpp_interface
     end interface
 
     interface
-        subroutine callCPPSetFlowInRCR(flow, pressure) bind(c,name="callCPPSetFlowInRCR")
+        subroutine callCPPSetFlowInRCR(flow, pressure, timestepNumber) bind(c,name="callCPPSetFlowInRCR")
             use iso_c_binding
             double precision :: flow
             double precision :: pressure
+            integer(c_int) :: timestepNumber
         end subroutine callCPPSetFlowInRCR
     end interface
     

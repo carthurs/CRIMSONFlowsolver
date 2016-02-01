@@ -1044,8 +1044,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
-    write(*,*) "setting pressure for C++ RCRs 2"
-    call callCPPSetPressureFromFortran()
+    ! write(*,*) "setting pressure for C++ RCRs 2"
+    ! call callCPPSetPressureFromFortran()
 
 ! ********************************************* !
 ! *** heart model boundary condition switch *** !
@@ -2409,7 +2409,7 @@ subroutine reset_flow_n(y,rom)
     Pressures(1) = Pressures(1)/CoupleArea(1) !(50.265) ! just a hack until i sort out the areas for netlists... one model only, and assuming radius is 4 units
     write(*,*) "surface area for RCR was: ", CoupleArea(1), Pressures(1)
 
-    call callCPPSetFlowInRCR(currflow(1), Pressures(1))
+    ! call callCPPSetFlowInRCR(currflow(1), Pressures(1), lstep)
 
 end subroutine reset_flow_n
 

@@ -50,15 +50,15 @@ void CircuitData::rebuildCircuitMetadata()
 	mapOfPrescribedVolumeTrackingComponents.clear();
 	for (auto component = components.begin(); component!=components.end(); component++)
 	{
-		assert((*component)->startNode->prescribedPressureType!=Pressure_Null);
-		if((*component)->startNode->prescribedPressureType != Pressure_NotPrescribed)
+		assert((*component)->startNode->getPressurePrescriptionType() != Pressure_Null);
+		if((*component)->startNode->getPressurePrescriptionType() != Pressure_NotPrescribed)
 		{
 			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->getIndex(), (*component)->startNode));
 		}
 		// mapOfPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->startNode->indexInInputData, (*component)->startNode));
 
-		assert((*component)->endNode->prescribedPressureType!=Pressure_Null);
-		if((*component)->endNode->prescribedPressureType != Pressure_NotPrescribed)
+		assert((*component)->endNode->getPressurePrescriptionType() != Pressure_Null);
+		if((*component)->endNode->getPressurePrescriptionType() != Pressure_NotPrescribed)
 		{
 			mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> ((*component)->endNode->getIndex(), (*component)->endNode));
 		}
@@ -458,7 +458,7 @@ double* CircuitPressureNode::getPressurePointer()
 double* CircuitPressureNode::getPointerToFixedPressurePrescription()
 {
 	// we should only be accessing this pointer for modification if it is a fixed-type pressure prescription
-	assert(prescribedPressureType == Pressure_Fixed);
+	assert(m_prescribedPressureType == Pressure_Fixed);
 	double* pressurePointer = &m_fixedPressure;
 	return pressurePointer;
 }
@@ -644,7 +644,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		{
 			if (node->second->isAtBoundary())
 			{
-				node->second->prescribedPressureType=Pressure_NotPrescribed;
+				node->second->setPressurePrescriptionType(Pressure_NotPrescribed);
 				mapOfPrescribedPressureNodes.erase(node);
 				break;
 			}
@@ -678,7 +678,7 @@ void CircuitData::switchBetweenDirichletAndNeumannCircuitDesign()
 		{
 			if (node->second->isAtBoundary())
 			{
-				node->second->prescribedPressureType=Pressure_3DInterface;
+				node->second->setPressurePrescriptionType(Pressure_3DInterface);
 				mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->getIndex(),node->second));
 				break;
 			}
@@ -1037,7 +1037,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 				{
 					if (node->first == toOneIndexing(componentAtBoundaryIndex))
 					{
-						node->second->prescribedPressureType=Pressure_NotPrescribed;
+						node->second->setPressurePrescriptionType(Pressure_NotPrescribed);
 						mapOfPrescribedPressureNodes.erase(node);
 						break;
 					}
@@ -1092,7 +1092,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 				{
 					if (node->first == toOneIndexing(componentAtBoundaryIndex))
 					{
-						node->second->prescribedPressureType=Pressure_3DInterface;
+						node->second->setPressurePrescriptionType(Pressure_3DInterface);
 						mapOfPrescribedPressureNodes.insert(std::pair<int,boost::shared_ptr<CircuitPressureNode>> (node->second->getIndex(),node->second));
 						break;
 					}
@@ -1189,7 +1189,7 @@ double CircuitPressureNode::getPressure()
 {
 	// If this is a prescribed fixed pressure, ensure we reset it to the original input value.
 	// This has the additional benefit of stopping any drift in a supposedly-prescribed value.
-	if (prescribedPressureType == Pressure_Fixed)
+	if (m_prescribedPressureType == Pressure_Fixed)
 	{
 		pressure = m_fixedPressure;
 	}
@@ -1206,7 +1206,7 @@ void CircuitPressureNode::setPrescribedPressure(const double prescribedPressure)
 	// We only do anything special with fixed-pressure values. There's nothing
 	// to do here with other types of prescribed pressure, as they don't
 	// remain fixed at a single value (so we needn't remember it in m_fixedPressure).
-	if (prescribedPressureType == Pressure_Fixed)
+	if (m_prescribedPressureType == Pressure_Fixed)
 	{
 		m_fixedPressure = prescribedPressure;
 	}
@@ -1219,6 +1219,56 @@ void CircuitPressureNode::setPrescribedPressure(const double prescribedPressure)
 void CircuitPressureNode::setRestartPressureFromHistory()
 {
 	pressure = m_entirePressureHistory.back();
+}
+
+void CircuitPressureNode::setHasHistoryPressure(const bool hasHistoryPressure)
+{
+	m_hasHistoryPressure = hasHistoryPressure;
+}
+
+void CircuitPressureNode::copyPressureToHistoryPressure()
+{
+	m_historyPressure = getPressure();
+}
+
+double CircuitPressureNode::getHistoryPressure() const
+{
+	return m_historyPressure;
+}
+
+bool CircuitPressureNode::hasHistoryPressure() const
+{
+	return m_hasHistoryPressure;
+}
+
+circuit_nodal_pressure_prescription_t CircuitPressureNode::getPressurePrescriptionType() const
+{
+	return m_prescribedPressureType;
+}
+
+void CircuitPressureNode::setPressurePrescriptionType(const circuit_nodal_pressure_prescription_t prescribedPressureType)
+{
+	m_prescribedPressureType = prescribedPressureType;
+}
+
+int CircuitPressureNode::getPrescribedPressurePointerIndex() const
+{
+	return m_prescribedPressurePointerIndex;
+}
+
+void CircuitPressureNode::setPrescribedPressurePointerIndex(const int prescribedPressurePointerIndex)
+{
+	m_prescribedPressurePointerIndex = prescribedPressurePointerIndex;
+}
+
+double CircuitPressureNode::getFromPressureHistoryByTimestepIndex(const int timestepIndex) const
+{
+	return m_entirePressureHistory.at(timestepIndex);
+}
+
+void CircuitPressureNode::appendToPressureHistory(const double pressure)
+{
+	m_entirePressureHistory.push_back(pressure);
 }
 
 void VolumeTrackingComponent::recordVolumeInHistory()

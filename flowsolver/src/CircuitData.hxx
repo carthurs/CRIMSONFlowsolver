@@ -175,23 +175,17 @@ private:
 class CircuitPressureNode
 {
 public:
-	double historyPressure;
-	bool hasHistoryPressure;
-	circuit_nodal_pressure_prescription_t prescribedPressureType;
-	int prescribedPressurePointerIndex;
-	std::vector<double> m_entirePressureHistory;
-
 	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
 	CircuitPressureNode(const int indexInInputData, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
 	: m_indexInInputData(indexInInputData),
-	prescribedPressureType(typeOfPrescribedPressure),
+	m_prescribedPressureType(typeOfPrescribedPressure),
 	m_hstep(hstep)
 	{
-		hasHistoryPressure = false;
+		m_hasHistoryPressure = false;
 	    m_isAtBoundary = false;
 	    m_hasPythonParameterController = false;
 	    m_entirePressureHistory.reserve(m_hstep);
-	    prescribedPressurePointerIndex = 0;
+	    m_prescribedPressurePointerIndex = 0;
 	}
 
 	double* getPressurePointer();
@@ -207,10 +201,29 @@ public:
 	bool hasUserDefinedExternalPythonScriptParameterController() const;
 	std::string getPythonControllerName() const;
 
+	double getHistoryPressure() const;
+	void copyPressureToHistoryPressure();
+	bool hasHistoryPressure() const;
+	void setHasHistoryPressure(const bool hasHistoryPressure);
+	circuit_nodal_pressure_prescription_t getPressurePrescriptionType() const;
+	void setPressurePrescriptionType(const circuit_nodal_pressure_prescription_t prescribedPressureType);
+	int getPrescribedPressurePointerIndex() const;
+	void setPrescribedPressurePointerIndex(const int prescribedPressurePointerIndex);
+	double getFromPressureHistoryByTimestepIndex(const int timestepIndex) const;
+	void appendToPressureHistory(const double pressure);
+
+
+
 protected:
 	double pressure;
 	const int m_hstep;
 private:
+	double m_historyPressure;
+	bool m_hasHistoryPressure;
+	circuit_nodal_pressure_prescription_t m_prescribedPressureType;
+	int m_prescribedPressurePointerIndex;
+	std::vector<double> m_entirePressureHistory;
+
 	bool m_isAtBoundary;
 	const int m_indexInInputData;
 	bool m_hasPythonParameterController;

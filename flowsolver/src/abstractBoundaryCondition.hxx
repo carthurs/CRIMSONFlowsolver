@@ -105,7 +105,6 @@ class abstractBoundaryCondition
     bool m_thisIsARestartedSimulation;
     std::vector<int> listOfMeshNodesAtThisBoundary;
     bool hasListOfMeshNodesAtThisBoundary;
-    double pressure_n_savedForKalmanFilter;
 
     // double LPNInflowPressure;
 

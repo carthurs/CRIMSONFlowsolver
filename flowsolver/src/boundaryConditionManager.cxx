@@ -877,22 +877,22 @@ extern "C" void callCPPUpdateBoundaryConditionControlSystems()
   boundaryConditionManager_instance->updateBoundaryConditionControlSystems();
 }
 
-void boundaryConditionManager::setFlowInRCR(const double flow, const double pressure)
+void boundaryConditionManager::setFlowInRCR(const double flow, const double pressure, const int timestepNumber)
 {
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     boost::shared_ptr<RCR> currentRCR = boost::dynamic_pointer_cast<RCR> (*boundaryCondition);
     if (currentRCR)
     {
-      currentRCR->setFlowAtLastTimestepInPointerArray(flow, pressure);
+      currentRCR->setFlowAtLastTimestepInPointerArray(flow, pressure, timestepNumber);
     }
   }
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPSetFlowInRCR(double& flow, double& pressure)
+extern "C" void callCPPSetFlowInRCR(double& flow, double& pressure, int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->setFlowInRCR(flow, pressure);
+  boundaryConditionManager_instance->setFlowInRCR(flow, pressure, timestepNumber);
 }
 
 void boundaryConditionManager::createControlSystems()

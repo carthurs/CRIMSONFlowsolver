@@ -70,6 +70,7 @@ public:
 	int m_IndexOfThisNetlistLPNInInputFile;
 
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
+	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) {std::cout << "kalman filter not implemented in NetlistBoundaryCondition";};
 protected:
 private:
 	boost::shared_ptr<NetlistCircuit> mp_NetlistCircuit;

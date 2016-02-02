@@ -35,7 +35,7 @@ public:
  	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 
  	void setPressureFromFortran();
- 	void setFlowAtLastTimestepInPointerArray(const double flow, const double pressure, const int timestepNumber);
+ 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber);
  	void getPressureAndFlowPointersFromFortran();
 
 

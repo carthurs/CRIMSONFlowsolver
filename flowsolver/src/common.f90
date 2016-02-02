@@ -137,6 +137,12 @@ module phcommonvars
     !----------------------------------------------------------
 
     !----------------------------------------------------------
+    logical kalmanFilterOn
+    common /kalmanFilterActive/ kalmanFilterOn
+    bind(C, name="kalmanFilterActive") :: /kalmanFilterActive/
+    !----------------------------------------------------------
+
+    !----------------------------------------------------------
     integer :: master != 0
     integer numpe, myrank
     common /workfc/ master, numpe, myrank

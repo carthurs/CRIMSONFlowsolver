@@ -44,6 +44,10 @@
    extern "C" {
 #endif
 
+      extern struct {
+         bool kalmanFilterOn = false;
+      } kalmanFilterActive;
+
       extern struct { 
          int master;
          int numpe;

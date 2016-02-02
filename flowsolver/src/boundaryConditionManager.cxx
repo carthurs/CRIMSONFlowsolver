@@ -884,7 +884,7 @@ void boundaryConditionManager::setFlowInRCR(const double flow, const double pres
     boost::shared_ptr<RCR> currentRCR = boost::dynamic_pointer_cast<RCR> (*boundaryCondition);
     if (currentRCR)
     {
-      currentRCR->setFlowAtLastTimestepInPointerArray(flow, pressure, timestepNumber);
+      currentRCR->resetStateUsingKalmanFilteredEstimate(flow, pressure, timestepNumber);
     }
   }
 }

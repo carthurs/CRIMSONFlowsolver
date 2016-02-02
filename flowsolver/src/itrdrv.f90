@@ -1045,7 +1045,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
     ! write(*,*) "setting pressure for C++ RCRs 2"
-    ! call callCPPSetPressureFromFortran()
+    ! call callCPPSetPressureFromFortran() ! enable for kalman filter
 
 ! ********************************************* !
 ! *** heart model boundary condition switch *** !
@@ -1115,21 +1115,26 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
         nstep(1)+nptsTRCR,numTRCRSrfs)
     endif
 
-    ! Nan rcr ----------------------------------
-    if(numGRCRSrfs.gt.0) then
-        !call grcrbc_ComputeImplicitCoefficients(lstep, yold)
-
-        if (nrcractive) then
-            ! first reset flow for the filter
-            call reset_flow_n(yold, nrcr)
-            ! calculate the implicit coefficients
-            ! call nrcr%setimplicitcoeff(lstep) !\cppHook
-
-            ! call callCppComputeAllImplicitCoeff_solve(lstep)
-            ! call callCppComputeAllImplicitCoeff_update(lstep)
-        end if
-
+    ! Kalman filter reset status of boundary conditions after the estimation step:
+    if (kalmanFilterOn) then
+        call reset_flow_n(yold, nrcr)
     endif
+
+    ! ! Nan rcr ----------------------------------
+    ! if(numGRCRSrfs.gt.0) then
+    !     !call grcrbc_ComputeImplicitCoefficients(lstep, yold)
+
+    !     if (nrcractive) then
+    !         ! first reset flow for the filter
+    !         call reset_flow_n(yold, nrcr)
+    !         ! calculate the implicit coefficients
+    !         ! call nrcr%setimplicitcoeff(lstep) !\cppHook
+
+    !         ! call callCppComputeAllImplicitCoeff_solve(lstep)
+    !         ! call callCppComputeAllImplicitCoeff_update(lstep)
+    !     end if
+
+    ! endif
 
     ! Moved here from above - it's a generic update for everything,
     ! so shouldn't need guarding
@@ -2409,7 +2414,7 @@ subroutine reset_flow_n(y,rom)
     Pressures(1) = Pressures(1)/CoupleArea(1) !(50.265) ! just a hack until i sort out the areas for netlists... one model only, and assuming radius is 4 units
     write(*,*) "surface area for RCR was: ", CoupleArea(1), Pressures(1)
 
-    ! call callCPPSetFlowInRCR(currflow(1), Pressures(1), lstep)
+    call callCPPSetFlowInRCR(currflow(1), Pressures(1), lstep) ! enable for kalman filter
 
 end subroutine reset_flow_n
 

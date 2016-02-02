@@ -121,13 +121,13 @@ void RCR::setPressureFromFortran()
 {
   // This is only called if this is a new simulation (the bool sees to that).
   // If it's a restarted sim, the pressure should be loaded properly anyway.
-  if (m_needsPressureToBeInitialisedFromFortran)
+  if (m_needsPressureToBeInitialisedFromFortran)  // possibly need to disable this guard for kalman filter
   {
     pressure_n = *(pressure_n_ptrs.at(0));
   }
 }
 
-void RCR::setFlowAtLastTimestepInPointerArray(const double flow, const double pressure, const int timestepNumber)
+void RCR::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber)
 {
   std::cout << "rcr setting timestepNumber: " << timestepNumber << std::endl;
   if (timestepNumber > 0) {

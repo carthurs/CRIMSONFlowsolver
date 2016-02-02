@@ -48,6 +48,8 @@ public:
 
 	void finalizeLPNAtEndOfTimestep();
 
+	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) {std::cout << "kalman filter not implemented in NetlistBoundaryCondition";};
+
 	~controlledCoronary()
 	{
 		numberOfInitialisedCoronaries--;

@@ -77,7 +77,6 @@ class abstractBoundaryCondition
     void incrementTimestepIndex();
     virtual void setDirichletConditionsIfNecessary(int* const binaryMask);
     virtual void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) = 0;
-    // void storeFlowAndPressureAtStartOfTimestep();
  protected:
  	double dp_dq;
  	double Hop;

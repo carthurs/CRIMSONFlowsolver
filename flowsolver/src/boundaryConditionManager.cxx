@@ -877,7 +877,7 @@ extern "C" void callCPPUpdateBoundaryConditionControlSystems()
   boundaryConditionManager_instance->updateBoundaryConditionControlSystems();
 }
 
-void boundaryConditionManager::setFlowInRCR(const double flow, const double pressure, const int timestepNumber)
+void boundaryConditionManager::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber)
 {
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -889,10 +889,10 @@ void boundaryConditionManager::setFlowInRCR(const double flow, const double pres
   }
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPSetFlowInRCR(double& flow, double& pressure, int& timestepNumber)
+extern "C" void callCPPResetStateUsingKalmanFilteredEstimate(double& flow, double& pressure, int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->setFlowInRCR(flow, pressure, timestepNumber);
+  boundaryConditionManager_instance->resetStateUsingKalmanFilteredEstimate(flow, pressure, timestepNumber);
 }
 
 void boundaryConditionManager::createControlSystems()

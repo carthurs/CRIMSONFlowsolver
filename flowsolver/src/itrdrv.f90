@@ -1117,7 +1117,9 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     ! Kalman filter reset status of boundary conditions after the estimation step:
     if (kalmanFilterOn) then
-        call reset_flow_n(yold, nrcr)
+        call resetBoundaryConditionStateForKalmanFilter(yold, numGRCRSrfs, nsrflistGRCR)
+        call resetBoundaryConditionStateForKalmanFilter(yold, numControlledCoronarySrfs, indicesOfCoronarySurfaces)
+        call resetBoundaryConditionStateForKalmanFilter(yold, numNetlistLPNSrfs, indicesOfNetlistSurfaces)
     endif
 
     ! ! Nan rcr ----------------------------------
@@ -2376,47 +2378,46 @@ subroutine initmultidomaincontainer(y,mdc)
 ! *** subroutine to reset flow at time step n using the fluid solution y
 !     added because of the filter modifies the state at the timestep n
 !     KDL NAN 22/08/14
+!
+! *** upgraded and renamed to support a full step-back of all
+!     types of boundary conditions
+!     CA 2/2/16
 ! ********************************************************
 
-subroutine reset_flow_n(y,rom)
+subroutine resetBoundaryConditionStateForKalmanFilter(y, numberOfSurfaces, listOfSurfaces)
 
     use multidomain
     use boundarymodule, only: GetFlowQ, integrScalar
     use phcommonvars
     use cpp_interface
 
-    real*8 :: y(nshg, ndof)
-    type(reducedorder) :: rom
-    integer :: nsurf 
-    integer :: srflist(0:MAXSURF)
-    real*8 :: currflow(0:MAXSURF)
+    real*8, intent(in) :: y(nshg, ndof)
+    integer, intent(in) :: numberOfSurfaces
+    integer, intent(in) :: listOfSurfaces(0:MAXSURF)
+    real*8 :: surfaceFlows(0:MAXSURF)
     real*8 :: POnly(nshg)
-    real*8 :: Pressures(0:MAXSURF)
-    real*8 :: CoupleArea(0:MAXSURF)
-
-    ! get number of surfaces 
-    nsurf = rom%getsurfnum()
-    write(*,*) "found ", nsurf, "surfaces in reset_flow_n"
-
-    ! get surface list in 0:MAXSURF array
-    srflist = rom%getsurfids()
+    real*8 :: surfacePressures(0:MAXSURF)
+    real*8 :: flowSurfaceArea(0:MAXSURF)
+    integer :: indexAmongstCurrentSurfaceType
 
     ! integrate flow field on surface in normal direction
-    call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
-
-    ! reset flow at step n in reduced order model
-    call rom%setflow_n(nsurf,currflow)
+    call GetFlowQ(surfaceFlows, y(:,1:3), listOfSurfaces, numberOfSurfaces)
 
     POnly(:)=y(:,4) ! pressure
-    call integrScalar(Pressures,POnly,srflist,nsurf) !get surface pressure integral
-    call integrScalar(CoupleArea,POnly*0 + 1.0,srflist,nsurf)
-    ! Pressures(1:numSrfs) = Pressures(1:numSrfs)/CoupleArea(1:numSrfs)
-    Pressures(1) = Pressures(1)/CoupleArea(1) !(50.265) ! just a hack until i sort out the areas for netlists... one model only, and assuming radius is 4 units
-    write(*,*) "surface area for RCR was: ", CoupleArea(1), Pressures(1)
+    call integrScalar(surfacePressures, POnly, listOfSurfaces,numberOfSurfaces) !get surface pressure integral
+    call integrScalar(flowSurfaceArea, POnly*0 + 1.0, listOfSurfaces, numberOfSurfaces)
 
-    call callCPPSetFlowInRCR(currflow(1), Pressures(1), lstep) ! enable for kalman filter
+    ! compute the area-averaged pressure over the surface
+    do indexAmongstCurrentSurfaceType = 1, numberOfSurfaces
+        surfacePressures(indexAmongstCurrentSurfaceType) = surfacePressures(indexAmongstCurrentSurfaceType) / flowSurfaceArea(indexAmongstCurrentSurfaceType) !(50.265) ! just a hack until i sort out the areas for netlists... one model only, and assuming radius is 4 units
+    end do
 
-end subroutine reset_flow_n
+    ! tell the boundary condition in C++ to do the actual resetting to the state the Kalman filter wants us to begin from:
+    do indexAmongstCurrentSurfaceType = 1, numberOfSurfaces
+        call callCPPResetStateUsingKalmanFilteredEstimate(surfaceFlows(indexAmongstCurrentSurfaceType), surfacePressures(indexAmongstCurrentSurfaceType), lstep)
+    end do
+
+end subroutine resetBoundaryConditionStateForKalmanFilter
 
 
 !      

@@ -639,6 +639,7 @@ void NetlistReader::readControlSystemPrescriptions()
 	{
 		parameter_controller_t controlType;
 		readNextLine();
+		int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 		// Work out what sort of control is required for this component:
 		if (mp_currentLineSplitBySpaces->at(1).compare("pc") == 0) // proximal coronary resistor control
 		{
@@ -657,14 +658,12 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			controlType = Controller_CustomPythonComponentParameter;
 			// Store the name of the Python script that controls this surface:
-			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
 		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicFlow") == 0)
 		{
 			controlType = Controller_CustomPythonComponentFlowFile;
 			// Store the name of the dat file that controls this surface:
-			int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));	
 		}
 		else
@@ -674,7 +673,6 @@ void NetlistReader::readControlSystemPrescriptions()
 			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
 			throw std::runtime_error(error.str());
 		}
-		int componentIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
 		componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
 	}
 	m_mapsOfComponentControlTypesForEachSurface.push_back(componentControlTypesForThisSurface);

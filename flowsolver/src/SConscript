@@ -39,6 +39,7 @@ sources=string.split("""
 	partition.cxx
 	ValType.cxx
 	multidom.cxx
+	NetlistXmlReader.cxx
 	fileReaders.cxx
 	fileWriters.cxx
 	fortranPointerManager.cxx

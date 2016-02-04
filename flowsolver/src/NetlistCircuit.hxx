@@ -10,6 +10,7 @@
 #include <set>
 #include <boost/weak_ptr.hpp>
 #include "fileReaders.hxx"
+#include "NetlistXmlReader.hxx"
 
 class NetlistCircuit
 {
@@ -141,6 +142,7 @@ protected:
 	int m_NumberOfAtomicSubcircuits;
 
 	NetlistReader* mp_netlistFileReader;
+	NetlistXmlReader* mp_netlistXmlReader;
 
 	void createBasicCircuitDescription();
 	void createVectorsAndMatricesForCircuitLinearSystem();

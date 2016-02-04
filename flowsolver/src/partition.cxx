@@ -270,6 +270,9 @@ void Partition_Problem(int numProcs) {
 	}
 	system(systemcmd);
 
+	sprintf(systemcmd, "cp *.xml %s", _directory_name);
+	system(systemcmd);
+
 	sprintf(systemcmd, "cp *.lua %s", _directory_name);
 	system(systemcmd);
 

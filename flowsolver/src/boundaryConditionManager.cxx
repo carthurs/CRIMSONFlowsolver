@@ -877,22 +877,21 @@ extern "C" void callCPPUpdateBoundaryConditionControlSystems()
   boundaryConditionManager_instance->updateBoundaryConditionControlSystems();
 }
 
-void boundaryConditionManager::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber)
+void boundaryConditionManager::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int surfaceIndex, const int timestepNumber)
 {
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
-    boost::shared_ptr<RCR> currentRCR = boost::dynamic_pointer_cast<RCR> (*boundaryCondition);
-    if (currentRCR)
+    if ((*boundaryCondition)->getSurfaceIndex() == surfaceIndex)
     {
-      currentRCR->resetStateUsingKalmanFilteredEstimate(flow, pressure, timestepNumber);
+      (*boundaryCondition)->resetStateUsingKalmanFilteredEstimate(flow, pressure, timestepNumber);
     }
   }
 }
 // ---WRAPPED BY--->
-extern "C" void callCPPResetStateUsingKalmanFilteredEstimate(double& flow, double& pressure, int& timestepNumber)
+extern "C" void callCPPResetStateUsingKalmanFilteredEstimate(double& flow, double& pressure, int& surfaceIndex, int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->resetStateUsingKalmanFilteredEstimate(flow, pressure, timestepNumber);
+  boundaryConditionManager_instance->resetStateUsingKalmanFilteredEstimate(flow, pressure, surfaceIndex, timestepNumber);
 }
 
 void boundaryConditionManager::createControlSystems()
@@ -905,10 +904,11 @@ void boundaryConditionManager::createControlSystems()
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
   NetlistReader* netlistReader_instance = NetlistReader::Instance();
+  NetlistXmlReader* NetlistXmlReader_instance = NetlistXmlReader::Instance();
   
   // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
   // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
-  std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypes = netlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
+  std::map<int, std::map<int,parameter_controller_t>> mapsOfComponentControlTypes = NetlistXmlReader_instance->getMapsOfComponentControlTypesForEachSurface();
 
   // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
   // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();

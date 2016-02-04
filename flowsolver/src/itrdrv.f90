@@ -2399,12 +2399,13 @@ subroutine resetBoundaryConditionStateForKalmanFilter(y, numberOfSurfaces, listO
     real*8 :: surfacePressures(0:MAXSURF)
     real*8 :: flowSurfaceArea(0:MAXSURF)
     integer :: indexAmongstCurrentSurfaceType
+    integer :: surfaceIndex
 
     ! integrate flow field on surface in normal direction
     call GetFlowQ(surfaceFlows, y(:,1:3), listOfSurfaces, numberOfSurfaces)
 
     POnly(:)=y(:,4) ! pressure
-    call integrScalar(surfacePressures, POnly, listOfSurfaces,numberOfSurfaces) !get surface pressure integral
+    call integrScalar(surfacePressures, POnly, listOfSurfaces, numberOfSurfaces) !get surface pressure integral
     call integrScalar(flowSurfaceArea, POnly*0 + 1.0, listOfSurfaces, numberOfSurfaces)
 
     ! compute the area-averaged pressure over the surface
@@ -2414,7 +2415,8 @@ subroutine resetBoundaryConditionStateForKalmanFilter(y, numberOfSurfaces, listO
 
     ! tell the boundary condition in C++ to do the actual resetting to the state the Kalman filter wants us to begin from:
     do indexAmongstCurrentSurfaceType = 1, numberOfSurfaces
-        call callCPPResetStateUsingKalmanFilteredEstimate(surfaceFlows(indexAmongstCurrentSurfaceType), surfacePressures(indexAmongstCurrentSurfaceType), lstep)
+        surfaceIndex = listOfSurfaces(indexAmongstCurrentSurfaceType)
+        call callCPPResetStateUsingKalmanFilteredEstimate(surfaceFlows(indexAmongstCurrentSurfaceType), surfacePressures(indexAmongstCurrentSurfaceType), surfaceIndex, lstep)
     end do
 
 end subroutine resetBoundaryConditionStateForKalmanFilter

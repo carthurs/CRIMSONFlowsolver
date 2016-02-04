@@ -105,7 +105,7 @@ class abstractBoundaryCondition;
     void setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits);
     void setMasterControlScriptPresent(const int masterControlScriptPresent);
 
-    void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber);
+    void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int surfaceIndex, const int timestepNumber);
 
     void setSimulationModePurelyZeroD(const int simulationIsPurelyZeroD);
 

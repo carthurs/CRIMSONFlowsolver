@@ -223,10 +223,11 @@ module cpp_interface
     end interface
 
     interface
-        subroutine callCPPResetStateUsingKalmanFilteredEstimate(flow, pressure, timestepNumber) bind(c,name="callCPPResetStateUsingKalmanFilteredEstimate")
+        subroutine callCPPResetStateUsingKalmanFilteredEstimate(flow, pressure, surfaceIndex, timestepNumber) bind(c,name="callCPPResetStateUsingKalmanFilteredEstimate")
             use iso_c_binding
             double precision :: flow
             double precision :: pressure
+            integer(c_int) :: surfaceIndex
             integer(c_int) :: timestepNumber
         end subroutine callCPPResetStateUsingKalmanFilteredEstimate
     end interface

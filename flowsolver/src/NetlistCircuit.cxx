@@ -69,11 +69,12 @@ void NetlistCircuit::createCircuitDescription()
 
     // Get the reader class for the netlist data file, and ask it for the circuit description data:
     mp_netlistFileReader = NetlistReader::Instance();
+    mp_netlistXmlReader = NetlistXmlReader::Instance();
     createBasicCircuitDescription();
 
     // Tell the node at the 3D interface that it connects to the 3D domain:
     {
-        int threeDNodeIndex = mp_netlistFileReader->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPNInInputFile);
+        int threeDNodeIndex = mp_netlistXmlReader->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPNInInputFile);
         mp_circuitData->initialiseNodeAndComponentAtInterface(threeDNodeIndex);
     }
 
@@ -83,7 +84,7 @@ void NetlistCircuit::setupCustomPythonControlSystems()
 {
     // Give any components tagged in the input data for custom Python
     // control systems the name of their Python controller script:
-    std::vector<std::pair<int,std::string>> userDefinedComponentControllers = mp_netlistFileReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<std::pair<int,std::string>> userDefinedComponentControllers = mp_netlistXmlReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
     for (auto componentIndexAndPythonName = userDefinedComponentControllers.begin(); componentIndexAndPythonName != userDefinedComponentControllers.end(); componentIndexAndPythonName++)
     {
         mp_circuitData->mapOfComponents.at(componentIndexAndPythonName->first)->setPythonControllerName(componentIndexAndPythonName->second);
@@ -1198,6 +1199,7 @@ void NetlistCircuit::initialiseCircuit()
 {
     // This function exists just so we can modify what initialiseCircuit does in subclasses without repeating code.
     mp_netlistFileReader = NetlistReader::Instance();
+    mp_netlistXmlReader = NetlistXmlReader::Instance();
     initialiseCircuit_common();
 
     // The system is square in this case

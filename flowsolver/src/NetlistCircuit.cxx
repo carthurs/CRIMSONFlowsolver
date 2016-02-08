@@ -272,9 +272,9 @@ void NetlistCircuit::createBasicCircuitDescription()
 void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
 {
     // Access the read-in file data:
-    std::vector<int> retrievedListOfPrescribedPressures = mp_netlistFileReader->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = mp_netlistFileReader->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<double> retrievedValueOfPrescribedPressures = mp_netlistFileReader->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<int> retrievedListOfPrescribedPressures = mp_netlistXmlReader->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = mp_netlistXmlReader->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<double> retrievedValueOfPrescribedPressures = mp_netlistXmlReader->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
 
     // Discover whether this node has a prescribed pressure, and if so, what type:
     circuit_nodal_pressure_prescription_t typeOfPrescribedPressure = Pressure_NotPrescribed; // initialise, but chnage later if pressure is actually prescribed

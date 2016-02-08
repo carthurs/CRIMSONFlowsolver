@@ -20,6 +20,7 @@ void NetlistXmlReader::parseReadData()
 	readCircuitStructure();
 	readPrescribedFlowComponents();
 	readInitialPressures();
+	readPrescribedPressureNodes();
 }
 
 void NetlistXmlReader::gatherNodeIndicesAt3DInterface()
@@ -311,7 +312,7 @@ void NetlistXmlReader::readPrescribedFlowComponents()
 				tempTypeOfPrescribedFlows.push_back(typeOfPrescribedFlow);
 				if (typeOfPrescribedFlow == Flow_Fixed)
 				{
-					tempValueOfPrescribedFlows.push_back(component.second.get<int>("prescribedFlowValue"));
+					tempValueOfPrescribedFlows.push_back(component.second.get<double>("prescribedFlowValue"));
 				}
 				else if (typeOfPrescribedFlow == Flow_3DInterface)
 				{
@@ -336,6 +337,58 @@ circuit_component_flow_prescription_t NetlistXmlReader::convertToFlowPrescriptio
 	else if (boost::iequals(inputFileFlowPrescriptionKeyword, "threeDInterface"))
 	{
 		returnValue = Flow_3DInterface;
+	}
+	else
+	{
+		throw std::runtime_error("ERROR: Unknown netlist component flow prescription. This often indicates a malformed netlist_surfaces.dat.");
+	}
+	return returnValue;
+}
+
+void NetlistXmlReader::readPrescribedPressureNodes()
+{
+	for (auto circuit : m_netlistDataFromFile.get_child("netlistCircuits"))
+	{
+		int circuitIndex = toZeroIndexing(circuit.second.get<int>("circuitIndex"));
+		std::vector<int> tempListOfPrescribedPressures;
+		std::vector<double> tempValueOfPrescribedPressures;
+		std::vector<circuit_nodal_pressure_prescription_t> tempTypeOfPrescribedPressures;
+
+		for (auto node : circuit.second.get_child("nodes"))
+		{
+			boost::optional<std::string> prescribedPressureType = node.second.get_optional<std::string>("prescribedPressureType");
+			if (prescribedPressureType)
+			{
+				tempListOfPrescribedPressures.push_back(node.second.get<int>("index"));
+				circuit_nodal_pressure_prescription_t typeOfPrescribedPressure = convertToPressurePrescriptionType(*prescribedPressureType);
+				tempTypeOfPrescribedPressures.push_back(typeOfPrescribedPressure);
+				if (typeOfPrescribedPressure == Pressure_Fixed)
+				{
+					tempValueOfPrescribedPressures.push_back(node.second.get<double>("initialPressure"));
+				}
+				else if (typeOfPrescribedPressure == Pressure_LeftVentricular)
+				{
+					// this 1.0 really gets used as a LV pressure scaling value before applying it to the node (in the case of Pressure_LeftVentricular only)
+					tempValueOfPrescribedPressures.push_back(1.0);	
+				}
+			}
+		}
+		m_listOfPrescribedPressures.insert(std::make_pair(circuitIndex, tempListOfPrescribedPressures));
+		m_valueOfPrescribedPressures.insert(std::make_pair(circuitIndex, tempValueOfPrescribedPressures));
+		m_typeOfPrescribedPressures.insert(std::make_pair(circuitIndex, tempTypeOfPrescribedPressures));
+	}
+}
+
+circuit_nodal_pressure_prescription_t NetlistXmlReader::convertToPressurePrescriptionType(const std::string inputFilePressurePrescriptionKeyword) const
+{
+	circuit_nodal_pressure_prescription_t returnValue;
+	if (boost::iequals(inputFilePressurePrescriptionKeyword, "fixed"))
+	{
+		returnValue = Pressure_Fixed;
+	}
+	else if (boost::iequals(inputFilePressurePrescriptionKeyword, "leftVentricular"))
+	{
+		returnValue = Pressure_LeftVentricular;
 	}
 	else
 	{
@@ -456,4 +509,17 @@ const std::map<int, std::vector<circuit_component_flow_prescription_t>>& Netlist
 const std::map<int, std::map<int,double>>& NetlistXmlReader::getInitialPressures() const
 {
 	return m_initialPressures;
+}
+
+const std::map<int, std::vector<int>> NetlistXmlReader::getListOfPrescribedPressures() const
+{
+	return m_listOfPrescribedPressures;
+}
+const std::map<int, std::vector<double>> NetlistXmlReader::getValueOfPrescribedPressures() const
+{
+	return m_valueOfPrescribedPressures;
+}
+const std::map<int, std::vector<circuit_nodal_pressure_prescription_t>> NetlistXmlReader::getTypeOfPrescribedPressures() const
+{
+	return m_typeOfPrescribedPressures;
 }

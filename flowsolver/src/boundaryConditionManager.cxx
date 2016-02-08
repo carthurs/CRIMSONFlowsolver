@@ -904,15 +904,15 @@ void boundaryConditionManager::createControlSystems()
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
   NetlistReader* netlistReader_instance = NetlistReader::Instance();
-  NetlistXmlReader* NetlistXmlReader_instance = NetlistXmlReader::Instance();
+  NetlistXmlReader* netlistXmlReader_instance = NetlistXmlReader::Instance();
   
   // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
   // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
-  std::map<int, std::map<int,parameter_controller_t>> mapsOfComponentControlTypes = NetlistXmlReader_instance->getMapsOfComponentControlTypesForEachSurface();
+  std::map<int, std::map<int,parameter_controller_t>> mapsOfComponentControlTypes = netlistXmlReader_instance->getMapsOfComponentControlTypesForEachSurface();
 
   // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
   // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();
-  std::vector<std::map<int,parameter_controller_t>> mapsOfNodeControlTypes = netlistReader_instance->getMapsOfNodalControlTypesForEachSurface();
+  std::map<int, std::map<int,parameter_controller_t>> mapsOfNodeControlTypes = netlistXmlReader_instance->getMapsOfNodalControlTypesForEachSurface();
 
 
   // Check for the existence of netlists with input data setting up control of any of 

@@ -44,7 +44,13 @@ public:
 	const std::map<int, std::vector<int>>& getComponentStartNodes() const;
 	const std::map<int, std::vector<int>>& getComponentEndNodes() const;
 	const std::vector<double> getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const;
-	const double getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const;
+	double getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const;
+
+	const std::map<int, std::vector<int>>& getListOfPrescribedFlows() const;
+	const std::map<int, std::vector<double>>& getValueOfPrescribedFlows() const;
+	const std::map<int, std::vector<circuit_component_flow_prescription_t>>& getTypeOfPrescribedFlows() const;
+	const std::map<int, std::map<int,double>>& getInitialPressures() const;
+
 private:
 	NetlistXmlReader()
 	{
@@ -66,6 +72,9 @@ private:
 	void countPrescribedPressureNodesForEachCircuit();
 	void countPrescribedFlowsForEachCircuit();
 	void readCircuitStructure();
+	void readPrescribedFlowComponents();
+	circuit_component_flow_prescription_t convertToFlowPrescriptionType(const std::string inputFileFlowPrescriptionKeyword) const;
+	void readInitialPressures();
 
 	static NetlistXmlReader* msp_instance;
 
@@ -84,6 +93,11 @@ private:
 	std::map<int, std::vector<int>> m_componentStartNodes;
 	std::map<int, std::vector<int>> m_componentEndNodes;
 	std::map<int, std::vector<ComponentParameterContainer>> m_componentParameterValues;
+	std::map<int, std::map<int,double>> m_initialPressures;
+	std::map<int, int> m_numberOfPressureNodes;
+	std::map<int, std::vector<int>> m_listOfPrescribedFlows;
+	std::map<int, std::vector<double>> m_valueOfPrescribedFlows;
+	std::map<int, std::vector<circuit_component_flow_prescription_t>> m_typeOfPrescribedFlows;
 };
 
 #endif

@@ -166,10 +166,10 @@ void NetlistCircuit::createBasicCircuitDescription()
     std::vector<double> retrievedComponentParameterValues = mp_netlistXmlReader->getComponentParameterValues(m_IndexOfThisNetlistLPNInInputFile);
     std::reverse(retrievedComponentParameterValues.begin(), retrievedComponentParameterValues.end());
 
-    std::vector<int> retrievedListOfPrescribedFlows = mp_netlistFileReader->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = mp_netlistFileReader->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<double> retrievedValueOfPrescribedFlows = mp_netlistFileReader->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::map<int,double> retrievedInitialPressures = mp_netlistFileReader->getInitialPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<int> retrievedListOfPrescribedFlows = mp_netlistXmlReader->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = mp_netlistXmlReader->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<double> retrievedValueOfPrescribedFlows = mp_netlistXmlReader->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::map<int,double> retrievedInitialPressures = mp_netlistXmlReader->getInitialPressures().at(m_IndexOfThisNetlistLPNInInputFile);
     
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_circuitData->components.begin(); component != mp_circuitData->components.end(); component++)

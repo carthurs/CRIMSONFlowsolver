@@ -51,7 +51,7 @@ void NetlistXmlReader::gatherComponentControllerNames()
 
 		// Some containers to fill:
 		std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
-		std::vector<std::pair<int,std::string>> userDefinedComponentControllersAndPythonNamesForThisSurface;
+		std::map<int,std::string> userDefinedComponentControllersAndPythonNamesForThisSurface;
 
 		// loop the components of this circuit
 		for (auto component : circuit.second.get_child("components"))
@@ -82,7 +82,7 @@ void NetlistXmlReader::gatherComponentControllerNames()
 					// Store the name of the Python script that controls this surface:
 					std::string controlScriptName = componentControlSpecification->get<std::string>("source");
 
-					userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, controlScriptName));
+					userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, controlScriptName));
 				}
 				else if (controlType_raw.compare("prescribedPeriodicFlow") == 0)
 				{
@@ -90,7 +90,7 @@ void NetlistXmlReader::gatherComponentControllerNames()
 					// Store the name of the dat file that controls this surface:
 					std::string controlScriptName = componentControlSpecification->get<std::string>("source");
 
-					userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, controlScriptName));
+					userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, controlScriptName));
 				}
 				else
 				{
@@ -116,7 +116,7 @@ void NetlistXmlReader::gatherNodalControllerNames()
 
 		// Some containers to fill
 		std::map<int,parameter_controller_t> nodalControlTypesForThisSurface;
-		std::vector<std::pair<int,std::string>> userDefinedNodeControllersAndPythonNamesForThisSurface;
+		std::map<int,std::string> userDefinedNodeControllersAndPythonNamesForThisSurface;
 
 		// Loop the nodes of this circuit:
 		for (auto node : circuit.second.get_child("nodes"))
@@ -133,14 +133,14 @@ void NetlistXmlReader::gatherNodalControllerNames()
 					controlType = Controller_CustomPythonNode;
 					std::string controlScriptName = nodalControlSpecification->get<std::string>("source");
 					// Store the name of the Python script that controls this surface:
-					userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, controlScriptName));
+					userDefinedNodeControllersAndPythonNamesForThisSurface.insert(std::make_pair(nodeIndex, controlScriptName));
 				}
 				else if (controlType_raw.compare("prescribedPeriodicPressure") == 0)
 				{
 					controlType = Controller_CustomPythonNodePressureFile;
 					std::string controlScriptName = nodalControlSpecification->get<std::string>("source");
 					// Store the name of the dat file that controls this surface:
-					userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, controlScriptName));	
+					userDefinedNodeControllersAndPythonNamesForThisSurface.insert(std::make_pair(nodeIndex, controlScriptName));	
 				}
 				else
 				{
@@ -420,7 +420,7 @@ const std::map<int, int>& NetlistXmlReader::getIndicesOfNodesAt3DInterface() con
 	return m_nodeAt3DInterfaceForEachNetlist;
 }
 
-const std::vector<std::pair<int,std::string>>& NetlistXmlReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
+const std::map<int,std::string>& NetlistXmlReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
 {
 	return m_userDefinedComponentControllersAndPythonNames.at(surfaceIndex);
 }
@@ -430,7 +430,7 @@ const std::map<int, std::map<int,parameter_controller_t>>& NetlistXmlReader::get
 	return m_mapsOfComponentControlTypesForEachSurface;
 }
 
-const std::vector<std::pair<int,std::string>>& NetlistXmlReader::getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const
+const std::map<int,std::string>& NetlistXmlReader::getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const
 {
 	return m_userDefinedNodeControllersAndPythonNames.at(surfaceIndex);
 }
@@ -522,4 +522,113 @@ const std::map<int, std::vector<double>> NetlistXmlReader::getValueOfPrescribedP
 const std::map<int, std::vector<circuit_nodal_pressure_prescription_t>> NetlistXmlReader::getTypeOfPrescribedPressures() const
 {
 	return m_typeOfPrescribedPressures;
+}
+
+const std::string NetlistXmlReader::getXmlComponentNameFromComponentType(const circuit_component_t componentType)
+{
+	std::string xmlNameString;
+	switch (componentType)
+	{
+		case Component_Resistor:
+			xmlNameString = "resistor";
+			break;
+		case Component_Capacitor:
+			xmlNameString = "capacitor";
+			break;
+		case Component_Inductor:
+			xmlNameString = "inductor";
+			break;
+		case Component_Diode:
+			xmlNameString = "diode";
+			break;
+		case Component_MonopolePressureNode:
+			xmlNameString = "monopole";
+			break;
+		case Component_VolumeTracking:
+			xmlNameString = "volumeTracking";
+			break;
+		case Component_VolumeTrackingPressureChamber:
+			xmlNameString = "volumeTrackingPressureChamber";
+			break;
+		default :
+			throw std::runtime_error("Unknown circuit component type in getXmlComponentNameFromComponentType");
+	}
+	return xmlNameString;
+}
+
+const std::string NetlistXmlReader::getXmlFlowPrescritpionNameFromFlowPrescriptionType(const circuit_component_flow_prescription_t flowPrescriptionType)
+{
+	std::string xmlNameString;
+	switch(flowPrescriptionType)
+	{
+		case Flow_NotPrescribed:
+			xmlNameString = "notPrescribed";
+			break;
+		case Flow_MonopoleSoUndefined:
+			xmlNameString = "monopole";
+			break;
+		case Flow_Fixed:
+			xmlNameString = "fixed";
+			break;
+		case Flow_3DInterface:
+			xmlNameString = "threeDInterface";
+			break;
+		default:
+			throw std::runtime_error("Unknown flow prescription type in getXmlFlowPrescritpionNameFromFlowPrescriptionType");
+	}
+
+	return xmlNameString;
+}
+
+const std::string NetlistXmlReader::getXmlControlNameFromControlType(const parameter_controller_t controlType)
+{
+	std::string xmlNameString;
+	switch (controlType)
+	{
+		case Controller_LeftVentricularElastance:
+			xmlNameString = "leftVentricularElastance";
+			break;
+		case Controller_BleedResistance:
+			xmlNameString = "bleedResistance";
+			break;
+		case Controller_BleedCompliance:
+			xmlNameString = "bleedCompliance";
+			break;
+		case Controller_CustomPythonComponentParameter:
+			xmlNameString = "customPython";
+			break;
+		case Controller_CustomPythonComponentFlowFile:
+			xmlNameString = "prescribedPeriodicFlow";
+			break;
+		case Controller_CustomPythonNode:
+			xmlNameString = "customPython";
+			break;
+		case Controller_CustomPythonNodePressureFile:
+			xmlNameString = "prescribedPeriodicPressure";
+			break;
+		default:
+			throw std::runtime_error("Unknown control prescription type in getXmlControlNameFromControlType");
+	}
+	return xmlNameString;
+}
+
+const std::string NetlistXmlReader::getXmlPressurePrescriptionNameFromPressurePrescriptionType(const circuit_nodal_pressure_prescription_t pressurePrescriptionType)
+{
+	std::string xmlNameString;
+	switch (pressurePrescriptionType)
+	{
+		case Pressure_NotPrescribed:
+			xmlNameString = "pressureNotPrescribed";
+			break;
+		case Pressure_Fixed:
+			xmlNameString = "fixed";
+			break;
+		case Pressure_LeftVentricular:
+			xmlNameString = "leftVentricularPressure";
+			break;
+		case Pressure_3DInterface:
+			xmlNameString = "threeDInterface";
+			break;
+	}
+	return xmlNameString;
 }

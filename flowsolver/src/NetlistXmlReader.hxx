@@ -32,9 +32,9 @@ public:
 	}
 
 	const std::map<int, int>& getIndicesOfNodesAt3DInterface() const;
-	const std::vector<std::pair<int,std::string>>& getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const;
+	const std::map<int, std::string>& getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const;
 	const std::map<int, std::map<int,parameter_controller_t>>& getMapsOfComponentControlTypesForEachSurface() const;
-	const std::vector<std::pair<int,std::string>>& getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const;
+	const std::map<int, std::string>& getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const;
 	const std::map<int, std::map<int,parameter_controller_t>>& getMapsOfNodalControlTypesForEachSurface() const;
 	const std::map<int, int>& getNumberOfComponents() const;
 	const std::map<int, int>& getNumberOfPressureNodes() const;
@@ -53,7 +53,10 @@ public:
 	const std::map<int, std::vector<int>> getListOfPrescribedPressures() const;
 	const std::map<int, std::vector<double>> getValueOfPrescribedPressures() const;
 	const std::map<int, std::vector<circuit_nodal_pressure_prescription_t>> getTypeOfPrescribedPressures() const;
-
+	static const std::string getXmlComponentNameFromComponentType(const circuit_component_t componentType);
+	static const std::string getXmlFlowPrescritpionNameFromFlowPrescriptionType(const circuit_component_flow_prescription_t flowPrescriptionType);
+	static const std::string getXmlControlNameFromControlType(const parameter_controller_t controlType);
+	static const std::string getXmlPressurePrescriptionNameFromPressurePrescriptionType(const circuit_nodal_pressure_prescription_t pressurePrescriptionType);
 
 private:
 	NetlistXmlReader()
@@ -87,9 +90,9 @@ private:
 	std::map<int, int> m_nodeAt3DInterfaceForEachNetlist;
 
 	boost::property_tree::ptree m_netlistDataFromFile;
-	std::map<int, std::vector<std::pair<int, std::string>>> m_userDefinedComponentControllersAndPythonNames;
+	std::map<int, std::map<int, std::string>> m_userDefinedComponentControllersAndPythonNames;
 	std::map<int, std::map<int,parameter_controller_t>> m_mapsOfComponentControlTypesForEachSurface;
-	std::map<int, std::vector<std::pair<int,std::string>>> m_userDefinedNodeControllersAndPythonNames;
+	std::map<int, std::map<int,std::string>> m_userDefinedNodeControllersAndPythonNames;
 	std::map<int, std::map<int,parameter_controller_t>> m_mapsOfNodalControlTypesForEachSurface;
 	std::map<int, int> m_numberOfComponents;
 	std::map<int, int> m_numberOfNodes;

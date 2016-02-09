@@ -3,6 +3,10 @@
 #include "common_c.h"
 #include "datatypesInCpp.hxx"
 #include <iterator>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include "indexShifters.hxx"
+#include "NetlistXmlReader.hxx"
 
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
@@ -634,7 +638,7 @@ void NetlistReader::readControlSystemPrescriptions()
 	readNextLine();
 	m_numberOfComponentsWithControl.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
 	std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
-	std::vector<std::pair<int,std::string>> userDefinedComponentControllersAndPythonNamesForThisSurface;
+	std::map<int,std::string> userDefinedComponentControllersAndPythonNamesForThisSurface;
 	for (int controlledComponent=0; controlledComponent<m_numberOfComponentsWithControl.back(); controlledComponent++)
 	{
 		parameter_controller_t controlType;
@@ -658,13 +662,13 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			controlType = Controller_CustomPythonComponentParameter;
 			// Store the name of the Python script that controls this surface:
-			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
+			userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
 		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicFlow") == 0)
 		{
 			controlType = Controller_CustomPythonComponentFlowFile;
 			// Store the name of the dat file that controls this surface:
-			userDefinedComponentControllersAndPythonNamesForThisSurface.push_back(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));	
+			userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));	
 		}
 		else
 		{
@@ -682,7 +686,7 @@ void NetlistReader::readControlSystemPrescriptions()
 	readNextLine();
 	m_numberOfNodesWithControl.push_back(atoi(mp_currentLineSplitBySpaces->at(0).c_str()));
 	std::map<int,parameter_controller_t> nodalControlTypesForThisSurface;
-	std::vector<std::pair<int,std::string>> userDefinedNodeControllersAndPythonNamesForThisSurface;
+	std::map<int,std::string> userDefinedNodeControllersAndPythonNamesForThisSurface;
 	for (int controlledNode=0; controlledNode < m_numberOfNodesWithControl.back(); controlledNode++)
 	{
 		parameter_controller_t controlType;
@@ -693,14 +697,14 @@ void NetlistReader::readControlSystemPrescriptions()
 			controlType = Controller_CustomPythonNode;
 			// Store the name of the Python script that controls this surface:
 			int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
-			userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));
+			userDefinedNodeControllersAndPythonNamesForThisSurface.insert(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));
 		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicPressure") == 0)
 		{
 			controlType = Controller_CustomPythonNodePressureFile;
 			// Store the name of the dat file that controls this surface:
 			int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());
-			userDefinedNodeControllersAndPythonNamesForThisSurface.push_back(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));	
+			userDefinedNodeControllersAndPythonNamesForThisSurface.insert(std::make_pair(nodeIndex, mp_currentLineSplitBySpaces->at(2)));	
 		}
 		else
 		{
@@ -716,12 +720,130 @@ void NetlistReader::readControlSystemPrescriptions()
 	m_userDefinedNodeControllersAndPythonNames.push_back(userDefinedNodeControllersAndPythonNamesForThisSurface);
 }
 
-std::vector<std::pair<int,std::string>> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
+// This is designed only for use in converting old-format netlist_surfaces.dat into 
+// the new netlist_surfaces.xml format
+void NetlistReader::writeCircuitSpecificationInXmlFormat() const
+{
+	using boost::property_tree::ptree;
+	ptree pt;
+
+
+	for (int circuitIndex = 0; circuitIndex < m_numberOfNetlistSurfacesIn_netlist_surfacesdat; circuitIndex++)
+	{
+		ptree currentCircuit;
+		currentCircuit.put("circuitIndex", toOneIndexing(circuitIndex));
+
+		// Do the components:
+		for (int componentIndex = 0; componentIndex < m_numberOfComponents.at(circuitIndex); componentIndex++)
+		{
+			ptree currentComponent;
+			currentComponent.put("index", toOneIndexing(componentIndex));
+
+			circuit_component_t componentType = m_componentTypes.at(circuitIndex).at(componentIndex);
+			currentComponent.put("type", NetlistXmlReader::getXmlComponentNameFromComponentType(componentType));
+
+			currentComponent.put("startNodeIndex", m_componentStartNodes.at(circuitIndex).at(componentIndex));
+			currentComponent.put("endNodeIndex", m_componentEndNodes.at(circuitIndex).at(componentIndex));
+			currentComponent.put("parameterValue", m_componentParameterValues.at(circuitIndex).at(componentIndex).getParameter());
+
+			if (componentType == Component_VolumeTracking || componentType == Component_VolumeTrackingPressureChamber)
+			{
+				double initialVolume = getComponentInitialVolume(circuitIndex, componentIndex);
+				currentComponent.put("initialVolume", initialVolume);
+			}
+
+
+			for (int indexAmongstPrescribedFlowComponents = 0; indexAmongstPrescribedFlowComponents < m_numberOfPrescribedFlows.at(circuitIndex); indexAmongstPrescribedFlowComponents++)
+			{
+				if (m_listOfPrescribedFlows.at(circuitIndex).at(indexAmongstPrescribedFlowComponents) == toOneIndexing(componentIndex))
+				{
+					currentComponent.put("prescribedFlowType", NetlistXmlReader::getXmlFlowPrescritpionNameFromFlowPrescriptionType(m_typeOfPrescribedFlows.at(circuitIndex).at(indexAmongstPrescribedFlowComponents)));
+				}
+			}
+
+			// Gather the component control info into the property tree
+			for (auto controlledComponentInfo : m_mapsOfComponentControlTypesForEachSurface.at(circuitIndex))
+			{
+				int controlledComponentIndex = controlledComponentInfo.first;
+				if (controlledComponentIndex == toOneIndexing(componentIndex))
+				{
+					ptree controlInfoForThisComponent;
+
+					parameter_controller_t controlType = controlledComponentInfo.second;
+					controlInfoForThisComponent.put("type", NetlistXmlReader::getXmlControlNameFromControlType(controlType));
+					if (controlType == Controller_CustomPythonComponentParameter || controlType == Controller_CustomPythonComponentFlowFile)
+					{
+						std::string controlSourceInfo = getUserDefinedComponentControllersAndPythonNames(circuitIndex).at(toOneIndexing(componentIndex));
+						controlInfoForThisComponent.put("source", controlSourceInfo);
+					}
+					currentComponent.add_child("control", controlInfoForThisComponent);
+					break; // the can't be more than one control specification for this component, and we've found it
+				}
+			}
+
+			currentCircuit.add_child("components.component", currentComponent);
+		}
+
+		// Do the nodes:
+		for (int nodeIndex = 0; nodeIndex < m_numberOfPressureNodes.at(circuitIndex); nodeIndex++)
+		{
+			ptree currentNode;
+			currentNode.put("index", toOneIndexing(nodeIndex));
+			currentNode.put("initialPressure", m_initialPressures.at(circuitIndex).at(toOneIndexing(nodeIndex)));
+			if (toOneIndexing(nodeIndex) == m_indicesOfNodesAt3DInterface.at(circuitIndex))
+			{
+				currentNode.put("isAt3DInterface", "true");
+			}
+
+			for (int indexAmongstPrescribedPressureNodes = 0; indexAmongstPrescribedPressureNodes < m_numberOfPrescribedPressures.at(circuitIndex); indexAmongstPrescribedPressureNodes++)
+			{
+				if (m_listOfPrescribedPressures.at(circuitIndex).at(indexAmongstPrescribedPressureNodes) == toOneIndexing(nodeIndex))
+				{
+					currentNode.put("prescribedPressureType", NetlistXmlReader::getXmlPressurePrescriptionNameFromPressurePrescriptionType(m_typeOfPrescribedPressures.at(circuitIndex).at(indexAmongstPrescribedPressureNodes)));
+					
+					// during the switch to xml input files, we've consolidated the fixed pressure node's pressure with the same node's initial pressure
+					// since having both didn't make sense. Therefore, overwrite the initialPressure with the prescribedPressure
+					// (the user should never have given them different values anyway!)
+					currentNode.put("initialPressure", m_valueOfPrescribedPressures.at(circuitIndex).at(indexAmongstPrescribedPressureNodes));
+				}
+			}
+			
+			// Gather the nodal control info:
+			for (auto controlledNodeInfo : m_mapsOfNodalControlTypesForEachSurface.at(circuitIndex))
+			{
+				int controlledNodeIndex = controlledNodeInfo.first;
+				if (controlledNodeIndex == toOneIndexing(nodeIndex))
+				{
+					ptree controlInfoForThisNode;
+
+					parameter_controller_t controlType = controlledNodeInfo.second;
+					controlInfoForThisNode.put("type", NetlistXmlReader::getXmlControlNameFromControlType(controlType));
+					if (controlType == Controller_CustomPythonNode || controlType == Controller_CustomPythonNodePressureFile)
+					{
+						std::string controlSourceInfo = getUserDefinedNodeControllersAndPythonNames(circuitIndex).at(toOneIndexing(nodeIndex));
+						controlInfoForThisNode.put("source", controlSourceInfo);
+					}
+					currentNode.add_child("control", controlInfoForThisNode);
+					break; // the can't be more than one control specification for this node, and we've found it
+				}
+			}
+
+			currentCircuit.add_child("nodes.node", currentNode);
+		}
+
+
+		pt.add_child("netlistCircuits.circuit", currentCircuit);
+	}
+
+	write_xml("testlist_surfaces.xml", pt);
+}
+
+std::map<int,std::string> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
 {
 	return m_userDefinedComponentControllersAndPythonNames.at(surfaceIndex);
 }
 
-std::vector<std::pair<int,std::string>> NetlistReader::getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const
+std::map<int,std::string> NetlistReader::getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const
 {
 	return m_userDefinedNodeControllersAndPythonNames.at(surfaceIndex);
 }

@@ -5,6 +5,7 @@
 #include <iterator>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include "mpi.h"
 #include "indexShifters.hxx"
 #include "NetlistXmlReader.hxx"
 
@@ -835,7 +836,16 @@ void NetlistReader::writeCircuitSpecificationInXmlFormat() const
 		pt.add_child("netlistCircuits.circuit", currentCircuit);
 	}
 
-	write_xml("testlist_surfaces.xml", pt);
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	if (rank==0)
+	{
+		// settings to indent the xml properly:
+		boost::property_tree::xml_parser::xml_writer_settings<std::string> settings('\t', 1);
+		write_xml("../netlist_surfaces.xml", pt, std::locale(), settings); // write into launch folder for future use
+		write_xml("netlist_surfaces.xml", pt, std::locale(), settings); // write into the procs case folder
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 std::map<int,std::string> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const

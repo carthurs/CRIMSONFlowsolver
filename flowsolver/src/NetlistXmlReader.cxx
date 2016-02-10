@@ -4,6 +4,7 @@
 #include <boost/algorithm/string.hpp>
 
 NetlistXmlReader* NetlistXmlReader::msp_instance = 0;
+NetlistDownstreamXmlReader* NetlistDownstreamXmlReader::msp_downstreamReaderInstance = 0;
 
 // Netlist data is read from netlist_surfaces.xml and stored in a boost property tree.
 // The main task of this class is to extract this data into useable internal data structures,
@@ -68,11 +69,11 @@ void NetlistXmlReader::gatherComponentControllerNames()
 				{
 					throw std::logic_error("EE: This control hasn't been implemented yet!"); // need to do the push_backs below, too.
 				}
-				else if (controlType_raw.compare("l") == 0)
+				else if (boost::iequals(controlType_raw, "leftVentricularElastance"))
 				{
 					controlType = Controller_LeftVentricularElastance;
 				}
-				else if (controlType_raw.compare("bleed") == 0)
+				else if (controlType_raw.compare("bleedResistance") == 0)
 				{
 					controlType = Controller_BleedResistance;
 				}
@@ -631,4 +632,85 @@ const std::string NetlistXmlReader::getXmlPressurePrescriptionNameFromPressurePr
 			break;
 	}
 	return xmlNameString;
+}
+
+void NetlistDownstreamXmlReader::parseBoundaryConditionConnectivity()
+{
+	for (auto circuit : m_netlistDataFromFile.get_child("netlistCircuits"))
+	{
+		int downstreamCircuitIndex = toZeroIndexing(circuit.second.get<int>("circuitIndex"));
+
+		std::vector<int> tempConnectedCircuitSurfaceIndces;
+		std::vector<int> tempLocalBoundaryConditionInterfaceNodes;
+		std::vector<int> tempRemoteBoundaryConditionInterfaceNodes;
+
+		int numberOfBoundaryConditionsConnectedTo = 0;
+		std::set<int> allUpstreamCircuitSurfaceIndices;
+		for (auto node : circuit.second.get_child("nodes"))
+		{
+			boost::optional<boost::property_tree::ptree&> nodalConenctivitySpecification = node.second.get_child_optional("upstreamConnectivity");
+			if (nodalConenctivitySpecification)
+			{
+				for (auto upstreamConnection : node.second.get_child("upstreamConnectivity"))
+				{
+					// upstream circuit surface index info:
+					int upstreamCircuitSurfaceIndex = upstreamConnection.second.get<int>("upstreamCircuitSurfaceIndex");
+					allUpstreamCircuitSurfaceIndices.insert(upstreamCircuitSurfaceIndex);
+					tempConnectedCircuitSurfaceIndces.push_back(upstreamCircuitSurfaceIndex);
+
+					// local node of the connection
+					tempLocalBoundaryConditionInterfaceNodes.push_back(node.second.get<int>("index"));
+
+					// upstream node of the connection
+					tempRemoteBoundaryConditionInterfaceNodes.push_back(upstreamConnection.second.get<int>("connectsToUpstreamNode"));
+				}
+			}
+		}
+		// m_numberOfPressureNodes.insert(std::make_pair(circuitIndex, numberOfBoundaryConditionsConnectedTo));
+		// m_initialPressures.insert(std::make_pair(circuitIndex, tempInitialPressures));
+		m_numberOfBoundaryConditionsConnectedTo.insert(std::make_pair(downstreamCircuitIndex, allUpstreamCircuitSurfaceIndices.size()));
+		m_connectedCircuitSurfaceIndices.insert(std::make_pair(downstreamCircuitIndex, tempConnectedCircuitSurfaceIndces));
+		m_localBoundaryConditionInterfaceNodes.insert(std::make_pair(downstreamCircuitIndex, tempLocalBoundaryConditionInterfaceNodes));
+		m_remoteBoundaryConditionInterfaceNodes.insert(std::make_pair(downstreamCircuitIndex, tempRemoteBoundaryConditionInterfaceNodes));
+	}
+}
+
+int NetlistDownstreamXmlReader::getNumberOfBoundaryConditionsConnectedTo(const int downstreamCircuitIndex) const
+{
+	return m_numberOfBoundaryConditionsConnectedTo.at(downstreamCircuitIndex);
+}
+
+const std::vector<int>& NetlistDownstreamXmlReader::getConnectedCircuitSurfaceIndices(const int downstreamCircuitIndex) const
+{
+	return m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex);
+}
+
+const std::vector<int>& NetlistDownstreamXmlReader::getLocalBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const
+{
+	return m_localBoundaryConditionInterfaceNodes.at(downstreamCircuitIndex);
+}
+
+const std::vector<int>& NetlistDownstreamXmlReader::getRemoteBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const
+{
+	return m_remoteBoundaryConditionInterfaceNodes.at(downstreamCircuitIndex);
+}
+
+const std::set<int> NetlistDownstreamXmlReader::getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(const int boundaryConditionIndex) const // boundaryConditionIndex here should be as in the solver.inp
+{
+	std::set<int> nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit;
+
+	// Find all the downstream circuits which connect to the requested boundary condition (boundaryConditionIndex)
+	for (int downstreamCircuitIndex = 0; downstreamCircuitIndex < m_connectedCircuitSurfaceIndices.size(); downstreamCircuitIndex++)
+	{
+		for (int attachedBoundaryConditionIndex = 0; attachedBoundaryConditionIndex < m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).size(); attachedBoundaryConditionIndex++)
+		{
+			if (m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).at(attachedBoundaryConditionIndex) == boundaryConditionIndex)
+			{
+				// Gather the nodes in this boundary condition which connect to downstream circuits:
+				nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit.insert(m_remoteBoundaryConditionInterfaceNodes.at(downstreamCircuitIndex).at(attachedBoundaryConditionIndex));
+			}
+		}
+	}
+
+	return nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit;
 }

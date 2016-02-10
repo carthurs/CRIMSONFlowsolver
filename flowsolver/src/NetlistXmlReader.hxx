@@ -5,6 +5,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <vector>
 #include <map>
+#include <set>
 #include <utility>
 #include <iostream>
 #include "datatypesInCpp.hxx"
@@ -17,12 +18,12 @@ public:
 	{
 		if (!msp_instance)
 		{
-			msp_instance = new NetlistXmlReader();
+			msp_instance = new NetlistXmlReader("netlist_surfaces.xml");
 		}
 		return msp_instance;
 	}
 
-	static void Terminante()
+	static void Term()
 	{
 		if (msp_instance)
 		{
@@ -58,11 +59,18 @@ public:
 	static const std::string getXmlControlNameFromControlType(const parameter_controller_t controlType);
 	static const std::string getXmlPressurePrescriptionNameFromPressurePrescriptionType(const circuit_nodal_pressure_prescription_t pressurePrescriptionType);
 
-private:
-	NetlistXmlReader()
+	virtual ~NetlistXmlReader() {};
+
+protected:
+	NetlistXmlReader(const std::string fileName)
+	{
+		initialise(fileName);
+	}
+
+	void initialise(const std::string fileName)
 	{
 		try {
-			read_xml("netlist_surfaces.xml", m_netlistDataFromFile);
+			read_xml(fileName, m_netlistDataFromFile);
 			parseReadData();
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
@@ -110,6 +118,60 @@ private:
 	std::map<int, std::vector<int>> m_listOfPrescribedPressures;
 	std::map<int, std::vector<double>> m_valueOfPrescribedPressures;
 	std::map<int, std::vector<circuit_nodal_pressure_prescription_t>> m_typeOfPrescribedPressures;
+};
+
+class NetlistDownstreamXmlReader : public NetlistXmlReader
+{
+public:
+
+	static NetlistDownstreamXmlReader* Instance() 
+	{
+		if (!msp_downstreamReaderInstance)
+		{
+			msp_downstreamReaderInstance = new NetlistDownstreamXmlReader("netlist_closed_loop_downstream.xml");
+		}
+		return msp_downstreamReaderInstance;
+	}
+
+	static void Term()
+	{
+		if (msp_downstreamReaderInstance)
+		{
+			delete msp_downstreamReaderInstance;
+			msp_downstreamReaderInstance = 0;
+		}
+	}
+
+	int getNumberOfBoundaryConditionsConnectedTo(const int downstreamCircuitIndex) const;
+	const std::vector<int>& getConnectedCircuitSurfaceIndices(const int downstreamCircuitIndex) const;
+	const std::vector<int>& getLocalBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
+	const std::vector<int>& getRemoteBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
+	const std::set<int> getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(const int boundaryConditionIndex) const; // boundaryConditionIndex here should be as in the solver.inp.
+private:
+	
+	static NetlistDownstreamXmlReader* msp_downstreamReaderInstance;
+
+	NetlistDownstreamXmlReader(const std::string fileName)
+	: NetlistXmlReader(fileName)
+	{
+		initialise_downstream();
+	}
+
+	void initialise_downstream()
+	{
+		try {
+			parseBoundaryConditionConnectivity();
+		} catch (const std::exception& e) {
+		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+		    throw e;
+		}
+	}
+	void parseBoundaryConditionConnectivity();
+
+	std::map<int, int> m_numberOfBoundaryConditionsConnectedTo;
+	std::map<int, std::vector<int>> m_connectedCircuitSurfaceIndices;
+	std::map<int, std::vector<int>> m_localBoundaryConditionInterfaceNodes;
+	std::map<int, std::vector<int>> m_remoteBoundaryConditionInterfaceNodes;
 };
 
 #endif

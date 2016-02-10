@@ -51,13 +51,15 @@ void NetlistClosedLoopDownstreamCircuit::createCircuitDescription()
 
     // Get the reader class for the netlist data file, and ask it for the circuit description data:
     mp_netlistFileReader = NetlistDownstreamCircuitReader::Instance();
+    mp_netlistXmlReader = NetlistDownstreamXmlReader::Instance();
     createBasicCircuitDescription();
     appendClosedLoopSpecificCircuitDescription();
 }
 
 void NetlistClosedLoopDownstreamCircuit::appendClosedLoopSpecificCircuitDescription()
 {
-	NetlistDownstreamCircuitReader* downcastDownstreamCircuitReader = static_cast<NetlistDownstreamCircuitReader*> (mp_netlistFileReader);
+    // NetlistDownstreamCircuitReader* downcastDownstreamCircuitReader = static_cast<NetlistDownstreamCircuitReader*> (mp_netlistFileReader);
+	NetlistDownstreamXmlReader* downcastDownstreamCircuitReader = static_cast<NetlistDownstreamXmlReader*> (mp_netlistXmlReader);
     m_numberOfConnectedBoundaryConditions = downcastDownstreamCircuitReader->getNumberOfBoundaryConditionsConnectedTo(m_downstreamCircuitIndex);
     m_connectedCircuitSurfaceIndices = downcastDownstreamCircuitReader->getConnectedCircuitSurfaceIndices(m_downstreamCircuitIndex);
 

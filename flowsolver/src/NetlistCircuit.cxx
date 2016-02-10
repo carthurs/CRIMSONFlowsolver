@@ -74,7 +74,7 @@ void NetlistCircuit::createCircuitDescription()
 
     // Tell the node at the 3D interface that it connects to the 3D domain:
     {
-        int threeDNodeIndex = mp_netlistFileReader->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPNInInputFile);
+        int threeDNodeIndex = mp_netlistXmlReader->getIndicesOfNodesAt3DInterface().at(m_IndexOfThisNetlistLPNInInputFile);
         mp_circuitData->initialiseNodeAndComponentAtInterface(threeDNodeIndex);
     }
 
@@ -84,14 +84,14 @@ void NetlistCircuit::setupCustomPythonControlSystems()
 {
     // Give any components tagged in the input data for custom Python
     // control systems the name of their Python controller script:
-    std::map<int,std::string> userDefinedComponentControllers = mp_netlistFileReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
+    std::map<int,std::string> userDefinedComponentControllers = mp_netlistXmlReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
     for (auto componentIndexAndPythonName = userDefinedComponentControllers.begin(); componentIndexAndPythonName != userDefinedComponentControllers.end(); componentIndexAndPythonName++)
     {
         mp_circuitData->mapOfComponents.at(componentIndexAndPythonName->first)->setPythonControllerName(componentIndexAndPythonName->second);
     }
     // Give any nodes tagged in the input data for custom Python
     // control systems the name of their Python controller script:
-    std::map<int,std::string> userDefinedNodeControllers = mp_netlistFileReader->getUserDefinedNodeControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
+    std::map<int,std::string> userDefinedNodeControllers = mp_netlistXmlReader->getUserDefinedNodeControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
     for (auto nodeIndexAndPythonName = userDefinedNodeControllers.begin(); nodeIndexAndPythonName != userDefinedNodeControllers.end(); nodeIndexAndPythonName++)
     {
         // Nodal parameter (i.e. presure) controllers can only be attached
@@ -123,12 +123,12 @@ void NetlistCircuit::setupCustomPythonControlSystems()
 
 void NetlistCircuit::createBasicCircuitDescription()
 {
-    mp_circuitData->numberOfComponents = mp_netlistFileReader->getNumberOfComponents().at(m_IndexOfThisNetlistLPNInInputFile);
-    mp_circuitData->numberOfPressureNodes = mp_netlistFileReader->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPNInInputFile);
-    mp_circuitData->numberOfPrescribedPressures = mp_netlistFileReader->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
-    mp_circuitData->numberOfPrescribedFlows = mp_netlistFileReader->getNumberOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    mp_circuitData->numberOfComponents = mp_netlistXmlReader->getNumberOfComponents().at(m_IndexOfThisNetlistLPNInInputFile);
+    mp_circuitData->numberOfPressureNodes = mp_netlistXmlReader->getNumberOfPressureNodes().at(m_IndexOfThisNetlistLPNInInputFile);
+    mp_circuitData->numberOfPrescribedPressures = mp_netlistXmlReader->getNumberOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    mp_circuitData->numberOfPrescribedFlows = mp_netlistXmlReader->getNumberOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
 
-    std::vector<circuit_component_t> retrievedComponentTypes = mp_netlistFileReader->getComponentTypes().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<circuit_component_t> retrievedComponentTypes = mp_netlistXmlReader->getComponentTypes().at(m_IndexOfThisNetlistLPNInInputFile);
 
     // Prepare space for the components in the circuit:
     assert(mp_circuitData->components.empty());
@@ -137,12 +137,12 @@ void NetlistCircuit::createBasicCircuitDescription()
         CircuitComponent* toPushBack;
         if (retrievedComponentTypes.at(componentIndex) == Component_VolumeTrackingPressureChamber)
         {
-            double initialVolume = mp_netlistFileReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
+            double initialVolume = mp_netlistXmlReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
             toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation, initialVolume);
         }
         else if (retrievedComponentTypes.at(componentIndex) == Component_VolumeTracking)
         {
-            double initialVolume = mp_netlistFileReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
+            double initialVolume = mp_netlistXmlReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
             toPushBack = new VolumeTrackingComponent(m_hstep,m_thisIsARestartedSimulation, initialVolume);
         }
         else
@@ -159,17 +159,17 @@ void NetlistCircuit::createBasicCircuitDescription()
     // We want to pop off the component types as we use them, but starting from the beginning of the vector. To do this, we reverse
     // the vector and then pop from the new end.
     std::reverse(retrievedComponentTypes.begin(), retrievedComponentTypes.end());
-    std::vector<int> retrievedComponentStartNodes = mp_netlistFileReader->getComponentStartNodes().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<int> retrievedComponentStartNodes = mp_netlistXmlReader->getComponentStartNodes().at(m_IndexOfThisNetlistLPNInInputFile);
     std::reverse(retrievedComponentStartNodes.begin(), retrievedComponentStartNodes.end());
-    std::vector<int> retrievedComponentEndNodes = mp_netlistFileReader->getComponentEndNodes().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<int> retrievedComponentEndNodes = mp_netlistXmlReader->getComponentEndNodes().at(m_IndexOfThisNetlistLPNInInputFile);
     std::reverse(retrievedComponentEndNodes.begin(), retrievedComponentEndNodes.end());
-    std::vector<double> retrievedComponentParameterValues = mp_netlistFileReader->getComponentParameterValues(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<double> retrievedComponentParameterValues = mp_netlistXmlReader->getComponentParameterValues(m_IndexOfThisNetlistLPNInInputFile);
     std::reverse(retrievedComponentParameterValues.begin(), retrievedComponentParameterValues.end());
 
-    std::vector<int> retrievedListOfPrescribedFlows = mp_netlistFileReader->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = mp_netlistFileReader->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<double> retrievedValueOfPrescribedFlows = mp_netlistFileReader->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::map<int,double> retrievedInitialPressures = mp_netlistFileReader->getInitialPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<int> retrievedListOfPrescribedFlows = mp_netlistXmlReader->getListOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = mp_netlistXmlReader->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<double> retrievedValueOfPrescribedFlows = mp_netlistXmlReader->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::map<int,double> retrievedInitialPressures = mp_netlistXmlReader->getInitialPressures().at(m_IndexOfThisNetlistLPNInInputFile);
     
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_circuitData->components.begin(); component != mp_circuitData->components.end(); component++)
@@ -272,9 +272,9 @@ void NetlistCircuit::createBasicCircuitDescription()
 void NetlistCircuit::setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode)
 {
     // Access the read-in file data:
-    std::vector<int> retrievedListOfPrescribedPressures = mp_netlistFileReader->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = mp_netlistFileReader->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
-    std::vector<double> retrievedValueOfPrescribedPressures = mp_netlistFileReader->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<int> retrievedListOfPrescribedPressures = mp_netlistXmlReader->getListOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<circuit_nodal_pressure_prescription_t> retrievedTypeOfPrescribedPressures = mp_netlistXmlReader->getTypeOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+    std::vector<double> retrievedValueOfPrescribedPressures = mp_netlistXmlReader->getValueOfPrescribedPressures().at(m_IndexOfThisNetlistLPNInInputFile);
 
     // Discover whether this node has a prescribed pressure, and if so, what type:
     circuit_nodal_pressure_prescription_t typeOfPrescribedPressure = Pressure_NotPrescribed; // initialise, but chnage later if pressure is actually prescribed
@@ -1206,7 +1206,6 @@ void NetlistCircuit::initialiseCircuit()
     m_numberOfSystemRows = m_numberOfSystemColumns;
 
     createVectorsAndMatricesForCircuitLinearSystem();
-    mp_netlistFileReader->writeCircuitSpecificationInXmlFormat(); // for converting old netlist specification file format to new (generally not important for actual simulations)
 }
 
 void NetlistCircuit::initialiseCircuit_common()

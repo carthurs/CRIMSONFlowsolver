@@ -299,6 +299,9 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
             Mat matrixContribution;
             mp_NetlistCircuit->getMatrixContribution(alfi_delt, matrixContribution);
 
+            // std::cout << "Location 2B: Downstream circuit for closed loop " << m_index << ":" << std::endl;
+            // errFlag = MatView(matrixContribution,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+
             PetscInt numberOfRows;
             PetscInt numberOfColumns;
             errFlag = MatGetSize(matrixContribution, &numberOfRows, &numberOfColumns); CHKERRABORT(PETSC_COMM_SELF,errFlag);

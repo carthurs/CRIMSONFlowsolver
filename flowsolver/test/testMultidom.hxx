@@ -122,6 +122,8 @@
 		netlistReader_instance = NetlistReader::Instance();
 	    netlistReader_instance->setFileName("netlist_surfaces.dat");
 	    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+	    // for converting old netlist specification file format to new (generally not important for actual simulations)
+    	netlistReader_instance->writeCircuitSpecificationInXmlFormat();
 
 		
 		std::vector<std::pair<int,boundary_condition_t>> surfaceList;

@@ -61,6 +61,9 @@ void multidom_initialise(){
     NetlistReader* netlistReader_instance = NetlistReader::Instance();
     netlistReader_instance->setFileName("netlist_surfaces.dat");
     netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+
+    // for converting old netlist specification file format to new (generally not important for actual simulations)
+    netlistReader_instance->writeCircuitSpecificationInXmlFormat();
   }
 
   if (boundaryConditionManager_instance->getNumberOfDownsreamClosedLoopCircuits() > 0)
@@ -118,10 +121,11 @@ void multidom_iter_finalise()
 }
 
 void multidom_finalise(){
-  boundaryConditionManager::Instance()->Term();
-  rcrtReader::Instance()->Term();
-  controlledCoronaryReader::Instance()->Term();
-  NetlistReader::Instance()->Term();
-  NetlistDownstreamCircuitReader::Instance()->Term();
+  boundaryConditionManager::Term();
+  rcrtReader::Term();
+  controlledCoronaryReader::Term();
+  NetlistReader::Term();
+  NetlistDownstreamCircuitReader::Term();
+  NetlistXmlReader::Term();
 }
 

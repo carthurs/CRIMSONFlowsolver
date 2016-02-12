@@ -880,7 +880,10 @@ void NetlistReader::writePropertyTreeToDisk(const std::string fileNameWithoutExt
 	std::string filenameAsDat = fileNameWithoutExtension + ".dat";
 	boost::filesystem::path currentDatFilePath("../"+filenameAsDat);
 	boost::filesystem::path deprecatedDatFilePath = oldDatFilesDirectory /= boost::filesystem::path(filenameAsDat);
-	boost::filesystem::rename(currentDatFilePath, deprecatedDatFilePath);
+	if (boost::filesystem::exists(currentDatFilePath))
+	{
+		boost::filesystem::rename(currentDatFilePath, deprecatedDatFilePath);
+	}
 }
 
 std::map<int,std::string> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const

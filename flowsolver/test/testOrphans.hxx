@@ -11,6 +11,7 @@
 #include "debuggingToolsForCpp.hxx"
 #include <boost/shared_ptr.hpp>
 #include "SimvascularGlobalArrayTransfer.h"
+#include "mpi.h"
 
 	// The fixture for testing class Foo.
 	class testOrphans : public ::testing::Test {
@@ -49,6 +50,43 @@
 	    // multidom_finalise();
 	    // fortranPointerManager_instance->tearDown();
 	    // retrievedBoundaryConditions = 0;
+
+	  	// we do this because the new NetlistXmlReader does not allow the use of 
+	  	// non-standard file names, and the tests here work with e.g. 
+	  	// 
+	  	// netlist_surfaces_bad3DInterfaceComponentOrientation.dat
+	  	//
+	  	// which becomes just
+	  	//
+	  	// netlist_surfaces.xml
+	  	//
+	  	// This wil clash with subsequent tests, so we move it safely to
+	  	// a storage directory
+	  	MPI_Barrier(MPI_COMM_WORLD);
+	  	int rank;
+	  	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	  	if (rank==0)
+	  	{
+		  	boost::filesystem::path oldXmlFilesDirectory("oldXmlFiles");
+		  	if (!boost::filesystem::exists(oldXmlFilesDirectory))
+		  	{
+				boost::filesystem::create_directory(oldXmlFilesDirectory);
+			}
+
+		  	boost::filesystem::path basePath("oldXmlFiles/netlist_surfaces.xml");
+		  	boost::filesystem::path pathToTry = basePath;
+		  	int fileSuffix = 0;
+		  	while (boost::filesystem::exists(pathToTry))
+		  	{
+		  		pathToTry = basePath;
+		  		pathToTry += boost::filesystem::path("."+boost::lexical_cast<std::string>(fileSuffix));
+		  		fileSuffix++;
+		  	}
+		    boost::filesystem::rename(boost::filesystem::path("netlist_surfaces.xml"), pathToTry);
+		    std::cout << "Moving the just-generated netlist_surfaces.xml to ./oldXmlFiles/" << std::endl;
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+
 	    netlistReader_instance->Term();
 	    NetlistXmlReader::Term();
 	    boundaryConditionManager_instance->Term();

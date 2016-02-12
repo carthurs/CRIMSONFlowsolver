@@ -119,11 +119,16 @@
 		controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
 
 		// Setup the netlist reader:
+		boost::filesystem::current_path(boost::filesystem::path("basicTestFiles"));
 		netlistReader_instance = NetlistReader::Instance();
-	    netlistReader_instance->setFileName("netlist_surfaces.dat");
-	    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
-	    // for converting old netlist specification file format to new (generally not important for actual simulations)
-    	netlistReader_instance->writeCircuitSpecificationInXmlFormat();
+		if (boost::filesystem::exists(boost::filesystem::path("netlist_surfaces.dat")))
+  		{
+		    netlistReader_instance->setFileName("netlist_surfaces.dat");
+		    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+		    // for converting old netlist specification file format to new (generally not important for actual simulations)
+    		netlistReader_instance->writeCircuitSpecificationInXmlFormat();
+		}
+		boost::filesystem::current_path(boost::filesystem::path(".."));
 
 		
 		std::vector<std::pair<int,boundary_condition_t>> surfaceList;

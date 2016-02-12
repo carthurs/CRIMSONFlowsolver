@@ -3,6 +3,7 @@
 
 #include "multidom.hxx"
 #include "fileReaders.hxx"
+#include "NetlistXmlReader.hxx"
 #include "boundaryConditionManager.hxx"
 #include "gtest/gtest.h"
 #include "common_c.h"
@@ -49,6 +50,7 @@
 	    // fortranPointerManager_instance->tearDown();
 	    // retrievedBoundaryConditions = 0;
 	    netlistReader_instance->Term();
+	    NetlistXmlReader::Term();
 	    boundaryConditionManager_instance->Term();
 	    fortranPointerManager_instance->tearDown();
 	    SimvascularGlobalArrayTransfer::Get()->tearDown();

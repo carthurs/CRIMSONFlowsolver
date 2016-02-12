@@ -948,15 +948,18 @@ void boundaryConditionManager::createControlSystems()
   if (m_numLoopClosingNetlistCircuits > 0)
   {
     // Get the reader for the closed loop system
-    NetlistDownstreamCircuitReader* downstreamNetlistReader_instance = NetlistDownstreamCircuitReader::Instance();
+    // NetlistDownstreamCircuitReader* downstreamNetlistReader_instance = NetlistDownstreamCircuitReader::Instance();
+    NetlistDownstreamXmlReader* downstreamNetlistReader_instance = NetlistDownstreamXmlReader::Instance();
 
     // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
     // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
-    std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
+    // std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
+    std::map<int, std::map<int,parameter_controller_t>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
 
     // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
     // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();
-    std::vector<std::map<int,parameter_controller_t>> mapsOfNodeControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfNodalControlTypesForEachSurface();
+    // std::vector<std::map<int,parameter_controller_t>> mapsOfNodeControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfNodalControlTypesForEachSurface();
+    std::map<int, std::map<int,parameter_controller_t>> mapsOfNodeControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfNodalControlTypesForEachSurface();
 
     for (auto loopClosingCircuit = m_netlistDownstreamLoopClosingSubsections.begin(); loopClosingCircuit != m_netlistDownstreamLoopClosingSubsections.end(); loopClosingCircuit++)
     {

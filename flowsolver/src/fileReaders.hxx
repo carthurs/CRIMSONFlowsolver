@@ -15,6 +15,8 @@
 #include "debuggingToolsForCpp.hxx"
 #include "datatypesInCpp.hxx"
 #include "customCRIMSONContainers.hxx"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 class abstractFileReader
 {
@@ -287,6 +289,8 @@ private:
 	std::vector<double> intramyocardialCapacitorTopPressure;
 };
 
+using boost::property_tree::ptree;
+
 class NetlistReader : public abstractMultipleSurfaceFileReader
 {
 public:
@@ -336,7 +340,7 @@ public:
 	std::map<int,std::string> getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const;
 	std::map<int,std::string> getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const;
 
-	void writeCircuitSpecificationInXmlFormat() const;
+	void writeCircuitSpecificationInXmlFormat();
 
 protected:
 	int m_indexOfNetlistCurrentlyBeingReadInFile;
@@ -353,6 +357,11 @@ protected:
 	void readPrescribedFlowTypes();
 	void readInitialPressures();
 	void readControlSystemPrescriptions();
+
+	void generateBasicPropertyTreeForBoundaryConditionCircuits();
+	void writePropertyTreeToDisk(const std::string fileName) const;
+
+	ptree m_propertyTreeRepresentationOfCircuitData;
 
 	std::vector<std::vector<circuit_component_t>> m_componentTypes; // the data in here will be the stripped first column of the netlist, identifying each line of circuitData as being r=resistor, c=capacitor, etc.
 	std::vector<std::vector<int>> m_componentStartNodes;
@@ -383,14 +392,14 @@ protected:
 	std::vector<std::map<int,std::string>> m_userDefinedComponentControllersAndPythonNames;
 	std::vector<std::map<int,std::string>> m_userDefinedNodeControllersAndPythonNames;
 
+	int m_numberOfNetlistSurfacesInDatFile;
+
 	NetlistReader()
 	{
 	}
 private:
 
 	static NetlistReader* instance;
-
-	int m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
 
 	std::vector<int> m_indicesOfNodesAt3DInterface;
 
@@ -419,6 +428,8 @@ public:
 
 	void readAndSplitMultiSurfaceInputFile();
 
+	void writeDownstreamCircuitSpecificationInXmlFormat();
+
 	int getNumberOfBoundaryConditionsConnectedTo(const int downstreamCircuitIndex) const;
 	std::vector<int> getConnectedCircuitSurfaceIndices(const int downstreamCircuitIndex) const;
 	std::vector<int> getLocalBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
@@ -431,6 +442,7 @@ private:
 	int getNumberOfNetlistSurfaces();
 	void readBoundaryConditionConnectivity();
 	void checkForBadCircuitDesign();
+	void addUpstreamConnectivityInfoToPropertyTree();
 
 	std::vector<int> m_numberOfBoundaryConditionsConnectedTo;
 	std::vector<std::vector<int>> m_connectedCircuitSurfaceIndices;

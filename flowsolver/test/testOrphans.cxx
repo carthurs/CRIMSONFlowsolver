@@ -29,8 +29,11 @@ TEST_F(testOrphans, checkNetlistDetectsBad3DInterfaceComponentOrientation) {
 
   // Setup the netlist reader:
   netlistReader_instance = NetlistReader::Instance();
-  netlistReader_instance->setFileName("netlist_surfaces_bad3DInterfaceComponentOrientation.dat");
-  netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+  // if (boost::filesystem::exists(boost::filesystem::path("netlist_surfaces_bad3DInterfaceComponentOrientation.dat")))
+  // {
+    netlistReader_instance->setFileName("netlist_surfaces_bad3DInterfaceComponentOrientation.dat");
+    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+  // }
   // for converting old netlist specification file format to new (generally not important for actual simulations)
   netlistReader_instance->writeCircuitSpecificationInXmlFormat();
 
@@ -64,10 +67,13 @@ TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
 
   // Setup the netlist reader:
   netlistReader_instance = NetlistReader::Instance();
+  // if (boost::filesystem::exists(boost::filesystem::path("netlist_surfaces_badComponentAt3DInterface.dat")))
+  // {
+    netlistReader_instance->setFileName("netlist_surfaces_badComponentAt3DInterface.dat");
+    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+  // }
   // for converting old netlist specification file format to new (generally not important for actual simulations)
   netlistReader_instance->writeCircuitSpecificationInXmlFormat();
-  netlistReader_instance->setFileName("netlist_surfaces_badComponentAt3DInterface.dat");
-  netlistReader_instance->readAndSplitMultiSurfaceInputFile();
 
   std::vector<std::pair<int,boundary_condition_t>> surfaceList;
   surfaceList.clear();

@@ -166,8 +166,11 @@ TEST_F(testFileReaders, checkHistFileReader) {
 
 TEST_F(testFileReaders, checkNetlistReader) {
   NetlistReader* netlistReader_instance = NetlistReader::Instance();
-  netlistReader_instance->setFileName("netlist_surfaces.dat");
-  netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+  if (boost::filesystem::exists(boost::filesystem::path("netlist_surfaces.dat")))
+  {
+    netlistReader_instance->setFileName("netlist_surfaces.dat");
+    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+  }
 
   {
     std::vector<double> returnedVectorOfDoubles;
@@ -309,7 +312,10 @@ TEST_F(testFileReaders, checkNetlistReader) {
 TEST_F(testFileReaders, checkNetlistDownstreamCircuitReader)
 {
   NetlistDownstreamCircuitReader* downstreamReader_instance = NetlistDownstreamCircuitReader::Instance();
-  downstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
+  if (boost::filesystem::exists(boost::filesystem::path("netlist_closed_loop_downstream.dat")))
+  {
+    downstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
+  }
   downstreamReader_instance->readAndSplitMultiSurfaceInputFile();
 
   {

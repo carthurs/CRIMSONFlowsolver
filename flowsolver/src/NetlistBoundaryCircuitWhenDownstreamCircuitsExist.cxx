@@ -5,7 +5,8 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::initialiseCircuit()
 {
     // Discover which pressure nodes don't need Kirchoff law applications yet, because such laws will be applied later
     // once this circuit is combined with the downstreamCircuit to make a (closed loop)-type boundary circuit.
-    m_pressureNodesWhichConnectToDownstreamCircuits = NetlistDownstreamCircuitReader::Instance()->getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(m_surfaceIndex);
+    // m_pressureNodesWhichConnectToDownstreamCircuits = NetlistDownstreamCircuitReader::Instance()->getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(m_surfaceIndex);
+    m_pressureNodesWhichConnectToDownstreamCircuits = NetlistDownstreamXmlReader::Instance()->getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(m_surfaceIndex);
     m_numberOfNodesConnectingToAnotherCircuit = m_pressureNodesWhichConnectToDownstreamCircuits.size();
 
     // This function exists just so we can modify what initialiseCircuit does in subclasses without repeating code.

@@ -1,5 +1,6 @@
 #include "pureZeroDDriver.hxx"
 #include "fileIOHelpers.hxx"
+#include "NetlistXmlReader.hxx"
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
@@ -158,6 +159,8 @@ void PureZeroDDriver::iter_finalize()
 
 void PureZeroDDriver::finalize()
 {
+	NetlistXmlReader::Term();
+	NetlistDownstreamXmlReader::Term();
 	delete[] mp_interfaceFlowsToBeReadByBoundaryConditions;
 	delete[] mp_interfacePressuresToBeReadByBoundaryConditions;
 

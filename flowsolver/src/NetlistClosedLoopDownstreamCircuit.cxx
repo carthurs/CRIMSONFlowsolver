@@ -8,7 +8,8 @@ void NetlistClosedLoopDownstreamCircuit::initialiseCircuit()
 {
     // Discover which pressure nodes don't need Kirchoff law applications yet, because such laws will be applied later
     // once this circuit is combined with the upstream boundary conditions to make a (closed loop)-type boundary circuit.
-    std::vector<int> nodesConnectingToBoundaryCircuits = NetlistDownstreamCircuitReader::Instance()->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
+    // std::vector<int> nodesConnectingToBoundaryCircuits = NetlistDownstreamCircuitReader::Instance()->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
+    std::vector<int> nodesConnectingToBoundaryCircuits = NetlistDownstreamXmlReader::Instance()->getLocalBoundaryConditionInterfaceNodes(m_downstreamCircuitIndex);
     // Convert the vector to a set, which is more convenient for checking membership:
     for (auto node = nodesConnectingToBoundaryCircuits.begin(); node != nodesConnectingToBoundaryCircuits.end(); node++)
     {

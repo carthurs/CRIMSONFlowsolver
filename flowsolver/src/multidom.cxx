@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include "fileReaders.hxx"
 #include "boundaryConditionManager.hxx"
+#include <boost/filesystem.hpp>
 
 
 void multidom_initialise(){
@@ -59,8 +60,11 @@ void multidom_initialise(){
   if (boundaryConditionManager_instance->getNumberOfNetlistSurfaces() > 0)
   {
     NetlistReader* netlistReader_instance = NetlistReader::Instance();
-    netlistReader_instance->setFileName("netlist_surfaces.dat");
-    netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+    if (boost::filesystem::exists(boost::filesystem::path("netlist_surfaces.dat")))
+    {
+      netlistReader_instance->setFileName("netlist_surfaces.dat");
+      netlistReader_instance->readAndSplitMultiSurfaceInputFile();
+    }
 
     // for converting old netlist specification file format to new (generally not important for actual simulations)
     netlistReader_instance->writeCircuitSpecificationInXmlFormat();
@@ -69,8 +73,14 @@ void multidom_initialise(){
   if (boundaryConditionManager_instance->getNumberOfDownsreamClosedLoopCircuits() > 0)
   {
     NetlistReader* closedLoopDownstreamReader_instance = NetlistDownstreamCircuitReader::Instance();
-    closedLoopDownstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
-    closedLoopDownstreamReader_instance->readAndSplitMultiSurfaceInputFile();
+    if (boost::filesystem::exists(boost::filesystem::path("netlist_closed_loop_downstream.dat")))
+    {
+      closedLoopDownstreamReader_instance->setFileName("netlist_closed_loop_downstream.dat");
+      closedLoopDownstreamReader_instance->readAndSplitMultiSurfaceInputFile();
+      // for converting old netlist specification file format to new (generally not important for actual simulations)
+      NetlistDownstreamCircuitReader* downcastDownstreamCircuitReader = static_cast<NetlistDownstreamCircuitReader*> (closedLoopDownstreamReader_instance);
+      downcastDownstreamCircuitReader->writeDownstreamCircuitSpecificationInXmlFormat();
+    }
   }
 
   // Assemble the list of global surface numbers and types. This will be used

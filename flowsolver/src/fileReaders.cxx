@@ -3,11 +3,10 @@
 #include "common_c.h"
 #include "datatypesInCpp.hxx"
 #include <iterator>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 #include "mpi.h"
 #include "indexShifters.hxx"
 #include "NetlistXmlReader.hxx"
+#include <boost/filesystem.hpp>
 
 rcrtReader* rcrtReader::instance = 0;
 controlledCoronaryReader* controlledCoronaryReader::instance = 0;
@@ -446,7 +445,7 @@ void NetlistReader::readAndSplitMultiSurfaceInputFile()
 
 	}
 
-	m_numberOfNetlistSurfacesIn_netlist_surfacesdat = m_indexOfNetlistCurrentlyBeingReadInFile;
+	m_numberOfNetlistSurfacesInDatFile = m_indexOfNetlistCurrentlyBeingReadInFile;
 
 	m_fileHasBeenRead = true;
 }
@@ -723,13 +722,31 @@ void NetlistReader::readControlSystemPrescriptions()
 
 // This is designed only for use in converting old-format netlist_surfaces.dat into 
 // the new netlist_surfaces.xml format
-void NetlistReader::writeCircuitSpecificationInXmlFormat() const
+void NetlistReader::writeCircuitSpecificationInXmlFormat()
 {
-	using boost::property_tree::ptree;
-	ptree pt;
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	if (rank==0)
+	{
+		boost::filesystem::path xmlFilePath("netlist_surfaces.xml");
+		// Write an xml version of this file if it has not been converted yet:
+		if (!boost::filesystem::exists(xmlFilePath))
+		{
+			//in this case, there must be a netlist_surfaces.dat to convert to xml:
+			if (!boost::filesystem::exists(boost::filesystem::path("netlist_surfaces.dat")))
+			{
+				throw std::runtime_error("EE: No netlist_surfaces.dat or netlist_surfaces.xml found.");
+			}
+			generateBasicPropertyTreeForBoundaryConditionCircuits();
+			writePropertyTreeToDisk("netlist_surfaces");
+		}
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+}
 
-
-	for (int circuitIndex = 0; circuitIndex < m_numberOfNetlistSurfacesIn_netlist_surfacesdat; circuitIndex++)
+void NetlistReader::generateBasicPropertyTreeForBoundaryConditionCircuits()
+{
+	for (int circuitIndex = 0; circuitIndex < m_numberOfNetlistSurfacesInDatFile; circuitIndex++)
 	{
 		ptree currentCircuit;
 		currentCircuit.put("circuitIndex", toOneIndexing(circuitIndex));
@@ -758,7 +775,12 @@ void NetlistReader::writeCircuitSpecificationInXmlFormat() const
 			{
 				if (m_listOfPrescribedFlows.at(circuitIndex).at(indexAmongstPrescribedFlowComponents) == toOneIndexing(componentIndex))
 				{
-					currentComponent.put("prescribedFlowType", NetlistXmlReader::getXmlFlowPrescritpionNameFromFlowPrescriptionType(m_typeOfPrescribedFlows.at(circuitIndex).at(indexAmongstPrescribedFlowComponents)));
+					circuit_component_flow_prescription_t flowPrescriptionType = m_typeOfPrescribedFlows.at(circuitIndex).at(indexAmongstPrescribedFlowComponents);
+					currentComponent.put("prescribedFlowType", NetlistXmlReader::getXmlFlowPrescritpionNameFromFlowPrescriptionType(flowPrescriptionType));
+					if (flowPrescriptionType == Flow_Fixed)
+					{
+						currentComponent.put("prescribedFlowValue", getValueOfPrescribedFlows().at(circuitIndex).at(indexAmongstPrescribedFlowComponents));
+					}
 				}
 			}
 
@@ -791,9 +813,14 @@ void NetlistReader::writeCircuitSpecificationInXmlFormat() const
 			ptree currentNode;
 			currentNode.put("index", toOneIndexing(nodeIndex));
 			currentNode.put("initialPressure", m_initialPressures.at(circuitIndex).at(toOneIndexing(nodeIndex)));
-			if (toOneIndexing(nodeIndex) == m_indicesOfNodesAt3DInterface.at(circuitIndex))
+
+			bool thisIsNotADownstreamLoopClosingCircuit = (m_indicesOfNodesAt3DInterface.size() > 0);
+			if (thisIsNotADownstreamLoopClosingCircuit)
 			{
-				currentNode.put("isAt3DInterface", "true");
+				if (toOneIndexing(nodeIndex) == m_indicesOfNodesAt3DInterface.at(circuitIndex))
+				{
+					currentNode.put("isAt3DInterface", "true");
+				}
 			}
 
 			for (int indexAmongstPrescribedPressureNodes = 0; indexAmongstPrescribedPressureNodes < m_numberOfPrescribedPressures.at(circuitIndex); indexAmongstPrescribedPressureNodes++)
@@ -832,20 +859,28 @@ void NetlistReader::writeCircuitSpecificationInXmlFormat() const
 			currentCircuit.add_child("nodes.node", currentNode);
 		}
 
-
-		pt.add_child("netlistCircuits.circuit", currentCircuit);
+		m_propertyTreeRepresentationOfCircuitData.add_child("netlistCircuits.circuit", currentCircuit);
 	}
 
-	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	if (rank==0)
-	{
-		// settings to indent the xml properly:
-		boost::property_tree::xml_parser::xml_writer_settings<std::string> settings('\t', 1);
-		write_xml("../netlist_surfaces.xml", pt, std::locale(), settings); // write into launch folder for future use
-		write_xml("netlist_surfaces.xml", pt, std::locale(), settings); // write into the procs case folder
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void NetlistReader::writePropertyTreeToDisk(const std::string fileNameWithoutExtension) const
+{
+	std::string filenameAsXml = fileNameWithoutExtension + ".xml";
+	boost::filesystem::path xmlFilePath(filenameAsXml);
+	// Write an xml version of this file if it has not been converted yet:
+	// settings to indent the xml properly:
+	boost::property_tree::xml_parser::xml_writer_settings<std::string> settings('\t', 1);
+	write_xml("../"+filenameAsXml, m_propertyTreeRepresentationOfCircuitData, std::locale(), settings); // write into launch folder for future use
+	write_xml(filenameAsXml, m_propertyTreeRepresentationOfCircuitData, std::locale(), settings); // write into the procs case folder
+
+	// Move the old .dat file to a folder, as it wont be needed any more:
+	boost::filesystem::path oldDatFilesDirectory("../netlistDatFiles_deprecated");
+	boost::filesystem::create_directory(oldDatFilesDirectory);
+	std::string filenameAsDat = fileNameWithoutExtension + ".dat";
+	boost::filesystem::path currentDatFilePath("../"+filenameAsDat);
+	boost::filesystem::path deprecatedDatFilePath = oldDatFilesDirectory /= boost::filesystem::path(filenameAsDat);
+	boost::filesystem::rename(currentDatFilePath, deprecatedDatFilePath);
 }
 
 std::map<int,std::string> NetlistReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
@@ -979,7 +1014,7 @@ std::vector<std::map<int,parameter_controller_t>>& NetlistReader::getMapsOfNodal
 int NetlistReader::getNumberOfNetlistSurfaces()
 {
 	assert(m_fileHasBeenRead);
-	return m_numberOfNetlistSurfacesIn_netlist_surfacesdat;
+	return m_numberOfNetlistSurfacesInDatFile;
 }
 
 void NetlistDownstreamCircuitReader::readAndSplitMultiSurfaceInputFile()
@@ -1007,6 +1042,8 @@ void NetlistDownstreamCircuitReader::readAndSplitMultiSurfaceInputFile()
 	}
 
 	checkForBadCircuitDesign();
+
+	m_numberOfNetlistSurfacesInDatFile = m_indexOfNetlistCurrentlyBeingReadInFile;
 
 	m_fileHasBeenRead = true;
 }
@@ -1134,4 +1171,51 @@ std::vector<int> NetlistDownstreamCircuitReader::getIndicesOfNodesAt3DInterface(
 int NetlistDownstreamCircuitReader::getNumberOfNetlistSurfaces()
 {
 	throw std::logic_error("Method getNumberOfNetlistSurfaces() should not be called on the NetlistDownstreamCircuitReader, as it has no surfaces.");
+}
+
+void NetlistDownstreamCircuitReader::writeDownstreamCircuitSpecificationInXmlFormat()
+{
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	if (rank==0)
+	{
+		boost::filesystem::path xmlFilePath("netlist_closed_loop_downstream.xml");
+		// Write an xml version of this file if it has not been converted yet:
+		if (!boost::filesystem::exists(xmlFilePath))
+		{
+			//in this case, there must be a netlist_surfaces.dat to convert to xml:
+			if (!boost::filesystem::exists(boost::filesystem::path("netlist_closed_loop_downstream.dat")))
+			{
+				throw std::runtime_error("EE: No netlist_closed_loop_downstream.dat or netlist_closed_loop_downstream.xml found.");
+			}
+			generateBasicPropertyTreeForBoundaryConditionCircuits();
+			addUpstreamConnectivityInfoToPropertyTree();
+
+			writePropertyTreeToDisk("netlist_closed_loop_downstream");
+		}
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void NetlistDownstreamCircuitReader::addUpstreamConnectivityInfoToPropertyTree()
+{
+	for (auto& circuit : m_propertyTreeRepresentationOfCircuitData.get_child("netlistCircuits"))
+	{
+		int currentDownstreamCircuitIndex = toZeroIndexing(circuit.second.get<int>("circuitIndex"));
+		for (auto& node : circuit.second.get_child("nodes"))
+		{
+			int currentNodeIndex = node.second.get<int>("index");
+			// see if we have any connectivity data to write for this node:
+			for (int indexAmongstUpstreamConnectionsForThisDownstreamCircuit = 0; indexAmongstUpstreamConnectionsForThisDownstreamCircuit < m_localBoundaryConditionInterfaceNodes.at(currentDownstreamCircuitIndex).size(); indexAmongstUpstreamConnectionsForThisDownstreamCircuit++)
+			{
+				int localInterfaceNodeIndex = m_localBoundaryConditionInterfaceNodes.at(currentDownstreamCircuitIndex).at(indexAmongstUpstreamConnectionsForThisDownstreamCircuit);
+				if (currentNodeIndex == localInterfaceNodeIndex)
+				{
+					auto& connectionSubtree = node.second.add_child("upstreamConnectivity.connection", ptree());
+					connectionSubtree.put("upstreamCircuitSurfaceIndex", m_connectedCircuitSurfaceIndices.at(currentDownstreamCircuitIndex).at(indexAmongstUpstreamConnectionsForThisDownstreamCircuit));
+					connectionSubtree.put("connectsToUpstreamNode", m_remoteBoundaryConditionInterfaceNodes.at(currentDownstreamCircuitIndex).at(indexAmongstUpstreamConnectionsForThisDownstreamCircuit));
+				}
+			}
+		}
+	}
 }

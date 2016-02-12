@@ -147,6 +147,7 @@ public:
 	const std::vector<int>& getLocalBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
 	const std::vector<int>& getRemoteBoundaryConditionInterfaceNodes(const int downstreamCircuitIndex) const;
 	const std::set<int> getSetOfNodesInBoundaryConditionWhichConnectToDownstreamCircuit(const int boundaryConditionIndex) const; // boundaryConditionIndex here should be as in the solver.inp.
+	void writeDownstreamCircuitSpecificationInXmlFormat() const;
 private:
 	
 	static NetlistDownstreamXmlReader* msp_downstreamReaderInstance;
@@ -154,7 +155,12 @@ private:
 	NetlistDownstreamXmlReader(const std::string fileName)
 	: NetlistXmlReader(fileName)
 	{
-		initialise_downstream();
+		try {
+			initialise_downstream();
+		} catch (const std::exception& e) {
+		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+		    throw e;
+		}
 	}
 
 	void initialise_downstream()

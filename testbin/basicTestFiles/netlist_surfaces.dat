@@ -1,0 +1,234 @@
+# List of components in a format similar to that for netlist.
+# Hash-commented lines are ignored.
+### Begin first netlist boundary condition model
+# Number of Components
+3
+# Component 1 type (resistor here):
+r
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2
+58.43089e0
+# Component 2 type (capacitor here):
+c
+# Component 2 details:
+2
+3 
+0.001278473e0
+# Component 3 type:
+r
+# Component 3 details:
+2
+4
+1600.0e0
+# Number of prescribed pressure nodes:
+2
+# Indices of nodes with prescribed pressures:
+3
+4
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.01e0
+0.11e0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.0e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+4
+# Initial pressures at the pressure nodes:
+1 206663.0e0
+2 206663.1e0
+3 0.0e0
+4 0.1e0
+# Index of node at 3D interface:
+1
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
+######
+### Begin second netlist boundary condition model
+######
+# Number of Components
+5
+# Component 1 type (resistor here):
+r
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+3
+2 
+0.001278473e1
+# Component 2 type (capacitor here):
+c
+# Component 2 details:
+1
+2
+60.43089e1
+# Component 3 type:
+t
+# Component 3 details:
+2
+4
+1600.0e1 130000.0
+# component 4 type:
+i
+# component 4 details:
+4
+5
+1e-4
+# component 5 type:
+v
+# component 5 details:
+4
+6
+1e2 140000.0
+# Number of prescribed pressure nodes:
+4
+# Indices of nodes with prescribed pressures:
+3
+4
+5
+6
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+1.1e0
+1.2e0
+1.3e0
+1.4e0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+f
+f
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1.1e0
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+6
+# Initial pressures at the pressure nodes:
+1 106663.0e0
+2 106663.1e0
+3 106663.2e0
+4 1.0e0
+5 1.1e0
+6 1.2e0
+# Index of node at 3D interface:
+3
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
+### End second netlist boundary condition model
+######
+### Begin third netlist boundary condition model
+######
+# Number of Components
+3
+# Component 1 type (resistor here):
+r
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2 
+10.0
+# Component 2 type (capacitor here):
+c
+# Component 2 details:
+2
+3
+1e-5
+# Component 3 type (diode here):
+d
+# Component 3 details:
+2
+4
+0.1
+# Number of prescribed pressure nodes:
+2
+# Indices of nodes with prescribed pressures:
+3
+4
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+0.0
+1000000.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+4
+# Initial pressures at the pressure nodes:
+1 106663.0e0
+2 106663.1e0
+3 0.0
+4 1000000.0
+# Index of node at 3D interface:
+1
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
+### End third netlist boundary condition model
+######
+### Begin fourth netlist boundary condition model
+######
+# Number of Components
+1
+# Component 1 type (diode here):
+d
+# Component 1 details (start-node index, end-node index, associated parameter (resistance for resistors, capacitance for capacitors):
+1
+2 
+0.1
+# Number of prescribed pressure nodes:
+1
+# Indices of nodes with prescribed pressures:
+2
+# Prescribed pressure values / scalings (dependent on types, given by next component):
+1000000.0
+# Prescribed pressure types (f=fixed to value given in previous line, l=left ventricular pressure, scaled by value given in previous line):
+f
+# Number of prescribed flows:
+1
+# Indices of components with prescribed flows
+1
+# Values of prescribed flows (3D interface set to -1; this value is irrelevant and unused by the code):
+-1
+# Types of prescribed flows (t=threeD domain interface)
+t
+# Number of pressure nodes (including everything- 3D interface, zero-pressure points, internal nodes, etc.):
+2
+# Initial pressures at the pressure nodes:
+1 106663.0e0
+2 1000000.0
+# Index of node at 3D interface:
+1
+# Number of components with control
+0
+# List of components with control, with the type of control
+# number of nodes with control
+0
+# List of nodes with control, with the type of control (l = LV elastance)
+### End fourth netlist boundary condition model

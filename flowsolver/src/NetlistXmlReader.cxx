@@ -96,8 +96,8 @@ void NetlistXmlReader::gatherComponentControllerNames()
 				else
 				{
 					std::stringstream error;
-					error << "EE: Unknown component control type found during read of netlist surface " << toOneIndexing(circuitIndex) << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-					error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+					error << "EE: Unknown component control type found during read of netlist surface " << toOneIndexing(circuitIndex) << ", as indexed by order of appearance in netlist_surfaces.xml." << std::endl;
+					error << "This may just indicate a malformed netlist_surfaces.xml" << std::endl;
 					throw std::runtime_error(error.str());
 				}
 				componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );

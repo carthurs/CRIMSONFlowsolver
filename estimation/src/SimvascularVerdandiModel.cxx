@@ -286,6 +286,22 @@ void SimvascularVerdandiModel::Initialize() {
 
 }
 
+void SimvascularVerdandiModel::setupNetlistFiltering() {
+	std::map<std::string, double*> filteredNetlistParameters = gat->getRawPointersToNetlistParameters();
+	for (std::pair<std::string, double*> filteredParameter : filteredNetlistParameters)
+	{
+		std::string filteredParameterName = filteredParameter.first;
+		double* filteredParameterPointer = filteredParameter.second;
+		
+		SimvascularAugStatePart state_part;
+		state_part.Initialize(filteredParameterName.c_str());
+		state_part.addDataPointer(filteredParameterPointer);
+		state_part.addIsEstimated(1);
+		shared_parts_.push_back(state_part);
+	}
+	
+}
+
 
 /*!
  *    The purpose of this function is to
@@ -297,8 +313,9 @@ void SimvascularVerdandiModel::Initialize() {
  */
 void SimvascularVerdandiModel::BuildAugmentedState() {
 
-	SimvascularAugStatePart state_part;
+	setupNetlistFiltering();
 
+	SimvascularAugStatePart state_part;
 
 	// velocity and pressure field
 	// here we are loop through the nodes only on this processor, i.e. unique/not shared

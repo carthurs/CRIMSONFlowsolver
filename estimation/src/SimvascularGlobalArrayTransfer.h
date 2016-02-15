@@ -31,6 +31,9 @@ public:
 	void setPointerToRCRSurfacePressure(double* pointerToSurfacePressure, const int indexAmongstRCRs);
 	void setSynchronisationDisabled(const std::string& keyName);
 
+	void setPointerToFilteredNetlistParameter(double* pointerToFilteredParameter, const std::string parameterNameTag);
+	const std::map<std::string, double*> getRawPointersToNetlistParameters() const;
+
 	//! vector storing the block sizes for each element block
 	std::vector <int> global_npro;
 
@@ -169,7 +172,7 @@ private:
 	// expects.
 	//
 	// To get around this, whenever we need to access pointerMapDP_, we first
-	// synchronise all its data with the actual boudnary conditions, using the
+	// synchronise all its data with the actual boundary conditions, using the
 	// pointers stored in actualDataPointerMap_.
 	//
 	// This is untidy, but allows us to interface with the existing code.
@@ -179,6 +182,10 @@ private:
 	// get rid of the Fortran boundary conditions entriely.
 	std::map<std::string, std::vector<double*>> actualDataPointerMap_;
 	std::map<std::string, bool> synchronisationEnabled_;
+
+	// For the netlists, we can be tidier and work with just one array of pointers
+	// to the actual data:
+	std::map<std::string, double*> netlistActualDataPointerMap_;
 
 	static SimvascularGlobalArrayTransfer* instance;
 };

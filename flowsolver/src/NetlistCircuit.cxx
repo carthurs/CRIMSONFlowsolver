@@ -3,6 +3,7 @@
 #include "fileWriters.hxx"
 #include <boost/make_shared.hpp>
 #include "indexShifters.hxx"
+#include "SimvascularGlobalArrayTransfer.h"
 
 void NetlistCircuit::initialisePetscArrayNames()
 {
@@ -170,6 +171,8 @@ void NetlistCircuit::createBasicCircuitDescription()
     std::vector<circuit_component_flow_prescription_t> retrievedTypeOfPrescribedFlows = mp_netlistXmlReader->getTypeOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
     std::vector<double> retrievedValueOfPrescribedFlows = mp_netlistXmlReader->getValueOfPrescribedFlows().at(m_IndexOfThisNetlistLPNInInputFile);
     std::map<int,double> retrievedInitialPressures = mp_netlistXmlReader->getInitialPressures().at(m_IndexOfThisNetlistLPNInInputFile);
+
+    std::set<int> retrievedKalmanFilteredComponentIndices = mp_netlistXmlReader->getKalmanFilteredComponentIndicesByCircuitIndex(m_IndexOfThisNetlistLPNInInputFile);
     
     // Loop over the components, assigning them (and their nodes) the appropriate properties to give the fully-described circuit:
     for (auto component = mp_circuitData->components.begin(); component != mp_circuitData->components.end(); component++)
@@ -237,6 +240,20 @@ void NetlistCircuit::createBasicCircuitDescription()
 
         (*component)->startNode->setPressure(retrievedInitialPressures.at((*component)->startNode->getIndex()));
         (*component)->endNode->setPressure(retrievedInitialPressures.at((*component)->endNode->getIndex()));
+
+
+        // Kalman filtering setup
+        {
+            SimvascularGlobalArrayTransfer* gat = SimvascularGlobalArrayTransfer::Get();
+            // see if the component's index is on the list of Kalman-filtered components:
+            if (retrievedKalmanFilteredComponentIndices.count((*component)->getIndex()) == 1)
+            {
+                std::stringstream componentNametagBuilder;
+                componentNametagBuilder << "circuit_" << m_surfaceIndex << "_component_" << (*component)->getIndex();
+
+                gat->setPointerToFilteredNetlistParameter((*component)->getParameterPointer(), componentNametagBuilder.str());
+            }
+        }
 
 
     }
@@ -1489,6 +1506,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
+            std::cout << "current resistor value: " << currentParameterValue << std::endl;
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
@@ -1526,6 +1544,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
+            std::cout << "current capacitor value: " << currentParameterValue << std::endl;
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,-alfi_delt/currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,nodeIndexToPressureHistoryNodeOrderingMap.at(startNode)+mp_circuitData->numberOfPressureNodes,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);

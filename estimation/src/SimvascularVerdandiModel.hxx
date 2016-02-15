@@ -291,6 +291,7 @@ private:
 	void initialiseFortranRCRFiltering();
 	void initialiseCppRCRFiltering();
 	void addParameterForEstimation(const char* parameterTypeName, const char* parameterArrayKeyInGlobalArrayTransfer, const int numberOfParametersToAdd, const int offsetOfPointerInArray, const int strideBetweenPointers, const std::vector<int> includeParameterFlag);
+	void setupNetlistFiltering();
 };
 
 

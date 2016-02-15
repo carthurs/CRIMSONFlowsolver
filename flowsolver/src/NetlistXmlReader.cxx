@@ -22,6 +22,7 @@ void NetlistXmlReader::parseReadData()
 	readPrescribedFlowComponents();
 	readInitialPressures();
 	readPrescribedPressureNodes();
+	readKalmanFilteringTags();
 }
 
 void NetlistXmlReader::gatherNodeIndicesAt3DInterface()
@@ -294,6 +295,25 @@ void NetlistXmlReader::readCircuitStructure()
 	}
 }
 
+void NetlistXmlReader::readKalmanFilteringTags()
+{
+	for (auto circuit : m_netlistDataFromFile.get_child("netlistCircuits"))
+	{
+		int circuitIndex = toZeroIndexing(circuit.second.get<int>("circuitIndex"));
+		std::set<int> indicesOfComponentsWithKalmanFilteringInPresentCircuit;
+
+		for (auto component : circuit.second.get_child("components"))
+		{
+			boost::optional<std::string> isKalmanFiltered = component.second.get_optional<std::string>("kalmanFiltered");
+			if (isKalmanFiltered && boost::iequals(*isKalmanFiltered, "true"))
+			{
+				indicesOfComponentsWithKalmanFilteringInPresentCircuit.insert(component.second.get<int>("index"));
+			}
+		}
+		m_listOfKalmanFilteredComponents.insert(std::make_pair(circuitIndex, indicesOfComponentsWithKalmanFilteringInPresentCircuit));
+	}
+}
+
 void NetlistXmlReader::readPrescribedFlowComponents()
 {
 	for (auto circuit : m_netlistDataFromFile.get_child("netlistCircuits"))
@@ -493,6 +513,11 @@ const std::vector<double> NetlistXmlReader::getComponentParameterValues(const in
 double NetlistXmlReader::getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const
 {
 	return m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile).at(componentIndexWithinNetlist).getInitialVolume();
+}
+
+const std::set<int>& NetlistXmlReader::getKalmanFilteredComponentIndicesByCircuitIndex(const int circuitIndex) const
+{
+	return m_listOfKalmanFilteredComponents.at(circuitIndex);
 }
 
 const std::map<int, std::vector<int>>& NetlistXmlReader::getListOfPrescribedFlows() const

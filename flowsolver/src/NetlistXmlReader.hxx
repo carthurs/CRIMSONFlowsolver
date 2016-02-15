@@ -46,6 +46,7 @@ public:
 	const std::map<int, std::vector<int>>& getComponentEndNodes() const;
 	const std::vector<double> getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const;
 	double getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const;
+	const std::set<int>& getKalmanFilteredComponentIndicesByCircuitIndex(const int circuitIndex) const;
 
 	const std::map<int, std::vector<int>>& getListOfPrescribedFlows() const;
 	const std::map<int, std::vector<double>>& getValueOfPrescribedFlows() const;
@@ -79,6 +80,7 @@ protected:
 	}
 
 	void parseReadData();
+	void readKalmanFilteringTags();
 	void gatherNodeIndicesAt3DInterface();
 	void gatherComponentControllerNames();
 	void gatherNodalControllerNames();
@@ -118,6 +120,7 @@ protected:
 	std::map<int, std::vector<int>> m_listOfPrescribedPressures;
 	std::map<int, std::vector<double>> m_valueOfPrescribedPressures;
 	std::map<int, std::vector<circuit_nodal_pressure_prescription_t>> m_typeOfPrescribedPressures;
+	std::map<int, std::set<int>> m_listOfKalmanFilteredComponents;
 };
 
 class NetlistDownstreamXmlReader : public NetlistXmlReader

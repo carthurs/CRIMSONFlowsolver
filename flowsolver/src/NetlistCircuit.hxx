@@ -62,7 +62,6 @@ public:
 		std::stringstream volumeFileNameBuilder;
 		volumeFileNameBuilder << "netlistVolumes_surface_" << m_surfaceIndex << ".dat";
 		m_VolumeHistoryFileName = volumeFileNameBuilder.str();
-
 	}
 
 	virtual void initialiseCircuit();

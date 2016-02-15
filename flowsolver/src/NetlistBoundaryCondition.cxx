@@ -139,3 +139,12 @@ bool NetlistBoundaryCondition::hasPrescribedFlowAcross3DInterface() const
 {
     return mp_NetlistCircuit->hasPrescribedFlowAcross3DInterface();
 }
+
+void NetlistBoundaryCondition::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber)
+{
+  std::cout << "(FIXME) netlist setting timestepNumber: " << timestepNumber << std::endl; // need to actually wind back all internal state variables too!
+  if (timestepNumber > 0) {
+    *flow_n_ptrs.at(0) = flow;
+    pressure_n = pressure;
+  }
+}

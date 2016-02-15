@@ -76,6 +76,17 @@ void SimvascularGlobalArrayTransfer::setupArraysForWindkesselFiltering()
 	}
 }
 
+// To support arbitrary Netlist component filtering:
+void SimvascularGlobalArrayTransfer::setPointerToFilteredNetlistParameter(double* pointerToFilteredParameter, const std::string parameterNameTag)
+{
+	netlistActualDataPointerMap_.insert(std::make_pair(parameterNameTag, pointerToFilteredParameter));
+}
+
+const std::map<std::string, double*> SimvascularGlobalArrayTransfer::getRawPointersToNetlistParameters() const
+{
+	return netlistActualDataPointerMap_;
+}
+
 void SimvascularGlobalArrayTransfer::setPointerToWindkesselProximalResistance(double* pointerToProximalResistance, const int indexAmongstRCRs)
 {
 	assert(m_numberOfRCRSurfacesHasBeenSet);

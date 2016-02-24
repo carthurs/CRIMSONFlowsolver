@@ -58,6 +58,8 @@ public:
 	bool hasPrescribedPressureAcross3DInterface() const;
 	bool hasPrescribedFlowAcross3DInterface() const;
 
+	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
+
 	~NetlistBoundaryCondition()
 	{
 		numberOfInitialisedNetlistLPNs--;

@@ -83,7 +83,7 @@ if (bop.MAKE_WITH_PRESOLVER==1):
 if (bop.MAKE_WITH_POSTSOLVER==1):
 	SConscript('./postsolver/src/SConscript',exports='env')
 if int(test):
-   SConscript('./gtest-1.7.0/src/SConscript',exports='env')
+   SConscript(bop.GOOGLETEST_TOP+'/src/SConscript',exports='env')
    SConscript('./flowsolver/test/SConscript',exports='env')
 
 # # Give the source files:

@@ -290,6 +290,7 @@ private:
 	void initialiseHeartModelFiltering();
 	void initialiseFortranRCRFiltering();
 	void initialiseCppRCRFiltering();
+	void initialiseNetlistFiltering();
 	void addParameterForEstimation(const char* parameterTypeName, const char* parameterArrayKeyInGlobalArrayTransfer, const int numberOfParametersToAdd, const int offsetOfPointerInArray, const int strideBetweenPointers, const std::vector<int> includeParameterFlag);
 	void setupNetlistFiltering();
 };

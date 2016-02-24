@@ -53,7 +53,7 @@ void boundaryConditionManager::setMasterControlScriptPresent(const int masterCon
   {
     m_masterControlScriptPresent = true;
   }
-  else
+    else
   {
     m_masterControlScriptPresent = false;
   }
@@ -236,7 +236,7 @@ void boundaryConditionManager::updateAllRCRS_Pressure_n1_withflow()
 {
   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
-    if (typeid(**iterator)==typeid(RCR))
+    if (typeid(**iterator)==typeid(RCR) || typeid(**iterator)==typeid(NetlistBoundaryCondition))
     {
       (*iterator)->updpressure_n1_withflow();
     }
@@ -561,6 +561,23 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_netlists();
+}
+
+std::vector<double*> boundaryConditionManager::getPointersToAllNetlistCapacitorNodalHistoryPressures() const
+{
+  std::vector<double*> capacitorNodalHistoryPressuresPointers;
+  for (auto boundaryCondition : m_boundaryConditions)
+  {
+    auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryCondition);
+    if (downcastNetlist != NULL)
+    {
+      std::vector<double*> nodalHistoryPressuresForThisNetlist = downcastNetlist->getCapacitorNodalHistoryPressurePointers();
+
+      // prepend the values for this Netlist to the vector of values from all Netlists that will be returned to the caller:
+      capacitorNodalHistoryPressuresPointers.insert(capacitorNodalHistoryPressuresPointers.begin(), nodalHistoryPressuresForThisNetlist.begin(), nodalHistoryPressuresForThisNetlist.end());
+    }
+  }
+  return capacitorNodalHistoryPressuresPointers;
 }
 
 

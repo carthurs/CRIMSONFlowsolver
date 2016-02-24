@@ -25,6 +25,9 @@ public:
 	// bool m_endNodeConnectsToDiode;
 	// boost::shared_ptr<CircuitPressureNode> endNodeIfNeighbouringDiodeExistsAndIsOpen;
 
+	boost::shared_ptr<CircuitPressureNode> getStartNode();
+	boost::shared_ptr<CircuitPressureNode> getEndNode();
+
 	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtStartNode;
 	std::vector<boost::weak_ptr<CircuitComponent>> neighbouringComponentsAtEndNode;
 
@@ -301,6 +304,7 @@ public:
 	boost::shared_ptr<CircuitPressureNode> getNodeByInputDataIndex(const int componentIndex);
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
+	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
 
 protected:
 	bool m_flowPermittedAcross3DInterface;

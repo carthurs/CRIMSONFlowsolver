@@ -131,6 +131,7 @@ void RCR::resetStateUsingKalmanFilteredEstimate(const double flow, const double 
 {
   std::cout << "rcr setting timestepNumber: " << timestepNumber << std::endl;
   if (timestepNumber > 0) {
+    // These values are used to specify the /history/ state of the model (i.e. P_{n-1} and Q_{n-1})
     *flow_n_ptrs.at(0) = flow;
     pressure_n = pressure;
   }

@@ -144,7 +144,18 @@ void NetlistBoundaryCondition::resetStateUsingKalmanFilteredEstimate(const doubl
 {
   std::cout << "(FIXME) netlist setting timestepNumber: " << timestepNumber << std::endl; // need to actually wind back all internal state variables too!
   if (timestepNumber > 0) {
+    // These values are used to specify the /history/ state of the model (i.e. P_{n-1} and Q_{n-1})
     *flow_n_ptrs.at(0) = flow;
     pressure_n = pressure;
+    *pressure_n_ptrs.at(0) = pressure;
+
+    // At this point, the filter has adjusted the parameters and the pressure/velocity fields (it does combined state-parameter estimation)
+    // This means that the starting point for the boundary condition state needs to be updated.
+
   }
+}
+
+std::vector<double*> NetlistBoundaryCondition::getCapacitorNodalHistoryPressurePointers() const
+{
+    return mp_NetlistCircuit->getCapacitorNodalHistoryPressurePointers();
 }

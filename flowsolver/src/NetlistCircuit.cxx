@@ -1806,12 +1806,12 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
     int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfVolumeTrackingPressureChambers;
     {
       int ll=0;
-      for (auto prescribedPressureNode=mp_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode!=mp_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
+      for (auto prescribedPressureNode = mp_circuitData->mapOfPrescribedPressureNodes.begin(); prescribedPressureNode != mp_circuitData->mapOfPrescribedPressureNodes.end(); prescribedPressureNode++ )
       {
         // Coming from 'f' for 'fixed' in the input data:
         if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_Fixed)
         {
-            errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,prescribedPressureNode->second->getPressure(),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);    
+            errFlag = VecSetValue(m_RHS, ll + tempIndexingShift, prescribedPressureNode->second->getPressure(), INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);    
         }
         // Coming from 'l' for 'left-ventricular' in the input data:
         else if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_LeftVentricular)
@@ -1844,46 +1844,6 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
       }
     }
 
-    // for (int ll=0; ll<mp_circuitData->numberOfPrescribedPressures; ll++)
-    // {
-    //    // 'f' for 'fixed'
-    //    if (mp_circuitData->typeOfPrescribedPressures.at(ll) == Pressure_Fixed)
-    //    {
-    //       errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,valueOfPrescribedPressures.at(ll),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    //    }
-    //    // 'l' for 'leftVentricular'
-    //    else if (subcircuitInputData.typeOfPrescribedPressures.at(ll) == Pressure_LeftVentricular)
-    //    {
-    //       std::cout << "this requires heartmodel. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
-    //       std::exit(1);
-    //       // if ((timestepNumber == 0) || (timestepNumber == 1)) // treat case with no known IM pressure yet
-    //       // {
-    //       //    P_IM_mid_lasttimestep = 5000; // \todo find a better way of doing this; maybe input this value from file...
-    //       //    P_IM_mid = 5000; // ... or set it based on the aortic valve state at simulation start
-    //       // }
-    //       // elseif (timestepNumber .eq. int(2)) then // treat case where only one IM pressure history point is known
-    //       //    P_IM_mid_lasttimestep = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber-1)
-    //       //    P_IM_mid = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber)
-    //       // else // get the previous intramyocardial pressure in the case where we have enough doata for this (see comment before start of "if" block)
-    //       //    P_IM_mid_lasttimestep = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber-1)
-    //       //    P_IM_mid = this%valueOfPrescribedPressures(ll,kk) * hrt%plv_hist(timestepNumber)
-    //       // end if
-
-    //       // errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,P_IM_mid,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    //       // int nn=0;
-    //       // for (auto iterator=listOfHistoryPressures.begin(); iterator!=listOfHistoryPressures.end(); iterator++, nn++)
-    //       // {
-    //       //    if (*iterator == listOfPrescribedPressures.at(ll))
-    //       //    {
-    //       //       historyPressuresInSubcircuit.at(*iterator) = P_IM_mid_lasttimestep;
-    //       //    }
-    //       // }
-    //    }
-    //    else
-    //    {
-    //         throw std::runtime_error("Unknown pressure prescription value in Netlist.");
-    //    }
-    // }
     // History Pressures
     tempIndexingShift += mp_circuitData->numberOfPrescribedPressures;
     // for(int ll=0; ll<m_numberOfHistoryPressures; ll++)
@@ -1899,12 +1859,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
                 lll++;
             }
         }
-        // for (auto iterator=listOfHistoryPressures.begin(); iterator!=listOfHistoryPressures.end(); iterator++)
-        // {
-        //     errFlag = VecSetValue(m_RHS,lll+tempIndexingShift,historyPressuresInSubcircuit.at(*iterator - 1),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-        // }
-        // lll++;
-      }
+    }
     // Prescribed Flows:
     tempIndexingShift += m_numberOfHistoryPressures;
     // columnIndexOf3DInterfaceFlowInLinearSystem.clear();
@@ -2057,29 +2012,6 @@ void NetlistCircuit::updateLPN(const int timestepNumber)
 
     // Get the updated volumes:
     giveComponentsTheirVolumesFromSolutionVector();
-
-    // for (int volumeIndex = indexShift; volumeIndex < indexShift + m_numberOfTrackedVolumes; volumeIndex++)
-    // {
-    //     errFlag = VecGetValues(m_solutionVector,getSingleValue,&volumeIndex,&volumesInSubcircuit[volumeIndex-indexShift]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-
-    //     VolumeTrackingComponent* currentPressureChamber = dynamic_cast<VolumeTrackingComponent*> (mp_circuitData->mapOfVolumeTrackingComponents.at(toOneIndexing(volumeIndex-indexShift)).get());
-    //     currentPressureChamber->setStoredVolume(volumesInSubcircuit[volumeIndex-indexShift]);
-    //     currentPressureChamber->passPressureToStartNode();
-    // }
-
-    // // Update the volumes in each VolumeTrackingComponent
-    // for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
-    // {
-    //   // detect the VolumeTrackingPressureChambers:
-    //   if (component->second->type == Component_VolumeTrackingPressureChamber)
-    //   {
-    //     VolumeTrackingComponent* currentPressureChamber = dynamic_cast<VolumeTrackingComponent*> (component->second.get());
-    //     currentPressureChamber->updateStoredVolume(alfi_delt);
-    //     currentPressureChamber->passPressureToStartNode();
-    //   }
-    // }
-
-    // write(*,*) 'discrepancy:', (-this%P_a(1) - this%pressuresInSubcircuit(2))/1.2862d5 - this%flowsInSubcircuit(1)
 }
 
 void NetlistCircuit::giveNodesTheirPressuresFromSolutionVector()
@@ -2091,17 +2023,17 @@ void NetlistCircuit::giveNodesTheirPressuresFromSolutionVector()
   // std::cout << "called giveNodesTheirPressuresFromSolutionVector" << std::endl;
 
   // Look the nodes, handing them their new pressures from the circuit linear system solve:
-  for (int ll=0; ll<mp_circuitData->numberOfPressureNodes; ll++)
+  for (int pressureNodeIndex=0; pressureNodeIndex<mp_circuitData->numberOfPressureNodes; pressureNodeIndex++)
   {
-      errFlag = VecGetValues(m_solutionVector,getSingleValue,&ll,&pressuresInSubcircuit[ll]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+      errFlag = VecGetValues(m_solutionVector,getSingleValue,&pressureNodeIndex,&pressuresInSubcircuit[pressureNodeIndex]); CHKERRABORT(PETSC_COMM_SELF,errFlag);
       // std::cout << "system matrix: " << m_surfaceIndex << std::endl;
       // MatView(m_systemMatrix,PETSC_VIEWER_STDOUT_WORLD);
       // std::cout << "m_RHS: " << std::endl;
       // VecView(m_RHS,PETSC_VIEWER_STDOUT_WORLD);
       // std::cout << "solution vec: " << std::endl;
       // VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD);
-      assert(!isnan(pressuresInSubcircuit[ll]));
-      mp_circuitData->mapOfPressureNodes.at(toOneIndexing(ll))->setPressure(pressuresInSubcircuit[ll]);
+      assert(!isnan(pressuresInSubcircuit[pressureNodeIndex]));
+      mp_circuitData->mapOfPressureNodes.at(toOneIndexing(pressureNodeIndex))->setPressure(pressuresInSubcircuit[pressureNodeIndex]);
       // std::cout << "just set pressure " << pressuresInSubcircuit[ll] << " at node " << ll << " of circuit " << m_surfaceIndex << std::endl;
   }
 }
@@ -2334,4 +2266,9 @@ bool NetlistCircuit::hasPrescribedPressureAcross3DInterface() const
 bool NetlistCircuit::hasPrescribedFlowAcross3DInterface() const
 {
     return mp_circuitData->hasPrescribedFlowAcrossInterface();
+}
+
+std::vector<double*> NetlistCircuit::getCapacitorNodalHistoryPressurePointers() const
+{
+    return mp_circuitData->getCapacitorNodalHistoryPressurePointers();
 }

@@ -1649,6 +1649,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     if (nrcractive) then
         call callCPPUpdateAllRCRS_Pressure_n1_withflow()
     end if
+    !call callCPPUpdateAllRCRS_Pressure_n1_withflow()
     !
     ! *** update flow and pressure history in the numerical RCR
     !

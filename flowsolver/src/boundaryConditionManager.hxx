@@ -74,6 +74,8 @@ class abstractBoundaryCondition;
     void finalizeLPNAtEndOfTimestep_controlledCoronary();
     void finalizeLPNAtEndOfTimestep_netlists();
 
+    std::vector<double*> getPointersToAllNetlistCapacitorNodalHistoryPressures() const;
+
     // void updateAllControlledCoronaryLPNs_Pressure_n1_withflow();
 
     // void setSurfacePressure_netlistLPNs(double* netlistSurfacePressures);

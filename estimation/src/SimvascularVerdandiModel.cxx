@@ -2,6 +2,7 @@
 #define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
 
 #include "SimvascularVerdandiModel.hxx"
+#include "boundaryConditionManager.hxx"
 
 //! Checks for existance of file
 /*!
@@ -313,8 +314,6 @@ void SimvascularVerdandiModel::setupNetlistFiltering() {
  */
 void SimvascularVerdandiModel::BuildAugmentedState() {
 
-	setupNetlistFiltering();
-
 	SimvascularAugStatePart state_part;
 
 	// velocity and pressure field
@@ -395,6 +394,8 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		state_part.Clear();
 	}
 
+	initialiseNetlistFiltering();
+
     // ***
     // *** now come the parameters, above are the variables required to restart the simulation, i.e. P^{t_{n}}, etc.
     // *** below are the estimated parameters, these have to be collected together
@@ -413,9 +414,9 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 	// for lumped parameter model parameters
 	if (nreduced_has_coupled_parameters_) {
-
 		initialiseFortranRCRFiltering();
 		// initialiseCppRCRFiltering();
+		setupNetlistFiltering();	
 
 		initialiseHeartModelFiltering();
 	}
@@ -564,6 +565,26 @@ void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
 		state_part.Clear();
 
 	}
+}
+
+// Adds the non-parameter LPN state values to the filtered state vector
+// (because the kalman filter does combined state-parameter estimation, this is necessary
+// despite the fact that we're not /estimating/ these internal netlist LPN state variables)
+void SimvascularVerdandiModel::initialiseNetlistFiltering()
+{
+	SimvascularAugStatePart state_part;
+	state_part.Initialize("NetlistCapacitorPressureNodes");
+	std::vector<double*> netlistCapacitorNodalHistoryPressurePointers = boundaryConditionManager::Instance()->getPointersToAllNetlistCapacitorNodalHistoryPressures();
+	for (auto nodalPressureSharedPointer : netlistCapacitorNodalHistoryPressurePointers)
+	{
+		std::cout << "In initialiseNetlistFiltering(), adding pointer: " << *(nodalPressureSharedPointer) << std::endl;
+		state_part.addDataPointer(nodalPressureSharedPointer);
+		// Annotate that these parameters are not to be estimated
+		// (they're included because they're part of the state that the filter needs to adjust when it generates Kalman filter particles)
+		state_part.addIsEstimated(0);
+	}
+	shared_parts_.push_back(state_part);
+	state_part.Clear();
 }
 
 void SimvascularVerdandiModel::initialiseHeartModelFiltering() 
@@ -895,10 +916,12 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 
 	if (rank_ == numProcs_ - 1)
 		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
-			//cout << it->getName() << endl;
 			for (std::size_t jj = 0; jj < it->getSize(); ++jj)
+			{
+				std::cout << " in GetSTate(): " << it->getName() << " value " << it->getData((int)jj) <<  std::endl;
 				duplicated_state_.SetBuffer( it->getDuplicatedStateIndex((int)jj),
 						                     it->getData((int)jj) );
+			}
 		}
 
 	duplicated_state_.Flush();
@@ -932,11 +955,14 @@ void SimvascularVerdandiModel::StateUpdated() {
 
 	if (rank_ == numProcs_ - 1) {
 		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		{
 			for (std::size_t jj = 0; jj < it->getSize(); jj++) {
+				std::cout << "in StateUpdated(): " << it->getName() << " value " << *it->getDataPointer((int)jj) << std::endl;
 				it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
 
 				tempArray[tcounter++] = *it->getDataPointer((int)jj);
 			}
+		}
 
 		// communicate values from the last processor to the other processors
 		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);

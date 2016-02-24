@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <stack>
 #include <sstream>
+#include <boost/make_shared.hpp>
 
 #include "common_c.h"
 
@@ -33,6 +34,16 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	// std::cout << "hasForwardFlow: " << hasForwardFlow << std::endl;
 
 	return (hasNonnegativePressureGradient || hasForwardFlow);
+}
+
+boost::shared_ptr<CircuitPressureNode> CircuitComponent::getStartNode()
+{
+	return startNode;
+}
+
+boost::shared_ptr<CircuitPressureNode> CircuitComponent::getEndNode()
+{
+	return endNode;
 }
 
 void CircuitData::rebuildCircuitMetadata()
@@ -843,6 +854,28 @@ std::vector<std::pair<int,double*>> CircuitData::getVolumeTrackingComponentInput
 	return returnValue;
 }
 
+std::vector<double*> CircuitData::getCapacitorNodalHistoryPressurePointers() const
+{
+	std::vector<double*> capacitorNodalHistoryPressurePointers;
+
+	for (auto componentMapEntry : mapOfComponents)
+	{
+		CircuitComponent component = *(componentMapEntry.second);
+		if (component.getType() == Component_Capacitor)
+		{
+			boost::shared_ptr<CircuitPressureNode> node = component.getStartNode();
+			// Fixed pressures should not be allowed to be varied by the Kalman filter
+			// (for which this method was written)
+			if (node->getPressurePrescriptionType() != Pressure_Fixed)
+			{
+				capacitorNodalHistoryPressurePointers.push_back(node->getPressurePointer());
+			}
+			
+		}
+	}
+	return capacitorNodalHistoryPressurePointers;
+}
+
 bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const
 {
 	// Negate and return:
@@ -1228,6 +1261,7 @@ void CircuitPressureNode::setHasHistoryPressure(const bool hasHistoryPressure)
 
 void CircuitPressureNode::copyPressureToHistoryPressure()
 {
+	std::cout << "setting history pressure to " << getPressure() << " from " << m_historyPressure << std::endl;
 	m_historyPressure = getPressure();
 }
 

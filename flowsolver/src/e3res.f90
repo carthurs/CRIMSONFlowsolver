@@ -374,6 +374,8 @@
            divqi
       double precision, dimension(nsd) :: &
            omega
+!     MESH VELOCITY TERMS
+      double precision, dimension(npro) :: uMesh1, uMesh2, uMesh3
 !.... compute source term
       src = zero
       if(matflg(5,1) .ge. 1) then
@@ -428,22 +430,32 @@
               -omega(2)*(omega(3)*xx(:,2)-omega(2)*xx(:,3)) &
               -two*(omega(1)*u2-omega(2)*u1)
       endif
+!     get mesh velocity
+      uMesh1(:) = 0.0
+      uMesh2(:) = 0.0
+      uMesh3(:) = 0.0
+      ! MAYBE PRECALCULATE OUTSIDE ?
+      !if (iALE .eq. 1) then
+      !  call calculateMeshVelocity(uMesh1,uMesh2,uMesh3)
+      !end if
+
+
 !     calculate momentum residual
-      rLui(:,1) =(aci(:,1) + u1 * g1yi(:,2) &
-           + u2 * g2yi(:,2) &
-           + u3 * g3yi(:,2) - src(:,1) ) * rho &
-           + g1yi(:,1) &
-              - divqi(:,1)
-      rLui(:,2) =(aci(:,2) + u1 * g1yi(:,3) &
-           + u2 * g2yi(:,3) &
-           + u3 * g3yi(:,3) - src(:,2) ) * rho &
-           + g2yi(:,1) &
-              - divqi(:,2)
-      rLui(:,3) =(aci(:,3) + u1 * g1yi(:,4) &
-           + u2 * g2yi(:,4) &
-           + u3 * g3yi(:,4) - src(:,3) ) * rho &
-           + g3yi(:,1) &
-              - divqi(:,3)
+      rLui(:,1) =(aci(:,1) + (u1 - uMesh1) * g1yi(:,2) &
+                           + (u2 - uMesh2) * g2yi(:,2) &
+                           + (u3 - uMesh3) * g3yi(:,2) - src(:,1) ) * rho &
+                           + g1yi(:,1) &
+                           - divqi(:,1)
+      rLui(:,2) =(aci(:,2) + (u1 - uMesh1) * g1yi(:,3) &
+                           + (u2 - uMesh2) * g2yi(:,3) &
+                           + (u3 - uMesh3) * g3yi(:,3) - src(:,2) ) * rho &
+                           + g2yi(:,1) &
+                           - divqi(:,2)
+      rLui(:,3) =(aci(:,3) + (u1 - uMesh1) * g1yi(:,4) &
+                           + (u2 - uMesh2) * g2yi(:,4) &
+                           + (u3 - uMesh3) * g3yi(:,4) - src(:,3) ) * rho &
+                           + g3yi(:,1) &
+                           - divqi(:,3)
       if(iconvflow.eq.1) then
          divu(:)  = (g1yi(:,2) + g2yi(:,3) + g3yi(:,4))*rho
          rLui(:,1)=rlui(:,1)+u1(:)*divu(:)

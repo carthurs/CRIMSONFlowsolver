@@ -2282,8 +2282,19 @@ int writeGEOMBCDAT(char* filename) {
     nitems = numNodes_;
     writedatablock_( &filenum, "global node surface number ", (void*)ndsurfg_, &nitems,
                      "integer", oformat );
-
+ 	
 	// write node tags
+	// this array is set in tagRingNodes and is only used in vlmwStTri in the flowsolver (as nodetagfield)
+	// if undefined, i.e. rigid, zero this array 
+	// KDL 01/03/16
+	
+    if (inodeTag_ == NULL) {
+    	inodeTag_ = new int [numNodes_];
+    	for (i  = 0; i < numNodes_;i++) {
+    		inodeTag_[i] = 0;
+    	}
+    }
+
 	size = numNodes_;
 	nitems = 2;
 	iarray[0] = numNodes_;

@@ -130,6 +130,25 @@ int main(int argc, char *argv[]) {
       exit(-1);
   }
 
+  // uncomment section below (and comment section above)
+  // to enable attaching the debuger to the presolver
+
+  /*
+  const char* debuggerFlag = "1";
+  for(int ii=1; ii<argc; ii++)
+  {
+    // Look for a single "1" on the command line, indicating that we should
+    // wait for the debugger...
+    if(!strcmp(argv[ii], debuggerFlag))
+    {
+      static volatile int debuggerPresent =0;
+      fprintf(stdout,"Debug flag spotted on the command line. Pausing to await debugger connection...\n");
+      while (!debuggerPresent ); // assign debuggerPresent=1
+    }
+  }
+  */
+
+
   //check to make sure file exists! 
   debugprint(stddbg,"attempt to open [%s]\n",argv[1]);
   FILE *fp = fopen (argv[1], "r");

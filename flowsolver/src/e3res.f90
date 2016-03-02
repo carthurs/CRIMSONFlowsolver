@@ -37,6 +37,7 @@
 !
 !------------------------------------------------------------------------
       use phcommonvars
+      use ale
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       dimension u1(npro),         u2(npro),         u3(npro), &
@@ -58,6 +59,22 @@
                 locmass(npro,nshl),omega(3)
 
       integer aa
+
+!
+!..... ALE variables
+!
+      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+
+      !     get mesh velocity KDL, MA
+      uMesh1(:) = globalMeshVelocity(1)
+      uMesh2(:) = globalMeshVelocity(2)
+      uMesh3(:) = globalMeshVelocity(3)
+      
+      ! MAYBE PRECALCULATE OUTSIDE ?
+      !if (iALE .eq. 1) then
+      !  call calculateMeshVelocity(uMesh1,uMesh2,uMesh3)
+      !end if
+
 !     
 !.... initialize multipliers for Na and Na_{,i}
 !
@@ -100,30 +117,31 @@
 !
 !.... compute the Na,i multiplier
 !
-      tmp  = -pres + tauC * (g1yi(:,2) + g2yi(:,3) + g3yi(:,4))
+      tmp  = -pres + tauC * (g1yi(:,2) + g2yi(:,3) + g3yi(:,4)) !think this is div(v)
       tmp1 =  rmu * ( g2yi(:,2) + g1yi(:,3) )
       tmp2 =  rmu * ( g3yi(:,3) + g2yi(:,4) )
       tmp3 =  rmu * ( g1yi(:,4) + g3yi(:,2) )
 
 
       if(iconvflow.eq.2) then  ! advective form (NO IBP either)
+
 !
 ! no density yet...it comes later
 !
          rNa(:,1) = rNa(:,1)  &
-                  + ubar(:,1) * g1yi(:,2) &
-                  + ubar(:,2) * g2yi(:,2) &
-                  + ubar(:,3) * g3yi(:,2)
+                  + (ubar(:,1)-uMesh1(:)) * g1yi(:,2) &
+                  + (ubar(:,2)-uMesh2(:)) * g2yi(:,2) &
+                  + (ubar(:,3)-uMesh3(:)) * g3yi(:,2)
          rNa(:,2) = rNa(:,2) &
-                  + ubar(:,1) * g1yi(:,3) &
-                  + ubar(:,2) * g2yi(:,3) &
-                  + ubar(:,3) * g3yi(:,3)
+                  + (ubar(:,1)-uMesh1(:)) * g1yi(:,3) &
+                  + (ubar(:,2)-uMesh2(:)) * g2yi(:,3) &
+                  + (ubar(:,3)-uMesh3(:)) * g3yi(:,3)
          rNa(:,3) = rNa(:,3) &
-                  + ubar(:,1) * g1yi(:,4) &
-                  + ubar(:,2) * g2yi(:,4) &
-                  + ubar(:,3) * g3yi(:,4)
+                  + (ubar(:,1)-uMesh1(:)) * g1yi(:,4) &
+                  + (ubar(:,2)-uMesh2(:)) * g2yi(:,4) &
+                  + (ubar(:,3)-uMesh3(:)) * g3yi(:,4)
 
-         rGNa(:,1,1) = two * rmu * g1yi(:,2) + tmp
+         rGNa(:,1,1) = two * rmu * g1yi(:,2) + tmp ! stress term 
          rGNa(:,1,2) = tmp1
          rGNa(:,1,3) = tmp3
          rGNa(:,2,1) = tmp1
@@ -163,15 +181,15 @@
       tmp2        = tauM * rLui(:,2) 
       tmp3        = tauM * rLui(:,3)
       
-      rGNa(:,1,1) = rGNa(:,1,1) + tmp1 * u1 
-      rGNa(:,1,2) = rGNa(:,1,2) + tmp1 * u2
-      rGNa(:,1,3) = rGNa(:,1,3) + tmp1 * u3
-      rGNa(:,2,1) = rGNa(:,2,1) + tmp2 * u1
-      rGNa(:,2,2) = rGNa(:,2,2) + tmp2 * u2
-      rGNa(:,2,3) = rGNa(:,2,3) + tmp2 * u3
-      rGNa(:,3,1) = rGNa(:,3,1) + tmp3 * u1
-      rGNa(:,3,2) = rGNa(:,3,2) + tmp3 * u2
-      rGNa(:,3,3) = rGNa(:,3,3) + tmp3 * u3
+      rGNa(:,1,1) = rGNa(:,1,1) + tmp1 * (u1 - uMesh1)
+      rGNa(:,1,2) = rGNa(:,1,2) + tmp1 * (u2 - uMesh2)
+      rGNa(:,1,3) = rGNa(:,1,3) + tmp1 * (u3 - uMesh3)
+      rGNa(:,2,1) = rGNa(:,2,1) + tmp2 * (u1 - uMesh1)
+      rGNa(:,2,2) = rGNa(:,2,2) + tmp2 * (u2 - uMesh2)
+      rGNa(:,2,3) = rGNa(:,2,3) + tmp2 * (u3 - uMesh3)
+      rGNa(:,3,1) = rGNa(:,3,1) + tmp3 * (u1 - uMesh1)
+      rGNa(:,3,2) = rGNa(:,3,2) + tmp3 * (u2 - uMesh2)
+      rGNa(:,3,3) = rGNa(:,3,3) + tmp3 * (u3 - uMesh3)
 
       if(iconvflow.eq.1) then  
 !
@@ -355,8 +373,9 @@
            aci,  u1,   u2,   u3,   Temp, rho,  xx, &
                  g1yi, g2yi, g3yi, &
            rLui, src, divqi)
-       use phcommonvars
- IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      use phcommonvars
+      use ale
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !     INPUTS
       double precision, intent(in), dimension(npro,nsd) ::  &
            aci, xx
@@ -431,9 +450,9 @@
               -two*(omega(1)*u2-omega(2)*u1)
       endif
 !     get mesh velocity
-      uMesh1(:) = 0.0
-      uMesh2(:) = 0.0
-      uMesh3(:) = 0.0
+      uMesh1(:) = globalMeshVelocity(1)
+      uMesh2(:) = globalMeshVelocity(2)
+      uMesh3(:) = globalMeshVelocity(3)
       ! MAYBE PRECALCULATE OUTSIDE ?
       !if (iALE .eq. 1) then
       !  call calculateMeshVelocity(uMesh1,uMesh2,uMesh3)

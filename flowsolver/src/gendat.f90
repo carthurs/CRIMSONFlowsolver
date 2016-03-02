@@ -16,7 +16,8 @@
         use pointer_data
         use deformableWall
         use phcommonvars
-        use multidomain        
+        use multidomain     
+        use ale    
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
 ! arrays in the following line are now dimensioned in readnblk
@@ -239,7 +240,15 @@
          multidom = multidomconstructor()   
       end if
 !
-! *** end of intialise multidomain models           
+! *** end of intialise multidomain models   
+!
+!
+! *** initialise ALE 
+!
+      call readGlobalMeshVelocity()
+!
+! *** end of initialise ALE 
+!
 !
 !.... --------------------->  Initial Conditions  <--------------------
 !

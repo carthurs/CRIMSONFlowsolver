@@ -27,6 +27,7 @@
 !----------------------------------------------------------------------
 !
         use phcommonvars
+        use ale
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
         dimension rho(npro),                 u1(npro), &
@@ -39,6 +40,20 @@
 !
         dimension gijd(npro,6),       fact(npro), rnu(npro), &
              rhoinv(npro)
+
+        !..... ALE variables
+
+      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+
+      !     get mesh velocity KDL, MA
+      uMesh1(:) = globalMeshVelocity(1)
+      uMesh2(:) = globalMeshVelocity(2)
+      uMesh3(:) = globalMeshVelocity(3)
+      
+      ! MAYBE PRECALCULATE OUTSIDE ?
+      !if (iALE .eq. 1) then
+      !  call calculateMeshVelocity(uMesh1,uMesh2,uMesh3)
+      !end if     
 !
 !
 !.... get the metric tensor
@@ -68,17 +83,17 @@
 !
 !...  momentum tau
 ! 
-         dts=  Dtgl*dtsfct	! Dtgl = (time step)^-1
+         dts=  Dtgl*dtsfct	! Dtgl = (time step)^-1, dtsfct = c1
          tauM = ( (two*dts)**2 &
-      		      + ( u1 * ( gijd(:,1) * u1 &
-      			             + gijd(:,4) * u2 &
-      			             + gijd(:,6) * u3 ) &
-      		        + u2 * ( gijd(:,4) * u1 &
-      			             + gijd(:,2) * u2 &
-      			             + gijd(:,5) * u3 ) &
-      		        + u3 * ( gijd(:,6) * u1 &
-      			             + gijd(:,5) * u2 &
-      			             + gijd(:,3) * u3 ) ) ) &
+      		      + ( (u1-uMesh1) * ( gijd(:,1) * (u1-uMesh1) &
+      			                      + gijd(:,4) * (u2-uMesh2) &
+      			                      + gijd(:,6) * (u3-uMesh3) ) &
+      		        + (u2-uMesh2) * ( gijd(:,4) * (u1-uMesh1) &
+      			                      + gijd(:,2) * (u2-uMesh2) &
+      			                      + gijd(:,5) * (u3-uMesh3) ) &
+      		        + (u3-uMesh3) * ( gijd(:,6) * (u1-uMesh1) &
+      			                      + gijd(:,5) * (u2-uMesh2) &
+      			                      + gijd(:,3) * (u3-uMesh3) ) ) ) &
       		    + fff * rnu** 2 &
       		    * ( gijd(:,1) ** 2 &
       		      + gijd(:,2) ** 2 &
@@ -94,6 +109,9 @@
          ff=taucfct/dtsfct
          tauC =rho* pt125*fact/(gijd(:,1)+gijd(:,2)+gijd(:,3))*ff
          tauM = one/fact
+
+
+
       else if(itau.eq.1)  then  ! new tau
 
 !
@@ -133,8 +151,14 @@
 !     this tau needs a u/h instead of a u*h so we contract with g_{ij} as
 !     follows  (i.e. u_i g_{ij} u_j approx u^2/(h^2)/4) 
 !
+!     the definition of gijd appears to be as follows ... KDL, MA
+!     | g11 g12 g13 |    | gijd(1)  gijd(4) gijd(6) |
+!     | ... g22 g23 |  = | .......  gijd(2) gijd(5) |
+!     | ... ... g33 |    | .......  ....... gijd(3) |
+!
+
          fact = &
-                u1 * ( gijd(:,1) * u1 &
+                u1 * ( gijd(:,1) * u1 &      
                      + gijd(:,4) * u2 &
                      + gijd(:,6) * u3 ) &
               + u2 * ( gijd(:,4) * u1 &

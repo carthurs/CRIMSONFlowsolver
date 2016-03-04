@@ -101,10 +101,11 @@ int main(int argc, char* argv[])
 	int nshgl_disp,numvar_disp,lstep_disp;
 	int nshgl_wss,numvar_wss,lstep_wss;
 	int nshgl_ybar,numvar_ybar,lstep_ybar;
+	int nshgl_res,numvar_res,lstep_res;
 	int newstepnumber = 0;
 
 	double *qglobal, *qlocal, *xlocal, *xglobal, *aglobal, *fglobal, *dglobal, *dglobal_ref, *distglobal, *wglobal;
-	double *yglobal;
+	double *yglobal, *resglobal;
 	float *qdx, *xdx;
 	int *iendx, nodes[8];
 	char rfname[40];
@@ -674,6 +675,27 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
+
+#if DEBUG_RESIDUAL == 1		
+		// read in residual field for current processor 
+		sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+		printf("Reducing : %s for residual\n", rfname);
+		openfile_(rfname, "read", &irstin   );
+		readheader_(&irstin,"residual",(void*)iarray,&ithree,"double",iotype);
+		nshgl_res=iarray[0];
+		numvar_res=iarray[1];
+		lstep_res=iarray[2];
+		iqsiz=nshgl_res*numvar_res;
+		readdatablock_(&irstin,"residual",(void*)qlocal, &iqsiz, "double", iotype);
+		closefile_( &irstin, "read" );
+		/* map solution to global */
+		for(k=0; k< numvar_res; k++){
+			for(j=0; j< nshgl_res ; j++){
+				resglobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+			}
+		}
+#endif
+
 
 	}
 	for(k=0; k< numvar; k++)

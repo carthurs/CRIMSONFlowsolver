@@ -1596,8 +1596,11 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
             call write_displ(myrank, lstep, nshg, 3, uold, uref )
             if (imeasdist.eq.1) then
                 call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
-            end if
+            end if            
         end if
+#if DEBUG_ALE == 1
+        call Write_Residual(myrank, lstep, nshg, 4, res ) 
+#endif
     endif
     
     ! ************************** !

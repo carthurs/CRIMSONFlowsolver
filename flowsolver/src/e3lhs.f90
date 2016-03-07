@@ -31,6 +31,7 @@
 !
 !------------------------------------------------------------------------
       use phcommonvars
+      use ale
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       dimension u1(npro),         u2(npro),       u3(npro), &
@@ -40,9 +41,9 @@
                 shpfun(npro,nshl),shg(npro,nshl,3)
       
       dimension xKebe(npro,9,nshl,nshl), xGoC(npro,4,nshl,nshl)
-!
+
 !.... local declarations
-!
+
       dimension t1(npro,3),       t2(npro,3),      t3(npro,3), &
                 tmp1(npro),       tmp2(npro),     &
                 tmp(npro),        tlW(npro)
@@ -50,18 +51,54 @@
       integer   aa, b
       
       real*8    lhmFct, lhsFct,           tsFct(npro)
+
+      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+
+      character(50) :: filename, dimchar 
+      
+      ! get mesh velocity KDL, MA
+      uMesh1(:) = globalMeshVelocity(1)
+      uMesh2(:) = globalMeshVelocity(2)
+      uMesh3(:) = globalMeshVelocity(3)      
       
       lhsFct = alfi * gami * Delt(itseq)
       lhmFct = almi * (one - flmpl) 
-!
+
 !.... scale variables for efficiency
-!
+
       tlW      = lhsFct * WdetJ     
       tmp1      = tlW * rho
       tauM      = tlW * tauM 
       tauC      = tlW * tauC 
       rmu       = tlW * rmu 
       tsFct     = lhmFct * WdetJ * rho
+
+
+      do n = 1,9
+
+         write(dimchar,'(i3)') n
+         write(filename,'(3(a))') 'zKebe.',trim(adjustl(dimchar)),'.dat'
+         open(756,file=filename,status='new')
+         write(*,*) 'printing zKebe for ', n
+         
+         do nn = 1,npro
+            
+            do m = 1, nshl
+               do mm = 1, nshl
+                  write(*,*)  'a = ',m, ' b = ', mm
+                  write(756,'(e27.20)',advance="no") xKebe(nn,n,m,mm)
+               end do
+            end do 
+            write(756,'(a)') ' '
+
+         end do ! element end 
+         close(756)           
+
+      end do ! 1:9 end
+      stop
+
+
+     
       if(iconvflow.eq.2) then  ! 2 is ubar form 3 is cons form but ubar tang. 
          tauBar    = lhsFct * WdetJ * tauBar 
          uBar(:,1) = tmp1 * uBar(:,1)
@@ -74,72 +111,89 @@
          uBar(:,3) = tmp1 * u3(:)
       endif
 
-!
+
 !.... compute mass and convection terms
-!
+
       do b = 1, nshl
-         t1(:,1) = uBar(:,1) * shg(:,b,1) &
-                 + uBar(:,2) * shg(:,b,2) &
-                 + uBar(:,3) * shg(:,b,3)
-!
+
+! t1 is a scalar product 
 ! t1=ubar_k N^b,k*rho*alpha_f*gamma*deltat*WdetJ  
-!
+
+! here the ubar velocity is missing the subtraction of the mesh velocity
+! tmp1 is alpha deltaT gamma rho - see eqn 3.85 in Alberto's thesis
+! definition of ubar_k is: ubar_k = v_k - (tau_M/rho)*L_k
+! KDL, MA
+
+         t1(:,1) = (uBar(:,1) - tmp1*uMesh1) * shg(:,b,1) &
+                 + (uBar(:,2) - tmp1*uMesh2) * shg(:,b,2) &
+                 + (uBar(:,3) - tmp1*uMesh3) * shg(:,b,3)
+
          do aa = 1, nshl
+
+! tmp1=alpha_m*(1-lmp)*WdetJ*N^aN^b*rho   the time term CORRECT
+! tmp2=tmp1+N^a*ubar_k N^b,k*rho*alpha_f*gamma*deltat*WdetJ 
+! the second term is convective term CORRECT         
             tmp1 = tsFct * shpfun(:,aa) * shpfun(:,b)
             tmp2 = tmp1 + t1(:,1) * shpfun(:,aa)
-!
-! tmp1=alpha_m*(1-lmp)*WdetJ*N^aN^b*rho   the time term CORRECT
-! tmp2=tmp1+N^a*ubar_k N^b,k*rho*alpha_f*gamma*deltat*WdetJ   the 
-!    second term is convective term CORRECT
-!            
+            
             xKebe(:,1,aa,b) = xKebe(:,1,aa,b) + tmp2
             xKebe(:,5,aa,b) = xKebe(:,5,aa,b) + tmp2
             xKebe(:,9,aa,b) = xKebe(:,9,aa,b) + tmp2
          enddo
       enddo
-!
+
+
+
+
+
 !.... compute the rest of K (symmetric terms)
-!      
+      
       do b = 1, nshl
-         
+
+! t1 is tauC*N^b_i,j*alpha_f*gamma*deltat*WdetJ        
          t1(:,1) = tauC * shg(:,b,1)
          t1(:,2) = tauC * shg(:,b,2)
          t1(:,3) = tauC * shg(:,b,3)
 
-! t1 is tauC*N^b_i,j*alpha_f*gamma*deltat*WdetJ
-         
+! t2 is mu*N^b_j,k*alpha_f*gamma*deltat*WdetJ         
          t2(:,1) = rmu  * shg(:,b,1)
          t2(:,2) = rmu  * shg(:,b,2)
          t2(:,3) = rmu  * shg(:,b,3)
-! t2 is mu*N^b_j,k*alpha_f*gamma*deltat*WdetJ
-      
-         tmp1 = tauM   * ( u1 * shg(:,b,1)   &
-                         + u2 * shg(:,b,2)  &
-                         + u3 * shg(:,b,3) )*rho
-! tmp1 is tauM*(rho u_m N^b_j,m)*alpha_f*gamma*deltat*WdetJ
 
+
+! u1, u2, u3 refer to v_m in eq (3.85) Alberto's thesis, KDL, MA  
+! tmp1 is a scalar product    
+! tmp1 is tauM*(rho u_m N^b_j,m)*alpha_f*gamma*deltat*WdetJ
+         tmp1 = tauM   * ( (u1 - uMesh1)  * shg(:,b,1)   &
+                         + (u2 - uMesh2)  * shg(:,b,2)  &
+                         + (u3 - uMesh3)  * shg(:,b,3) )*rho
+
+! tmp2 is taubar*(L_m N^b_j,m)*alpha_f*gamma*deltat*WdetJ
+! another scalar product
          tmp2 = tauBar * ( rLui(:,1) * shg(:,b,1) &
                          + rLui(:,2) * shg(:,b,2) &
                          + rLui(:,3) * shg(:,b,3) )
-! tmp2 is taubar*(L_m N^b_j,m)*alpha_f*gamma*deltat*WdetJ
-         t3(:,1) = t2(:,1) + tmp1 * u1 + tmp2 * rLui(:,1)
-         t3(:,2) = t2(:,2) + tmp1 * u2 + tmp2 * rLui(:,2)
-         t3(:,3) = t2(:,3) + tmp1 * u3 + tmp2 * rLui(:,3)
 
-! t3 is   (mu*N^b_j,k + u_k tauM*(rho u_m N^b_j,m)+ L_k*taubar*(L_mN^b_j,m ) 
-!   *alpha_f*gamma*deltat*WdetJ     which isline 2 page 40 of whiting
-!   ALMOST (waiting to get hit with N^a_{i,k}
+
+! u1, u2, u3 refer to v_k in eq (3.85) Alberto's thesis, KDL, MA      
+! t3 is (mu*N^b_j,k + u_k tauM*(rho u_m N^b_j,m)+ L_k*taubar*(L_mN^b_j,m )*alpha_f*gamma*deltat*WdetJ     
+! which is line 2 page 40 of Whiting
+! ALMOST (waiting to get hit with N^a_{i,k}
 ! mu correct NOW (wrong before) and rho weight on tauM term
-!
+         t3(:,1) = t2(:,1) + tmp1 * (u1 - uMesh1) + tmp2 * rLui(:,1)
+         t3(:,2) = t2(:,2) + tmp1 * (u2 - uMesh2) + tmp2 * rLui(:,2)
+         t3(:,3) = t2(:,3) + tmp1 * (u3 - uMesh3) + tmp2 * rLui(:,3)
+
 !.... first do the (nodal) diagonal blocks         
-!
+
          aa  = b
-         
+
+! tmp is the N^a_{i,k} dot product with t3 defined above         
          tmp = t3(:,1) * shg(:,aa,1) &
              + t3(:,2) * shg(:,aa,2) &
              + t3(:,3) * shg(:,aa,3)
-! previous command is the N^a_{i,k} dot product with t3 defined above
 
+! 
          xKebe(:,1,aa,b) = xKebe(:,1,aa,b) + tmp &
                             + t1(:,1) * shg(:,aa,1) &
                             + t2(:,1) * shg(:,aa,1)
@@ -149,29 +203,29 @@
          xKebe(:,9,aa,b) = xKebe(:,9,aa,b) + tmp &
                             + t1(:,3) * shg(:,aa,3) &
                             + t2(:,3) * shg(:,aa,3)
-!
+
          tmp1               = t1(:,1) * shg(:,aa,2) &
                             + t2(:,2) * shg(:,aa,1)
          xKebe(:,2,aa,b) = xKebe(:,2,aa,b) + tmp1 
          xKebe(:,4,b,aa) = xKebe(:,4,b,aa) + tmp1 
-!
+
          tmp1               = t1(:,1) * shg(:,aa,3) &
                             + t2(:,3) * shg(:,aa,1)
          xKebe(:,3,aa,b) = xKebe(:,3,aa,b) + tmp1 
          xKebe(:,7,b,aa) = xKebe(:,7,b,aa) + tmp1 
-!
+
          tmp1               = t1(:,2) * shg(:,aa,3) &
                             + t2(:,3) * shg(:,aa,2)
          xKebe(:,6,aa,b) = xKebe(:,6,aa,b) + tmp1 
          xKebe(:,8,b,aa) = xKebe(:,8,b,aa) + tmp1 
-!
+
 !.... now the off-diagonal (nodal) blocks
-!
+
          do aa = b+1, nshl
             tmp             = t3(:,1) * shg(:,aa,1) &
                             + t3(:,2) * shg(:,aa,2) &
                             + t3(:,3) * shg(:,aa,3)
-!
+
             tmp1            = tmp &
                             + t1(:,1) * shg(:,aa,1) &
                             + t2(:,1) * shg(:,aa,1)
@@ -189,44 +243,72 @@
                             + t2(:,3) * shg(:,aa,3)
             xKebe(:,9,aa,b) = xKebe(:,9,aa,b) + tmp1
             xKebe(:,9,b,aa) = xKebe(:,9,b,aa) + tmp1
-!
+
 !.... ( i != j )
-!
+
             tmp1               = t1(:,1) * shg(:,aa,2) &
                                + t2(:,2) * shg(:,aa,1)
             xKebe(:,2,aa,b) = xKebe(:,2,aa,b) + tmp1
             xKebe(:,4,b,aa) = xKebe(:,4,b,aa) + tmp1
-!
+
             tmp1               = t1(:,1) * shg(:,aa,3) &
                                + t2(:,3) * shg(:,aa,1)
             xKebe(:,3,aa,b) = xKebe(:,3,aa,b) + tmp1
             xKebe(:,7,b,aa) = xKebe(:,7,b,aa) + tmp1
-!
+
             tmp1               = t1(:,2) * shg(:,aa,1) &
                                + t2(:,1) * shg(:,aa,2)
             xKebe(:,4,aa,b) = xKebe(:,4,aa,b) + tmp1
             xKebe(:,2,b,aa) = xKebe(:,2,b,aa) + tmp1
-!
+
             tmp1               = t1(:,2) * shg(:,aa,3) &
                                + t2(:,3) * shg(:,aa,2)
             xKebe(:,6,aa,b) = xKebe(:,6,aa,b) + tmp1
             xKebe(:,8,b,aa) = xKebe(:,8,b,aa) + tmp1
-!
+
             tmp1               = t1(:,3) * shg(:,aa,1) &
                                + t2(:,1) * shg(:,aa,3)
             xKebe(:,7,aa,b) = xKebe(:,7,aa,b) + tmp1
             xKebe(:,3,b,aa) = xKebe(:,3,b,aa) + tmp1
-!
+
             tmp1               = t1(:,3) * shg(:,aa,2) &
                                + t2(:,2) * shg(:,aa,3)
             xKebe(:,8,aa,b) = xKebe(:,8,aa,b) + tmp1
             xKebe(:,6,b,aa) = xKebe(:,6,b,aa) + tmp1
-!
+
          enddo
       enddo
-!
+
+
+      do n = 1,9
+
+
+         write(dimchar,'(i3)') n
+         write(filename,'(3(a))') 'xKebe.',trim(adjustl(dimchar)),'.dat'
+         open(756,file=filename,status='new')
+         write(*,*) 'printing xKebe for ', n
+         
+         do nn = 1,npro
+            
+            do m = 1, nshl
+               do mm = 1, nshl
+                  write(*,*)  'a = ',m, ' b = ', mm
+                  write(756,'(e27.20)',advance="no") xKebe(nn,n,m,mm)
+               end do
+            end do 
+            write(756,'(a)') ' '
+
+         end do ! element end 
+         close(756)           
+
+      end do ! 1:9 end
+      stop
+      
+
+
+
 !.... compute G   Nai Nbp,j
-!
+
       
       do b = 1, nshl
          t1(:,1) = tlW * shg(:,b,1)
@@ -240,9 +322,8 @@
       enddo
 !
 !.... compute C
-! we divide by rho because the L on the weight space is density divided
-!      form
-!
+! we divide by rho because the L on the weight space is density divided form
+
       tauM=tauM/rho
       do b = 1, nshl
          t1(:,1) = tauM * shg(:,b,1)
@@ -255,10 +336,10 @@
                             + t1(:,3) * shg(:,aa,3)
          enddo
       enddo
-      
-!
+     
+
 !.... return
-!
+
       return
       end
 

@@ -52,7 +52,7 @@
       
       real*8    lhmFct, lhsFct,           tsFct(npro)
 
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro),  multfact_ubar(npro)
 
       character(50) :: filename, dimchar 
       
@@ -68,34 +68,35 @@
 
       tlW      = lhsFct * WdetJ     
       tmp1      = tlW * rho
+      multfact_ubar = tmp1 !this scaling factor is used when substracting mesh velocity from ubar (see below)
       tauM      = tlW * tauM 
       tauC      = tlW * tauC 
       rmu       = tlW * rmu 
       tsFct     = lhmFct * WdetJ * rho
 
 
-      do n = 1,9
+      ! do n = 1,9
 
-         write(dimchar,'(i3)') n
-         write(filename,'(3(a))') 'zKebe.',trim(adjustl(dimchar)),'.dat'
-         open(756,file=filename,status='new')
-         write(*,*) 'printing zKebe for ', n
+      !    write(dimchar,'(i3)') n
+      !    write(filename,'(3(a))') 'zKebe.',trim(adjustl(dimchar)),'.dat'
+      !    open(756,file=filename,status='new')
+      !    write(*,*) 'printing zKebe for ', n
          
-         do nn = 1,npro
+      !    do nn = 1,npro
             
-            do m = 1, nshl
-               do mm = 1, nshl
-                  write(*,*)  'a = ',m, ' b = ', mm
-                  write(756,'(e27.20)',advance="no") xKebe(nn,n,m,mm)
-               end do
-            end do 
-            write(756,'(a)') ' '
+      !       do m = 1, nshl
+      !          do mm = 1, nshl
+      !             write(*,*)  'a = ',m, ' b = ', mm
+      !             write(756,'(e27.20)',advance="no") xKebe(nn,n,m,mm)
+      !          end do
+      !       end do 
+      !       write(756,'(a)') ' '
 
-         end do ! element end 
-         close(756)           
+      !    end do ! element end 
+      !    close(756)           
 
-      end do ! 1:9 end
-      stop
+      ! end do ! 1:9 end
+     
 
 
      
@@ -111,8 +112,40 @@
          uBar(:,3) = tmp1 * u3(:)
       endif
 
+      ! open(757,file='ubar.dat',status='new')
+      ! do nn=1,npro
+      !     write(757,'(3(e30.20))') uBar(nn,1)-tmp1(nn)*uMesh1(nn), &
+      !                              uBar(nn,2)-tmp1(nn)*uMesh2(nn), &
+      !                              uBar(nn,3)-tmp1(nn)*uMesh3(nn)
+      ! end do
+
+
+      ! stop
+
 
 !.... compute mass and convection terms
+
+      
+      ! do n = 1,nshl
+
+      !    write(dimchar,'(i3)') n
+      !    write(filename,'(3(a))') 'shg.',trim(adjustl(dimchar)),'.dat'
+      !    open(760,file=filename,status='new')
+      !    write(*,*) 'printing shg for node ', n
+         
+      !    do nn = 1,npro
+            
+      !       do m = 1, 3
+      !             ! write(*,*)  'a = ',m, ' b = ', mm
+      !             write(760,'(e30.20)',advance="no") shg(nn,n,m)
+      !       end do 
+      !       write(760,'(a)') ' '
+
+      !    end do ! element end 
+      !    close(760)           
+
+      ! end do ! 1:9 end
+
 
       do b = 1, nshl
 
@@ -124,9 +157,19 @@
 ! definition of ubar_k is: ubar_k = v_k - (tau_M/rho)*L_k
 ! KDL, MA
 
-         t1(:,1) = (uBar(:,1) - tmp1*uMesh1) * shg(:,b,1) &
-                 + (uBar(:,2) - tmp1*uMesh2) * shg(:,b,2) &
-                 + (uBar(:,3) - tmp1*uMesh3) * shg(:,b,3)
+
+        ! write(dimchar,'(i3)') b
+        ! write(filename,'(3(a))') 't1.',trim(adjustl(dimchar)),'.dat'
+        ! open(758,file=filename,status='new')
+        ! write(*,*) 'printing t1 for ', b
+
+
+         t1(:,1) = (uBar(:,1) - multfact_ubar(:)*uMesh1(:)) * shg(:,b,1) &
+                 + (uBar(:,2) - multfact_ubar(:)*uMesh2(:)) * shg(:,b,2) &
+                 + (uBar(:,3) - multfact_ubar(:)*uMesh3(:)) * shg(:,b,3)
+
+        ! write(758,'(e27.20)') t1(:,1)    
+        ! close(758)
 
          do aa = 1, nshl
 
@@ -142,7 +185,7 @@
          enddo
       enddo
 
-
+      ! stop
 
 
 
@@ -280,29 +323,29 @@
       enddo
 
 
-      do n = 1,9
+      ! do n = 1,9
 
 
-         write(dimchar,'(i3)') n
-         write(filename,'(3(a))') 'xKebe.',trim(adjustl(dimchar)),'.dat'
-         open(756,file=filename,status='new')
-         write(*,*) 'printing xKebe for ', n
+      !    write(dimchar,'(i3)') n
+      !    write(filename,'(3(a))') 'xKebe.',trim(adjustl(dimchar)),'.dat'
+      !    open(756,file=filename,status='new')
+      !    write(*,*) 'printing xKebe for ', n
          
-         do nn = 1,npro
+      !    do nn = 1,npro
             
-            do m = 1, nshl
-               do mm = 1, nshl
-                  write(*,*)  'a = ',m, ' b = ', mm
-                  write(756,'(e27.20)',advance="no") xKebe(nn,n,m,mm)
-               end do
-            end do 
-            write(756,'(a)') ' '
+      !       do m = 1, nshl
+      !          do mm = 1, nshl
+      !             write(*,*)  'a = ',m, ' b = ', mm
+      !             write(756,'(e27.20)',advance="no") xKebe(nn,n,m,mm)
+      !          end do
+      !       end do 
+      !       write(756,'(a)') ' '
 
-         end do ! element end 
-         close(756)           
+      !    end do ! element end 
+      !    close(756)           
 
-      end do ! 1:9 end
-      stop
+      ! end do ! 1:9 end
+      ! stop
       
 
 

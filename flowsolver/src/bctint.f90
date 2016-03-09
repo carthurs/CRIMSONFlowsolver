@@ -322,7 +322,7 @@
       subroutine BCint(timel,shp,shgl,shpb,shglb,x,BC,iBC)
 
       use     specialBC ! brings in itvn,nbct, bct, numbct, nptsmax
-
+      use ale
       use phcommonvars  
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
@@ -334,6 +334,15 @@
                shglb(MAXTOP,nsd,maxsh,MAXQPT)
 
       integer  iBC(numnp),nlast,i,j,nper 
+
+      real*8   uMeshDirichletBC(nshg,3)
+
+
+      uMeshDirichletBC(:,1) = globalMeshVelocity(1)
+      uMeshDirichletBC(:,2) = globalMeshVelocity(2)
+      uMeshDirichletBC(:,3) = globalMeshVelocity(3)
+
+      BC(:,3:5) = uMeshDirichletBC(:,1:3)
 
       do i =1,itvn ! itvn is the number of varying nodes on this proc 
 
@@ -349,7 +358,8 @@
 
                wr=(t-BCt(i,j-1,4))/(BCt(i,j,4)-BCt(i,j-1,4))
                BC(nbct(i),3:5)= BCt(i,j-1,1:3)*(one-wr) &
-                              + BCt(i,j,1:3)*wr
+                              + BCt(i,j,1:3)*wr &
+                              + uMeshDirichletBC(nbct(i),1:3)
                exit
 
             endif

@@ -86,14 +86,15 @@
 ! *********************************************************
 ! *** end of set MAXSURF and Delt in multidomain module ***
 ! *********************************************************
-!
+
 !.... time varying boundary conditions as set from file bct.dat and impt.dat 
 !     (see function for format in file bctint.f)
-!
+
         if (itvn .gt. 0 ) then !for inlet velocities
-           call initBCt( x, iBC, BC)
-           call BCint(lstep*Delt(1),shp,shgl,shpb,shglb,x, BC, iBC)
+           call initBCt(x, iBC, BC)           
+           call BCint(lstep*Delt(1), x, BC, iBC)
         endif
+
         if (impfile .gt. 0 ) then !for impedance BC
            do irank=1, numpe
               call MPI_BARRIER (INEWCOMM,ierr)

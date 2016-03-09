@@ -245,7 +245,8 @@
 !
 ! *** initialise ALE 
 !
-      call readGlobalMeshVelocity()
+      call readGlobalMeshVelocity() ! 
+      call addGlobalMeshVelocityToSolution(y,nshg,ndof)
 !
 ! *** end of initialise ALE 
 !

@@ -925,7 +925,7 @@ void boundaryConditionManager::createControlSystems()
   
   // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
   // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
-  std::map<int, std::map<int,parameter_controller_t>> mapsOfComponentControlTypes = netlistXmlReader_instance->getMapsOfComponentControlTypesForEachSurface();
+  std::map<int, std::map<int, ComponentControlSpecificationContainer>> mapsOfComponentControlTypes = netlistXmlReader_instance->getMapsOfComponentControlTypesForEachSurface();
 
   // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
   // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();
@@ -945,9 +945,14 @@ void boundaryConditionManager::createControlSystems()
       int netlistIndex = currentNetlist->getIndexAmongstNetlists();
       // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
       try {
-        for (auto componentIndexAndControlType = mapsOfComponentControlTypes.at(netlistIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes.at(netlistIndex).end(); componentIndexAndControlType++)
+        for (auto componentIndexAndControlTypes = mapsOfComponentControlTypes.at(netlistIndex).begin(); componentIndexAndControlTypes != mapsOfComponentControlTypes.at(netlistIndex).end(); componentIndexAndControlTypes++)
           {
-            mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
+            // The component may have multiple controllers attached (e.g. both unstressed volume and compliance), so we loop their names:
+            for (int controlSpecificationIndex = 0; controlSpecificationIndex < componentIndexAndControlTypes->second.getNumberOfControlScripts(); controlSpecificationIndex++)
+            {
+              parameter_controller_t controlType = componentIndexAndControlTypes->second.getControlTypeByIndexLocalToComponent(controlSpecificationIndex);
+              mp_controlSystemsManager->createParameterController(controlType, currentNetlistCircuit, componentIndexAndControlTypes->first);
+            }
           }
           // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
           for (auto nodeIndexAndControlType = mapsOfNodeControlTypes.at(netlistIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes.at(netlistIndex).end(); nodeIndexAndControlType++)
@@ -971,7 +976,7 @@ void boundaryConditionManager::createControlSystems()
     // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
     // std::vector<int> numberOfComponentsWithControl = getNumberOfComponentsWithControl();
     // std::vector<std::map<int,parameter_controller_t>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
-    std::map<int, std::map<int,parameter_controller_t>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
+    std::map<int, std::map<int, ComponentControlSpecificationContainer>> mapsOfComponentControlTypes_closedLoop = downstreamNetlistReader_instance->getMapsOfComponentControlTypesForEachSurface();
 
     // Get info for the nodes that need control (number of these, the nodes indices in the netlist, and the control types for each)
     // std::vector<int> numberOfNodesWithControl = getNumberOfNodesWithControl();
@@ -985,9 +990,14 @@ void boundaryConditionManager::createControlSystems()
 
       try {
         // Create the controls for components by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
-          for (auto componentIndexAndControlType = mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).begin(); componentIndexAndControlType != mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).end(); componentIndexAndControlType++)
+          for (auto componentIndexAndControlTypes = mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).begin(); componentIndexAndControlTypes != mapsOfComponentControlTypes_closedLoop.at(closedLoopIndex).end(); componentIndexAndControlTypes++)
           {
-            mp_controlSystemsManager->createParameterController(componentIndexAndControlType->second, currentNetlistCircuit, componentIndexAndControlType->first);
+            // The component may have multiple controllers attached (e.g. both unstressed volume and compliance), so we loop their names:
+            for (int controlSpecificationIndex = 0; controlSpecificationIndex < componentIndexAndControlTypes->second.getNumberOfControlScripts(); controlSpecificationIndex++)
+            {
+              parameter_controller_t controlType = componentIndexAndControlTypes->second.getControlTypeByIndexLocalToComponent(controlSpecificationIndex);
+              mp_controlSystemsManager->createParameterController(controlType, currentNetlistCircuit, componentIndexAndControlTypes->first);
+            }
           }
           // Create the controls for nodes by looping over the pairs which give the component index in the netlist, together with its prescribed control type from netlist_surfaces.dat:
           for (auto nodeIndexAndControlType = mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).begin(); nodeIndexAndControlType != mapsOfNodeControlTypes_closedLoop.at(closedLoopIndex).end(); nodeIndexAndControlType++)

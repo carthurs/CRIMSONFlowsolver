@@ -134,7 +134,7 @@ void NetlistClosedLoopDownstreamCircuit::getMatrixContribution(const double alfi
 
 void NetlistClosedLoopDownstreamCircuit::getRHSContribution(const int timestepNumber, Vec& rhsFromThisDownstreamCircuit)
 {
-    assembleRHS(timestepNumber);
+    assembleRHS(timestepNumber, false);
     rhsFromThisDownstreamCircuit = m_RHS;
 }
 

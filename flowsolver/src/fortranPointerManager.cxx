@@ -4,7 +4,6 @@
 
 extern "C" void giveflowpointertocpp(int& surfaceIndex,double*& flowPointer) {
 	fortranBoundaryDataPointerManager::Get()->setBoundaryFlows(surfaceIndex,flowPointer);
-
 }
 
 extern "C" void givepressurepointertocpp(int& surfaceIndex,double*& pressPointer) {
@@ -35,6 +34,7 @@ double* fortranBoundaryDataPointerManager::getBoundaryFlows(int surfaceIndex)
 		return m_boundaryFlows.at(surfaceIndex);
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+	    std::cout << "This may mean multidomain.dat is missing." << std::endl;
 	    throw e;
 	}
 }

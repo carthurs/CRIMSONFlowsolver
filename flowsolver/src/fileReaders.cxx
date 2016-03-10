@@ -664,6 +664,12 @@ void NetlistReader::readControlSystemPrescriptions()
 			// Store the name of the Python script that controls this surface:
 			userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
 		}
+		else if (mp_currentLineSplitBySpaces->at(1).compare("customPythonUnstressedVolume") == 0)
+		{
+			controlType = Controller_CustomPythonComponentUnstressedVolume;
+			// Store the name of the Python script that controls this surface:
+			userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, mp_currentLineSplitBySpaces->at(2)));
+		}
 		else if (mp_currentLineSplitBySpaces->at(1).compare("prescribedPeriodicFlow") == 0)
 		{
 			controlType = Controller_CustomPythonComponentFlowFile;
@@ -873,6 +879,8 @@ void NetlistReader::writePropertyTreeToDisk(const std::string fileNameWithoutExt
 	boost::property_tree::xml_parser::xml_writer_settings<std::string> settings('\t', 1);
 	write_xml("../"+filenameAsXml, m_propertyTreeRepresentationOfCircuitData, std::locale(), settings); // write into launch folder for future use
 	write_xml(filenameAsXml, m_propertyTreeRepresentationOfCircuitData, std::locale(), settings); // write into the procs case folder
+	// write_json("../"+filenameAsXml, m_propertyTreeRepresentationOfCircuitData, std::locale()); // write into launch folder for future use
+	// write_json(filenameAsXml, m_propertyTreeRepresentationOfCircuitData, std::locale()); // write into the procs case folder
 
 	// Move the old .dat file to a folder, as it wont be needed any more:
 	boost::filesystem::path oldDatFilesDirectory("../netlistDatFiles_deprecated");

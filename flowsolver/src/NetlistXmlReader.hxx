@@ -33,8 +33,8 @@ public:
 	}
 
 	const std::map<int, int>& getIndicesOfNodesAt3DInterface() const;
-	const std::map<int, std::string>& getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const;
-	const std::map<int, std::map<int,parameter_controller_t>>& getMapsOfComponentControlTypesForEachSurface() const;
+	const std::map<int, ComponentControlSpecificationContainer>& getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const;
+	const std::map<int, std::map<int, ComponentControlSpecificationContainer>>& getMapsOfComponentControlTypesForEachSurface() const;
 	const std::map<int, std::string>& getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const;
 	const std::map<int, std::map<int,parameter_controller_t>>& getMapsOfNodalControlTypesForEachSurface() const;
 	const std::map<int, int>& getNumberOfComponents() const;
@@ -46,6 +46,7 @@ public:
 	const std::map<int, std::vector<int>>& getComponentEndNodes() const;
 	const std::vector<double> getComponentParameterValues(const int indexOfRequestedNetlistLPNDataInInputFile) const;
 	double getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const;
+	double getComponentInitialUnstressedVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const;
 	const std::set<int>& getKalmanFilteredComponentIndicesByCircuitIndex(const int circuitIndex) const;
 
 	const std::map<int, std::vector<int>>& getListOfPrescribedFlows() const;
@@ -100,8 +101,8 @@ protected:
 	std::map<int, int> m_nodeAt3DInterfaceForEachNetlist;
 
 	boost::property_tree::ptree m_netlistDataFromFile;
-	std::map<int, std::map<int, std::string>> m_userDefinedComponentControllersAndPythonNames;
-	std::map<int, std::map<int,parameter_controller_t>> m_mapsOfComponentControlTypesForEachSurface;
+	std::map<int, std::map<int, ComponentControlSpecificationContainer>> m_userDefinedComponentControllersAndPythonNames;
+	// std::map<int, std::map<int,std::vector<parameter_controller_t>>> m_mapsOfComponentControlTypesForEachSurface;
 	std::map<int, std::map<int,std::string>> m_userDefinedNodeControllersAndPythonNames;
 	std::map<int, std::map<int,parameter_controller_t>> m_mapsOfNodalControlTypesForEachSurface;
 	std::map<int, int> m_numberOfComponents;

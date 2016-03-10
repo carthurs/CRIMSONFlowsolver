@@ -209,6 +209,21 @@
            solinc(i,1:dof) = Res4(1:dof,i)
         END DO
 
+#if DEBUG_ALE == 1
+
+      write(*,*) 'printing solinc'
+      open(793,file='solinc.memLS.dat',status='new')
+      do i = 1, nshg
+         write(793,'(4(e20.10))') solinc(i,1), solinc(i,2), solinc(i,3),&
+                                  solinc(i,4)
+                                          
+      end do 
+      close(793)
+      stop
+
+#endif
+
+
 !####################################################################
       ELSE
 !
@@ -220,6 +235,22 @@
 !.... setup the linear algebra solver
 !
       rtmp = res(:,1:4)
+
+#if DEBUG_ALE == 1
+      open(99,file='rtmp.dat',status='new')
+      write(*,*) 'printing rtmp inside solfar'
+      do i=1,nshg
+          write(99,'(4(e25.15))') rtmp(i,1:4)
+      enddo
+      close(99)
+
+      open(91,file='flowDiag.dat',status='new')
+      write(*,*) 'printing flowDiag inside solfar'
+      do i=1,nshg
+          write(91,'(4(e25.15))') flowDiag(i,1:4)
+      enddo
+      close(91)          
+#endif      
 
       !aperm = zero
       call usrNew ( usr,        eqnType,          aperm, &
@@ -236,6 +267,46 @@
 !
       call myfLesSolve ( lesId, usr )
       call getSol ( usr, solinc )
+
+
+#if DEBUG_ALE == 1
+      open(99,file='first_residual.dat',status='new')
+      write(*,*) 'printing rhs inside solfar'
+      do i=1,nshg
+          write(99,'(4(e25.15))') res(i,1:4)
+      enddo
+      close(99)
+
+      write(*,*) 'printing lhsK'
+      open(100,file='lhsK.dat',status='new')
+      do i = 1, nnz_tot
+         write(100,'(9(e20.10))') lhsK(1,i),lhsK(2,i),lhsK(3,i), &
+                                          lhsK(4,i),lhsK(5,i),lhsK(6,i), &
+                                          lhsK(7,i),lhsK(8,i),lhsK(9,i)  
+      end do 
+      close(100)
+
+      write(*,*) 'printing lhsP'
+      open(101,file='lhsP.dat',status='new')
+      do i = 1, nnz_tot
+         write(101,'(4(e20.10))') lhsP(1,i),lhsP(2,i),lhsP(3,i), &
+                                          lhsP(4,i)
+      end do 
+      close(101)
+
+
+      write(*,*) 'printing solinc'
+      open(793,file='solinc.dat',status='new')
+      do i = 1, nshg
+         write(793,'(4(e20.10))') solinc(i,1), solinc(i,2), solinc(i,3),&
+                                  solinc(i,4)
+                                          
+      end do 
+      close(793)
+
+      stop
+#endif
+
 
       if (numpe > 1) then
          call commu ( solinc, ilwork, nflow, 'out')

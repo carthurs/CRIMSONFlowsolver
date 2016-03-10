@@ -101,10 +101,11 @@ int main(int argc, char* argv[])
 	int nshgl_disp,numvar_disp,lstep_disp;
 	int nshgl_wss,numvar_wss,lstep_wss;
 	int nshgl_ybar,numvar_ybar,lstep_ybar;
+	int nshgl_res,numvar_res,lstep_res;
 	int newstepnumber = 0;
 
 	double *qglobal, *qlocal, *xlocal, *xglobal, *aglobal, *fglobal, *dglobal, *dglobal_ref, *distglobal, *wglobal;
-	double *yglobal;
+	double *yglobal, *resglobal;
 	float *qdx, *xdx;
 	int *iendx, nodes[8];
 	char rfname[40];
@@ -491,6 +492,11 @@ int main(int argc, char* argv[])
 		wglobal = (double *) malloc( numvar*nshgtot * sizeof(double));
 	}
 
+#if DEBUG_ALE == 1	
+	resglobal = (double *) malloc( 4*nshgtot * sizeof(double));
+#endif
+
+
 	if (RequestedYbar) {
 		/* scanning restart.<stepnum>.1 for numvar */
 		sprintf(rfname,"restart.%d.1",stepnumber);
@@ -675,6 +681,26 @@ int main(int argc, char* argv[])
 			}
 		}
 
+#if DEBUG_ALE == 1		
+		// read in residual field for current processor 
+		sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+		printf("Reducing : %s for residual\n", rfname);
+		openfile_(rfname, "read", &irstin   );
+		readheader_(&irstin,"residual",(void*)iarray,&ithree,"double",iotype);
+		nshgl_res=iarray[0];
+		numvar_res=iarray[1];
+		lstep_res=iarray[2];
+		iqsiz=nshgl_res*numvar_res;
+		readdatablock_(&irstin,"residual",(void*)qlocal, &iqsiz, "double", iotype);
+		closefile_( &irstin, "read" );
+		/* map solution to global */
+		for(k=0; k< numvar_res; k++){
+			for(j=0; j< nshgl_res ; j++){
+				resglobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+			}
+		}
+#endif
+
 	}
 	for(k=0; k< numvar; k++)
 		printf("var.=%d, min=%f, max=%f \n", k,qmin[k],qmax[k]);
@@ -797,6 +823,20 @@ int main(int argc, char* argv[])
 			writedatablock_( &irstin, "distances ",
 					( void* )(distglobal), &nitems, "double", iotype );
 		}
+
+		// write out global residuals
+#if DEBUG_ALE == 1		
+		nitems = 3;
+		iarray[ 0 ] = nshgtot;
+		iarray[ 1 ] = 4;
+		iarray[ 2 ] = lstep;
+		size = 4*nshgtot;
+		writeheader_( &irstin, "residual ",
+					( void* )iarray, &nitems, &size,"double", iotype );
+		nitems = size;
+		writedatablock_( &irstin, "residual ",
+					( void* )(resglobal), &nitems, "double", iotype );
+#endif
 
 		// if the acceleration is requested, before closing the file write the acceleration
 		if(RequestedAcceleration){
@@ -1265,6 +1305,9 @@ int main(int argc, char* argv[])
 	if(RequestedYbar){
 		free(yglobal);
 	}
+#if DEBUG_ALE == 1
+	free(resglobal);
+#endif	
 	free(xglobal);
 	free(ien);
 	return 0;

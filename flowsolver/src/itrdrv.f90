@@ -1085,11 +1085,13 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     xi=(istep+1)*1.0/nstp
     datmat(1,2,1)=rmub*(1.0-xi)+xi*rmue
     !            write(*,*) "current mol. visc = ", datmat(1,2,1)
-    !.... if we have time varying boundary conditions update the values of BC.
-    !     these will be for time step n+1 so use lstep+1
-    !
-    if(itvn.gt.0) call BCint((lstep+1)*Delt(1), shp, shgl,  &
-    shpb, shglb, x, BC, iBC)
+    
+!.... if we have time varying boundary conditions update the values of BC.
+!     these will be for time step n+1 so use lstep+1
+    
+    if (itvn .gt. 0) then
+       call BCint((lstep+1)*Delt(1), x, BC, iBC)
+    end if 
 
     !
     ! ... calc the pressure contribution that depends on the history for the imp BC
@@ -1596,8 +1598,11 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
             call write_displ(myrank, lstep, nshg, 3, uold, uref )
             if (imeasdist.eq.1) then
                 call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
-            end if
+            end if            
         end if
+#if DEBUG_ALE == 1
+        call Write_Residual(myrank, lstep, nshg, 4, res ) 
+#endif
     endif
     
     ! ************************** !

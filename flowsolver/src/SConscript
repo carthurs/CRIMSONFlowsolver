@@ -118,6 +118,7 @@ sources=string.split("""
 	datatypes.f90
 	externalDataTools.f90
 	multidomain.f90
+	ALE.f90
 	itrdrv.f90
 	error.f90
 	asadj.f90

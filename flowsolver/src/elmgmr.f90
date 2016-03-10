@@ -464,6 +464,37 @@
 !.... return
 !
 !      call timer ('Back    ')
+
+!
+!....print first rhs
+!
+
+      ! open(99,file='first_residual.dat',status='new')
+      ! write(*,*) 'printing rhs'
+      ! do i=1,nshg
+      !     write(99,'(4(e25.15))') res(i,1:4)
+      ! enddo
+      ! close(99)
+
+      ! write(*,*) 'printing lhsK'
+      ! open(100,file='lhsK.dat',status='new')
+      ! do i = 1, nnz_tot
+      !    write(100,'(9(e20.10))') lhsK(1,i),lhsK(2,i),lhsK(3,i), &
+      !                                     lhsK(4,i),lhsK(5,i),lhsK(6,i), &
+      !                                     lhsK(7,i),lhsK(8,i),lhsK(9,i)  
+      ! end do 
+      ! close(100)
+
+      ! write(*,*) 'printing lhsP'
+      ! open(101,file='lhsP.dat',status='new')
+      ! do i = 1, nnz_tot
+      !    write(101,'(4(e20.10))') lhsP(1,i),lhsP(2,i),lhsP(3,i), &
+      !                                     lhsP(4,i)
+      ! end do 
+      ! close(101)
+
+      ! stop
+
       return
       end
 

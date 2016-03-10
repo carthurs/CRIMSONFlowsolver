@@ -236,9 +236,10 @@
 !     Initialize:time varying boundary condition
 !
 !-----------------------------------------------------------------------
+
       subroutine initBCt( x, iBC, BC )
       
-      use     specialBC
+      use specialBC
       use phcommonvars  
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
       
@@ -247,114 +248,134 @@
       character*80 card
       real*8 distds
       real*8 dd
-!
+
 !  This one should be used for boundary layer meshes where bct.dat must
 !  be given to greater precision than is currently being generated.
 !
-!      epsd=1.0d-12    ! this is distance SQUARED to save square root
+!     epsd=1.0d-12    ! this is distance SQUARED to save square root
+!     epsd=1.0d-8     ! this is distance SQUARED to save square root
+      epsd=1.0d-6     ! new distance to avoid problems when using mm
 
-!      epsd=1.0d-8              ! this is distance SQUARED to save square root
-      epsd=1.0d-6              ! new distance to avoid problems when using mm
-
-      ic=0                      !count the number on this processor
+      ic=0            ! count the number on this processor
      
       if(any(ibits(iBC,3,3).eq.7)) then
+         
          write(*,*) 'opening bct.dat'
-!         open(unit=567, file='bct.dat',status='old')
          open(unit=567, file='bct.dat',ACTION='READ',STATUS='old')
          read (567,'(a80)') card
-           read (card,*) ntv, nptsmax
-!        read(567,*) ntv,nptsmax
+         read (card,*) ntv, nptsmax
+
          if(allocated(nBCt)) then
            deallocate (nBCt)
          endif
          allocate (nBCt(numnp))
+
          if(allocated(numBCt)) then
            deallocate (numBCt)
          endif
+
          allocate (numBCt(ntv))
          if(allocated(BCt)) then
            deallocate (BCt)
          endif
+
          allocate (BCt(ntv,nptsmax,4))
+         
          do k=1,ntv
+
             read(567,*) x1,x2,x3,ntpts
-!
-! Find the point on the boundary (if it is on this processor)
-! that matches this point
-!
-            do i=1,numnp
-               if(ibits(ibc(i),3,3) .eq.7) then
-                  dd= distds(x1,x2,x3,x(i,1),x(i,2),x(i,3))
+
+!  Find the point on the boundary (if it is on this processor)
+!  that matches this point
+
+            do i=1,numnp               
+               if(ibits(ibc(i),3,3) .eq.7) then               
+                  
+                  dd = distds(x1,x2,x3,x(i,1),x(i,2),x(i,3)) ! distance squared
+                  
                   if(dd.lt.epsd) then
                      ic=ic+1
-                     nBCt(ic)=i ! the index of this node amongst those on this processor
+                     nBCt(ic)=i       ! the index of this node amongst those on this processor
                      numBCt(ic)=ntpts ! the number of time series
+                     
                      do j=1,ntpts
-!                        read(567,*) BCt(ic,j,4),(BCt(ic,j,n),n=1,3)
                         read(567,*) (BCt(ic,j,n),n=1,4)
                      enddo
-                     exit
+
+                     exit ! exit if point is found
                   endif
                endif
             enddo
+
             if(i.eq.numnp+1) then
-!
-!  if we get here the point was not found.  It must be on another
+
+!  If we get here the point was not found.  It must be on another
 !  processor so we read past this record and move on
-!
+
                do j=1,ntpts
                   read(567,*) rj1,rj2,rj3,rj4
                enddo
+
             endif
-         enddo                  ! end of the loop over ntv
-      BCt(:,:,4)=BCt(:,:,4)*bcttimescale
-      endif                     ! any 3 component nodes
+
+         enddo ! end of the loop over ntv
+      
+      BCt(:,:,4) = BCt(:,:,4)*bcttimescale ! scale time 
+
+      endif    ! any 3 component nodes (iBC test)
+      
       itvn=ic
       close(567)
       write(*,*)'myrank=',myrank,' and I own ',ic,' nodes for bct.dat.'
-
 
       return
       end
 
 
-      subroutine BCint(timel,shp,shgl,shpb,shglb,x,BC,iBC)
+      subroutine BCint(timel,x,BC,iBC)
 
-      use     specialBC ! brings in itvn,nbct, bct, numbct, nptsmax
-
+      use specialBC                       ! brings in itvn,nbct, bct, numbct, nptsmax
+      use ale                             ! ALE module
       use phcommonvars  
-      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+      IMPLICIT REAL*8 (a-h,o-z)           ! change default real type to be double precision
 
-      real*8   BC(nshg,ndofBC), timel,t
-      real*8   x(numnp,nsd), &
-               shp(MAXTOP,maxsh,MAXQPT), &
-               shgl(MAXTOP,nsd,maxsh,MAXQPT), &
-               shpb(MAXTOP,maxsh,MAXQPT), &
-               shglb(MAXTOP,nsd,maxsh,MAXQPT)
-
+      real*8   BC(nshg,ndofBC), timel, t, x(numnp,nsd)            
       integer  iBC(numnp),nlast,i,j,nper 
 
-      do i =1,itvn ! itvn is the number of varying nodes on this proc 
+      ! mesh velocity for Direchlet BC, here size of nshg, i.e. number of nodes on this processor
+      real*8   uMeshDirichletBC(nshg,3)   
+      
+      ! get global mesh velocity - to change to subroutine call
+      uMeshDirichletBC(:,1) = globalMeshVelocity(1)
+      uMeshDirichletBC(:,2) = globalMeshVelocity(2)
+      uMeshDirichletBC(:,3) = globalMeshVelocity(3)
 
-         nlast=numBCt(i)     ! number of time series to interpolate from
-         nper=timel/BCt(i,nlast,4)! number of periods completed to shift off
+      ! initialise the BC values with the mesh velocity
+      BC(:,3:5) = uMeshDirichletBC(:,1:3)
 
+      do i = 1, itvn                      ! itvn is the number of varying nodes on this proc 
 
-         t=timel-nper*BCt(i,nlast,4)  ! now time in periodic domain
+         nlast = numBCt(i)                ! number of time series to interpolate from
+         nper = timel/BCt(i,nlast,4)      ! number of periods completed to shift off
+         t = timel - nper*BCt(i,nlast,4)  ! now time in periodic domain
 
-         do j=2,nlast   !loop to find the interval that we are in
+         do j = 2, nlast                  ! loop to find the interval that we are in
 
-            if(BCt(i,j,4).gt.t) then  ! this is upper bound, j-1 is lower
+            if (BCt(i,j,4).gt.t) then     ! this is upper bound, j-1 is lower
 
-               wr=(t-BCt(i,j-1,4))/(BCt(i,j,4)-BCt(i,j-1,4))
-               BC(nbct(i),3:5)= BCt(i,j-1,1:3)*(one-wr) &
-                              + BCt(i,j,1:3)*wr
-               exit
-
+               wr = (t-BCt(i,j-1,4)) / (BCt(i,j,4)-BCt(i,j-1,4))
+               
+                                          ! overwrite BC value for current timestep plus mesh velocity 
+               BC(nbct(i),3:5) = BCt(i,j-1,1:3)*(one-wr) &
+                               + BCt(i,j,1:3)*wr &
+                               + uMeshDirichletBC(nbct(i),1:3)
+               
+               exit                       ! if found exit
             endif
+         
          enddo
       enddo
+
       return
       end
 

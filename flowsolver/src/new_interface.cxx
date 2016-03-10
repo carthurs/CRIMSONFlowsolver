@@ -15,6 +15,7 @@
 #define Write_Error   WRITE_ERROR
 #define Write_Displ   WRITE_DISPL
 #define Write_Distl   WRITE_DISTL
+#define Write_Residual WRITE_RESIDUAL
 #else
 #include <unistd.h>
 #include <strings.h>
@@ -23,11 +24,13 @@
 #define Write_Error   write_error_
 #define Write_Displ   write_displ_
 #define Write_Distl   write_distl_
+#define Write_Residual write_residual_
 #else
 #define Write_Restart write_restart
 #define Write_Error   write_error
 #define Write_Displ   write_displ
 #define Write_Distl   write_distl
+#define Write_Residual write_residual      
 #endif
 #endif
 
@@ -259,6 +262,50 @@ extern "C"
         
     }
 }
+
+//
+// write residual to restart file, 
+// to do: replace these with a generic append_restart function KDL
+// 
+
+extern "C"
+{
+    void Write_Residual(  
+                  int* pid, 
+                  int* stepno, 
+                  int* nshg, 
+                  int* numVars,
+                  double* array1 ) { 
+
+
+        char fname[255];
+        char rfile[60];
+        int irstou;
+        int magic_number = 362436;
+        int* mptr = &magic_number;
+        time_t timenow = time ( &timenow);
+        double version=0.0;
+        int isize, nitems;
+        int iarray[10];
+
+        sprintf(rfile,"restart.%d.%d",*stepno,*pid+1);
+        openfile_(rfile,"append", &irstou);
+
+        isize = (*nshg)*(*numVars);
+        nitems = 3;
+        iarray[ 0 ] = (*nshg);
+        iarray[ 1 ] = (*numVars);
+        iarray[ 2 ] = (*stepno);
+        writeheader_( &irstou, "residual", (void*)iarray, &nitems, &isize, "double", outpar.iotype );
+                    
+        nitems = (*nshg)*(*numVars);
+        writedatablock_( &irstou, "residual", (void*)(array1), &nitems, "double", outpar.iotype );
+
+        closefile_( &irstou, "append" );
+        
+    }
+}
+
 
 
 

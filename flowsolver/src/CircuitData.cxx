@@ -410,10 +410,10 @@ bool CircuitComponent::hasUserDefinedExternalPythonScriptParameterController() c
 	return m_hasPythonParameterController;
 }
 
-std::string CircuitComponent::getPythonControllerName() const
+std::string CircuitComponent::getPythonControllerName(const parameter_controller_t controllerType) const
 {
 	assert(m_hasPythonParameterController);
-	return m_pythonParameterControllerName;
+	return m_pythonParameterControllerNames.at(controllerType);
 }
 
 // Sets the name "whateverName" of the parameter controller to look for in the
@@ -422,11 +422,10 @@ std::string CircuitComponent::getPythonControllerName() const
 // newParamterValue = updateControl(self, oldParameterValue, delt).
 //
 // This should be a Python script.
-void CircuitComponent::setPythonControllerName(const std::string pythonParameterControllerName)
+void CircuitComponent::addPythonControllerName(const parameter_controller_t controllerType, const std::string pythonParameterControllerName)
 {
-	assert(!m_hasPythonParameterController);
 	m_hasPythonParameterController = true;
-	m_pythonParameterControllerName = pythonParameterControllerName;
+	m_pythonParameterControllerNames.insert(std::make_pair(controllerType, pythonParameterControllerName));
 }
 
 
@@ -498,7 +497,6 @@ std::string CircuitPressureNode::getPythonControllerName() const
 // This should be a Python script.
 void CircuitPressureNode::setPythonControllerName(const std::string pythonParameterControllerName)
 {
-	assert(!m_hasPythonParameterController);
 	m_hasPythonParameterController = true;
 	m_pythonParameterControllerName = pythonParameterControllerName;
 }
@@ -1265,9 +1263,21 @@ void CircuitPressureNode::copyPressureToHistoryPressure()
 	m_historyPressure = getPressure();
 }
 
+void CircuitPressureNode::copyHistoryPressureToHistoryHistoryPressure()
+{
+	// used with the Kalman filter to store a history pressure from the step before the particle
+	m_historyHistoryPressure = m_historyPressure;
+}
+
 double CircuitPressureNode::getHistoryPressure() const
 {
 	return m_historyPressure;
+}
+
+double CircuitPressureNode::getHistoryHistoryPressure() const
+{
+	// used with the Kalman filter to store a history pressure from the step before the particle
+	return m_historyHistoryPressure;
 }
 
 bool CircuitPressureNode::hasHistoryPressure() const
@@ -1380,6 +1390,7 @@ void VolumeTrackingComponent::setRestartVolumeFromHistory()
 void VolumeTrackingPressureChamber::passPressureToStartNode()
 {
 	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
+	std::cout << "m_unstressedVolume: " << m_unstressedVolume << std::endl;
 	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
 	std::cout << "pressure set to: " << m_pressure << std::endl;
 	startNode->setPressure(m_pressure);
@@ -1392,6 +1403,13 @@ double VolumeTrackingPressureChamber::getUnstressedVolume()
 
 void VolumeTrackingPressureChamber::setStoredVolume(const double newVolume)
 {
+	std::cout << "pre m_storedVolume: " << m_storedVolume << std::endl;
 	m_storedVolume = newVolume;
+	std::cout << "post m_storedVolume: " << m_storedVolume << std::endl;
 	passPressureToStartNode();
+}
+
+double* VolumeTrackingPressureChamber::getUnstressedVolumePointer()
+{
+	return &m_unstressedVolume;
 }

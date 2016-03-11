@@ -140,6 +140,13 @@ bool NetlistBoundaryCondition::hasPrescribedFlowAcross3DInterface() const
     return mp_NetlistCircuit->hasPrescribedFlowAcross3DInterface();
 }
 
+// // For making the internal history state variables of the LPN agree with the
+// // current Kalman particle (which is given in terms of the 3D domain)
+// void NetlistBoundaryCondition::synchroniseStateToKalmanParticle()
+// {
+//     mp_NetlistCircuit->computeHistoryVariablesToMatchCurrentKalmanFilterParticle();
+// }
+
 void NetlistBoundaryCondition::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber)
 {
   std::cout << "(FIXME) netlist setting timestepNumber: " << timestepNumber << std::endl; // need to actually wind back all internal state variables too!
@@ -148,6 +155,7 @@ void NetlistBoundaryCondition::resetStateUsingKalmanFilteredEstimate(const doubl
     *flow_n_ptrs.at(0) = flow;
     pressure_n = pressure;
     *pressure_n_ptrs.at(0) = pressure;
+    // mp_NetlistCircuit->computeHistoryVariablesToMatchCurrentKalmanFilterParticle(timestepNumber, delt);
 
     // At this point, the filter has adjusted the parameters and the pressure/velocity fields (it does combined state-parameter estimation)
     // This means that the starting point for the boundary condition state needs to be updated.

@@ -93,6 +93,8 @@ public:
 	bool hasPrescribedPressureAcross3DInterface() const;
 	bool hasPrescribedFlowAcross3DInterface() const;
 
+	void computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const int timestepNumber, const double alfi_delt);
+
 	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
 
 	virtual void createCircuitDescription();
@@ -153,7 +155,7 @@ protected:
 	void getMapOfVolumeHistoriesToCorrectComponents();
 	void getMapOfTrackedVolumesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
-	void assembleRHS(const int timestepNumber);
+	void assembleRHS(const int timestepNumber, const bool useHistoryHistoryPressure); // useHistoryHistoryPressure should usually be "false"
 	void giveNodesTheirPressuresFromSolutionVector();
 	void giveComponentsTheirFlowsFromSolutionVector();
 	void giveComponentsTheirVolumesFromSolutionVector();
@@ -221,6 +223,10 @@ private:
 	void findLinearSystemIndicesOf3DInterfacePressureAndFlow();
 	void setupCustomPythonControlSystems();
 	void countVolumeTrackingPressureChambers();
+	void solveLinearSystem();
+	void buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(const int timestepNumber, const double alfi_delt);
+	void recordPressureHistory();
+	void recordPressureHistoryHistory();
 	// void createInitialCircuitDescriptionWithoutDiodes();
 	// void assignComponentsToAtomicSubcircuits();
 

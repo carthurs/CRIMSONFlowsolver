@@ -165,7 +165,7 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getMatrixContribution(co
 
 void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getRHSContribution(const int timestepNumber, Vec& rhsFromThisBoundary)
 {
-    assembleRHS(timestepNumber);
+    assembleRHS(timestepNumber, false);
     rhsFromThisBoundary = m_RHS;
 }
 

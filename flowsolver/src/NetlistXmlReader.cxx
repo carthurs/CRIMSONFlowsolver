@@ -52,60 +52,73 @@ void NetlistXmlReader::gatherComponentControllerNames()
 		int circuitIndex = toZeroIndexing(circuit.second.get<int>("circuitIndex"));
 
 		// Some containers to fill:
-		std::map<int,parameter_controller_t> componentControlTypesForThisSurface;
-		std::map<int,std::string> userDefinedComponentControllersAndPythonNamesForThisSurface;
+		// std::map<int,std::vector<parameter_controller_t>> componentControlTypesForThisSurface;
+		std::map<int, ComponentControlSpecificationContainer> userDefinedComponentControllersAndPythonNamesForThisSurface;
 
 		// loop the components of this circuit
 		for (auto component : circuit.second.get_child("components"))
 		{
 			int componentIndex = component.second.get<int>("index");
-			// If there's a controller defined for this component, get its details:
-			boost::optional<boost::property_tree::ptree&> componentControlSpecification = component.second.get_child_optional("control");
-			if (componentControlSpecification)
+			// If there's one (or more) controller defined for this component, get its details:
+			ComponentControlSpecificationContainer componentControlScriptSpecification;
+			// std::vector<parameter_controller_t> controlTypes;
+			for (auto componentProperty : component.second)
 			{
-				std::string controlType_raw = componentControlSpecification->get<std::string>("type");
-				// Work out what sort of control is required for this component:
-				parameter_controller_t controlType;
-				if (controlType_raw.compare("pc") == 0) // proximal coronary resistor control
+				// boost::optional<boost::property_tree::ptree&> componentControlSpecification = component.second.get_child_optional("control");
+				if (boost::iequals(componentProperty.first, "control"))
 				{
-					throw std::logic_error("EE: This control hasn't been implemented yet!"); // need to do the push_backs below, too.
-				}
-				else if (boost::iequals(controlType_raw, "leftVentricularElastance"))
-				{
-					controlType = Controller_LeftVentricularElastance;
-				}
-				else if (controlType_raw.compare("bleedResistance") == 0)
-				{
-					controlType = Controller_BleedResistance;
-				}
-				else if (controlType_raw.compare("customPython") == 0)
-				{
-					controlType = Controller_CustomPythonComponentParameter;
-					// Store the name of the Python script that controls this surface:
-					std::string controlScriptName = componentControlSpecification->get<std::string>("source");
+					std::string controlType_raw = componentProperty.second.get<std::string>("type");
+					// Work out what sort of control is required for this component:
+					parameter_controller_t controlType;
+					std::string controlScriptName;
+					if (boost::iequals(controlType_raw, "pc")) // proximal coronary resistor control
+					{
+						throw std::logic_error("EE: This control hasn't been implemented yet!"); // need to do the push_backs below, too.
+					}
+					else if (boost::iequals(controlType_raw, "leftVentricularElastance"))
+					{
+						controlType = Controller_LeftVentricularElastance;
+					}
+					else if (boost::iequals(controlType_raw, "bleedResistance"))
+					{
+						controlType = Controller_BleedResistance;
+					}
+					else if (boost::iequals(controlType_raw, "customPython"))
+					{
+						controlType = Controller_CustomPythonComponentParameter;
+						// Store the name of the Python script that controls this surface:
+						controlScriptName = componentProperty.second.get<std::string>("source");
+					}
+					else if (boost::iequals(controlType_raw, "customPythonUnstressedVolume"))
+					{
+						controlType = Controller_CustomPythonComponentUnstressedVolume;
 
-					userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, controlScriptName));
-				}
-				else if (controlType_raw.compare("prescribedPeriodicFlow") == 0)
-				{
-					controlType = Controller_CustomPythonComponentFlowFile;
-					// Store the name of the dat file that controls this surface:
-					std::string controlScriptName = componentControlSpecification->get<std::string>("source");
+						controlScriptName = componentProperty.second.get<std::string>("source");
+					}
+					else if (boost::iequals(controlType_raw, "prescribedPeriodicFlow"))
+					{
+						controlType = Controller_CustomPythonComponentFlowFile;
+						// Store the name of the dat file that controls this surface:
+						controlScriptName = componentProperty.second.get<std::string>("source");
 
-					userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, controlScriptName));
+					}
+					else
+					{
+						std::stringstream error;
+						error << "EE: Unknown component control type found during read of netlist surface " << toOneIndexing(circuitIndex) << ", as indexed by order of appearance in netlist_surfaces.xml." << std::endl;
+						error << "This may just indicate a malformed netlist_surfaces.xml" << std::endl;
+						throw std::runtime_error(error.str());
+					}
+					// controlTypes.push_back(controlType);
+					componentControlScriptSpecification.addControlScript(controlType, controlScriptName);
+					// controlScriptNames.push_back(controlScriptName);
 				}
-				else
-				{
-					std::stringstream error;
-					error << "EE: Unknown component control type found during read of netlist surface " << toOneIndexing(circuitIndex) << ", as indexed by order of appearance in netlist_surfaces.xml." << std::endl;
-					error << "This may just indicate a malformed netlist_surfaces.xml" << std::endl;
-					throw std::runtime_error(error.str());
-				}
-				componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
 			}
+			userDefinedComponentControllersAndPythonNamesForThisSurface.insert(std::make_pair(componentIndex, componentControlScriptSpecification));
+			// componentControlTypesForThisSurface.insert( std::make_pair(componentIndex, controlTypes) );
 		}
 		// gather the info for this circuit into the all-circuits data structures:
-		m_mapsOfComponentControlTypesForEachSurface.insert(std::make_pair(circuitIndex, componentControlTypesForThisSurface));
+		// m_mapsOfComponentControlTypesForEachSurface.insert(std::make_pair(circuitIndex, componentControlTypesForThisSurface));
 		m_userDefinedComponentControllersAndPythonNames.insert(std::make_pair(circuitIndex, userDefinedComponentControllersAndPythonNamesForThisSurface));
 	}
 }
@@ -286,6 +299,18 @@ void NetlistXmlReader::readCircuitStructure()
 
 				tempContainer.setInitialVolume(*initialVolume);
 			}
+			if (tempComponentTypes.back() == Component_VolumeTrackingPressureChamber)
+			{
+				boost::optional<double> initialUnstressedVolume = component.second.get_optional<double>("initialUnstressedVolume");
+				if (!initialUnstressedVolume)
+				{ 
+					tempContainer.setInitialUnstressedVolume(0.0);
+				}
+				else
+				{
+					tempContainer.setInitialUnstressedVolume(*initialUnstressedVolume);
+				}
+			}
 			tempComponentParameterValues.push_back(tempContainer);
 		}
 		m_componentTypes.insert(std::make_pair(circuitIndex, tempComponentTypes));
@@ -441,14 +466,14 @@ const std::map<int, int>& NetlistXmlReader::getIndicesOfNodesAt3DInterface() con
 	return m_nodeAt3DInterfaceForEachNetlist;
 }
 
-const std::map<int,std::string>& NetlistXmlReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
+const std::map<int, ComponentControlSpecificationContainer>& NetlistXmlReader::getUserDefinedComponentControllersAndPythonNames(const int surfaceIndex) const
 {
 	return m_userDefinedComponentControllersAndPythonNames.at(surfaceIndex);
 }
 
-const std::map<int, std::map<int,parameter_controller_t>>& NetlistXmlReader::getMapsOfComponentControlTypesForEachSurface() const
+const std::map<int, std::map<int, ComponentControlSpecificationContainer>>& NetlistXmlReader::getMapsOfComponentControlTypesForEachSurface() const
 {
-	return m_mapsOfComponentControlTypesForEachSurface;
+	return m_userDefinedComponentControllersAndPythonNames;
 }
 
 const std::map<int,std::string>& NetlistXmlReader::getUserDefinedNodeControllersAndPythonNames(const int surfaceIndex) const
@@ -513,6 +538,11 @@ const std::vector<double> NetlistXmlReader::getComponentParameterValues(const in
 double NetlistXmlReader::getComponentInitialVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const
 {
 	return m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile).at(componentIndexWithinNetlist).getInitialVolume();
+}
+
+double NetlistXmlReader::getComponentInitialUnstressedVolume(const int indexOfRequestedNetlistLPNDataInInputFile, const int componentIndexWithinNetlist) const
+{
+	return m_componentParameterValues.at(indexOfRequestedNetlistLPNDataInInputFile).at(componentIndexWithinNetlist).getInitialUnstressedVolume();
 }
 
 const std::set<int>& NetlistXmlReader::getKalmanFilteredComponentIndicesByCircuitIndex(const int circuitIndex) const

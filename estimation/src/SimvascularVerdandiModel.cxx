@@ -3,6 +3,7 @@
 
 #include "SimvascularVerdandiModel.hxx"
 #include "boundaryConditionManager.hxx"
+#include <boost/algorithm/string.hpp>
 
 //! Checks for existance of file
 /*!
@@ -323,6 +324,9 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
 		for(int varIdx=0; varIdx < 4; varIdx++) { // ignore the 5th dof and beyond
+			// if (varIdx == 2 && actualIdx == 2) {
+			// 	std::cout << state_part.getName() << " " << *gat->getRawPointerToSpecificValueRelatedToPointerMapDP("solution", varIdx * conpar.nshg + actualIdx-1) << std::endl;
+			// }
 			state_part.addDataPointer(gat->getRawPointerToSpecificValueRelatedToPointerMapDP("solution", varIdx * conpar.nshg + actualIdx-1) );
 			state_part.addIsEstimated(0);
 		}
@@ -907,11 +911,21 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	if (rank_ == 0)
 		std::cout << "getting state ";
 
+	// bool onceOnly = true;
 	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
 		//cout << it->getName() << endl;
 		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
+		{
 			duplicated_state_.SetBuffer( it->getDuplicatedStateIndex((int)jj),
 					                     it->getData((int)jj) );
+			// if (onceOnly)
+			// {
+			if (boost::iequals(it->getName(),"NetlistCapacitorPressureNodes"))
+			{
+				std::cout << " in GetState() 2: " << it->getName() << " value " << it->getData((int)jj) <<  std::endl;
+				// onceOnly = false;
+			}
+		}
 	}
 
 	if (rank_ == numProcs_ - 1)
@@ -927,7 +941,9 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	duplicated_state_.Flush();
 
 	if (rank_ == 0)
+	{
 		std::cout << "[done]" << std::endl;
+	}
 
 	return duplicated_state_;
 
@@ -944,11 +960,26 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 void SimvascularVerdandiModel::StateUpdated() {
 
 	if (rank_ == 0)
+	{
 		std::cout << "setting state ";
+	}
 
+	// bool onceOnly = true;
 	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+	{
 		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
+		{
 			it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
+			// if (onceOnly) {
+			// 	std::cout << " in StateUpdated() 2: " << it->getName() << " value " << *it->getDataPointer((int)jj) <<  std::endl;
+			// 	onceOnly = false;
+			// }
+			if (boost::iequals(it->getName(),"NetlistCapacitorPressureNodes"))
+			{
+				std::cout << " in StateUpdated() 2: " << it->getName() << " value " << *it->getDataPointer((int)jj) <<  std::endl;
+			}
+		}
+	}
 
 	double* tempArray = new double[shared_parts_size_];
 	int tcounter = 0;
@@ -957,8 +988,8 @@ void SimvascularVerdandiModel::StateUpdated() {
 		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 		{
 			for (std::size_t jj = 0; jj < it->getSize(); jj++) {
-				std::cout << "in StateUpdated(): " << it->getName() << " value " << *it->getDataPointer((int)jj) << std::endl;
 				it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
+				std::cout << "in StateUpdated(): " << it->getName() << " value " << *it->getDataPointer((int)jj) << std::endl;
 
 				tempArray[tcounter++] = *it->getDataPointer((int)jj);
 			}
@@ -1030,7 +1061,9 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 	U.Zero();
 
 	for (int i = 0; i < Nreduced_; i++)
+	{
 		U(i, i) = double(double(1) / state_error_variance_value_[i]);
+	}
 
 	//U.Print();
 

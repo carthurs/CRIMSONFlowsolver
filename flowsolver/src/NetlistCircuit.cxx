@@ -85,10 +85,17 @@ void NetlistCircuit::setupCustomPythonControlSystems()
 {
     // Give any components tagged in the input data for custom Python
     // control systems the name of their Python controller script:
-    std::map<int,std::string> userDefinedComponentControllers = mp_netlistXmlReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
-    for (auto componentIndexAndPythonName = userDefinedComponentControllers.begin(); componentIndexAndPythonName != userDefinedComponentControllers.end(); componentIndexAndPythonName++)
+    std::map<int, ComponentControlSpecificationContainer> userDefinedComponentControllers = mp_netlistXmlReader->getUserDefinedComponentControllersAndPythonNames(m_IndexOfThisNetlistLPNInInputFile);
+    for (auto componentIndexAndPythonControllerSpecification = userDefinedComponentControllers.begin(); componentIndexAndPythonControllerSpecification != userDefinedComponentControllers.end(); componentIndexAndPythonControllerSpecification++)
     {
-        mp_circuitData->mapOfComponents.at(componentIndexAndPythonName->first)->setPythonControllerName(componentIndexAndPythonName->second);
+        // There can be more than one controller attached to this component (e.g. to control both compliance and unstressed volume)
+        ComponentControlSpecificationContainer& controlInfo = componentIndexAndPythonControllerSpecification->second;
+        for (int controllerIndexForThisComponent = 0; controllerIndexForThisComponent < controlInfo.getNumberOfControlScripts(); controllerIndexForThisComponent++)
+        {
+            std::string pythonScriptName = controlInfo.getControlScriptNameByIndexLocalToComponent(controllerIndexForThisComponent);
+            parameter_controller_t controllerType = controlInfo.getControlTypeByIndexLocalToComponent(controllerIndexForThisComponent);
+            mp_circuitData->mapOfComponents.at(componentIndexAndPythonControllerSpecification->first)->addPythonControllerName(controllerType, pythonScriptName);
+        }
     }
     // Give any nodes tagged in the input data for custom Python
     // control systems the name of their Python controller script:
@@ -139,7 +146,8 @@ void NetlistCircuit::createBasicCircuitDescription()
         if (retrievedComponentTypes.at(componentIndex) == Component_VolumeTrackingPressureChamber)
         {
             double initialVolume = mp_netlistXmlReader->getComponentInitialVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
-            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation, initialVolume);
+            double initialUnstressedVolume = mp_netlistXmlReader->getComponentInitialUnstressedVolume(m_IndexOfThisNetlistLPNInInputFile, componentIndex);
+            toPushBack = new VolumeTrackingPressureChamber(m_hstep,m_thisIsARestartedSimulation, initialVolume, initialUnstressedVolume);
         }
         else if (retrievedComponentTypes.at(componentIndex) == Component_VolumeTracking)
         {
@@ -723,8 +731,27 @@ void NetlistCircuit::initialiseAtStartOfTimestep()
 
 void NetlistCircuit::finalizeLPNAtEndOfTimestep()
 {
+    recordPressureHistoryHistory();
     recordPressuresFlowsAndVolumesInHistoryArrays();
     switchDiodeStatesIfNecessary();
+}
+
+void NetlistCircuit::recordPressureHistoryHistory()
+{
+    for (auto node : mp_circuitData->mapOfPressureNodes)
+    {
+        // Store the pressure for writing to output file:
+        node.second->copyHistoryPressureToHistoryHistoryPressure();
+    }
+}
+
+void NetlistCircuit::recordPressureHistory()
+{
+    for (auto node : mp_circuitData->mapOfPressureNodes)
+    {
+        // Store the pressure for writing to output file:
+        node.second->copyPressureToHistoryPressure();
+    }
 }
 
 boost::shared_ptr<CircuitComponent> NetlistCircuit::getComponentByInputDataIndex(const int componentIndex)
@@ -823,7 +850,8 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         if (componentTypes.at(ii) == Component_VolumeTrackingPressureChamber)
         {
             double initialVolume = 130000.0; //\todo make adjustable
-            toPushBack = new VolumeTrackingPressureChamber(m_hstep, m_thisIsARestartedSimulation, initialVolume);
+            double initialUnstressedVolume = 0.0; //\todo make adjustable
+            toPushBack = new VolumeTrackingPressureChamber(m_hstep, m_thisIsARestartedSimulation, initialVolume, initialUnstressedVolume);
         }
         else if (componentTypes.at(ii) == Component_VolumeTracking)
         {
@@ -1252,6 +1280,7 @@ void NetlistCircuit::initialiseCircuit_common()
 
   loadPressuresFlowsAndVolumesOnRestart();
   setInternalHistoryPressureFlowsAndVolumes();
+  recordPressureHistoryHistory();
   if (m_startingTimestepIndex == 0)
   {
     m_oneshotIgnoreIncorrectFortranFlow = true;
@@ -1506,7 +1535,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
-            std::cout << "current resistor value: " << currentParameterValue << std::endl;
+            // std::cout << "current resistor value: " << currentParameterValue << std::endl;
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,-currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             row++;
@@ -1544,7 +1573,7 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
             errFlag = MatSetValue(m_systemMatrix,row,toZeroIndexing(endNode),-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
             double currentParameterValue = *((*component)->getParameterPointer());
-            std::cout << "current capacitor value: " << currentParameterValue << std::endl;
+            // std::cout << "current capacitor value: " << currentParameterValue << std::endl;
             int indexOfThisComponentsFlow = toZeroIndexing((*component)->getIndex());
             errFlag = MatSetValue(m_systemMatrix,row,indexOfThisComponentsFlow+mp_circuitData->numberOfPressureNodes+m_numberOfHistoryPressures,-alfi_delt/currentParameterValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = MatSetValue(m_systemMatrix,row,nodeIndexToPressureHistoryNodeOrderingMap.at(startNode)+mp_circuitData->numberOfPressureNodes,-1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -1787,20 +1816,16 @@ void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
     // std::cout << "sizes are: " << columnIndexOf3DInterfacePressureInLinearSystem.size() << " " << columnIndexOf3DInterfaceFlowInLinearSystem.size() << std::endl;
 }
 
-void NetlistCircuit::assembleRHS(const int timestepNumber)
+// useHistoryHistoryPressure is for the Kalman filter, so we can update the Xn-1 variables to match
+// the current Kalman particle
+void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistoryHistoryPressure)
 {
 
     PetscErrorCode errFlag;
     errFlag = VecZeroEntries(m_RHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    historyPressuresInSubcircuit = pressuresInSubcircuit;
-    historyFlowsInSubcircuit = flowsInSubcircuit;
-    historyVolumesInSubcircuit = volumesInSubcircuit;
-
     // columnIndexOf3DInterfacePressureInLinearSystem.clear(); // dummy value, to be replaced!
     findLinearSystemIndicesOf3DInterfacePressureAndFlow();
-
-    // int nextPressurePointerIndex = 0; // for tracking which pressure pointer to use - useful when there are multiple pressure interfaces to other domains / subcircuits
 
     // Prescribed pressures
     int tempIndexingShift = mp_circuitData->numberOfComponents + m_numberOfMultipleIncidentCurrentNodes + m_numberOfVolumeTrackingPressureChambers;
@@ -1831,8 +1856,6 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
                 throw e;
               }
-              // columnIndexOf3DInterfacePressureInLinearSystem.push_back(ll + tempIndexingShift);
-              // nextPressurePointerIndex++;
             }
         }
         else
@@ -1846,7 +1869,6 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
 
     // History Pressures
     tempIndexingShift += mp_circuitData->numberOfPrescribedPressures;
-    // for(int ll=0; ll<m_numberOfHistoryPressures; ll++)
 
     // Scoping unit to include the second counter lll in the for loop, without having lll in-scope after the loop finishes:
     {
@@ -1855,15 +1877,20 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
         {
             if (node->second->hasHistoryPressure())
             {
-                errFlag = VecSetValue(m_RHS,lll+tempIndexingShift,node->second->getHistoryPressure(),INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+                double historyPressure;
+                if (useHistoryHistoryPressure)
+                {
+                    historyPressure = node->second->getHistoryHistoryPressure();
+                } else {
+                    historyPressure = node->second->getHistoryPressure();
+                }
+                errFlag = VecSetValue(m_RHS,lll+tempIndexingShift,historyPressure,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
                 lll++;
             }
         }
     }
     // Prescribed Flows:
     tempIndexingShift += m_numberOfHistoryPressures;
-    // columnIndexOf3DInterfaceFlowInLinearSystem.clear();
-    // int nextFlowPointerIndex = 0;
     // Scoping unit to include the second counter ll in the for loop, without having ll in-scope after the loop finishes:
     {
         int ll=0;
@@ -1988,7 +2015,8 @@ void NetlistCircuit::assembleRHS(const int timestepNumber)
     {
         int row = rowIndexAndUnstressedVolumePair->first;
         double unstressedVolume = rowIndexAndUnstressedVolumePair->second;
-        errFlag = VecSetValue(m_RHS, row, unstressedVolume, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+        // minus unstressedVolume because compliance * pressure = (volume - unstressed volume).
+        errFlag = VecSetValue(m_RHS, row, -unstressedVolume, INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF, errFlag);
     }
  
     errFlag = VecAssemblyBegin(m_RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -2125,11 +2153,24 @@ std::vector<double> NetlistCircuit::getVolumesFromSolutionVector()
   return volumesToReturn;
 }
 
+void NetlistCircuit::buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(const int timestepNumber, const double alfi_delt)
+{
+    generateLinearSystemFromPrescribedCircuit(alfi_delt);
+    assembleRHS(timestepNumber, true);
+
+    solveLinearSystem();
+}
+
 void NetlistCircuit::buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt)
 {
   generateLinearSystemFromPrescribedCircuit(alfi_delt);
-  assembleRHS(timestepNumber);
+  assembleRHS(timestepNumber, false);
 
+  solveLinearSystem();
+}
+
+void NetlistCircuit::solveLinearSystem()
+{
   PetscErrorCode errFlag;
   // get the inverse of the system matrix:
   errFlag = MatMatSolve(m_systemMatrix,m_identityMatrixForPetscInversionHack,m_inverseOfSystemMatrix); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -2229,6 +2270,13 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
 
 
     return implicitCoefficientsToReturn;
+}
+
+void NetlistCircuit::computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const int timestepNumber, const double alfi_delt)
+{
+    buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(timestepNumber, alfi_delt);
+    giveNodesTheirPressuresFromSolutionVector();
+    recordPressureHistory();
 }
 
 // This subroutine detects whether the last circuit linear system solve was invalid due to its producing negative

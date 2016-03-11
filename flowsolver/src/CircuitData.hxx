@@ -79,8 +79,8 @@ public:
 	}
 
 	bool hasUserDefinedExternalPythonScriptParameterController() const;
-	std::string getPythonControllerName() const;
-	void setPythonControllerName(const std::string pythonParameterControllerName);
+	std::string getPythonControllerName(const parameter_controller_t controllerType) const;
+	void addPythonControllerName(const parameter_controller_t controlType, const std::string pythonParameterControllerName);
 
 	bool hasNonnegativePressureGradientOrForwardFlow(); // whether the diode should be open
 	bool connectsToNodeAtInterface();
@@ -104,7 +104,7 @@ public:
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	bool m_hasPythonParameterController;
-	std::string m_pythonParameterControllerName;
+	std::map<parameter_controller_t, std::string> m_pythonParameterControllerNames;
 private:
 	circuit_component_t m_type;
 	bool m_permitsFlow; // for diodes in particular
@@ -161,15 +161,16 @@ protected:
 class VolumeTrackingPressureChamber : public VolumeTrackingComponent
 {
 public:
-	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation, const double initialVolume)
+	VolumeTrackingPressureChamber(const int hstep, const bool thisIsARestartedSimulation, const double initialVolume, const double initialUnstressedVolume)
 	: VolumeTrackingComponent(hstep, thisIsARestartedSimulation, initialVolume)
 	{
 		//assert(!thisIsARestartedSimulation);
-		m_unstressedVolume = 0.0; // default; can be changed later if necessary
+		m_unstressedVolume = initialUnstressedVolume;
 	}
 	
 	void setStoredVolume(const double newVolume);
 	double getUnstressedVolume();
+	double* getUnstressedVolumePointer();
 private:
 	double m_unstressedVolume;
 	void passPressureToStartNode();
@@ -206,6 +207,8 @@ public:
 
 	double getHistoryPressure() const;
 	void copyPressureToHistoryPressure();
+	double getHistoryHistoryPressure() const;
+	void copyHistoryPressureToHistoryHistoryPressure();
 	bool hasHistoryPressure() const;
 	void setHasHistoryPressure(const bool hasHistoryPressure);
 	circuit_nodal_pressure_prescription_t getPressurePrescriptionType() const;
@@ -222,6 +225,7 @@ protected:
 	const int m_hstep;
 private:
 	double m_historyPressure;
+	double m_historyHistoryPressure;
 	bool m_hasHistoryPressure;
 	circuit_nodal_pressure_prescription_t m_prescribedPressureType;
 	int m_prescribedPressurePointerIndex;

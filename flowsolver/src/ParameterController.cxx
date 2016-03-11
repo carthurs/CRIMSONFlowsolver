@@ -220,7 +220,7 @@ void GenericPythonController::initialise()
 			std::cout << std::endl << "EE: An error occurred when constructing the Python parameter controller "  << std::endl
 					               << m_controllerPythonScriptBaseName << ".py. Details are below:, but if this"  << std::endl
 					               << " is an error with a missing module, you may need to set paths in your "  << std::endl
-					               << "Python script with sys.path.append(\"/path/to/missing/module/\")." << std::endl << std::endl;
+					               << "Python script with sys.path.append(\"/path/to/missing/module/\"). (A)" << std::endl << std::endl;
 			PyErr_Print();
 		}
 		// Rethrow the original exception (whether or not it was Python's).

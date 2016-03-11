@@ -176,7 +176,58 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 			}
 
 			break;
+		case Controller_CustomPythonComponentUnstressedVolume:
+			{
+				// get the component:
+				boost::shared_ptr<CircuitComponent> controlledComponent = netlistCircuit->getComponentByInputDataIndex(nodeOrComponentIndex);
+				boost::shared_ptr<VolumeTrackingPressureChamber> componentWithUnstressedVolumeToControl = boost::static_pointer_cast<VolumeTrackingPressureChamber> (controlledComponent);
+				if (!componentWithUnstressedVolumeToControl) 
+				{
+					std::stringstream errorMessage;
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << " was tagged as having unstressed volume control, but the component has no unstressed volume parameter." << std::endl;
+					throw std::runtime_error(errorMessage.str());
+				}
+				
+				//////////////////////////////////////////////////////////////////////
+				// this is the difference with normal Python component controllers: //
+				//////////////////////////////////////////////////////////////////////
+				double* parameterToControl = componentWithUnstressedVolumeToControl->getUnstressedVolumePointer();
 
+				std::string externalPythonControllerName;
+				std::vector<std::pair<int,double*>> flowPointerPairs;
+				std::vector<std::pair<int,double*>> pressurePointerPairs;
+				std::vector<std::pair<int,double*>> volumePointerPairs;
+
+				if (componentWithUnstressedVolumeToControl->hasUserDefinedExternalPythonScriptParameterController())
+				{
+					externalPythonControllerName = componentWithUnstressedVolumeToControl->getPythonControllerName(controllerType);
+
+					// Gather the pressures and flows as pointers, so the CustomPython parameter
+					// controller can retrieve the pressure and flow values for each component
+					// of its netlist, and pass them to the Python controller for use by the user.
+					// They're indexed by the input data indices for the nodes / componnents:
+					flowPointerPairs = netlistCircuit->getComponentInputDataIndicesAndFlows();
+					pressurePointerPairs = netlistCircuit->getNodeInputDataIndicesAndPressures();
+					volumePointerPairs = netlistCircuit->getVolumeTrackingComponentInputDataIndicesAndVolumes();
+
+				}
+				else
+				{
+					std::stringstream errorMessage;
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
+					throw std::runtime_error(errorMessage.str());
+				}
+				int surfaceIndex = netlistCircuit->getSurfaceIndex();
+				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				controllerToPushBack->initialise();
+				// m_controlSystems.push_back(controllerToPushBack);
+				m_pythonControlSystems.push_back(controllerToPushBack);
+				sortPythonControlSystemsByPriority();
+			}
+
+			break;
 		case Controller_CustomPythonComponentParameter:
 			{
 				// get the component:
@@ -189,7 +240,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 				if (controlledComponent->hasUserDefinedExternalPythonScriptParameterController())
 				{
-					externalPythonControllerName = controlledComponent->getPythonControllerName();
+					externalPythonControllerName = controlledComponent->getPythonControllerName(controllerType);
 
 					// Gather the pressures and flows as pointers, so the CustomPython parameter
 					// controller can retrieve the pressure and flow values for each component
@@ -238,7 +289,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 
 				if (controlledComponent->hasUserDefinedExternalPythonScriptParameterController())
 				{
-					externalPythonControllerName = controlledComponent->getPythonControllerName();
+					externalPythonControllerName = controlledComponent->getPythonControllerName(controllerType);
 
 					// Begin by getting the Python flow control script and copying it into the working directory, if
 					// it doesn't exist there yet:

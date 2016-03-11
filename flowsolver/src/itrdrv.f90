@@ -134,8 +134,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 !--------------------------------------------------------------------
 !   Setting up memLS
 
-    write(*,*) "ALE ON: ", aleOn
-
     IF (memLSFlag .EQ. 1) THEN
         CALL memLS_LS_CREATE(memLS_ls, LS_TYPE_NS, dimKry=Kspace,relTol=epstol(8), &
                              relTolIn=(/epstol(1),epstol(7)/), maxItr=nPrjs, maxItrIn=(/nGMRES,maxIters/))
@@ -1530,6 +1528,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     integer ifail
 
     real*8 relativeVelocity(nshg,3), uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
+    real*8 relativeVelocity2(nshg,3)
 
     ! ! Update boundary conditions to the final pressure, conforming to the final flow:
     ! if (nrcractive) then
@@ -1602,6 +1601,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     relativeVelocity(:,2) = y(:,2) - uMesh2(:)
     relativeVelocity(:,3) = y(:,3) - uMesh3(:)
 
+    relativeVelocity2(:,1) = y(:,1) - uMesh1(:)
+    relativeVelocity2(:,2) = y(:,2) - uMesh2(:)
+    relativeVelocity2(:,3) = y(:,3) - uMesh3(:)    
+
     !
     ! ... write out the solution
     !
@@ -1617,6 +1620,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call Write_Residual(myrank, lstep, nshg, 4, res) 
 #endif
         call Write_Relative_Velocity(myrank, lstep, nshg, 3, relativeVelocity) 
+        call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, relativeVelocity2, "vrel") 
+        
     endif
     
     ! ************************** !

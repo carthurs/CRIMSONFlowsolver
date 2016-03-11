@@ -163,6 +163,7 @@ int main(int argc, char* argv[])
 	bool RequestedWSS  = false;
 	bool RequestedYbar = false;
 	bool RequestedNewSn = false;
+	
 
 	/* argc is the number of strings on the command-line */
 	/*  starting with the program name */

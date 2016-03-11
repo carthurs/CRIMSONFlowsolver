@@ -105,7 +105,8 @@ int main(int argc, char* argv[])
 	int newstepnumber = 0;
 
 	double *qglobal, *qlocal, *xlocal, *xglobal, *aglobal, *fglobal, *dglobal, *dglobal_ref, *distglobal, *wglobal;
-	double *yglobal, *resglobal, *relativeVelocityGlobal;
+	double *yglobal;
+	double *resglobal, *relativeVelocityGlobal, *updatedMeshCoordinatesGlobal; // ALE variables KDL, MA 2016
 	float *qdx, *xdx;
 	int *iendx, nodes[8];
 	char rfname[40];
@@ -163,7 +164,7 @@ int main(int argc, char* argv[])
 	bool RequestedWSS  = false;
 	bool RequestedYbar = false;
 	bool RequestedNewSn = false;
-	
+	bool aleOn = false;
 
 	/* argc is the number of strings on the command-line */
 	/*  starting with the program name */
@@ -194,6 +195,7 @@ int main(int argc, char* argv[])
 			cout << "  -wss                : reduce Wall Shear Stress"<<endl;
 			cout << "  -ybar               : reduce ybar field"<<endl;
 			cout << "  -newsn stepnumber   : override step number in file"<<endl;
+			cout << "  -ale                : reduce ALE variables in file"<<endl;
 			cout << "END COMMAND-LINE ARGUMENT SUMMARY" << endl;
 			cout << endl;
 		}
@@ -254,6 +256,12 @@ int main(int argc, char* argv[])
 		else if(tmpstr=="-ybar"){
 			RequestedYbar = true;
 		}
+		else if(tmpstr=="-ALE"){
+			aleOn = true;
+		}
+        else if(tmpstr=="-ale"){
+			aleOn = true;
+		}		
 		else {
 			BogusCmdLine = true;
 		}
@@ -298,6 +306,9 @@ int main(int argc, char* argv[])
 	if(RequestedWSS){
 		cout << "Will reduce wall shear stress field as requested" << endl;
 	}
+    if(aleOn){
+		cout << "Will reduce ALE fields as requested" << endl;
+	}	
 	/* Keep these last */
 	if(!StepNumberAvailable){
 		cout << "No step number or range of steps given, so exiting." << endl;
@@ -493,10 +504,13 @@ int main(int argc, char* argv[])
 		wglobal = (double *) malloc( numvar*nshgtot * sizeof(double));
 	}
 
+	if(aleOn){
 #if DEBUG_ALE == 1	
-	resglobal = (double *) malloc( 4*nshgtot * sizeof(double));
+		resglobal = (double *) malloc( 4*nshgtot * sizeof(double));
 #endif
-	relativeVelocityGlobal = (double *) malloc( 3*nshgtot * sizeof(double));
+		relativeVelocityGlobal = (double *) malloc( 3*nshgtot * sizeof(double));
+		updatedMeshCoordinatesGlobal = (double *) malloc( 3*nshgtot * sizeof(double));		
+	}
 
 	if (RequestedYbar) {
 		/* scanning restart.<stepnum>.1 for numvar */
@@ -682,42 +696,64 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		if(aleOn){
+
 #if DEBUG_ALE == 1		
-		// read in residual field for current processor 
-		sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
-		printf("Reducing : %s for residual\n", rfname);
-		openfile_(rfname, "read", &irstin   );
-		readheader_(&irstin,"residual",(void*)iarray,&ithree,"double",iotype);
-		nshgl_res=iarray[0];
-		numvar_res=iarray[1];
-		lstep_res=iarray[2];
-		iqsiz=nshgl_res*numvar_res;
-		readdatablock_(&irstin,"residual",(void*)qlocal, &iqsiz, "double", iotype);
-		closefile_( &irstin, "read" );
-		/* map solution to global */
-		for(k=0; k< numvar_res; k++){
-			for(j=0; j< nshgl_res ; j++){
-				resglobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+			// read in residual field for current processor 
+			sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+			printf("Reducing : %s for residual\n", rfname);
+			openfile_(rfname, "read", &irstin   );
+			readheader_(&irstin,"residual",(void*)iarray,&ithree,"double",iotype);
+			nshgl_res=iarray[0];
+			numvar_res=iarray[1];
+			lstep_res=iarray[2];
+			iqsiz=nshgl_res*numvar_res;
+			readdatablock_(&irstin,"residual",(void*)qlocal, &iqsiz, "double", iotype);
+			closefile_( &irstin, "read" );
+			/* map solution to global */
+			for(k=0; k< numvar_res; k++){
+				for(j=0; j< nshgl_res ; j++){
+					resglobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+				}
 			}
-		}
 #endif
 
-		// read in relative velocity field for current processor 
-		sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
-		printf("Reducing : %s for relative velocity\n", rfname);
-		openfile_(rfname, "read", &irstin   );
-		readheader_(&irstin,"relative velocity",(void*)iarray,&ithree,"double",iotype);
-		nshgl_res=iarray[0];
-		numvar_res=iarray[1];
-		lstep_res=iarray[2];
-		iqsiz=nshgl_res*numvar_res;
-		readdatablock_(&irstin,"relative velocity",(void*)qlocal, &iqsiz, "double", iotype);
-		closefile_( &irstin, "read" );
-		/* map solution to global */
-		for(k=0; k< numvar_res; k++){
-			for(j=0; j< nshgl_res ; j++){
-				relativeVelocityGlobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+			// read in relative velocity field for current processor 
+			sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+			printf("Reducing : %s for relative velocity\n", rfname);
+			openfile_(rfname, "read", &irstin   );
+			readheader_(&irstin,"relative velocity",(void*)iarray,&ithree,"double",iotype);
+			nshgl_res=iarray[0];
+			numvar_res=iarray[1];
+			lstep_res=iarray[2];
+			iqsiz=nshgl_res*numvar_res;
+			readdatablock_(&irstin,"relative velocity",(void*)qlocal, &iqsiz, "double", iotype);
+			closefile_( &irstin, "read" );
+			/* map solution to global */
+			for(k=0; k< numvar_res; k++){
+				for(j=0; j< nshgl_res ; j++){
+					relativeVelocityGlobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+				}
 			}
+
+			// read in updated mesh coordinate field for current processor 
+			sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+			printf("Reducing : %s for updated mesh coordinates\n", rfname);
+			openfile_(rfname, "read", &irstin   );
+			readheader_(&irstin,"updated mesh coordinates",(void*)iarray,&ithree,"double",iotype);
+			nshgl_res=iarray[0];
+			numvar_res=iarray[1];
+			lstep_res=iarray[2];
+			iqsiz=nshgl_res*numvar_res;
+			readdatablock_(&irstin,"updated mesh coordinates",(void*)qlocal, &iqsiz, "double", iotype);
+			closefile_( &irstin, "read" );
+			/* map solution to global */
+			for(k=0; k< numvar_res; k++){
+				for(j=0; j< nshgl_res ; j++){
+					updatedMeshCoordinatesGlobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+				}
+			}
+
 		}
 
 	}
@@ -843,30 +879,47 @@ int main(int argc, char* argv[])
 					( void* )(distglobal), &nitems, "double", iotype );
 		}
 
-		// write out global residuals
+        if (aleOn)
+        {
+        
+			// write out global residuals
 #if DEBUG_ALE == 1		
-		nitems = 3;
-		iarray[ 0 ] = nshgtot;
-		iarray[ 1 ] = 4;
-		iarray[ 2 ] = lstep;
-		size = 4*nshgtot;
-		writeheader_( &irstin, "residual ",
-					( void* )iarray, &nitems, &size,"double", iotype );
-		nitems = size;
-		writedatablock_( &irstin, "residual ",
-					( void* )(resglobal), &nitems, "double", iotype );
+			nitems = 3;
+			iarray[ 0 ] = nshgtot;
+			iarray[ 1 ] = 4;
+			iarray[ 2 ] = lstep;
+			size = 4*nshgtot;
+			writeheader_( &irstin, "residual ",
+						( void* )iarray, &nitems, &size,"double", iotype );
+			nitems = size;
+			writedatablock_( &irstin, "residual ",
+						( void* )(resglobal), &nitems, "double", iotype );
 #endif
 
-		nitems = 3;
-		iarray[ 0 ] = nshgtot;
-		iarray[ 1 ] = 3;
-		iarray[ 2 ] = lstep;
-		size = 3*nshgtot;
-		writeheader_( &irstin, "relative velocity ",
-					( void* )iarray, &nitems, &size,"double", iotype );
-		nitems = size;
-		writedatablock_( &irstin, "relative velocity ",
-					( void* )(relativeVelocityGlobal), &nitems, "double", iotype );
+			// write out relative velocity
+			nitems = 3;
+			iarray[ 0 ] = nshgtot;
+			iarray[ 1 ] = 3;
+			iarray[ 2 ] = lstep;
+			size = 3*nshgtot;
+			writeheader_( &irstin, "relative velocity ",
+						( void* )iarray, &nitems, &size,"double", iotype );
+			nitems = size;
+			writedatablock_( &irstin, "relative velocity ",
+						( void* )(relativeVelocityGlobal), &nitems, "double", iotype );
+
+			// write out updated mesh coordinates
+			nitems = 3;
+			iarray[ 0 ] = nshgtot;
+			iarray[ 1 ] = 3;
+			iarray[ 2 ] = lstep;
+			size = 3*nshgtot;
+			writeheader_( &irstin, "updated mesh coordinates ",
+						( void* )iarray, &nitems, &size,"double", iotype );
+			nitems = size;
+			writedatablock_( &irstin, "updated mesh coordinates ",
+						( void* )(updatedMeshCoordinatesGlobal), &nitems, "double", iotype );			
+		}
 
 		// if the acceleration is requested, before closing the file write the acceleration
 		if(RequestedAcceleration){
@@ -1335,10 +1388,13 @@ int main(int argc, char* argv[])
 	if(RequestedYbar){
 		free(yglobal);
 	}
+	if (aleOn){
 #if DEBUG_ALE == 1
-	free(resglobal);
+		free(resglobal);
 #endif	
-	free(relativeVelocityGlobal);
+		free(relativeVelocityGlobal);
+		free(updatedMeshCoordinatesGlobal);
+	}
 	free(xglobal);
 	free(ien);
 	return 0;

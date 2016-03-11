@@ -1527,8 +1527,9 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     integer jj
     integer ifail
 
-    real*8 relativeVelocity(nshg,3), uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
-    real*8 relativeVelocity2(nshg,3)
+    real*8 uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
+    real*8 relativeVelocity(nshg,3)
+    real*8 updatedMeshCoordinates(nshg,3)
 
     ! ! Update boundary conditions to the final pressure, conforming to the final flow:
     ! if (nrcractive) then
@@ -1601,9 +1602,11 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     relativeVelocity(:,2) = y(:,2) - uMesh2(:)
     relativeVelocity(:,3) = y(:,3) - uMesh3(:)
 
-    relativeVelocity2(:,1) = y(:,1) - uMesh1(:)
-    relativeVelocity2(:,2) = y(:,2) - uMesh2(:)
-    relativeVelocity2(:,3) = y(:,3) - uMesh3(:)    
+    ! calculate updated mesh coordinates
+    ! x is stored in the global arrays module
+    updatedMeshCoordinates(:,1) = x(:,1)
+    updatedMeshCoordinates(:,2) = x(:,2)
+    updatedMeshCoordinates(:,3) = x(:,3)
 
     !
     ! ... write out the solution
@@ -1616,11 +1619,15 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
                 call write_distl(myrank, lstep, nshg, 1, xdist) ! should use nshg or numnp?
             end if            
         end if
+
+        if (aleOn .eq. int(1)) then
 #if DEBUG_ALE == 1
-        call Write_Residual(myrank, lstep, nshg, 4, res) 
+            call Write_Residual(myrank, lstep, nshg, 4, res) 
 #endif
-        call Write_Relative_Velocity(myrank, lstep, nshg, 3, relativeVelocity) 
-        call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, relativeVelocity2, "vrel") 
+            ! call Write_Relative_Velocity(myrank, lstep, nshg, 3, relativeVelocity) 
+            call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, relativeVelocity, "relative velocity") 
+            call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, updatedMeshCoordinates, "updated mesh coordinates") 
+        end if 
         
     endif
     

@@ -134,6 +134,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 !--------------------------------------------------------------------
 !   Setting up memLS
 
+    write(*,*) "ALE ON: ", aleOn
+
     IF (memLSFlag .EQ. 1) THEN
         CALL memLS_LS_CREATE(memLS_ls, LS_TYPE_NS, dimKry=Kspace,relTol=epstol(8), &
                              relTolIn=(/epstol(1),epstol(7)/), maxItr=nPrjs, maxItrIn=(/nGMRES,maxIters/))
@@ -1519,12 +1521,15 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     use phcommonvars
     use itrDrvVars
+    use ale
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer jj
     integer ifail
+
+    real*8 relativeVelocity(nshg,3), uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
 
     ! ! Update boundary conditions to the final pressure, conforming to the final flow:
     ! if (nrcractive) then
@@ -1588,21 +1593,30 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         write(*,*) 'updating uref with avg'
     end if
 
+    !
+    ! ... calculate relative velocity KDL, MA
+    ! 
+
+    call getMeshVelocities(uMesh1, uMesh2, uMesh3, nshg)
+    relativeVelocity(:,1) = y(:,1) - uMesh1(:)
+    relativeVelocity(:,2) = y(:,2) - uMesh2(:)
+    relativeVelocity(:,3) = y(:,3) - uMesh3(:)
 
     !
     ! ... write out the solution
     !
     if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
-        call restar ('out ',  yold  ,ac)
+        call restar ('out ', yold, ac)
         if(ideformwall.eq.1) then
-            call write_displ(myrank, lstep, nshg, 3, uold, uref )
+            call write_displ(myrank, lstep, nshg, 3, uold, uref)
             if (imeasdist.eq.1) then
-                call write_distl(myrank, lstep, nshg, 1, xdist ) ! should use nshg or numnp?
+                call write_distl(myrank, lstep, nshg, 1, xdist) ! should use nshg or numnp?
             end if            
         end if
 #if DEBUG_ALE == 1
-        call Write_Residual(myrank, lstep, nshg, 4, res ) 
+        call Write_Residual(myrank, lstep, nshg, 4, res) 
 #endif
+        call Write_Relative_Velocity(myrank, lstep, nshg, 3, relativeVelocity) 
     endif
     
     ! ************************** !

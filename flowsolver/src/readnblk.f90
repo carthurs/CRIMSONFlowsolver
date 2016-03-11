@@ -37,6 +37,7 @@
       use readarrays
       use globalArrays
       use phcommonvars
+      use ale
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
       real (c_double), allocatable :: xread(:,:), qread(:,:), acread(:,:)
@@ -643,6 +644,17 @@
       endif
 
       temporary_array = zero
+
+      !.... initialize ALE because we need update coordinates and velocities at this point
+
+
+      if (aleOn.eq.1) then
+
+          call readUpdatedMeshVariablesFromFile(irstart,numnp)
+          call updateMeshVariables(x,y,numnp)
+
+      endif
+
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)
       if (geombcHasObservationFields) then

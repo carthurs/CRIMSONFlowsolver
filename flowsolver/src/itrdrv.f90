@@ -708,6 +708,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         ! call solveWallProb(rowp,colm,ilwork,iBC,BC,iper)
     end if
 
+
     if (idistancenudge.eq.1) then
         if (myrank.eq.zero) then
             write(*,*) "computing distance to wall data surfaces (initial)"

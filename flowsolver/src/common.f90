@@ -143,6 +143,12 @@ module phcommonvars
     !----------------------------------------------------------
 
     !----------------------------------------------------------
+    integer aleOn
+    common /aleFlags/ aleOn
+    bind(C, name="aleFlags") :: /aleFlags/
+    !----------------------------------------------------------
+
+    !----------------------------------------------------------
     integer :: master != 0
     integer numpe, myrank
     common /workfc/ master, numpe, myrank

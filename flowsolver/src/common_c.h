@@ -48,6 +48,10 @@
          bool kalmanFilterOn = false;
       } kalmanFilterActive;
 
+      extern struct {
+         int aleOn;
+      } aleFlags;      
+
       extern struct { 
          int master;
          int numpe;

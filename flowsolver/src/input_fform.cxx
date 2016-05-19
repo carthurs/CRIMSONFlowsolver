@@ -43,6 +43,16 @@ int input_fform() {
 		timpar.ntseq = inp.GetValue("ntseq");
 		solpar.imap = inp.GetValue("imap");
 
+		// ALE
+		if( (string) inp.GetValue("Arbitary Lagrangian Eulerian description") == "True")
+		{
+			aleFlags.aleOn = 1; 
+		}			
+		else
+		{
+			aleFlags.aleOn = 0; 
+		} 
+		
 		// Solution Control Keywords
 
 		if ((string) inp.GetValue("Equation of State") == "Incompressible")

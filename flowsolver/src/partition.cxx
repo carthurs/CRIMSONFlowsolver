@@ -289,8 +289,10 @@ void Partition_Problem(int numProcs) {
 	}
 
 	if (nomodule.pureZeroDSimulation == 0) {
+		
 		openfile_("geombc.dat.1", "read", &igeombc);
 		vector < string > headers;
+		
 		Gather_Headers(&igeombc, headers);
 
 		int numel, nIfaces, spebc;
@@ -1480,7 +1482,6 @@ void Partition_Problem(int numProcs) {
 		sprintf(filename,"%silwork.info",_directory_name );
 		ofstream ilwf( filename );
 	#endif
-
 		for (int a = 0; a < numProcs; a++) { //outer loop over procs
 			ilwork.push_back(0);
 
@@ -1607,6 +1608,7 @@ void Partition_Problem(int numProcs) {
 			isize = PeriodicPart[a].size();
 			nitems = 1;
 			iarray[0] = PeriodicPart[a].size();
+
 			writeheader_(&fgeom, "periodic masters array ", (void*) iarray, &nitems,
 					&isize, "integer", oformat);
 

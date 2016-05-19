@@ -36,7 +36,7 @@ static char help[] = "Pure Flowsolver.\n\n";
 
 int main(int argc, char **argv) {
 
-
+   kalmanFilterActive.kalmanFilterOn = false;
    int rank;
    int numProcsTotal,numProcs;
    int ierr = 0;

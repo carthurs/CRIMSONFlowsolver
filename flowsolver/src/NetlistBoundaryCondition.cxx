@@ -85,8 +85,8 @@ void NetlistBoundaryCondition::writePressuresFlowsAndVolumes(int& nextTimestepWr
 // condition type is currently Dirichlet.
 void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
 {
-  if(flowPermittedAcross3DInterface())
-  {
+    if(flowPermittedAcross3DInterface())
+    {
     assert(hasListOfMeshNodesAtThisBoundary);
     // set zero in the binaryMask at the locations necessary to impose Dirichlet at this surface
     for (auto node=listOfMeshNodesAtThisBoundary.begin(); node!=listOfMeshNodesAtThisBoundary.end(); node++)

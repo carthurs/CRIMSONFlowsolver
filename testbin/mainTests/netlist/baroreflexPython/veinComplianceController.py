@@ -15,7 +15,7 @@ class parameterController(abstractParameterController): #NECESSARY
 		self.finishSetup() #NECESSARY
 		# The baseline resistance will be set the first time the controller steps, 
 		# using the value set in netlist_surfaces.xml for the resistor its attached to
-		self.initialUnstressedVolumeHasBeenSet = False
+		self.initialComplianceHasBeenSaved = False
 
 
 	# def setFirstTimestepBroadcastValues(self):
@@ -38,12 +38,12 @@ class parameterController(abstractParameterController): #NECESSARY
 		# 	print "Flow ", key, " was ", dictionaryOfFlowsByComponentIndex[key]
 
 		# Get a baseline resistance on the first time-step taken
-		if (not self.initialUnstressedVolumeHasBeenSet):
-			self.baselineUnstressedVolume = currentParameterValue
-			self.initialUnstressedVolumeHasBeenSet = True
+		if (not self.initialComplianceHasBeenSaved):
+			self.baselineCompliance = currentParameterValue
+			self.initialComplianceHasBeenSaved = True
 
 		controlSignal = self.getRecievedBroadcastValue('baroreceptor','venousComplianceControlSignal')
-		unstressedVolumeToSet = self.baselineUnstressedVolume * controlSignal
-		print "python setting venous compliance", unstressedVolumeToSet
+		complianceToSet = self.baselineCompliance * controlSignal
+		print "python setting venous compliance", complianceToSet
 		
-		return unstressedVolumeToSet
+		return complianceToSet

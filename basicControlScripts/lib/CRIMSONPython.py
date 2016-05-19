@@ -25,7 +25,7 @@ def loadClassOnRestart(fileName, MPIRank):
 	return loadedObject
 
 
-class stateDataContainer:
+class stateDataContainer(object):
 	
 	def __init__(self, containerNameTag):
 		self.containerNameTag = containerNameTag
@@ -46,7 +46,7 @@ class stateDataContainer:
 		return copy.deepcopy(returnValue)
 
 
-class abstractParameterController:
+class abstractParameterController(object):
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
 		self.m_baseNameOfThisScript = baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile
 		self.MPIRank = MPIRank

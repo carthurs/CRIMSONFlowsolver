@@ -53,6 +53,7 @@ static char help[] = "ROUKF driver.\n\n";
 
 int main(int argc, char** argv)
 {
+    kalmanFilterActive.kalmanFilterOn = true;
     char buildNumber[100];
     char buildTime[100];
     getBuildNumber(buildNumber);

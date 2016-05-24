@@ -86,7 +86,7 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 {
 	assert(m_hasNumberOfColumns);
 	int index;
-	double value;
+	double doubleJustRead;
 
 	m_dataReadFromFile_line.clear();
 	// Get all the data entries from a single line of the file.
@@ -95,10 +95,10 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 	// which is newly cleared on each call to this function.
  	for (int currentColumn=0; currentColumn<m_numColumns; currentColumn++)
  	{
- 		value = 0.0;
+ 		doubleJustRead = 0.0;
  		if (!mp_file->fail())
  		{
- 			*mp_file >> value;
+ 			*mp_file >> doubleJustRead;
  		}
  		else
 		{
@@ -111,12 +111,12 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 	 		if (currentColumn>0)
 	 		{
 	 			std::stringstream error;
-	 			error << "File " << m_fileName << " terminated early.";
+	 			error << "File " << m_fileName << " terminated early. Zero-indexed last column read was " << currentColumn << " with value " << doubleJustRead << ".";
 				throw std::runtime_error(error.str());
 	 		}
 	 		return false;
 	 	}
- 		m_dataReadFromFile_line.push_back(value);
+ 		m_dataReadFromFile_line.push_back(doubleJustRead);
  	}
 
  	// return false case is guarded by an if above

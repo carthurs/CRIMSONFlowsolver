@@ -407,7 +407,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
           // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
           histFileReader boundaryConditionVolumeHistoryReader;
           boundaryConditionVolumeHistoryReader.setFileName(m_VolumeHistoryFileName);
-          boundaryConditionVolumeHistoryReader.setNumColumns(mp_circuitData->m_numberOfVolumeTrackingComponenets);
+          boundaryConditionVolumeHistoryReader.setNumColumns(mp_circuitData->m_numberOfVolumeTrackingComponenets + 1); // +1 for the timestep indexing column
           boundaryConditionVolumeHistoryReader.readAndSplitMultiSurfaceRestartFile();
 
           for (int stepToRead=0; stepToRead <= m_startingTimestepIndex; stepToRead++)

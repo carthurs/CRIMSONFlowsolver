@@ -295,7 +295,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
         ! Fill out the array with ones
         binaryMask = 1
-        ! Set the apprporiate zeros for the nodes wherre where the Dirichlet conditions should be applied:
+        ! Set the apprporiate zeros for the nodes where the Dirichlet conditions should be applied:
         call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
         ! Reset iBC, so we work with a clean copy
         iBC = iBC_original
@@ -745,7 +745,6 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! It's a least-bad hack to get around the chicken-and-egg initialisation
     ! order issues for the 3D and multidomain. If we want to avoid this,
     ! the Fortran code needs refactoring.
-    write(*,*) "setting pressure for C++ RCRs"
     call callCPPSetPressureFromFortran()
     ! call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 
@@ -1031,7 +1030,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer, dimension(nshg) :: binaryMask
-    integer numberOfCppManagedBoundaryConditions
+    integer numberOfCppManagedBoundaryConditions, ii
 
     ! ! Ensure that the CurrentIter counter has been reset (detects e.g. problems with
     ! ! solver.inp requesting a MinNumIter which exceeds the number of steps in the
@@ -1066,7 +1065,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
         if (numberOfCppManagedBoundaryConditions .gt. int(0)) then
             ! Fill out the array with zeros
             binaryMask = 1
-            ! Set the apprporiate zeros for the nodes where where the Neumann conditions should be applied:
+            ! Set the apprporiate zeros for the nodes where the Neumann conditions should be applied:
             call callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(c_loc(binaryMask), nshg)
             ! Reset iBC, so we work with a clean copy
             iBC = iBC_original

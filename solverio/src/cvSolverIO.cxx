@@ -131,6 +131,7 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
                           const char*  iotype) {
 
    int i,skip_size,integer_value;
+   rewindFile();
    int rewinded = 0;
 
    int lengthOfToken;

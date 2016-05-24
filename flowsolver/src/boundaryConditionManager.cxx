@@ -190,6 +190,7 @@ void boundaryConditionManager::setPressureFromFortran()
   {
     if (typeid(**boundaryCondition)==typeid(RCR))
     {
+      std::cout << "setting pressure for C++ RCRs" << std::endl;
       RCR* downcastRCR = dynamic_cast<RCR*>(boundaryCondition->get());
       downcastRCR->setPressureFromFortran();
     }
@@ -214,7 +215,7 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs
   {
     if (typeid(**iterator)==typeid(RCR))
     {
-      
+      // std::cout << "RCR implicoeff: " << (*iterator)->getSurfaceIndex() << " " << (*iterator)->getdp_dq() << " " << (*iterator)->getHop() << std::endl;     
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
       // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       
@@ -299,7 +300,9 @@ void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
   {
     boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
-    assert(downcastNetlist != NULL);
+    if (downcastNetlist == NULL) {
+      throw std::runtime_error("Can only use Netlist boundary conditions in pure zero-D simulations.");
+    }
 
     // Get the (zero-indexed) Netlist index; this gives us the appropriate location of the pointers in the input variables
     int netlistIndex = downcastNetlist->getIndexAmongstNetlists();
@@ -685,7 +688,7 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
       // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = (*iterator)->getHop();
       // std::cout << " and H operator: " << implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] << std::endl;
-      
+      // std::cout << "Netlist implicoeff: " << (*iterator)->getSurfaceIndex() << " " << (*iterator)->getdp_dq() << " " << (*iterator)->getHop() << std::endl;
       writeLocation++;
     }
   }

@@ -29,9 +29,9 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	{
 		hasForwardFlow = (flow >= floatingPointTolerance);
 	}
-	// std::cout << "flow in hasNonnegativePressureGradientOrForwardFlow:" << flow << " and sign " << m_signForPrescribed3DInterfaceFlow << std::endl;
-	// std::cout << "hasNonnegativePressureGradient: " << hasNonnegativePressureGradient << std::endl;
-	// std::cout << "hasForwardFlow: " << hasForwardFlow << std::endl;
+	std::cout << "flow in hasNonnegativePressureGradientOrForwardFlow:" << flow << " and sign " << m_signForPrescribed3DInterfaceFlow << std::endl;
+	std::cout << "hasNonnegativePressureGradient: " << hasNonnegativePressureGradient << std::endl;
+	std::cout << "hasForwardFlow: " << hasForwardFlow << std::endl;
 
 	return (hasNonnegativePressureGradient || hasForwardFlow);
 }

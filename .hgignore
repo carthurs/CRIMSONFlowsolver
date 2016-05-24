@@ -61,4 +61,22 @@ testbin/mainTests/netlist/simpleDiodeTest/temp/netlist_surfaces.dat.old
 testbin/mainTests/restart/echo.dat
 testbin/mainTests/restart/forces.dat
 testbin/mainTests/restart/histor.dat
+testbin/oldXmlFiles/*
 
+testbin/mainTests/legacy/netlistWithRCRTs/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/netlist/coronaryControlPython/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/netlist/emulateRCR/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/netlist/heart/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/zeroDDomain/netlistRCRs/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/zeroDDomain/pythonFlowPrescriptions/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/zeroDDomain/pythonPressurePrescriptions/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/zeroDDomain/restartNetlistRCRs/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/netlist/closedLoopHeartRestart/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/netlist/closedLoopHeartRestart/netlistDatFiles_deprecated/netlist_surfaces.dat
+testbin/mainTests/zeroDDomain/closedLoopHeart/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/zeroDDomain/downstreamPythonParameterControllers/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/zeroDDomain/restartTwoDomainsClosedLoop/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/zeroDDomain/twoDomainsClosedLoop/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/zeroDDomain/pythonBroadcastCommunications/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/zeroDDomain/pythonParameterControllers/netlistDatFiles_deprecated/netlist_*.dat
+testbin/mainTests/zeroDDomain/pythonPicklers/netlistDatFiles_deprecated/netlist_*.dat

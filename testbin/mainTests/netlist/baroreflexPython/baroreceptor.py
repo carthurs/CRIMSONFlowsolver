@@ -11,7 +11,6 @@ from math import cosh, tanh
 # 	pass
 
 class parameterController(abstractParameterController):
-
 	def __getstate__(self):
 		odict = self.__dict__.copy()
 		del odict['odeSolver'] # remove things that can't be pickled
@@ -20,7 +19,6 @@ class parameterController(abstractParameterController):
 	def __setstate__(self, odict):
 		self.__dict__.update(odict)
 		self.setupOdeSolver(self.states)
-
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
 		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)
@@ -99,7 +97,6 @@ class parameterController(abstractParameterController):
 		targetPeripheralConductanceDelta = max(-5.0 * self.exerciseIntensityInWatts / 150.0, -5.0)
 		targetPeripheralConductance = initialPeripheralConductance + targetPeripheralConductanceDelta
 		self.targetPeripheralResistanceNormalised = (1.0 / targetPeripheralConductance) / initialPeripheralResistance
-
 		indexOfLpnNodeAtAorticSurface = 1
 		baroreceptorObservedPressure = dictionaryOfPressuresByNodeIndex[indexOfLpnNodeAtAorticSurface]
 
@@ -133,7 +130,6 @@ class parameterController(abstractParameterController):
 
 			self.heartRate = self.initialHeartRate * heartRateControlSignal
 			self.heartPeriod = self.heartRate / 60
-
 
 		if (self.baroreflexOn):
 			self.addBroadcastVariable('heartRate', self.heartRate)
@@ -176,8 +172,6 @@ class parameterController(abstractParameterController):
 	def computeOdeDerivatives(self, t, y, currentMeanPressure):
 		# unpack extraPArameters:
 		# currentMeanPressure = extraParameters[0]
-
-
 		proportionalDistanceFromTargetMeanPressure = currentMeanPressure / self.targetMeanPressure
 		sympatheticSignal = self.sympatheticActivation(proportionalDistanceFromTargetMeanPressure)
 		parasympatheticSignal = self.parasympatheticActivation(proportionalDistanceFromTargetMeanPressure)

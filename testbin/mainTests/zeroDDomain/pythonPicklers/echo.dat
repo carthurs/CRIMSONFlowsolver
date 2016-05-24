@@ -1,4 +1,4 @@
-Default Ensa Case                                                     12/12/15 
+Default Ensa Case                                                     24/05/16 
 
  M a i n   C o n t r o l   P a r a m e t e r s        
 
@@ -45,7 +45,7 @@
     eq. 1, execution                                  
 
  input echo parameter  . . . . . . . . . . . (necho )=         3
-Default Ensa Case                                                     12/12/15 
+Default Ensa Case                                                     24/05/16 
 
  S o l u t i o n   P a r a m e t e r s                
 
@@ -71,19 +71,19 @@
  dimension of Krylov space . . . . . . . . . (kspace)=        50
 
  maximum number of GMRES cycles  . . . . . . (ngmres)=         1
-Default Ensa Case                                                     12/12/15 
+Default Ensa Case                                                     24/05/16 
 
  S o l v e r   I n f o r m a t i o n                    
 
  Seq num    Nstep    Niter    Impl      Nupdate     Eps_Tol
      1       150        0      10          1      0.10000E-01
-Default Ensa Case                                                     12/12/15 
+Default Ensa Case                                                     24/05/16 
 
  S p a t i a l   a n d   T i m e   I n t e g r a t i o n
 
  Seq num  Elem Int.  Bound Int.  Level  LCtime    Delt       CFLfld    CFLsld
      1       2           2  -0.1000E+01       0   1.0000E-03    0.0000    0.0000
-Default Ensa Case                                                     12/12/15 
+Default Ensa Case                                                     24/05/16 
 
  O u t p u t   I n f o r m a t i o n                  
 

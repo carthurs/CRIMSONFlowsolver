@@ -15,7 +15,8 @@
       real*8, allocatable ::  NASC(:)
       real*8, allocatable ::  PNABI(:,:)
       real*8, allocatable ::  NANBIJ(:,:,:)
-      integer, allocatable :: ndsurf(:)
+      ! added target for gfortran
+      integer, allocatable, target :: ndsurf(:)
       
       end module
       
@@ -74,7 +75,7 @@
 !
 ! *** set ndsurf from geombc added by KDL & NAN
 !    
-      if (indsurf) then      
+      if (indsurf .eq. 1) then      
       
         fname1 = 'geombc.dat'
         fname1 = trim(fname1) // cname(myrank+1)

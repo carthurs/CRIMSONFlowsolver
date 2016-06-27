@@ -45,13 +45,20 @@ DEBUG_ALE_ON = 0
 #############################
 
 # Intel flags
+
 OPT_FLAGS       = ['-O3', '-std=c++0x', '-DNDEBUG','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
 OPT_FFLAGS      = ['-O3','-align','array64byte','-fpp','-D\'DEBUG_ALE='+str(DEBUG_ALE_ON)+'\'','-D\'EXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)+'\'']
 DEBUG_FLAGS     = ['-O0','-g','-std=c++0x','-pthread','-Wall','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
 DEBUG_FFLAGS    = ['-O0','-g','-align','array64byte','-traceback','-fp-stack-check','-fpp','-DDEBUG_ALE='+str(DEBUG_ALE_ON),'-DEXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)]
 
 # GNU flags
-# Note that the common block alignment appears to be done automatically in GNU
+#
+# Note that the 64 bit alignment should be done automatically with gfortran. 
+# "GFortran translates ALLOCATE calls using malloc(), so if your system malloc() returns correctly aligned memory"
+# See https://gcc.gnu.org/ml/fortran/2007-05/msg00494.html
+#
+# Other users post about using the flag -m64, but tests are inconclusive if this is faster/different from the default behaviour	
+# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=24261
 
 # OPT_FLAGS       = ['-O3', '-std=c++0x', '-DNDEBUG','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
 # OPT_FFLAGS      = ['-ffree-line-length-none','-O3','-cpp','-D\'DEBUG_ALE='+str(DEBUG_ALE_ON)+'\'','-D\'EXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)+'\'']

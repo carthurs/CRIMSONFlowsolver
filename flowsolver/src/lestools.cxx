@@ -12,7 +12,7 @@
   #include "les.h"
  }
 
-#if defined intel || defined __ICC
+#if defined intel || defined __ICC || defined __GNUC__
 extern "C"
 {
   void  drvsclrDiag(	double *sclrDiag,	int *ilwork,	int *iBC,

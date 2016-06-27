@@ -33,6 +33,7 @@ env_local.Append(LIBS=bop.F90_LIBS)
 env_local.Append(LIBS=bop.INTEL_LIBSLIST)
 env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
 env_local.Append(LIBS=bop.PETSC_LIBSLIST)
+env_local.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
 
 sources=string.split("""
 	gtest_main.cc

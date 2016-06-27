@@ -194,7 +194,7 @@
 ! *** multidomain code, add surface ids to container ***
 ! ******************************************************
 !
-        if (multidomainactive) then         
+        if (multidomainactive .eq. 1) then         
 
           ! add heart surface 
           if (iheart .gt. int(0)) then          

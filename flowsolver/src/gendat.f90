@@ -236,7 +236,7 @@
 !
 ! *** initialise the multidomain container
 !
-      if (multidomainactive) then
+      if (multidomainactive .eq. 1) then
          multidom = multidomconstructor()   
       end if
 !

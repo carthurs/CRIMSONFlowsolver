@@ -50,7 +50,9 @@ module deformableWall
 
     integer numwallelems, numwallelems_global
 
-    real*8, allocatable :: regionWallProps(:,:)
+    ! gfortran is throwing an error because regionWallProps doesn't
+    ! have the TARGET attribute - KDL 14/06/2016
+    real*8, target, allocatable :: regionWallProps(:,:)
     integer WallETagID, WallhTagID
       
 contains

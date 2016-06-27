@@ -392,7 +392,7 @@
 ! **** start of multidomain container code ***
 ! ********************************************
 !
-       if (multidomainactive) then
+       if (multidomainactive .eq. 1) then
 
 !         ! update flows in the container
           call updmultidomaincontainer(y,multidom,'velocity')
@@ -1056,7 +1056,8 @@
       real*8  p(0:MAXSURF),   q(0:MAXSURF,3)
       integer irankCoupled, i, j, k
 
-      real*8 :: implicitcoeffs(0:MAXSURF,2)
+      ! added target for gfortran KDL
+      real*8, target :: implicitcoeffs(0:MAXSURF,2)
       integer :: surfids(0:MAXSURF)
       integer flowIsPermitted
 !
@@ -1188,7 +1189,7 @@
           do j = 1, numGRCRSrfs
 
               ! switch for the numerical RCR
-              if (nrcractive) then
+              if (nrcractive .eq. 1) then
                 
                 ! get implicit coefficients
                 ! THIS IS THE FORTRAN WAY - THE CODE BELOW REPLACES IT WITH THE C++ CALLS!
@@ -1276,7 +1277,7 @@
       endif !end of coupling for Coronary BC
 
 !     **************New Controlled Coronary Model**************
-      if(newCoronaryActive) then
+      if(newCoronaryActive .eq. 1) then
         call GetFlowQ(p,y,indicesOfCoronarySurfaces,numControlledCoronarySrfs)  !Q pushed into p but at this point 
         ! p is just the full Q for each surface
 
@@ -1396,7 +1397,7 @@
 !.... multiply p by integral NA*n_i
 !
         do i = 1,nshg
-            if (hrt%isavopen()) then
+            if (hrt%isavopen() .eq. 1) then
               surfids = hrt%getsurfids()
               if (surfids(1) .eq. ndsurf(i)) then
                 res(i,1:3)=res(i,1:3)+p(1)*NABI(i,1:3)                
@@ -1688,7 +1689,8 @@
 
       INTEGER, INTENT(IN) :: memLS_nFaces
       REAL*8, INTENT(OUT) :: faceRes(memLS_nFaces)
-      REAL*8 :: implicitcoeffs(0:MAXSURF,2)
+      ! added target for gfortran KDL
+      REAL*8, TARGET :: implicitcoeffs(0:MAXSURF,2)
 
       INTEGER faIn, k
       integer flowIsPermitted
@@ -1711,7 +1713,7 @@
          END DO
          DO k = 1, numGRCRSrfs
             faIn = faIn + 1
-            if (nrcractive) then
+            if (nrcractive .eq. 1) then
               ! implicitcoeffs(1:numGRCRSrfs,1:2)  = nrcr%getimplicitcoeff()
               call callCppGetImplicitCoeff_rcr(c_loc(implicitcoeffs(1,1)))
               faceRes(faIn) = implicitcoeffs(k,1)
@@ -1738,7 +1740,7 @@
          IF (iheart .gt. int(0)) THEN
             faIn = faIn + 1        
             implicitcoeffs(1:1,1:2) = hrt%getimplicitcoeff()
-            IF (hrt%isavopen()) THEN
+            IF (hrt%isavopen() .eq. 1) THEN
                faceRes(faIn) = implicitcoeffs(1,1)
             END IF
          END IF 

@@ -44,7 +44,8 @@
 !.... pointer declarations
 !
          type (i1d), dimension(MAXBLK2) ::  mmat,  mmatb
-         type (i2d), dimension(MAXBLK2) ::  mien
+         ! added target attribute to this type for gfortran
+         type (i2d), dimension(MAXBLK2), target ::  mien
          type (i2d), dimension(MAXBLK2) ::  mienb,  miBCB
          type (r2d), dimension(MAXBLK2) ::  mxmudmi
          type (r3d), dimension(MAXBLK2) ::  mBCB

@@ -466,7 +466,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         ELSE
 !--------------------------------------------------------------------
 
-
+#ifndef NO_ACUSIM
             call myfLesNew( lesId,          41994, &
                             eqnType, &
                             nDofs,          minIters,       maxIters, &
@@ -474,7 +474,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
                             presPrjFlag,    nPresPrjs,      epstol(1), &
                             prestol,        verbose,        statsflow, &
                             nPermDims,      nTmpDims,      servername  )
-
+#endif
         END IF
 
         if (.not.allocated(aperm)) then

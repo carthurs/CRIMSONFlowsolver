@@ -240,6 +240,10 @@ BLASLAPACK_INCDIR = [BLASLAPACK_TOP+'/include']
 BLASLAPACK_LIBSDIR   = [BLASLAPACK_TOP+'/lib/intel64']
 BLASLAPACK_LIBSLIST =  ['mkl_intel_lp64', 'mkl_sequential', 'mkl_core', 'pthread']
 
+######################################
+# Google test includes and libraries #
+######################################
+
 GOOGLETEST_TOP    = HOME_DIR+'/gtest-1.7.0'
 GOOGLETEST_INCDIR = [GOOGLETEST_TOP+'/include']
 GOOGLETEST_SRC    = [GOOGLETEST_TOP+'/src']

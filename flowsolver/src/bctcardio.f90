@@ -208,7 +208,6 @@
       call RCRint(timestepRCR*(stepn + alfi),PdistCur)
       HopRCR(1:numSrfs) = RCRic(1:numSrfs)  &
            *exp(-dtRCR(1:numSrfs)*(stepn + alfi)) + PdistCur(1:numSrfs)
-      write(*,*) "RCR Hop convolution: ", HopRCR
       return
       end
 

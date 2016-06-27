@@ -210,7 +210,7 @@
 !
 !.... read the node tags
 !
-      if (geombcHasNodeTags) then
+      if (geombcHasNodeTags .eq. 1) then
         itwo=2
         fname1='node tags?'
         call readheader(igeom,fname1//c_null_char,intfromfile,itwo,c_char_"integer"//c_null_char, iotype)
@@ -353,7 +353,7 @@
       !
       !.... read in the simple observation function arrays
       !
-      if (geombcHasObservationFields) then
+      if (geombcHasObservationFields .eq. 1) then
         itwo=2
         fname1='observation function solution?'
         call readheader(igeom,fname1//c_null_char,intfromfile, &
@@ -657,7 +657,7 @@
 
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)
-      if (geombcHasObservationFields) then
+      if (geombcHasObservationFields .eq. 1) then
         call PhAssignPointerInt(c_loc(ilinobsfunc_sol), c_char_"observation function solution"//c_null_char)
         call PhAssignPointerInt(c_loc(ilinobsfunc_acc), c_char_"observation function time derivative of solution"//c_null_char)
         call PhAssignPointerInt(c_loc(ilinobsfunc_disp), c_char_"observation function displacement"//c_null_char)

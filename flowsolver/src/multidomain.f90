@@ -5974,6 +5974,8 @@
       end subroutine initialise_hrt
 
       ! assign pointers for filter
+      ! for gfortran 4.8 added target attribute to class object
+      ! KDL June 2016
 
       subroutine assign_ptrs_ext_hrt(a)
 
@@ -5982,7 +5984,7 @@
 
       implicit none
 
-      class(numericalheart) :: a
+      class(numericalheart), target :: a
 
       ! set pointer to EMax, added to map of pointers in SimvascularGlobalArrayTransfer.cxx
       call PhAssignPointerDP(c_loc(a%emax), c_char_"Heart_EMax"//c_null_char)

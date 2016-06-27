@@ -120,7 +120,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     integer :: surfids(0:MAXSURF)
 
-    integer, dimension(nshg) :: binaryMask
+    ! added target for gfortran
+    integer, dimension(nshg), target :: binaryMask
 
     !
     !.... For linear solver Library
@@ -1030,7 +1031,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-    integer, dimension(nshg) :: binaryMask
+    ! added target for gfortran
+    integer, dimension(nshg), target :: binaryMask
     integer numberOfCppManagedBoundaryConditions, ii
 
     ! ! Ensure that the CurrentIter counter has been reset (detects e.g. problems with

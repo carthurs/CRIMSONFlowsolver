@@ -155,13 +155,15 @@
 !
 ! *** constant rcr with time varying pdistal
 !
+!     for gfortran 4.8 individual public and private variables 
+!     have to be individually defined - KDL June 2016
+!
       type, extends(reducedorder) :: numericalrcr
-         real*8, allocatable  :: parameters_RCR(:,:) ! RCR parameter array - for filter
-         real*8               :: parameters_Pd       ! Pd parameter - for filter
-         private 
-         type(rcrdata), allocatable :: rcrparams(:) ! RCR parameter list
-         real*8, allocatable        :: pRes_n(:)    ! Reservoir pressure
-         integer                    :: init_pRes    ! Integer test
+         real*8, allocatable, public  :: parameters_RCR(:,:) ! RCR parameter array - for filter
+         real*8, public               :: parameters_Pd       ! Pd parameter - for filter
+         type(rcrdata), allocatable, private :: rcrparams(:) ! RCR parameter list
+         real*8, allocatable, private        :: pRes_n(:)    ! Reservoir pressure
+         integer, private                    :: init_pRes    ! Integer test
          contains
          private
          procedure :: initialise_rcr => initialise_rcr 

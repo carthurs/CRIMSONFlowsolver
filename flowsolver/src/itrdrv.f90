@@ -584,7 +584,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         call hrt%initxvars(lstep)                   
 
         ! if valve open, switch iBC
-        if (hrt%isavopen()) then
+        if (hrt%isavopen() .eq. 1) then
             iBC = iBCs(1,:)
         else
             iBC = iBCd
@@ -653,7 +653,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
         !call grcrbc_Initialize()
         !call grcrbc_SetInternalState(y)
         
-        if (nrcractive) then
+        if (nrcractive .eq. 1) then
             nrcr = nrcrconstructor(numGRCRSrfs,nsrflistGRCR)
             
             !call initreducedordermodel(y, nrcr, 'legacy')
@@ -689,7 +689,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! *** intialise multidomain container and systemic circuit *** !
     ! ************************************************************ !
 
-    if (multidomainactive) then
+    if (multidomainactive .eq. 1) then
         call initmultidomaincontainer(y,multidom) ! set using flows and pressures at t = t_{n}
         !if (sysactive) then
         !  call sys%initxvars(lstep)
@@ -1051,8 +1051,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 ! *** heart model boundary condition switch *** !
 ! ********************************************* !
 
-          if (iheart) then  
-            if (hrt%isavopen()) then
+          if (iheart .eq. 1) then  
+            if (hrt%isavopen() .eq. 1) then
               iBC = iBCs(1,:)
             else
               iBC = iBCd
@@ -1272,7 +1272,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 ! ************************************ !
 
                 if (iheart .gt. int(0)) then
-                    if (hrt%isavopen()) then
+                    if (hrt%isavopen() .eq. 1) then
                         memLS_lhs = memLS_lhs_s
                         memLS_ls = memLS_ls_s
                     else
@@ -1445,7 +1445,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     ! note this is being done for each particle, it must also be done with the final 
     ! y in the finalise step after the filter has averaged y
     !
-    if (multidomainactive) then
+    if (multidomainactive .eq. 1) then
         call updmultidomaincontainer(y,multidom,'velocity')
         call updmultidomaincontainer(y,multidom,'pressure')
     end if 
@@ -1458,7 +1458,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
         ! this is here because it is particle dependent as the WK pressure is part of the state
         ! the pressure_n is a set via the pointer set previously 
-        if (nrcractive) then
+        if (nrcractive .eq. 1) then
             ! call updreducedordermodel(y,nrcr,'update') !\todo add this back in maybe when you do the Kalman filter?
             !
             ! At least when the kalman filter is off, this only needs to be done
@@ -1536,7 +1536,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !     call callCPPUpdateAllRCRS_Pressure_n1_withflow()
     ! end if
 
-    if (newCoronaryActive) then
+    if (newCoronaryActive .eq. 1) then
         ! call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
 
         ! One final update of the internal pressures in the LPN to conform to the 
@@ -1672,12 +1672,12 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     ! UPDATE CONTAINER WITH AVERAGE FROM THE PARTICLES
     ! THIS SHOULD BE MOVED UP, BUT WILL THAT PUSH THE HEART MODEL OUT OF SYNC?!!
     !
-    if (multidomainactive) then
+    if (multidomainactive .eq. 1) then
         call updmultidomaincontainer(y,multidom,'velocity')
         call updmultidomaincontainer(y,multidom,'pressure')
     end if 
 
-    if (nrcractive) then
+    if (nrcractive .eq. 1) then
         call callCPPUpdateAllRCRS_Pressure_n1_withflow()
     end if
     !call callCPPUpdateAllRCRS_Pressure_n1_withflow()
@@ -2515,7 +2515,7 @@ subroutine updreducedordermodel(y,rom,varchar)
         ! check if pressure is required to be passed to the reduced order model
         ! for e.g. the heart model when the aortic valve is shut
               
-        if (rom%ispressureupdate()) then
+        if (rom%ispressureupdate() .eq. 1) then
       
             ! integrate pressure
             call integrScalar(integpress,y(:,4),srflist,nsurf)

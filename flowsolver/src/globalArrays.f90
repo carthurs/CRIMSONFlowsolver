@@ -17,11 +17,15 @@ module globalArrays
     real*8, allocatable :: uref(:,:)
     real*8, allocatable :: ubar(:,:)
 
-    real*8, allocatable :: xdist(:)
-    real*8, allocatable :: xdnv(:,:)
-    real*8, allocatable :: df_fem(:)
+    ! gfortran is throwing an error because xdist, xdnv, df_fem  doesn't have
+    ! the TARGET attribute - KDL 14/06/2016
+    real*8, target, allocatable :: xdist(:)
+    real*8, target, allocatable :: xdnv(:,:)
+    real*8, target, allocatable :: df_fem(:)
 
-    real (c_double), allocatable :: temporary_array(:,:)
+    ! gfortran is throwing an error because temporary_array  doesn't have the 
+    ! TARGET attribute - KDL 14/06/2016
+    real (c_double), target, allocatable :: temporary_array(:,:)
 
     integer (c_int), target, allocatable :: iBC(:)
     integer (c_int), target, allocatable :: iBC_original(:)

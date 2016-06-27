@@ -213,8 +213,8 @@
          real*8 :: vula                         ! left atrial unstressed volume
          real*8 :: emax, emin                   ! maximum/minimum elastance
          real*8 :: period                       ! heart period
-         real*8 :: tmax                         ! 
-         real*8 :: trelax                       ! 
+         real*8 :: tmax                         ! time to maximum elastance
+         real*8 :: trelax                       ! time to relaxation
          real*8 :: kelv                         ! defined value for elastance varying resistance 
          real*8 :: vlv_coeff(2)                 ! vlv coefficients
          real*8 :: activationtime               ! elastance activation time
@@ -2316,34 +2316,34 @@
          write(*,*)  
          write(*,'(a35)') ' ************************************'
          write(*,*)  
-         if (multidomainactive) then
+         if (multidomainactive .eq. 1) then
             write(*,format) 'Multidomain module: ','On'
-            if (nrcractive) then
+            if (nrcractive .eq. 1) then
                write(*,format) 'Numerical RCR: ','On'
             else 
                write(*,format) 'Numerical RCR: ','Off'
             end if
-            if (ntrcractive) then
+            if (ntrcractive .eq. 1) then
                write(*,format) 'Numerical TRCR: ','On'
             else 
                write(*,format) 'Numerical TRCR: ','Off'
             end if
-            if (hrtactive) then
+            if (hrtactive .eq. 1) then
                write(*,format) 'Numerical heart: ','On'
             else 
                write(*,format) 'Numerical heart: ','Off'
             end if
-            if (sysactive) then
+            if (sysactive .eq. 1) then
                write(*,format) 'Systemic circuit: ','On'
             else 
                write(*,format) 'Systemic circuit: ','Off'
             end if
-            if (newCoronaryActive) then
+            if (newCoronaryActive .eq. 1) then
                write(*,format) 'Coronary control: ','On'
             else
                write(*,format) 'Coronary control: ','Off'
             end if
-            if (netlistActive) then
+            if (netlistActive .eq. 1) then
                write(*,format) 'Netlist surfaces: ', 'On'
             else
                write(*,format) 'Netlist surfaces: ', 'Off'
@@ -3150,7 +3150,8 @@
       subroutine resetstb_pres(this)      
       implicit none
       class(multidomaincontainer) :: this
-      this%stb_pres(:) = real(0.0,8)
+      ! prior initialisation with real(0.0,8) was causing problems in gfortran
+      this%stb_pres(:) = 0.0 
       end subroutine
 !
 ! *** add stabilisation pressure
@@ -3467,7 +3468,7 @@
       !!this%patrial = params(2)
 !
 !     ! check if numerical rcr and numerical heart are active
-      if (nrcr%isactive .and. hrt%isactive) then
+      if ((nrcr%isactive .eq. 1) .and. (hrt%isactive .eq. 1)) then
       else
          write(*,*) '** WARNING numerical RCR and heart model not active'
          stop
@@ -5227,7 +5228,7 @@
 !
 !
 !     ! set aortic pressure from 3D or 0D domain (stored in the last variable)
-      if (a%updatepressure) then
+      if (a%updatepressure .eq. 1) then
          a%paorta_n = a%presspntr(a%surfnum)%p                                         
       end if
 !      
@@ -5368,7 +5369,12 @@
       call a%calculate(stepn) 
 !
 !     ! if feedback not activated
+      ! added if def for gfotran - KDL June 2016
+#ifdef __GFORTRAN__
+      if (a%active .eqv. .false.) then
+#else
       if (a%active .eq. .false.) then
+#endif
 
          tperiod = a%params(1)
          !!tstep = floor(tperiod/delt)
@@ -6175,8 +6181,8 @@
          end if
 !
          
-         if (a%ibackflow) then
-            if (a%backflow) then
+         if (a%ibackflow .eq. 1) then
+            if (a%backflow .eq. 1) then
                a%avopen = int(1)
             end if            
          end if 
@@ -6500,7 +6506,7 @@
 !!         end if
 !
 !     ! else if aortic valve open
-      elseif (a%avopen) then             
+      elseif (a%avopen .eq. 1) then             
 !        
          a%plv_n = elv*(a%vlv_n - a%vulv)         
          a%plv_n = a%plv_n*(real(1.0,8) + a%kelv*a%flow_n(1)) !! flow negative      
@@ -6540,7 +6546,7 @@
       if (a%plv_n .gt. a%pressure_n(1)) then
          a%avopen = int(1) 
          a%updatepressure = int(0)
-         if (a%ibackflow) then
+         if (a%ibackflow .eq. 1) then
             a%t_backflow = real(0.0,8)
          end if 
       elseif (a%flow_n(1) .lt. real(0.0,8)) then ! there is still forward flow
@@ -6551,7 +6557,7 @@
          a%updatepressure = int(1)
       end if  
 !      
-      if (a%ibackflow) then
+      if (a%ibackflow .eq. 1) then
          if (a%flow_n(1) .gt. real(0.0,8)) then                     
             if (a%t_backflow < a%max_backflow) then            
                a%t_backflow = a%t_backflow + delt
@@ -6797,7 +6803,7 @@
       allocate(this%implicitcoeff_n1(surfnum,2)) 
 
       ! initialise reservoir pressure  
-      if (initrcr) then
+      if (initrcr .eq. 1) then
          ! set int
          this%init_pRes = 1
          allocate(this%pRes_n(surfnum))
@@ -6904,7 +6910,7 @@
          alfi_delt = delt         
       end if
 !
-      if (a%init_pRes) then
+      if (a%init_pRes .eq. 1) then
 !
          do i = 1, a%surfnum
 !

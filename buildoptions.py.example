@@ -82,7 +82,7 @@ BUILDFLAGS      = GLOBAL_DEFINES
 
 CXX_LIBS    = ''
 CXX_LIBS    = '-lrt'
-F90_LIBS    = ['mpi_f90']
+F90_LIBS    = ['']
 
 ################################### 
 # Set root of CRIMSON source tree #
@@ -126,7 +126,7 @@ RUNTIME_LIBSLIST = INTEL_LIBSLIST
 MPI_TOP        = '/usr/local/OpenMPI-intel'
 MPI_INCDIR     = [MPI_TOP+'/include']
 MPI_LIBSDIR    = [MPI_TOP+'/lib']
-MPI_LIBSLIST   = ['mpi','mpi_f90']
+MPI_LIBSLIST   = ['mpi','mpi_mpifh']
 
 ####################################
 # Metis 4 include and library list #

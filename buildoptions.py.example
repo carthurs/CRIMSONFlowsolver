@@ -221,7 +221,7 @@ PETSC_LIBSLIST = ['petsc']
 # Boost 1.57 include and libraries #
 ####################################
 
-BOOSTCPP_TOP    = HOME_DIR+'/../boost_1_57_0/install'
+BOOSTCPP_TOP    = 'PATH/TO/boost_1_57_0/install'
 BOOSTCPP_INCDIR = [BOOSTCPP_TOP+'/include']
 BOOSTCPP_LIBSDIR = [BOOSTCPP_TOP+'/lib']
 BOOSTCPP_LIBSLIST = ['boost_thread','boost_filesystem','boost_system']

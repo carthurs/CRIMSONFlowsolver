@@ -889,7 +889,7 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
 }
 
 double ClosedLoopDownstreamSubsection::getSignForPrescribed3DInterfaceFlow(const int boundaryConditionIndex) const {
-    std::cout << "requested data for BC with index " << boundaryConditionIndex << std::endl;
+    // std::cout << "requested data for BC with index " << boundaryConditionIndex << std::endl;
     return m_signForPrescribed3DInterfaceFlow.at(boundaryConditionIndex);
 }
 

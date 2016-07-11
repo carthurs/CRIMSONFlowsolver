@@ -1256,7 +1256,7 @@ void CircuitPressureNode::setHasHistoryPressure(const bool hasHistoryPressure)
 
 void CircuitPressureNode::copyPressureToHistoryPressure()
 {
-	std::cout << "setting history pressure to " << getPressure() << " from " << m_historyPressure << std::endl;
+	// std::cout << "setting history pressure to " << getPressure() << " from " << m_historyPressure << std::endl;
 	m_historyPressure = getPressure();
 }
 

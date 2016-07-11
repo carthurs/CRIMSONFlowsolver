@@ -4,13 +4,23 @@ import numpy
 import scipy.interpolate
 
 # disable serialisation
-def loadClassOnRestart(fileName, MPIRank):
-	return None
+# def loadClassOnRestart(fileName, MPIRank):
+# 	return None
 
-def saveClassForRestart(objectToIgnore):
-	pass
+# def saveClassForRestart(objectToIgnore):
+# 	pass
 
 class parameterController(abstractParameterController):
+
+	def __getstate__(self):
+		odict = self.__dict__.copy()
+		del odict['flowFunction']
+		return odict
+
+	def __setstate__(self, odict):
+		self.__dict__.update(odict)
+		self.getPeriodicFlowPrescriberData()
+
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
 		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)

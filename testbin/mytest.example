@@ -55,6 +55,8 @@ fi
 export LES_LICENSE_SERVER="blackbook2v2"
 export PHASTA_CONFIG="/home/carthurs/workspace/merged_simvascular/simvascular_flowsolver_estimator/configs"
 export LD_LIBRARY_PATH="/usr/local/OpenMPI-intel/lib:/opt/intel/mkl/lib/intel64"
+# SET PYTHON PATH HERE IF YOU'RE HAVING PROBLEMS WITH MODULE LOADS IN PYTHON
+#export PYTHONPATH=/usr/lib/python2.7/dist-packages
 
 mpirun -np $1 ./test $shuffleCommand $seedCommand $2 $3 $4 $5 $6 $7 $8 $9
 

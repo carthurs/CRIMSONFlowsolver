@@ -9,6 +9,7 @@ env = Environment(ENV = os.environ)
 env.Replace(PATH = '')
 env.Replace(LD_LIBRARY_PATH = '')
 env.Append(LINKFLAGS = bop.PYTHON_LDMODULEFLAGS)
+env.Append(LINKFLAGS = bop.PYTHON_LDMODULEFLAGS + bop.ADDITIONAL_LINKFLAGS)
 
 
 env.Prepend(LIBPATH = bop.EFENCE_INCDIR)

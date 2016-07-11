@@ -114,6 +114,9 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     // linear system:
     int firstEntryBelongingToCurrentSurfaceInSolutionVector = 0;
     m_mapOfSurfaceIndicesToRangeOfEntriesInSolutionVector.clear();
+
+    store3DInterfaceFlowSigns();
+
     m_systemSize = 0;
     for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
     {
@@ -498,6 +501,15 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     // errFlag = VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
+void ClosedLoopDownstreamSubsection::store3DInterfaceFlowSigns()
+{
+    for (int upstreamCircuitIndex = 0; upstreamCircuitIndex < m_upstreamBoundaryConditionCircuits.size(); upstreamCircuitIndex++)
+    for (auto upstreamCircuitSharedPtr : m_upstreamBoundaryConditionCircuits)
+    {
+        m_signForPrescribed3DInterfaceFlow.insert(std::make_pair(upstreamCircuitSharedPtr->getIndexAmongstNetlists(), upstreamCircuitSharedPtr->getInterfaceFlowSign()));
+    }
+}
+
 void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt)
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
@@ -861,7 +873,7 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     }
 
     errFlag = MatGetValues(m_inverseOfClosedLoopMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlow,&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    implicitCoefficientsToReturn.first = valueFromInverseOfSystemMatrix;
+    implicitCoefficientsToReturn.first = getSignForPrescribed3DInterfaceFlow(boundaryConditionIndex) * valueFromInverseOfSystemMatrix;
 
     PetscScalar valueFromRHS;
     errFlag = VecGetValues(m_closedLoopRHS,numberOfValuesToGet,&columnIndexOf3DInterfaceFlow,&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -870,8 +882,15 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
     implicitCoefficientsToReturn.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
+
+    // std::cout << "and just set 2 " << implicitCoefficientsToReturn.first << " " <<implicitCoefficientsToReturn.second << std::endl;
     
     return implicitCoefficientsToReturn;
+}
+
+double ClosedLoopDownstreamSubsection::getSignForPrescribed3DInterfaceFlow(const int boundaryConditionIndex) const {
+    std::cout << "requested data for BC with index " << boundaryConditionIndex << std::endl;
+    return m_signForPrescribed3DInterfaceFlow.at(boundaryConditionIndex);
 }
 
 double ClosedLoopDownstreamSubsection::getComputedInterfacePressure(const int boundaryConditionIndex) const
@@ -921,7 +940,7 @@ double ClosedLoopDownstreamSubsection::getComputedInterfaceFlow(const int bounda
     PetscScalar flowFromRHS;
     errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,&vectorIndexOf3DInterfaceFlow,&flowFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    return flowFromRHS;
+    return flowFromRHS * getSignForPrescribed3DInterfaceFlow(boundaryConditionIndex);
 }
 
 void ClosedLoopDownstreamSubsection::createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill)

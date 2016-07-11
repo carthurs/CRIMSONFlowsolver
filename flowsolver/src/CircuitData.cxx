@@ -21,17 +21,7 @@ bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether 
 	bool hasNonnegativePressureGradient = (startNode->getPressure() - endNode->getPressure() >= 0.0 - floatingPointTolerance);
 	bool hasForwardFlow;
 	// Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
-	if (m_connectsToNodeAtInterface)
-	{
-		hasForwardFlow = (m_signForPrescribed3DInterfaceFlow*flow >= floatingPointTolerance);
-	}
-	else
-	{
-		hasForwardFlow = (flow >= floatingPointTolerance);
-	}
-	std::cout << "flow in hasNonnegativePressureGradientOrForwardFlow:" << flow << " and sign " << m_signForPrescribed3DInterfaceFlow << std::endl;
-	std::cout << "hasNonnegativePressureGradient: " << hasNonnegativePressureGradient << std::endl;
-	std::cout << "hasForwardFlow: " << hasForwardFlow << std::endl;
+	hasForwardFlow = flow >= floatingPointTolerance;
 
 	return (hasNonnegativePressureGradient || hasForwardFlow);
 }
@@ -207,11 +197,13 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 			// want to give to the diode.)
 			if (startNodeIsAt3Dinterface)
 			{
-				(*component)->m_signForPrescribed3DInterfaceFlow = 1.0;
+				m_signForPrescribed3DInterfaceFlow = 1.0;
+				std::cout << "start node is at 3d interface" << std::endl;
 			}
 			else if (endNodeIsAt3Dinterface)
 			{
-				(*component)->m_signForPrescribed3DInterfaceFlow = -1.0;
+				m_signForPrescribed3DInterfaceFlow = -1.0;
+				std::cout << "end node is at 3d interface" << std::endl;
 			}
 			else
 			{
@@ -295,6 +287,11 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 		throw std::runtime_error(errorMessage.str());
 	}
 
+}
+
+double CircuitData::getSignForPrescribed3DInterfaceFlow() const
+{
+	return m_signForPrescribed3DInterfaceFlow;
 }
 
 void CircuitData::rebuildCircuitPressureNodeMap()
@@ -936,11 +933,11 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 		// want to give to the diode.)
 		if (startNodeIsAt3Dinterface)
 		{
-			(*component)->m_signForPrescribed3DInterfaceFlow = -1.0;
+			m_signForPrescribed3DInterfaceFlow = -1.0;
 		}
 		else if (endNodeIsAt3Dinterface)
 		{
-			(*component)->m_signForPrescribed3DInterfaceFlow = 1.0;
+			m_signForPrescribed3DInterfaceFlow = 1.0;
 		}
 
 		// // Find which end of the component doesn't link to any other components (and so therefore is at the 3D interface)

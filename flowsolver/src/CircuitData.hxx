@@ -35,7 +35,6 @@ public:
 	
 	double parameterValueFromInputData; // for diodes only. Stores a value from netlist_surfaces.dat to be set as the currentParameterValue (resistance) when the diode is open.
 	circuit_component_flow_prescription_t prescribedFlowType;
-	double m_signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by its end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
 	double flow;
 	double historyFlow;
 	bool hasHistoryFlow;
@@ -309,12 +308,13 @@ public:
 
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
-
+	double getSignForPrescribed3DInterfaceFlow() const;
 protected:
 	bool m_flowPermittedAcross3DInterface;
 	std::vector<int> m_indexOfNodeAt3DInterface;
 	void setIndicesOfNodesAtInterface(std::vector<int> indicesToSet);
 	int toOneIndexing(const int oneIndexedValue);
+	double m_signForPrescribed3DInterfaceFlow; // Necessary for if this component is at the 3D interface. If it's been connected to the 3D domain by the interfacing component's end-node, we need to switch the sign of the flow before prescribing it in the linear system for this boundary.
 private:
 	void rebuildCircuitPressureNodeMap();
 	void switchBetweenDirichletAndNeumannCircuitDesign();

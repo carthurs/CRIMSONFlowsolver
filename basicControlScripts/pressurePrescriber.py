@@ -3,13 +3,22 @@ from math import pi, cos
 import numpy
 import scipy.interpolate
 
-def loadClassOnRestart(fileName, MPIRank):
-	return None
+# def loadClassOnRestart(fileName, MPIRank):
+# 	return None
 
-def saveClassForRestart(objectToIgnore):
-	pass
+# def saveClassForRestart(objectToIgnore):
+# 	pass
 
 class parameterController(abstractParameterController):
+
+	def __getstate__(self):
+		odict = self.__dict__.copy()
+		del odict['pressureFunction']
+		return odict
+
+	def __setstate__(self, odict):
+		self.__dict__.update(odict)
+		self.getPeriodicPressurePrescriberData()
 
 	def __init__(self, baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank):
 		abstractParameterController.__init__(self,baseNameOfThisScriptAndOfRelatedFlowOrPressureDatFile, MPIRank)

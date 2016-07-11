@@ -967,7 +967,7 @@
         end if 
 
         do i = 1, numSurfID
-          write(chararray1,'(i)') surfID(i)
+          write(chararray1,'(i12)') surfID(i)
           
           write(fnum,'(/,a)') '---------------------------'
           write(fnum,'(a,a)') 'Surface number ',trim(adjustl(chararray1))

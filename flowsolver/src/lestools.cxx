@@ -12,7 +12,7 @@
   #include "les.h"
  }
 
-#if defined intel || defined __ICC
+#if defined intel || defined __ICC || defined __GNUC__
 extern "C"
 {
   void  drvsclrDiag(	double *sclrDiag,	int *ilwork,	int *iBC,
@@ -1352,12 +1352,13 @@ void lesPrecPPE(UsrHd usrHd,
      srcpnt      = usrPointer ( usrHd, srcId, srcOff, nSrcDims ) ;
      dstpnt      = usrPointer ( usrHd, dstId, dstOff, nDstDims ) ;
 
+#ifndef NO_ACUSIM
      ramg_interface( usrHd->colm,
 		     usrHd->rowp,usrHd->lhsK,usrHd->lhsP,usrHd->flowDiag,
 		     srcpnt,dstpnt,
 		     usrHd->ilwork,usrHd->BC,usrHd->iBC,usrHd->iper
 		     );
-     
+#endif     
      return;
 }
 

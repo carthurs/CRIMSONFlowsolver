@@ -161,7 +161,7 @@
 !
         do iel=1,npro
 
-          if (indsurf) then        
+          if (indsurf .eq. 1) then        
           else
             if (iBCB(iel,2) .ne. 0) then
               iface = iBCB(iel,2)
@@ -338,7 +338,7 @@
 !     push the surf number which we have associated with boundary
 !     elements up to the global level in the array ndsurf
 !
-        if (indsurf) then        
+        if (indsurf .eq. 1) then        
         else
           do iel=1,npro
             if (iBCB(iel,2) .ne. 0) then
@@ -521,7 +521,7 @@
                  if (iBCB(iel,2) .eq. nsrflistLagrange(k)) then
                     iface = iBCB(iel,2)
                     do kk=1,nshlb
-                      if (indsurf) then        
+                      if (indsurf .eq. 1) then        
                       else
                         if (ndsurf(ienb(iel,kk)).ne.1) then
                           ndsurf(ienb(iel,kk))=iface   

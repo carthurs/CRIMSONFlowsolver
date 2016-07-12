@@ -45,7 +45,7 @@
 #endif
 
       extern struct {
-         bool kalmanFilterOn = false;
+         bool kalmanFilterOn;
       } kalmanFilterActive;
 
       extern struct {

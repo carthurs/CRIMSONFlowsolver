@@ -119,6 +119,10 @@ private:
 	void enforcePressureEqualityBetweenDuplicatedNodes();
 	void writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(const boost::shared_ptr<const CircuitData> circuitData, const int multipleIncidentCurrentNode, const int row, const int numberOfHistoryPressures, const int columnOffset);
 	std::vector<PetscScalar> extractContiguousRangeFromPetscVector(Vec vector, const int firstEntry, const int lastEntry) const;
+	void store3DInterfaceFlowSigns();
+
+	std::map<int,double> m_signForPrescribed3DInterfaceFlow;
+	double getSignForPrescribed3DInterfaceFlow(const int boundaryConditionIndex) const;
 
 	// std::queue has no clear() method, so we use this instead:
 	template <typename Type>

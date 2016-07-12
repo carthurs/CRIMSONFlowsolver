@@ -106,10 +106,13 @@ void SimvascularNodalSolutionObservation::Initialize(std::string name, const Sim
 
 	name_ = name;
 	std::cout << "Initializing " << name << std::endl;
-
-	boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
-
-	configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	
+	// boost filesystem not working on GNU/ConFLUX builds, reverting to previous implementation.
+    // causing segfaults when attempting to read this path string. KDL
+    // TODO: fix this 
+	//boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
+	//configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	configuration.Set("data_directory", data_directory_);
 
 	isDistributed_ = true;
 
@@ -152,8 +155,9 @@ void SimvascularNodalSolutionObservation::Initialize(std::string name, const Sim
 	data_file_name_ = "saved_observations_local_nodalsol";
 	std::stringstream s_temp;
 	s_temp << rank_;
-	
-	data_file_name_ = configuration.Get<std::string>("data_directory"); + "/" + data_file_name_ + s_temp.str() + ".dat";
+	// boost filesystem not working on GNU/ConFLUX builds, reverting to previous implementation
+	//data_file_name_ = configuration.Get<std::string>("data_directory"); + "/" + data_file_name_ + s_temp.str() + ".dat";
+	data_file_name_ = data_directory_ + "/" + data_file_name_ + s_temp.str() + ".dat";
 	saved_obs_file_name_ = "saved_observations_local_nodalsol" + s_temp.str() + ".dat";
 
 	// some console output
@@ -193,8 +197,10 @@ void SimvascularNodalDisplacementObservation::Initialize(std::string name, const
 	name_ = name;
 	std::cout << "Initializing " << name << std::endl;
 
-	boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
-	configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	// boost filesystem not working on GNU/ConFLUX builds, reverting to previous implementation
+	//boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
+	//configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	configuration.Set("data_directory", data_directory_);
 
 	isDistributed_ = true;
 
@@ -225,7 +231,9 @@ void SimvascularNodalDisplacementObservation::Initialize(std::string name, const
 	data_file_name_ = "saved_observations_local_nodaldisp";
 	std::stringstream s_temp;
 	s_temp << rank_;
+	// boost filesystem not working on GNU/ConFLUX builds, reverting to previous implementation
 	data_file_name_ = configuration.Get<std::string>("data_directory") + "/" + data_file_name_ + s_temp.str() + ".dat";
+	data_file_name_ = data_directory_ + "/" + data_file_name_ + s_temp.str() + ".dat";
 	saved_obs_file_name_ = "saved_observations_local_nodaldisp" + s_temp.str() + ".dat";
 
 	// some console output
@@ -262,8 +270,10 @@ void SimvascularDistanceObservation::Initialize(std::string name, const Simvascu
 	name_ = name;
 	std::cout << "Initializing " << name << std::endl;
 
-	boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
-	configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	// boost filesystem not working GNU/ConFLUX builds, reverting to previous implementation
+	//boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
+	//configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	configuration.Set("data_directory", data_directory_);
 
 	isDistributed_ = true;
 
@@ -378,8 +388,10 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	name_ = name;
 	std::cout << "Initializing " << name << std::endl;
 
-	boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
-	configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	// boost filesystem not working GNU/ConFLUX builds, reverting to previous implementation
+	//boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
+	//configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	configuration.Set("data_directory", data_directory_);
 
 	isDistributed_ = false;
 
@@ -872,8 +884,10 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	configuration.SetPrefix("observation.");
 	//configuration.Set("use_restarts",use_restarts_);
-	boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
-	configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	// boost filesystem not working GNU/ConFLUX builds, reverting to previous implementation
+	//boostfs::path defaultObservationsTruthDirectory = boostfs::current_path() / ".." / "truth";
+	//configuration.Set("data_directory", defaultObservationsTruthDirectory.string(), data_directory_);
+	configuration.Set("data_directory", data_directory_);
 	configuration.Set("Nskip", "v > 0", Nskip_);
 	configuration.Set("initial_time", "", 0., initial_time_);
 	configuration.Set("final_time", "", numeric_limits<double>::max(),final_time_);

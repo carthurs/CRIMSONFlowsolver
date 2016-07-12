@@ -1915,12 +1915,12 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
                 // restarted step. In this case, the flow from Fortran will be
                 // incorrect, so we use the value saved by the boundary condition
                 // at the end of the last simulation.
-                threeDFlowValue = prescribedFlowComponent->second->flow;
+                threeDFlowValue = prescribedFlowComponent->second->flow * mp_circuitData->getSignForPrescribed3DInterfaceFlow();
                 m_oneshotIgnoreIncorrectFortranFlow = false;
               }
               else
               {
-                threeDFlowValue = *flowPointerToSet * prescribedFlowComponent->second->m_signForPrescribed3DInterfaceFlow;
+                threeDFlowValue = *flowPointerToSet * mp_circuitData->getSignForPrescribed3DInterfaceFlow();
               }
               // std::cout << "setting 3D flow: " << threeDFlowValue << std::endl;
               assert(!isnan(threeDFlowValue));
@@ -2250,7 +2250,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
     std::pair<double,double> implicitCoefficientsToReturn;
 
     errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&m_columnOf3DInterfacePrescribedFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    implicitCoefficientsToReturn.first = valueFromInverseOfSystemMatrix;
+    implicitCoefficientsToReturn.first = mp_circuitData->getSignForPrescribed3DInterfaceFlow() * valueFromInverseOfSystemMatrix;
 
     PetscScalar valueFromRHS;
     errFlag = VecGetValues(m_RHS,numberOfValuesToGet,&m_columnOf3DInterfacePrescribedFlowInLinearSystem.at(0),&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -2270,6 +2270,11 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
 
 
     return implicitCoefficientsToReturn;
+}
+
+double NetlistCircuit::getInterfaceFlowSign() const
+{
+    return mp_circuitData->getSignForPrescribed3DInterfaceFlow();
 }
 
 void NetlistCircuit::computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const int timestepNumber, const double alfi_delt)

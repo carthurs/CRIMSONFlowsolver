@@ -139,7 +139,13 @@ module externalDataTools
 		integer :: lastGlobalNumstart
 		integer :: rank
 		integer :: err
+        ! gfortran requires exist to be logical
+#ifdef __GFORTRAN__
+        logical :: exist
+#else
 		integer :: exist
+#endif
+
 
 		call MPI_COMM_RANK(MPI_COMM_WORLD,rank,err)
 		if (err .ne. int(0) ) then

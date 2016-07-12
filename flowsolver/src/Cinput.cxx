@@ -37,7 +37,7 @@ CInput::CInput(const string &fname, const string &default_fname)
 
   // allocate memory
   input_text   = new vector<string>;
-  input_map    = new map<string,string>;
+  input_map    = new map<string,string,caseInsensitveStringLessThanComparator>;
 
   // get the lines of text from the input file
   get_input_lines(input_text, infile);
@@ -47,7 +47,7 @@ CInput::CInput(const string &fname, const string &default_fname)
   if (!default_fname.empty()) {
     ifstream infile2( default_fname.c_str(), ios::in);
 
-    map<string,string> *default_map  = new map<string,string>;
+    map<string, string, caseInsensitveStringLessThanComparator> *default_map  = new map<string,string,caseInsensitveStringLessThanComparator>;
     vector<string> *default_text = new vector<string>;
 
     get_input_lines(default_text, infile2);
@@ -85,7 +85,7 @@ CInput::~CInput()
 
 
 // return the input map
-map<string,string> CInput::InputMap() const
+map<string, string, caseInsensitveStringLessThanComparator> CInput::InputMap() const
 {
   return *input_map;
 }
@@ -114,7 +114,7 @@ void CInput::get_input_lines(vector<string> *text, ifstream &infile)
 
 
 // 
-void CInput::build_map(map<string,string> *inmap,
+void CInput::build_map(map<string,string,caseInsensitveStringLessThanComparator> *inmap,
 		      vector<string>     *intext)
 {
   // iterate through input_text of text and separate at :'s

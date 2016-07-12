@@ -95,8 +95,8 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
   //  pdistn = a%parameters_Pd
   //  pdistn_1 = a%parameters_Pd
 
-  std::cout << "C++ RCR compliance: " << capacitance << " rp: "  << proximalResistance << " rd: " << distalResistance << " timestep: " << timestepNumber << " flow: " << (*flow_n_ptrs.at(0))<< " pressure: " << pressure_n << std::endl;
-  std::cout << "pdistn: " << pdistn << "pdistn_1: " << pdistn_1 << std::endl;
+  // std::cout << "C++ RCR compliance: " << capacitance << " rp: "  << proximalResistance << " rd: " << distalResistance << " timestep: " << timestepNumber << " flow: " << (*flow_n_ptrs.at(0))<< " pressure: " << pressure_n << std::endl;
+  // std::cout << "pdistn: " << pdistn << "pdistn_1: " << pdistn_1 << std::endl;
 
   std::pair<double,double> returnCoeffs;
 

@@ -271,9 +271,9 @@ void PureZeroDDriver::writeNumstartDotDat()
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank == 0)
 	{
-		std::string numstartFileName = std::string("numstart.dat");
+		std::string numstartFileName("numstart.dat");
 
-		std::ofstream fileHandle = std::ofstream(numstartFileName.c_str(), std::ios::trunc);
+		std::ofstream fileHandle(numstartFileName.c_str(), std::ios::trunc);
 		
 		if (!fileHandle.is_open())
 		{

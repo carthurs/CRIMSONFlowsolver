@@ -12,10 +12,23 @@ def saveClassForRestart(objectToSave):
 		cPickle.dump(objectToSave, outputFile, cPickle.HIGHEST_PROTOCOL)
 		outputFile.close()
 
-# OVERRIDE IN YOUR SUBCLASS IF YOU DONT WANT SERIALISATION
+# OVERRIDE (-READ THIS WHOLE COMMENT BEFORE DOING THAT-) IN YOUR SUBCLASS IF YOU DONT WANT SERIALISATION
 # (I.E. IF YOU'RE USING UNSERIALISEABLE MEMBERS)
 # RETURN None IN THAT CASE, SO C++ WILL CONSTRUCT THE OBJECT
 # AFRESH ON RESTART.
+#
+# Alternatively, remove the things that you can't serialise, then load them again manually on unpickle using something like
+# this in your subclass:
+#
+# def __getstate__(self):
+# 	odict = self.__dict__.copy()
+# 	del odict['odeSolver'] # remove things that can't be pickled
+# 	return odict
+#
+# def __setstate__(self, odict):
+# 	self.__dict__.update(odict)
+# 	self.setupOdeSolver(self.states) # On unpickle, manually recreate the things that you couldn't pickle
+#
 def loadClassOnRestart(fileName, MPIRank):
 	inputFile = open(fileName + ".pickle")
 	loadedObject = cPickle.load(inputFile)

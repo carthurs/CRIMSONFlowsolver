@@ -148,7 +148,7 @@ void ROUKFModified<T, Model, ObservationManager> ::Forward() {
 		model_state_error_variance LC;
 		sigma_point_matrix C;
 		C.Copy(this->U_inv_);
-		GetCholesky(C);
+		Verdandi::GetCholesky(C);
 
 		LC.Copy(this->L_);
 		MltAdd(T(1), this->L_, C, T(0), LC);

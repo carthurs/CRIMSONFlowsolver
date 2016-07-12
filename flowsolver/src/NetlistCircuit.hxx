@@ -117,6 +117,7 @@ public:
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 	boost::shared_ptr<CircuitPressureNode> getNodeByInputDataIndex(const int componentIndex);
 	int getNumberOfHistoryPressures() const;
+	double getInterfaceFlowSign() const;
 protected:
 	// Overload constructor for subclasses to call:
 	NetlistCircuit(const int hstep, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const int startingTimestepIndex)

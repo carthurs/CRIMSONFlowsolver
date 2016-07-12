@@ -41,10 +41,19 @@ DAMAGE.
 #include <vector>
 #include <string>
 #include <map>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include "ValType.h"
 
 using namespace std;
+
+// http://www.cplusplus.com/reference/map/map/map/
+struct caseInsensitveStringLessThanComparator {
+  bool operator() (const std::string& lhs, const std::string& rhs) const
+  {
+    return boost::algorithm::ilexicographical_compare<std::string, std::string>(lhs, rhs);
+  }
+};
 
 class CInput {
 public:
@@ -53,7 +62,7 @@ public:
   ~CInput();
 
   // return the entire input map
-  map<string,string> InputMap() const;
+  map<string, string, caseInsensitveStringLessThanComparator> InputMap() const;
 
   // returns the desired string
   //  const string &GetValue(const string &) const;
@@ -67,10 +76,10 @@ private:
   void trim_string(string *str);
 
   void get_input_lines(vector<string> *, ifstream& );
-  void build_map(map<string,string> *, vector<string> *);
+  void build_map(map<string, string, caseInsensitveStringLessThanComparator> *, vector<string> *);
 
-  map<string,string> *input_map;
-  map<string,string> *default_map;
+  map<string, string, caseInsensitveStringLessThanComparator> *input_map;
+  map<string, string, caseInsensitveStringLessThanComparator> *default_map;
 
   vector<string> *input_text;
   vector<string> *default_text;

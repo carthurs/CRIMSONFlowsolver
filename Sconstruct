@@ -84,6 +84,7 @@ if (bop.MAKE_WITH_PRESOLVER==1):
 if (bop.MAKE_WITH_POSTSOLVER==1):
 	SConscript('./postsolver/src/SConscript',exports='env')
 if int(test):
+   print "including " + bop.GOOGLETEST_TOP+"/src/SConscript"
    SConscript(bop.GOOGLETEST_TOP+'/src/SConscript',exports='env')
    SConscript('./flowsolver/test/SConscript',exports='env')
 

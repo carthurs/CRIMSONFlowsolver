@@ -405,7 +405,7 @@
       allocate (PressHist(currentTimestepIndex+nstep(1)+1,numCalcSrfs)) !for pressure history
       FlowHist = zero
       PressHist = zero
-      write(*,*) "currentTimestepIndex", currentTimestepIndex
+
       if (currentTimestepIndex .gt. 0) then
          call ReadDataFile(FlowHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCalcSrfs, &
             'FlowHist.dat',1004)

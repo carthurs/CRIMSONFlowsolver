@@ -112,7 +112,7 @@
 !.... end
 !
         if (exts) then
-           if ((iter.eq.1).and.(mod(lstep,freq).eq.0)) then
+           if ((iter.eq.1).and.(mod(currentTimestepIndex,freq).eq.0)) then
               call timeseries(yl,xl,ien,sgn)
            endif
         endif

@@ -98,7 +98,7 @@ class abstractBoundaryCondition;
     void setDelt(const double delt);
     void setHstep(const int hstep);
     void setAlfi(const double alfi);
-    // void setLstep(const int lstep);
+    // void setLstep(const int currentTimestepIndex);
     void setStartingTimestepIndex(const int startingTimestepIndex);
     void incrementTimestepIndex();
     void setNtout(const int ntout);
@@ -166,7 +166,7 @@ class abstractBoundaryCondition;
     double m_delt;
     int m_hstep;
     double m_alfi;
-    int m_currentTimestepIndex; // Formerly "lstep", but that was a silly name.
+    int m_currentTimestepIndex; // Formerly "currentTimestepIndex", but that was a silly name.
     int m_ntout;
     int m_maxsurf;
     int m_nstep;

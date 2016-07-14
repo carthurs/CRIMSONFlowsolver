@@ -48,13 +48,13 @@ subroutine ElmDist(u, x, xdist, xdnv, df_fem) bind(C, name="elmdist")
     !     according to the cycle length parameter that was set
     !     in observed.dat
     !
-    nPer = (lstep)*Delt(1)/cycleLength
+    nPer = (currentTimestepIndex)*Delt(1)/cycleLength
          
     !
     !.... compute the physical time
     !
                   
-    cycleTime = (lstep)*Delt(1)-nPer*cycleLength
+    cycleTime = (currentTimestepIndex)*Delt(1)-nPer*cycleLength
          
     !
     !.... compute the interval that we are in right now

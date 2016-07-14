@@ -398,17 +398,18 @@
       if (allocated(FlowHist)) then
         deallocate (FlowHist) !for flow history
       endif
-      allocate (FlowHist(lstep+nstep(1)+1,numCalcSrfs)) !for flow history
+      allocate (FlowHist(currentTimestepIndex+nstep(1)+1,numCalcSrfs)) !for flow history
       if (allocated(PressHist)) then
         deallocate (PressHist) !for pressure history
       endif
-      allocate (PressHist(lstep+nstep(1)+1,numCalcSrfs)) !for pressure history
+      allocate (PressHist(currentTimestepIndex+nstep(1)+1,numCalcSrfs)) !for pressure history
       FlowHist = zero
       PressHist = zero
-      if (lstep .gt. 0) then
-         call ReadDataFile(FlowHist(1:lstep+1,:),lstep+1,numCalcSrfs, &
+      write(*,*) "currentTimestepIndex", currentTimestepIndex
+      if (currentTimestepIndex .gt. 0) then
+         call ReadDataFile(FlowHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCalcSrfs, &
             'FlowHist.dat',1004)
-         call ReadDataFile(PressHist(1:lstep+1,:),lstep+1,numCalcSrfs, &
+         call ReadDataFile(PressHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCalcSrfs, &
             'PressHist.dat',1005)
       endif
       
@@ -552,16 +553,16 @@
 
       allocate (dtRCR(numRCRSrfs))
       
-      nptsRCR = lstep            
-      allocate (QHistRCR(lstep+nstep(1)+1,numRCRSrfs))
-      allocate (RCRConvCoef(lstep+nstep(1)+2,numRCRSrfs)) !for convolution coeff
-      allocate (PHistRCR(lstep+nstep(1)+1,numRCRSrfs))
+      nptsRCR = currentTimestepIndex            
+      allocate (QHistRCR(currentTimestepIndex+nstep(1)+1,numRCRSrfs))
+      allocate (RCRConvCoef(currentTimestepIndex+nstep(1)+2,numRCRSrfs)) !for convolution coeff
+      allocate (PHistRCR(currentTimestepIndex+nstep(1)+1,numRCRSrfs))
       PHistRCR = zero
       QHistRCR = zero
-      if (lstep .gt. 0) then
-         call ReadDataFile(QHistRCR(1:lstep+1,:),lstep+1,numRCRSrfs, &
+      if (currentTimestepIndex .gt. 0) then
+         call ReadDataFile(QHistRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numRCRSrfs, &
             'QHistRCR.dat',870)
-         call ReadDataFile(PHistRCR(1:lstep+1,:),lstep+1,numRCRSrfs, &
+         call ReadDataFile(PHistRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numRCRSrfs, &
             'PHistRCR.dat',871)
       endif
       
@@ -629,12 +630,12 @@
 
       allocate (poldTRCR(0:MAXSURF))
       allocate (HopTRCR(0:MAXSURF))
-      allocate (dtTRCR(lstep+nstep(1)+2,numTRCRSrfs))
-      allocate (QHistTRCR(lstep+nstep(1)+1,numTRCRSrfs))
-      allocate (PHistTRCR(lstep+nstep(1)+1,numTRCRSrfs))
+      allocate (dtTRCR(currentTimestepIndex+nstep(1)+2,numTRCRSrfs))
+      allocate (QHistTRCR(currentTimestepIndex+nstep(1)+1,numTRCRSrfs))
+      allocate (PHistTRCR(currentTimestepIndex+nstep(1)+1,numTRCRSrfs))
       allocate (TRCRic(0:MAXSURF))
-      allocate (TRCRConvCoef(lstep+nstep(1)+2,numTRCRSrfs)) !for convolution coeff
-      allocate (CurrValueTRCR(lstep+nstep(1)+2,numTRCRSrfs,4))
+      allocate (TRCRConvCoef(currentTimestepIndex+nstep(1)+2,numTRCRSrfs)) !for convolution coeff
+      allocate (CurrValueTRCR(currentTimestepIndex+nstep(1)+2,numTRCRSrfs,4))
       poldTRCR = zero
       HopTRCR = zero
       dtTRCR = zero
@@ -643,31 +644,31 @@
       TRCRic = zero
       TRCRConvCoef = zero
       CurrValueTRCR = zero
-      if (lstep .eq. 0) then
+      if (currentTimestepIndex .eq. 0) then
          nptsTRCR = 0
-      elseif (lstep .gt. 0) then
-         nptsTRCR = lstep
-         call ReadDataFile(QHistTRCR(1:lstep+1,:),lstep+1,numTRCRSrfs, &
+      elseif (currentTimestepIndex .gt. 0) then
+         nptsTRCR = currentTimestepIndex
+         call ReadDataFile(QHistTRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numTRCRSrfs, &
             'QHistTRCR.dat',882)
-         call ReadDataFile(PHistTRCR(1:lstep+1,:),lstep+1,numTRCRSrfs, &
+         call ReadDataFile(PHistTRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numTRCRSrfs, &
             'PHistTRCR.dat',883)
-         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,1),lstep+1, &
+         call ReadDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,1),currentTimestepIndex+1, &
             numTRCRSrfs,'ValueTRCRRp.dat',984)
-         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,2),lstep+1, &
+         call ReadDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,2),currentTimestepIndex+1, &
             numTRCRSrfs,'ValueTRCRC.dat',985)
-         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,3),lstep+1, &
+         call ReadDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,3),currentTimestepIndex+1, &
             numTRCRSrfs,'ValueTRCRRd.dat',986)
-         call ReadDataFile(CurrValueTRCR(1:lstep+1,:,4),lstep+1, &
+         call ReadDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,4),currentTimestepIndex+1, &
             numTRCRSrfs,'ValueTRCRPd.dat',987)
-         dtTRCR(1:lstep+1,:)=Delt(1) &
-           /CurrValueTRCR(1:lstep+1,:,2)/CurrValueTRCR(1:lstep+1,:,3)
+         dtTRCR(1:currentTimestepIndex+1,:)=Delt(1) &
+           /CurrValueTRCR(1:currentTimestepIndex+1,:,2)/CurrValueTRCR(1:currentTimestepIndex+1,:,3)
       endif
 
 !      if (regflow.gt.0) then
-!         allocate(QmeanReg(lstep+nstep(1)+1,numRegSrfs))
-!         allocate(CtrlParamsReg(lstep+nstep(1)+1,numRegSrfs))
+!         allocate(QmeanReg(currentTimestepIndex+nstep(1)+1,numRegSrfs))
+!         allocate(CtrlParamsReg(currentTimestepIndex+nstep(1)+1,numRegSrfs))
 !         allocate(CoeffReg(5,numRegSrfs))
-!         allocate(RegIntCoeff(lstep+nstep(1)+1,numRegSrfs))
+!         allocate(RegIntCoeff(currentTimestepIndex+nstep(1)+1,numRegSrfs))
 !         QmeanReg = zero
 !         CtrlParamsReg = zero
 !         CoeffReg = zero
@@ -681,10 +682,10 @@
 !               read(981,*) (CoeffReg(n,k), n=1,5) ! n=1 desired flow, n=2 scaling factor, n=3 minimum resistance
 !            enddo
 !         close(981)
-!         if (lstep .gt. 0) then
-!            call ReadDataFile(QmeanReg(1:lstep+1,:),lstep+1,numRegSrfs,
+!         if (currentTimestepIndex .gt. 0) then
+!            call ReadDataFile(QmeanReg(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numRegSrfs,
 !     &         'qmeanreg.dat',989)
-!            call ReadDataFile(CtrlParamsReg(1:lstep+1,:),lstep+1,
+!            call ReadDataFile(CtrlParamsReg(1:currentTimestepIndex+1,:),currentTimestepIndex+1,
 !     &         numRegSrfs,'ctrlparamsreg.dat',988)
 !         endif
 !      endif
@@ -803,7 +804,7 @@
       allocate (CoefCOR(5,numCORSrfs))
       allocate (DetCOR(numCORSrfs))
 
-      if (lstep .eq. 0) then
+      if (currentTimestepIndex .eq. 0) then
          nptsCOR = 0
          allocate (CORConvCoef(nstep(1)+2,numCORSrfs)) !for convolution coeff
          allocate (CORPlvConvCoef(nstep(1)+2,numCORSrfs))
@@ -813,21 +814,21 @@
          QHistCOR = zero
          PlvHistCOR = zero
          PHistCOR = zero
-      elseif (lstep .gt. 0) then   
-         nptsCOR = lstep            
-         allocate (CORConvCoef(lstep+nstep(1)+2,numCORSrfs)) !for convolution coeff
-         allocate (CORPlvConvCoef(lstep+nstep(1)+2,numCORSrfs))
-         allocate (QHistCOR(lstep+nstep(1)+1,numCORSrfs)) !for flow history
-         allocate (PlvHistCOR(lstep+nstep(1)+1,numCORSrfs))
-         allocate (PHistCOR(lstep+nstep(1)+1,numCORSrfs)) !for pressure history
+      elseif (currentTimestepIndex .gt. 0) then   
+         nptsCOR = currentTimestepIndex            
+         allocate (CORConvCoef(currentTimestepIndex+nstep(1)+2,numCORSrfs)) !for convolution coeff
+         allocate (CORPlvConvCoef(currentTimestepIndex+nstep(1)+2,numCORSrfs))
+         allocate (QHistCOR(currentTimestepIndex+nstep(1)+1,numCORSrfs)) !for flow history
+         allocate (PlvHistCOR(currentTimestepIndex+nstep(1)+1,numCORSrfs))
+         allocate (PHistCOR(currentTimestepIndex+nstep(1)+1,numCORSrfs)) !for pressure history
          QHistCOR = zero
          PlvHistCOR = zero
          PHistCOR = zero
-         call ReadDataFile(QHistCOR(1:lstep+1,:),lstep+1,numCORSrfs, &
+         call ReadDataFile(QHistCOR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCORSrfs, &
             'QHistCOR.dat',876)
-         call ReadDataFile(PHistCOR(1:lstep+1,:),lstep+1,numCORSrfs, &
+         call ReadDataFile(PHistCOR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCORSrfs, &
             'PHistCOR.dat',877)
-         call ReadDataFile(PlvHistCOR(1:lstep+1,:),lstep+1,numCORSrfs, &
+         call ReadDataFile(PlvHistCOR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCORSrfs, &
             'PlvHistCOR.dat',879)
       endif
 
@@ -934,7 +935,7 @@
          enddo
       close(820)
       
-      if (lstep .eq. 0) then
+      if (currentTimestepIndex .eq. 0) then
          nptsINCP = 0
          allocate (Paorta(nstep(1)+1,numINCPSrfs))
          allocate (Qaorta(nstep(1)+1,numINCPSrfs))
@@ -946,22 +947,22 @@
          PLV = zero
          VLV = zero
          QAV = zero        
-      elseif (lstep .gt. 0) then       
-         nptsINCP = lstep        
+      elseif (currentTimestepIndex .gt. 0) then       
+         nptsINCP = currentTimestepIndex        
          allocate (Paorta(nstep(1)+nptsINCP+1,numINCPSrfs))
          allocate (Qaorta(nstep(1)+nptsINCP+1,numINCPSrfs))
          allocate (PLV(nstep(1)+nptsINCP+1,numINCPSrfs))
          allocate (VLV(nstep(1)+nptsINCP+1,numINCPSrfs))
          allocate (QAV(nstep(1)+nptsINCP+1,numINCPSrfs))
-         call ReadDataFile(Paorta(1:lstep+1,:),lstep+1,numINCPSrfs, &
+         call ReadDataFile(Paorta(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numINCPSrfs, &
             'Paorta.dat',821)
-         call ReadDataFile(Qaorta(1:lstep+1,:),lstep+1,numINCPSrfs, &
+         call ReadDataFile(Qaorta(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numINCPSrfs, &
             'Qaorta.dat',822)
-         call ReadDataFile(PLV(1:lstep+1,:),lstep+1,numINCPSrfs, &
+         call ReadDataFile(PLV(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numINCPSrfs, &
             'PLV.dat',823)
-         call ReadDataFile(VLV(1:lstep+1,:),lstep+1,numINCPSrfs, &
+         call ReadDataFile(VLV(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numINCPSrfs, &
             'VLV.dat',824)
-         call ReadDataFile(QAV(1:lstep+1,:),lstep+1,numINCPSrfs, &
+         call ReadDataFile(QAV(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numINCPSrfs, &
             'QAV.dat',825)
       endif
       VLV(1,1:numINCPSrfs) = ValueVv(3,1:numINCPSrfs)- &
@@ -1065,8 +1066,8 @@
       allocate(AddLag(numLagrangeSrfs,3))
       allocate(LagMeanFlow(numLagrangeSrfs))
       NumOfData = numLagrangeSrfs*3
-      allocate(LagHist(lstep+nstep(1)+1, NumOfData))
-      allocate(LagErrorHist(lstep+nstep(1)+1, NumOfData))
+      allocate(LagHist(currentTimestepIndex+nstep(1)+1, NumOfData))
+      allocate(LagErrorHist(currentTimestepIndex+nstep(1)+1, NumOfData))
       LagCenter = zero
       LagInplaneVectors = zero
       LagRadius = zero
@@ -1103,10 +1104,10 @@
          read(800,*) (ScaleFactor(k,n), n=1,3) !Scaling factors
       enddo
       close(800)
-      if (lstep .gt. zero) then
-         call ReadDataFile(LagHist(1:lstep+1,:),lstep+1,NumOfData, &
+      if (currentTimestepIndex .gt. zero) then
+         call ReadDataFile(LagHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,NumOfData, &
            'LagrangeMultipliers.dat',801)
-         call ReadDataFile(LagErrorHist(1:lstep+1,:),lstep+1,NumOfData, &
+         call ReadDataFile(LagErrorHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,NumOfData, &
            'LagrangeErrors.dat',802)
       endif
       

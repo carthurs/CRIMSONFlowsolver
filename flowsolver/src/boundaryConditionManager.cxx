@@ -90,9 +90,9 @@ void boundaryConditionManager::setSimulationModePurelyZeroD(const int simulation
   
 }
 
-// void boundaryConditionManager::setLstep(const int lstep)
+// void boundaryConditionManager::setLstep(const int currentTimestepIndex)
 // {
-//   m_currentTimestepIndex = lstep;
+//   m_currentTimestepIndex = currentTimestepIndex;
 //   m_currentTimestepIndexHasBeenSet = true;
 // }
 

@@ -843,7 +843,7 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
  */
 double SimvascularVerdandiModel::GetTime() const {
 	if(!dynamic_start_){
-		return (double)(timdat.lstep);
+		return (double)(timdat.currentTimestepIndex);
 	} else {
 		if (event_started_){
 			return (double)(time_shifted_);

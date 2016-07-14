@@ -84,7 +84,7 @@ void controlledCoronary::initialiseModel()
 		// Initialise the pressure using the value from the PHistRCR.dat.
 		std::cout << "this is all wrong... restart not set up yet!" << std::endl;
 		std::exit(1);
-		// pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisCoronary+1,timdat.lstep);
+		// pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisCoronary+1,timdat.currentTimestepIndex);
     }
     else
     {

@@ -148,7 +148,7 @@
 				try {
 					pureZeroDDriver.setDelt(inpdat.Delt[0]);
 				    pureZeroDDriver.setAlfi(timdat.alfi);
-				    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
+				    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.currentTimestepIndex);
 				    pureZeroDDriver.setNtout(1);
 	
 				    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);

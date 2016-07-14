@@ -401,7 +401,7 @@
 ! !         ! solve reduced order model using updated flows
 !           if (sysactive) then
 ! !!             call updreducedordermodel(y,sys,'solve')
-!              call sys%solve(lstep)
+!              call sys%solve(currentTimestepIndex)
 !              !! need to code something that adds pressure to the RHS
 !           end if
 ! 
@@ -412,7 +412,7 @@
        !if (iheart .gt. int(0) .and. isystemic .ne. int(1)) then
        if (iheart .gt. int(0)) then       
           call updreducedordermodel(y,hrt,'solve') ! update flow_n1
-          call hrt%iterate_hrt(lstep,'solve')
+          call hrt%iterate_hrt(currentTimestepIndex,'solve')
        endif
 
        !if (numControlledCoronarySrfs .gt. int(0)) then
@@ -1118,10 +1118,10 @@
                           ! p is just the full Q for each surface
         do j = 1,numRCRSrfs
             if(sign.lt.zero) then ! RHS so -1
-                p(j)= sign*(poldRCR(j) + p(j)*RCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
+                p(j)= sign*(poldRCR(j) + p(j)*RCRConvCoef(currentTimestepIndex+2,j)) !pressure p=pold+ Qbeta
                 p(j)= p(j) - HopRCR(j) ! H operator contribution
             elseif(sign.gt.zero) then ! LHS so sign is positive
-                p(j)= sign*p(j)*RCRConvCoef(lstep+2,j)
+                p(j)= sign*p(j)*RCRConvCoef(currentTimestepIndex+2,j)
             endif
         enddo
 
@@ -1146,10 +1146,10 @@
         call GetFlowQ(p, y, nsrflistTRCR, numTRCRSrfs)
         do j = 1, numTRCRSrfs
             if(sign.lt.zero) then ! RHS so -1
-                p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
+                p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(currentTimestepIndex+2,j)) !pressure p=pold+ Qbeta
                 p(j)= p(j) - HopTRCR(j) ! H operator contribution
             elseif(sign.gt.zero) then ! LHS so sign is positive
-                p(j)= sign*p(j)*TRCRConvCoef(lstep+2,j)
+                p(j)= sign*p(j)*TRCRConvCoef(currentTimestepIndex+2,j)
             endif
         enddo
 
@@ -1177,10 +1177,10 @@
           ! write(*,*) "flows just got:", p(1)
           !          do j = 1, numGRCRSrfs
           !              if(sign.lt.zero) then ! RHS so -1
-          !                  p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
+          !                  p(j)= sign*(poldTRCR(j) + p(j)*TRCRConvCoef(currentTimestepIndex+2,j)) !pressure p=pold+ Qbeta
           !                  p(j)= p(j) - HopTRCR(j) ! H operator contribution
           !              elseif(sign.gt.zero) then ! LHS so sign is positive
-          !                  p(j)= sign*p(j)*TRCRConvCoef(lstep+2,j)
+          !                  p(j)= sign*p(j)*TRCRConvCoef(currentTimestepIndex+2,j)
           !              endif
           !          enddo
 
@@ -1254,11 +1254,11 @@
         do j = 1,numCORSrfs
             if(sign.lt.zero) then ! RHS so -1
                 p(j)= sign*(poldCOR(j) +  &
-                   p(j)*CORConvCoef(lstep+2,j)) !pressure p=pold+ Qbeta
-                                !check lstep - need it to be integer and value n not n+1
+                   p(j)*CORConvCoef(currentTimestepIndex+2,j)) !pressure p=pold+ Qbeta
+                                !check currentTimestepIndex - need it to be integer and value n not n+1
                 p(j)= p(j) +sign* HopCOR(j) ! H operator contribution
             elseif(sign.gt.zero) then ! LHS so sign is positive
-                p(j)= sign*p(j)*CORConvCoef(lstep+2,j)
+                p(j)= sign*p(j)*CORConvCoef(currentTimestepIndex+2,j)
             endif
         enddo
 !
@@ -1436,7 +1436,7 @@
                resL(k,1)=two*ScaleFactor(k,1)*Lagalpha(k,1)-Penalty(k,1)
                resL(k,2)=two*ScaleFactor(k,2)*Lagalpha(k,2)-Penalty(k,2)
                resL(k,3)=two*ScaleFactor(k,3)*Lagalpha(k,3)-Penalty(k,3)
-               if (lstep .eq. 0) then
+               if (currentTimestepIndex .eq. 0) then
                   do i=1, 3
                      LagErrorHist(1,(k-1)*3+i)=Penalty(k,i)
                   enddo
@@ -1709,7 +1709,7 @@
          END DO
          DO k = 1, numRCRSrfs
             faIn = faIn + 1
-            faceRes(faIn) = RCRConvCoef(lstep+2,k)
+            faceRes(faIn) = RCRConvCoef(currentTimestepIndex+2,k)
          END DO
          DO k = 1, numGRCRSrfs
             faIn = faIn + 1

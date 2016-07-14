@@ -104,7 +104,7 @@
 !
 !.... write out the new history of flow rates to Qhistor.dat
 !      
-         if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+         if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
                      (myrank .eq. zero)) then
             open(unit=816, file='Qhistor.dat',status='replace')
             write(816,*) ntimeptpT
@@ -119,25 +119,25 @@
 !... for RCR bc just add the new contribution
 !
       if(numRCRSrfs.gt.zero .and. nsrfIdList(1).eq.nsrflistRCR(1)) then
-         QHistRCR(lstep+1,1:numSrfs) = NewQ(1:numSrfs)
+         QHistRCR(currentTimestepIndex+1,1:numSrfs) = NewQ(1:numSrfs)
       endif
 !
 !... for time-varying RCR bc just add the new contribution
 !
       if(numTRCRSrfs.gt.zero.and.nsrfIdList(1).eq.nsrflistTRCR(1)) then
-         QHistTRCR(lstep+1,1:numSrfs) = NewQ(1:numSrfs)
+         QHistTRCR(currentTimestepIndex+1,1:numSrfs) = NewQ(1:numSrfs)
       endif
 !
 !... for Coronary bc just add the new contribution
 !
       if(numCORSrfs.gt.zero.and.nsrfIdList(1).eq.nsrflistCOR(1)) then
-         QHistCOR(lstep+1,1:numSrfs) = NewQ(1:numSrfs)
+         QHistCOR(currentTimestepIndex+1,1:numSrfs) = NewQ(1:numSrfs)
       endif      
 !
 !... for INCP bc just add the new contribution
 !
       if(numINCPSrfs.gt.zero.and.nsrfIdList(1).eq.nsrflistINCP(1)) then
-         QHistINCP(lstep+1,1:numSrfs) = NewQ(1:numSrfs)  
+         QHistINCP(currentTimestepIndex+1,1:numSrfs) = NewQ(1:numSrfs)  
       endif 
       
       return
@@ -304,12 +304,12 @@
       integer  srfIDList(0:MAXSURF),  numSrfs
       
       call integrScalar(NewP,y(:,4),srfIdList,numSrfs)
-         PHistRCR(lstep+1,1:numSrfs)=NewP(1:numSrfs)/RCRArea(1:numSrfs)
-      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+         PHistRCR(currentTimestepIndex+1,1:numSrfs)=NewP(1:numSrfs)/RCRArea(1:numSrfs)
+      if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
          (myrank .eq. zero)) then
-         call OutputDataFile(QHistRCR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(QHistRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'QHistRCR.dat',870)
-         call OutputDataFile(PHistRCR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(PHistRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'PHistRCR.dat',871)
       endif 
 
@@ -330,20 +330,20 @@
       integer  srfIDList(0:MAXSURF),  numSrfs
 
       call integrScalar(NewP,y(:,4),srfIDList,numSrfs)
-      PHistTRCR(lstep+1,1:numSrfs)=NewP(1:numSrfs)/TRCRArea(1:numSrfs)
-      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+      PHistTRCR(currentTimestepIndex+1,1:numSrfs)=NewP(1:numSrfs)/TRCRArea(1:numSrfs)
+      if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
         (myrank .eq. zero)) then
-         call OutputDataFile(QHistTRCR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(QHistTRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
            'QHistTRCR.dat',882)
-         call OutputDataFile(PHistTRCR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(PHistTRCR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
            'PHistTRCR.dat',883)
-         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,1),lstep+1, &
+         call OutputDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,1),currentTimestepIndex+1, &
            numSrfs,'ValueTRCRRp.dat',984)
-         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,2),lstep+1, &
+         call OutputDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,2),currentTimestepIndex+1, &
            numSrfs,'ValueTRCRC.dat',985)
-         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,3),lstep+1, &
+         call OutputDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,3),currentTimestepIndex+1, &
            numSrfs,'ValueTRCRRd.dat',986)
-         call OutputDataFile(CurrValueTRCR(1:lstep+1,:,4),lstep+1, &
+         call OutputDataFile(CurrValueTRCR(1:currentTimestepIndex+1,:,4),currentTimestepIndex+1, &
            numSrfs,'ValueTRCRPd.dat',987)
       endif
 
@@ -528,13 +528,13 @@
       PHistCOR(stepn+1,1:numSrfs) = CoupleArea(1:numSrfs) &
          /CORArea(1:numSrfs)
 
-      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+      if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
          (myrank .eq. zero)) then
-         call OutputDataFile(QHistCOR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(QHistCOR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'QHistCOR.dat',876)
-         call OutputDataFile(PHistCOR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(PHistCOR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'PHistCOR.dat',877)
-         call OutputDataFile(PlvHistCOR(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(PlvHistCOR(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'PlvHistCOR.dat',879)
       endif 
 
@@ -575,11 +575,11 @@
 
       ! VelOnly(:,1:3)=y(:,1:3)
       call GetFlowQ(Qini,y(:,1:3),srfIdList,numSrfs) !get initial flow
-      FlowHist(lstep+1,1:numSrfs)=Qini(1:numSrfs) !initialize QHistRCR
+      FlowHist(currentTimestepIndex+1,1:numSrfs)=Qini(1:numSrfs) !initialize QHistRCR
       ! POnly(:)=y(:,4) ! pressure
       call integrScalar(Pini,y(:,4),srfIdList,numSrfs) !get initial pressure integral
       Pini(1:numSrfs) = Pini(1:numSrfs)/CalcArea(1:numSrfs)
-      PressHist(lstep+1,1:numSrfs)=Pini(1:numSrfs)
+      PressHist(currentTimestepIndex+1,1:numSrfs)=Pini(1:numSrfs)
      
       return
       end
@@ -604,12 +604,12 @@
       real*8    VelOnly(nshg,3), POnly(nshg)
 
       allocate (RCRic(0:MAXSURF))
-      call RCRint(lstep,PdistIni) !get initial distal P 
+      call RCRint(currentTimestepIndex,PdistIni) !get initial distal P 
       POnly(:)= one ! one to get area      
       call integrScalar(CoupleArea,POnly,srfIdList,numSrfs) !get surf area
       RCRArea(1:numSrfs) = CoupleArea(1:numSrfs)
 
-      if (lstep .eq. zero) then
+      if (currentTimestepIndex .eq. zero) then
          VelOnly(:,1:3)=y(:,1:3)
          call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs) !get initial flow
          QHistRCR(1,1:numSrfs)=Qini(1:numSrfs) !initialize QHistRCR
@@ -619,7 +619,7 @@
          PHistRCR(1,1:numSrfs)=Pini(1:numSrfs)
          RCRic(1:numSrfs) = Pini(1:numSrfs)  &
                 - ValueListRCR(1,:)*Qini(1:numSrfs)-PdistIni(1:numSrfs)
-      elseif (lstep .gt. zero) then
+      elseif (currentTimestepIndex .gt. zero) then
           RCRic(1:numSrfs) = PHistRCR(1,1:numSrfs)  &
            -ValueListRCR(1,1:numSrfs)*QHistRCR(1,1:numSrfs) &
            -PdistIni(1:numSrfs)
@@ -647,7 +647,7 @@
       call integrScalar(CoupleArea,POnly,srfIdList,numSrfs)
       call TRCRint(zero)
       TRCRArea(1:numSrfs) = CoupleArea(1:numSrfs)
-      if (lstep .eq. zero) then
+      if (currentTimestepIndex .eq. zero) then
          VelOnly(:,1:3)=y(:,1:3)
          call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs)
          QHistTRCR(1,1:numSrfs)=Qini(1:numSrfs)
@@ -686,9 +686,9 @@
       POnly(:)= one ! one to get area
       call integrScalar(CoupleArea,POnly,srfIdList,numSrfs) !get surf area
       CORArea(1:numSrfs)=CoupleArea(1:numSrfs)
-      call CORint(Delt(1)*lstep,PlvistIni,zero)
+      call CORint(Delt(1)*currentTimestepIndex,PlvistIni,zero)
       CORic = zero
-      if (lstep .eq. zero) then
+      if (currentTimestepIndex .eq. zero) then
          VelOnly(:,1:3)=y(:,1:3)
          call GetFlowQ(Qini,VelOnly,srfIdList,numSrfs) !get initial flow
          QHistCOR(1,1:numSrfs)=Qini(1:numSrfs)
@@ -697,7 +697,7 @@
          PHistCOR(1,1:numSrfs) = Pini(1:numSrfs)/CORArea(1:numSrfs)
          Pini(1:numSrfs)=Pini(1:numSrfs)/CORArea(1:numSrfs)
          PlvHistCOR(1,1:numSrfs)=PlvistIni(1:numSrfs)
-      elseif (lstep .gt. zero) then
+      elseif (currentTimestepIndex .gt. zero) then
          Qini(1:numSrfs) = QHistCOR(1,1:numSrfs)
          Pini(1:numSrfs) = PHistCOR(1,1:numSrfs)
          PlvistIni(1:numSrfs)=PlvHistCOR(1,1:numSrfs)
@@ -912,7 +912,7 @@
       InflowArea(1:numSrfs) = CoupleArea(1:numSrfs)
       call INCPint(zero, initElast, initPvenous)
       Eadjust(1:numSrfs) = initElast(1:numSrfs)
-      if (lstep .eq. zero) then
+      if (currentTimestepIndex .eq. zero) then
          call integrScalar(Integral, y(:,4), srfIDList, numSrfs)
          Paorta(1,1:numSrfs)= &
             Integral(1:numSrfs)/InflowArea(1:numSrfs)
@@ -927,9 +927,9 @@
                QAV(1,k)=(initPvenous(k)-PLV(1,k))/ValueVv(1,k)
             endif              
          enddo
-      elseif (lstep .gt. zero) then
+      elseif (currentTimestepIndex .gt. zero) then
          do k=1, numINCPSrfs
-            do j=1, lstep+1
+            do j=1, currentTimestepIndex+1
                if (Qaorta(j,k) .ne. zero) then
                   QHistINCP(j,k) = Qaorta(j,k)
                elseif (QAV(j,k) .ne. zero) then
@@ -1000,17 +1000,17 @@
             endif
          endif
       enddo
-      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+      if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
             (myrank .eq. zero)) then
-         call OutputDataFile(Paorta(1:lstep+1,:),stepn+1,numSrfs, &
+         call OutputDataFile(Paorta(1:currentTimestepIndex+1,:),stepn+1,numSrfs, &
             'Paorta.dat',821)
-         call OutputDataFile(Qaorta(1:lstep+1,:),stepn+1,numSrfs, &
+         call OutputDataFile(Qaorta(1:currentTimestepIndex+1,:),stepn+1,numSrfs, &
             'Qaorta.dat',822)
-         call OutputDataFile(PLV(1:lstep+1,:),stepn+1,numSrfs, &
+         call OutputDataFile(PLV(1:currentTimestepIndex+1,:),stepn+1,numSrfs, &
             'PLV.dat',823)
-         call OutputDataFile(VLV(1:lstep+1,:),stepn+1,numSrfs, &
+         call OutputDataFile(VLV(1:currentTimestepIndex+1,:),stepn+1,numSrfs, &
             'VLV.dat',824)
-         call OutputDataFile(QAV(1:lstep+1,:),stepn+1,numSrfs, &
+         call OutputDataFile(QAV(1:currentTimestepIndex+1,:),stepn+1,numSrfs, &
             'QAV.dat',825)
       endif
         
@@ -1031,14 +1031,14 @@
       integer  srfIDList(0:MAXSURF),  numSrfs
 
       call GetFlowQ(NewQ, y(:,1:3), srfIDList,numSrfs) !new flow at time n+1
-      FlowHist(lstep+1,1:numSrfs) = NewQ(1:numSrfs)
+      FlowHist(currentTimestepIndex+1,1:numSrfs) = NewQ(1:numSrfs)
       call integrScalar(NewP, y(:,4), srfIDList, numSrfs)
-      PressHist(lstep+1,1:numSrfs) = NewP(1:numSrfs)/CalcArea(1:numSrfs)
-      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+      PressHist(currentTimestepIndex+1,1:numSrfs) = NewP(1:numSrfs)/CalcArea(1:numSrfs)
+      if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
          (myrank .eq. zero)) then
-         call OutputDataFile(FlowHist(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(FlowHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'FlowHist.dat',1004)
-         call OutputDataFile(PressHist(1:lstep+1,:),lstep+1,numSrfs, &
+         call OutputDataFile(PressHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numSrfs, &
             'PressHist.dat',1005)
       endif 
 
@@ -1076,23 +1076,23 @@
       IPLagrange(1:numSrfs,1:3)=InnerProduct(1:numSrfs,1:3)
       do k=1, numSrfs
          NumOfData = (k-1)*3+1
-         LagErrorHist(lstep+1,NumOfData)=abs(IPLagrange(k,1) &
+         LagErrorHist(currentTimestepIndex+1,NumOfData)=abs(IPLagrange(k,1) &
             -two*QLagrange(k,1)*PQLagrange(k,1) &
             +QLagrange(k,1)**2*ProfileDelta(k))
-         LagErrorHist(lstep+1,NumOfData+1)=abs(IPLagrange(k,2))
-         LagErrorHist(lstep+1,NumOfData+2)=abs(IPLagrange(k,3))
-            LagErrorHist(lstep+1,NumOfData:NumOfData+2)= &
-            LagErrorHist(lstep+1,NumOfData:NumOfData+2) &
+         LagErrorHist(currentTimestepIndex+1,NumOfData+1)=abs(IPLagrange(k,2))
+         LagErrorHist(currentTimestepIndex+1,NumOfData+2)=abs(IPLagrange(k,3))
+            LagErrorHist(currentTimestepIndex+1,NumOfData:NumOfData+2)= &
+            LagErrorHist(currentTimestepIndex+1,NumOfData:NumOfData+2) &
             *LagMeanFlow(k)
-         LagHist(lstep+1,NumOfData:NumOfData+2)=Lag(k,1:3)
+         LagHist(currentTimestepIndex+1,NumOfData:NumOfData+2)=Lag(k,1:3)
       enddo    
 
-      if (((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)).and. &
+      if (((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)).and. &
             (myrank .eq. zero)) then
          NumOfData = numLagrangeSrfs*3
-         call OutputDataFile(LagHist(1:lstep+1,:),lstep+1, NumOfData, &
+         call OutputDataFile(LagHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1, NumOfData, &
             'LagrangeMultipliers.dat',801)
-         call OutputDataFile(LagErrorHist(1:lstep+1,:),lstep+1, &
+         call OutputDataFile(LagErrorHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1, &
             NumOfData,'LagrangeErrors.dat',802)
       endif
 !
@@ -1123,10 +1123,10 @@
       do k=1, numSrfs
          LagMeanFlow(k)=two*LagProfileArea(k)/LagMeanFlow(k) &
             /LagMeanFlow(k)
-         if (lstep .eq. zero) then
+         if (currentTimestepIndex .eq. zero) then
             LagHist(1,(k-1)*3+1:(k-1)*3+3)=Lagold(k,1:3)
-         elseif (lstep .gt. zero) then
-            Lagold(k,1:3)=LagHist(lstep+1,(k-1)*3+1:(k-1)*3+3)
+         elseif (currentTimestepIndex .gt. zero) then
+            Lagold(k,1:3)=LagHist(currentTimestepIndex+1,(k-1)*3+1:(k-1)*3+3)
          endif
       enddo
 !            

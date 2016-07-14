@@ -441,7 +441,7 @@ extern "C"
                      Real*    aperm,
                      Integer* nshg,
                      Integer* myrank,
-                     Integer* lstep,
+                     Integer* currentTimestepIndex,
                      Integer* nPermDims ) {
 #ifndef NO_ACUSIM
         int nPrjs, PrjSrcId;
@@ -453,7 +453,7 @@ extern "C"
         double* projVec;
         int i, j, count;
 
-        sprintf( filename,"restart.%d.%d", *lstep, *myrank+1 );
+        sprintf( filename,"restart.%d.%d", *currentTimestepIndex, *myrank+1 );
         openfile_( filename, "append", &fileHandle );
         
         nPrjs = (Integer) lesGetPar( lesArray[ *lesId ], LES_ACT_PRJS );
@@ -518,7 +518,7 @@ extern "C"
                      Real*    aperm,
                      Integer* nshg,
                      Integer* myrank,
-                     Integer* lstep ,
+                     Integer* currentTimestepIndex ,
                      Integer* nPermDims ) {
 #ifndef NO_ACUSIM
         int nPrjs, PrjSrcId;
@@ -532,7 +532,7 @@ extern "C"
         double* projVec;
         int i,j,count;
 
-        sprintf( filename,"restart.%d.%d", *lstep, *myrank+1 );
+        sprintf( filename,"restart.%d.%d", *currentTimestepIndex, *myrank+1 );
         openfile_( filename, "read", &fileHandle );
 
         if ( fileHandle == 0 ) return;

@@ -61,6 +61,8 @@
       open(unit=72,file='numstart.dat',status='old')
       read(72,*) irstart
       close(72)
+
+      currentTimestepIndex = irstart
 !
       fnameg='geombc.dat'
       fnameg= trim(fnameg)  // cname(myrank+1)
@@ -507,13 +509,13 @@
 !.... read the header and check it against the run data
 !
       ithree=3
-!      call creadlist(irstin,ithree,nshg2,ndof2,lstep)
+!      call creadlist(irstin,ithree,nshg2,ndof2,currentTimestepIndex)
       fname1='solution?'
       call readheader(irstin,fname1//c_null_char,intfromfile, &
            ithree,c_char_"integer"//c_null_char, iotype)
       nshg2=intfromfile(1)
       ndof2=intfromfile(2)
-      lstep=intfromfile(3)
+      !currentTimestepIndex=intfromfile(3)
       if(ndof2.ne.ndof) then
         warning='WARNING more data in restart than needed: keeping 1st '
         write(*,*) warning , ndof
@@ -551,7 +553,7 @@
       if(intfromfile(1).ne.0) then 
          nshg2=intfromfile(1)
          ndof2=intfromfile(2)
-         lstep=intfromfile(3)
+         !currentTimestepIndex=intfromfile(3)
          
          if (nshg2 .ne. nshg) call error ('restar  ', 'nshg   ', nshg)
 
@@ -587,7 +589,7 @@
               ithree,c_char_"integer"//c_null_char, iotype)
          nshg2=intfromfile(1)
          ndisp=intfromfile(2)
-         lstep=intfromfile(3)
+         !currentTimestepIndex=intfromfile(3)
          if(ndisp.ne.nsd) then
             warning='WARNING ndisp not equal nsd'
             write(*,*) warning , ndisp
@@ -620,7 +622,7 @@
                  ithree,c_char_"integer"//c_null_char, iotype)
              nshg2=intfromfile(1)
              ndisp=intfromfile(2)
-             lstep=intfromfile(3)
+             !currentTimestepIndex=intfromfile(3)
              if(ndisp.ne.nsd) then
                  warning='WARNING ndisp not equal nsd'
                  write(*,*) warning , ndisp

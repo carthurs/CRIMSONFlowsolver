@@ -27,10 +27,10 @@
 !                            MPI_SUM, master, INEWCOMM,ierr)
 !           endif
 !           if (numpe.eq.1) &
-!             write (76,1000) lstep+1, dke,dke
+!             write (76,1000) currentTimestepIndex+1, dke,dke
 
 !           if ((myrank .eq. master).and.(numpe > 1)) then 
-!              write (76,1000) lstep+1, dkesum,dkesum
+!              write (76,1000) currentTimestepIndex+1, dkesum,dkesum
 ! !
 !              call flush(76)
 ! !     
@@ -105,7 +105,7 @@
       endif
 
       if (myrank .eq. master) then
-         write (iforce,1000) lstep, (Force(i), i=1,nsd),  &
+         write (iforce,1000) currentTimestepIndex, (Force(i), i=1,nsd),  &
               HFlux,spmasss,(ftot(i),i=1,nsd)
          call flush(iforce)
       endif
@@ -193,7 +193,7 @@
             SFlux = SFluxg
           endif
           iunit=60+isrf
-          write(iunit,"(i7,1p5e14.5)")lstep,SFlux
+          write(iunit,"(i7,1p5e14.5)")currentTimestepIndex,SFlux
           call flush(iunit)
         endif
       enddo

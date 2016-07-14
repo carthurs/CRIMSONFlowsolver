@@ -490,7 +490,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
           allocate (lhsK(9,nnz_tot))
         endif
 
-        call readLesRestart( lesId,  aperm, nshg, myrank, lstep, nPermDims )
+        call readLesRestart( lesId,  aperm, nshg, myrank, currentTimestepIndex, nPermDims )
 
     else
         nPermDims = 0
@@ -544,7 +544,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !
     !.....open the necessary files to gather time series
     !
-    lstep0 = lstep+1
+    lstep0 = currentTimestepIndex+1
         
     ! ******************************************************** ! 
     ! *** initialize the initial condition for heart model *** !
@@ -579,10 +579,10 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
         ! set internal variables for the left heart     
         ! if (isystemic .ne. int(1)) then
-            ! call hrt%initxvars(lstep)                   
+            ! call hrt%initxvars(currentTimestepIndex)                   
         ! end if 
 
-        call hrt%initxvars(lstep)                   
+        call hrt%initxvars(currentTimestepIndex)                   
 
         ! if valve open, switch iBC
         if (hrt%isavopen() .eq. 1) then
@@ -600,7 +600,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     !
     !.... satisfy the boundary conditions
     !
-    if (lstep .eq. 0 ) then
+    if (currentTimestepIndex .eq. 0 ) then
         call itrBC (y, ac,  iBC, BC, iper, ilwork)
     endif
     yold = y
@@ -693,7 +693,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     if (multidomainactive .eq. 1) then
         call initmultidomaincontainer(y,multidom) ! set using flows and pressures at t = t_{n}
         !if (sysactive) then
-        !  call sys%initxvars(lstep)
+        !  call sys%initxvars(currentTimestepIndex)
         !  call initreducedordermodel(y,sys,'multidomain')
         !end if
     end if
@@ -1089,10 +1089,10 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !            write(*,*) "current mol. visc = ", datmat(1,2,1)
     
 !.... if we have time varying boundary conditions update the values of BC.
-!     these will be for time step n+1 so use lstep+1
+!     these will be for time step n+1 so use currentTimestepIndex+1
     
     if (itvn .gt. 0) then
-       call BCint((lstep+1)*Delt(1), x, BC, iBC)
+       call BCint((currentTimestepIndex+1)*Delt(1), x, BC, iBC)
     end if 
 
     !
@@ -1104,8 +1104,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     ! ... calc the pressure contribution that depends on the history for the RCR BC
     !
     if(numRCRSrfs.gt.0) then
-        call CalcHopRCR (Delt(itseq), lstep, numRCRSrfs)
-        call CalcRCRConvCoef(lstep,numRCRSrfs)
+        call CalcHopRCR (Delt(itseq), currentTimestepIndex, numRCRSrfs)
+        call CalcRCRConvCoef(currentTimestepIndex,numRCRSrfs)
         call pHist(poldRCR,QHistRCR,RCRConvCoef, &
         nstep+nptsRCR,numRCRSrfs)
     endif
@@ -1113,8 +1113,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     ! ... compute coefficients required for time-varying RCR BCs
     !
     if(numTRCRSrfs.gt.0) then
-        call CalcTRCRConvCoef(lstep,numTRCRSrfs)
-        call CalcHopTRCR (Delt(itseq), lstep, numTRCRSrfs)
+        call CalcTRCRConvCoef(currentTimestepIndex,numTRCRSrfs)
+        call CalcHopTRCR (Delt(itseq), currentTimestepIndex, numTRCRSrfs)
         call pHist(poldTRCR,QHistTRCR,TRCRConvCoef, &
         nstep(1)+nptsTRCR,numTRCRSrfs)
     endif
@@ -1128,44 +1128,44 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
 
     ! ! Nan rcr ----------------------------------
     ! if(numGRCRSrfs.gt.0) then
-    !     !call grcrbc_ComputeImplicitCoefficients(lstep, yold)
+    !     !call grcrbc_ComputeImplicitCoefficients(currentTimestepIndex, yold)
 
     !     if (nrcractive) then
     !         ! first reset flow for the filter
     !         call reset_flow_n(yold, nrcr)
     !         ! calculate the implicit coefficients
-    !         ! call nrcr%setimplicitcoeff(lstep) !\cppHook
+    !         ! call nrcr%setimplicitcoeff(currentTimestepIndex) !\cppHook
 
-    !         ! call callCppComputeAllImplicitCoeff_solve(lstep)
-    !         ! call callCppComputeAllImplicitCoeff_update(lstep)
+    !         ! call callCppComputeAllImplicitCoeff_solve(currentTimestepIndex)
+    !         ! call callCppComputeAllImplicitCoeff_update(currentTimestepIndex)
     !     end if
 
     ! endif
 
     ! Moved here from above - it's a generic update for everything,
     ! so shouldn't need guarding
-    call callCppComputeAllImplicitCoeff_solve(lstep)
-    call callCppComputeAllImplicitCoeff_update(lstep)
+    call callCppComputeAllImplicitCoeff_solve(currentTimestepIndex)
+    call callCppComputeAllImplicitCoeff_update(currentTimestepIndex)
     ! ------------------------------------------
 
     !
     ! ... calc the pressure contribution that depends on the history for the Coronary BC
     !
     if(numCORSrfs.gt.0) then
-        call CalcCORConvCoef(lstep,numCORSrfs)
+        call CalcCORConvCoef(currentTimestepIndex,numCORSrfs)
         call pHist(poldCOR, QHistCOR, CORConvCoef, &
         nstep+nptsCOR,numCORSrfs)
-        call CalcHopCOR (Delt(itseq), lstep, nsrflistCOR,  &
+        call CalcHopCOR (Delt(itseq), currentTimestepIndex, nsrflistCOR,  &
         numCORSrfs,yold)
     endif
     !
     !.... calculate the coefficients
     !
     if (numINCPSrfs .gt. 0) then
-        call CalcINCPConvCoef(lstep, numINCPSrfs)
+        call CalcINCPConvCoef(currentTimestepIndex, numINCPSrfs)
         call pHist(poldINCP, QHistINCP, &
         INCPConvCoef, nstep+nptsINCP, numINCPSrfs)
-        call CalcINCPCoef(Delt(itseq), lstep, &
+        call CalcINCPCoef(Delt(itseq), currentTimestepIndex, &
         nsrflistINCP, numINCPSrfs, yold)
     endif
     !
@@ -1548,14 +1548,14 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     end if
 
     if(numNetlistLPNSrfs .gt. 0) then
-        call callCPPUpdateAllNetlistLPNs(lstep)
+        call callCPPUpdateAllNetlistLPNs(currentTimestepIndex)
         call callCppfinalizeLPNAtEndOfTimestep_netlists()
     endif
 
     call itrBC (yold, acold,  iBC,  BC,  iper,ilwork)
 
     istep = istep + 1
-    lstep = lstep + 1
+    currentTimestepIndex = currentTimestepIndex + 1
 
     ! interface to compute distances to observed wall motion
     if (imeasdist.eq.1) then
@@ -1613,22 +1613,22 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !
     ! ... write out the solution
     !
-    if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
+    if ((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)) then
         call restar ('out ', yold, ac)
         if(ideformwall.eq.1) then
-            call write_displ(myrank, lstep, nshg, 3, uold, uref)
+            call write_displ(myrank, currentTimestepIndex, nshg, 3, uold, uref)
             if (imeasdist.eq.1) then
-                call write_distl(myrank, lstep, nshg, 1, xdist) ! should use nshg or numnp?
+                call write_distl(myrank, currentTimestepIndex, nshg, 1, xdist) ! should use nshg or numnp?
             end if            
         end if
 
         if (aleOn .eq. int(1)) then
 #if DEBUG_ALE == 1
-            call Write_Residual(myrank, lstep, nshg, 4, res) 
+            call Write_Residual(myrank, currentTimestepIndex, nshg, 4, res) 
 #endif
-            ! call Write_Relative_Velocity(myrank, lstep, nshg, 3, relativeVelocity) 
-            call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, relativeVelocity, "relative velocity") 
-            call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, updatedMeshCoordinates, "updated mesh coordinates") 
+            ! call Write_Relative_Velocity(myrank, currentTimestepIndex, nshg, 3, relativeVelocity) 
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, relativeVelocity, "relative velocity") 
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, updatedMeshCoordinates, "updated mesh coordinates") 
         end if 
         
     endif
@@ -1641,14 +1641,14 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     if (iheart .gt. int(0)) then
 
         
-        call hrt%iterate_hrt(lstep,'update')
+        call hrt%iterate_hrt(currentTimestepIndex,'update')
         call updreducedordermodel(y,hrt,'update') 
         
         ! update internal variables in the heart with new flow at t = t_{n+1}
-        call hrt%updxvars(lstep)        
-        call hrt%writexvars(lstep)
+        call hrt%updxvars(currentTimestepIndex)        
+        call hrt%writexvars(currentTimestepIndex)
         
-        ! call hrt%write_activation_history_hrt(lstep) !moved this to avoid missing latest activation value...
+        ! call hrt%write_activation_history_hrt(currentTimestepIndex) !moved this to avoid missing latest activation value...
 
     end if
 
@@ -1666,7 +1666,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     ! ... update the flow history for the RCR convolution
     !
     if(numRCRSrfs.gt.zero) then
-        call UpdHistConv(y,nsrflistRCR,numRCRSrfs) !uses lstep
+        call UpdHistConv(y,nsrflistRCR,numRCRSrfs) !uses currentTimestepIndex
         call UpdRCR(y,nsrflistRCR,numRCRSrfs)
     endif
 
@@ -1694,10 +1694,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
          ! Update boundary conditions to the final pressure, conforming to the final flow:
 
         ! update pressure and flow history arrays
-        call nrcr%updxvars(lstep)
+        call nrcr%updxvars(currentTimestepIndex)
 
         ! write pressure and flow history arrays
-        ! call nrcr%writexvars(lstep)
+        ! call nrcr%writexvars(currentTimestepIndex)
 
 
     endif
@@ -1706,7 +1706,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     call callCPPRecordPressuresAndFlowsInHistoryArrays()
 
     ! wrt dta
-    if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
+    if ((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)) then
         if(myrank.eq.zero) then
             call callCPPWritePHistAndQHistRCR()
             call callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
@@ -1734,8 +1734,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     ! ... update the flow history for the Coronary convolution
     !
     if(numCORSrfs.gt.zero) then
-        call UpdHistConv(y,nsrflistCOR,numCORSrfs) !uses lstep
-        call UpdHistPlvConv(y,Delt(itseq),lstep,nsrflistCOR, numCORSrfs)
+        call UpdHistConv(y,nsrflistCOR,numCORSrfs) !uses currentTimestepIndex
+        call UpdHistPlvConv(y,Delt(itseq),currentTimestepIndex,nsrflistCOR, numCORSrfs)
     endif
     !
     ! ... update the flow history for the CalcSurfaces
@@ -1765,7 +1765,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     if (exts) then
 
-        if (mod(lstep-1,freq).eq.0) then
+        if (mod(currentTimestepIndex-1,freq).eq.0) then
 
             do jj = 1, ntspts
 
@@ -1828,8 +1828,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !....  print out results.
     !
 !    ntoutv=max(ntout,100)   ! velb is not needed so often
-!    if ((irs .ge. 1) .and. (mod(lstep, ntout) .eq. 0)) then
-!        if( (mod(lstep, ntoutv) .eq. 0) .and. &
+!    if ((irs .ge. 1) .and. (mod(currentTimestepIndex, ntout) .eq. 0)) then
+!        if( (mod(currentTimestepIndex, ntoutv) .eq. 0) .and. &
 !        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
 !        ((nsonmax.eq.1).and.(iLES.gt.0)))) &
 !        call rwvelb  ('out ',  velbar  ,ifail)
@@ -1945,7 +1945,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
     !.... print out the last step
     !
-    if ((irs .ge. 1) .and. ((mod(lstep, ntout) .ne. 0) .or. &
+    if ((irs .ge. 1) .and. ((mod(currentTimestepIndex, ntout) .ne. 0) .or. &
     (nstp .eq. 0))) then
 !        if( &
 !        ((irscale.ge.0).or.(itwmod.gt.0) .or.  &
@@ -1955,10 +1955,10 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         write(*,*) "OUT2 min value of y: ", minval(y)
         call restar ('out ',  yold  ,ac)
         if(ideformwall.eq.1) then
-            call write_displ(myrank, lstep, nshg, 3, u, uref )
+            call write_displ(myrank, currentTimestepIndex, nshg, 3, u, uref )
             if (imeasdist.eq.1) then
                 call ElmDist(u,x,xdist,xdnv,df_fem)
-                call write_distl(myrank, lstep, nshg,1,xdist)
+                call write_distl(myrank, currentTimestepIndex, nshg,1,xdist)
             end if
         end if
     endif
@@ -1966,7 +1966,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
 
     lesId   = numeqns(1)
     IF (memLSflag .NE. 1) THEN
-        call saveLesRestart( lesId,  aperm , nshg, myrank, lstep, nPermDims )
+        call saveLesRestart( lesId,  aperm , nshg, myrank, currentTimestepIndex, nPermDims )
     ENDIF
 
 
@@ -1982,7 +1982,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         !.... open the output file
         !
         iqoldsiz=nshg*ndof*2
-        call write_error(myrank, lstep, nshg, 10, rerr )
+        call write_error(myrank, currentTimestepIndex, nshg, 10, rerr )
 
 
     endif
@@ -1990,9 +1990,9 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
     if(ioybar.eq.1) then
 
         itmp = 1
-        if (lstep .gt. 0) itmp = int(log10(float(lstep)))+1
+        if (currentTimestepIndex .gt. 0) itmp = int(log10(float(currentTimestepIndex)))+1
         write (fmt2,"('(''restart.'',i',i1,',1x)')") itmp
-        write (fname2,fmt2) lstep
+        write (fname2,fmt2) currentTimestepIndex
 
         fname2 = trim(fname2) // cname(myrank+1)
         !
@@ -2005,7 +2005,7 @@ subroutine itrdrv_finalize() bind(C, name="itrdrv_finalize")
         nitems = 3
         iarray(1) = nshg
         iarray(2) = 5
-        iarray(3) = lstep
+        iarray(3) = currentTimestepIndex
         call writeheader(irstin, fnamer2//c_null_char,iarray, nitems, isize, &
         c_char_"double"//c_null_char, iotype )
 
@@ -2316,7 +2316,7 @@ subroutine initreducedordermodel(y, rom, asciiformat)
     call rom%setarea(nsurf,surfarea)
 
 
-    if (lstep .eq. zero) then
+    if (currentTimestepIndex .eq. zero) then
 
 !       integrate flow field on surface in normal direction
         call GetFlowQ(currflow,y(:,1:3),srflist,nsurf)
@@ -2331,11 +2331,11 @@ subroutine initreducedordermodel(y, rom, asciiformat)
         call rom%setflow_n(nsurf,currflow) 
         call rom%setpressure_n(nsurf,currpress)           
 
-    elseif (lstep .gt. zero) then
+    elseif (currentTimestepIndex .gt. zero) then
        
 !       hack for heart model !!!
-        call rom%loadflowfile(lstep,asciiformat)
-        call rom%loadpressurefile(lstep,asciiformat) !! lstep index starts at zero  
+        call rom%loadflowfile(currentTimestepIndex,asciiformat)
+        call rom%loadpressurefile(currentTimestepIndex,asciiformat) !! currentTimestepIndex index starts at zero  
 
     end if
 
@@ -2450,7 +2450,7 @@ subroutine resetBoundaryConditionStateForKalmanFilter(y, numberOfSurfaces, listO
     ! tell the boundary condition in C++ to do the actual resetting to the state the Kalman filter wants us to begin from:
     do indexAmongstCurrentSurfaceType = 1, numberOfSurfaces
         surfaceIndex = listOfSurfaces(indexAmongstCurrentSurfaceType)
-        call callCPPResetStateUsingKalmanFilteredEstimate(surfaceFlows(indexAmongstCurrentSurfaceType), surfacePressures(indexAmongstCurrentSurfaceType), surfaceIndex, lstep)
+        call callCPPResetStateUsingKalmanFilteredEstimate(surfaceFlows(indexAmongstCurrentSurfaceType), surfacePressures(indexAmongstCurrentSurfaceType), surfaceIndex, currentTimestepIndex)
     end do
 
 end subroutine resetBoundaryConditionStateForKalmanFilter
@@ -2544,7 +2544,7 @@ subroutine updreducedordermodel(y,rom,varchar)
 
         ! if (rom%classNameString .eq. 'controlledCoronaryModel') then
         !   !Update coronary internal pressures, now we're done with this timestep:
-        !   call controlledCoronarySurfaces%updateLPN_coronary(lstep)
+        !   call controlledCoronarySurfaces%updateLPN_coronary(currentTimestepIndex)
         ! else if (rom%classNameString .eq. 'netlistLPN') then
         !   call netlistLPNSurfaces%updateLPN_netlistLPN()
         ! end if

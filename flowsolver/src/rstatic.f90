@@ -137,11 +137,11 @@
 !.... results of continuity and momentum 
 !
            
-           write (*,2000) lstep+1, cputme, totres, jtotrs, rmaxdyU, &
+           write (*,2000) currentTimestepIndex+1, cputme, totres, jtotrs, rmaxdyU, &
                 rmaxdyP,nrsmax, &
                 mproc(1)+1, jresmx, int(statsflow(4)), &
                 int(statsflow(1))
-           write (ihist,2000) lstep+1, cputme, totres, jtotrs,  &
+           write (ihist,2000) currentTimestepIndex+1, cputme, totres, jtotrs,  &
                 rmaxdyU, rmaxdyP, nrsmax, &
                 mproc(1)+1,jresmx,int(statsflow(4)), &
                 int(statsflow(1))
@@ -221,9 +221,9 @@
               realsec=TMRC()
               cputme = (realsec - ttim(100))
 
-           print 802, lstep+1, cputme, totres, rmaxdyT, &
+           print 802, currentTimestepIndex+1, cputme, totres, rmaxdyT, &
                       int(statssclr(1))
-           write (ihist,802) lstep+1, cputme, totres,  &
+           write (ihist,802) currentTimestepIndex+1, cputme, totres,  &
                 rmaxdyT,int(statssclr(1))
            
                call flush(ihist)

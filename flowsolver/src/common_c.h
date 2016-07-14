@@ -401,7 +401,7 @@
          double Dtmax;
          double alpha;
          double etol;
-         int lstep;
+         int currentTimestepIndex;
          int ifunc;
          int itseq;
          int istep;

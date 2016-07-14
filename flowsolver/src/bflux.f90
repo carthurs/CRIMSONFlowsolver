@@ -8,11 +8,11 @@
 !
 ! This routine :
 !   1. computes the boundary fluxes
-!   2. prints the results in the file [FLUX.lstep]
+!   2. prints the results in the file [FLUX.currentTimestepIndex]
 !
 ! output:
-!  in file flux.<lstep>.n (similar to restart file):
-!     machin  nshg  lstep 
+!  in file flux.<currentTimestepIndex>.n (similar to restart file):
+!     machin  nshg  currentTimestepIndex 
 !     normal_1 ... normal_nsd            ! outward normal direction
 !     tau_1n   ... tau_nsd n             ! boundary viscous flux
 !
@@ -275,7 +275,7 @@
 !
       ntoutv=ntout
       if ( (irs .ge. 1) &
-           .and. (mod(lstep, ntoutv) .eq. 0) &
+           .and. (mod(currentTimestepIndex, ntoutv) .eq. 0) &
            .or.  (istep .eq. nstep(itseq)) ) then
 
 !
@@ -346,9 +346,9 @@
          enddo
 
 !         itmp = 1
-!         if (lstep .gt. 0) itmp = int(log10(float(lstep)))+1
+!         if (currentTimestepIndex .gt. 0) itmp = int(log10(float(currentTimestepIndex)))+1
 !         write (fmt1,"('(''flux.'',i',i1,',1x)')") itmp
-!         write (fname1,fmt1) lstep
+!         write (fname1,fmt1) currentTimestepIndex
       
 !         fname1 = trim(fname1) // cname(myrank+1)
    
@@ -357,7 +357,7 @@
 !         open (unit=iflux, file=fname1, status='unknown', 
 !     &         form='formatted',err=997)
 
-!      write (iflux) machin, nshg, lstep
+!      write (iflux) machin, nshg, currentTimestepIndex
 !      write (iflux) rtmp(:,1:6)
 !
 !.... output the results
@@ -375,9 +375,9 @@
 !... output the results in the new format in restart.step#.proc# file
 
          itmp = 1
-         if (lstep .gt. 0) itmp = int(log10(float(lstep)))+1
+         if (currentTimestepIndex .gt. 0) itmp = int(log10(float(currentTimestepIndex)))+1
          write (fmt2,"('(''restart.'',i',i1,',1x)')") itmp
-         write (fname2,fmt2) lstep
+         write (fname2,fmt2) currentTimestepIndex
 
          fname2 = trim(fname2) // cname(myrank+1)
 !
@@ -390,7 +390,7 @@
          nitems = 3;
          iarray(1) = nshg
          iarray(2) = ndof
-         iarray(3) = lstep
+         iarray(3) = currentTimestepIndex
          call writeheader(irstin, fnamer//c_null_char,iarray, nitems, isize, &
               c_char_"double"//c_null_char, iotype )
     
@@ -400,7 +400,7 @@
               c_char_"double"//c_null_char, iotype)
         
          call closefile( irstin, c_char_"append"//c_null_char )
-!         call Write_boundaryflux(myrank,lstep,nshg,ndof,rtmp(:,1:ndof))
+!         call Write_boundaryflux(myrank,currentTimestepIndex,nshg,ndof,rtmp(:,1:ndof))
 
 !     wallss vectors into the restart file(s)
          if( iowflux .eq. 1) then
@@ -412,7 +412,7 @@
             nitems = 3
             iarray(1) = nshg
             iarray(2) = ndof
-            iarray(3) = lstep
+            iarray(3) = currentTimestepIndex
             call writeheader(irstin, fnamer//c_null_char,iarray, nitems, isize, &
                  c_char_"double"//c_null_char, iotype )
          

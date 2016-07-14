@@ -27,9 +27,9 @@ void multidom_initialise(){
   // and pass it in explicitly to the BC. It's much easier to keep track of this way.
   boundaryConditionManager_instance->setSimulationModePurelyZeroD(nomodule.pureZeroDSimulation);
   boundaryConditionManager_instance->setDelt(inpdat.Delt[0]);
-  boundaryConditionManager_instance->setHstep(inpdat.nstep[0] + timdat.lstep);
+  boundaryConditionManager_instance->setHstep(inpdat.nstep[0] + timdat.currentTimestepIndex);
   boundaryConditionManager_instance->setAlfi(timdat.alfi);
-  // boundaryConditionManager_instance->setLstep(timdat.lstep);
+  // boundaryConditionManager_instance->setLstep(timdat.currentTimestepIndex);
   boundaryConditionManager_instance->setNtout(outpar.ntout);
   boundaryConditionManager_instance->setMaxsurf(MAXSURF);
   boundaryConditionManager_instance->setNstep(inpdat.nstep[0]);

@@ -105,7 +105,7 @@
 !.... check for execution mode
 !
         if (iexec .eq. 0) then
-           lstep = 0
+           currentTimestepIndex = 0
            call restar ('out ',  y  ,ac)
            return
         endif

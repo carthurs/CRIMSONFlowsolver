@@ -660,7 +660,7 @@
       real*8 :: rho        ! \rho_{fluid}
       integer :: ntout     ! frequency of output inputted from solver.inp 
       integer :: nstep     ! number of timesteps to do (inputted from solver.inp
-      integer :: lstep     ! \todo remove this probably, pass lstep in with hrtconstructor and sysconstructor (because some functions pass lstep in explicitly, if we use lstep in a function expecting it to have the right value and without passing it into that function, the compiler thinks this is ok because of this here lstep; in reality this one is never updated though and the function is then buggy!) total number of steps completed (read from numstart.dat?)
+      integer :: currentTimestepIndex     ! \todo remove this probably, pass currentTimestepIndex in with hrtconstructor and sysconstructor (because some functions pass currentTimestepIndex in explicitly, if we use currentTimestepIndex in a function expecting it to have the right value and without passing it into that function, the compiler thinks this is ok because of this here currentTimestepIndex; in reality this one is never updated though and the function is then buggy!) total number of steps completed (read from numstart.dat?)
       real*8, parameter :: mmhgtodynes = real(1333.3,8)
       real*8, parameter :: pi = real(4.0d+0,8) &
                               * atan(1.0d+0)
@@ -2155,7 +2155,7 @@
       subroutine setsimv_lstep(lstep_val)
       implicit none 
       integer :: lstep_val
-      lstep = lstep_val
+      currentTimestepIndex = lstep_val
       end subroutine setsimv_lstep    
 !
 
@@ -3689,8 +3689,8 @@
       allocate(this%x_n1(this%xdim))                  ! x-variables at t_{n+alfi}
 !
 !     ! allocate history arrays
-      if (lstep .gt. int(0)) then
-         hstep = nstep + lstep
+      if (currentTimestepIndex .gt. int(0)) then
+         hstep = nstep + currentTimestepIndex
       else
          hstep = nstep
       end if
@@ -6166,7 +6166,7 @@
          time_n1 = delt*(real(stepn,8)+alfi)
       elseif (varchar .eq. updatechar) then
 !!         time_n1 = delt*real(stepn+1,8)
-         time_n1 = delt*real(stepn,8) !! update called after lstep increase         
+         time_n1 = delt*real(stepn,8) !! update called after currentTimestepIndex increase         
       end if
 !
 !     ! solve
@@ -6776,8 +6776,8 @@
 
 
       ! allocate history arrays
-      if (lstep .gt. int(0)) then
-         hstep = nstep + lstep
+      if (currentTimestepIndex .gt. int(0)) then
+         hstep = nstep + currentTimestepIndex
       else
          hstep = nstep
       end if      

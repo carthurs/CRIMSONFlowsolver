@@ -1345,7 +1345,7 @@ int cmd_append_displacements(char *cmd) {
 	}
 
 	int nsd = 3;
-	int lstep = 0;
+	int currentTimestepIndex = 0;
 	int nshg = numNodes_;
 	int size = nsd * nshg;
 
@@ -1355,7 +1355,7 @@ int cmd_append_displacements(char *cmd) {
 	int iarray[3];
 	iarray[0] = nshg;
 	iarray[1] = nsd;
-	iarray[2] = lstep;
+	iarray[2] = currentTimestepIndex;
 
 	writeheader_(&filenum, "displacement ", (void*) iarray, &nitems, &size,
 			"double", oformat);
@@ -1435,7 +1435,7 @@ int cmd_append_displacements_with_ref(char *cmd) {
 	}
 
 	int nsd = 3;
-	int lstep = 0;
+	int currentTimestepIndex = 0;
 	int nshg = numNodes_;
 	int size = nsd * nshg;
 
@@ -1463,7 +1463,7 @@ int cmd_append_displacements_with_ref(char *cmd) {
 	int iarray[3];
 	iarray[0] = nshg;
 	iarray[1] = nsd;
-	iarray[2] = lstep;
+	iarray[2] = currentTimestepIndex;
 
 	writeheader_(&filenum, "displacement ", (void*) iarray, &nitems, &size,
 			"double", oformat);
@@ -1971,7 +1971,7 @@ int readRESTARTDAT(char* filename, int readSoln, int readDisp, int readAcc) {
 	int intfromfile[50];
 	int irstin;
 	int ione = 1, itwo = 2, ithree = 3, iseven = 7;
-	int nshgl, numvar, lstep, iqsiz;
+	int nshgl, numvar, currentTimestepIndex, iqsiz;
 
 	openfile_(filename, "read", &irstin);
 
@@ -1981,7 +1981,7 @@ int readRESTARTDAT(char* filename, int readSoln, int readDisp, int readAcc) {
 				oformat);
 		nshgl = intfromfile[0];
 		numvar = intfromfile[1];
-		lstep = intfromfile[2];
+		currentTimestepIndex = intfromfile[2];
 		iqsiz = nshgl * numvar;
 		soln_ = new double[iqsiz];
 		readdatablock_(&irstin, "solution", (void*) soln_, &iqsiz, "double",
@@ -1994,7 +1994,7 @@ int readRESTARTDAT(char* filename, int readSoln, int readDisp, int readAcc) {
 				"double", oformat);
 		nshgl = intfromfile[0];
 		numvar = intfromfile[1];
-		lstep = intfromfile[2];
+		currentTimestepIndex = intfromfile[2];
 		iqsiz = nshgl * numvar;
 		dispsoln_ = new double[iqsiz];
 		readdatablock_(&irstin, "displacement", (void*) dispsoln_, &iqsiz,
@@ -2007,7 +2007,7 @@ int readRESTARTDAT(char* filename, int readSoln, int readDisp, int readAcc) {
 				&ithree, "double", oformat);
 		nshgl = intfromfile[0];
 		numvar = intfromfile[1];
-		lstep = intfromfile[2];
+		currentTimestepIndex = intfromfile[2];
 		iqsiz = nshgl * numvar;
 		acc_ = new double[iqsiz];
 		readdatablock_(&irstin, "time derivative of solution", (void*) acc_,
@@ -2105,18 +2105,18 @@ int writeRESTARTDAT(char* filename) {
 
 
 
-	int nsd, lstep, nshg;
+	int nsd, currentTimestepIndex, nshg;
 
 	if (dispsoln_ != NULL) {
 		nsd = 3;
-		lstep = 0;
+		currentTimestepIndex = 0;
 		nshg = numNodes_;
 		size = nsd * nshg;
 		nitems = 3;
 
 		iarray[0] = nshg;
 		iarray[1] = nsd;
-		iarray[2] = lstep;
+		iarray[2] = currentTimestepIndex;
 
 		writeheader_(&filenum, "displacement ", (void*) iarray, &nitems, &size,
 				"double", oformat);

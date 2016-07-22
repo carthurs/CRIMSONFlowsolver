@@ -30,6 +30,9 @@ MAKE_WITH_POSTSOLVER = 1
 MAKE_WITH_FLOWSOLVER = 1
 MAKE_WITH_ESTIMATOR = 1
 
+# disables acusim tests only currently.
+DISABLE_ACUSIM = 0
+
 WITH_ELECTRIC_FENCE = 0
 
 #######################################################
@@ -64,6 +67,10 @@ DEBUG_FFLAGS    = ['-O0','-g','-align','array64byte','-traceback','-fp-stack-che
 # OPT_FFLAGS      = ['-ffree-line-length-none','-O3','-cpp','-D\'DEBUG_ALE='+str(DEBUG_ALE_ON)+'\'','-D\'EXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)+'\'']
 # DEBUG_FLAGS     = ['-O0','-g','-std=c++0x','-pthread','-Wall','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
 # DEBUG_FFLAGS    = ['-ffree-line-length-none','-g','-fbacktrace','-cpp','-DDEBUG_ALE='+str(DEBUG_ALE_ON),'-DEXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)]  #-cpp #-fno-underscoring
+
+if DISABLE_ACUSIM==1:
+	OPT_FLAGS.append('-DDISABLE_ACUSIM_TESTS')
+	DEBUG_FLAGS.append('-DDISABLE_ACUSIM_TESTS')
 
 ADDITIONAL_LINKFLAGS = []
 

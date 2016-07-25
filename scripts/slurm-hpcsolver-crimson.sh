@@ -2,7 +2,7 @@
 # Script to launch the CRIMSON Flowsolver on SLURM
 # Chris Arthurs 2016/07/25
 
-if [[ $# -gt 2 ]]; then
+if [[ $# -gt 1 ]]; then
 	printf "\n"
 	echo "Cores: $1"
 	echo "Wall time: $2"

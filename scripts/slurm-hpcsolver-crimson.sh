@@ -59,7 +59,6 @@ if [[ $# -gt 1 ]]; then
 	 \n \
 	 \n mpirun -np ${1} /vlsci/VR0285/jmynard/CRIMSON-Flowsolver/simvascular_flowsolver_estimator/bin/flowsolver solver.inp"
 
-	echo -e $run
 	echo -e $run | sbatch
 else
 	printf "\n"

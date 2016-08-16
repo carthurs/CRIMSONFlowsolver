@@ -107,6 +107,10 @@ void CInput::get_input_lines(vector<string> *text, ifstream &infile)
   while ( getline( infile, textline, '\n' ) ) {
     // ignore everything on a comment line
     if ( textline[0] != '#' ) {
+      // strip any stray carriage return, which will exist at the end of the string if solver.inp was written
+      // in Windows and is being read on Linux. (string was split at \n by getline(), so a Windows \r\n ending
+      // will have left a trailing \r)
+      textline.erase(std::remove(textline.begin(), textline.end(), '\r'), textline.end());
       text->push_back( textline );
     }
   }

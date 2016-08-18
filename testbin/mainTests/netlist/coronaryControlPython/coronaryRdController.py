@@ -31,7 +31,7 @@ class parameterController(abstractParameterController): #NECESSARY
 
 	def setupControlSystemVariables(self):
 		self.proportionOfLeftMyocardiumThisCoronaryPerfuses = 0.1
-		self.initialMVO2 = 2720.0 * self.proportionOfLeftMyocardiumThisCoronaryPerfuses # mm^3. 2720.0 should be set to some resting-state value for your particular application. Simulate to discover it.
+		self.initialMVO2 = 272.0 * self.proportionOfLeftMyocardiumThisCoronaryPerfuses # mm^3. 272.0 should be set to some resting-state value for your particular application. Simulate to discover it.
 		self.previousMVO2 = self.initialMVO2
 
 		self.MVO2History = numpy.array(self.initialMVO2) #empty array

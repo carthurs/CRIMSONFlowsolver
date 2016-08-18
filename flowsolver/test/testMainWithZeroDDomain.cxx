@@ -851,7 +851,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 		mvo2HistoryReader.readAndSplitMultiSurfaceRestartFile();
 
 		double mvo2Result = mvo2HistoryReader.getReadFileData(0,13);
-		EXPECT_NEAR(4.518717470399062108e+01, mvo2Result, 1e-8);
+		EXPECT_NEAR(4.525274383785653498e+01, mvo2Result, 1e-8);
 	}
 
 	{
@@ -861,7 +861,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 		r_d_historyReader.readAndSplitMultiSurfaceRestartFile();
 
 		double r_d_result = r_d_historyReader.getReadFileData(0,6640);
-		EXPECT_NEAR(1.943815387757063817e+01, r_d_result, 1e-8);
+		EXPECT_NEAR(4.350306627092590617e+01, r_d_result, 1e-8);
 	}
 	
 	{
@@ -871,7 +871,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 		r_p_historyReader.readAndSplitMultiSurfaceRestartFile();
 
 		double r_p_result = r_p_historyReader.getReadFileData(0,6640);
-		EXPECT_NEAR(5.913031561811178172, r_p_result, 1e-8);
+		EXPECT_NEAR(6.475766148479123352, r_p_result, 1e-8);
 	}
 
 	{
@@ -881,7 +881,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 		flowHistReader.readAndSplitMultiSurfaceRestartFile();
 
 		double lastTimestepCoronaryFlow = flowHistReader.getReadFileData(1,7000);
-		EXPECT_NEAR(1155.89051134339, lastTimestepCoronaryFlow, 1e-8);
+		EXPECT_NEAR(879.323421682284, lastTimestepCoronaryFlow, 1e-8);
 	}	
 }
 

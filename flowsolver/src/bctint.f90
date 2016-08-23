@@ -406,7 +406,7 @@
       FlowHist = zero
       PressHist = zero
 
-      if (currentTimestepIndex .gt. 0) then
+      if (currentTimestepIndex .gt. 0 .and. pureZeroDSimulation .eq. 0) then
          call ReadDataFile(FlowHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCalcSrfs, &
             'FlowHist.dat',1004)
          call ReadDataFile(PressHist(1:currentTimestepIndex+1,:),currentTimestepIndex+1,numCalcSrfs, &

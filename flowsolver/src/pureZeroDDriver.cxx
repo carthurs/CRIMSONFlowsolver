@@ -98,7 +98,9 @@ void PureZeroDDriver::setNtout(const int ntout)
 
 void PureZeroDDriver::iter_init()
 {
-	std::cout << "============ Doing timestep number " << m_timestepNumber << " ============" << std::endl;
+	if (m_timestepNumber % 100 == 0) {
+		std::cout << "============ Doing timestep number " << m_timestepNumber << " ============" << std::endl;
+	}
 	assert(m_alfiHasBeenSet);
 	assert(m_deltHasBeenSet);
 	assert(m_ntoutHasBeenSet);

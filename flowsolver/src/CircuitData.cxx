@@ -1387,9 +1387,9 @@ void VolumeTrackingComponent::setRestartVolumeFromHistory()
 void VolumeTrackingPressureChamber::passPressureToStartNode()
 {
 	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
-	std::cout << "m_unstressedVolume: " << m_unstressedVolume << std::endl;
-	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
-	std::cout << "pressure set to: " << m_pressure << std::endl;
+	// std::cout << "m_unstressedVolume: " << m_unstressedVolume << std::endl;
+	// std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
+	// std::cout << "pressure set to: " << m_pressure << std::endl;
 	startNode->setPressure(m_pressure);
 }
 
@@ -1400,9 +1400,9 @@ double VolumeTrackingPressureChamber::getUnstressedVolume()
 
 void VolumeTrackingPressureChamber::setStoredVolume(const double newVolume)
 {
-	std::cout << "pre m_storedVolume: " << m_storedVolume << std::endl;
+	// std::cout << "pre m_storedVolume: " << m_storedVolume << std::endl;
 	m_storedVolume = newVolume;
-	std::cout << "post m_storedVolume: " << m_storedVolume << std::endl;
+	// std::cout << "post m_storedVolume: " << m_storedVolume << std::endl;
 	passPressureToStartNode();
 }
 

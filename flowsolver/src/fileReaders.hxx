@@ -135,11 +135,15 @@ public:
 			std::reverse(mp_currentLineSplitBySpaces->begin(), mp_currentLineSplitBySpaces->end());
 		}
 
-		std::string returnValue = mp_currentLineSplitBySpaces->back();
+		std::string nextSpaceDelimitedString = mp_currentLineSplitBySpaces->back();
 		mp_currentLineSplitBySpaces->pop_back();
 		
+		// strip any stray carriage return, which will exist at the end of the string if solver.inp was written
+		// in Windows and is being read on Linux.
+		nextSpaceDelimitedString.erase(std::remove(nextSpaceDelimitedString.begin(), nextSpaceDelimitedString.end(), '\r'), nextSpaceDelimitedString.end());
+
 		success = true;
-		return returnValue;
+		return nextSpaceDelimitedString;
 	}
 private:
 

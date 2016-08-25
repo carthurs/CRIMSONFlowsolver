@@ -162,7 +162,8 @@ double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 
 	double returnValue;
 	try {
-		returnValue = ((m_dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
+		std::vector<double> fullRowOfData = m_dataReadFromFile.at(timestepNumber);
+		returnValue = (fullRowOfData).at(columnIndex);
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
 	    throw e;

@@ -100,13 +100,14 @@
 !
 !.... correct the residuals
 !
-        if (loctim(itseq) .eq. 0) then
-          resnrm = resnrm 
-          resmax = resmax
-        else
-          resnrm = resnrm
-          resmax = resmax
-        endif
+! ...this code doesn't look very useful - removed 2016/8/25 CA
+        ! if (loctim(itseq) .eq. 0) then
+        !   resnrm = resnrm 
+        !   resmax = resmax
+        ! else
+        !   resnrm = resnrm
+        !   resmax = resmax
+        ! endif
 !
 !.... approximate the number of entries
 !

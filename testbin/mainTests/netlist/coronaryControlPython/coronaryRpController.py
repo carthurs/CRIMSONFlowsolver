@@ -11,6 +11,6 @@ class parameterController(abstractParameterController):
 		# format is getReceivedBroadcastValue(nameOfBroadcastingScript, nametagOfBroadcastValue)
 		R_pResistanceToSet = self.getRecievedBroadcastValue('coronaryRdController','Rp')
 
-		print "R_p was:", R_pResistanceToSet
+		#print "R_p was:", R_pResistanceToSet
 		
 		return R_pResistanceToSet

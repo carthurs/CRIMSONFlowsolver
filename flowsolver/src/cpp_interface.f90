@@ -200,6 +200,12 @@ module cpp_interface
             end subroutine callCPPWriteAllNetlistComponentFlowsAndNodalPressures
     end interface
 
+    interface
+            subroutine callCPPDebugPrintFlowPointerTarget_BCM() bind(c,name="callCPPDebugPrintFlowPointerTarget_BCM")
+                use iso_c_binding
+            end subroutine callCPPDebugPrintFlowPointerTarget_BCM
+    end interface
+
     ! interface
     !         subroutine callCPPLoadAllNetlistComponentFlowsAndNodalPressures() bind(c,name="callCPPLoadAllNetlistComponentFlowsAndNodalPressures")
     !             use iso_c_binding

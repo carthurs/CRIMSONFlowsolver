@@ -120,6 +120,8 @@ class abstractBoundaryCondition;
 
     void setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows);
 
+    void debugPrintFlowPointerTarget_BCM();
+
     ~boundaryConditionManager()
     {
     }

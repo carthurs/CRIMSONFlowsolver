@@ -2214,32 +2214,31 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
 {
     assert(mp_circuitData->connectsTo3DDomain());
 
-    PetscErrorCode errFlag;
-    {
-      int safetyCounter = 0;
-      bool solutionVectorMightHaveNegativeVolumes = true;
-      // This loop keeps repeating the circuit linear system solve, until we have
-      // ensured there are no negative volumes:
-      while (solutionVectorMightHaveNegativeVolumes)
-      {
+    // {
+    //   int safetyCounter = 0;
+    //   bool solutionVectorMightHaveNegativeVolumes = true;
+    //   // This loop keeps repeating the circuit linear system solve, until we have
+    //   // ensured there are no negative volumes:
+    //   while (solutionVectorMightHaveNegativeVolumes)
+    //   {
         buildAndSolveLinearSystem(timestepNumber,alfi_delt);
 
-        solutionVectorMightHaveNegativeVolumes = areThereNegativeVolumes(timestepNumber, alfi_delt);
+    //     solutionVectorMightHaveNegativeVolumes = areThereNegativeVolumes(timestepNumber, alfi_delt);
 
-        safetyCounter++;
-        if (safetyCounter > 1 && safetyCounter < 5)
-        {
-          std::cout << "II: Redoing due to a detected negative-volume problem! ----------------------------------------------" << std::endl;
-        }
-        if (safetyCounter > safetyCounterLimit)
-        {
-          std::stringstream errorMessage;
-          errorMessage << "EE: Took too long (" << safetyCounter << " repeated solves of the circuit linear system) to eradicate negative volumes at the domain boundary with index " << m_surfaceIndex << "." << std::endl;
-          errorMessage << "This was probably caused by a bad (or an extremely large) Netlist circuit!" << std::endl;
-          throw std::runtime_error(errorMessage.str());
-        }
-      }
-    }
+    //     safetyCounter++;
+    //     if (safetyCounter > 1 && safetyCounter < 5)
+    //     {
+    //       std::cout << "II: Redoing due to a detected negative-volume problem! ----------------------------------------------" << std::endl;
+    //     }
+    //     if (safetyCounter > safetyCounterLimit)
+    //     {
+    //       std::stringstream errorMessage;
+    //       errorMessage << "EE: Took too long (" << safetyCounter << " repeated solves of the circuit linear system) to eradicate negative volumes at the domain boundary with index " << m_surfaceIndex << "." << std::endl;
+    //       errorMessage << "This was probably caused by a bad (or an extremely large) Netlist circuit!" << std::endl;
+    //       throw std::runtime_error(errorMessage.str());
+    //     }
+    //   }
+    // }
 
     // Extract the implicit coeffcients, for eventual passing to the FORTRAN
     // linear solve
@@ -2249,6 +2248,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
     
     std::pair<double,double> implicitCoefficientsToReturn;
 
+    PetscErrorCode errFlag;
     errFlag = MatGetValues(m_inverseOfSystemMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&m_columnOf3DInterfacePrescribedFlowInLinearSystem.at(0),&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     implicitCoefficientsToReturn.first = mp_circuitData->getSignForPrescribed3DInterfaceFlow() * valueFromInverseOfSystemMatrix;
 
@@ -2266,7 +2266,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
     // VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD);
     // std::cout << "m_RHS vector: "<< std::endl;
     // VecView(m_RHS,PETSC_VIEWER_STDOUT_WORLD);
-    // std::cout << "and just set " << implicitCoefficientsToReturn.first << " " <<implicitCoefficientsToReturn.second << std::endl;
+    // std::cout << std::setprecision(20) << "and just set " << implicitCoefficientsToReturn.first << " " <<implicitCoefficientsToReturn.second << std::endl;
 
 
     return implicitCoefficientsToReturn;

@@ -1364,6 +1364,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
             endif         ! end of scalar type solve
 
+            ! call callCppComputeAllImplicitCoeff_solve(currentTimestepIndex)
+
         else ! this is an update  (mod did not equal zero)
 
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1403,6 +1405,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 ilwork)
             endif
         endif         !end of switch between solve or update
+
+        ! call callCPPDebugPrintFlowPointerTarget_BCM()
 
         if(rescontrol .gt. 0) then
             if (controlResidual .lt. ResCriteria .and.  &

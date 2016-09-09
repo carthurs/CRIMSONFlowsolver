@@ -914,6 +914,19 @@ extern "C" void callCPPResetStateUsingKalmanFilteredEstimate(double& flow, doubl
   boundaryConditionManager_instance->resetStateUsingKalmanFilteredEstimate(flow, pressure, surfaceIndex, timestepNumber);
 }
 
+void boundaryConditionManager::debugPrintFlowPointerTarget_BCM()
+{
+  for (auto const &boundaryCondition : m_boundaryConditions) {
+    boundaryCondition->debugPrintFlowPointerTarget();
+  }  
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPDebugPrintFlowPointerTarget_BCM()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->debugPrintFlowPointerTarget_BCM();
+}
+
 void boundaryConditionManager::createControlSystems()
 {
   assert(m_startingTimestepIndexHasBeenSet);

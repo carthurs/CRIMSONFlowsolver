@@ -58,6 +58,8 @@ class abstractBoundaryCondition;
     void computeAllImplicitCoeff_solve(const int timestepNumber);
     void computeAllImplicitCoeff_update(const int timestepNumber);
 
+    void computeAllNetlistImplicitCoeff_solve(const int timestepNumber);
+
     void updateAllRCRS_Pressure_n1_withflow();
     void updateAllRCRS_setflow_n(const double* const flows);
     void updateAllRCRS_setflow_n1(const double* const flows);

@@ -101,7 +101,7 @@
 						Partition_Problem( m_numProcsTotal );
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 				}
 
@@ -133,7 +133,7 @@
 					callFortranSetupTimeParameters(dummyInitialItseqValue);
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 
 				// initialise reduced order boundary conditions
@@ -141,7 +141,7 @@
 					multidom_initialise();
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 
 				PureZeroDDriver pureZeroDDriver;
@@ -158,7 +158,7 @@
 					multidomSetupControlSystems();
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 
 				// pointer manager?      
@@ -170,25 +170,25 @@
 						pureZeroDDriver.iter_init();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 					try {
 						pureZeroDDriver.iter_step();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 					try {
 						pureZeroDDriver.iter_finalize();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 					try {
 						multidom_iter_finalise();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 				}
 

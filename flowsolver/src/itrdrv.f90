@@ -1231,7 +1231,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer j
-    integer boundaryConditionRebuildNeeded
+    ! integer boundaryConditionRebuildNeeded
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !.... -----------------------> predictor phase <-----------------------
@@ -1364,7 +1364,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
             endif         ! end of scalar type solve
 
-            ! call callCppComputeAllImplicitCoeff_solve(currentTimestepIndex)
+            ! This call will only do anything if the Netlist pressure / dP/dQ terms are dependent upon the solution for the Q we're trying to find at the interface in question
+            ! call callCppComputeAllNetlistImplicitCoeff_solve(currentTimestepIndex)
 
         else ! this is an update  (mod did not equal zero)
 

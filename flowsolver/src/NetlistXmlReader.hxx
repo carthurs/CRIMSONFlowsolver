@@ -76,7 +76,7 @@ protected:
 			parseReadData();
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 	}
 
@@ -163,7 +163,7 @@ private:
 			initialise_downstream();
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 	}
 
@@ -173,7 +173,7 @@ private:
 			parseBoundaryConditionConnectivity();
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 	}
 	void parseBoundaryConditionConnectivity();

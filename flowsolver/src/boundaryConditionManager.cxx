@@ -336,7 +336,6 @@ std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionMana
 
 void boundaryConditionManager::computeAllImplicitCoeff_solve(const int timestepNumber)
 {
-  fortranBoundaryDataPointerManager* fortranBoundaryDataPointerManager_instance = fortranBoundaryDataPointerManager::Get();
   for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     (*iterator)->computeImplicitCoeff_solve(timestepNumber);
@@ -361,6 +360,23 @@ extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeAllImplicitCoeff_update(timestepNumber);
+}
+
+void boundaryConditionManager::computeAllNetlistImplicitCoeff_solve(const int timestepNumber)
+{
+  for(auto&& boundaryCondition : m_boundaryConditions)
+  {
+    if (boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryCondition))
+    {
+      boundaryCondition->computeImplicitCoeff_solve(timestepNumber);
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppComputeAllNetlistImplicitCoeff_solve(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeAllNetlistImplicitCoeff_solve(timestepNumber);
 }
 
 
@@ -977,7 +993,7 @@ void boundaryConditionManager::createControlSystems()
           }
       } catch (const std::exception& e) {
           std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-          throw e;
+          throw;
       }
     }
   }
@@ -1022,7 +1038,7 @@ void boundaryConditionManager::createControlSystems()
           }
       } catch (const std::exception& e) {
           std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-          throw e;
+          throw;
       }
     }
 

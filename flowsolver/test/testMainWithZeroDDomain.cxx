@@ -350,7 +350,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
   	runSimulation();
   } catch (const std::exception& e) {
       std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-      throw e;
+      throw;
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -893,7 +893,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
   	runSimulation();
   } catch (const std::exception& e) {
       std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-      throw e;
+      throw;
   }
   MPI_Barrier(MPI_COMM_WORLD);
 

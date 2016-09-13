@@ -23,7 +23,7 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
     EXPECT_EQ((*retrievedBoundaryConditions)[2]->surfaceIndex,9);
   } catch (const std::exception& e) {
       std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-      throw e;
+      throw;
   }
 
   try {
@@ -36,7 +36,7 @@ TEST_F(testMultidom, checkBoundaryConditionsMadeProperly) {
     EXPECT_EQ(*((*retrievedBoundaryConditions)[2]->pressure_n_ptrs.at(0)),press3);
   } catch (const std::exception& e) {
       std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-      throw e;
+      throw;
   }
   
 }

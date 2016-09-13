@@ -15,7 +15,7 @@ void NetlistBoundaryCondition::initialiseModel()
             mp_NetlistCircuit->setPointersToBoundaryPressuresAndFlows(pressure_n_ptrs.at(0), flow_n_ptrs.at(0), numberOfPointers);
         } catch (const std::exception& e) {
             std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-            throw e;
+            throw;
         }
     }
     // Get the input data

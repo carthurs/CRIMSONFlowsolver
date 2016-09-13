@@ -502,7 +502,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
             }
       } catch (const std::exception& e) {
           std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-          throw e;
+          throw;
       }
 
       // Set the starting place for the write on the next iteration (nextTimestepWrite_start is returned to the caller, by reference).
@@ -1854,7 +1854,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
                 errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,*pressurePointerToSet,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
               } catch (const std::exception& e) {
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-                throw e;
+                throw;
               }
             }
         }
@@ -1905,7 +1905,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
                 flowPointerToSet = flow_n_ptrs.at(prescribedFlowComponent->second->prescribedFlowPointerIndex);
               } catch (const std::exception& e) {
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-                throw e;
+                throw;
               }
               // First, flip the sign of the flow, if necessary due to the orientation of the component at the 3D interface:
               double threeDFlowValue;
@@ -2214,31 +2214,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
 {
     assert(mp_circuitData->connectsTo3DDomain());
 
-    // {
-    //   int safetyCounter = 0;
-    //   bool solutionVectorMightHaveNegativeVolumes = true;
-    //   // This loop keeps repeating the circuit linear system solve, until we have
-    //   // ensured there are no negative volumes:
-    //   while (solutionVectorMightHaveNegativeVolumes)
-    //   {
-        buildAndSolveLinearSystem(timestepNumber,alfi_delt);
-
-    //     solutionVectorMightHaveNegativeVolumes = areThereNegativeVolumes(timestepNumber, alfi_delt);
-
-    //     safetyCounter++;
-    //     if (safetyCounter > 1 && safetyCounter < 5)
-    //     {
-    //       std::cout << "II: Redoing due to a detected negative-volume problem! ----------------------------------------------" << std::endl;
-    //     }
-    //     if (safetyCounter > safetyCounterLimit)
-    //     {
-    //       std::stringstream errorMessage;
-    //       errorMessage << "EE: Took too long (" << safetyCounter << " repeated solves of the circuit linear system) to eradicate negative volumes at the domain boundary with index " << m_surfaceIndex << "." << std::endl;
-    //       errorMessage << "This was probably caused by a bad (or an extremely large) Netlist circuit!" << std::endl;
-    //       throw std::runtime_error(errorMessage.str());
-    //     }
-    //   }
-    // }
+    buildAndSolveLinearSystem(timestepNumber,alfi_delt);
 
     // Extract the implicit coeffcients, for eventual passing to the FORTRAN
     // linear solve

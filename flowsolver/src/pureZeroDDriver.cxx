@@ -126,7 +126,7 @@ void PureZeroDDriver::iter_step()
 			}
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 	}
 	m_zeroDDomainLPN->setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(m_pressuresOrFlowsAtBoundaries);
@@ -179,7 +179,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveToBoundaryCond
 			mp_interfacePressuresToBeReadByBoundaryConditions[boundaryConditionIndex] = boundaryPressures.at(boundaryConditionIndex);
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 	}
 }
@@ -253,7 +253,7 @@ void PureZeroDDriver::setupConnectedComponents(const int num3DConnectedComponent
 	    	indexAmongstNetlists = mapFromNetlistSurfaceIndexToIndexAmongstNetlistsInInputData.at(surfaceIndex);
 	    } catch (const std::exception& e) {
 	        std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	        throw e;
+	        throw;
 	    }
 	    m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.insert(std::make_pair(indexAmongstNetlists, connectedComponentIndex));
 	    indexAmongstNetlists++;

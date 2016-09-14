@@ -5,7 +5,7 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include "datatypesInCpp.hxx"
-#include "NetlistCircuit.hxx"
+#include "NetlistZeroDDomainCircuit.hxx"
 
 class Netlist3DDomainReplacement
 {

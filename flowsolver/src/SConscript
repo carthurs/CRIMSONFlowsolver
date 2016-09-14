@@ -51,6 +51,7 @@ sources=string.split("""
 	ClosedLoopDownstreamSubsection.cxx
 	NetlistBoundaryCondition.cxx
 	NetlistCircuit.cxx
+	NetlistZeroDDomainCircuit.cxx
 	NetlistBoundaryCircuitWhenDownstreamCircuitsExist.cxx
 	NetlistClosedLoopDownstreamCircuit.cxx
 	CircuitData.cxx

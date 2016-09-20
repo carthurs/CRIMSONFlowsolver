@@ -273,10 +273,10 @@ void PureZeroDDriver::setupConnectedComponents(const int num3DConnectedComponent
 	    int surfaceIndex = surfaceIndexOrNextConnectedComponentFlag;
 	    int indexAmongstZeroDOutlets;
 	    try {
-	    	std::cout << "requesting 2: " << surfaceIndex << std::endl;
-	    	for (auto& pair : mapFromSurfaceIndexToIndexAmongstZeroDSurfaces){
-	    		std::cout << "map contains: " << pair.first << ", " << pair.second << std::endl;
-	    	}
+	    	// std::cout << "requesting 2: " << surfaceIndex << std::endl;
+	    	// for (auto& pair : mapFromSurfaceIndexToIndexAmongstZeroDSurfaces){
+	    	// 	std::cout << "map contains: " << pair.first << ", " << pair.second << std::endl;
+	    	// }
 	    	indexAmongstZeroDOutlets = mapFromSurfaceIndexToIndexAmongstZeroDSurfaces.at(surfaceIndex);
 	    } catch (const std::exception& e) {
 	        std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;

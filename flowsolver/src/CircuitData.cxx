@@ -537,7 +537,7 @@ void CircuitComponent::setPrescribedFlow(const double prescribedFlow)
 {
 	m_valueOfPrescribedFlow = prescribedFlow;
 	m_hasPrescribedFlow = true;
-	std::cout << "just set flow " << prescribedFlow << " for component " << m_indexInInputData << std::endl;
+	// std::cout << "just set flow " << prescribedFlow << " for component " << m_indexInInputData << std::endl;
 }
 
 double* CircuitComponent::getPointerToFixedFlowPrescription()

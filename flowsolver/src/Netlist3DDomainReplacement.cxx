@@ -39,6 +39,7 @@ void Netlist3DDomainReplacement::updateLPN(const int timestepNumber)
 void Netlist3DDomainReplacement::finalizeLPNAtEndOfTimestep()
 {
     mp_NetlistZeroDDomainCircuit->finalizeLPNAtEndOfTimestep();
+    mp_zeroDDomainControlSystemsManager->updateBoundaryConditionControlSystems();
 }
 
 void Netlist3DDomainReplacement::writePressuresFlowsAndVolumes(int& nextTimestepWrite_zeroDBoundaries_start)

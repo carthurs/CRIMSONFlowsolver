@@ -17,11 +17,11 @@ int NetlistZeroDDomainCircuit::getConnectedTopologicalComponentIndexForInnerResi
     assert(componentIndex > m_numberOfOutlets);
     assert(componentIndex <= 2*m_numberOfOutlets);
     int indexOfThisZeroDSurface = toZeroIndexing(componentIndex - m_numberOfOutlets);
-    std::cout << "requested " << indexOfThisZeroDSurface << std::endl;
-    for (auto& pair : m_mapFromZeroDSurfaceIndexToConnectedComponentIndex)
-    {
-        std::cout << "pair entry: " << pair.first << ", " << pair.second << std::endl;
-    }
+    // std::cout << "requested " << indexOfThisZeroDSurface << std::endl;
+    // for (auto& pair : m_mapFromZeroDSurfaceIndexToConnectedComponentIndex)
+    // {
+    //     std::cout << "pair entry: " << pair.first << ", " << pair.second << std::endl;
+    // }
     return m_mapFromZeroDSurfaceIndexToConnectedComponentIndex.at(indexOfThisZeroDSurface);
 }
 
@@ -293,7 +293,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
             // Dirichlet / BCT surfaces have fixed flows:
             (*component)->prescribedFlowType = Flow_Fixed;
             (*component)->setPrescribedFlow(3.14159265); // recognisable nonsense initial value - in case it doesn't get properly replaced this value will be noticed in output data
-            (*component)->addPythonControllerName(Controller_CustomPythonComponentFlowFile, "bctController");
+            (*component)->addPythonControllerName(Controller_CustomPythonComponentFlowFile, "bctFlowWaveform");
         }
         else
         {
@@ -373,8 +373,8 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
 
     // Now add the nodes at the base of the compliance units:
     {
-        int highestIndexAmongstComplianceUnitBaseNodes = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*(m_numberOfConnectedComponentsOf3DDomain-1);
-        for (int pressureNodeIndex=m_numberOfNetlistsUsedAsBoundaryConditions + 1; pressureNodeIndex <= highestIndexAmongstComplianceUnitBaseNodes; pressureNodeIndex+=2)
+        int highestIndexAmongstComplianceUnitBaseNodes = m_numberOfOutlets + 1 + 2*(m_numberOfConnectedComponentsOf3DDomain-1);
+        for (int pressureNodeIndex=m_numberOfOutlets + 1; pressureNodeIndex <= highestIndexAmongstComplianceUnitBaseNodes; pressureNodeIndex+=2)
         {
             listOfPrescribedPressures.push_back(pressureNodeIndex);
         }
@@ -404,7 +404,6 @@ void NetlistZeroDDomainCircuit::setupPressureNode(const int indexOfNodeInInputDa
     {
         valueOfPrescribedPressures.push_back(0.0);
     }
-
 
     // Discover whether this node has a prescribed pressure, and if so, what type:
     circuit_nodal_pressure_prescription_t typeOfPrescribedPressure = Pressure_NotPrescribed; // initialise, but chnage later if pressure is actually prescribed

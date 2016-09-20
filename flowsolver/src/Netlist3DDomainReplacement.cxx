@@ -51,12 +51,21 @@ void Netlist3DDomainReplacement::writePressuresFlowsAndVolumes(int& nextTimestep
 //     mp_NetlistZeroDDomainCircuit->loadPressuresFlowsAndVolumesOnRestart(startingTimestepIndex);
 // }
 
-void Netlist3DDomainReplacement::initialiseModel()
+void Netlist3DDomainReplacement::initialiseModel(const double delt, const int numberOfTimestepsBetweenRestarts)
 {
     // Get the input data
     mp_NetlistZeroDDomainCircuit->createCircuitDescription();
 
     mp_NetlistZeroDDomainCircuit->initialiseCircuit();
+
+    bool masterControlScriptPresent = false;
+    mp_zeroDDomainControlSystemsManager = boost::shared_ptr<ControlSystemsManager> (new ControlSystemsManager(delt, masterControlScriptPresent, m_startingTimestepIndex, numberOfTimestepsBetweenRestarts));
+
+    boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> controlTypesAndComponentIndicesIn3DDomainReplacementCircuit = mp_NetlistZeroDDomainCircuit->getControlTypesAndComponentIndices();
+    for (auto& controlTypeAndComponentIndex : *controlTypesAndComponentIndicesIn3DDomainReplacementCircuit)
+    {
+        mp_zeroDDomainControlSystemsManager->createParameterController(controlTypeAndComponentIndex.first, mp_NetlistZeroDDomainCircuit, controlTypeAndComponentIndex.second);
+    }
 
     // Determine how many subcircuits are needed, and note which components belong to each subcircuit
     // mp_NetlistZeroDDomainCircuit->identifyAtomicSubcircuits();

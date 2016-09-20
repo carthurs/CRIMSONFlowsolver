@@ -1,6 +1,8 @@
 #include "NetlistZeroDDomainCircuit.hxx"
 #include "indexShifters.hxx"
 
+// NetlistZeroDDomainCircuit is the class which represents the LPN(s) which replaces the 3D domain(s) in pure zeroD mode.
+
 void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
 {
     // Idetify and construct the appropriate subcircuits for this timestep
@@ -12,16 +14,21 @@ void NetlistZeroDDomainCircuit::initialiseAtStartOfTimestep()
 // out which connected component it belongs to (so it can be attached to the appropriate compliance unit)
 int NetlistZeroDDomainCircuit::getConnectedTopologicalComponentIndexForInnerResistor(const int componentIndex) const
 {
-    assert(componentIndex > m_numberOfNetlistsUsedAsBoundaryConditions);
-    assert(componentIndex <= 2*m_numberOfNetlistsUsedAsBoundaryConditions);
-    int indexOfNetlistBoundaryConditionConnectedToThisBranch = toZeroIndexing(componentIndex - m_numberOfNetlistsUsedAsBoundaryConditions);
-    return m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.at(indexOfNetlistBoundaryConditionConnectedToThisBranch);
+    assert(componentIndex > m_numberOfOutlets);
+    assert(componentIndex <= 2*m_numberOfOutlets);
+    int indexOfThisZeroDSurface = toZeroIndexing(componentIndex - m_numberOfOutlets);
+    std::cout << "requested " << indexOfThisZeroDSurface << std::endl;
+    for (auto& pair : m_mapFromZeroDSurfaceIndexToConnectedComponentIndex)
+    {
+        std::cout << "pair entry: " << pair.first << ", " << pair.second << std::endl;
+    }
+    return m_mapFromZeroDSurfaceIndexToConnectedComponentIndex.at(indexOfThisZeroDSurface);
 }
 
 void NetlistZeroDDomainCircuit::findNumberOfConnectedComponentsOf3DDomain()
 {
     int maxConnectedComponentIndex = 0;
-    for (auto netlistBoundaryConditionData = m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.begin(); netlistBoundaryConditionData != m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex.end(); netlistBoundaryConditionData++)
+    for (auto netlistBoundaryConditionData = m_mapFromZeroDSurfaceIndexToConnectedComponentIndex.begin(); netlistBoundaryConditionData != m_mapFromZeroDSurfaceIndexToConnectedComponentIndex.end(); netlistBoundaryConditionData++)
     {
         if (netlistBoundaryConditionData->second > maxConnectedComponentIndex)
         {
@@ -37,7 +44,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // This function creates the internal CircuitData class format for a zero-D
     // Netlist, non-boundary-condition replacement for the 3D domain, for pure zero-D simulation.
 
-    const int totalNumberOfResistorsIn3DDomainReplacementCircuit = 2 * m_numberOfNetlistsUsedAsBoundaryConditions;
+    const int totalNumberOfResistorsIn3DDomainReplacementCircuit = 2 * (m_numberOfOutlets);
     // we'll have a resistor for each netlist used as a boundary condition, plus one VolumeTrackingComponent for each connected component:
     mp_circuitData->numberOfComponents = totalNumberOfResistorsIn3DDomainReplacementCircuit + m_numberOfConnectedComponentsOf3DDomain;
 
@@ -49,11 +56,11 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // plus the zero-pressure prescription on the base of the VolumeTrackingComponent (one for each connected component:
     mp_circuitData->numberOfPrescribedPressures = m_numberOfConnectedComponentsOf3DDomain;
     // None initially:
-    mp_circuitData->numberOfPrescribedFlows = m_numberOfNetlistsUsedAsBoundaryConditions;
+    mp_circuitData->numberOfPrescribedFlows = m_numberOfOutlets;
 
     // Create the component data:
     std::vector<circuit_component_t> componentTypes;
-    for (int boundary=0; boundary < m_numberOfNetlistsUsedAsBoundaryConditions; boundary++)
+    for (int boundary=0; boundary < m_numberOfOutlets; boundary++)
     {
     	componentTypes.push_back(Component_Resistor);
         componentTypes.push_back(Component_Resistor);
@@ -110,16 +117,28 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     //
     // (the domain is designed so that the
     // dP/dQ resistors happen to have the same indices as their end-nodes)
+    //
+    // As some of the outlets may not be Netlists (so far, the other possibility is BCT-type flow prescription)
+    // we just assume that the netlists come first in the indexing, and the other types later.
     for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; dpDqResistorIndex++)
     {
         componentEndNodes.push_back(dpDqResistorIndex);
     }
+
+    // Now do the non-netlist surface end-nodes (this could be done as part of the dpDqResistorIndex loop above),
+    // but we split it here for human clarity.
+    for (int prescribedFlowSurfaceResistorIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1; prescribedFlowSurfaceResistorIndex <= m_numberOfOutlets; prescribedFlowSurfaceResistorIndex++)
+    {
+        componentEndNodes.push_back(prescribedFlowSurfaceResistorIndex);
+    }
+
+
     // The next 2*m_numberOfConnectedComponentsOf3DDomain node indices are used for the domain central node of each connected component
     // (it's basically star-shaped in each connected component), and the end-node singleton for the bottom of each compliance chamber.
     //
     // Skip these, and now do the end nodes for the resistors which represent
     // the resistance of the 3D domain itself.
-    for (int internalDomainResistorEndNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; internalDomainResistorEndNodeIndex <= mp_circuitData->numberOfPressureNodes; internalDomainResistorEndNodeIndex++)
+    for (int internalDomainResistorEndNodeIndex = m_numberOfOutlets + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; internalDomainResistorEndNodeIndex <= mp_circuitData->numberOfPressureNodes; internalDomainResistorEndNodeIndex++)
     {
         componentEndNodes.push_back(internalDomainResistorEndNodeIndex);
     }
@@ -127,18 +146,18 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     for (int complianceUnitIndex = totalNumberOfResistorsIn3DDomainReplacementCircuit+1; complianceUnitIndex <= mp_circuitData->numberOfComponents; complianceUnitIndex++)
     {
         int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex - totalNumberOfResistorsIn3DDomainReplacementCircuit;
-        int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions - 1;
+        int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfOutlets - 1;
         componentEndNodes.push_back(endNodeIndexForThisComplianceUnit);
     }
 
     std::vector<int> componentStartNodes;
-    // All the components, except for the dP/dQ resistors, have the same
+    // All the components, except for the dP/dQ resistors (or other BC type edge resistors), have the same
     // start-node (the centre-point of the star-shape of this domain).
-    // We do the dP/dQ resistors first:
+    // We do the dP/dQ (and other edge-type) resistors first:
     //
     // the "+2*m_numberOfConnectedComponentsOf3D domain" is to make space for a compliance
-    // chanmber for each connected component
-    for (int dpDqResistorStartNodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; dpDqResistorStartNodeIndex <= mp_circuitData->numberOfPressureNodes; dpDqResistorStartNodeIndex++)
+    // chamber for each connected component
+    for (int dpDqResistorStartNodeIndex = m_numberOfOutlets + 1 + 2*m_numberOfConnectedComponentsOf3DDomain; dpDqResistorStartNodeIndex <= mp_circuitData->numberOfPressureNodes; dpDqResistorStartNodeIndex++)
     {
         componentStartNodes.push_back(dpDqResistorStartNodeIndex);
     }
@@ -149,18 +168,18 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // the same start node. We set these indices now, as appropriate:
     //
     // resistors first....:
-    for (int resistorIndex = m_numberOfNetlistsUsedAsBoundaryConditions+1; resistorIndex <= totalNumberOfResistorsIn3DDomainReplacementCircuit; resistorIndex++)
+    for (int resistorIndex = m_numberOfOutlets+1; resistorIndex <= totalNumberOfResistorsIn3DDomainReplacementCircuit; resistorIndex++)
     {
         // componentStartNodes.push_back(m_numberOfNetlistsUsedAsBoundaryConditions+2);
         int connectedTopologicalComponentOfThisInnerResistor = getConnectedTopologicalComponentIndexForInnerResistor(resistorIndex);
-        int startNodeIndexForThisInnerResistor = 2*connectedTopologicalComponentOfThisInnerResistor + m_numberOfNetlistsUsedAsBoundaryConditions;
+        int startNodeIndexForThisInnerResistor = 2*connectedTopologicalComponentOfThisInnerResistor + m_numberOfOutlets;
         componentStartNodes.push_back(startNodeIndexForThisInnerResistor);
     }
     // ... then the compliance units:
     for (int complianceUnitIndex = totalNumberOfResistorsIn3DDomainReplacementCircuit+1; complianceUnitIndex <= mp_circuitData->numberOfComponents; complianceUnitIndex++)
     {
         int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex - totalNumberOfResistorsIn3DDomainReplacementCircuit;
-        int startNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions;
+        int startNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfOutlets;
         componentStartNodes.push_back(startNodeIndexForThisComplianceUnit);
     }
 
@@ -182,21 +201,15 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     
     std::vector<double> componentParameterValues;
     double initialResistanceForDpDqResistors = 0.0;
-    for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; dpDqResistorIndex++)
+    for (int dpDqResistorIndex = 1; dpDqResistorIndex <= m_numberOfOutlets; dpDqResistorIndex++)
     {
         componentParameterValues.push_back(initialResistanceForDpDqResistors);
     }
-    for (int internalDomainResistorIndex = 1; internalDomainResistorIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; internalDomainResistorIndex++)
+    for (int internalDomainResistorIndex = 1; internalDomainResistorIndex <= m_numberOfOutlets; internalDomainResistorIndex++)
     {
         componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     }
 
-    // componentParameterValues.push_back(initialResistanceForDpDqResistors);
-    // componentParameterValues.push_back(initialResistanceForDpDqResistors);
-    // componentParameterValues.push_back(initialResistanceForDpDqResistors);
-    // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
-    // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
-    // componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     for (int complianceUnit = 0; complianceUnit < m_numberOfConnectedComponentsOf3DDomain; complianceUnit++)
     {
         componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
@@ -206,17 +219,25 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
 
     std::vector<circuit_component_flow_prescription_t> typeOfPrescribedFlows;
     std::vector<double> valueOfPrescribedFlows;
-    std::vector<int> listOfPrescribedFlows;
+    // std::vector<int> listOfPrescribedFlows;
     for (int interfaceComponentIndex=0; interfaceComponentIndex < m_numberOfNetlistsUsedAsBoundaryConditions; interfaceComponentIndex++)
     {
         typeOfPrescribedFlows.push_back(Flow_3DInterface);
         valueOfPrescribedFlows.push_back(0.0);
-        listOfPrescribedFlows.push_back(toOneIndexing(interfaceComponentIndex));
+        // listOfPrescribedFlows.push_back(toOneIndexing(interfaceComponentIndex));
+    }
+
+    // Now do flow prescriptions for the prescribed flow type boundaries (these have no LPN BCM upstream of them, as Netlist BCs do)
+    for (int interfaceComponentIndex = m_numberOfNetlistsUsedAsBoundaryConditions; interfaceComponentIndex < m_numberOfOutlets; interfaceComponentIndex++)
+    {
+        typeOfPrescribedFlows.push_back(Flow_Fixed);
+        valueOfPrescribedFlows.push_back(1234.0);
+        // listOfPrescribedFlows.push_back(toOneIndexing(interfaceComponentIndex));
     }
     
     std::map<int,double> initialPressures;
     // Do the nodes at the outside points of the domain which belong to resistors:
-    for (int node=1; node <= m_numberOfNetlistsUsedAsBoundaryConditions; node++)
+    for (int node=1; node <= m_numberOfOutlets; node++)
     {
     	initialPressures.insert(std::make_pair(node,m_initialDomainPressure));
     }
@@ -225,13 +246,13 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     for (int complianceUnitIndex = 1; complianceUnitIndex <= m_numberOfConnectedComponentsOf3DDomain; complianceUnitIndex++)
     {
         int connectedComponentIndexOfThisComplianceUnit = complianceUnitIndex;
-        int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfNetlistsUsedAsBoundaryConditions - 1;
+        int endNodeIndexForThisComplianceUnit = 2*connectedComponentIndexOfThisComplianceUnit + m_numberOfOutlets - 1;
         initialPressures.insert(std::make_pair(endNodeIndexForThisComplianceUnit, 0.0));
     }
 
     // Do the initial pressures at the centres of the star (top nodes of the compliance units):
     {
-        int nodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 2;
+        int nodeIndex = m_numberOfOutlets + 2;
         for (int loopIndex = 0; loopIndex < m_numberOfConnectedComponentsOf3DDomain; loopIndex++)
         {
             initialPressures.insert(std::make_pair(nodeIndex,m_initialDomainPressure));
@@ -240,7 +261,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     }
 
     // Do the initial pressures at the points between the pairs of resistors
-    for (int nodeIndex = m_numberOfNetlistsUsedAsBoundaryConditions + 2 * m_numberOfConnectedComponentsOf3DDomain; nodeIndex <= mp_circuitData->numberOfPressureNodes; nodeIndex++)
+    for (int nodeIndex = m_numberOfOutlets + 2 * m_numberOfConnectedComponentsOf3DDomain; nodeIndex <= mp_circuitData->numberOfPressureNodes; nodeIndex++)
     {
         initialPressures.insert(std::make_pair(nodeIndex, m_initialDomainPressure));
     }
@@ -265,7 +286,19 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         // be constructed during the call to setupPressureNode.
         setupPressureNode(indexOfEndNodeInInputData, (*component)->endNode, *component);
 
-        (*component)->prescribedFlowType = Flow_NotPrescribed;  // initialise as a default, before replacing as necessary
+
+        bool componentIsOuterResistorOnDirichletBranch = (*component)->getIndex() > m_numberOfNetlistsUsedAsBoundaryConditions && (*component)->getIndex() <= m_numberOfOutlets;
+        if (componentIsOuterResistorOnDirichletBranch)
+        {
+            // Dirichlet / BCT surfaces have fixed flows:
+            (*component)->prescribedFlowType = Flow_Fixed;
+            (*component)->setPrescribedFlow(3.14159265); // recognisable nonsense initial value - in case it doesn't get properly replaced this value will be noticed in output data
+            (*component)->addPythonControllerName(Controller_CustomPythonComponentFlowFile, "bctController");
+        }
+        else
+        {
+            (*component)->prescribedFlowType = Flow_NotPrescribed;
+        }
         // for (int prescribedFlow=0; prescribedFlow<mp_circuitData->numberOfPrescribedFlows; prescribedFlow++)
         // {
         //     if (listOfPrescribedFlows.at(prescribedFlow) == (*component)->getIndex())
@@ -297,10 +330,10 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // (rewrites - but does not change - the values are identical!)
     mp_circuitData->rebuildCircuitMetadata();
 
-    // Tell the node at the 3D interface that it connects to the 3D domain:
+    // Tell the node at the "3D" interface that it connects to the LPN domain:
     {
         std::vector<int> threeDNodeIndices;
-        for (int nodeIndex=1; nodeIndex<=m_numberOfNetlistsUsedAsBoundaryConditions; nodeIndex++)
+        for (int nodeIndex = 1; nodeIndex <= m_numberOfNetlistsUsedAsBoundaryConditions; nodeIndex++)
         {
         	threeDNodeIndices.push_back(nodeIndex);
         }
@@ -441,17 +474,26 @@ void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double
             bool boundaryCurrentlyUsesDpDqResistance = (pressuresOrFlowsAtBoundaries.at(dpDqResistorIndex).first == Boundary_Pressure);
             if (boundaryCurrentlyUsesDpDqResistance)
             {
-                // the component getIndex() needs to be converted to zero-indexing:
-                double potentialResistance = allImplicitCoefficients.at((*component)->getIndex()-1).first;
+                double potentialResistance = allImplicitCoefficients.at(toZeroIndexing((*component)->getIndex())).first;
                 assert(!isnan(potentialResistance));
 
-                // if (potentialResistance == 0.0)
-                // {
-                //     potentialResistance = 0.000001;
-                // }
                 (*component)->setParameterValue(potentialResistance);
+                (*component)->setHasNoPrescribedFlow(); // defensive
             }
+
+            bool boundaryCurrentlyHasPrescribedFlow = (pressuresOrFlowsAtBoundaries.at(dpDqResistorIndex).first == Boundary_Flow);
+            if (boundaryCurrentlyHasPrescribedFlow)
+            {
+                double prescribedFlow = pressuresOrFlowsAtBoundaries.at(dpDqResistorIndex).second;
+                (*component)->setPrescribedFlow(prescribedFlow);
+            }
+
             dpDqResistorIndex++;
         }
     }
+}
+
+boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> NetlistZeroDDomainCircuit::getControlTypesAndComponentIndices() const
+{
+    return mp_circuitData->getControlTypesAndComponentIndices();
 }

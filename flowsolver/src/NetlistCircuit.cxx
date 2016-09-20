@@ -1283,6 +1283,11 @@ void NetlistCircuit::generateLinearSystemWithoutFactorisation(const double alfi_
        columnMap.push_back(ll + tempUnknownVariableIndexWithinLinearSystem);
      }
 
+     if (columnMap.size() != m_numberOfSystemRows - rowsDoneSoFar)
+     {
+        throw std::runtime_error("EE: Netlist circuit appears to be malformed.");
+     }
+
      // Set the prescribed-value equations (i.e. pressure_1 (LHS) = pressure_1 (m_RHS) - so really just a way of setting the prescribed values within the linear system)
      for (int ll = 0; ll < m_numberOfSystemRows - rowsDoneSoFar; ll++)
      {
@@ -1440,6 +1445,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
         int ll=0;
         for (auto prescribedFlowComponent=mp_circuitData->mapOfPrescribedFlowComponents.begin(); prescribedFlowComponent!=mp_circuitData->mapOfPrescribedFlowComponents.end(); prescribedFlowComponent++)
         {
+            // std::cout << "surface " << m_IndexOfThisNetlistLPNInInputFile << "prescribed flow component " << prescribedFlowComponent->second->prescribedFlowType << std::endl;//++++
            if (prescribedFlowComponent->second->prescribedFlowType == Flow_3DInterface)
            {
             if (mp_circuitData->hasPrescribedFlowAcrossInterface())
@@ -1466,7 +1472,6 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
               {
                 threeDFlowValue = *flowPointerToSet * mp_circuitData->getSignForPrescribed3DInterfaceFlow();
               }
-              // std::cout << "setting 3D flow: " << threeDFlowValue << std::endl;
               assert(!isnan(threeDFlowValue));
               // Give the (possibly sign-corrected) flow to the linear system:
               errFlag = VecSetValue(m_RHS,ll + tempIndexingShift,threeDFlowValue,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -1566,9 +1571,11 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
     errFlag = VecAssemblyBegin(m_RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
     errFlag = VecAssemblyEnd(m_RHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    // std::cout << "m_RHS for surface " << m_surfaceIndex << ":" << std::endl;
-    // errFlag = VecView(m_RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    // std::cout << "END m_RHS for surface " << m_surfaceIndex << std::endl;
+    // if (m_surfaceIndex == -1){
+    //     // std::cout << "m_RHS for surface " << m_surfaceIndex << ":" << std::endl;
+    //     // errFlag = VecView(m_RHS,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
+    //     // std::cout << "END m_RHS for surface " << m_surfaceIndex << std::endl;
+    // }
 
 }
 

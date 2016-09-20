@@ -157,13 +157,15 @@ int main(int argc, char **argv) {
    {
       assert(nomodule.pureZeroDSimulation==1);
 
-      PureZeroDDriver pureZeroDDriver;
+      // numDirCalcSrfs = number of prescribed flow (i.e. bct; dirichlet) surfaces
+      PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs);
 
       pureZeroDDriver.setDelt(inpdat.Delt[0]);
       pureZeroDDriver.setAlfi(timdat.alfi);
       pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.currentTimestepIndex);
       pureZeroDDriver.setNtout(outpar.ntout);
-      pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
+      // nsrflistDirCalc = list of prescribed flow surface indices
+      pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces, nomodule.nsrflistDirCalc);
 
       pureZeroDDriver.init();
       multidomSetupControlSystems();

@@ -6,13 +6,14 @@
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
-	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex, const int startingTimestepIndex)
+	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure, const std::map<int,int> mapFromZeroDSurfaceIndexToConnectedComponentIndex, const int startingTimestepIndex, const int numberOfDirichletBCTSurfaces)
 	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt, startingTimestepIndex),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
 	m_elastanceToGiveCentralCapacitor(complianceToGiveCentralCapacitor),
 	m_initialDomainPressure(initialDomainPressure),
 	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions),
-	m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex(mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex)
+	m_mapFromZeroDSurfaceIndexToConnectedComponentIndex(mapFromZeroDSurfaceIndexToConnectedComponentIndex),
+	m_numberOfDirichletBCTSurfaces(numberOfDirichletBCTSurfaces)
 	{
 		findNumberOfConnectedComponentsOf3DDomain();
 
@@ -23,6 +24,8 @@ public:
 		m_FlowHistoryFileName.append("netlistFlows_zeroDDomainReplacement.dat");
 		m_VolumeHistoryFileName.clear(); // Defensive
 		m_VolumeHistoryFileName.append("netlistVolumes_zeroDDomainReplacement.dat");
+
+		m_numberOfOutlets = m_numberOfNetlistsUsedAsBoundaryConditions + m_numberOfDirichletBCTSurfaces;
 	}
 
 	void setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate);
@@ -33,6 +36,8 @@ public:
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 	void createCircuitDescription();
 	void initialiseAtStartOfTimestep();
+
+	boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> getControlTypesAndComponentIndices() const;
 private:
 	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 
@@ -42,8 +47,10 @@ private:
 	const double m_oneResistanceToGiveEachResistor;
 	const double m_elastanceToGiveCentralCapacitor;
 	const double m_initialDomainPressure;
+	const int m_numberOfDirichletBCTSurfaces;
+    int m_numberOfOutlets;
 	int m_numberOfConnectedComponentsOf3DDomain;
-	const std::map<int,int> m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
+	const std::map<int,int> m_mapFromZeroDSurfaceIndexToConnectedComponentIndex;
 };
 
 #endif

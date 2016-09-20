@@ -144,14 +144,16 @@
 				    throw;
 				}
 
-				PureZeroDDriver pureZeroDDriver;
+				int numberOfDirichletBCTSurfaces = 0;
+				PureZeroDDriver pureZeroDDriver(numberOfDirichletBCTSurfaces);
 				try {
 					pureZeroDDriver.setDelt(inpdat.Delt[0]);
 				    pureZeroDDriver.setAlfi(timdat.alfi);
 				    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.currentTimestepIndex);
 				    pureZeroDDriver.setNtout(1);
 	
-				    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
+					int* emptyListOfDirichletBCTSurfaces = NULL;
+				    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces, emptyListOfDirichletBCTSurfaces);
 	
 					pureZeroDDriver.init();
 	

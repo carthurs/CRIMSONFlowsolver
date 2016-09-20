@@ -413,6 +413,13 @@ std::string CircuitComponent::getPythonControllerName(const parameter_controller
 	return m_pythonParameterControllerNames.at(controllerType);
 }
 
+parameter_controller_t CircuitComponent::getControlType() const
+{
+	// There appears to be some old functionality for multiple controllers. I doubt this is actually used, but assert it anyway.
+	assert(m_pythonParameterControllerNames.size() == 1);
+	return m_pythonParameterControllerNames.begin()->first;
+}
+
 // Sets the name "whateverName" of the parameter controller to look for in the
 // working directory: whateverName.py, containing class whateverName,
 // with class method:
@@ -530,12 +537,18 @@ void CircuitComponent::setPrescribedFlow(const double prescribedFlow)
 {
 	m_valueOfPrescribedFlow = prescribedFlow;
 	m_hasPrescribedFlow = true;
+	std::cout << "just set flow " << prescribedFlow << " for component " << m_indexInInputData << std::endl;
 }
 
 double* CircuitComponent::getPointerToFixedFlowPrescription()
 {
 	assert(m_hasPrescribedFlow);
 	return &m_valueOfPrescribedFlow;
+}
+
+void CircuitComponent::setHasNoPrescribedFlow()
+{
+	m_hasPrescribedFlow = false;
 }
 
 void CircuitComponent::setHasHistoryVolume(const bool hasHistoryVolume)
@@ -869,6 +882,19 @@ std::vector<double*> CircuitData::getCapacitorNodalHistoryPressurePointers() con
 		}
 	}
 	return capacitorNodalHistoryPressurePointers;
+}
+
+boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> CircuitData::getControlTypesAndComponentIndices() const
+{
+	boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> controlTypesAndComponentIndices(new std::vector<std::pair<parameter_controller_t, int>>());
+    for (auto& component : components)
+    {
+        if (component->hasUserDefinedExternalPythonScriptParameterController())
+        {
+        	controlTypesAndComponentIndices->push_back(std::make_pair(component->getControlType(), component->getIndex()));
+        }
+    }
+    return controlTypesAndComponentIndices;
 }
 
 bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const

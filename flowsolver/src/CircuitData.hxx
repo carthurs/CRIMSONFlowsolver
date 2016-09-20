@@ -95,11 +95,13 @@ public:
 	bool permitsFlow() const;
 	double getPrescribedFlow() const;
 	void setPrescribedFlow(const double prescribedFlow);
+	void setHasNoPrescribedFlow();
 	double* getPointerToFixedFlowPrescription();
 	bool hasPrescribedFlow() const;
 	void setRestartFlowFromHistory();
 	void setHasHistoryVolume(const bool hasHistoryVolume);
 	bool getHasHistoryVolume();
+	parameter_controller_t getControlType() const;
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
 	bool m_hasPythonParameterController;
@@ -309,6 +311,7 @@ public:
 	boost::shared_ptr<CircuitPressureNode> ifExistsGetNodeOtherwiseConstructNode(const int indexInInputData_in, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
 	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
 	double getSignForPrescribed3DInterfaceFlow() const;
+	boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> getControlTypesAndComponentIndices() const;
 protected:
 	bool m_flowPermittedAcross3DInterface;
 	std::vector<int> m_indexOfNodeAt3DInterface;

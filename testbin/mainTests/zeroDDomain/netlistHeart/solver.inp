@@ -20,8 +20,8 @@ Simulate in Purely Zero Dimensions: True
 # CARDIOVASCULAR MODELING PARAMETERS: PRESCRIBED VELOCITIES
 # {
     BCT Time Scale Factor : 1.0
-    List of Dirichlet Surfaces : #5
-    Number of Dirichlet Surfaces Which Output Pressure and Flow : 0#1
+    List of Dirichlet Surfaces : 7
+    Number of Dirichlet Surfaces Which Output Pressure and Flow : 1
     Time Varying Boundary Conditions From File : False
 # }
 
@@ -29,8 +29,8 @@ Simulate in Purely Zero Dimensions: True
 # CARDIOVASCULAR MODELING PARAMETERS: RCR
 # {
     Number of experimental RCR Surfaces : 0
-    List of Netlist LPN Surfaces : 5 6 7
-    Number of Netlist LPN Surfaces : 3
+    List of Netlist LPN Surfaces : 5 6 #7
+    Number of Netlist LPN Surfaces : 2
 #     RCR Values From File : True
 # }
 

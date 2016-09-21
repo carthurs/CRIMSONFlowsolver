@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
       assert(nomodule.pureZeroDSimulation==1);
 
       // numDirCalcSrfs = number of prescribed flow (i.e. bct; dirichlet) surfaces
-      PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs);
+      PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, nomodule.zeroDDomainCompliance);
 
       pureZeroDDriver.setDelt(inpdat.Delt[0]);
       pureZeroDDriver.setAlfi(timdat.alfi);

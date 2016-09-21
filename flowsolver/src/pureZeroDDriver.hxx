@@ -9,8 +9,9 @@
 class PureZeroDDriver
 {
 public:
-	PureZeroDDriver(const int numberOfDirichletSurfaces) :
-	m_numberOfDirichletSurfaces(numberOfDirichletSurfaces)
+	PureZeroDDriver(const int numberOfDirichletSurfaces, const double centralCapacitorCompliance) :
+	m_numberOfDirichletSurfaces(numberOfDirichletSurfaces),
+	m_complianceToGiveCentralCapacitor(centralCapacitorCompliance)
 	{
 		boundaryConditionManager_instance = boundaryConditionManager::Instance();
 		checkIfThisIsARestartedSimulation();
@@ -54,6 +55,7 @@ private:
 	int m_hstep;
 	int m_numberOfTimestepsBetweenRestarts;
 	const int m_numberOfDirichletSurfaces;
+	const double m_complianceToGiveCentralCapacitor;
 
 	int m_numberOfNetlistsUsedAsBoundaryConditions;
 

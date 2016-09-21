@@ -144,7 +144,7 @@
 				    throw;
 				}
 
-				PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs);
+				PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, nomodule.zeroDDomainCompliance);
 				try {
 					pureZeroDDriver.setDelt(inpdat.Delt[0]);
 				    pureZeroDDriver.setAlfi(timdat.alfi);

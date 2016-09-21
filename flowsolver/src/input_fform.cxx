@@ -1049,6 +1049,7 @@ int input_fform() {
 		    if(boost::iequals((string)inp.GetValue("Simulate in Purely Zero Dimensions"), "True"))
 		    {
 		      nomodule.pureZeroDSimulation = int(1);
+		      nomodule.zeroDDomainCompliance = inp.GetValue("Zero Dimensional Domain Compliance");
 		    }
 		    else
 		    {

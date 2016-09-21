@@ -12,7 +12,7 @@ void PureZeroDDriver::init()
 	assert(m_numberOfNetlistsUsedAsBoundaryConditions > 0);
 
 	double oneResistanceToGiveEachResistor = 0.001;
-	double complianceToGiveCentralCapacitor = 0.0102461E1; // to give ~10mmHg pressure at the initial vol
+	double complianceToGiveCentralCapacitor = m_complianceToGiveCentralCapacitor;
 	double initialDomainPressure = 10664.0;//133.3 * 10; // 80 mmHg
 
 	assert(m_deltHasBeenSet);

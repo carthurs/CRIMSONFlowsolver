@@ -50,7 +50,8 @@ module phcommonvars
         tissSuppRingStiffCoeff, &
         tissSuppRingDampCoeff, &
         stateFilterCoeff, &
-        rescontrol, ResCriteria, heartparam(0:15), stabflux_coeff
+        rescontrol, ResCriteria, heartparam(0:15), stabflux_coeff, &
+        zeroDDomainCompliance
     integer           icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP(0:MAXSURF),incpfile, &
         numResistSrfs, nsrflistResist(0:MAXSURF), &
@@ -91,6 +92,7 @@ module phcommonvars
         stateFilterCoeff, &
         rescontrol,ResCriteria, heartparam, &
         stabflux_coeff, &
+        zeroDDomainCompliance, &
         icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP,incpfile, &
         numResistSrfs, nsrflistResist, &

@@ -485,6 +485,7 @@
          double ResCriteria;
          double heartparam[16];
          double stabflux_coeff;
+         double zeroDDomainCompliance;
          int icardio;
          int itvn;
          int ipvsq;

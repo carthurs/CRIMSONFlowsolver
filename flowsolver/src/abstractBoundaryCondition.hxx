@@ -32,7 +32,6 @@ class abstractBoundaryCondition
       m_nstep(nstep)
     {
         hasListOfMeshNodesAtThisBoundary = false; // flag to be used to guard against using the list when it hasn't been provided by Fortran.
-        std::cout <<"is surfarea set yet in c++?" << surfarea << std::endl;
         // allocate arrays with +1 to size, in case hstep=0 (that would be undefined behaviour under new double)
         flowhist = new double [hstep+1];
         pressurehist = new double [hstep+1];
@@ -91,7 +90,6 @@ class abstractBoundaryCondition
  	double* pressurehist;
  	std::string flowfile;
     std::string pressurefile;
-	double surfarea;
 	std::vector<double*> flow_n_ptrs;
     double flow_n1;
     std::vector<double*> pressure_n_ptrs;

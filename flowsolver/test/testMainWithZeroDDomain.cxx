@@ -1106,3 +1106,92 @@ TEST_F(testMainWithZeroDDomain, checkPythonUnpicklers) {
 	  	EXPECT_NEAR(-52275.6004154903,flowResult,1e-8);
 	  }
   }
+
+
+TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
+  setSimDirectory("mainTests/zeroDDomain/bctFlowPrescriber");
+  clearOutOldFiles();
+
+  try {
+  	runSimulation();
+  } catch (const std::exception& e) {
+      std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
+      throw;
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Check netlistPressures_surface_-1.dat.dat
+  {
+	  histFileReader zeroDDomainFlows = histFileReader();
+	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
+	  zeroDDomainFlows.setNumColumns(8);
+	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
+	  
+	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+	  double flowResult = zeroDDomainFlows.getReadFileData(5,1501);
+	  EXPECT_NEAR(259.543214447641,flowResult,1e-8);
+	  flowResult = zeroDDomainFlows.getReadFileData(6,1501);
+	  EXPECT_NEAR(84.6680132335589,flowResult,1e-8);
+	  flowResult = zeroDDomainFlows.getReadFileData(7,1501);
+	  EXPECT_NEAR(-24.7370038486727,flowResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_-1.dat
+  {
+	  histFileReader zeroDDomainFlows = histFileReader();
+	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
+	  zeroDDomainFlows.setNumColumns(8);
+	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
+	  // Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+	  // ...third column:
+	  double flowResult = zeroDDomainFlows.getReadFileData(2,1501);
+	  EXPECT_NEAR(259.543214447641,flowResult,1e-8);
+	  
+	  flowResult = zeroDDomainFlows.getReadFileData(3,1501);
+	  EXPECT_NEAR(84.6680132335589,flowResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_5.dat
+  {
+		histFileReader netlist1Flow = histFileReader();
+		netlist1Flow.setFileName("netlistFlows_surface_5.dat");
+		netlist1Flow.setNumColumns(4);
+		netlist1Flow.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double flowResult = netlist1Flow.getReadFileData(1,1501);
+		EXPECT_NEAR(-319.619773209747,flowResult,1e-8);
+  }
+
+  // Check netlistFlows_surface_6.dat
+  {
+		histFileReader netlist2Flow = histFileReader();
+		netlist2Flow.setFileName("netlistFlows_surface_6.dat");
+		netlist2Flow.setNumColumns(4);
+		netlist2Flow.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double flowResult = netlist2Flow.getReadFileData(1,1501);
+		EXPECT_NEAR(259.579506526332,flowResult,1e-8);
+  }
+  
+  // Check netlistPressures_surface_5.dat
+  {
+		histFileReader netlist1Pressure = histFileReader();
+		netlist1Pressure.setFileName("netlistPressures_surface_5.dat");
+		netlist1Pressure.setNumColumns(5);
+		netlist1Pressure.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double pressureResult = netlist1Pressure.getReadFileData(1,1501);
+		EXPECT_NEAR(770.012379257636,pressureResult,1e-8);
+  }
+
+  // Check netlistPressures_surface_6.dat
+  {
+		histFileReader netlist1Pressure = histFileReader();
+		netlist1Pressure.setFileName("netlistPressures_surface_6.dat");
+		netlist1Pressure.setNumColumns(5);
+		netlist1Pressure.readAndSplitMultiSurfaceRestartFile();
+		// Get the data from timestep 5, 1st column (this method searches for the timestep by value, whereas the columns are zero-indexed)
+		double pressureResult = netlist1Pressure.getReadFileData(1,1501);
+		EXPECT_NEAR(769.442541551951,pressureResult,1e-8);
+  }
+}

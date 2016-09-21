@@ -1,6 +1,6 @@
 Geombc Has Observation Fields: False
 Geombc Has Node Tags: False
-Simulate in Purely Zero Dimensions: False
+Simulate in Purely Zero Dimensions: True
 
 # CARDIOVASCULAR MODELING PARAMETERS
 # {
@@ -20,8 +20,19 @@ Simulate in Purely Zero Dimensions: False
 # CARDIOVASCULAR MODELING PARAMETERS: PRESCRIBED VELOCITIES
 # {
     BCT Time Scale Factor : 1.0
-    List of Dirichlet Surfaces :
-    Number of Dirichlet Surfaces Which Output Pressure and Flow : 0
+
+    # For zero-D BCT, we put the BCT surface index here as usual
+    # But you need a bctFlowWaveform.dat in the simulation directory, containing
+    # two space-separated columns. Column 1 is the time (seconds), and column 2 is the 
+    # flow value at that time. Provide one complete cardiac period.
+    #
+    # A steady-flow version can also be used - just make a bctFlowWaveform.dat with 2 rows and 2 columns, with
+    # start-time and end-time in column 1, and the same flow value in both rows of column 2.
+    #
+    # CRIMSON GUI outputs these files when you have a Prescribed Velocities boundary condition.
+    #
+    List of Dirichlet Surfaces : 7
+    Number of Dirichlet Surfaces Which Output Pressure and Flow : 1
     Time Varying Boundary Conditions From File : False
 # }
 
@@ -29,8 +40,14 @@ Simulate in Purely Zero Dimensions: False
 # CARDIOVASCULAR MODELING PARAMETERS: RCR
 # {
     Number of experimental RCR Surfaces : 0
-    List of Netlist LPN Surfaces : 5 6 7
-    Number of Netlist LPN Surfaces : 3
+
+    # For zero-D BCT, all other surfaces must be Netlist. We list them here.
+    # Remember that Netlists are read in order from the top of the netlist_surfaces.xml,
+    # so you need to eusre that you have no extra, unused surfaces in netlist_surfaces.xml
+    # (e.g. if you would normally have a Netlist heart model and are testing a bct in its
+    # place, then you must remove the Netlist heart from netlist_surfaces.dat first).
+    List of Netlist LPN Surfaces : 5 6
+    Number of Netlist LPN Surfaces : 2
 #     RCR Values From File : True
 # }
 
@@ -61,6 +78,6 @@ Simulate in Purely Zero Dimensions: False
 # SOLUTION CONTROL
 # {
     Equation of State : Incompressible
-    Number of Timesteps : 5000
+    Number of Timesteps : 1500
     Time Step Size : 0.001
 # }

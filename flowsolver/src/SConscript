@@ -55,6 +55,8 @@ sources=string.split("""
 	NetlistBoundaryCircuitWhenDownstreamCircuitsExist.cxx
 	NetlistClosedLoopDownstreamCircuit.cxx
 	CircuitData.cxx
+	CircuitComponent.cxx
+	CircuitPressureNode.cxx
 	ControlSystemsManager.cxx
 	ParameterController.cxx
 	timers.cxx

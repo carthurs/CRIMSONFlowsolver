@@ -24,7 +24,7 @@ module phcommonvars
     !
     !  The two types of face topology are  1= tri, 2=quad
     !
-    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255 )
+    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255, MAXOUTPUTNODES=1000 )
   
     ! the common block nomodule holds all the things which have been removed
     ! from different modules
@@ -81,7 +81,8 @@ module phcommonvars
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation, &
         num3DConnectedComponents, surfacesOfEachConnectedComponent(0:MAXSURF), &
-        hasMasterPythonControlScript
+        hasMasterPythonControlScript, writeSpecificNodalDataEveryTimestep, &
+        numberOfNodesForDataOutput, indicesOfNodesForDataOutput(0:MAXOUTPUTNODES)
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -122,7 +123,8 @@ module phcommonvars
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation, &
         num3DConnectedComponents, surfacesOfEachConnectedComponent, &
-        hasMasterPythonControlScript
+        hasMasterPythonControlScript, writeSpecificNodalDataEveryTimestep, &
+        numberOfNodesForDataOutput, indicesOfNodesForDataOutput
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 

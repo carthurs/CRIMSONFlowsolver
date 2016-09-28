@@ -12,6 +12,7 @@
 
 #define MAXBLK   50000
 #define MAXSURF  199
+#define MAXOUTPUTNODES 1000
 #define MAXREGIONS 255
 #define MAXTS   100
 #define MAXTOP   5
@@ -553,6 +554,9 @@
          int num3DConnectedComponents;
          int surfacesOfEachConnectedComponent[MAXSURF+1];
          int hasMasterPythonControlScript;
+         int writeSpecificNodalDataEveryTimestep;
+         int numberOfNodesForDataOutput;
+         int indicesOfNodesForDataOutput[MAXOUTPUTNODES+1];
       } nomodule;
 
 

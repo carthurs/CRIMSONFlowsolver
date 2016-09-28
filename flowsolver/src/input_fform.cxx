@@ -6,6 +6,8 @@
 #include "CInput.h"
 #include "common_c.h"
 #include <boost/algorithm/string.hpp>
+#include <stdexcept>
+#include <sstream>
 
 using namespace std;
 void print_error_code(int ierr);
@@ -1153,6 +1155,33 @@ int input_fform() {
 		else
 		{
 			nomodule.hasMasterPythonControlScript = 0;	
+		}
+
+		nomodule.numberOfNodesForDataOutput = inp.GetValue("Number of Mesh Nodes which Output Presure and Flow");
+		if (nomodule.numberOfNodesForDataOutput > 0)
+		{
+			if (nomodule.numberOfNodesForDataOutput > MAXOUTPUTNODES)
+			{
+				std::stringstream errorMessage;
+				errorMessage << "Number of Mesh Nodes which Output Presure and Flow exceeded MAXOUTPUTNODES, which is " << MAXOUTPUTNODES << ". Adjust this value and recompile, or request fewer output nodes." << std::endl;
+				throw std::runtime_error(errorMessage.str());
+			}
+			nomodule.writeSpecificNodalDataEveryTimestep = 1;
+
+			ivec = inp.GetValue("List of Mesh Nodes which Output Presure and Flow");
+			for (i=0; i<MAXOUTPUTNODES+1; i++)
+			{
+				nomodule.indicesOfNodesForDataOutput[i] = 0;
+			}
+
+			for (i=0; i<nomodule.numberOfNodesForDataOutput; i++)
+			{
+				nomodule.indicesOfNodesForDataOutput[i+1] = ivec[i];
+			}
+		}
+		else
+		{
+			nomodule.writeSpecificNodalDataEveryTimestep = 0;
 		}
 
 		nomodule.ideformwall = 0;

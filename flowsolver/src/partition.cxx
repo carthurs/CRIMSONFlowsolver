@@ -638,27 +638,107 @@ void Partition_Problem(int numProcs) {
 		} // loop over procs
 		  //ien.clear();
 
+		// ParallelData is the most important data structure of this code. It maintains
+		// the global to local mapping of shapefuntion numbers.
+		//
+		// ParallelData[ global_number][ processor_id ] = processor_local_no
+		//
+		// all shape function numbers, global and local are stored in fortran indexing
+
 		/* co-ords */
 
-		readheader_(&igeombc, "co-ordinates", (void*) iarray, &itwo, "double",
-				iformat);
+		readheader_(&igeombc, "co-ordinates", (void*) iarray, &itwo, "double", iformat);
 		isize = iarray[0] * iarray[1];
 		double* xloc = new double[isize];
-		readdatablock_(&igeombc, "co-ordinates", (void*) xloc, &isize, "double",
-				iformat);
+		readdatablock_(&igeombc, "co-ordinates", (void*) xloc, &isize, "double", iformat);
+
+		// Trying to deduce exactly what the original author was doing here:
+		// I think the ith entry of Xpart corresponds to the ith processor;
+		// the entry is a map from the shapefunction index local to that processor to a 3-element
+		// vector containing the (x,y,z) coordinates of the associated node.
 		vector < map<int, vector<double> > > Xpart(numProcs);
 
-		for (int x = 1; x < iarray[0] + 1; x++) {
-			for (map<int, int>::iterator iter = ParallelData[x].begin();
-					iter != ParallelData[x].end(); iter++) {
+		for (int x = 1; x < iarray[0] + 1; x++)
+		{
+			for (map<int, int>::iterator iter = ParallelData[x].begin(); iter != ParallelData[x].end(); iter++)
+			{
 				for (int s = 0; s < 3; s++) {
-					Xpart[(*iter).first][(*iter).second].push_back(
-							xloc[x - 1 + s * iarray[0]]);
+					Xpart[(*iter).first][(*iter).second].push_back(xloc[x - 1 + s * iarray[0]]);
 					//cout << (*iter).first << " " << (*iter).second << " " << xloc[x - 1 + s * iarray[0]] << endl;
 				}
 			}
 		}
 		delete[] xloc;
+
+		// setup output of individual node pressure / velocity if requested in solver.inp:
+		//
+		// To do this, we convert the requested global node indices from the solver.inp to their
+		// processor-local indices, and write one file for each processor, telling it which
+		// of its (locally-indexed) nodes it should output pressure and flow for:
+		if (nomodule.writeSpecificNodalDataEveryTimestep)
+		{
+			vector<vector<int>> processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices(numProcs);
+
+			// From the global node indices requested in the solver.inp, we find the corresponding local
+			// node indices, sorted by processor index:
+			for (int index = 1; index <= nomodule.numberOfNodesForDataOutput; index++) // Fortran array indexing
+			{
+				int outputNodeGlobalIndex = nomodule.indicesOfNodesForDataOutput[index];
+				map<int,int>& processorIdToProcessorLocalNodeIndex = ParallelData.at(outputNodeGlobalIndex);
+				for (auto processorIdAndLocalIndexPair = processorIdToProcessorLocalNodeIndex.begin(); processorIdAndLocalIndexPair != processorIdToProcessorLocalNodeIndex.end(); processorIdAndLocalIndexPair++)
+				{
+					const int processorId = processorIdAndLocalIndexPair->first;
+					const int localNodeIndex = processorIdAndLocalIndexPair->second;
+					processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).push_back(localNodeIndex);
+				}
+			}
+
+			// write the processor-local node indices for the individual nodal pressure/velocity output
+			// to files, one for each processor. This will be read by the processor in question during
+			// the simulation, so that it knows which of its nodes it should output data for.
+			for(int processorId=0; processorId < numProcs ; processorId++ ) {
+		        bzero( (void*)filename, 255 );
+		        ofstream nodalOutputFileStream;
+		        sprintf( filename, "%snodalOutputIndices.dat.%d",_directory_name, processorId);
+		        nodalOutputFileStream.open (filename, ios::out);
+
+		        nodalOutputFileStream << processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).size() << endl;
+		        for(auto outputNodeIterator = processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).begin(); outputNodeIterator != processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).end(); outputNodeIterator++)
+		        {
+		            nodalOutputFileStream << *outputNodeIterator << endl;
+		        }
+		        nodalOutputFileStream.close();
+		    }
+
+		    { //scoping unit to avoid errors
+			    // Write an index file to assist the user with finding which output file contains the nodes they requested:
+			    // First we gather the data, then we sort it by global node index, then we write it to file.
+			    std::vector<std::pair<int,int>> globalNodeIndexAndProcessorIds;
+			    for (int index = 1; index <= nomodule.numberOfNodesForDataOutput; index++) // Fortran array indexing
+				{
+					int outputNodeGlobalIndex = nomodule.indicesOfNodesForDataOutput[index];
+					map<int,int>& processorIdToProcessorLocalNodeIndex = ParallelData.at(outputNodeGlobalIndex);
+					for (auto processorIdAndLocalIndexPair = processorIdToProcessorLocalNodeIndex.begin(); processorIdAndLocalIndexPair != processorIdToProcessorLocalNodeIndex.end(); processorIdAndLocalIndexPair++)
+					{
+						const int processorId = processorIdAndLocalIndexPair->first;
+						globalNodeIndexAndProcessorIds.push_back(std::make_pair(outputNodeGlobalIndex, processorId));
+					}
+				}
+
+				// Sort by global node index:
+				std::sort(globalNodeIndexAndProcessorIds.begin(), globalNodeIndexAndProcessorIds.end(), [](std::pair<int,int> left, std::pair<int,int> right){return (left.first < right.first);});
+
+				// actually write the data:
+				ofstream nodalOutputIndexFileStream("nodalOutputDataIndex.dat", ios::out);
+			    nodalOutputIndexFileStream << "Column 1: Global Index. Column 2: Owning Processor." << endl;
+			    for (auto&& nodeIndexAndProcessorIdPair : globalNodeIndexAndProcessorIds)
+			    {
+			    	nodalOutputIndexFileStream << nodeIndexAndProcessorIdPair.first << " " << nodeIndexAndProcessorIdPair.second << endl;
+			    }
+
+				nodalOutputIndexFileStream.close();
+			}
+		}
 
 		/* node tags */
 		// Begin with declarations outside the scope of the "if", so they're available later, too.

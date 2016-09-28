@@ -1533,10 +1533,16 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     integer jj
     integer ifail
+    integer numberOfOutputNodesOnThisProcessor
+    integer, allocatable :: outputNodesOnThisProcessor(:)
+    logical fileExists
 
     real*8 uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
     real*8 relativeVelocity(nshg,3)
     real*8 updatedMeshCoordinates(nshg,3)
+
+    CHARACTER*256 outputNodesListFileName
+    CHARACTER*256 outputNodesDataFileName
 
     ! ! Update boundary conditions to the final pressure, conforming to the final flow:
     ! if (nrcractive) then
@@ -1614,6 +1620,53 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     updatedMeshCoordinates(:,1) = x(:,1)
     updatedMeshCoordinates(:,2) = x(:,2)
     updatedMeshCoordinates(:,3) = x(:,3)
+
+
+    ! ------------- Begin code for writing out specific nodal solution (pressure and velocity) data ----------------
+    if (writeSpecificNodalDataEveryTimestep .eq. 1) then
+        ! Read in the list of local nodes that this processor needs to write data for
+        ! (this was generated during partitioning, from the specification in solver.inp)
+        write(outputNodesListFileName,*) myrank
+        outputNodesListFileName = "nodalOutputIndices.dat."//ADJUSTL(TRIM(outputNodesListFileName))
+        open(1, file=outputNodesListFileName)
+        read(1,*) numberOfOutputNodesOnThisProcessor
+
+        allocate (outputNodesOnThisProcessor(numberOfOutputNodesOnThisProcessor))
+
+        do jj = 1, numberOfOutputNodesOnThisProcessor
+            read(1,*) outputNodesOnThisProcessor(jj)
+        enddo
+        close(1)
+
+
+        ! Write the data to the output file for this processor.
+        ! If the file doesn't yet exist, we create it and write an informative header.
+        write(outputNodesDataFileName, *) myrank
+        outputNodesDataFileName = "nodalData.dat."//ADJUSTL(TRIM(outputNodesDataFileName))
+        
+        inquire(file=outputNodesDataFileName, exist=fileExists)
+        if (fileExists) then
+            open(1, file=outputNodesDataFileName, status='old', position='append', action='write')
+        else
+            open(1, file=outputNodesDataFileName, status='new', action='write')
+            write(1,*) "This file contains pressures and flows every time-step at the requested nodes."
+            write(1,*) "Each node's data takes the format (velocityX, velocityY, velocityZ, pressure)."
+            write(1,*) "Number of nodes in this file:"
+            write(1,*) numberOfOutputNodesOnThisProcessor
+            write(1,*) "Global node indices, in the order in which the data appears in this file:"
+            do jj = 1, numberOfOutputNodesOnThisProcessor
+                write(1,*) ltg(outputNodesOnThisProcessor(jj))
+            enddo
+            write(1,*) "Begin data:"
+        endif
+
+        do jj = 1, numberOfOutputNodesOnThisProcessor
+            write(1,*) yold(outputNodesOnThisProcessor(jj),1:4)
+        enddo
+        close(1)
+    endif
+    ! ------------- End code for writing out specific nodal solution (pressure and velocity) data ----------------
+
 
     !
     ! ... write out the solution

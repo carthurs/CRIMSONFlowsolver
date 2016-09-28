@@ -112,3 +112,7 @@ Global Node Numbering: True
 {
      Step Construction  : 0 1 0 1 0 1 0 1 0 1 0 1
 }
+
+
+Number of Mesh Nodes which Output Presure and Flow : 6
+List of Mesh Nodes which Output Presure and Flow : 99 55 44 77 88 66

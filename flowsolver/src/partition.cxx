@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sstream>
 
 //#include <boost/optional/optional.hpp>
 //#include <tuple>
@@ -729,7 +730,9 @@ void Partition_Problem(int numProcs) {
 				std::sort(globalNodeIndexAndProcessorIds.begin(), globalNodeIndexAndProcessorIds.end(), [](std::pair<int,int> left, std::pair<int,int> right){return (left.first < right.first);});
 
 				// actually write the data:
-				ofstream nodalOutputIndexFileStream("nodalOutputDataIndex.dat", ios::out);
+				std::stringstream indexFileName;
+				indexFileName << _directory_name << "nodalOutputDataIndex.dat";
+				std::ofstream nodalOutputIndexFileStream(indexFileName.str(), ios::out);
 			    nodalOutputIndexFileStream << "Column 1: Global Index. Column 2: Owning Processor." << endl;
 			    for (auto&& nodeIndexAndProcessorIdPair : globalNodeIndexAndProcessorIds)
 			    {

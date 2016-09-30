@@ -492,7 +492,11 @@ void NetlistReader::readCircuitStructure()
 		}
 		else
 		{
-			throw std::runtime_error("ERROR: Unknown netlist component type. This often indicates a malformed netlist_surfaces.dat.\n");
+			std::stringstream errorMessage;
+			errorMessage << "ERROR: Unknown netlist component type. This often indicates a malformed ";
+			errorMessage << m_fileName;
+			errorMessage << std::endl;
+			throw std::runtime_error(errorMessage.str());
 		}
 
 		readNextLine();
@@ -508,8 +512,12 @@ void NetlistReader::readCircuitStructure()
 		if (tempComponentTypes.back() == Component_VolumeTracking || tempComponentTypes.back() == Component_VolumeTrackingPressureChamber)
 		{
 			if (mp_currentLineSplitBySpaces->size() < 2)
-			{ 
-				throw std::runtime_error("EE: Insufficient parameters given for one of the netlist volume-tracking components.");
+			{
+				std::stringstream errorMessage;
+				errorMessage << "EE: Insufficient parameters given for one of the netlist volume-tracking components in file ";
+				errorMessage << m_fileName;
+				errorMessage << std::endl;
+				throw std::runtime_error(errorMessage.str());
 			}
 
 			tempContainer.setInitialVolume(atof(mp_currentLineSplitBySpaces->at(1).c_str()));
@@ -565,7 +573,11 @@ void NetlistReader::readPrescribedPressureTypes()
 		}
 		else
 		{
-			throw std::runtime_error("EE: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
+			std::stringstream errorMessage;
+			errorMessage << "EE: Unknown netlist nodal pressure prescription. This often indicates a malformed ";
+			errorMessage << m_fileName;
+			errorMessage << std::endl;
+			throw std::runtime_error(errorMessage.str());
 		}
 	}
 	m_typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
@@ -612,7 +624,11 @@ void NetlistReader::readPrescribedFlowTypes()
 		}
 		else
 		{
-			throw std::runtime_error("ERROR: Unknown netlist component flow prescription. This often indicates a malformed netlist_surfaces.dat.");
+			std::stringstream errorMessage;
+			errorMessage << "ERROR: Unknown netlist component flow prescription. This often indicates a malformed ";
+			errorMessage << m_fileName;
+			errorMessage << std::endl;
+			throw std::runtime_error(errorMessage.str());
 		}
 	}
 	m_typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
@@ -680,7 +696,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			std::stringstream error;
 			error << "EE: Unknown component control type found during read of netlist surface " << m_indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+			error << "This may just indicate a malformed " << m_fileName << std::endl;
 			throw std::runtime_error(error.str());
 		}
 		componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
@@ -716,7 +732,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			std::stringstream error;
 			error << "EE: Unknown node control type found during read of netlist surface " << m_indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+			error << "This may just indicate a malformed " << m_fileName << std::endl;
 			throw std::runtime_error(error.str());
 		}
 		int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());

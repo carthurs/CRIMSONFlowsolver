@@ -739,7 +739,7 @@ void Partition_Problem(int numProcs) {
 				// actually write the data:
 				std::stringstream indexFileName;
 				indexFileName << _directory_name << "nodalOutputDataIndex.dat";
-				std::ofstream nodalOutputIndexFileStream(indexFileName.str(), ios::out);
+				std::ofstream nodalOutputIndexFileStream(indexFileName.str().c_str(), ios::out);
 			    nodalOutputIndexFileStream << "Column 1: Global Index. Column 2: Owning Processor." << endl;
 			    for (auto&& nodeIndexAndProcessorIdPair : globalNodeIndexAndProcessorIds)
 			    {

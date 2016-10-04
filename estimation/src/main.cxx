@@ -158,7 +158,11 @@ int main(int argc, char **argv) {
       assert(nomodule.pureZeroDSimulation==1);
 
       // numDirCalcSrfs = number of prescribed flow (i.e. bct; dirichlet) surfaces
-      PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, nomodule.zeroDDomainCompliance);
+      std::vector<double> zeroDDomainCompliancesForEachConnectedComponent;
+      double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents;
+      zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances, zeroDDomainCompliancesEndPointer);
+
+      PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, zeroDDomainCompliancesForEachConnectedComponent);
 
       pureZeroDDriver.setDelt(inpdat.Delt[0]);
       pureZeroDDriver.setAlfi(timdat.alfi);

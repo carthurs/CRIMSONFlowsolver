@@ -1,5 +1,6 @@
 #include "NetlistZeroDDomainCircuit.hxx"
 #include "indexShifters.hxx"
+#include <iterator>
 
 // NetlistZeroDDomainCircuit is the class which represents the LPN(s) which replaces the 3D domain(s) in pure zeroD mode.
 
@@ -210,10 +211,22 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
         componentParameterValues.push_back(m_oneResistanceToGiveEachResistor);
     }
 
-    for (int complianceUnit = 0; complianceUnit < m_numberOfConnectedComponentsOf3DDomain; complianceUnit++)
+    // for (int complianceUnit = 0; complianceUnit < m_numberOfConnectedComponentsOf3DDomain; complianceUnit++)
+    // {
+    //     componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
+    // }
+
+    // There will be m_numberOfConnectedComponentsOf3DDomain compliances to append (i.e one capacitor for each connected component of the domain)
+    // copy them all into componentParameterValues.
+    std::copy(m_elastancesToGiveCentralCapacitors.begin(), m_elastancesToGiveCentralCapacitors.end(), std::back_inserter(componentParameterValues));
+
+
+    std::cout << "3D domain compliances: ";
+    for (auto iterator = m_elastancesToGiveCentralCapacitors.begin(); iterator!=m_elastancesToGiveCentralCapacitors.end(); iterator++)
     {
-        componentParameterValues.push_back(m_elastanceToGiveCentralCapacitor);
+        std::cout << *iterator;
     }
+    std::cout << std::endl;
 
     std::reverse(componentParameterValues.begin(), componentParameterValues.end());
 

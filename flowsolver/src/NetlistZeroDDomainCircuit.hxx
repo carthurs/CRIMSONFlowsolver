@@ -6,10 +6,10 @@
 class NetlistZeroDDomainCircuit : public NetlistCircuit
 {
 public:
-	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const double complianceToGiveCentralCapacitor, const double initialDomainPressure, const std::map<int,int> mapFromZeroDSurfaceIndexToConnectedComponentIndex, const int startingTimestepIndex, const int numberOfDirichletBCTSurfaces)
+	NetlistZeroDDomainCircuit(int hstep, const int numberOfNetlistsUsedAsBoundaryConditions, const bool thisIsARestartedSimulation, const double alfi, const double delt, const double oneResistanceToGiveEachResistor, const std::vector<double>& compliancesToGiveCentralCapacitors, const double initialDomainPressure, const std::map<int,int> mapFromZeroDSurfaceIndexToConnectedComponentIndex, const int startingTimestepIndex, const int numberOfDirichletBCTSurfaces)
 	: NetlistCircuit(hstep, -1, thisIsARestartedSimulation, alfi, delt, startingTimestepIndex),
 	m_oneResistanceToGiveEachResistor(oneResistanceToGiveEachResistor),
-	m_elastanceToGiveCentralCapacitor(complianceToGiveCentralCapacitor),
+	m_elastancesToGiveCentralCapacitors(compliancesToGiveCentralCapacitors),
 	m_initialDomainPressure(initialDomainPressure),
 	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions),
 	m_mapFromZeroDSurfaceIndexToConnectedComponentIndex(mapFromZeroDSurfaceIndexToConnectedComponentIndex),
@@ -45,7 +45,7 @@ private:
 	void findNumberOfConnectedComponentsOf3DDomain();
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	const double m_oneResistanceToGiveEachResistor;
-	const double m_elastanceToGiveCentralCapacitor;
+	const std::vector<double> m_elastancesToGiveCentralCapacitors;
 	const double m_initialDomainPressure;
 	const int m_numberOfDirichletBCTSurfaces;
     int m_numberOfOutlets;

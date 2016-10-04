@@ -14,6 +14,7 @@
 #define MAXSURF  199
 #define MAXOUTPUTNODES 1000
 #define MAXREGIONS 255
+#define MAX3DDOMAINS 10
 #define MAXTS   100
 #define MAXTOP   5
 #define MAXQPT   125
@@ -486,7 +487,7 @@
          double ResCriteria;
          double heartparam[16];
          double stabflux_coeff;
-         double zeroDDomainCompliance;
+         double zeroDDomainCompliances[MAX3DDOMAINS+1];
          int icardio;
          int itvn;
          int ipvsq;

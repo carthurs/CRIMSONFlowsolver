@@ -24,7 +24,7 @@ module phcommonvars
     !
     !  The two types of face topology are  1= tri, 2=quad
     !
-    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255, MAXOUTPUTNODES=1000 )
+    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255, MAXOUTPUTNODES=1000, MAX3DDOMAINS = 10 )
   
     ! the common block nomodule holds all the things which have been removed
     ! from different modules
@@ -51,7 +51,7 @@ module phcommonvars
         tissSuppRingDampCoeff, &
         stateFilterCoeff, &
         rescontrol, ResCriteria, heartparam(0:15), stabflux_coeff, &
-        zeroDDomainCompliance
+        zeroDDomainCompliances(0:MAX3DDOMAINS)
     integer           icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP(0:MAXSURF),incpfile, &
         numResistSrfs, nsrflistResist(0:MAXSURF), &
@@ -93,7 +93,7 @@ module phcommonvars
         stateFilterCoeff, &
         rescontrol,ResCriteria, heartparam, &
         stabflux_coeff, &
-        zeroDDomainCompliance, &
+        zeroDDomainCompliances, &
         icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP,incpfile, &
         numResistSrfs, nsrflistResist, &

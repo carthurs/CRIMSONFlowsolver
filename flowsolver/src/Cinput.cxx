@@ -45,27 +45,28 @@ CInput::CInput(const string &fname, const string &default_fname)
 
   // build and merge with default map ( if desired )
   if (!default_fname.empty()) {
-    ifstream infile2( default_fname.c_str(), ios::in);
+    ifstream defaultSolverConfiguration( default_fname.c_str(), ios::in);
 
     map<string, string, caseInsensitveStringLessThanComparator> *default_map  = new map<string,string,caseInsensitveStringLessThanComparator>;
-    vector<string> *default_text = new vector<string>;
+    vector<string> *defaultSolverConfigurationContent = new vector<string>;
 
-    get_input_lines(default_text, infile2);
-    build_map(default_map, default_text);
+    get_input_lines(defaultSolverConfigurationContent, defaultSolverConfiguration);
+    build_map(default_map, defaultSolverConfigurationContent);
 
     // merge the two maps
-    map<string,string>::const_iterator iter = default_map->begin();
-    for ( ; iter != default_map->end(); ++iter ) {
+    for (map<string,string>::const_iterator iter = default_map->begin(); iter != default_map->end(); ++iter )
+    {
       string defkey = iter->first;
       string defval = iter->second;
-      if ( input_map->find(defkey) == input_map->end() ) {
-	(*input_map)[defkey] = defval;
+      if ( input_map->find(defkey) == input_map->end() )
+      {
+	       (*input_map)[defkey] = defval;
       }
     }
-    infile2.close();
+    defaultSolverConfiguration.close();
 
     delete default_map;
-    delete default_text;
+    delete defaultSolverConfigurationContent;
     
   } else  {
     cerr << "Input warning: no input.config file found." << endl;
@@ -118,8 +119,7 @@ void CInput::get_input_lines(vector<string> *text, ifstream &infile)
 
 
 // 
-void CInput::build_map(map<string,string,caseInsensitveStringLessThanComparator> *inmap,
-		      vector<string>     *intext)
+void CInput::build_map(map<string,string,caseInsensitveStringLessThanComparator> *inmap, vector<string> *intext)
 {
   // iterate through input_text of text and separate at :'s
   for (int i = 0 ; i < intext->size(); i++) {
@@ -198,5 +198,4 @@ void CInput::trim_string(string *str)
   if ( pos0 < length-1 ) {
     str->erase(pos0+1, length-pos0);
   }
-
 }

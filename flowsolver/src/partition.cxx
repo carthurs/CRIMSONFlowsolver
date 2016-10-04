@@ -1,6 +1,7 @@
+#include "partition.h"
+
 #include <cstdlib>
 #include <iostream>
-#include <vector>
 #include <string>
 #include <cstring>
 #include <map>
@@ -286,6 +287,22 @@ void Partition_Problem(int numProcs) {
 	if (numProcs < 2) {
 		sprintf(systemcmd, "cp *.1 %s", _directory_name);
 		system(systemcmd);
+
+		if (nomodule.writeSpecificNodalDataEveryTimestep)
+		{
+			const int processorId = 0;
+			// This data structure is expected by writeNodalOutputIndicesForProcessor(). In the multi-processor
+			// case, the first index (entries of the outer vector) gives the CPU index. Here, we're single-process,
+			// so we make a fake structure with the outer vector containing only one entry.
+			std::vector<std::vector<int>> processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices(1);
+			for (int index = 1; index <= nomodule.numberOfNodesForDataOutput; index++) // Fortran array indexing
+			{
+				int outputNodeGlobalIndex = nomodule.indicesOfNodesForDataOutput[index];
+				// Global node indices are sufficient here, as on single-CPU, global node indexing is identical to local indexing.
+				processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(0).push_back(outputNodeGlobalIndex);
+			}
+			writeNodalOutputIndicesForProcessor(processorId, processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices);
+		}
 		return;
 	}
 
@@ -698,17 +715,7 @@ void Partition_Problem(int numProcs) {
 			// to files, one for each processor. This will be read by the processor in question during
 			// the simulation, so that it knows which of its nodes it should output data for.
 			for(int processorId=0; processorId < numProcs ; processorId++ ) {
-		        bzero( (void*)filename, 255 );
-		        ofstream nodalOutputFileStream;
-		        sprintf( filename, "%snodalOutputIndices.dat.%d",_directory_name, processorId);
-		        nodalOutputFileStream.open (filename, ios::out);
-
-		        nodalOutputFileStream << processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).size() << endl;
-		        for(auto outputNodeIterator = processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).begin(); outputNodeIterator != processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).end(); outputNodeIterator++)
-		        {
-		            nodalOutputFileStream << *outputNodeIterator << endl;
-		        }
-		        nodalOutputFileStream.close();
+				writeNodalOutputIndicesForProcessor(processorId, processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices);
 		    }
 
 		    { //scoping unit to avoid errors
@@ -2427,4 +2434,20 @@ void Partition_Problem(int numProcs) {
 	//if ( !chdir( _directory_name ) ) /* cd successful */
 	//	cout <<" changing to the problem directory " << _directory_name << endl;
 	ParallelData.clear();
+}
+
+
+void writeNodalOutputIndicesForProcessor(const int processorId, const std::vector<std::vector<int>>& processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in)
+{
+    bzero( (void*)filename, 255 );
+    ofstream nodalOutputFileStream;
+    sprintf( filename, "%snodalOutputIndices.dat.%d",_directory_name, processorId);
+    nodalOutputFileStream.open (filename, ios::out);
+
+    nodalOutputFileStream << processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in.at(processorId).size() << endl;
+    for(auto outputNodeIterator = processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in.at(processorId).begin(); outputNodeIterator != processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in.at(processorId).end(); outputNodeIterator++)
+    {
+        nodalOutputFileStream << *outputNodeIterator << endl;
+    }
+    nodalOutputFileStream.close();
 }

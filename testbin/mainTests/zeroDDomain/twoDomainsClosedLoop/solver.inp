@@ -4,6 +4,7 @@ Geombc Has Node Tags: False
 Simulate in Purely Zero Dimensions: True
 Number of Connected Components of 3D Domain: 2
 List of Surfaces In Each Connected Component Separated by -1s: 4 6 -1 5 7
+Zero Dimensional Domain Compliance: 0.102461 0.102461
 
 # CARDIOVASCULAR MODELING PARAMETERS
 # {

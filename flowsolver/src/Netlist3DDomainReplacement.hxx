@@ -11,12 +11,12 @@
 class Netlist3DDomainReplacement
 {
 public:
-	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromZeroDSurfaceIndexToConnectedComponentIndex, const int startingTimestepIndex, const int numberOfDirichletBCTSurfaces, const int numberOfTimestepsBetweenRestarts)
+	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const std::vector<double>& compliancesToGiveToCentralCapacitors, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromZeroDSurfaceIndexToConnectedComponentIndex, const int startingTimestepIndex, const int numberOfDirichletBCTSurfaces, const int numberOfTimestepsBetweenRestarts)
 	: m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions),
 	m_startingTimestepIndex(startingTimestepIndex)
 	{
 		bool thisIsARestartedSimulation = false; //\todo fix this!
-		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure, mapFromZeroDSurfaceIndexToConnectedComponentIndex, startingTimestepIndex, numberOfDirichletBCTSurfaces));
+		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, compliancesToGiveToCentralCapacitors, initialDomainPressure, mapFromZeroDSurfaceIndexToConnectedComponentIndex, startingTimestepIndex, numberOfDirichletBCTSurfaces));
 		initialiseModel(delt, numberOfTimestepsBetweenRestarts);
 	}
 

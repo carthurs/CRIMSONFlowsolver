@@ -1048,16 +1048,6 @@ int input_fform() {
 		      nomodule.inputHRandSP = int(0);
 		    }
 
-		    if(boost::iequals((string)inp.GetValue("Simulate in Purely Zero Dimensions"), "True"))
-		    {
-		      nomodule.pureZeroDSimulation = int(1);
-		      nomodule.zeroDDomainCompliance = inp.GetValue("Zero Dimensional Domain Compliance");
-		    }
-		    else
-		    {
-		      nomodule.pureZeroDSimulation = int(0);
-		    }
-
 			if (nomodule.numVisFluxSrfs = inp.GetValue(
 					"Number of Surfaces which zero out in-plane tractions")) {
 				ivec = inp.GetValue(
@@ -1120,6 +1110,27 @@ int input_fform() {
 					}
 				}
 			}
+
+			if(boost::iequals((string)inp.GetValue("Simulate in Purely Zero Dimensions"), "True"))
+		    {
+		    	nomodule.pureZeroDSimulation = int(1);
+		    	std::vector<double> readCompliancesList = inp.GetValue("Zero Dimensional Domain Compliance");
+		    	if (readCompliancesList.size() != nomodule.num3DConnectedComponents)
+		    	{
+		    		throw std::runtime_error("Number of compliances given in input value \"Zero Dimensional Domain Compliance\" does not match the number of connected components of the domain.");
+		    	}
+		        for (i = 0; i < MAX3DDOMAINS + 1; i++)
+		        {
+		      	  nomodule.zeroDDomainCompliances[i] = 0;
+		        }
+				for (i = 0; i < nomodule.num3DConnectedComponents; i++) {
+					nomodule.zeroDDomainCompliances[i + 1] = readCompliancesList.at(i);
+				}
+		    }
+		    else
+		    {
+		      nomodule.pureZeroDSimulation = int(0);
+		    }
 
 			if (boost::iequals((string) inp.GetValue("Lagrange Multipliers"), "True"))
 				nomodule.Lagrange = 1;

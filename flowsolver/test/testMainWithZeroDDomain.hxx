@@ -144,7 +144,13 @@
 				    throw;
 				}
 
-				PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, nomodule.zeroDDomainCompliance);
+				std::vector<double> zeroDDomainCompliancesForEachConnectedComponent;
+                double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents + 1;
+			    zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances + 1, zeroDDomainCompliancesEndPointer);
+
+			    std::cout << std::endl;
+
+				PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, zeroDDomainCompliancesForEachConnectedComponent);
 				try {
 					pureZeroDDriver.setDelt(inpdat.Delt[0]);
 				    pureZeroDDriver.setAlfi(timdat.alfi);

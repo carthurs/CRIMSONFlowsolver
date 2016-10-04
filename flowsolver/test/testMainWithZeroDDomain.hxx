@@ -145,7 +145,7 @@
 				}
 
 				std::vector<double> zeroDDomainCompliancesForEachConnectedComponent;
-                double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents + 1;
+                double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents + 1; // Fortran indexing
 			    zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances + 1, zeroDDomainCompliancesEndPointer);
 
 			    std::cout << std::endl;

@@ -160,8 +160,8 @@ int main(int argc, char **argv) {
 
       // numDirCalcSrfs = number of prescribed flow (i.e. bct; dirichlet) surfaces
       std::vector<double> zeroDDomainCompliancesForEachConnectedComponent;
-      double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents;
-      zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances, zeroDDomainCompliancesEndPointer);
+      double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents + 1; // Fortran indexing
+      zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances + 1, zeroDDomainCompliancesEndPointer);
 
       PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, zeroDDomainCompliancesForEachConnectedComponent);
 

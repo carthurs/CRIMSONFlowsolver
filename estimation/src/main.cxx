@@ -35,6 +35,7 @@ using namespace std;
 static char help[] = "Pure Flowsolver.\n\n";
 
 int main(int argc, char **argv) {
+   std::cout << "FLOWSOLVER STARTING" << std::endl;
 
    kalmanFilterActive.kalmanFilterOn = false;
    int rank;

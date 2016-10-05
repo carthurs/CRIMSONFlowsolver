@@ -309,7 +309,7 @@
 !        write (23,*) indsym(5,5)
 !        write (23,*) " time,   CFLfld, CFLsld, Dtgl,   Dtmax,  alpha,"
 !        write (23,*)  time,   CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
-!                        etol,   lstep,  ifunc,  itseq,  istep,  iter, &
+!                        etol,   currentTimestepIndex,  ifunc,  itseq,  istep,  iter, &
 !                        nitr,   almi,   alfi,   gami,   flmpl,  flmpr, &
 !                        dtol(2)
 !        write (23,*) "LCtime, ntseq"

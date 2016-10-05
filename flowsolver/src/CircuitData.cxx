@@ -1,7 +1,6 @@
 #include "CircuitData.hxx"
 #include "indexShifters.hxx"
 #include <stdexcept>
-#include <float.h>
 #include <algorithm>
 #include <stack>
 #include <sstream>
@@ -9,42 +8,6 @@
 
 #include "common_c.h"
 
-
-bool CircuitComponent::hasNonnegativePressureGradientOrForwardFlow() // whether the diode should be open
-{
-	// We use a tolerance on these floating-point comparisons here
-	// because the errors in the netlist linear system solves
-	// for the boundary conditions can be of order 1e-9.
-	const double floatingPointTolerance = 1e-8;
-	// std::cout << "start and end node pressures for switching in hasNonnegativePressureGradientOrForwardFlow: " << startNode->getPressure() << " " << endNode->getPressure() << " difference is: " << startNode->getPressure() - endNode->getPressure() << std::endl;
-	// std::cout << "m_connectsToNodeAtInterface: " << m_connectsToNodeAtInterface << std::endl;
-	bool hasNonnegativePressureGradient = (startNode->getPressure() - endNode->getPressure() >= 0.0 - floatingPointTolerance);
-	bool hasForwardFlow;
-	// Diode closure is enforced by setting diode resistance to DBL_MAX, so there remains a small flow on the order 1e-308 across a closed diode.
-	if (m_connectsToNodeAtInterface)
-	{
-		hasForwardFlow = (m_signForPrescribed3DInterfaceFlow*flow >= floatingPointTolerance);
-	}
-	else
-	{
-		hasForwardFlow = (flow >= floatingPointTolerance);
-	}
-	// std::cout << "flow in hasNonnegativePressureGradientOrForwardFlow:" << flow << " and sign " << m_signForPrescribed3DInterfaceFlow << std::endl;
-	// std::cout << "hasNonnegativePressureGradient: " << hasNonnegativePressureGradient << std::endl;
-	// std::cout << "hasForwardFlow: " << hasForwardFlow << std::endl;
-
-	return (hasNonnegativePressureGradient || hasForwardFlow);
-}
-
-boost::shared_ptr<CircuitPressureNode> CircuitComponent::getStartNode()
-{
-	return startNode;
-}
-
-boost::shared_ptr<CircuitPressureNode> CircuitComponent::getEndNode()
-{
-	return endNode;
-}
 
 void CircuitData::rebuildCircuitMetadata()
 {
@@ -176,7 +139,7 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
     	mapOfPressureNodes.at(threeDInterfaceNodeIndex)->setIsAtBoundary();
     } catch (const std::exception& e) {
     	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-    	throw e;
+    	throw;
     }
 
 	int numberOfComponentsTaggedFor3DFlow = 0; //a counter to verify there exists a unique 3D flow-tagged component
@@ -207,11 +170,13 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 			// want to give to the diode.)
 			if (startNodeIsAt3Dinterface)
 			{
-				(*component)->m_signForPrescribed3DInterfaceFlow = 1.0;
+				m_signForPrescribed3DInterfaceFlow = 1.0;
+				std::cout << "start node is at 3d interface" << std::endl;
 			}
 			else if (endNodeIsAt3Dinterface)
 			{
-				(*component)->m_signForPrescribed3DInterfaceFlow = -1.0;
+				m_signForPrescribed3DInterfaceFlow = -1.0;
+				std::cout << "end node is at 3d interface" << std::endl;
 			}
 			else
 			{
@@ -297,6 +262,11 @@ void CircuitData::initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeI
 
 }
 
+double CircuitData::getSignForPrescribed3DInterfaceFlow() const
+{
+	return m_signForPrescribed3DInterfaceFlow;
+}
+
 void CircuitData::rebuildCircuitPressureNodeMap()
 {
 	mapOfPressureNodes.clear();
@@ -346,7 +316,7 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseCons
 			mapOfPressureNodes.at(indexInInputData_in)->listOfComponentstAttachedToThisNode.push_back(componentToPushBack);
 		} catch (const std::exception& e) {
 	    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    	throw e;
+	    	throw;
 	    }
 		
 		// Return this existing node:
@@ -355,7 +325,7 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::ifExistsGetNodeOtherwiseCons
 			returnValue = mapOfPressureNodes.at(indexInInputData_in);
 		} catch (const std::exception& e) {
 	    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    	throw e;
+	    	throw;
 	    }
 
 		return returnValue;
@@ -405,102 +375,6 @@ void CircuitData::switchDiodeStatesIfNecessary()
 	}
 }
 
-bool CircuitComponent::hasUserDefinedExternalPythonScriptParameterController() const
-{
-	return m_hasPythonParameterController;
-}
-
-std::string CircuitComponent::getPythonControllerName(const parameter_controller_t controllerType) const
-{
-	assert(m_hasPythonParameterController);
-	return m_pythonParameterControllerNames.at(controllerType);
-}
-
-// Sets the name "whateverName" of the parameter controller to look for in the
-// working directory: whateverName.py, containing class whateverName,
-// with class method:
-// newParamterValue = updateControl(self, oldParameterValue, delt).
-//
-// This should be a Python script.
-void CircuitComponent::addPythonControllerName(const parameter_controller_t controllerType, const std::string pythonParameterControllerName)
-{
-	m_hasPythonParameterController = true;
-	m_pythonParameterControllerNames.insert(std::make_pair(controllerType, pythonParameterControllerName));
-}
-
-
-bool CircuitComponent::permitsFlow() const
-{
-	return m_permitsFlow;
-}
-
-void CircuitComponent::enableDiodeFlow()
-{
-	assert(m_type == Component_Diode);
-	m_currentParameterValue = parameterValueFromInputData; // For enforcing zero resistance when the diode is open
-	m_permitsFlow = true;
-}
-
-void CircuitComponent::disableDiodeFlow()
-{
-	assert(m_type == Component_Diode);
-	m_currentParameterValue = DBL_MAX; // For enforcing "infinite" resistance when the diode is open//NOT USED
-	m_permitsFlow = false;
-}
-
-double* CircuitComponent::getFlowPointer()
-{
-	double* flowPointer = &flow;
-	return flowPointer;
-}
-
-void CircuitComponent::setRestartFlowFromHistory()
-{
-	flow = m_entireFlowHistory.back();
-}
-
-double* CircuitPressureNode::getPressurePointer()
-{
-	double* pressurePointer = &pressure;
-	return pressurePointer;
-}
-
-double* CircuitPressureNode::getPointerToFixedPressurePrescription()
-{
-	// we should only be accessing this pointer for modification if it is a fixed-type pressure prescription
-	assert(m_prescribedPressureType == Pressure_Fixed);
-	double* pressurePointer = &m_fixedPressure;
-	return pressurePointer;
-}
-
-bool CircuitPressureNode::hasUserDefinedExternalPythonScriptParameterController() const
-{
-	return m_hasPythonParameterController;
-}
-
-bool CircuitComponent::hasPrescribedFlow() const
-{
-	return m_hasPrescribedFlow;
-}
-
-std::string CircuitPressureNode::getPythonControllerName() const
-{
-	assert(m_hasPythonParameterController);
-	return m_pythonParameterControllerName;
-}
-
-// Sets the name "whateverName" of the nodal pressure controller to look for in the
-// working directory: whateverName.py, containing class whateverName,
-// with class method:
-// newParamterValue = updateControl(self, oldParameterValue, delt).
-//
-// This should be a Python script.
-void CircuitPressureNode::setPythonControllerName(const std::string pythonParameterControllerName)
-{
-	m_hasPythonParameterController = true;
-	m_pythonParameterControllerName = pythonParameterControllerName;
-}
-
 // In particular, this is for starting a simulation with all diodes shut, for stability.
 void CircuitData::closeAllDiodes()
 {
@@ -511,44 +385,6 @@ void CircuitData::closeAllDiodes()
 			(*component)->disableDiodeFlow();
 		}
 	}
-}
-
-int CircuitComponent::getIndex() const
-{
-	return m_indexInInputData;
-}
-
-void CircuitComponent::setIndex(const int index)
-{
-	m_indexInInputData = index;
-}
-
-double CircuitComponent::getPrescribedFlow() const
-{
-	assert(m_hasPrescribedFlow);
-	return m_valueOfPrescribedFlow;
-}
-
-void CircuitComponent::setPrescribedFlow(const double prescribedFlow)
-{
-	m_valueOfPrescribedFlow = prescribedFlow;
-	m_hasPrescribedFlow = true;
-}
-
-double* CircuitComponent::getPointerToFixedFlowPrescription()
-{
-	assert(m_hasPrescribedFlow);
-	return &m_valueOfPrescribedFlow;
-}
-
-void CircuitComponent::setHasHistoryVolume(const bool hasHistoryVolume)
-{
-	m_hasHistoryVolume = hasHistoryVolume;
-}
-
-bool CircuitComponent::getHasHistoryVolume()
-{
-	return m_hasHistoryVolume;
 }
 
 void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
@@ -573,7 +409,7 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 		toPushOntoStack = boost::weak_ptr<CircuitComponent>(mapOfComponents.at(indexOfComponentAt3DInterface));
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
 	componentsNeedingChecking.push(toPushOntoStack);
 	// To keep track of which components have been already checked:
@@ -621,7 +457,7 @@ void CircuitData::detectWhetherClosedDiodesStopAllFlowAt3DInterface()
 				}
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 	}
 	// Check whether flow has just become possible across this boundary (or vice-versa), when compared to the previous time-step.
@@ -755,33 +591,8 @@ int CircuitData::getIndexOfNodeAtInterface()
 		return m_indexOfNodeAt3DInterface.at(0); // The basic netlist boundary condition currently only uses the 0th entry of m_indexOfNodeAt3DInterface.
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
-}
-
-circuit_component_t& CircuitComponent::getType()
-{
-	return m_type;
-}
-
-double* CircuitComponent::getParameterPointer()
-{
-	return &m_currentParameterValue;
-}
-
-void CircuitComponent::setParameterValue(double const parameterValue)
-{
-	m_currentParameterValue = parameterValue;
-}
-
-bool CircuitComponent::connectsToNodeAtInterface()
-{
-	return m_connectsToNodeAtInterface;
-}
-
-void CircuitComponent::setConnectsToNodeAtInterface()
-{
-	m_connectsToNodeAtInterface = true;
 }
 
 inline int CircuitData::toOneIndexing(const int zeroIndexedValue)
@@ -807,7 +618,7 @@ boost::shared_ptr<CircuitComponent> CircuitData::getComponentByInputDataIndex(co
 		return mapOfComponents.at(componentIndex);
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
 }
 
@@ -817,7 +628,7 @@ boost::shared_ptr<CircuitPressureNode> CircuitData::getNodeByInputDataIndex(cons
 		return mapOfPressureNodes.at(componentIndex);
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
 }
 
@@ -874,6 +685,19 @@ std::vector<double*> CircuitData::getCapacitorNodalHistoryPressurePointers() con
 	return capacitorNodalHistoryPressurePointers;
 }
 
+boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> CircuitData::getControlTypesAndComponentIndices() const
+{
+	boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> controlTypesAndComponentIndices(new std::vector<std::pair<parameter_controller_t, int>>());
+    for (auto& component : components)
+    {
+        if (component->hasUserDefinedExternalPythonScriptParameterController())
+        {
+        	controlTypesAndComponentIndices->push_back(std::make_pair(component->getControlType(), component->getIndex()));
+        }
+    }
+    return controlTypesAndComponentIndices;
+}
+
 bool Netlist3DDomainReplacementCircuitData::hasPrescribedFlowAcrossInterface() const
 {
 	// Negate and return:
@@ -908,7 +732,7 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
     		mapOfPressureNodes.at(*threeDInterfaceNodeIndex)->setIsAtBoundary();
     	} catch (const std::exception& e) {
     	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-    	    throw e;
+    	    throw;
     	}
     }
 
@@ -936,11 +760,11 @@ void Netlist3DDomainReplacementCircuitData::initialiseNodesAndComponentsAtInterf
 		// want to give to the diode.)
 		if (startNodeIsAt3Dinterface)
 		{
-			(*component)->m_signForPrescribed3DInterfaceFlow = -1.0;
+			m_signForPrescribed3DInterfaceFlow = -1.0;
 		}
 		else if (endNodeIsAt3Dinterface)
 		{
-			(*component)->m_signForPrescribed3DInterfaceFlow = 1.0;
+			m_signForPrescribed3DInterfaceFlow = 1.0;
 		}
 
 		// // Find which end of the component doesn't link to any other components (and so therefore is at the 3D interface)
@@ -1047,7 +871,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 				flowIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Flow);
 			} catch (const std::exception& e) {
 			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-			    throw e;
+			    throw;
 			}
 			if (flowIsGivenTo0DReplacementDomainAtThisBoundary)
 			{
@@ -1055,7 +879,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 					givePrescribedFlowToBoundaryComponent(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 			}
 			bool flowWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary = (mapOfPrescribedFlowComponents.find(toOneIndexing(componentAtBoundaryIndex)) == mapOfPrescribedFlowComponents.end());
@@ -1102,7 +926,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 				pressureIsGivenTo0DReplacementDomainAtThisBoundary = (boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).first == Boundary_Pressure);
 			} catch (const std::exception& e) {
 			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-			    throw e;
+			    throw;
 			}
 			if(pressureIsGivenTo0DReplacementDomainAtThisBoundary)
 			{
@@ -1110,7 +934,7 @@ void Netlist3DDomainReplacementCircuitData::setBoundaryPrescriptionsAndBoundaryC
 					givePrescribedPressureToBoundaryNode(toOneIndexing(componentAtBoundaryIndex),boundaryFlowsOrPressuresAsAppropriate.at(componentAtBoundaryIndex).second);
 				} catch (const std::exception& e) {
 			    	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-			    	throw e;
+			    	throw;
 		    	}
 			}
 			bool pressureWasPreviouslyNotGivenTo0DReplacementDomainAtThisBoundary = (mapOfPrescribedPressureNodes.find(toOneIndexing(componentAtBoundaryIndex)) == mapOfPrescribedPressureNodes.end());
@@ -1172,7 +996,7 @@ void Netlist3DDomainReplacementCircuitData::givePrescribedPressureToBoundaryNode
 		mapOfPressureNodes.at(nodeIndex)->setPressure(prescribedPressure);
 	} catch (const std::exception& e) {
     	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-    	throw e;
+    	throw;
     }
 }
 
@@ -1182,7 +1006,7 @@ void Netlist3DDomainReplacementCircuitData::givePrescribedFlowToBoundaryComponen
 		mapOfComponents.at(componentIndex)->flow = prescribedFlow;
 	} catch (const std::exception& e) {
     	std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-    	throw e;
+    	throw;
     }
 }
 
@@ -1199,217 +1023,4 @@ void Netlist3DDomainReplacementCircuitData::addToMapOfDpDqResistors(int indexOfR
 bool Netlist3DDomainReplacementCircuitData::isADpDqResistor(const int componentIndex)
 {
 	return (m_mapOfDpDqResistors.count(componentIndex) == 1);
-}
-
-int CircuitPressureNode::getIndex() const
-{
-	return m_indexInInputData;
-}
-
-void CircuitPressureNode::setIsAtBoundary()
-{
-	m_isAtBoundary = true;
-}
-
-bool CircuitPressureNode::isAtBoundary() const
-{
-	return m_isAtBoundary;
-}
-
-double CircuitPressureNode::getPressure()
-{
-	// If this is a prescribed fixed pressure, ensure we reset it to the original input value.
-	// This has the additional benefit of stopping any drift in a supposedly-prescribed value.
-	if (m_prescribedPressureType == Pressure_Fixed)
-	{
-		pressure = m_fixedPressure;
-	}
-	return pressure;
-}
-
-void CircuitPressureNode::setPressure(const double pressure_in)
-{
-	pressure = pressure_in;
-}
-
-void CircuitPressureNode::setPrescribedPressure(const double prescribedPressure)
-{
-	// We only do anything special with fixed-pressure values. There's nothing
-	// to do here with other types of prescribed pressure, as they don't
-	// remain fixed at a single value (so we needn't remember it in m_fixedPressure).
-	if (m_prescribedPressureType == Pressure_Fixed)
-	{
-		m_fixedPressure = prescribedPressure;
-	}
-	else
-	{
-		pressure = prescribedPressure;
-	}
-}
-
-void CircuitPressureNode::setRestartPressureFromHistory()
-{
-	pressure = m_entirePressureHistory.back();
-}
-
-void CircuitPressureNode::setHasHistoryPressure(const bool hasHistoryPressure)
-{
-	m_hasHistoryPressure = hasHistoryPressure;
-}
-
-void CircuitPressureNode::copyPressureToHistoryPressure()
-{
-	std::cout << "setting history pressure to " << getPressure() << " from " << m_historyPressure << std::endl;
-	m_historyPressure = getPressure();
-}
-
-void CircuitPressureNode::copyHistoryPressureToHistoryHistoryPressure()
-{
-	// used with the Kalman filter to store a history pressure from the step before the particle
-	m_historyHistoryPressure = m_historyPressure;
-}
-
-double CircuitPressureNode::getHistoryPressure() const
-{
-	return m_historyPressure;
-}
-
-double CircuitPressureNode::getHistoryHistoryPressure() const
-{
-	// used with the Kalman filter to store a history pressure from the step before the particle
-	return m_historyHistoryPressure;
-}
-
-bool CircuitPressureNode::hasHistoryPressure() const
-{
-	return m_hasHistoryPressure;
-}
-
-circuit_nodal_pressure_prescription_t CircuitPressureNode::getPressurePrescriptionType() const
-{
-	return m_prescribedPressureType;
-}
-
-void CircuitPressureNode::setPressurePrescriptionType(const circuit_nodal_pressure_prescription_t prescribedPressureType)
-{
-	m_prescribedPressureType = prescribedPressureType;
-}
-
-int CircuitPressureNode::getPrescribedPressurePointerIndex() const
-{
-	return m_prescribedPressurePointerIndex;
-}
-
-void CircuitPressureNode::setPrescribedPressurePointerIndex(const int prescribedPressurePointerIndex)
-{
-	m_prescribedPressurePointerIndex = prescribedPressurePointerIndex;
-}
-
-double CircuitPressureNode::getFromPressureHistoryByTimestepIndex(const int timestepIndex) const
-{
-	return m_entirePressureHistory.at(timestepIndex);
-}
-
-void CircuitPressureNode::appendToPressureHistory(const double pressure)
-{
-	m_entirePressureHistory.push_back(pressure);
-}
-
-void VolumeTrackingComponent::recordVolumeInHistory()
-{
-	m_entireVolumeHistory.push_back(m_storedVolume);
-}
-
-double VolumeTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
-{
-	return m_entireVolumeHistory.at(timestep);
-}
-
-void VolumeTrackingComponent::setVolumeHistoryAtTimestep(double historyVolume)
-{
-	m_entireVolumeHistory.push_back(historyVolume);
-}
-
-void VolumeTrackingComponent::setStoredVolume(const double newVolume)
-{
-	m_storedVolume = newVolume;
-}
-// The /proposed/ volume is the one which gets checked for negative (invalid) values
-// so that we can detect such invalid cases, and take steps to remedy.
-void VolumeTrackingComponent::setProposedVolume(const double proposedVolume)
-{
-	m_proposedVolume = proposedVolume;
-}
-double VolumeTrackingComponent::getVolume()
-{
-	return m_storedVolume;
-}
-double* VolumeTrackingComponent::getVolumePointer()
-{
-	return &m_storedVolume;
-}
-double VolumeTrackingComponent::getProposedVolume()
-{
-	std::cout<<"proposed volume was: " << m_proposedVolume << std::endl;
-	return m_proposedVolume;	
-}
-double VolumeTrackingComponent::getHistoryVolume()
-{
-	return m_historyVolume;
-}
-void VolumeTrackingComponent::cycleHistoryVolume()
-{
-	m_historyVolume = m_storedVolume;
-}
-
-double VolumeTrackingComponent::getElastance()
-{
-	return m_currentParameterValue;
-}
-
-bool VolumeTrackingComponent::zeroVolumeShouldBePrescribed()
-{
-	return m_enforceZeroVolumePrescription;
-}
-
-void VolumeTrackingComponent::enforceZeroVolumePrescription()
-{
-	m_enforceZeroVolumePrescription = true;
-}
-
-void VolumeTrackingComponent::resetZeroVolumePrescription()
-{
-	m_enforceZeroVolumePrescription = false;
-}
-
-void VolumeTrackingComponent::setRestartVolumeFromHistory()
-{
-	m_storedVolume = m_entireVolumeHistory.back();
-}
-
-void VolumeTrackingPressureChamber::passPressureToStartNode()
-{
-	m_pressure = (m_storedVolume - m_unstressedVolume)*m_currentParameterValue;
-	std::cout << "m_unstressedVolume: " << m_unstressedVolume << std::endl;
-	std::cout << "compliance set to: " << m_currentParameterValue << std::endl;
-	std::cout << "pressure set to: " << m_pressure << std::endl;
-	startNode->setPressure(m_pressure);
-}
-
-double VolumeTrackingPressureChamber::getUnstressedVolume() 
-{
-	return m_unstressedVolume;
-}
-
-void VolumeTrackingPressureChamber::setStoredVolume(const double newVolume)
-{
-	std::cout << "pre m_storedVolume: " << m_storedVolume << std::endl;
-	m_storedVolume = newVolume;
-	std::cout << "post m_storedVolume: " << m_storedVolume << std::endl;
-	passPressureToStartNode();
-}
-
-double* VolumeTrackingPressureChamber::getUnstressedVolumePointer()
-{
-	return &m_unstressedVolume;
 }

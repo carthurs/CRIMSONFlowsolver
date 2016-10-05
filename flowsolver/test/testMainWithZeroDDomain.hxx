@@ -101,7 +101,7 @@
 						Partition_Problem( m_numProcsTotal );
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 				}
 
@@ -133,7 +133,7 @@
 					callFortranSetupTimeParameters(dummyInitialItseqValue);
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 
 				// initialise reduced order boundary conditions
@@ -141,24 +141,30 @@
 					multidom_initialise();
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 
-				PureZeroDDriver pureZeroDDriver;
+				std::vector<double> zeroDDomainCompliancesForEachConnectedComponent;
+                double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents + 1; // Fortran indexing
+			    zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances + 1, zeroDDomainCompliancesEndPointer);
+
+			    std::cout << std::endl;
+
+				PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, zeroDDomainCompliancesForEachConnectedComponent);
 				try {
 					pureZeroDDriver.setDelt(inpdat.Delt[0]);
 				    pureZeroDDriver.setAlfi(timdat.alfi);
-				    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
+				    pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.currentTimestepIndex);
 				    pureZeroDDriver.setNtout(1);
 	
-				    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
+				    pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces, nomodule.nsrflistDirCalc);
 	
 					pureZeroDDriver.init();
 	
 					multidomSetupControlSystems();
 				} catch (const std::exception& e) {
 				    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-				    throw e;
+				    throw;
 				}
 
 				// pointer manager?      
@@ -170,25 +176,25 @@
 						pureZeroDDriver.iter_init();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 					try {
 						pureZeroDDriver.iter_step();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 					try {
 						pureZeroDDriver.iter_finalize();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 					try {
 						multidom_iter_finalise();
 					} catch (const std::exception& e) {
 					    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-					    throw e;
+					    throw;
 					}
 				}
 

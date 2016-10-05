@@ -9,7 +9,9 @@
 class PureZeroDDriver
 {
 public:
-	PureZeroDDriver()
+	PureZeroDDriver(const int numberOfDirichletSurfaces, const std::vector<double>& centralCapacitorsCompliances) :
+	m_numberOfDirichletSurfaces(numberOfDirichletSurfaces),
+	m_compliancesToGiveCentralCapacitors(centralCapacitorsCompliances)
 	{
 		boundaryConditionManager_instance = boundaryConditionManager::Instance();
 		checkIfThisIsARestartedSimulation();
@@ -17,7 +19,7 @@ public:
 		m_deltHasBeenSet = false;
 		m_alfiHasBeenSet = false;
 		m_hstepHasBeenSet = false;
-		m_ntoutHasBeenSet = false;
+		m_numberOfTimestepsBetweenRestartsHasBeenSet = false;
 		m_mapFromNetlistIndexToConnectedComponentsHasBeenSet = false;
 	}
 	void init();
@@ -29,8 +31,8 @@ public:
 	void setDelt(const double delt);
 	void setAlfi(const double alfi);
 	void setHstep(const int hstep);
-	void setNtout(const int ntout);
-	void setupConnectedComponents(const int num3DConnectedComponents, const int* const surfacesOfEachConnectedComponent, const int* const indicesOfNetlistSurfaces);
+	void setNtout(const int numberOfTimestepsBetweenRestarts);
+	void setupConnectedComponents(const int num3DConnectedComponents, const int* const surfacesOfEachConnectedComponent, const int* const indicesOfNetlistSurfaces, const int* const indicesOfDirichletSurfaces);
 
 private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make
@@ -51,16 +53,21 @@ private:
 	double m_alfi;
 	double m_delt;
 	int m_hstep;
-	int m_ntout;
+	int m_numberOfTimestepsBetweenRestarts;
+	const int m_numberOfDirichletSurfaces;
+	const std::vector<double> m_compliancesToGiveCentralCapacitors;
 
 	int m_numberOfNetlistsUsedAsBoundaryConditions;
 
-	std::map<int,int> m_mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex;
+	// the zero-D surfaces are just indexed by consecutive integers, staring from 1.
+	// This is used for internal purposes only - the inlets/outlets still have the surface index
+	// of their corresponding surface in the 3D model.
+	std::map<int,int> m_mapFromZeroDSurfaceIndexToConnectedComponentIndex;
 
 	bool m_deltHasBeenSet;
 	bool m_alfiHasBeenSet;
 	bool m_hstepHasBeenSet;
-	bool m_ntoutHasBeenSet;
+	bool m_numberOfTimestepsBetweenRestartsHasBeenSet;
 	bool m_mapFromNetlistIndexToConnectedComponentsHasBeenSet;
 
 	void placePressuresAndFlowsInStorageArrays_toGiveToBoundaryConditions(std::vector<double> boundaryPressures, std::vector<double> boundaryFlows);

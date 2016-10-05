@@ -42,9 +42,8 @@ bool abstractFileReader::readNextLine()
 
 	// Read the next line from the file
 	m_currentLine.clear();
-	bool fileNotEnded;
 
-	fileNotEnded = !(std::getline(*mp_file,m_currentLine).eof());
+	bool fileNotEnded = std::getline(*mp_file,m_currentLine);
 
 	// If the end of the file had not been reached before the above read:
 	if (fileNotEnded)
@@ -54,7 +53,7 @@ bool abstractFileReader::readNextLine()
 		while(m_currentLine.compare(0,1,"#") == int(0))
 		{
 			m_currentLine.clear();
-			fileNotEnded = !(std::getline(*mp_file,m_currentLine).eof());
+			fileNotEnded = std::getline(*mp_file,m_currentLine);
 		}
 
 		if (fileNotEnded)
@@ -86,7 +85,7 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 {
 	assert(m_hasNumberOfColumns);
 	int index;
-	double value;
+	double doubleJustRead;
 
 	m_dataReadFromFile_line.clear();
 	// Get all the data entries from a single line of the file.
@@ -95,10 +94,10 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 	// which is newly cleared on each call to this function.
  	for (int currentColumn=0; currentColumn<m_numColumns; currentColumn++)
  	{
- 		value = 0.0;
+ 		doubleJustRead = 0.0;
  		if (!mp_file->fail())
  		{
- 			*mp_file >> value;
+ 			*mp_file >> doubleJustRead;
  		}
  		else
 		{
@@ -111,12 +110,12 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 	 		if (currentColumn>0)
 	 		{
 	 			std::stringstream error;
-	 			error << "File " << m_fileName << " terminated early.";
+	 			error << "File " << m_fileName << " terminated early. Zero-indexed last column read was " << currentColumn << " with value " << doubleJustRead << ".";
 				throw std::runtime_error(error.str());
 	 		}
 	 		return false;
 	 	}
- 		m_dataReadFromFile_line.push_back(value);
+ 		m_dataReadFromFile_line.push_back(doubleJustRead);
  	}
 
  	// return false case is guarded by an if above
@@ -163,10 +162,11 @@ double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 
 	double returnValue;
 	try {
-		returnValue = ((m_dataReadFromFile.find(timestepNumber))->second).at(columnIndex);
+		std::vector<double> fullRowOfData = m_dataReadFromFile.at(timestepNumber);
+		returnValue = (fullRowOfData).at(columnIndex);
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
 
 	return returnValue;
@@ -492,7 +492,11 @@ void NetlistReader::readCircuitStructure()
 		}
 		else
 		{
-			throw std::runtime_error("ERROR: Unknown netlist component type. This often indicates a malformed netlist_surfaces.dat.\n");
+			std::stringstream errorMessage;
+			errorMessage << "ERROR: Unknown netlist component type. This often indicates a malformed ";
+			errorMessage << m_fileName;
+			errorMessage << std::endl;
+			throw std::runtime_error(errorMessage.str());
 		}
 
 		readNextLine();
@@ -508,8 +512,12 @@ void NetlistReader::readCircuitStructure()
 		if (tempComponentTypes.back() == Component_VolumeTracking || tempComponentTypes.back() == Component_VolumeTrackingPressureChamber)
 		{
 			if (mp_currentLineSplitBySpaces->size() < 2)
-			{ 
-				throw std::runtime_error("EE: Insufficient parameters given for one of the netlist volume-tracking components.");
+			{
+				std::stringstream errorMessage;
+				errorMessage << "EE: Insufficient parameters given for one of the netlist volume-tracking components in file ";
+				errorMessage << m_fileName;
+				errorMessage << std::endl;
+				throw std::runtime_error(errorMessage.str());
 			}
 
 			tempContainer.setInitialVolume(atof(mp_currentLineSplitBySpaces->at(1).c_str()));
@@ -565,7 +573,11 @@ void NetlistReader::readPrescribedPressureTypes()
 		}
 		else
 		{
-			throw std::runtime_error("EE: Unknown netlist nodal pressure prescription. This often indicates a malformed netlist_surfaces.dat.");
+			std::stringstream errorMessage;
+			errorMessage << "EE: Unknown netlist nodal pressure prescription. This often indicates a malformed ";
+			errorMessage << m_fileName;
+			errorMessage << std::endl;
+			throw std::runtime_error(errorMessage.str());
 		}
 	}
 	m_typeOfPrescribedPressures.push_back(tempTypeOfPrescribedPressures);
@@ -612,7 +624,11 @@ void NetlistReader::readPrescribedFlowTypes()
 		}
 		else
 		{
-			throw std::runtime_error("ERROR: Unknown netlist component flow prescription. This often indicates a malformed netlist_surfaces.dat.");
+			std::stringstream errorMessage;
+			errorMessage << "ERROR: Unknown netlist component flow prescription. This often indicates a malformed ";
+			errorMessage << m_fileName;
+			errorMessage << std::endl;
+			throw std::runtime_error(errorMessage.str());
 		}
 	}
 	m_typeOfPrescribedFlows.push_back(tempTypeOfPrescribedFlows);
@@ -680,7 +696,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			std::stringstream error;
 			error << "EE: Unknown component control type found during read of netlist surface " << m_indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+			error << "This may just indicate a malformed " << m_fileName << std::endl;
 			throw std::runtime_error(error.str());
 		}
 		componentControlTypesForThisSurface.insert( std::make_pair(componentIndex,controlType) );
@@ -716,7 +732,7 @@ void NetlistReader::readControlSystemPrescriptions()
 		{
 			std::stringstream error;
 			error << "EE: Unknown node control type found during read of netlist surface " << m_indexOfNetlistCurrentlyBeingReadInFile << ", as indexed by order of appearance in netlist_surfaces.dat." << std::endl;
-			error << "This may just indicate a malformed netlist_surfaces.dat" << std::endl;
+			error << "This may just indicate a malformed " << m_fileName << std::endl;
 			throw std::runtime_error(error.str());
 		}
 		int nodeIndex = atoi(mp_currentLineSplitBySpaces->at(0).c_str());

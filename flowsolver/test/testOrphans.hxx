@@ -25,7 +25,7 @@
 
 	  testOrphans() {
 	  	// get the boundary condition manager
-	  	timdat.lstep = 0; // this is needed because the boundaryConditionManager constructor looks for it explicitly!
+	  	timdat.currentTimestepIndex = 0; // this is needed because the boundaryConditionManager constructor looks for it explicitly!
   		boundaryConditionManager_instance = boundaryConditionManager::Instance();
   		overrideMissingDataForTesting();
 	  }
@@ -100,7 +100,7 @@
 	  	//
 	  	// Please document each override very carefully, and write a note to the console!
 
-	  	// This is because timdat.lstep is used to determine whether we're restarting a simulation
+	  	// This is because timdat.currentTimestepIndex is used to determine whether we're restarting a simulation
 	  	// and we're not doing that during tests.
 	  	std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
 	  	std::cout << "Information -- The overrides are in testOrphans.hxx." << std::endl;

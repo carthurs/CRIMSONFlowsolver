@@ -35,7 +35,7 @@ double* fortranBoundaryDataPointerManager::getBoundaryFlows(int surfaceIndex)
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
 	    std::cout << "This may mean multidomain.dat is missing." << std::endl;
-	    throw e;
+	    throw;
 	}
 }
 double* fortranBoundaryDataPointerManager::getBoundaryPressures(int surfaceIndex)
@@ -45,7 +45,7 @@ double* fortranBoundaryDataPointerManager::getBoundaryPressures(int surfaceIndex
 		return m_boundaryPressures.at(surfaceIndex);
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
 }
 

@@ -1,0 +1,274 @@
+###########################################################################################
+# buildoptions.py 
+# 
+# This file defines all options related to building CRIMSON
+# Optimisation is on by default. 
+# To build create a debug build add the option debug=1
+# For example: "scons -j3 debug=1" will execute a debug build using 3 parallel build jobs 
+###########################################################################################
+
+import sys
+import os 
+
+SHELL           = '/bin/sh'
+CXX             = 'mpicxx'
+CC              = 'mpicc'
+F90             = 'mpif90'
+F77             = 'mpif90'
+
+#################################
+# Select Intel of GNU archiever #
+#################################
+
+AR              = 'xiar' # Intel
+#AR              = 'ar'  # GNU
+ 
+GLOBAL_DEFINES = ['-Dunix']
+ 
+MAKE_WITH_PRESOLVER = 1
+MAKE_WITH_POSTSOLVER = 1
+MAKE_WITH_FLOWSOLVER = 1
+MAKE_WITH_ESTIMATOR = 1
+
+DISABLE_ACUSIM = 1
+
+WITH_ELECTRIC_FENCE = 0
+
+#######################################################
+# Extra console output.                               #
+# These options should be set to zero on the SGI/FLUX #
+# #####################################################
+
+EXTRA_CONSOLE_OUTPUT_ON = 0
+DEBUG_ALE_ON = 0
+
+#############################
+# Select Intel or GNU flags # 
+#############################
+
+# Intel flags
+
+OPT_FLAGS       = ['-O3', '-std=c++0x', '-DNDEBUG','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
+OPT_FFLAGS      = ['-O3','-align','array64byte','-fpp','-D\'DEBUG_ALE='+str(DEBUG_ALE_ON)+'\'','-D\'EXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)+'\'']
+DEBUG_FLAGS     = ['-O0','-g','-std=c++0x','-pthread','-Wall','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
+DEBUG_FFLAGS    = ['-O0','-g','-align','array64byte','-traceback','-fp-stack-check','-fpp','-DDEBUG_ALE='+str(DEBUG_ALE_ON),'-DEXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)]
+
+# GNU flags
+#
+# Note that the 64 bit alignment should be done automatically with gfortran. 
+# "GFortran translates ALLOCATE calls using malloc(), so if your system malloc() returns correctly aligned memory"
+# See https://gcc.gnu.org/ml/fortran/2007-05/msg00494.html
+#
+# Other users post about using the flag -m64, but tests are inconclusive if this is faster/different from the default behaviour	
+# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=24261
+
+# OPT_FLAGS       = ['-O3', '-std=c++0x', '-DNDEBUG','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
+# OPT_FFLAGS      = ['-ffree-line-length-none','-O3','-cpp','-D\'DEBUG_ALE='+str(DEBUG_ALE_ON)+'\'','-D\'EXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)+'\'']
+# DEBUG_FLAGS     = ['-O0','-g','-std=c++0x','-pthread','-Wall','-DDEBUG_ALE='+str(DEBUG_ALE_ON)]
+# DEBUG_FFLAGS    = ['-ffree-line-length-none','-g','-fbacktrace','-cpp','-DDEBUG_ALE='+str(DEBUG_ALE_ON),'-DEXTRA_CONSOLE_OUTPUT='+str(EXTRA_CONSOLE_OUTPUT_ON)]  #-cpp #-fno-underscoring
+
+if DISABLE_ACUSIM==1:
+	OPT_FLAGS.append('-DDISABLE_ACUSIM_TESTS')
+	DEBUG_FLAGS.append('-DDISABLE_ACUSIM_TESTS')
+
+ADDITIONAL_LINKFLAGS = []
+
+###################################
+# Python include and library list #
+###################################
+
+PYTHON_INCDIR = ['/usr/local/python/2.7.5-gcc/include/python2.7']
+PYTHON_LIBSDIR = ['/usr/local/python/2.7.5-gcc/lib']
+PYTHON_LIBSLIST = ['dl','util','m','python2.7']
+PYTHON_LDMODULEFLAGS = ['-Wl,-export-dynamic','-Wl,-Bsymbolic-functions']
+
+#################### 
+# Set global flags #
+#################### 
+
+BUILDFLAGS      = GLOBAL_DEFINES
+
+CXX_LIBS    = ''
+CXX_LIBS    = '-lrt'
+F90_LIBS    = ['']
+
+################################### 
+# Set root of CRIMSON source tree #
+################################### 
+
+HOME_DIR = '/vlsci/VR0285/jmynard/CRIMSON-Flowsolver/simvascular_flowsolver_estimator'
+EXTERNAL_LIB_DIR = HOME_DIR+'/external/x64-linux'
+ 
+SOLVERIO_INCDIR   = [HOME_DIR+'/solverio/src']
+SOLVERIO_LIBSDIR  = [HOME_DIR+'/lib']
+SOLVERIO_LIBSLIST = ['simvascular_solverio']
+
+FLOWSOLVER_INCDIR = [HOME_DIR+'/flowsolver/src']
+FLOWSOLVER_LIBSDIR = [HOME_DIR+'/lib']
+FLOWSOLVER_LIBSLIST = ['simvascular_flowsolver']
+
+ESTIMATOR_INCDIR = [HOME_DIR+'/estimation/src']
+ 
+##########################################
+# Select Intel or GNU run time libraries # 
+##########################################
+
+INTEL_TOP      = '/usr/local/intel/composer_xe_2013.5.192/compiler/'
+INTEL_INCDIR   = [INTEL_TOP+'/include']
+INTEL_LIBSDIR  = [INTEL_TOP+'/lib/intel64']
+INTEL_LIBSLIST = ['ifcore','ifport','imf','irc']
+
+GNU_TOP      = ['']
+GNU_INCDIR   = ['']
+GNU_LIBSDIR  = ['/usr/lib/gcc/ppc64le-redhat-linux/4.8.5/'] 
+GNU_LIBSLIST = ['gfortran'] 
+
+RUNTIME_INCDIR   = INTEL_INCDIR 
+RUNTIME_LIBSDIR  = INTEL_LIBSDIR
+RUNTIME_LIBSLIST = INTEL_LIBSLIST
+
+################################
+# MPI include and library list #
+################################
+
+MPI_TOP        = '/usr/local/OpenMPI-intel'
+MPI_INCDIR     = [MPI_TOP+'/include']
+MPI_LIBSDIR    = [MPI_TOP+'/lib']
+MPI_LIBSLIST   = ['mpi','mpi_mpifh']
+
+####################################
+# Metis 4 include and library list #
+####################################
+
+METIS_TOP      = EXTERNAL_LIB_DIR+'/metis-4.0'
+METIS_INCDIR   = [METIS_TOP]
+METIS_LIBSDIR  = [METIS_TOP]
+METIS_LIBSLIST = ['metis']
+ 
+#################################################
+# LesLib define flags, include and library list #
+# 
+# Define options : 
+#    -DACUSIM_LINUX
+#    -DACUSIM_LESLIB_VER_1_4
+#    -DNO_ACUSIM
+#
+# Note, if building for ConFlux, use NO_ACUSIM #
+################################################
+
+LESLIB_DEFS    = ['-DACUSIM_LINUX','-DACUSIM_LESLIB_VER_1_4']
+# LESLIB_DEFS    = ['-DNO_ACUSIM']
+LESLIB_TOP     = EXTERNAL_LIB_DIR+'/leslib-1.4'
+LESLIB_INCDIR  = [LESLIB_TOP]
+LESLIB_LIBSDIR = [LESLIB_TOP,LESLIB_TOP+'/deps']
+LESLIB_LIBSLIST= ['les','ifcore','ifport','imf','irc'] 
+
+######################
+# Flowsolver library #
+######################
+
+SIMVASCULAR_COMMON_LIBSLIST = ['simvascular_common']
+
+#######################
+# Presolver libraries #
+#######################
+
+NSPCG_TOP      = EXTERNAL_LIB_DIR+'/NSPCG'
+NSPCG_INCDIR   = [NSPCG_TOP]
+NSPCG_LIBSDIR  = [NSPCG_TOP]
+NSPCG_LIBSLIST = ['nspcg']
+
+SPARSE_TOP     = EXTERNAL_LIB_DIR+'/sparse-1.4'
+SPARSE_INCDIR  = [SPARSE_TOP]
+SPARSE_LIBSDIR = [SPARSE_TOP]
+SPARSE_LIBSLIST= ['sparse']
+
+ZLIB_TOP       = EXTERNAL_LIB_DIR+'/zlib-1.2.3'
+ZLIB_INCDIR    = [ZLIB_TOP]
+ZLIB_LIBSDIR   = [ZLIB_TOP]
+ZLIB_LIBSLIST  = ['z']
+
+################################
+# Verdandi and Seldon includes # 
+################################
+
+VERDANDI_TOP  = HOME_DIR+'/../verdandi-1.2.1'
+VERDANDI_INCDIR  = [VERDANDI_TOP, \
+		 VERDANDI_TOP+'/container', \
+		 VERDANDI_TOP+'/error', \
+		 VERDANDI_TOP+'/method', \
+		 VERDANDI_TOP+'/model', \
+		 VERDANDI_TOP+'/observation_manager', \
+		 VERDANDI_TOP+'/output_saver', \
+		 VERDANDI_TOP+'/share', \
+		 VERDANDI_TOP+'/include', \
+		 VERDANDI_TOP+'/include/lua/src', \
+		 VERDANDI_TOP+'/include/seldon']
+
+SELDON_TOP  = VERDANDI_TOP
+SELDON_INCDIR  = [SELDON_TOP,'/include/seldon']
+
+###############
+# Lua library #
+###############
+
+LUA_LIBSDIR = [VERDANDI_TOP+'/include/lua/src/']
+LUA_LIBSLIST = ['lua']
+
+###############################
+# PetSC include and libraries #
+###############################
+
+PETSC_TOP    = '/vlsci/VR0285/jmynard/CRIMSON-Flowsolver/petsc-3.2-p7'
+PETSC_BUILD = 'arch-linux-intel-infblaslapack-opt'
+PETSC_INCDIR = [PETSC_TOP+'/include',PETSC_TOP+'/'+PETSC_BUILD+'/include']
+PETSC_LIBSDIR   = [PETSC_TOP+'/'+PETSC_BUILD+'/lib']
+PETSC_LIBSLIST = ['petsc']
+
+####################################
+# Boost 1.57 include and libraries #
+####################################
+
+BOOSTCPP_TOP    = '/usr/local/boost/1.58.0-gcc'
+BOOSTCPP_INCDIR = [BOOSTCPP_TOP+'/include']
+BOOSTCPP_LIBSDIR = [BOOSTCPP_TOP+'/lib']
+BOOSTCPP_LIBSLIST = ['boost_thread','boost_filesystem','boost_system']
+
+#################################
+# VTK 5.8 include and libraries #
+#################################
+
+VTK_TOP    = '/vlsci/VR0285/jmynard/CRIMSON-Flowsolver/vtk-5.8.0-install'
+VTK_INCDIR = [VTK_TOP+'/include/vtk-5.8']
+VTK_LIBSDIR   = [VTK_TOP+'/lib/vtk-5.8/']
+VTK_LIBSLIST = ['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtkCommon','vtksys']
+
+##################################################
+# BLAS and LAPACK include and libraries          #
+#                                                #
+# On Intel systems these functions come from MKL # 
+# On ConFLUX need to use alternatives, i.e. ESSL #
+##################################################
+
+BLASLAPACK_TOP    = '/usr/local/intel/composer_xe_2013.5.192'
+BLASLAPACK_INCDIR = [BLASLAPACK_TOP+'/include']
+BLASLAPACK_LIBSDIR   = [BLASLAPACK_TOP+'/lib/intel64']
+BLASLAPACK_LIBSLIST =  ['mkl_intel_lp64', 'mkl_sequential', 'mkl_core', 'pthread']
+
+######################################
+# Google test includes and libraries #
+######################################
+
+GOOGLETEST_TOP    = HOME_DIR+'/gtest-1.7.0'
+GOOGLETEST_INCDIR = [GOOGLETEST_TOP+'/include']
+GOOGLETEST_SRC    = [GOOGLETEST_TOP+'/src']
+GOOGLETEST_LIBSLIST = ['test_flowsolver']
+
+if WITH_ELECTRIC_FENCE == 1:
+ EFENCE_TOP = '/home/USERNAME/Software/efence/electric-fence-2.1.13'
+ EFENCE_INCDIR = [EFENCE_TOP]
+ EFENCE_LIBSLIST=['efence']
+else:
+ EFENCE_TOP = ''
+ EFENCE_INCDIR = []
+ EFENCE_LIBSLIST=[]

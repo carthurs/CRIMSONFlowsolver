@@ -35,8 +35,9 @@ using namespace std;
 static char help[] = "Pure Flowsolver.\n\n";
 
 int main(int argc, char **argv) {
+   std::cout << "FLOWSOLVER STARTING" << std::endl;
 
-
+   kalmanFilterActive.kalmanFilterOn = false;
    int rank;
    int numProcsTotal,numProcs;
    int ierr = 0;
@@ -157,13 +158,19 @@ int main(int argc, char **argv) {
    {
       assert(nomodule.pureZeroDSimulation==1);
 
-      PureZeroDDriver pureZeroDDriver;
+      // numDirCalcSrfs = number of prescribed flow (i.e. bct; dirichlet) surfaces
+      std::vector<double> zeroDDomainCompliancesForEachConnectedComponent;
+      double* const zeroDDomainCompliancesEndPointer = nomodule.zeroDDomainCompliances + nomodule.num3DConnectedComponents + 1; // Fortran indexing
+      zeroDDomainCompliancesForEachConnectedComponent.assign(nomodule.zeroDDomainCompliances + 1, zeroDDomainCompliancesEndPointer);
+
+      PureZeroDDriver pureZeroDDriver(nomodule.numDirCalcSrfs, zeroDDomainCompliancesForEachConnectedComponent);
 
       pureZeroDDriver.setDelt(inpdat.Delt[0]);
       pureZeroDDriver.setAlfi(timdat.alfi);
-      pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.lstep);
+      pureZeroDDriver.setHstep(inpdat.nstep[0] + timdat.currentTimestepIndex);
       pureZeroDDriver.setNtout(outpar.ntout);
-      pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces);
+      // nsrflistDirCalc = list of prescribed flow surface indices
+      pureZeroDDriver.setupConnectedComponents(nomodule.num3DConnectedComponents, nomodule.surfacesOfEachConnectedComponent, nomodule.indicesOfNetlistSurfaces, nomodule.nsrflistDirCalc);
 
       pureZeroDDriver.init();
       multidomSetupControlSystems();

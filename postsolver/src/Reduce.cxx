@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 	FILE* frest;
 	int **ncorp2d, *ient, *ien;
 	int nshgl, numvar;
-	int maxnshg, numprocs , nshgtot,i,j,k,l, lstep;
+	int maxnshg, numprocs , nshgtot,i,j,k,l, currentTimestepIndex;
 	int np, numel, nen, nelblk;
 	int neltot, nelsofar, neltp, nenl, ipordl, nshl;
 	int gnum, opnum, nendx, junique, nshlmin;
@@ -540,7 +540,7 @@ int main(int argc, char* argv[])
 		readheader_(&irstin,"solution",(void*)intfromfile,&ithree,"double",iotype);
 		nshgl=intfromfile[0];
 		numvar=intfromfile[1];
-		lstep=intfromfile[2];
+		currentTimestepIndex=intfromfile[2];
 		iqsiz=nshgl*numvar;
 		readdatablock_(&irstin,"solution",(void*)qlocal, &iqsiz, "double", iotype);
 		closefile_( &irstin, "read" ); //the check below is not implemented-OK?
@@ -568,7 +568,7 @@ int main(int argc, char* argv[])
 			readheader_(&irstin,"time derivative of solution",(void*)intfromfile,&ithree,"double",iotype);
 			nshgl=intfromfile[0];
 			numvar=intfromfile[1];
-			lstep=intfromfile[2];
+			currentTimestepIndex=intfromfile[2];
 			iqsiz=nshgl*numvar;
 			readdatablock_(&irstin,"time derivative of solution",(void*)qlocal,&iqsiz, "double", iotype);
 			closefile_(&irstin, "read");
@@ -765,16 +765,16 @@ int main(int argc, char* argv[])
 	int* mptr = &magic_number;
 
 	if(RequestedPhasta){
-		/* write the total restart into restart.lstep.0  NOTE 0 is not
+		/* write the total restart into restart.currentTimestepIndex.0  NOTE 0 is not
        used in our partitioned system which goes from 1..nproc */
 		i=-1;
 
 		// allow user to reset the step number
 		if (RequestedNewSn) {
-			lstep = newstepnumber;
+			currentTimestepIndex = newstepnumber;
 		}
 
-		sprintf(rfile,"restart.%d.%d",lstep,i+1);
+		sprintf(rfile,"restart.%d.%d",currentTimestepIndex,i+1);
 		openfile_(rfile, "write" , &irstin);
 
 		writestring_( &irstin,"# PHASTA Input File Version 2.0\n");
@@ -804,7 +804,7 @@ int main(int argc, char* argv[])
 		nitems = 3;
 		iarray[ 0 ] = nshgtot;
 		iarray[ 1 ] = numvar;
-		iarray[ 2 ] = lstep;
+		iarray[ 2 ] = currentTimestepIndex;
 
 		writeheader_( &irstin, "solution ",
 				( void* )iarray, &nitems, &size,"double", iotype);
@@ -818,7 +818,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = numvar_wss;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 
 			writeheader_( &irstin, "wall shear stresses ",
 					( void* )iarray, &nitems, &size,"double", iotype);
@@ -833,7 +833,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = numvar_bf;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 
 			writeheader_( &irstin, "boundary fluxes ",
 					( void* )iarray, &nitems, &size,"double", iotype);
@@ -849,7 +849,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = nsd;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 			size = nsd*nshgtot;
 			writeheader_( &irstin, "displacement ",
 					( void* )iarray, &nitems, &size,"double", iotype );
@@ -870,7 +870,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = nsd;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 			size = nsd*nshgtot;
 			writeheader_( &irstin, "distances ",
 					( void* )iarray, &nitems, &size,"double", iotype );
@@ -887,7 +887,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = 4;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 			size = 4*nshgtot;
 			writeheader_( &irstin, "residual ",
 						( void* )iarray, &nitems, &size,"double", iotype );
@@ -900,7 +900,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = 3;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 			size = 3*nshgtot;
 			writeheader_( &irstin, "relative velocity ",
 						( void* )iarray, &nitems, &size,"double", iotype );
@@ -912,7 +912,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = 3;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 			size = 3*nshgtot;
 			writeheader_( &irstin, "updated mesh coordinates ",
 						( void* )iarray, &nitems, &size,"double", iotype );
@@ -927,7 +927,7 @@ int main(int argc, char* argv[])
 			nitems = 3;
 			iarray[ 0 ] = nshgtot;
 			iarray[ 1 ] = numvar;
-			iarray[ 2 ] = lstep;
+			iarray[ 2 ] = currentTimestepIndex;
 
 			writeheader_( &irstin, "time derivative of solution ",
 					( void* )iarray, &nitems, &size,"double", iotype);
@@ -1045,7 +1045,7 @@ int main(int argc, char* argv[])
 		/* echo out restart results */
 
 		frest = fopen("restart.asc.out","w");
-		fprintf(frest,"%d %d %d \n", nshgtot, numvar, lstep);
+		fprintf(frest,"%d %d %d \n", nshgtot, numvar, currentTimestepIndex);
 
 		for(i=0; i< nshgtot; i++){
 			for(j=0; j < numvar; j++)

@@ -5,16 +5,19 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include "datatypesInCpp.hxx"
-#include "NetlistCircuit.hxx"
+#include "NetlistZeroDDomainCircuit.hxx"
+#include "ControlSystemsManager.hxx"
 
 class Netlist3DDomainReplacement
 {
 public:
-	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const double elastanceToGiveVolumeTrackingPressureChamber, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex, const int startingTimestepIndex)
-	: m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
+	Netlist3DDomainReplacement(const int numberOfNetlistsUsedAsBoundaryConditions, const double oneResistanceToGiveEachResistor, const std::vector<double>& compliancesToGiveToCentralCapacitors, const double initialDomainPressure, const int hstep, const double alfi_local, const double delt, const std::map<int,int> mapFromZeroDSurfaceIndexToConnectedComponentIndex, const int startingTimestepIndex, const int numberOfDirichletBCTSurfaces, const int numberOfTimestepsBetweenRestarts)
+	: m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions),
+	m_startingTimestepIndex(startingTimestepIndex)
 	{
 		bool thisIsARestartedSimulation = false; //\todo fix this!
-		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, elastanceToGiveVolumeTrackingPressureChamber, initialDomainPressure, mapFromNetlistIndexAmongstNetlistsToConnectedComponentIndex, startingTimestepIndex));
+		mp_NetlistZeroDDomainCircuit = boost::shared_ptr<NetlistZeroDDomainCircuit> (new NetlistZeroDDomainCircuit(hstep, m_numberOfNetlistsUsedAsBoundaryConditions, thisIsARestartedSimulation, alfi_local, delt, oneResistanceToGiveEachResistor, compliancesToGiveToCentralCapacitors, initialDomainPressure, mapFromZeroDSurfaceIndexToConnectedComponentIndex, startingTimestepIndex, numberOfDirichletBCTSurfaces));
+		initialiseModel(delt, numberOfTimestepsBetweenRestarts);
 	}
 
 	void setFlowOrPressurePrescriptionsFromNetlistBoundaryConditions(std::vector<std::pair<boundary_data_t,double>> boundaryFlowsOrPressuresAsAppropriate);
@@ -25,7 +28,6 @@ public:
 
 	void setPointersToBoundaryPressuresAndFlows(double* const interfacePressuresToBeReadBy3DDomainReplacement, double* const interfaceFlowsToBeReadBy3DDomainReplacement, const int& numberOfPointers);
 
-	void initialiseModel();
 	void initialiseAtStartOfTimestep();
 	void updateLPN(const int timestepNumber);
 	void finalizeLPNAtEndOfTimestep();
@@ -40,8 +42,12 @@ public:
 private:
 	boost::shared_ptr<NetlistZeroDDomainCircuit> mp_NetlistZeroDDomainCircuit;
 	const int m_numberOfNetlistsUsedAsBoundaryConditions;
+	const int m_startingTimestepIndex;
 
 	std::vector<std::pair<boundary_data_t,double>> m_boundaryFlowsOrPressuresAsAppropriate;
+	boost::shared_ptr<ControlSystemsManager> mp_zeroDDomainControlSystemsManager;
+
+	void initialiseModel(const double delt, const int numberOfTimestepsBetweenRestarts);
 
 };
 

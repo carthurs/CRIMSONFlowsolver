@@ -15,11 +15,11 @@ env.Append(CPPPATH=bop.ESTIMATOR_INCDIR)
 
 env.Append(LIBPATH=bop.BOOSTCPP_LIBSDIR)
 
-env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.MPI_LIBSDIR+bop.METIS_LIBSDIR+bop.INTEL_LIBSDIR+bop.LESLIB_LIBSDIR+bop.PYTHON_LIBSDIR)
+env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.MPI_LIBSDIR+bop.METIS_LIBSDIR+bop.RUNTIME_LIBSDIR+bop.LESLIB_LIBSDIR+bop.PYTHON_LIBSDIR)
 
 env.Prepend(LIBS=bop.MPI_LIBSLIST)
 env.Prepend(LIBS=bop.LESLIB_LIBSLIST)
-env.Append(LIBS=bop.METIS_LIBSLIST+bop.INTEL_LIBSLIST)
+env.Append(LIBS=bop.METIS_LIBSLIST+bop.RUNTIME_LIBSLIST)
 env.Append(LIBS=bop.PETSC_LIBSLIST+bop.PYTHON_LIBSLIST)
 
 # env.Append(LIBPATH=[bop.PETSC_LIBSDIR,bop.VTK_LIBSDIR,bop.LUA_LIBSDIR,bop.FLOWSOLVER_LIBSDIR,bop.BLASLAPACK_LIBSDIR,bop.MPI_LIBSDIR,bop.SOLVERIO_LIBSDIR])
@@ -51,9 +51,12 @@ sources=string.split("""
 	ClosedLoopDownstreamSubsection.cxx
 	NetlistBoundaryCondition.cxx
 	NetlistCircuit.cxx
+	NetlistZeroDDomainCircuit.cxx
 	NetlistBoundaryCircuitWhenDownstreamCircuitsExist.cxx
 	NetlistClosedLoopDownstreamCircuit.cxx
 	CircuitData.cxx
+	CircuitComponent.cxx
+	CircuitPressureNode.cxx
 	ControlSystemsManager.cxx
 	ParameterController.cxx
 	timers.cxx

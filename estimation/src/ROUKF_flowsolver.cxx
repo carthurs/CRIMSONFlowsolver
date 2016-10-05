@@ -2,7 +2,9 @@
 #define SELDON_WITH_BLAS
 #define SELDON_WITH_LAPACK
 
+#ifdef __INTEL_COMPILER
 #define SELDON_WITH_MKL
+#endif
 
 #define VERDANDI_WITH_ABORT
 #define VERDANDI_DENSE

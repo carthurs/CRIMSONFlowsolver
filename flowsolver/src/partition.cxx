@@ -1,6 +1,7 @@
+#include "partition.h"
+
 #include <cstdlib>
 #include <iostream>
-#include <vector>
 #include <string>
 #include <cstring>
 #include <map>
@@ -8,6 +9,7 @@
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sstream>
 
 //#include <boost/optional/optional.hpp>
 //#include <tuple>
@@ -285,12 +287,30 @@ void Partition_Problem(int numProcs) {
 	if (numProcs < 2) {
 		sprintf(systemcmd, "cp *.1 %s", _directory_name);
 		system(systemcmd);
+
+		if (nomodule.writeSpecificNodalDataEveryTimestep)
+		{
+			const int processorId = 0;
+			// This data structure is expected by writeNodalOutputIndicesForProcessor(). In the multi-processor
+			// case, the first index (entries of the outer vector) gives the CPU index. Here, we're single-process,
+			// so we make a fake structure with the outer vector containing only one entry.
+			std::vector<std::vector<int>> processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices(1);
+			for (int index = 1; index <= nomodule.numberOfNodesForDataOutput; index++) // Fortran array indexing
+			{
+				int outputNodeGlobalIndex = nomodule.indicesOfNodesForDataOutput[index];
+				// Global node indices are sufficient here, as on single-CPU, global node indexing is identical to local indexing.
+				processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(0).push_back(outputNodeGlobalIndex);
+			}
+			writeNodalOutputIndicesForProcessor(processorId, processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices);
+		}
 		return;
 	}
 
 	if (nomodule.pureZeroDSimulation == 0) {
+		
 		openfile_("geombc.dat.1", "read", &igeombc);
 		vector < string > headers;
+		
 		Gather_Headers(&igeombc, headers);
 
 		int numel, nIfaces, spebc;
@@ -636,27 +656,99 @@ void Partition_Problem(int numProcs) {
 		} // loop over procs
 		  //ien.clear();
 
+		// ParallelData is the most important data structure of this code. It maintains
+		// the global to local mapping of shapefuntion numbers.
+		//
+		// ParallelData[ global_number][ processor_id ] = processor_local_no
+		//
+		// all shape function numbers, global and local are stored in fortran indexing
+
 		/* co-ords */
 
-		readheader_(&igeombc, "co-ordinates", (void*) iarray, &itwo, "double",
-				iformat);
+		readheader_(&igeombc, "co-ordinates", (void*) iarray, &itwo, "double", iformat);
 		isize = iarray[0] * iarray[1];
 		double* xloc = new double[isize];
-		readdatablock_(&igeombc, "co-ordinates", (void*) xloc, &isize, "double",
-				iformat);
+		readdatablock_(&igeombc, "co-ordinates", (void*) xloc, &isize, "double", iformat);
+
+		// Trying to deduce exactly what the original author was doing here:
+		// I think the ith entry of Xpart corresponds to the ith processor;
+		// the entry is a map from the shapefunction index local to that processor to a 3-element
+		// vector containing the (x,y,z) coordinates of the associated node.
 		vector < map<int, vector<double> > > Xpart(numProcs);
 
-		for (int x = 1; x < iarray[0] + 1; x++) {
-			for (map<int, int>::iterator iter = ParallelData[x].begin();
-					iter != ParallelData[x].end(); iter++) {
+		for (int x = 1; x < iarray[0] + 1; x++)
+		{
+			for (map<int, int>::iterator iter = ParallelData[x].begin(); iter != ParallelData[x].end(); iter++)
+			{
 				for (int s = 0; s < 3; s++) {
-					Xpart[(*iter).first][(*iter).second].push_back(
-							xloc[x - 1 + s * iarray[0]]);
+					Xpart[(*iter).first][(*iter).second].push_back(xloc[x - 1 + s * iarray[0]]);
 					//cout << (*iter).first << " " << (*iter).second << " " << xloc[x - 1 + s * iarray[0]] << endl;
 				}
 			}
 		}
 		delete[] xloc;
+
+		// setup output of individual node pressure / velocity if requested in solver.inp:
+		//
+		// To do this, we convert the requested global node indices from the solver.inp to their
+		// processor-local indices, and write one file for each processor, telling it which
+		// of its (locally-indexed) nodes it should output pressure and flow for:
+		if (nomodule.writeSpecificNodalDataEveryTimestep)
+		{
+			vector<vector<int>> processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices(numProcs);
+
+			// From the global node indices requested in the solver.inp, we find the corresponding local
+			// node indices, sorted by processor index:
+			for (int index = 1; index <= nomodule.numberOfNodesForDataOutput; index++) // Fortran array indexing
+			{
+				int outputNodeGlobalIndex = nomodule.indicesOfNodesForDataOutput[index];
+				map<int,int>& processorIdToProcessorLocalNodeIndex = ParallelData.at(outputNodeGlobalIndex);
+				for (auto processorIdAndLocalIndexPair = processorIdToProcessorLocalNodeIndex.begin(); processorIdAndLocalIndexPair != processorIdToProcessorLocalNodeIndex.end(); processorIdAndLocalIndexPair++)
+				{
+					const int processorId = processorIdAndLocalIndexPair->first;
+					const int localNodeIndex = processorIdAndLocalIndexPair->second;
+					processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices.at(processorId).push_back(localNodeIndex);
+				}
+			}
+
+			// write the processor-local node indices for the individual nodal pressure/velocity output
+			// to files, one for each processor. This will be read by the processor in question during
+			// the simulation, so that it knows which of its nodes it should output data for.
+			for(int processorId=0; processorId < numProcs ; processorId++ ) {
+				writeNodalOutputIndicesForProcessor(processorId, processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices);
+		    }
+
+		    { //scoping unit to avoid errors
+			    // Write an index file to assist the user with finding which output file contains the nodes they requested:
+			    // First we gather the data, then we sort it by global node index, then we write it to file.
+			    std::vector<std::pair<int,int>> globalNodeIndexAndProcessorIds;
+			    for (int index = 1; index <= nomodule.numberOfNodesForDataOutput; index++) // Fortran array indexing
+				{
+					int outputNodeGlobalIndex = nomodule.indicesOfNodesForDataOutput[index];
+					map<int,int>& processorIdToProcessorLocalNodeIndex = ParallelData.at(outputNodeGlobalIndex);
+					for (auto processorIdAndLocalIndexPair = processorIdToProcessorLocalNodeIndex.begin(); processorIdAndLocalIndexPair != processorIdToProcessorLocalNodeIndex.end(); processorIdAndLocalIndexPair++)
+					{
+						const int processorId = processorIdAndLocalIndexPair->first;
+						globalNodeIndexAndProcessorIds.push_back(std::make_pair(outputNodeGlobalIndex, processorId));
+					}
+				}
+
+				// Sort by global node index:
+				std::sort(globalNodeIndexAndProcessorIds.begin(), globalNodeIndexAndProcessorIds.end(), [](std::pair<int,int> left, std::pair<int,int> right){return (left.first < right.first);});
+
+				// actually write the data:
+				std::stringstream indexFileName;
+				indexFileName << _directory_name << "nodalOutputDataIndex.dat";
+				std::ofstream nodalOutputIndexFileStream(indexFileName.str().c_str(), ios::out);
+			    nodalOutputIndexFileStream << "Column 1: Global Index. Column 2: Owning Processor." << endl;
+			    for (auto&& nodeIndexAndProcessorIdPair : globalNodeIndexAndProcessorIds)
+			    {
+			    	nodalOutputIndexFileStream << nodeIndexAndProcessorIdPair.first << " " << nodeIndexAndProcessorIdPair.second << endl;
+			    }
+
+				nodalOutputIndexFileStream.close();
+			}
+		}
 
 		/* node tags */
 		// Begin with declarations outside the scope of the "if", so they're available later, too.
@@ -1480,7 +1572,6 @@ void Partition_Problem(int numProcs) {
 		sprintf(filename,"%silwork.info",_directory_name );
 		ofstream ilwf( filename );
 	#endif
-
 		for (int a = 0; a < numProcs; a++) { //outer loop over procs
 			ilwork.push_back(0);
 
@@ -1607,6 +1698,7 @@ void Partition_Problem(int numProcs) {
 			isize = PeriodicPart[a].size();
 			nitems = 1;
 			iarray[0] = PeriodicPart[a].size();
+
 			writeheader_(&fgeom, "periodic masters array ", (void*) iarray, &nitems,
 					&isize, "integer", oformat);
 
@@ -2342,4 +2434,20 @@ void Partition_Problem(int numProcs) {
 	//if ( !chdir( _directory_name ) ) /* cd successful */
 	//	cout <<" changing to the problem directory " << _directory_name << endl;
 	ParallelData.clear();
+}
+
+
+void writeNodalOutputIndicesForProcessor(const int processorId, const std::vector<std::vector<int>>& processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in)
+{
+    bzero( (void*)filename, 255 );
+    ofstream nodalOutputFileStream;
+    sprintf( filename, "%snodalOutputIndices.dat.%d",_directory_name, processorId);
+    nodalOutputFileStream.open (filename, ios::out);
+
+    nodalOutputFileStream << processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in.at(processorId).size() << endl;
+    for(auto outputNodeIterator = processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in.at(processorId).begin(); outputNodeIterator != processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in.at(processorId).end(); outputNodeIterator++)
+    {
+        nodalOutputFileStream << *outputNodeIterator << endl;
+    }
+    nodalOutputFileStream.close();
 }

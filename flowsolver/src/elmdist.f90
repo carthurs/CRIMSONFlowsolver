@@ -5,7 +5,21 @@ subroutine ElmDist(u, x, xdist, xdnv, df_fem) bind(C, name="elmdist")
     use deformableWall
     use shapeTable
          
-    use phcommonvars
+    !     
+    ! the subroutine interface for ElmDist is defined inside phcommonvars
+    ! however the fortran standard doesn't permit the subroutine to know 
+    ! it's own interface, see:
+    !
+    ! https://gcc.gnu.org/bugzilla/show_bug.cgi?id=51268
+    ! https://groups.google.com/forum/#!topic/comp.lang.fortran/7zkAqyYcXNk
+    ! 
+    ! the fix is to reassign to rename the function, inside the function 
+    ! itself, i.e. use MODULE_NAME, LOCAL_NAME => MODULE_NAME 
+    ! 
+    ! KDL, June 2016
+
+    use phcommonvars, temp => elmdist
+
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
          
     real*8 x(numnp,NSD),u(nshg,NSD)
@@ -34,13 +48,13 @@ subroutine ElmDist(u, x, xdist, xdnv, df_fem) bind(C, name="elmdist")
     !     according to the cycle length parameter that was set
     !     in observed.dat
     !
-    nPer = (lstep)*Delt(1)/cycleLength
+    nPer = (currentTimestepIndex)*Delt(1)/cycleLength
          
     !
     !.... compute the physical time
     !
                   
-    cycleTime = (lstep)*Delt(1)-nPer*cycleLength
+    cycleTime = (currentTimestepIndex)*Delt(1)-nPer*cycleLength
          
     !
     !.... compute the interval that we are in right now

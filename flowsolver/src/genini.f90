@@ -55,7 +55,7 @@
 !
 !.... -------------------------->  Restart  <---------------------------
 !
-!.... read q from [RESTAR.INP], reset LSTEP
+!.... read q from [RESTAR.INP], reset currentTimestepIndex
 !
         !call restar ('in  ',  y,  ac)
 !
@@ -80,7 +80,7 @@
       call setsimv_delt(Delt(1))     
       call setsimv_ntout(ntout)
       call setsimv_nstep(nstep(1))
-      call setsimv_lstep(lstep)
+      call setsimv_lstep(currentTimestepIndex)
       call setsimv_rho(datmat(1,1,1))
 !
 ! *********************************************************
@@ -92,7 +92,7 @@
 
         if (itvn .gt. 0 ) then !for inlet velocities
            call initBCt(x, iBC, BC)           
-           call BCint(lstep*Delt(1), x, BC, iBC)
+           call BCint(currentTimestepIndex*Delt(1), x, BC, iBC)
         endif
 
         if (impfile .gt. 0 ) then !for impedance BC
@@ -144,11 +144,11 @@
         endif
         if (incpfile .gt. 0) then !for INCP BC
            call initINCPt()  !read incp.dat, Elastance.dat
-           allocate (INCPConvCoef(lstep+nstep(1)+2, numINCPSrfs))
+           allocate (INCPConvCoef(currentTimestepIndex+nstep(1)+2, numINCPSrfs))
            allocate (INCPCoef(2, numINCPSrfs))
            allocate (InflowArea(numINCPSrfs))
            allocate (poldINCP(0:MAXSURF))
-           allocate (QHistINCP(lstep+nstep(1)+1, numINCPSrfs))
+           allocate (QHistINCP(currentTimestepIndex+nstep(1)+1, numINCPSrfs))
            allocate (Eadjust(numINCPSrfs))
            allocate (inactive(0:MAXSURF))
            inactive = 0
@@ -162,10 +162,10 @@
           ! call constructor with heartparam array
           
           ! uncomment to add back inputHRandSP - here set to zero
-          ! hrt = hrtconstructor(heartparam,inputHRandSP,lstep)
+          ! hrt = hrtconstructor(heartparam,inputHRandSP,currentTimestepIndex)
 
           ! heart constructor
-          hrt = hrtconstructor(heartparam,int(0),lstep)
+          hrt = hrtconstructor(heartparam,int(0),currentTimestepIndex)
 
         end if
 
@@ -194,7 +194,7 @@
 ! *** multidomain code, add surface ids to container ***
 ! ******************************************************
 !
-        if (multidomainactive) then         
+        if (multidomainactive .eq. 1) then         
 
           ! add heart surface 
           if (iheart .gt. int(0)) then          

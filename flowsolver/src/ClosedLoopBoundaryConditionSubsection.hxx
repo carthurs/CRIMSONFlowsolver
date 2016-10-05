@@ -5,8 +5,8 @@
 // class ClosedLoopBoundaryConditionSubsection : public NetlistBoundaryCondition
 // {
 // public:
-// 	ClosedLoopBoundaryConditionSubsection(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double lstep, const int maxsurf, const int nstep)
-// 	: NetlistBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, lstep, maxsurf, nstep)
+// 	ClosedLoopBoundaryConditionSubsection(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
+// 	: NetlistBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, currentTimestepIndex, maxsurf, nstep)
 // 	{
 
 // 	}

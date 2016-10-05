@@ -220,7 +220,7 @@ usrPointer(	UsrHd	usrHd,
 
 } /* end of usrPointer() */
 
-#ifdef ACUSIM_LESLIB_VER_1_4
+#if defined(ACUSIM_LESLIB_VER_1_4) || defined(NO_ACUSIM)
 
 #ifdef intel
 #define myfLesNew MYFLESNEW
@@ -249,11 +249,13 @@ void    myfLesNew(  Integer*   lesId,
                     char*     	fileName,
                     Integer   	len		) {
 
+#ifndef NO_ACUSIM
         lesArray[ *lesId ] = lesNew( fileName, *lmport, &lmNum, *eqnType,
                                      *nDofs, *minIters, *maxIters, *nKvecs, 
                                      *prjFlag, *nPrjs, *presPrjFlag, *nPresPrjs,
                                      *tol, *presTol, *verbose, stats, nPermDims,
                                      nTmpDims );
+#endif 
     return ;}
 /* the following is a fake function that was required when we moved to
    a C++ main on in the MS Visual Studio environment.  It fails to
@@ -264,7 +266,6 @@ void    myfLesNew(  Integer*   lesId,
 
 double __vcos_(double fg) { fflush(stdout); printf(" vcos got called \n"); fflush(stdout);}
 double __vlog_(double fg)  { fflush(stdout); printf(" vlog got called \n"); fflush(stdout);}
-
 
 #else /* we are in unix land... whew.  secretly we have equivalenced fileName and  */
 
@@ -292,6 +293,7 @@ extern "C"
                              Integer*	nTmpDims,
                              char*      lmhost,
                              Integer*   len             ) {
+#ifndef NO_ACUSIM
         int procId;
         MPI_Comm iNewComm_C = MPI_Comm_f2c(newcom.iNewComm);
         MPI_Comm_rank( iNewComm_C, &procId ) ;
@@ -318,6 +320,7 @@ extern "C"
                                          *tol, *presTol, *verbose, stats, nPermDims,
                                          nTmpDims );
         }
+#endif
         return ;
     }
 }
@@ -438,9 +441,9 @@ extern "C"
                      Real*    aperm,
                      Integer* nshg,
                      Integer* myrank,
-                     Integer* lstep,
+                     Integer* currentTimestepIndex,
                      Integer* nPermDims ) {
-
+#ifndef NO_ACUSIM
         int nPrjs, PrjSrcId;
         int nPresPrjs, PresPrjSrcId;
         char filename[255];
@@ -450,7 +453,7 @@ extern "C"
         double* projVec;
         int i, j, count;
 
-        sprintf( filename,"restart.%d.%d", *lstep, *myrank+1 );
+        sprintf( filename,"restart.%d.%d", *currentTimestepIndex, *myrank+1 );
         openfile_( filename, "append", &fileHandle );
         
         nPrjs = (Integer) lesGetPar( lesArray[ *lesId ], LES_ACT_PRJS );
@@ -508,15 +511,16 @@ extern "C"
         free( projVec);
 
         closefile_( &fileHandle, "append" );
+#endif
     }
 
     void readlesrestart_( Integer* lesId,
                      Real*    aperm,
                      Integer* nshg,
                      Integer* myrank,
-                     Integer* lstep ,
+                     Integer* currentTimestepIndex ,
                      Integer* nPermDims ) {
-
+#ifndef NO_ACUSIM
         int nPrjs, PrjSrcId;
         int nPresPrjs, PresPrjSrcId;
         char filename[255];
@@ -528,7 +532,7 @@ extern "C"
         double* projVec;
         int i,j,count;
 
-        sprintf( filename,"restart.%d.%d", *lstep, *myrank+1 );
+        sprintf( filename,"restart.%d.%d", *currentTimestepIndex, *myrank+1 );
         openfile_( filename, "read", &fileHandle );
 
         if ( fileHandle == 0 ) return;
@@ -599,11 +603,14 @@ extern "C"
         free( projVec );
 
         closefile_( &fileHandle, "read" );
+#endif
     }
 
     void  myflessolve_( Integer* lesId,
                         UsrHd    usrHd){
+#ifndef NO_ACUSIM
         lesSolve( lesArray[ *lesId ], usrHd );
+#endif
     }
 
     void getSol ( UsrHd usrHd,

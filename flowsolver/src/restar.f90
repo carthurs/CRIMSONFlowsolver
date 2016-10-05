@@ -60,12 +60,12 @@
            acw(:,1)   = acp(:,4)
            if(ndof.gt.4) acw(:,5:ndof)   = acp(:,5:ndof)
 !           
-           call write_restart(myrank, lstep, nshg, ndof, & 
+           call write_restart(myrank, currentTimestepIndex, nshg, ndof, & 
                 qw, acw)
 
            if (myrank.eq.master) then 
               open(unit=72,file='numstart.dat',status='old')
-              write(72,*) lstep
+              write(72,*) currentTimestepIndex
               close(72)
 
            endif

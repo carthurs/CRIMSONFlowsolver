@@ -15,7 +15,7 @@ void NetlistBoundaryCondition::initialiseModel()
             mp_NetlistCircuit->setPointersToBoundaryPressuresAndFlows(pressure_n_ptrs.at(0), flow_n_ptrs.at(0), numberOfPointers);
         } catch (const std::exception& e) {
             std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-            throw e;
+            throw;
         }
     }
     // Get the input data
@@ -85,8 +85,8 @@ void NetlistBoundaryCondition::writePressuresFlowsAndVolumes(int& nextTimestepWr
 // condition type is currently Dirichlet.
 void NetlistBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
 {
-  if(flowPermittedAcross3DInterface())
-  {
+    if(flowPermittedAcross3DInterface())
+    {
     assert(hasListOfMeshNodesAtThisBoundary);
     // set zero in the binaryMask at the locations necessary to impose Dirichlet at this surface
     for (auto node=listOfMeshNodesAtThisBoundary.begin(); node!=listOfMeshNodesAtThisBoundary.end(); node++)

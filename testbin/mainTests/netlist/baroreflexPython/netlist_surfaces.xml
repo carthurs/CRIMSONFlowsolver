@@ -50,10 +50,15 @@
 			</component>
 			<component>
 				<index>6</index>
-				<type>capacitor</type>
+				<type>volumeTrackingPressureChamber</type>
 				<startNodeIndex>5</startNodeIndex>
 				<endNodeIndex>7</endNodeIndex>
-				<parameterValue>75.0188</parameterValue>
+				<parameterValue>0.013329</parameterValue>
+				<initialVolume>96933.2</initialVolume>
+				<control>
+					<type>customPython</type>
+					<source>laElastanceController</source>
+				</control>
 			</component>
 		</components>
 		<nodes>
@@ -102,7 +107,7 @@
 				<type>resistor</type>
 				<startNodeIndex>1</startNodeIndex>
 				<endNodeIndex>2</endNodeIndex>
-				<parameterValue>0.00185</parameterValue>
+				<parameterValue>0.02</parameterValue>
 				<prescribedFlowType>threeDInterface</prescribedFlowType>
 			</component>
 			<component>
@@ -110,7 +115,7 @@
 				<type>resistor</type>
 				<startNodeIndex>2</startNodeIndex>
 				<endNodeIndex>3</endNodeIndex>
-				<parameterValue>0.0185</parameterValue>
+				<parameterValue>0.2</parameterValue>
 				<control>
 					<type>customPython</type>
 					<source>distalResistanceController</source>
@@ -121,7 +126,8 @@
 				<type>capacitor</type>
 				<startNodeIndex>2</startNodeIndex>
 				<endNodeIndex>4</endNodeIndex>
-				<parameterValue>5.735</parameterValue>
+				<parameterValue>11.735</parameterValue>
+				<!-- <parameterValue>5.735</parameterValue> -->
 			</component>
 		</components>
 		<nodes>
@@ -153,7 +159,8 @@
 				<type>resistor</type>
 				<startNodeIndex>1</startNodeIndex>
 				<endNodeIndex>2</endNodeIndex>
-				<parameterValue>0.00185</parameterValue>
+				<!-- <parameterValue>0.00185</parameterValue> -->
+				<parameterValue>0.02</parameterValue>
 				<prescribedFlowType>threeDInterface</prescribedFlowType>
 			</component>
 			<component>
@@ -161,10 +168,11 @@
 				<type>resistor</type>
 				<startNodeIndex>2</startNodeIndex>
 				<endNodeIndex>3</endNodeIndex>
-				<parameterValue>0.0185</parameterValue>
+				<!-- <parameterValue>0.0185</parameterValue> -->
+				<parameterValue>0.2</parameterValue>
 				<control>
 					<type>customPython</type>
-					<source>distalResistanceController</source>
+					<source>exercisingDistalResistanceController</source>
 				</control>
 			</component>
 			<component>
@@ -172,7 +180,8 @@
 				<type>capacitor</type>
 				<startNodeIndex>2</startNodeIndex>
 				<endNodeIndex>4</endNodeIndex>
-				<parameterValue>5.735</parameterValue>
+				<parameterValue>11.735</parameterValue>
+				<!-- <parameterValue>5.735</parameterValue> -->
 			</component>
 		</components>
 		<nodes>

@@ -1,0 +1,68 @@
+Geombc Has Observation Fields: False
+Geombc Has Node Tags: False
+Simulate in Purely Zero Dimensions: True
+
+# CARDIOVASCULAR MODELING PARAMETERS
+# {
+    Deformable Wall : False
+    Global Node Numbering : True
+    Influx Coefficient : 0.5
+    List of Output Surfaces : 5 6 7
+    Minimum Required Iterations : 2
+    Number of Coupled Surfaces : 2
+    Number of Surfaces which Output Pressure and Flow : 3
+    Pressure Coupling : Implicit
+    Residual Control : True
+    Residual Criteria : 0.001
+# }
+
+
+# CARDIOVASCULAR MODELING PARAMETERS: PRESCRIBED VELOCITIES
+# {
+    BCT Time Scale Factor : 1.0
+    List of Dirichlet Surfaces : #5
+    Number of Dirichlet Surfaces Which Output Pressure and Flow : 0#1
+    Time Varying Boundary Conditions From File : False
+# }
+
+
+# CARDIOVASCULAR MODELING PARAMETERS: RCR
+# {
+    Number of experimental RCR Surfaces : 0
+    List of Netlist LPN Surfaces : 5 6 7
+    Number of Netlist LPN Surfaces : 3
+    Number of Loop Closing Netlist Circuits: 1
+#     RCR Values From File : True
+# }
+
+
+# LINEAR SOLVER
+# {
+    Solver Type : memLS
+#    Step Construction : 0 1 # this is the standard 1 iteration
+#    Step Construction : 0 1 0 1 0 1 0 1 0 1 # this is the standard 5 iteration
+  Step Construction : 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 # this is the standard 20 iteration
+
+# }
+
+
+# MATERIAL PROPERTIES
+# {
+    Density : 0.00106
+    Viscosity : 0.004
+# }
+
+
+# OUTPUT CONTROL
+# {
+    Number of Timesteps between Restarts : 1
+    Print Error Indicators : True
+# }
+
+
+# SOLUTION CONTROL
+# {
+    Equation of State : Incompressible
+    Number of Timesteps : 1000
+    Time Step Size : 0.001
+# }

@@ -95,7 +95,7 @@ subroutine drvlesPrepDiag ( flowDiag, ilwork, &
                     if (nsrflistRCR(k).eq.ndsurf(n)) then
                         irankCoupled=k
                         flowdiag(n,1:3) = flowdiag(n,1:3) &
-                        + tfact*RCRConvCoef(lstep+2,irankCoupled)* & !check lstep+2 if restart from t.ne.0 &
+                        + tfact*RCRConvCoef(currentTimestepIndex+2,irankCoupled)* & !check currentTimestepIndex+2 if restart from t.ne.0 &
                         NABI(n,:)*NABI(n,:)
                     endif
                 enddo
@@ -104,7 +104,7 @@ subroutine drvlesPrepDiag ( flowDiag, ilwork, &
                     if (nsrflistCOR(k).eq.ndsurf(n)) then
                         irankCoupled=k
                         flowdiag(n,1:3) = flowdiag(n,1:3) &
-                        + tfact*CORConvCoef(lstep+2,irankCoupled)* &
+                        + tfact*CORConvCoef(currentTimestepIndex+2,irankCoupled)* &
                         NABI(n,:)*NABI(n,:)
                     endif
                 enddo

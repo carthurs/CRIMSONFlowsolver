@@ -90,9 +90,9 @@ void boundaryConditionManager::setSimulationModePurelyZeroD(const int simulation
   
 }
 
-// void boundaryConditionManager::setLstep(const int lstep)
+// void boundaryConditionManager::setLstep(const int currentTimestepIndex)
 // {
-//   m_currentTimestepIndex = lstep;
+//   m_currentTimestepIndex = currentTimestepIndex;
 //   m_currentTimestepIndexHasBeenSet = true;
 // }
 
@@ -190,6 +190,7 @@ void boundaryConditionManager::setPressureFromFortran()
   {
     if (typeid(**boundaryCondition)==typeid(RCR))
     {
+      std::cout << "setting pressure for C++ RCRs" << std::endl;
       RCR* downcastRCR = dynamic_cast<RCR*>(boundaryCondition->get());
       downcastRCR->setPressureFromFortran();
     }
@@ -214,7 +215,7 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs
   {
     if (typeid(**iterator)==typeid(RCR))
     {
-      
+      // std::cout << "RCR implicoeff: " << (*iterator)->getSurfaceIndex() << " " << (*iterator)->getdp_dq() << " " << (*iterator)->getHop() << std::endl;     
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
       // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       
@@ -299,7 +300,9 @@ void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
   {
     boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
-    assert(downcastNetlist != NULL);
+    if (downcastNetlist == NULL) {
+      throw std::runtime_error("Can only use Netlist boundary conditions in pure zero-D simulations.");
+    }
 
     // Get the (zero-indexed) Netlist index; this gives us the appropriate location of the pointers in the input variables
     int netlistIndex = downcastNetlist->getIndexAmongstNetlists();
@@ -333,7 +336,6 @@ std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionMana
 
 void boundaryConditionManager::computeAllImplicitCoeff_solve(const int timestepNumber)
 {
-  fortranBoundaryDataPointerManager* fortranBoundaryDataPointerManager_instance = fortranBoundaryDataPointerManager::Get();
   for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
     (*iterator)->computeImplicitCoeff_solve(timestepNumber);
@@ -358,6 +360,23 @@ extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeAllImplicitCoeff_update(timestepNumber);
+}
+
+void boundaryConditionManager::computeAllNetlistImplicitCoeff_solve(const int timestepNumber)
+{
+  for(auto&& boundaryCondition : m_boundaryConditions)
+  {
+    if (boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryCondition))
+    {
+      boundaryCondition->computeImplicitCoeff_solve(timestepNumber);
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCppComputeAllNetlistImplicitCoeff_solve(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeAllNetlistImplicitCoeff_solve(timestepNumber);
 }
 
 
@@ -685,7 +704,7 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
       // +m_maxsurf+1 here to move to the next column of the array (the +1 is annoying, and is because of weird design decisions in old FORTRAN code)
       implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = (*iterator)->getHop();
       // std::cout << " and H operator: " << implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] << std::endl;
-      
+      // std::cout << "Netlist implicoeff: " << (*iterator)->getSurfaceIndex() << " " << (*iterator)->getdp_dq() << " " << (*iterator)->getHop() << std::endl;
       writeLocation++;
     }
   }
@@ -911,6 +930,19 @@ extern "C" void callCPPResetStateUsingKalmanFilteredEstimate(double& flow, doubl
   boundaryConditionManager_instance->resetStateUsingKalmanFilteredEstimate(flow, pressure, surfaceIndex, timestepNumber);
 }
 
+void boundaryConditionManager::debugPrintFlowPointerTarget_BCM()
+{
+  for (auto const &boundaryCondition : m_boundaryConditions) {
+    boundaryCondition->debugPrintFlowPointerTarget();
+  }  
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPDebugPrintFlowPointerTarget_BCM()
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->debugPrintFlowPointerTarget_BCM();
+}
+
 void boundaryConditionManager::createControlSystems()
 {
   assert(m_startingTimestepIndexHasBeenSet);
@@ -961,7 +993,7 @@ void boundaryConditionManager::createControlSystems()
           }
       } catch (const std::exception& e) {
           std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-          throw e;
+          throw;
       }
     }
   }
@@ -1006,7 +1038,7 @@ void boundaryConditionManager::createControlSystems()
           }
       } catch (const std::exception& e) {
           std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-          throw e;
+          throw;
       }
     }
 

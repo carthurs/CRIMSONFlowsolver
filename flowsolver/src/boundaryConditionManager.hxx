@@ -58,6 +58,8 @@ class abstractBoundaryCondition;
     void computeAllImplicitCoeff_solve(const int timestepNumber);
     void computeAllImplicitCoeff_update(const int timestepNumber);
 
+    void computeAllNetlistImplicitCoeff_solve(const int timestepNumber);
+
     void updateAllRCRS_Pressure_n1_withflow();
     void updateAllRCRS_setflow_n(const double* const flows);
     void updateAllRCRS_setflow_n1(const double* const flows);
@@ -98,7 +100,7 @@ class abstractBoundaryCondition;
     void setDelt(const double delt);
     void setHstep(const int hstep);
     void setAlfi(const double alfi);
-    // void setLstep(const int lstep);
+    // void setLstep(const int currentTimestepIndex);
     void setStartingTimestepIndex(const int startingTimestepIndex);
     void incrementTimestepIndex();
     void setNtout(const int ntout);
@@ -119,6 +121,8 @@ class abstractBoundaryCondition;
     std::vector<std::pair<boundary_data_t,double>> getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber);
 
     void setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows);
+
+    void debugPrintFlowPointerTarget_BCM();
 
     ~boundaryConditionManager()
     {
@@ -166,7 +170,7 @@ class abstractBoundaryCondition;
     double m_delt;
     int m_hstep;
     double m_alfi;
-    int m_currentTimestepIndex; // Formerly "lstep", but that was a silly name.
+    int m_currentTimestepIndex; // Formerly "currentTimestepIndex", but that was a silly name.
     int m_ntout;
     int m_maxsurf;
     int m_nstep;

@@ -16,7 +16,7 @@
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
         include "mpif.h"
 !
-        character*8 routin, variab
+        character(len=*) routin, variab
 !
         data ierchk /0/
 !

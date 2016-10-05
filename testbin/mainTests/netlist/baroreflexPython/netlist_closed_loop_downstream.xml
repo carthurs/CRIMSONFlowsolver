@@ -22,8 +22,8 @@
 				<type>volumeTrackingPressureChamber</type>
 				<startNodeIndex>3</startNodeIndex>
 				<endNodeIndex>4</endNodeIndex>
-				<parameterValue>5.54e2</parameterValue>
-				<initialVolume>1938000.0</initialVolume>
+				<parameterValue>0.001805054152</parameterValue>
+				<initialVolume>2329564.0</initialVolume>
 				<initialUnstressedVolume>1938000.0</initialUnstressedVolume>
 				<control>
 					<type>customPython</type>
@@ -46,8 +46,8 @@
 				<type>volumeTrackingPressureChamber</type>
 				<startNodeIndex>5</startNodeIndex>
 				<endNodeIndex>6</endNodeIndex>
-				<parameterValue>9.9e1</parameterValue>
-				<initialVolume>596000.0</initialVolume>
+				<parameterValue>0.01010101010101</parameterValue>
+				<initialVolume>692650.0</initialVolume>
 				<initialUnstressedVolume>596000.0</initialUnstressedVolume>
 				<control>
 					<type>customPython</type>
@@ -63,7 +63,8 @@
 				<type>resistor</type>
 				<startNodeIndex>5</startNodeIndex>
 				<endNodeIndex>7</endNodeIndex>
-				<parameterValue>8.893e-2</parameterValue>
+				<!-- <parameterValue>8.893e-2</parameterValue> -->
+				<parameterValue>8.893e-3</parameterValue>
 				<control>
 					<type>customPython</type>
 					<source>distalResistanceController</source>
@@ -71,10 +72,12 @@
 			</component>
 			<component>
 				<index>7</index>
-				<type>capacitor</type>
+				<type>volumeTrackingPressureChamber</type>
 				<startNodeIndex>7</startNodeIndex>
 				<endNodeIndex>8</endNodeIndex>
-				<parameterValue>1.4e1</parameterValue>
+				<parameterValue>0.071428571429</parameterValue>
+				<initialVolume>523899.0</initialVolume>
+				<initialUnstressedVolume>401000.0</initialUnstressedVolume>
 			</component>
 		</components>
 		<nodes>

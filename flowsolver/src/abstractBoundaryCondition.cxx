@@ -81,7 +81,7 @@ void abstractBoundaryCondition::updatePressureAndFlowHistory()
     flowhist[m_currentTimestepIndex] = *(flow_n_ptrs.at(0));
   } catch (const std::exception& e) {
     std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-    throw e;
+    throw;
   }
 }
 
@@ -146,4 +146,9 @@ void abstractBoundaryCondition::setDirichletConditionsIfNecessary(int* const bin
   {
     binaryMask[*node] = 0;
   }
+}
+
+void abstractBoundaryCondition::debugPrintFlowPointerTarget()
+{
+  std::cout << "Boundary condition for surface index " << surfaceIndex << " has flow " << flow_n << " and flow pointer target " << *(flow_n_ptrs.at(0)) << std::endl;
 }

@@ -224,12 +224,12 @@
 	  	//
 	  	// Please document each override very carefully, and write a note to the console!
 
-	  	// This is because timdat.lstep is used to determine whether we're restarting a simulation
+	  	// This is because timdat.currentTimestepIndex is used to determine whether we're restarting a simulation
 	  	// and we're not doing that during tests.
 	  	// std::cout << "Information -- I'm overriding the following variables for this test..." << std::endl;
 	  	// std::cout << "Information -- The overrides are in testMultidom.hxx." << std::endl;
-	  	// std::cout << " timdat.lstep" << std::endl;
-	  	// timdat.lstep = int(0);
+	  	// std::cout << " timdat.currentTimestepIndex" << std::endl;
+	  	// timdat.currentTimestepIndex = int(0);
 	  	// std::cout << " inpdat.Delt[0]" << std::endl;
 	  	// inpdat.Delt[0] = 0.01;
 	  	// grcrbccom.numGRCRSrfs;

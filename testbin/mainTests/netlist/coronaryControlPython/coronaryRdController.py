@@ -31,7 +31,7 @@ class parameterController(abstractParameterController): #NECESSARY
 
 	def setupControlSystemVariables(self):
 		self.proportionOfLeftMyocardiumThisCoronaryPerfuses = 0.1
-		self.initialMVO2 = 2720.0 * self.proportionOfLeftMyocardiumThisCoronaryPerfuses # mm^3. 2720.0 should be set to some resting-state value for your particular application. Simulate to discover it.
+		self.initialMVO2 = 272.0 * self.proportionOfLeftMyocardiumThisCoronaryPerfuses # mm^3. 272.0 should be set to some resting-state value for your particular application. Simulate to discover it.
 		self.previousMVO2 = self.initialMVO2
 
 		self.MVO2History = numpy.array(self.initialMVO2) #empty array
@@ -39,8 +39,11 @@ class parameterController(abstractParameterController): #NECESSARY
 		self.leftVentricularPressureHistory = numpy.array([])
 
 		self.R_d_history = numpy.array([])
+		self.R_d_history_singleBeatBufferList = [] # for speed, buffer the single cycle in a (fast!) Python list, and only append to the R_d_history numpy array itself once per cycle (as this is probably an expensive operation when the arrays are large.) See http://stackoverflow.com/questions/7133885/fastest-way-to-grow-a-numpy-numeric-array
 		self.R_p_history = numpy.array([])
+		self.R_p_history_singleBeatBufferList = [] # for speed, buffer the single cycle in a (fast!) Python list, and only append to the R_d_history numpy array itself once per cycle (as this is probably an expensive operation when the arrays are large.) See http://stackoverflow.com/questions/7133885/fastest-way-to-grow-a-numpy-numeric-array
 		self.hungerHistory = numpy.array([])
+		self.hungerHistory_singleBeatBufferList = [] # for speed, buffer the single cycle in a (fast!) Python list, and only append to the R_d_history numpy array itself once per cycle (as this is probably an expensive operation when the arrays are large.) See http://stackoverflow.com/questions/7133885/fastest-way-to-grow-a-numpy-numeric-array
 
 		self.currentTimestepIndex = 0
 		self.beatStartTimestepIndices = numpy.array([self.currentTimestepIndex])
@@ -114,16 +117,19 @@ class parameterController(abstractParameterController): #NECESSARY
 		currentBloodFlow = dictionaryOfFlowsByComponentIndex[1] # flow through R_p
 		self.debtDelta = self.currentMVO2 - currentBloodFlow * self.arterial_O2_volume_proportion
 		self.hungerSignal = max(self.maximumAllowedNegativeHunger, self.hungerSignal + self.debtDelta * delt)
-		self.hungerHistory = numpy.append(self.hungerHistory, self.hungerSignal)
+		# self.hungerHistory = numpy.append(self.hungerHistory, self.hungerSignal)
+		self.hungerHistory_singleBeatBufferList.append(self.hungerSignal)
 
 		self.stepControlODE(delt)
 		self.restrictResistanceToWithinPhysiologicalRange()
 
 		# Set the new resistances:
 		self.R_d = 1.0/self.oneOverTotalResistance - self.R_p - self.R_a
-		self.R_d_history = numpy.append(self.R_d_history, self.R_d)
+		# self.R_d_history = numpy.append(self.R_d_history, self.R_d)
+		self.R_d_history_singleBeatBufferList.append(self.R_d)
 		self.R_p = 1.0/(1.0/self.R_p + delt * self.alphaFeedforwarGain * self.deltaMVO2 / self.arterial_O2_volume_proportion / self.meanPerfusionPressure)
-		self.R_p_history = numpy.append(self.R_p_history, self.R_p)
+		# self.R_p_history = numpy.append(self.R_p_history, self.R_p)
+		self.R_p_history_singleBeatBufferList.append(self.R_p)
 
 		# broadcast the new R_p, to be picked up by the controller for R_p:
 		self.clearBroadcastData()
@@ -150,15 +156,23 @@ class parameterController(abstractParameterController): #NECESSARY
 			self.computeMVO2OverPreviousBeat(self.beatStartTimestepIndices[-1])
 			self.beatStartTimestepIndices = numpy.append(self.beatStartTimestepIndices,self.currentTimestepIndex)
 			if self.MPIRank == 0:
+				self.R_d_history = numpy.append(self.R_d_history, numpy.array(self.R_d_history_singleBeatBufferList))
+				self.R_d_history_singleBeatBufferList = []
 				numpy.savetxt('R_d_history.dat', self.R_d_history)
+
+				self.R_p_history = numpy.append(self.R_p_history, numpy.array(self.R_p_history_singleBeatBufferList))
+				self.R_p_history_singleBeatBufferList = []
 				numpy.savetxt('R_p_history.dat', self.R_p_history)
+				
 				numpy.savetxt('MVO2History.dat', self.MVO2History)
+
+				self.hungerHistory = numpy.append(self.hungerHistory, numpy.array(self.hungerHistory_singleBeatBufferList))
 				numpy.savetxt('myocardialHungerHistory.dat', self.hungerHistory)
 		self.currentTimestepIndex += 1
 
 	def stepControlODE(self, delt):
 		self.deltaMVO2 = ( self.currentMVO2 - self.previousMVO2 ) / delt
-		print "deltaMVO2", self.deltaMVO2
+		#print "deltaMVO2", self.deltaMVO2
 
 		self.oneOverTotalResistance = self.oneOverTotalResistance + \
 						 delt*(

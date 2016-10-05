@@ -184,6 +184,7 @@ TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
   EXPECT_NEAR(1.077519395498929e-2,flowHistResult,1e-7);
 }
 
+#ifndef DISABLE_ACUSIM_TESTS
 TEST_F(testMain, checkNetlistHeartModel) {
   // This test uses a solver.inp which (on purpose) does not take enough
   // iterations (Step Construction 0 1 0 1...) for decent convergence.
@@ -232,7 +233,9 @@ TEST_F(testMain, checkNetlistHeartModel) {
   flowHistResult = FlowHistReader.getReadFileData(0,5);
   EXPECT_EQ(0,flowHistResult);
 }
+#endif
 
+#ifndef DISABLE_ACUSIM_TESTS
 TEST_F(testMain, checkClosedLoopWithHeart) {
   setSimDirectory("mainTests/netlist/closedLoopHeart");
   clearOutOldFiles();
@@ -326,7 +329,9 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
     EXPECT_NEAR(-27.2080883237159,flowResult,1e-8);
   }
 }
+#endif
 
+#ifndef DISABLE_ACUSIM_TESTS
 TEST_F(testMain, checkMixedNetlistAndRCRT)
 {
   setSimDirectory("mainTests/legacy/netlistWithRCRTs");
@@ -414,7 +419,9 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
     delete QHistReader;
   }
 }
+#endif
 
+#ifndef DISABLE_ACUSIM_TESTS
 TEST_F(testMain, checkClosedLoopWithHeartRestart) {
   setSimDirectory("mainTests/netlist/closedLoopHeartRestart");
   clearOutOldFiles();
@@ -508,3 +515,4 @@ TEST_F(testMain, checkClosedLoopWithHeartRestart) {
     EXPECT_NEAR(-28.2775298028741,flowResult,1e-1);
   }
 }
+#endif

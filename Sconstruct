@@ -9,6 +9,7 @@ env = Environment(ENV = os.environ)
 env.Replace(PATH = '')
 env.Replace(LD_LIBRARY_PATH = '')
 env.Append(LINKFLAGS = bop.PYTHON_LDMODULEFLAGS)
+env.Append(LINKFLAGS = bop.PYTHON_LDMODULEFLAGS + bop.ADDITIONAL_LINKFLAGS)
 
 
 env.Prepend(LIBPATH = bop.EFENCE_INCDIR)
@@ -83,6 +84,7 @@ if (bop.MAKE_WITH_PRESOLVER==1):
 if (bop.MAKE_WITH_POSTSOLVER==1):
 	SConscript('./postsolver/src/SConscript',exports='env')
 if int(test):
+   print "including " + bop.GOOGLETEST_TOP+"/src/SConscript"
    SConscript(bop.GOOGLETEST_TOP+'/src/SConscript',exports='env')
    SConscript('./flowsolver/test/SConscript',exports='env')
 

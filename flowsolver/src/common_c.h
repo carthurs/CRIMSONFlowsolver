@@ -12,7 +12,9 @@
 
 #define MAXBLK   50000
 #define MAXSURF  199
+#define MAXOUTPUTNODES 1000
 #define MAXREGIONS 255
+#define MAX3DDOMAINS 10
 #define MAXTS   100
 #define MAXTOP   5
 #define MAXQPT   125
@@ -45,7 +47,7 @@
 #endif
 
       extern struct {
-         bool kalmanFilterOn = false;
+         bool kalmanFilterOn;
       } kalmanFilterActive;
 
       extern struct {
@@ -402,7 +404,7 @@
          double Dtmax;
          double alpha;
          double etol;
-         int lstep;
+         int currentTimestepIndex;
          int ifunc;
          int itseq;
          int istep;
@@ -486,6 +488,7 @@
          double ResCriteria;
          double heartparam[16];
          double stabflux_coeff;
+         double zeroDDomainCompliances[MAX3DDOMAINS+1];
          int icardio;
          int itvn;
          int ipvsq;
@@ -553,6 +556,9 @@
          int num3DConnectedComponents;
          int surfacesOfEachConnectedComponent[MAXSURF+1];
          int hasMasterPythonControlScript;
+         int writeSpecificNodalDataEveryTimestep;
+         int numberOfNodesForDataOutput;
+         int indicesOfNodesForDataOutput[MAXOUTPUTNODES+1];
       } nomodule;
 
 

@@ -28,12 +28,10 @@
         do iblk = 1, itpblk
 !
 !           read(igeom) neltp,nenl,ipordl,nshl, ijunk, ijunk, lcsyst
-           iseven=7
-!           call creadlist(igeom,iseven,
+!           call creadlist(igeom,7,
 !     &          neltp,nenl,ipordl,nshl, ijunk, ijunk, lcsyst)
-           iseven=7
            fname1='connectivity interior?'
-           call readheader(igeom,fname1//c_null_char,intfromfile,iseven, &
+           call readheader(igeom,fname1//c_null_char,intfromfile,7, &
                            c_char_"integer"//c_null_char, iotype)
            neltp  =intfromfile(1)
            nenl   =intfromfile(2)
@@ -48,6 +46,19 @@
            iientpsiz=neltp*nshl
            call readdatablock(igeom,fname1//c_null_char,ientp,iientpsiz, &
                            c_char_"integer"//c_null_char, iotype)
+
+           ! Check if we're about to overrun the preallocated (MAXBLK-sized) data arrays:
+           ! (Intel compilers using the -CB flags would notice this automatically; without such
+           ! bounds-checking we would be in the realm of undefined behaviour, so guard it here
+           ! and provide a more helpful error message)
+           if (neltp/ibksz .gt. MAXBLK) then
+            write(*,*) "Too much data per CPU (MAXBLK exceeded). Try running with more CPUs."
+            write(*,*) "ibksz:", ibksz
+            write(*,*) "neltp:", neltp
+            write(*,*) "MAXBLK:", MAXBLK
+            call exit(1)
+           endif
+           
            do n=1,neltp,ibksz 
               nelblk=nelblk+1
               npro= min(IBKSZ, neltp - n + 1)

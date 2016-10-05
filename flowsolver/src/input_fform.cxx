@@ -5,6 +5,9 @@
 
 #include "CInput.h"
 #include "common_c.h"
+#include <boost/algorithm/string.hpp>
+#include <stdexcept>
+#include <sstream>
 
 using namespace std;
 void print_error_code(int ierr);
@@ -44,7 +47,7 @@ int input_fform() {
 		solpar.imap = inp.GetValue("imap");
 
 		// ALE
-		if( (string) inp.GetValue("Arbitrary Lagrangian Eulerian description") == "True")
+		if( boost::iequals((string) inp.GetValue("Arbitrary Lagrangian Eulerian description"), "True"))
 		{
 			aleFlags.aleOn = 1; 
 		}			
@@ -65,13 +68,13 @@ int input_fform() {
 		
 		// Solution Control Keywords
 
-		if ((string) inp.GetValue("Equation of State") == "Incompressible")
+		if (boost::iequals((string) inp.GetValue("Equation of State"), "Incompressible"))
 			matdat.matflg[0][0] = -1;
-		if ((string) inp.GetValue("Equation of State") == "Compressible")
+		if (boost::iequals((string) inp.GetValue("Equation of State"), "Compressible"))
 			matdat.matflg[0][0] = 0;
 		inpdat.Delt[0] = inp.GetValue("Time Step Size");
 		inpdat.nstep[0] = inp.GetValue("Number of Timesteps");
-		if ((string) inp.GetValue("Viscous Control") == "Viscous")
+		if (boost::iequals((string) inp.GetValue("Viscous Control"), "Viscous"))
 			conpar.navier = 1;
 		else
 			conpar.navier = 0;
@@ -105,13 +108,15 @@ int input_fform() {
 			//turbvar.eles = inp.GetValue("DES Edge Length");
 
 		int solflow, solheat, solscalr, ilset;
-		((string) inp.GetValue("Solve Flow") == "True") ?
+		(boost::iequals((string) inp.GetValue("Solve Flow") , "True")) ?
 				solflow = 1 : solflow = 0;
-		((string) inp.GetValue("Solve Heat") == "True") ?
+		(boost::iequals((string) inp.GetValue("Solve Heat") , "True")) ?
 				solheat = 1 : solheat = 0;
 		//for compressible solheat= False so
-		if ((string) inp.GetValue("Equation of State") == "Compressible")
+		if (boost::iequals((string) inp.GetValue("Equation of State") , "Compressible"))
+		{
 			solheat = 0;
+		}
 		ilset = (int) inp.GetValue("Solve Level Set");
 		solscalr = (int) inp.GetValue("Solve Scalars");
 		solscalr += ilset;
@@ -137,10 +142,9 @@ int input_fform() {
 					"Explicit Solve for Redistance Field");
 			levlset.iExpLSSclr1 = inp.GetValue(
 					"Explicit Solve for Scalar 1 Field");
-			if ((string) inp.GetValue("Apply Volume Constraint") == "True") {
+			if (boost::iequals((string) inp.GetValue("Apply Volume Constraint") , "True")) {
 				levlset.ivconstraint = 1;
-			} else if ((string) inp.GetValue("Apply Volume Constraint")
-					== "False") {
+			} else if (boost::iequals((string) inp.GetValue("Apply Volume Constraint"), "False")) {
 				levlset.ivconstraint = 0;
 			} else {
 				cout
@@ -156,22 +160,22 @@ int input_fform() {
 
 		conpar.necho = inp.GetValue("Verbosity Level");
 		outpar.ntout = inp.GetValue("Number of Timesteps between Restarts");
-		if ((string) inp.GetValue("Print Statistics") == "True")
+		if (boost::iequals((string) inp.GetValue("Print Statistics") , "True"))
 			outpar.ioform = 2;
 		else
 			outpar.ioform = 1;
 
-		if ((string) inp.GetValue("Print Wall Fluxes") == "True")
+		if (boost::iequals((string) inp.GetValue("Print Wall Fluxes") , "True"))
 			outpar.iowflux = 1;
 		else
 			outpar.iowflux = 0;
 
-		if ((string) inp.GetValue("Print FieldView") == "True")
+		if (boost::iequals((string) inp.GetValue("Print FieldView") , "True"))
 			outpar.iofieldv = 1;
 		else
 			outpar.iofieldv = 0;
 
-		if ((string) inp.GetValue("Print ybar") == "True")
+		if (boost::iequals((string) inp.GetValue("Print ybar"), "True"))
 			outpar.ioybar = 1;
 		else
 			outpar.ioybar = 0;
@@ -181,17 +185,17 @@ int input_fform() {
 		//strcpy( phasta_iotype , ((string)inp.GetValue("Data Block Format")).c_str());
 		//turbvar.sonfathvar = inp.GetValue("Number of Father Nodes");
 
-		if ((string) inp.GetValue("Print Residual at End of Step") == "True")
+		if (boost::iequals((string) inp.GetValue("Print Residual at End of Step") , "True"))
 			genpar.lstres = 1;
 		else
 			genpar.lstres = 0;
 
-		if ((string) inp.GetValue("Print Error Indicators") == "True")
+		if (boost::iequals((string) inp.GetValue("Print Error Indicators"), "True"))
 			turbvar.ierrcalc = 1;
 		else
 			turbvar.ierrcalc = 0;
 
-		if ((string) inp.GetValue("Print Velocity Hessian") == "True")
+		if (boost::iequals((string) inp.GetValue("Print Velocity Hessian") , "True"))
 			turbvar.ihessian = 1;
 		else
 			turbvar.ihessian = 0;
@@ -247,21 +251,27 @@ int input_fform() {
 
 		//Material Properties Keywords
 		matdat.nummat = levlset.iLSet + 1;
-		if ((string) inp.GetValue("Shear Law") == "Constant Viscosity")
+		if (boost::iequals((string) inp.GetValue("Shear Law") , "Constant Viscosity"))
 			for (i = 0; i < levlset.iLSet + 1; i++)
 				matdat.matflg[i][1] = 0;
 
-		if ((string) inp.GetValue("Bulk Viscosity Law")
-				== "Constant Bulk Viscosity")
+		if (boost::iequals((string) inp.GetValue("Bulk Viscosity Law"), "Constant Bulk Viscosity"))
+		{
 			for (i = 0; i < levlset.iLSet + 1; i++)
+			{
 				matdat.matflg[i][2] = 0;
+			}
+		}
 
 		mmatpar.pr = inp.GetValue("Prandtl Number");
 
-		if ((string) inp.GetValue("Conductivity Law")
-				== "Constant Conductivity")
+		if (boost::iequals((string) inp.GetValue("Conductivity Law"), "Constant Conductivity"))
+		{
 			for (i = 0; i < levlset.iLSet + 1; i++)
+			{
 				matdat.matflg[i][3] = 0;
+			}
+		}
 
 		vec = inp.GetValue("Density");
 		for (i = 0; i < levlset.iLSet + 1; i++) {
@@ -298,25 +308,28 @@ int input_fform() {
 
 		//turbvar.rmutarget = inp.GetValue("Target Viscosity For Step NSTEP");
 
-		if ((string) inp.GetValue("Body Force Option") == "None") {
+		if (boost::iequals((string) inp.GetValue("Body Force Option") , "None")) {
 			for (i = 0; i < levlset.iLSet + 1; i++)
+			{
 				matdat.matflg[i][4] = 0;
-		} else if ((string) inp.GetValue("Body Force Option") == "Vector") {
+			}
+		} else if (boost::iequals((string) inp.GetValue("Body Force Option"), "Vector")) {
 			for (i = 0; i < levlset.iLSet + 1; i++)
+			{
 				matdat.matflg[i][4] = 1;
-		} else if ((string) inp.GetValue("Body Force Option")
-				== "User e3source.f") {
+			}
+		} else if (boost::iequals((string) inp.GetValue("Body Force Option"), "User e3source.f")) {
 			for (i = 0; i < levlset.iLSet + 1; i++)
+			{
 				matdat.matflg[i][4] = 3;
-		} else if ((string) inp.GetValue("Body Force Option") == "Boussinesq") {
+			}
+		} else if (boost::iequals((string) inp.GetValue("Body Force Option") , "Boussinesq")) {
 			for (i = 0; i < levlset.iLSet + 1; i++)
 				matdat.matflg[i][4] = 2;
-		} else if ((string) inp.GetValue("Body Force Option")
-				== "Cooling Analytic") {
+		} else if (boost::iequals((string) inp.GetValue("Body Force Option"), "Cooling Analytic")) {
 			for (i = 0; i < levlset.iLSet + 1; i++)
 				matdat.matflg[i][4] = 4;
-		} else if ((string) inp.GetValue("Body Force Option")
-				== "Cooling Initial Condition") {
+		} else if (boost::iequals((string) inp.GetValue("Body Force Option"), "Cooling Initial Condition")) {
 			for (i = 0; i < levlset.iLSet + 1; i++)
 				matdat.matflg[i][4] = 5;
 		}
@@ -377,9 +390,9 @@ int input_fform() {
 		}
 		vec.erase(vec.begin(), vec.end());
 
-		if ((string) inp.GetValue("Surface Tension Option") == "No") {
+		if (boost::iequals((string) inp.GetValue("Surface Tension Option") , "No")) {
 			genpar.isurf = 0;
-		} else if ((string) inp.GetValue("Surface Tension Option") == "Yes") {
+		} else if (boost::iequals((string) inp.GetValue("Surface Tension Option") , "Yes")) {
 			genpar.isurf = 1;
 		} else {
 			cout << " Surface Tension: Only Legal Values (Yes, No) ";
@@ -393,7 +406,7 @@ int input_fform() {
 		genpar.EntropyPressure = inp.GetValue(
 				"Entropy Form of Pressure Constraint on Weight Space");
 
-		if ((string) inp.GetValue("Rotating Frame of Reference") == "True") {
+		if (boost::iequals((string) inp.GetValue("Rotating Frame of Reference"), "True")) {
 			matdat.matflg[0][5] = 1;
 			vec = inp.GetValue("Rotating Frame of Reference Rotation Rate");
 			matdat.datmat[0][5][0] = vec[0];
@@ -409,27 +422,23 @@ int input_fform() {
 
 		//Linear Solver parameters
 		inpdat.memLSFlag=0;
-		if ((string) inp.GetValue("Solver Type")
-				== "ACUSIM with P Projection") {
+		if (boost::iequals((string) inp.GetValue("Solver Type"), "ACUSIM with P Projection")) {
 			incomp.iprjFlag = 0;
 			incomp.ipresPrjFlag = 1;
-		} else if ((string) inp.GetValue("Solver Type") == "ACUSIM") {
+		} else if (boost::iequals((string) inp.GetValue("Solver Type"), "ACUSIM")) {
 			incomp.iprjFlag = 0;
 			incomp.ipresPrjFlag = 0;
-		} else if ((string) inp.GetValue("Solver Type")
-				== "ACUSIM with Velocity Projection") {
+		} else if (boost::iequals((string) inp.GetValue("Solver Type"), "ACUSIM with Velocity Projection")) {
 			incomp.iprjFlag = 1;
 			incomp.ipresPrjFlag = 0;
-		} else if ((string) inp.GetValue("Solver Type")
-				== "ACUSIM with Full Projection") {
+		} else if (boost::iequals((string) inp.GetValue("Solver Type"), "ACUSIM with Full Projection")) {
 			incomp.iprjFlag = 1;
 			incomp.ipresPrjFlag = 1;
-		} else if ((string) inp.GetValue("Solver Type")
-				== "GMRES Matrix Free") {
+		} else if (boost::iequals((string) inp.GetValue("Solver Type"), "GMRES Matrix Free")) {
 			inpdat.impl[0] += 10 * solflow;
-		} else if ((string) inp.GetValue("Solver Type") == "GMRES EBE") {
+		} else if (boost::iequals((string) inp.GetValue("Solver Type"), "GMRES EBE")) {
 			inpdat.impl[0] += 20 * solflow;
-		} else if( (string)inp.GetValue("Solver Type") =="memLS"){
+		} else if( boost::iequals((string)inp.GetValue("Solver Type"), "memLS")){
 		    inpdat.memLSFlag=1;
 		    printf("**********************************************************************\n"); 
 		    printf("*** IF USING MEMLS ENSURE THE SETTINGS IN INPUT.CONFIG ARE CHANGED ***\n");		    
@@ -527,73 +536,104 @@ int input_fform() {
 		// DISCRETIZATION CONTROL
 
 		genpar.ipord = inp.GetValue("Basis Function Order");
-		if ((string) inp.GetValue("Time Integration Rule") == "First Order")
+		if (boost::iequals((string) inp.GetValue("Time Integration Rule"), "First Order"))
 			inpdat.rhoinf[0] = -1;
 		else
 			inpdat.rhoinf[0] = (double) inp.GetValue(
 					"Time Integration Rho Infinity");
-		if ((string) inp.GetValue("Predictor at Start of Step")
-				== "Same Velocity")
+		if (boost::iequals((string) inp.GetValue("Predictor at Start of Step"), "Same Velocity"))
+		{
 			genpar.ipred = 1;
-		if ((string) inp.GetValue("Predictor at Start of Step")
-				== "Zero Acceleration")
+		}
+		if (boost::iequals((string) inp.GetValue("Predictor at Start of Step"), "Zero Acceleration"))
+		{
 			genpar.ipred = 2;
-		if ((string) inp.GetValue("Predictor at Start of Step")
-				== "Same Acceleration")
+		}
+		if (boost::iequals((string) inp.GetValue("Predictor at Start of Step"), "Same Acceleration"))
+		{
 			genpar.ipred = 3;
-		if ((string) inp.GetValue("Predictor at Start of Step") == "Same Delta")
+		}
+		if (boost::iequals((string) inp.GetValue("Predictor at Start of Step") , "Same Delta"))
+		{
 			genpar.ipred = 4;
+		}
 
-		if ((string) inp.GetValue("Weak Form") == "Galerkin")
+		if (boost::iequals((string) inp.GetValue("Weak Form") , "Galerkin"))
+		{
 			solpar.ivart = 1;
-		if ((string) inp.GetValue("Weak Form") == "SUPG")
+		}
+		if (boost::iequals((string) inp.GetValue("Weak Form") , "SUPG"))
+		{
 			solpar.ivart = 2;
+		}
 
-		if ((string) inp.GetValue("Flow Advection Form") == "Convective")
+		if (boost::iequals((string) inp.GetValue("Flow Advection Form"), "Convective"))
 			solpar.iconvflow = 2;
-		else if ((string) inp.GetValue("Flow Advection Form") == "Conservative")
+		else if (boost::iequals((string) inp.GetValue("Flow Advection Form"), "Conservative"))
 			solpar.iconvflow = 1;
-		if ((string) inp.GetValue("Scalar Advection Form") == "Convective")
+		if (boost::iequals((string) inp.GetValue("Scalar Advection Form") , "Convective"))
+		{
 			solpar.iconvsclr = 2;
-		else if ((string) inp.GetValue("Scalar Advection Form")
-				== "Conservative")
+		}
+		else if (boost::iequals((string) inp.GetValue("Scalar Advection Form"), "Conservative"))
+		{
 			solpar.iconvsclr = 1;
-		if ((string) inp.GetValue("Use Conservative Scalar Convection Velocity")
-				== "True")
+		}
+		if (boost::iequals((string) inp.GetValue("Use Conservative Scalar Convection Velocity"), "True"))
+		{
 			sclrs.consrv_sclr_conv_vel = 1;
-		else if ((string) inp.GetValue(
-				"Use Conservative Scalar Convection Velocity") == "False")
+		}
+		else if (boost::iequals((string) inp.GetValue("Use Conservative Scalar Convection Velocity") , "False"))
+		{
 			sclrs.consrv_sclr_conv_vel = 0;
+		}
 		// TAU INPUT
-		if ((string) inp.GetValue("Tau Matrix") == "Diagonal-Shakib")
+		if (boost::iequals((string) inp.GetValue("Tau Matrix"), "Diagonal-Shakib"))
+		{
 			genpar.itau = 0;
-		else if ((string) inp.GetValue("Tau Matrix") == "Diagonal-Franca")
+		}
+		else if (boost::iequals((string) inp.GetValue("Tau Matrix"), "Diagonal-Franca"))
+		{
 			genpar.itau = 1;
-		else if ((string) inp.GetValue("Tau Matrix") == "Diagonal-Jansen(dev)")
+		}
+		else if (boost::iequals((string) inp.GetValue("Tau Matrix"), "Diagonal-Jansen(dev)"))
+		{
 			genpar.itau = 2;
-		else if ((string) inp.GetValue("Tau Matrix") == "Diagonal-Compressible")
+		}
+		else if (boost::iequals((string) inp.GetValue("Tau Matrix"), "Diagonal-Compressible"))
+		{
 			genpar.itau = 3;
-		else if ((string) inp.GetValue("Tau Matrix") == "Matrix-Mallet")
+		}
+		else if (boost::iequals((string) inp.GetValue("Tau Matrix"), "Matrix-Mallet"))
+		{
 			genpar.itau = 10;
-		else if ((string) inp.GetValue("Tau Matrix") == "Matrix-Modal")
+		}
+		else if (boost::iequals((string) inp.GetValue("Tau Matrix"), "Matrix-Modal"))
+		{
 			genpar.itau = 11;
+		}
 
 		genpar.dtsfct = inp.GetValue("Tau Time Constant");
 		genpar.taucfct = inp.GetValue("Tau C Scale Factor");
 
 		// FLOW DISCONTINUITY CAPTURING
 
-		if ((string) inp.GetValue("Discontinuity Capturing") == "Off")
+		if (boost::iequals((string) inp.GetValue("Discontinuity Capturing"), "Off"))
+		{
 			solpar.iDC = 0;
-		else if ((string) inp.GetValue("Discontinuity Capturing")
-				== "DC-mallet")
+		}
+		else if (boost::iequals((string) inp.GetValue("Discontinuity Capturing"), "DC-mallet"))
+		{
 			solpar.iDC = 1;
-		else if ((string) inp.GetValue("Discontinuity Capturing")
-				== "DC-quadratic")
+		}
+		else if (boost::iequals((string) inp.GetValue("Discontinuity Capturing"), "DC-quadratic"))
+		{
 			solpar.iDC = 2;
-		else if ((string) inp.GetValue("Discontinuity Capturing")
-				== "DC-minimum")
+		}
+		else if (boost::iequals((string) inp.GetValue("Discontinuity Capturing"), "DC-minimum"))
+		{
 			solpar.iDC = 3;
+		}
 		else {
 			cout << "Condition not defined for Discontinuity Capturing \n ";
 			exit(1);
@@ -613,8 +653,8 @@ int input_fform() {
 		//        cout<< "Condition not defined for Scalar Discontinuity Capturing \n ";
 		//        exit(1);
 		//      }
-		if ((string) inp.GetValue("Include Viscous Correction in Stabilization")
-				== "True") {
+		if (boost::iequals((string) inp.GetValue("Include Viscous Correction in Stabilization"), "True"))
+		{
 			if (genpar.ipord == 1)
 				genpar.idiff = 1;
 			else
@@ -626,14 +666,16 @@ int input_fform() {
 		timdat.flmpl = inp.GetValue("Lumped Mass Fraction on Left-hand-side");
 		timdat.flmpr = inp.GetValue("Lumped Mass Fraction on Right-hand-side");
 
-		if ((string) inp.GetValue("Dump CFL") == "True")
+		if (boost::iequals((string) inp.GetValue("Dump CFL") , "True"))
+		{
 			timdat.iCFLworst = 1;
+		}
 
 		intdat.intg[0][0] = inp.GetValue("Quadrature Rule on Interior");
 		intdat.intg[0][1] = inp.GetValue("Quadrature Rule on Boundary");
 		genpar.ibksiz = inp.GetValue("Number of Elements Per Block");
 
-		((string) inp.GetValue("Turn Off Source Terms for Scalars") == "True") ?
+		(boost::iequals((string) inp.GetValue("Turn Off Source Terms for Scalars") , "True")) ?
 				sclrs.nosource = 1 : sclrs.nosource = 0;
 		sclrs.tdecay = inp.GetValue("Decay Multiplier for Scalars");
 
@@ -740,8 +782,7 @@ int input_fform() {
 //		}
 
 		// CARDIOVASCULAR MODELING PARAMETERS
-		if ((string) inp.GetValue("Time Varying Boundary Conditions From File")
-				== "True")
+		if (boost::iequals((string) inp.GetValue("Time Varying Boundary Conditions From File"), "True"))
 			nomodule.itvn = 1;
 		else
 			nomodule.itvn = 0;
@@ -754,14 +795,22 @@ int input_fform() {
 				cout << "Number of Coupled Surfaces > MAXSURF \n";
 				exit(1);
 			}
-			if ((string) inp.GetValue("Pressure Coupling") == "None")
+			if (boost::iequals((string) inp.GetValue("Pressure Coupling"), "None"))
+			{
 				nomodule.ipvsq = 0;
-			if ((string) inp.GetValue("Pressure Coupling") == "Explicit")
+			}
+			if (boost::iequals((string) inp.GetValue("Pressure Coupling"), "Explicit"))
+			{
 				nomodule.ipvsq = 1;
-			if ((string) inp.GetValue("Pressure Coupling") == "Implicit")
+			}
+			if (boost::iequals((string) inp.GetValue("Pressure Coupling"), "Implicit"))
+			{
 				nomodule.ipvsq = 2;
-			if ((string) inp.GetValue("Pressure Coupling") == "P-Implicit")
+			}
+			if (boost::iequals((string) inp.GetValue("Pressure Coupling"), "P-Implicit"))
+			{
 				nomodule.ipvsq = 3;
+			}
 			
            /**********************************************************
             ***          Influx Stabilisation Coefficient          ***
@@ -774,19 +823,19 @@ int input_fform() {
       		**********************************************************/
 
       		nomodule.indsurf = int(0);
-      		if ((string) inp.GetValue("Global Node Numbering") == "True")
+      		if (boost::iequals((string) inp.GetValue("Global Node Numbering"), "True"))
       		{
           		nomodule.indsurf = int(1);
       		}
 
       		nomodule.geombcHasObservationFields = int(1);
-      		if ((string) inp.GetValue("Geombc Has Observation Fields") == "False")
+      		if (boost::iequals((string) inp.GetValue("Geombc Has Observation Fields"), "False"))
       		{
       			nomodule.geombcHasObservationFields = int(0);
       		}
 
       		nomodule.geombcHasNodeTags = int(1);
-	      	if ((string) inp.GetValue("Geombc Has Node Tags") == "False")
+	      	if (boost::iequals((string) inp.GetValue("Geombc Has Node Tags"), "False"))
 	      	{
 	      		nomodule.geombcHasNodeTags = int(0);
 	      	}
@@ -795,7 +844,7 @@ int input_fform() {
 		     ***               Heart Model Parameters               ***
 		     **********************************************************/
 
-		    if ((string) inp.GetValue("Heart Model") == "True")
+		    if (boost::iequals((string) inp.GetValue("Heart Model"), "True"))
 		    {
 	            nomodule.iheart = 1;        
                 nomodule.heartparam[0] = inp.GetValue("Aortic Surface");
@@ -816,7 +865,7 @@ int input_fform() {
 		        
 		        		       		      
 		        // backflow parameters        
-		        if ((string) inp.GetValue("Backflow") == "True")
+		        if (boost::iequals((string) inp.GetValue("Backflow"), "True"))
 		        {
 		           nomodule.heartparam[11] = 1;    
 		           nomodule.heartparam[12] = inp.GetValue("Backflow Magnitude");
@@ -843,8 +892,10 @@ int input_fform() {
       		***                                                     ***
       		**********************************************************/
 
-			if ((string) inp.GetValue("Inflow Coupling") == "True")
+			if (boost::iequals((string) inp.GetValue("Inflow Coupling") , "True"))
+			{
 				nomodule.incp = 1;
+			}
 			else
 				nomodule.incp = 0;
 			if (nomodule.incp == 1) {
@@ -856,11 +907,14 @@ int input_fform() {
 				for (i = 0; i < nomodule.numINCPSrfs; i++) {
 					nomodule.nsrflistINCP[i + 1] = ivec[i];
 				}
-				if ((string) inp.GetValue("Inflow Parameters From File")
-						== "True")
+				if (boost::iequals((string) inp.GetValue("Inflow Parameters From File"), "True"))
+				{
 					nomodule.incpfile = 1;
+				}
 				else
+				{
 					nomodule.incpfile = 0;
+				}
 			}
 			if (nomodule.numResistSrfs = inp.GetValue(
 					"Number of Resistance Surfaces")) {
@@ -885,10 +939,14 @@ int input_fform() {
 				for (i = 0; i < nomodule.numImpSrfs; i++) {
 					nomodule.nsrflistImp[i + 1] = ivec[i];
 				}
-				if ((string) inp.GetValue("Impedance From File") == "True")
+				if (boost::iequals((string) inp.GetValue("Impedance From File") , "True"))
+				{
 					nomodule.impfile = 1;
+				}
 				else
+				{
 					nomodule.impfile = 0;
+				}
 			}
 			nomodule.ircrfile = 0; // value remains if RCR Values From File == False; changed below if True
 			if (nomodule.numRCRSrfs = inp.GetValue("Number of RCR Surfaces")) {
@@ -898,7 +956,7 @@ int input_fform() {
 				for (i = 0; i < nomodule.numRCRSrfs; i++) {
 					nomodule.nsrflistRCR[i + 1] = ivec[i];
 				}
-				if ((string) inp.GetValue("RCR Values From File") == "True")
+				if (boost::iequals((string) inp.GetValue("RCR Values From File"), "True"))
 				{
 					nomodule.ircrfile = 1;
 				}
@@ -933,7 +991,7 @@ int input_fform() {
 				for(i=0; i< grcrbccom.numGRCRSrfs; i++){
 					grcrbccom.nsrflistGRCR[i+1] = ivec[i];
 				}
-				if ( (string)inp.GetValue("experimental RCR Values From File") == "True")
+				if ( boost::iequals((string)inp.GetValue("experimental RCR Values From File"), "True"))
 					grcrbccom.igrcrfile = 1;
 				else
 					grcrbccom.igrcrfile = 0;
@@ -948,11 +1006,14 @@ int input_fform() {
 				for (i = 0; i < nomodule.numCORSrfs; i++) {
 					nomodule.nsrflistCOR[i + 1] = ivec[i];
 				}
-				if ((string) inp.GetValue("Coronary Values From File")
-						== "True")
+				if (boost::iequals((string) inp.GetValue("Coronary Values From File"), "True"))
+				{
 					nomodule.icorfile = 1;
+				}
 				else
+				{
 					nomodule.icorfile = 0;
+				}
 			}
 
 			if(nomodule.numControlledCoronarySrfs=inp.GetValue("Number of Controlled Coronary Surfaces"))
@@ -988,7 +1049,8 @@ int input_fform() {
 
 			nomodule.numLoopClosingCircuits = inp.GetValue("Number of Loop Closing Netlist Circuits");
 
-			if((string)inp.GetValue("Input prescribed HR and peak systolic pressure from file")=="True"){
+			if(boost::iequals((string)inp.GetValue("Input prescribed HR and peak systolic pressure from file"), "True"))
+			{
 		      nomodule.inputHRandSP = int(1);
 		    }
 		    else
@@ -1059,7 +1121,62 @@ int input_fform() {
 					nomodule.nsrflistDirCalc[i + 1] = ivec[i];
 				}
 			}
-			if ((string) inp.GetValue("Lagrange Multipliers") == "True")
+
+			nomodule.num3DConnectedComponents = inp.GetValue("Number of Connected Components of 3D Domain");
+			{
+				for (i=0; i<MAXSURF+1; i++)
+				{
+					nomodule.surfacesOfEachConnectedComponent[i] = 0;
+				}
+
+				bool domainHasMultipleConnectedComponents = (nomodule.num3DConnectedComponents > 1);
+				if (domainHasMultipleConnectedComponents)
+				{
+					ivec = inp.GetValue("List of Surfaces In Each Connected Component Separated by -1s");
+					int lengthOfConnectedComponentLineInSolverInp = nomodule.numNetlistLPNSrfs + nomodule.numDirCalcSrfs + nomodule.num3DConnectedComponents - 1;
+					for (i=0; i<lengthOfConnectedComponentLineInSolverInp; i++)
+					{
+						nomodule.surfacesOfEachConnectedComponent[i+1] = ivec[i];
+					}
+				}
+				else // If there's only one connected component, then this vector should just be the netlist and BCT surface indices (as the zeroD domain only supports these types of BC currently.)
+				{
+					// first do the netlists:
+					for (i = 0; i < nomodule.numNetlistLPNSrfs; i++)
+					{
+						nomodule.surfacesOfEachConnectedComponent[i+1] = nomodule.indicesOfNetlistSurfaces[i+1];
+					}
+					// Add the Dirichlet surfaces:
+					int indexShift = nomodule.numNetlistLPNSrfs;
+					for (i = 0; i < nomodule.numDirCalcSrfs; i++)
+					{
+						nomodule.surfacesOfEachConnectedComponent[i+1 + indexShift] = nomodule.nsrflistDirCalc[i+1];
+					}
+				}
+			}
+
+			if(boost::iequals((string)inp.GetValue("Simulate in Purely Zero Dimensions"), "True"))
+		    {
+		    	nomodule.pureZeroDSimulation = int(1);
+		    	std::vector<double> readCompliancesList = inp.GetValue("Zero Dimensional Domain Compliance");
+		    	if (readCompliancesList.size() != nomodule.num3DConnectedComponents)
+		    	{
+		    		throw std::runtime_error("Number of compliances given in input value \"Zero Dimensional Domain Compliance\" does not match the number of connected components of the domain.");
+		    	}
+		        for (i = 0; i < MAX3DDOMAINS + 1; i++)
+		        {
+		      	  nomodule.zeroDDomainCompliances[i] = 0;
+		        }
+				for (i = 0; i < nomodule.num3DConnectedComponents; i++) {
+					nomodule.zeroDDomainCompliances[i + 1] = readCompliancesList.at(i);
+				}
+		    }
+		    else
+		    {
+		      nomodule.pureZeroDSimulation = int(0);
+		    }
+
+			if (boost::iequals((string) inp.GetValue("Lagrange Multipliers"), "True"))
 				nomodule.Lagrange = 1;
 			else
 				nomodule.Lagrange = 0;
@@ -1072,22 +1189,21 @@ int input_fform() {
 				for (i = 0; i < nomodule.numLagrangeSrfs; i++) {
 					nomodule.nsrflistLagrange[i + 1] = ivec[i];
 				}
-				if ((string) inp.GetValue(
-						"Constrained Surface Information From File") == "True")
+				if (boost::iequals((string) inp.GetValue("Constrained Surface Information From File"), "True"))
 					nomodule.iLagfile = 1;
 				else
 					nomodule.iLagfile = 0;
 			}
 		}
 		nomodule.rescontrol = 0;
-		if ((string) inp.GetValue("Residual Control") == "True")
+		if (boost::iequals((string) inp.GetValue("Residual Control"), "True"))
 			nomodule.rescontrol = 1;
 		if (nomodule.rescontrol == 1) {
 			nomodule.ResCriteria = inp.GetValue("Residual Criteria");
 			nomodule.MinNumIter = inp.GetValue("Minimum Required Iterations");
 		}
 
-		if ((string) inp.GetValue("Has masterController.py Control Script") == "True")
+		if (boost::iequals((string) inp.GetValue("Has masterController.py Control Script"), "True"))
 		{
 			nomodule.hasMasterPythonControlScript = 1;
 		}
@@ -1096,8 +1212,35 @@ int input_fform() {
 			nomodule.hasMasterPythonControlScript = 0;	
 		}
 
+		nomodule.numberOfNodesForDataOutput = inp.GetValue("Number of Mesh Nodes which Output Presure and Flow");
+		if (nomodule.numberOfNodesForDataOutput > 0)
+		{
+			if (nomodule.numberOfNodesForDataOutput > MAXOUTPUTNODES)
+			{
+				std::stringstream errorMessage;
+				errorMessage << "Number of Mesh Nodes which Output Presure and Flow exceeded MAXOUTPUTNODES, which is " << MAXOUTPUTNODES << ". Adjust this value and recompile, or request fewer output nodes." << std::endl;
+				throw std::runtime_error(errorMessage.str());
+			}
+			nomodule.writeSpecificNodalDataEveryTimestep = 1;
+
+			ivec = inp.GetValue("List of Mesh Nodes which Output Presure and Flow");
+			for (i=0; i<MAXOUTPUTNODES+1; i++)
+			{
+				nomodule.indicesOfNodesForDataOutput[i] = 0;
+			}
+
+			for (i=0; i<nomodule.numberOfNodesForDataOutput; i++)
+			{
+				nomodule.indicesOfNodesForDataOutput[i+1] = ivec[i];
+			}
+		}
+		else
+		{
+			nomodule.writeSpecificNodalDataEveryTimestep = 0;
+		}
+
 		nomodule.ideformwall = 0;
-		if ((string) inp.GetValue("Deformable Wall") == "True") {
+		if (boost::iequals((string) inp.GetValue("Deformable Wall"), "True")) {
 			nomodule.ideformwall = 1;
 			nomodule.rhovw = inp.GetValue("Density of Vessel Wall");
 			nomodule.rnuvw = inp.GetValue("Poisson Ratio of Vessel Wall");
@@ -1106,31 +1249,41 @@ int input_fform() {
 			nomodule.nProps = inp.GetValue(
 					"Number of Wall Properties per Node");
 
-			if ((string) inp.GetValue("Wall Mass Matrix for LHS") == "True")
+			if (boost::iequals((string) inp.GetValue("Wall Mass Matrix for LHS"), "True"))
+			{
 				nomodule.iwallmassfactor = 1;
+			}
 			else
+			{
 				nomodule.iwallmassfactor = 0;
-			if ((string) inp.GetValue("Wall Stiffness Matrix for LHS")
-					== "True")
+			}
+			if (boost::iequals((string) inp.GetValue("Wall Stiffness Matrix for LHS"), "True"))
+			{
 				nomodule.iwallstiffactor = 1;
+			}
 			else
+			{
 				nomodule.iwallstiffactor = 0;
+			}
 
 			// new "boundary element tags"
-			if ((string) inp.GetValue("Use Boundary Element Tags") == "True") {
+			if (boost::iequals((string) inp.GetValue("Use Boundary Element Tags"), "True"))
+			{
 				nomodule.iuseBET = 1;
 			}
 			else
+			{
                 nomodule.iuseBET = 0;
+			}
 
 			// SWB vessel wall properties
-			if ((string) inp.GetValue("Use SWB File") == "True") {
+			if (boost::iequals((string) inp.GetValue("Use SWB File"), "True")) {
 				nomodule.iUseSWB = 1;
 
 				// only use the thickness value in SWB
 				// this will allow the use of the wall regions only for stiffness
 				nomodule.iUseSWBthickonly = 0;
-				if ((string) inp.GetValue("Use SWB Wall Thickness Only") == "True")
+				if (boost::iequals((string) inp.GetValue("Use SWB Wall Thickness Only"), "True"))
 					nomodule.iUseSWBthickonly = 1;
 			}
 			else
@@ -1176,36 +1329,36 @@ int input_fform() {
 
 			}
 
-			if ((string) inp.GetValue("Wall Damping Term") == "True") {
+			if (boost::iequals((string) inp.GetValue("Wall Damping Term"), "True")) {
 				nomodule.iwalldamp = 1;
 				nomodule.tissSuppDampCoeff = inp.GetValue("Damping Coefficient for Tissue Support");
 			} else
 				nomodule.iwalldamp = 0;
 
-			if ((string) inp.GetValue("Wall External Support Term") == "True") {
+			if (boost::iequals((string) inp.GetValue("Wall External Support Term"), "True")) {
 				nomodule.iwallsupp = 1;
 				nomodule.tissSuppStiffCoeff = inp.GetValue("Stiffness Coefficient for Tissue Support");
 			} else
 				nomodule.iwallsupp = 0;
 
-			if ((string) inp.GetValue("Axial Tethering Damping Term") == "True") {
+			if (boost::iequals((string) inp.GetValue("Axial Tethering Damping Term"), "True")) {
 				nomodule.iringdamp = 1;
 				nomodule.tissSuppRingDampCoeff = inp.GetValue("Axial Tethering Damping Coefficient");
 			} else
 				nomodule.iringdamp = 0;
 
-			if ((string) inp.GetValue("Axial Tethering Stiffness Term") == "True") {
+			if (boost::iequals((string) inp.GetValue("Axial Tethering Stiffness Term"), "True")) {
 				nomodule.iringsupp = 1;
 				nomodule.tissSuppRingStiffCoeff = inp.GetValue("Axial Tethering Stiffness Coefficient");
 			} else
 				nomodule.iringsupp = 0;
 
-			if ((string) inp.GetValue("Measure Distance to Wall Data") == "True") {
+			if (boost::iequals((string) inp.GetValue("Measure Distance to Wall Data"), "True")) {
 				nomodule.imeasdist = 1;
 			} else
 				nomodule.imeasdist = 0;
 
-			if ((string) inp.GetValue("Wall State Filter Term") == "True") {
+			if (boost::iequals((string) inp.GetValue("Wall State Filter Term"), "True")) {
 				nomodule.imeasdist = 1;
 				nomodule.idistancenudge = 1;
 				nomodule.stateFilterCoeff = inp.GetValue("Wall State Filter Coefficient");
@@ -1213,10 +1366,10 @@ int input_fform() {
 				nomodule.idistancenudge = 0;
 			}
 
-			if ((string) inp.GetValue("Use Reference Displacements") == "True") {
+			if (boost::iequals((string) inp.GetValue("Use Reference Displacements"), "True")) {
 				nomodule.iinitialprestress = 1;
 
-				if ((string) inp.GetValue("Update Reference Displacements with Average") == "True")
+				if (boost::iequals((string) inp.GetValue("Update Reference Displacements with Average"), "True"))
 					nomodule.iupdateprestress = 1;
 				else
 					nomodule.iupdateprestress = 0;

@@ -188,7 +188,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 					errorMessage << " was tagged as having unstressed volume control, but the component has no unstressed volume parameter." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
-				
+
 				//////////////////////////////////////////////////////////////////////
 				// this is the difference with normal Python component controllers: //
 				//////////////////////////////////////////////////////////////////////
@@ -221,9 +221,9 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -260,9 +260,9 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(parameterToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -317,9 +317,9 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(flowToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Component, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -358,8 +358,8 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Node, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
 				// m_controlSystems.push_back(controllerToPushBack);
-				controllerToPushBack->initialise();
 				m_pythonControlSystems.push_back(controllerToPushBack);
+				controllerToPushBack->initialise();
 				sortPythonControlSystemsByPriority();
 			}
 
@@ -403,9 +403,9 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				}
 				int surfaceIndex = netlistCircuit->getSurfaceIndex();
 				boost::shared_ptr<GenericPythonController> controllerToPushBack(new UserDefinedCustomPythonParameterController(pressureToControl, surfaceIndex, nodeOrComponentIndex, circuit_item_t::Circuit_Node, m_delt, externalPythonControllerName, flowPointerPairs, pressurePointerPairs, volumePointerPairs, m_startingTimestepIndex));
+				m_pythonControlSystems.push_back(controllerToPushBack);
 				controllerToPushBack->initialise();
 				// m_controlSystems.push_back(controllerToPushBack);
-				m_pythonControlSystems.push_back(controllerToPushBack);
 				sortPythonControlSystemsByPriority();
 			}
 			

@@ -161,7 +161,7 @@
         ! ************** !
 
         IF (iheart .GT. int(0)) THEN 
-          IF (hrt%isavopen()) THEN
+          IF (hrt%isavopen() .eq. 1) THEN
             memLS_nFaces_s = memLS_nFaces + int(1)
             ALLOCATE(faceRes(memLS_nFaces_s), incL(memLS_nFaces_s))
             CALL AddElmpvsQFormemLS(faceRes, memLS_nFaces_s)

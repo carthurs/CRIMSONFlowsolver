@@ -24,7 +24,7 @@ module phcommonvars
     !
     !  The two types of face topology are  1= tri, 2=quad
     !
-    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255 )
+    parameter     ( MAXTOP = 6, MAXSURF=199, MAXREGIONS=255, MAXOUTPUTNODES=1000, MAX3DDOMAINS = 10 )
   
     ! the common block nomodule holds all the things which have been removed
     ! from different modules
@@ -50,7 +50,8 @@ module phcommonvars
         tissSuppRingStiffCoeff, &
         tissSuppRingDampCoeff, &
         stateFilterCoeff, &
-        rescontrol, ResCriteria, heartparam(0:15), stabflux_coeff
+        rescontrol, ResCriteria, heartparam(0:15), stabflux_coeff, &
+        zeroDDomainCompliances(0:MAX3DDOMAINS)
     integer           icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP(0:MAXSURF),incpfile, &
         numResistSrfs, nsrflistResist(0:MAXSURF), &
@@ -80,7 +81,8 @@ module phcommonvars
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation, &
         num3DConnectedComponents, surfacesOfEachConnectedComponent(0:MAXSURF), &
-        hasMasterPythonControlScript
+        hasMasterPythonControlScript, writeSpecificNodalDataEveryTimestep, &
+        numberOfNodesForDataOutput, indicesOfNodesForDataOutput(0:MAXOUTPUTNODES)
     common /nomodule/ bcttimescale,ValueListResist, &
         rhovw,thicknessvw, evw, rnuvw, rshearconstantvw, betai, &
         ValueListWallE, &
@@ -91,6 +93,7 @@ module phcommonvars
         stateFilterCoeff, &
         rescontrol,ResCriteria, heartparam, &
         stabflux_coeff, &
+        zeroDDomainCompliances, &
         icardio, itvn, ipvsq, &
         incp, numINCPSrfs, nsrflistINCP,incpfile, &
         numResistSrfs, nsrflistResist, &
@@ -120,7 +123,8 @@ module phcommonvars
         inputHRandSP, geombcHasObservationFields, &
         geombcHasNodeTags, pureZeroDSimulation, &
         num3DConnectedComponents, surfacesOfEachConnectedComponent, &
-        hasMasterPythonControlScript
+        hasMasterPythonControlScript, writeSpecificNodalDataEveryTimestep, &
+        numberOfNodesForDataOutput, indicesOfNodesForDataOutput
     bind(C, name="nomodule") :: /nomodule/
     !----------------------------------------------------------
 
@@ -574,14 +578,14 @@ module phcommonvars
     !----------------------------------------------------------
     real*8          time,    CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
         etol
-    integer         lstep,  ifunc,  itseq,  istep,  iter, &
+    integer         currentTimestepIndex,  ifunc,  itseq,  istep,  iter, &
         nitr
     real*8          almi,   alfi,   gami,   flmpl,  flmpr, &
         dtol(2)
     integer         iCFLworst
     common /timdat/ time,    CFLfld, CFLsld, Dtgl,   Dtmax,  alpha, &
         etol,    &
-        lstep,  ifunc,  itseq,  istep,  iter, &
+        currentTimestepIndex,  ifunc,  itseq,  istep,  iter, &
         nitr,    &
         almi,   alfi,   gami,   flmpl,  flmpr, &
         dtol, &
@@ -1192,12 +1196,12 @@ end subroutine
 ! ibndc         : input  (problem boundary cond.)   [BC.DAT]
 ! imat          : input  (element material types)   [MATERIAL.DAT]
 ! iecho         : output (echo of input)            [ECHO.DAT]
-! iout          : output (result output)            [OUTPUT.lstep]
-! ichmou        : output (chemistry output)         [OUTCHM.lstep]
+! iout          : output (result output)            [OUTPUT.currentTimestepIndex]
+! ichmou        : output (chemistry output)         [OUTCHM.currentTimestepIndex]
 ! irstin        : input  (input restart)            [RESTAR.INP]
 ! irstou        : output (output restart)           [RESTAR.OUT]
 ! ihist         : output (history output)           [HISTOR.DAT]
-! iflux         : output (boundary flux)            [FLUX.lstep]
+! iflux         : output (boundary flux)            [FLUX.currentTimestepIndex]
 ! ierror        : output (error messages)           [ERROR.DAT]
 ! itable        : input  (equilibrium chemistry)    [TABLE.DAT]
 ! iforce        : output (aerodynamic forces)       [FORCES.DAT]
@@ -1351,8 +1355,8 @@ end subroutine
 ! Dtmax         : maximum delta-time
 ! alpha         : trapezoidal rule parameter
 ! etol          : epsilon tolerance for GMRES
-! lstep         : current time step
-! ifunc         : func. eval. counter (=niter*(lstep-lstep0) + iter)
+! currentTimestepIndex         : current time step
+! ifunc         : func. eval. counter (=niter*(currentTimestepIndex-lstep0) + iter)
 ! itseq         : sequence number
 ! istep         : step number (reseted at the beginning of the run)
 ! iter          : iteration number

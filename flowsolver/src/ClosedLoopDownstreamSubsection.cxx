@@ -89,7 +89,7 @@ std::vector<PetscScalar> ClosedLoopDownstreamSubsection::getSolutionVectorEntrie
         dataLocationRange = m_mapOfSurfaceIndicesToRangeOfEntriesInSolutionVector.at(surfaceIndex);
     } catch (const std::exception& e) {
         std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-        throw e;
+        throw;
     }
 
     // Get the data to return:
@@ -114,6 +114,9 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     // linear system:
     int firstEntryBelongingToCurrentSurfaceInSolutionVector = 0;
     m_mapOfSurfaceIndicesToRangeOfEntriesInSolutionVector.clear();
+
+    store3DInterfaceFlowSigns();
+
     m_systemSize = 0;
     for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
     {
@@ -498,6 +501,15 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     // errFlag = VecView(m_solutionVector,PETSC_VIEWER_STDOUT_WORLD); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
+void ClosedLoopDownstreamSubsection::store3DInterfaceFlowSigns()
+{
+    for (int upstreamCircuitIndex = 0; upstreamCircuitIndex < m_upstreamBoundaryConditionCircuits.size(); upstreamCircuitIndex++)
+    for (auto upstreamCircuitSharedPtr : m_upstreamBoundaryConditionCircuits)
+    {
+        m_signForPrescribed3DInterfaceFlow.insert(std::make_pair(upstreamCircuitSharedPtr->getIndexAmongstNetlists(), upstreamCircuitSharedPtr->getInterfaceFlowSign()));
+    }
+}
+
 void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt)
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
@@ -611,7 +623,7 @@ void ClosedLoopDownstreamSubsection::generateCircuitInterfaceNodeData()
             upstreamSurface = upstreamSurfaceIndices.at(interfaceConnectionIndex);
         } catch (const std::exception& e) {
             std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-            throw e;
+            throw;
         }
         // The map will throw an exception if the key does not exist; but we don't want this --
         // we want to create the key if it does not already exist, so we handle out_of_range
@@ -652,7 +664,7 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircui
                 thisUpstreamCircuitConnectsToThisDownstreamNode = (m_mapOfSurfaceIndicesConnectedToEachDownstreamInterfaceNode.at(*downstreamInterfaceNode).count(upstreamSurfaceIndex) == 1);
             } catch (const std::exception& e) {
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-                throw e;
+                throw;
             }
             if (thisUpstreamCircuitConnectsToThisDownstreamNode)
             {
@@ -671,7 +683,7 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircui
                     columnOffsetOfCurrentUpstreamCircuit = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(upstreamCircuitIndex);
                 } catch (const std::exception& e) {
                     std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-                    throw e;
+                    throw;
                 }
 
                 // Write the part of the Kirchoff equation for this node (multipleIncidentCurrentNode)
@@ -692,7 +704,7 @@ void ClosedLoopDownstreamSubsection::appendKirchoffLawsAtInterfacesBetweenCircui
             columnOffsetOfDownstreamClosedLoopCircuit = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(minusOneToIndicateDownstreamCircuitNotBC);
         } catch (const std::exception& e) {
             std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-            throw e;
+            throw;
         }
         boost::shared_ptr<CircuitData> downstreamCircuitData = mp_NetlistCircuit->getCircuitDescription();
         writePartOfKirchoffEquationIntoClosedLoopSysteMatrix(downstreamCircuitData, *downstreamInterfaceNode, m_nextBlankSystemMatrixRow, numberOfHistoryPressures_downstreamCircuit, columnOffsetOfDownstreamClosedLoopCircuit);
@@ -726,7 +738,7 @@ void ClosedLoopDownstreamSubsection::writePartOfKirchoffEquationIntoClosedLoopSy
           foundMultipleIncidentCurrentsForEndNode = (circuitData->components.at(component)->endNode->getIndex() == multipleIncidentCurrentNode); 
       } catch (const std::exception& e) {
           std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-          throw e;
+          throw;
       }
       if (foundMultipleIncidentCurrentsForEndNode)
       {
@@ -789,7 +801,7 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
                 column = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(currentUpstreamCircuitIndex) + toZeroIndexing(upstreamNodeIndex);
             } catch (const std::exception& e) {
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-                throw e;
+                throw;
             }
             assert(column < m_systemSize);
             errFlag = MatSetValue(m_closedLoopSystemMatrix,m_nextBlankSystemMatrixRow,column,1.0,INSERT_VALUES); CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -810,7 +822,7 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
                 downstreamNodeIndex = downstreamNodeIndices.at(sharedNodeIndex);
             } catch (const std::exception& e) {
                 std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-                throw e;
+                throw;
             }
             int minusOneToIndicateDownstreamCircuitNotBC = -1;
             int column = m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(minusOneToIndicateDownstreamCircuitNotBC) + toZeroIndexing(downstreamNodeIndex);
@@ -857,11 +869,11 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
                                             m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
     } catch (const std::exception& e) {
         std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-        throw e;
+        throw;
     }
 
     errFlag = MatGetValues(m_inverseOfClosedLoopMatrix,numberOfValuesToGet,rowToGet,numberOfValuesToGet,&columnIndexOf3DInterfaceFlow,&valueFromInverseOfSystemMatrix);CHKERRABORT(PETSC_COMM_SELF,errFlag);
-    implicitCoefficientsToReturn.first = valueFromInverseOfSystemMatrix;
+    implicitCoefficientsToReturn.first = getSignForPrescribed3DInterfaceFlow(boundaryConditionIndex) * valueFromInverseOfSystemMatrix;
 
     PetscScalar valueFromRHS;
     errFlag = VecGetValues(m_closedLoopRHS,numberOfValuesToGet,&columnIndexOf3DInterfaceFlow,&valueFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
@@ -870,8 +882,15 @@ std::pair<double,double> ClosedLoopDownstreamSubsection::getImplicitCoefficients
     errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,rowToGet,&valueFromSolutionVector);CHKERRABORT(PETSC_COMM_SELF,errFlag);
     
     implicitCoefficientsToReturn.second = valueFromSolutionVector - valueFromInverseOfSystemMatrix * valueFromRHS;//\todo make dynamic
+
+    // std::cout << "and just set 2 " << implicitCoefficientsToReturn.first << " " <<implicitCoefficientsToReturn.second << std::endl;
     
     return implicitCoefficientsToReturn;
+}
+
+double ClosedLoopDownstreamSubsection::getSignForPrescribed3DInterfaceFlow(const int boundaryConditionIndex) const {
+    // std::cout << "requested data for BC with index " << boundaryConditionIndex << std::endl;
+    return m_signForPrescribed3DInterfaceFlow.at(boundaryConditionIndex);
 }
 
 double ClosedLoopDownstreamSubsection::getComputedInterfacePressure(const int boundaryConditionIndex) const
@@ -890,7 +909,7 @@ double ClosedLoopDownstreamSubsection::getComputedInterfacePressure(const int bo
                                             m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
     } catch (const std::exception& e) {
         std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-        throw e;
+        throw;
     }
 
     PetscScalar pressureFromRHS;
@@ -915,13 +934,13 @@ double ClosedLoopDownstreamSubsection::getComputedInterfaceFlow(const int bounda
                                             m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.at(boundaryConditionIndex);
     } catch (const std::exception& e) {
         std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-        throw e;
+        throw;
     }
 
     PetscScalar flowFromRHS;
     errFlag = VecGetValues(m_solutionVector,numberOfValuesToGet,&vectorIndexOf3DInterfaceFlow,&flowFromRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-    return flowFromRHS;
+    return flowFromRHS * getSignForPrescribed3DInterfaceFlow(boundaryConditionIndex);
 }
 
 void ClosedLoopDownstreamSubsection::createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill)

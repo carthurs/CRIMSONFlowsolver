@@ -82,6 +82,13 @@ module cpp_interface
     		end subroutine callCppComputeAllImplicitCoeff_update
     end interface
 
+    interface
+            subroutine callCppComputeAllNetlistImplicitCoeff_solve(timestepNumber) bind(c,name="callCppComputeAllNetlistImplicitCoeff_solve")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllNetlistImplicitCoeff_solve
+    end interface
+
 
 !   =============== Numerical RCR Block ===============
     interface
@@ -198,6 +205,12 @@ module cpp_interface
             subroutine callCPPWriteAllNetlistComponentFlowsAndNodalPressures() bind(c,name="callCPPWriteAllNetlistComponentFlowsAndNodalPressures")
                 use iso_c_binding
             end subroutine callCPPWriteAllNetlistComponentFlowsAndNodalPressures
+    end interface
+
+    interface
+            subroutine callCPPDebugPrintFlowPointerTarget_BCM() bind(c,name="callCPPDebugPrintFlowPointerTarget_BCM")
+                use iso_c_binding
+            end subroutine callCPPDebugPrintFlowPointerTarget_BCM
     end interface
 
     ! interface

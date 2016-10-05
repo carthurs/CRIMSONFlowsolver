@@ -438,7 +438,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 		}
 	} catch (const std::exception& e) {
 	    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-	    throw e;
+	    throw;
 	}
 
 }
@@ -475,7 +475,7 @@ void SimvascularVerdandiModel::addParameterForEstimation(const char* parameterTy
 			}
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-		    throw e;
+		    throw;
 		}
 
 	}
@@ -501,7 +501,7 @@ void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
 				}
 			} catch (const std::exception& e) {
 			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-			    throw e;
+			    throw;
 			}
 
 		}
@@ -524,7 +524,7 @@ void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
 				}
 			} catch (const std::exception& e) {
 			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-			    throw e;
+			    throw;
 			}
 
 		}
@@ -547,7 +547,7 @@ void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
 				}
 			} catch (const std::exception& e) {
 			    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-			    throw e;
+			    throw;
 			}
 
 		}
@@ -843,7 +843,7 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
  */
 double SimvascularVerdandiModel::GetTime() const {
 	if(!dynamic_start_){
-		return (double)(timdat.lstep);
+		return (double)(timdat.currentTimestepIndex);
 	} else {
 		if (event_started_){
 			return (double)(time_shifted_);
@@ -1096,7 +1096,7 @@ SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateDstrb(std::string 
     	return *dstrb_parts_map_.at(name);
     } catch (const std::exception& e) {
         std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-        throw e;
+        throw;
     }
 
 }
@@ -1110,7 +1110,7 @@ SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateShared(std::string
     	return *shared_parts_map_.at(name);
     } catch (const std::exception& e) {
         std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
-        throw e;
+        throw;
     }
 
 }

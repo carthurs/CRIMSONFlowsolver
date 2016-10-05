@@ -8,7 +8,7 @@ import time
 
 print ""
 print "=============="
-print "Full usage: plotfigure.py <datafile> <ycolumn in file (zero-indexed)> <ylabel> <yscalefactor> <title> <xcolumn in file (zero-indexed) OR 'auto' for consecutive integers on the x axis> <xlabel> <xscalefactor>"
+print "Full usage: plotfigure.py <datafiley> <ycolumn in file (zero-indexed)> <ylabel> <yscalefactor> <title> <datafilex> <xcolumn in file (zero-indexed) OR 'auto' for consecutive integers on the x axis> <xlabel> <xscalefactor>"
 print "Use quotes if you need spaces in any of these arguments."
 print ""
 print "You can save the plot as a .png from the GUI, if you wish."
@@ -21,26 +21,26 @@ if len(commandLineArgs) < 3:
 	print "Not enough command line arguments. Please provide at least the first two."
 	print ""
 	sys.exit(0)
-if len(commandLineArgs) > 9:
+if len(commandLineArgs) > 10:
 	print "Too many command line arguments."
 	print ""
 	sys.exit(0)
-if len(commandLineArgs) < 9:
+if len(commandLineArgs) < 10:
 	print ""
 	print "=============="
 	print "Proceeding with missing arguments. This is okay, you just won't get some labels."
 	print "=============="
 	print ""
 	print ""
-	for nullEntryIndex in range(len(commandLineArgs),9):
+	for nullEntryIndex in range(len(commandLineArgs),10):
 		commandLineArgs.append('command line option missing')
 	# Make xscalefactor and yscalefactor 1.0 instead of "null"
-	for scalingEntryIndex in [4,8]:
+	for scalingEntryIndex in [4,9]:
 		if len(sys.argv) < scalingEntryIndex+1:
 			commandLineArgs[scalingEntryIndex] = 1.0
 
 # Put the input data into a string-keyed dictionary:
-commandLineArgsNamestrings = ['script','datafile','ycolumn','ylabel','yscalefactor','title','xcolumn','xlabel','xscalefactor']
+commandLineArgsNamestrings = ['script','datafiley','ycolumn','ylabel','yscalefactor','title','datafilex','xcolumn','xlabel','xscalefactor']
 commandLineDataZipped = zip(commandLineArgsNamestrings, commandLineArgs)
 commandLineData = dict(commandLineDataZipped)
 
@@ -48,14 +48,18 @@ commandLineData = dict(commandLineDataZipped)
 commandLineData['yscalefactor'] = float(commandLineData['yscalefactor'])
 commandLineData['xscalefactor'] = float(commandLineData['xscalefactor'])
 
-data=numpy.loadtxt(commandLineData['datafile'])
+datax=numpy.loadtxt(commandLineData['datafilex'])
+if commandLineData['datafilex'] != 'command line option missing':
+	datay = numpy.loadtxt(commandLineData['datafiley'])
+else:
+	datay = datax
 
 if commandLineData['xcolumn'] == 'auto':
-	myplot=matplotlib.pyplot.plot(numpy.array(range(1,len(data)+1))*commandLineData['xscalefactor'],data[:,commandLineData['ycolumn']]*commandLineData['yscalefactor'])
+	myplot=matplotlib.pyplot.plot(numpy.array(range(1,len(datax)+1))*commandLineData['xscalefactor'],datay[:,commandLineData['ycolumn']]*commandLineData['yscalefactor'])
 elif commandLineData['xcolumn'] != 'command line option missing':
-	myplot=matplotlib.pyplot.plot(data[:,commandLineData['xcolumn']]*commandLineData['xscalefactor'],data[:,commandLineData['ycolumn']]*commandLineData['yscalefactor'])
+	myplot=matplotlib.pyplot.plot(datax[:,commandLineData['xcolumn']]*commandLineData['xscalefactor'],datay[:,commandLineData['ycolumn']]*commandLineData['yscalefactor'])
 else:
-	myplot=matplotlib.pyplot.plot(data[:,commandLineData['ycolumn']]*commandLineData['yscalefactor'])
+	myplot=matplotlib.pyplot.plot(datay[:,commandLineData['ycolumn']]*commandLineData['yscalefactor'])
 
 xlabel=matplotlib.pyplot.xlabel(commandLineData['xlabel'])
 matplotlib.pyplot.draw()
@@ -77,7 +81,7 @@ matplotlib.pyplot.draw()
 ax=myseries.get_axes()
 ax.tick_params(axis='both',labelsize=28.0)
 ax.get_xticks()
-# array([  80.,   90.,  100.,  110.,  120.,  130.,  140.,  150.])
+ax.set_xticks( numpy.array([ 70., 80.,   90.,  100.,  110.,  120.,  130.]))
 myseries.get_figure().set_facecolor('white')
 ax.spines['top'].set_visible(False)
 matplotlib.pyplot.draw()

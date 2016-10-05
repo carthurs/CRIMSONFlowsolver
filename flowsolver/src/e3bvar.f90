@@ -639,7 +639,7 @@
 
           else
 
-              write(*,*) 'Number of wall properties not set correctly!'
+              write(*,*) 'Number of wall properties not set correctly! nProps: ', nProps
               stop
 
           end if

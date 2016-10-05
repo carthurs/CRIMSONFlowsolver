@@ -20,8 +20,8 @@ Simulate in Purely Zero Dimensions: True
 # CARDIOVASCULAR MODELING PARAMETERS: PRESCRIBED VELOCITIES
 # {
     BCT Time Scale Factor : 1.0
-    List of Dirichlet Surfaces : #5
-    Number of Dirichlet Surfaces Which Output Pressure and Flow : 0#1
+    List of Dirichlet Surfaces :
+    Number of Dirichlet Surfaces Which Output Pressure and Flow : 0
     Time Varying Boundary Conditions From File : False
 # }
 

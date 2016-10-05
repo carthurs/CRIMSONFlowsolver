@@ -71,7 +71,7 @@
       stsVelReg  = 0.0
       stsStress  = 0.0
 
-      step1      = lstep+1
+      step1      = currentTimestepIndex+1
       nTimeStep  = 0
       stsResFlg  = 0
 
@@ -405,7 +405,7 @@
 !.... open the output file
 !
       iofile = 39
-      step2 = lstep+1  ! current time step
+      step2 = currentTimestepIndex+1  ! current time step
       itmp  = 1
       itmp1 = 1
       if (step1 .gt. 0) itmp  = int(log10(float(step1)))+1

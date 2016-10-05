@@ -2,7 +2,9 @@
 #define SELDON_WITH_BLAS
 #define SELDON_WITH_LAPACK
 
+#ifdef __INTEL_COMPILER
 #define SELDON_WITH_MKL
+#endif
 
 #define VERDANDI_WITH_ABORT
 #define VERDANDI_DENSE
@@ -53,6 +55,7 @@ static char help[] = "ROUKF driver.\n\n";
 
 int main(int argc, char** argv)
 {
+    kalmanFilterActive.kalmanFilterOn = true;
     char buildNumber[100];
     char buildTime[100];
     getBuildNumber(buildNumber);

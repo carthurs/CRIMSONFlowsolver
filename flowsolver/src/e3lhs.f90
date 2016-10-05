@@ -57,9 +57,19 @@
       character(50) :: filename, dimchar 
       
       ! get mesh velocity KDL, MA
+      ! uMesh1(:) = globalMeshVelocity(1)
+      ! uMesh2(:) = globalMeshVelocity(2)
+      ! uMesh3(:) = globalMeshVelocity(3)      
+
+      ! if (rigidOn.eq.1) then
+      ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
+      ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
+      ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
+      ! else
       uMesh1(:) = globalMeshVelocity(1)
       uMesh2(:) = globalMeshVelocity(2)
-      uMesh3(:) = globalMeshVelocity(3)      
+      uMesh3(:) = globalMeshVelocity(3)
+      ! endif
       
       lhsFct = alfi * gami * Delt(itseq)
       lhmFct = almi * (one - flmpl) 

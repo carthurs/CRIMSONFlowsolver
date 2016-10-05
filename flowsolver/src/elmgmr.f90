@@ -50,6 +50,7 @@
 
         integer rowp(nshg*nnz),         colm(nshg+1)
 
+
 	    real*8  lhsK(9,nnz_tot),	lhsP(4,nnz_tot)
 
         real*8, allocatable, dimension(:,:,:,:) :: xKebe, xGoC
@@ -60,6 +61,9 @@
         real*8, allocatable :: tmpshpb(:,:), tmpshglb(:,:,:)
 
         real*8 spmasstot(20),  ebres(nshg)
+
+        integer   i
+        logical :: exist
 !
 !.... set up the timer
 !
@@ -126,6 +130,10 @@
 !.... loop over the element-blocks
 !
         do iblk = 1, nelblk
+#if DEBUG_ALE == 1
+    write(*,*) "iblk = ",iblk," out of",nelblk
+#endif 
+
           iblock = iblk         ! used in local mass inverse (p>2)
           iel    = lcblk(1,iblk)
           lelCat = lcblk(2,iblk)
@@ -160,6 +168,26 @@
           tmpshp(1:nshl,:) = shp(lcsyst,1:nshl,:)
           tmpshgl(:,1:nshl,:) = shgl(lcsyst,:,1:nshl,:)
 
+! #if DEBUG_ALE == 1
+
+!           write(*,*) 'printing res before ASIGMR'
+!           inquire(file="res_before_asigmr.dat", exist=exist)
+!           if (exist) then
+!             open(800, file="res_before_asigmr.dat", status="old", position="append", action="write")
+!           else
+!             open(800, file="res_before_asigmr.dat", status="new", action="write")
+!           end if
+!           do i = 1, nshg
+!              write(800,'(4(e40.20))') res(i,1), res(i,2), res(i,3),&
+!                                       res(i,4)
+                                              
+!           end do 
+!           close(800)
+      
+! #endif 
+
+
+
           call AsIGMR (y,                   ac, &
                        x,                   mxmudmi(iblk)%p,       &
                        tmpshp,  &
@@ -168,6 +196,24 @@
                        res, &
                        qres,                xKebe, &
                        xGoC,                rerr)
+
+! #if DEBUG_ALE == 1
+          
+!           write(*,*) 'printing res after ASIGMR'
+!           inquire(file="res_after_asigmr.dat", exist=exist)
+!           if (exist) then
+!             open(800, file="res_after_asigmr.dat", status="old", position="append", action="write")
+!           else
+!             open(800, file="res_after_asigmr.dat", status="new", action="write")
+!           end if  
+!           do i = 1, nshg
+!              write(800,'(4(e40.20))') res(i,1), res(i,2), res(i,3),&
+!                                       res(i,4)
+                                              
+!           end do 
+!           close(800)
+      
+! #endif 
 !
 !.... satisfy the BC's on the implicit LHS
 !
@@ -321,6 +367,26 @@
           tmpshpb(1:nshl,:) = shpb(lcsyst,1:nshl,:)
           tmpshglb(:,1:nshl,:) = shglb(lcsyst,:,1:nshl,:)
 
+! #if DEBUG_ALE == 1
+
+
+!           write(*,*) 'printing res before AsBMFG'
+!           inquire(file="res_before_asbmfg.dat", exist=exist)
+!           if (exist) then
+!             open(800, file="res_before_asbmfg.dat", status="old", position="append", action="write")
+!           else
+!             open(800, file="res_before_asbmfg.dat", status="new", action="write")
+!           end if  
+!           do i = 1, nshg
+!              write(800,'(4(e40.20))') res(i,1), res(i,2), res(i,3),&
+!                                       res(i,4)
+                                              
+!           end do 
+!           close(800)
+      
+! #endif 
+
+
           call AsBMFG (u,                       y, &
                        ac,                       &
                        x, &
@@ -332,6 +398,23 @@
                        miBCB(iblk)%p,           mBCB(iblk)%p, &
                        res,                     xKebe, &
                        mSWB(iblk)%p )
+
+! #if DEBUG_ALE == 1
+!           write(*,*) 'printing res after AsBMFG'
+!           inquire(file="res_after_asbmfg.dat", exist=exist)
+!           if (exist) then
+!             open(800, file="res_after_asbmfg.dat", status="old", position="append", action="write")
+!           else
+!             open(800, file="res_after_asbmfg.dat", status="new", action="write")
+!           end if  
+!           do i = 1, nshg
+!              write(800,'(4(e40.20))') res(i,1), res(i,2), res(i,3),&
+!                                       res(i,4)
+                                              
+!           end do 
+!           close(800)
+      
+! #endif 
 
 !
 !.... satisfy (again, for the vessel wall contributions) the BC's on the implicit LHS
@@ -428,6 +511,13 @@
 ! **** end of multidomain container code ***
 ! ******************************************
 !
+
+#if DEBUG_ALE == 1
+    write(*,*) "ipvsq = ",ipvsq
+    write(*,*) "numResistSrfs = ",numResistSrfs
+#endif 
+
+
        if(ipvsq.ge.1) then
 !
 !....  pressure vs. resistance boundary condition sets pressure at

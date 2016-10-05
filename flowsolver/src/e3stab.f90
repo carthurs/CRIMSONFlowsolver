@@ -44,11 +44,23 @@
         !..... ALE variables
 
       real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      integer   i
+      logical :: exist
 
       !     get mesh velocity KDL, MA
+      ! if (rigidOn.eq.1) then
+      ! write(*,*) "rigidOn"
+      ! ! uMesh1(:) = 0.0d0 !no relative stabilization for rigid body motion
+      ! ! uMesh2(:) = 0.0d0
+      ! ! uMesh3(:) = 0.0d0
+      ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
+      ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
+      ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
+      ! else
       uMesh1(:) = globalMeshVelocity(1)
       uMesh2(:) = globalMeshVelocity(2)
       uMesh3(:) = globalMeshVelocity(3)
+      ! endif
       
       ! MAYBE PRECALCULATE OUTSIDE ?
       !if (iALE .eq. 1) then
@@ -110,9 +122,25 @@
          tauC =rho* pt125*fact/(gijd(:,1)+gijd(:,2)+gijd(:,3))*ff
          tauM = one/fact
 
+#if DEBUG_ALE == 1      
 
+      write(*,*) 'printing inside e3stab'    
+      inquire(file="taum.dat", exist=exist)
+      if (exist) then
+        open(794, file="taum.dat", status="old", position="append", action="write")
+      else
+        open(794, file="taum.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(794,'(1(e40.20))') (tauM(i))      
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      end do 
+      close(794)
+#endif
 
       else if(itau.eq.1)  then  ! new tau
+
+
 
 !
 !  determinant of gijd

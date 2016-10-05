@@ -66,9 +66,15 @@
       real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
 
       !     get mesh velocity KDL, MA
+      ! if (rigidOn.eq.1) then
+      ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
+      ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
+      ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
+      ! else
       uMesh1(:) = globalMeshVelocity(1)
       uMesh2(:) = globalMeshVelocity(2)
       uMesh3(:) = globalMeshVelocity(3)
+      ! endif
       
       ! MAYBE PRECALCULATE OUTSIDE ?
       !if (iALE .eq. 1) then
@@ -395,6 +401,9 @@
            omega
 !     MESH VELOCITY TERMS
       double precision, dimension(npro) :: uMesh1, uMesh2, uMesh3
+
+      integer   i
+      logical :: exist
 !.... compute source term
       src = zero
       if(matflg(5,1) .ge. 1) then
@@ -450,9 +459,21 @@
               -two*(omega(1)*u2-omega(2)*u1)
       endif
 !     get mesh velocity
+      ! uMesh1(:) = globalMeshVelocity(1)
+      ! uMesh2(:) = globalMeshVelocity(2)
+      ! uMesh3(:) = globalMeshVelocity(3)
+
+
+      ! if (rigidOn.eq.1) then
+      ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
+      ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
+      ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
+      ! else
       uMesh1(:) = globalMeshVelocity(1)
       uMesh2(:) = globalMeshVelocity(2)
       uMesh3(:) = globalMeshVelocity(3)
+      ! endif
+
       ! MAYBE PRECALCULATE OUTSIDE ?
       !if (iALE .eq. 1) then
       !  call calculateMeshVelocity(uMesh1,uMesh2,uMesh3)
@@ -475,12 +496,169 @@
                            + (u3 - uMesh3) * g3yi(:,4) - src(:,3) ) * rho &
                            + g3yi(:,1) &
                            - divqi(:,3)
+
       if(iconvflow.eq.1) then
+
          divu(:)  = (g1yi(:,2) + g2yi(:,3) + g3yi(:,4))*rho
          rLui(:,1)=rlui(:,1)+u1(:)*divu(:)
          rLui(:,2)=rlui(:,2)+u2(:)*divu(:)
          rLui(:,3)=rlui(:,3)+u3(:)*divu(:)
       endif
+
+#if DEBUG_ALE == 1      
+
+      write(*,*) 'printing inside e3resStrongPDE'    
+      inquire(file="divu.dat", exist=exist)
+      if (exist) then
+        open(794, file="divu.dat", status="old", position="append", action="write")
+      else
+        open(794, file="divu.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(794,'(1(e40.20))') (g1yi(i,2) + g2yi(i,3) + g3yi(i,4))      
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      end do 
+      close(794)
+
+
+      inquire(file="rho_vector.dat", exist=exist)
+      if (exist) then
+        open(794, file="rho_vector.dat", status="old", position="append", action="write")
+      else
+        open(794, file="rho_vector.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(794,'(1(e40.20))') rho(i)     
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      end do 
+      close(794)
+
+      ! write(*,*) 'printing rlui'    
+      inquire(file="rlui.dat", exist=exist)
+      if (exist) then
+        open(793, file="rlui.dat", status="old", position="append", action="write")
+      else
+        open(793, file="rlui.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(793,'(3(e40.20))') rlui(i,1), rlui(i,2), rlui(i,3)                                     
+      end do 
+      close(793)
+
+      inquire(file="aci.dat", exist=exist)
+      if (exist) then
+        open(795, file="aci.dat", status="old", position="append", action="write")
+      else
+        open(795, file="aci.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(795,'(3(e40.20))') aci(i,1), aci(i,2), aci(i,3)                                     
+      end do 
+      close(795)
+
+
+      inquire(file="vrel.dat", exist=exist)
+      if (exist) then
+        open(796, file="vrel.dat", status="old", position="append", action="write")
+      else
+        open(796, file="vrel.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(796,'(3(e40.20))') u1(i) - uMesh1(i), &
+                                      u2(i) - uMesh2(i), &
+                                      u3(i) - uMesh3(i)           
+      end do 
+      close(796)
+
+
+      inquire(file="vfluid.dat", exist=exist)
+      if (exist) then
+        open(797, file="vfluid.dat", status="old", position="append", action="write")
+      else
+        open(797, file="vfluid.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(797,'(3(e40.20))') u1(i), &
+                                      u2(i), &
+                                      u3(i)           
+      end do 
+      close(797)
+
+      inquire(file="vmesh.dat", exist=exist)
+      if (exist) then
+        open(798, file="vmesh.dat", status="old", position="append", action="write")
+      else
+        open(798, file="vmesh.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(798,'(3(e40.20))') uMesh1(i), &
+                                      uMesh2(i), &
+                                      uMesh3(i)           
+      end do 
+      close(798)
+
+
+      !!! here, print divq
+      inquire(file="divq.dat", exist=exist)
+      if (exist) then
+        open(799, file="divq.dat", status="old", position="append", action="write")
+      else
+        open(799, file="divq.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(799,'(3(e40.20))') divqi(i,1), divqi(i,2), divqi(i,3)                                    
+      end do 
+      close(799)
+
+      ! write(*,*) 'printing rlui'    g1yi(:,4)
+      inquire(file="g1yi.dat", exist=exist)
+      if (exist) then
+        open(800, file="g1yi.dat", status="old", position="append", action="write")
+      else
+        open(800, file="g1yi.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(800,'(3(e40.20))') g1yi(i,2), g1yi(i,3), g1yi(i,4)                                     
+      end do 
+      close(800)
+
+      inquire(file="g2yi.dat", exist=exist)
+      if (exist) then
+        open(801, file="g2yi.dat", status="old", position="append", action="write")
+      else
+        open(801, file="g2yi.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(801,'(3(e40.20))') g2yi(i,2), g2yi(i,3), g2yi(i,4)                                     
+      end do 
+      close(801)
+
+      inquire(file="g3yi.dat", exist=exist)
+      if (exist) then
+        open(802, file="g3yi.dat", status="old", position="append", action="write")
+      else
+        open(802, file="g3yi.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(802,'(3(e40.20))') g3yi(i,2), g3yi(i,3), g3yi(i,4)                                     
+      end do 
+      close(802)
+
+
+      inquire(file="srcterm.dat", exist=exist)
+      if (exist) then
+        open(803, file="srcterm.dat", status="old", position="append", action="write")
+      else
+        open(803, file="srcterm.dat", status="new", action="write")
+      end if
+      do i = 1, npro
+             write(803,'(3(e40.20))') src(i,1), src(i,2), src(i,3)                                     
+      end do
+      close(803)
+
+
+
+#endif
 !
       return
       end subroutine e3resStrongPDE

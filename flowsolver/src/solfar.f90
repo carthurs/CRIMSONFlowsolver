@@ -135,6 +135,17 @@
                     rowp,      colm,       lhsK,       &
                     lhsP,      rerr   )
 
+#if DEBUG_ALE == 1
+      write(*,*) 'printing res after elmgmr'
+      open(793,file='resafterelmgmr.dat',status='new')
+      do i = 1, nshg
+         write(793,'(4(e40.20))') res(i,1), res(i,2), res(i,3),&
+                                  res(i,4) 
+                                          
+      end do 
+      close(793)
+#endif
+
 
       IF (memLSFlag .EQ. 1) THEN
   !####################################################################
@@ -203,7 +214,48 @@
               END DO
            END DO
         END DO
+
+#if DEBUG_ALE == 1
+
+      write(*,*) 'printing res4 before inside MEMLS if'
+      open(793,file='solinc.res4before.dat',status='new')
+      do i = 1, nshg
+         write(793,'(4(e40.20))') res4(1,i), res4(2,i), res4(3,i),&
+                                  res4(4,i) 
+                                          
+      end do 
+      close(793)
+
+      write(*,*) 'printing Val4 before inside MEMLS if'
+      open(793,file='solinc.Val4.dat',status='new')
+      do i = 1, nnz_tot
+         write(793,'(16(e40.20))') Val4(1,i), Val4(2,i), Val4(3,i),&
+                                   Val4(4,i), Val4(5,i), Val4(6,i),&
+                                   Val4(7,i), Val4(8,i), Val4(9,i),&
+                                   Val4(10,i), Val4(11,i), Val4(12,i),&
+                                   Val4(13,i), Val4(14,i), Val4(15,i),&
+                                   Val4(16,i)
+                                          
+      end do 
+      close(793)
+      
+#endif
+
+
       CALL memLS_SOLVE(memLS_lhs, memLS_ls, dof, Res4, Val4, incL, faceRes)
+
+#if DEBUG_ALE == 1
+
+      write(*,*) 'printing res4 after inside MEMLS if'
+      open(793,file='solinc.res4after.dat',status='new')
+      do i = 1, nshg
+         write(793,'(4(e40.20))') res4(1,i), res4(2,i), res4(3,i),&
+                                  res4(4,i)
+                                          
+      end do 
+      close(793)
+      
+#endif      
 
         DO i=1, nshg
            solinc(i,1:dof) = Res4(1:dof,i)
@@ -211,10 +263,10 @@
 
 #if DEBUG_ALE == 1
 
-      write(*,*) 'printing solinc'
+      write(*,*) 'printing solinc inside MEMLS if'
       open(793,file='solinc.memLS.dat',status='new')
       do i = 1, nshg
-         write(793,'(4(e20.10))') solinc(i,1), solinc(i,2), solinc(i,3),&
+         write(793,'(4(e40.20))') solinc(i,1), solinc(i,2), solinc(i,3),&
                                   solinc(i,4)
                                           
       end do 
@@ -238,14 +290,14 @@
 
 #if DEBUG_ALE == 1
       open(99,file='rtmp.dat',status='new')
-      write(*,*) 'printing rtmp inside solfar'
+      write(*,*) 'printing rtmp inside solfar OUTSIDE MEMLS if'
       do i=1,nshg
           write(99,'(4(e25.15))') rtmp(i,1:4)
       enddo
       close(99)
 
       open(91,file='flowDiag.dat',status='new')
-      write(*,*) 'printing flowDiag inside solfar'
+      write(*,*) 'printing flowDiag inside solfar OUTSIDE MEMLS if'
       do i=1,nshg
           write(91,'(4(e25.15))') flowDiag(i,1:4)
       enddo
@@ -277,7 +329,7 @@
       enddo
       close(99)
 
-      write(*,*) 'printing lhsK'
+      write(*,*) 'printing  inside MEMLS if'
       open(100,file='lhsK.dat',status='new')
       do i = 1, nnz_tot
          write(100,'(9(e20.10))') lhsK(1,i),lhsK(2,i),lhsK(3,i), &
@@ -286,7 +338,7 @@
       end do 
       close(100)
 
-      write(*,*) 'printing lhsP'
+      write(*,*) 'printing lhsP inside MEMLS if'
       open(101,file='lhsP.dat',status='new')
       do i = 1, nnz_tot
          write(101,'(4(e20.10))') lhsP(1,i),lhsP(2,i),lhsP(3,i), &
@@ -295,7 +347,7 @@
       close(101)
 
 
-      write(*,*) 'printing solinc'
+      write(*,*) 'printing solinc inside MEMLS if'
       open(793,file='solinc.dat',status='new')
       do i = 1, nshg
          write(793,'(4(e20.10))') solinc(i,1), solinc(i,2), solinc(i,3),&

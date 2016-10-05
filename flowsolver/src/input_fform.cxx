@@ -44,7 +44,7 @@ int input_fform() {
 		solpar.imap = inp.GetValue("imap");
 
 		// ALE
-		if( (string) inp.GetValue("Arbitary Lagrangian Eulerian description") == "True")
+		if( (string) inp.GetValue("Arbitrary Lagrangian Eulerian description") == "True")
 		{
 			aleFlags.aleOn = 1; 
 		}			
@@ -52,6 +52,16 @@ int input_fform() {
 		{
 			aleFlags.aleOn = 0; 
 		} 
+
+		if( (string) inp.GetValue("Rigid body motion") == "True")
+		{
+			aleFlags.rigidOn = 1; 
+		}			
+		else
+		{
+			aleFlags.rigidOn = 0; 
+		} 
+		
 		
 		// Solution Control Keywords
 

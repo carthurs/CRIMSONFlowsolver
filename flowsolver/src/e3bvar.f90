@@ -54,6 +54,7 @@
       use phcommonvars
 
       use deformableWall
+      use ale
 
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
@@ -127,6 +128,24 @@
       integer   aa, b, iblk
 
       integer logicPassed
+
+      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      
+
+      !     get mesh velocity KDL, MA
+      ! if (rigidOn.eq.1) then
+      ! write(*,*) "rigidOn"
+      ! ! uMesh1(:) = 0.0d0 !no relative stabilization for rigid body motion
+      ! ! uMesh2(:) = 0.0d0
+      ! ! uMesh3(:) = 0.0d0
+      ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
+      ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
+      ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
+      ! else
+      uMesh1(:) = globalMeshVelocity(1)
+      uMesh2(:) = globalMeshVelocity(2)
+      uMesh3(:) = globalMeshVelocity(3)
+      ! endif
 
 
 !
@@ -381,6 +400,12 @@
 !.... mass flux
 !
       unm = bnorm(:,1) * u1 +bnorm(:,2) * u2  +bnorm(:,3) * u3
+      ! unm = bnorm(:,1) * (u1-uMesh1) + &
+      !       bnorm(:,2) * (u2-uMesh2) + &
+      !       bnorm(:,3) * (u3-uMesh3)
+
+
+
 ! no rho in continuity eq.
 
 
@@ -673,7 +698,9 @@
               enddo
 
 
-          enddo
+          enddo   ! end do n=1,nshlb MA
+
+
 
           rlKwall = zero
           LHSwall = zero
@@ -710,7 +737,7 @@
                       enddo
                   enddo
 
-              enddo
+              enddo ! end do m = 1, nshlb
 
               ! now add the legacy prestress contribution
               if(iUseSWB.gt.0) then
@@ -735,7 +762,7 @@
                   rlKwall(:,nodlcln,i) = rlKwall(:,nodlcln,i) * WdetJb * SWB(:,1)
               enddo
 
-          enddo
+          enddo ! end do n=1,nshlb, MA 
 
           ! mass term
 

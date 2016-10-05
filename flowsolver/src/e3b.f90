@@ -169,34 +169,41 @@
                      rlKwall, &
                      xKebe)
         
-        #if DEBUG_ALE == 1 
-        write(*,*) 'printing shpb inside e3b'
-        write(file_name_aux,'(i5.5)') intp
-        file_name = trim("shpb_")
-        file_name = trim("shpb_")//trim(file_name_aux)
-        file_name = trim(file_name)//'.dat'
-        file_name = trim(file_name)
-        open(795,file=file_name,status='new')
-        do i = 1, npro
-          write(795,'(1(i10),4(e20.10))') i,shapeVar(i,1), shapeVar(i,2), shapeVar(i,3),&
-                                  shapeVar(i,4)                      
-        end do 
-        close(795)
+        ! write(*,*) "**************************************************"
+        ! write(*,*) "DEBUG_ALE = ",DEBUG_ALE
+        ! write(*,*) "**************************************************"
 
-        write(*,*) 'printing shglb inside e3b'
-        write(file_name_aux,'(i5.5)') intp
-        file_name = trim("shglb_")
-        file_name = trim("shglb_")//trim(file_name_aux)
-        file_name = trim(file_name)//'.dat'
-        file_name = trim(file_name)
-        open(793,file=file_name,status='new')
-        do i = 1, npro
-          do j = 1, nsd
-          write(793,'(2(i10),4(e20.10))') i,j,shdrv(i,j,1), shdrv(i,j,2), shdrv(i,j,3),&
-                                  shdrv(i,j,4) ! nenl = 4
-          end do                          
-        end do 
-        close(793)
+#if DEBUG_ALE == 1 
+        ! write(*,*) "**************************************************"
+        ! write(*,*) "DEBUG_ALE inside = ",DEBUG_ALE
+        ! write(*,*) "**************************************************"
+        ! write(*,*) 'printing shpb inside e3b'
+        ! write(file_name_aux,'(i5.5)') intp
+        ! file_name = trim("shpb_")
+        ! file_name = trim("shpb_")//trim(file_name_aux)
+        ! file_name = trim(file_name)//'.dat'
+        ! file_name = trim(file_name)
+        ! open(795,file=file_name,status='new')
+        ! do i = 1, npro
+        !   write(795,'(1(i10),4(e20.10))') i,shapeVar(i,1), shapeVar(i,2), shapeVar(i,3),&
+        !                           shapeVar(i,4)                      
+        ! end do 
+        ! close(795)
+
+        ! write(*,*) 'printing shglb inside e3b'
+        ! write(file_name_aux,'(i5.5)') intp
+        ! file_name = trim("shglb_")
+        ! file_name = trim("shglb_")//trim(file_name_aux)
+        ! file_name = trim(file_name)//'.dat'
+        ! file_name = trim(file_name)
+        ! open(793,file=file_name,status='new')
+        ! do i = 1, npro
+        !   do j = 1, nsd
+        !   write(793,'(2(i10),4(e20.10))') i,j,shdrv(i,j,1), shdrv(i,j,2), shdrv(i,j,3),&
+        !                           shdrv(i,j,4) ! nenl = 4
+        !   end do                          
+        ! end do 
+        ! close(793)
 
         ! write(*,*) 'printing shpb inside e3b'
         ! write(file_name_aux,'(i5.5)') intp
@@ -211,7 +218,7 @@
         ! end do 
         ! close(795)
 
-        #endif
+#endif
 !.... -----------------> boundary conditions <-------------------
 !
         do iel = 1, npro
@@ -596,9 +603,9 @@
 !
         enddo
 
-        #if DEBUG_ALE == 1 
-        stop 
-        #endif
+! #if DEBUG_ALE == 1 
+!         stop 
+! #endif
         
 !$$$        ttim(40) = ttim(40) + tmr()
 !

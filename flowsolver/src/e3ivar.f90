@@ -74,6 +74,11 @@
         dimension gyti(npro,nsd),            gradh(npro,nsd), &
                   sforce(npro,3),            weber(npro), &
                   Sclr(npro)
+
+        integer   iprint
+        logical :: exist   
+        real*8  grad_constant1(npro),grad_constant2(npro), &
+                grad_constant3(npro) , constant_value          
 !
 !.... ------------->  Primitive variables at int. point  <--------------
 !
@@ -166,6 +171,146 @@
           g3yi(:,3) = g3yi(:,3) + shg(:,n,3) * yl(:,n,3)
           g3yi(:,4) = g3yi(:,4) + shg(:,n,3) * yl(:,n,4)
        enddo
+
+#if DEBUG_ALE == 1   
+      write(*,*) 'printing inside e3ivar'    
+      inquire(file="shge3ivar1.dat", exist=exist)
+      if (exist) then
+        open(794, file="shge3ivar1.dat", status="old", position="append", action="write")
+      else
+        open(794, file="shge3ivar1.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(4(e40.20))')  shg(iprint,1,1),&
+                                        shg(iprint,2,1),&
+                                        shg(iprint,3,1),&
+                                        shg(iprint,4,1)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+      inquire(file="shge3ivar2.dat", exist=exist)
+      if (exist) then
+        open(794, file="shge3ivar2.dat", status="old", position="append", action="write")
+      else
+        open(794, file="shge3ivar2.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(4(e40.20))')  shg(iprint,1,2),&
+                                        shg(iprint,2,2),&
+                                        shg(iprint,3,2),&
+                                        shg(iprint,4,2)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+      inquire(file="shge3ivar3.dat", exist=exist)
+      if (exist) then
+        open(794, file="shge3ivar3.dat", status="old", position="append", action="write")
+      else
+        open(794, file="shge3ivar3.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(4(e40.20))')  shg(iprint,1,3),&
+                                        shg(iprint,2,3),&
+                                        shg(iprint,3,3),&
+                                        shg(iprint,4,3)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+      inquire(file="yle3ivarpressure.dat", exist=exist)
+      if (exist) then
+        open(794, file="yle3ivarpressure.dat", status="old", position="append", action="write")
+      else
+        open(794, file="yle3ivarpressure.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(12(e40.20))')  yl(iprint,1,1),&
+                                        yl(iprint,2,1),&
+                                        yl(iprint,3,1),&
+                                        yl(iprint,4,1)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+
+
+
+      inquire(file="yle3ivarvelocity1.dat", exist=exist)
+      if (exist) then
+        open(794, file="yle3ivarvelocity1.dat", status="old", position="append", action="write")
+      else
+        open(794, file="yle3ivarvelocity1.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(12(e40.20))')  yl(iprint,1,2),&
+                                        yl(iprint,2,2),&
+                                        yl(iprint,3,2),&
+                                        yl(iprint,4,2)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+      inquire(file="yle3ivarvelocity2.dat", exist=exist)
+      if (exist) then
+        open(794, file="yle3ivarvelocity2.dat", status="old", position="append", action="write")
+      else
+        open(794, file="yle3ivarvelocity2.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(12(e40.20))')  yl(iprint,1,3),&
+                                        yl(iprint,2,3),&
+                                        yl(iprint,3,3),&
+                                        yl(iprint,4,3)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+      inquire(file="yle3ivarvelocity3.dat", exist=exist)
+      if (exist) then
+        open(794, file="yle3ivarvelocity3.dat", status="old", position="append", action="write")
+      else
+        open(794, file="yle3ivarvelocity3.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(12(e40.20))')  yl(iprint,1,4),&
+                                        yl(iprint,2,4),&
+                                        yl(iprint,3,4),&
+                                        yl(iprint,4,4)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+
+
+       grad_constant1 = zero
+       grad_constant2 = zero
+       grad_constant3 = zero
+       constant_value = 100000.0d0
+
+       do n = 1, nshl
+          grad_constant1(:) = grad_constant1(:) + shg(:,n,1) * constant_value
+          grad_constant2(:) = grad_constant2(:) + shg(:,n,2) * constant_value
+          grad_constant3(:) = grad_constant3(:) + shg(:,n,3) * constant_value
+       enddo
+
+      inquire(file="gradconstant.dat", exist=exist)
+      if (exist) then
+        open(794, file="gradconstant.dat", status="old", position="append", action="write")
+      else
+        open(794, file="gradconstant.dat", status="new", action="write")
+      end if
+      do iprint = 1, npro
+             write(794,'(3(e40.20))')  grad_constant1(iprint),&
+                                       grad_constant2(iprint),&
+                                       grad_constant3(iprint)
+               ! write(794,'(1(e40.20))') g1yi(i,1)                                   
+      enddo 
+      close(794)
+
+
+#endif
 
        divqi = zero
        idflow = 3

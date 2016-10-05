@@ -1043,6 +1043,11 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !     end if
     ! end if
 
+#if DEBUG_ALE == 1
+    write(*,*) "ipvsq = ",ipvsq
+    write(*,*) "numResistSrfs = ",numResistSrfs
+#endif     
+
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
     ! write(*,*) "setting pressure for C++ RCRs 2"
@@ -1252,6 +1257,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     iter=0
     ilss=0  ! this is a switch thrown on first solve of LS redistance
 
+    ! write(*,*) "lstep inside itrdrv_iter_step is ",lstep
+    ! write(*,*) "istep inside itrdrv_iter_step is ",istep
 
     do istepc=1,seqsize
         icode=stepseq(istepc)
@@ -1626,6 +1633,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
             call Write_Residual(myrank, lstep, nshg, 4, res) 
 #endif
             ! call Write_Relative_Velocity(myrank, lstep, nshg, 3, relativeVelocity) 
+            ! write(*,*) "writing relative velocity, myrank = ",myrank
             call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, relativeVelocity, "relative velocity") 
             call appendDoubleFieldToRestart(myrank, lstep, nshg, 3, updatedMeshCoordinates, "updated mesh coordinates") 
         end if 

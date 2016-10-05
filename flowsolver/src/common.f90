@@ -143,8 +143,8 @@ module phcommonvars
     !----------------------------------------------------------
 
     !----------------------------------------------------------
-    integer aleOn
-    common /aleFlags/ aleOn
+    integer aleOn, rigidOn
+    common /aleFlags/ aleOn, rigidOn
     bind(C, name="aleFlags") :: /aleFlags/
     !----------------------------------------------------------
 

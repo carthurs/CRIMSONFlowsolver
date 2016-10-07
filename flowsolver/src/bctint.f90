@@ -345,10 +345,17 @@
       ! mesh velocity for Direchlet BC, here size of nshg, i.e. number of nodes on this processor
       real*8   uMeshDirichletBC(nshg,3)   
       
-      ! get global mesh velocity - to change to subroutine call
-      uMeshDirichletBC(:,1) = globalMeshVelocity(1)
-      uMeshDirichletBC(:,2) = globalMeshVelocity(2)
-      uMeshDirichletBC(:,3) = globalMeshVelocity(3)
+
+      if (aleRigid.eq.1) then
+         ! get global mesh velocity - to change to subroutine call
+         uMeshDirichletBC(:,1) = globalRigidVelocity(1)
+         uMeshDirichletBC(:,2) = globalRigidVelocity(2)
+         uMeshDirichletBC(:,3) = globalRigidVelocity(3)
+      else
+         uMeshDirichletBC(:,1) = real(0.0,8)
+         uMeshDirichletBC(:,2) = real(0.0,8)
+         uMeshDirichletBC(:,3) = real(0.0,8)
+      endif
 
       ! initialise the BC values with the mesh velocity
       BC(:,3:5) = uMeshDirichletBC(:,1:3)

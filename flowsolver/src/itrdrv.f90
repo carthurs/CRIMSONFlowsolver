@@ -1185,6 +1185,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     if(nosource.eq.1) BC(:,7:6+nsclr)= BC(:,7:6+nsclr)*0.8
 
 
+    
+
 !    if(iLES.gt.0) then  !complicated stuff has moved to
 !                                       !routine below
 !        call lesmodels(yold,  acold,     shgl,      shp,  &
@@ -1232,12 +1234,16 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use itrDrvVars
 
     use cpp_interface
+    use ale
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer j
     ! integer boundaryConditionRebuildNeeded
+
+
+    ! write(*,*) "my rank is ",myrank," and nshg = ",nshg
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !.... -----------------------> predictor phase <-----------------------
@@ -1259,8 +1265,18 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     iter=0
     ilss=0  ! this is a switch thrown on first solve of LS redistance
 
-    ! write(*,*) "lstep inside itrdrv_iter_step is ",lstep
+
+    ! write(*,*), "aleTest = ",aleTest
+
+    ! write(*,*) "currentTimestepIndex inside itrdrv_iter_step is ",currentTimestepIndex
     ! write(*,*) "istep inside itrdrv_iter_step is ",istep
+
+    call getMeshVelocities(uMesh,nshg) !computing Mesh velocities before iteration sequence
+                                       !this is now used for the imposed mesh velocity or 
+                                       !rigid body motion case. When the mesh moving algorithm
+                                       !is in place, maybe will need to build a global iteration
+                                       !algorithm to solve in blocks the Fluid-solid and the mesh
+                                       !motion MAF 06/10/2016
 
     do istepc=1,seqsize
         icode=stepseq(istepc)
@@ -1319,7 +1335,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 shpb,          shglb,     rowp,      &
                 colm,          lhsK,      lhsP, &
                 solinc,        rerr, &
-                memLS_lhs,     memLS_ls,  memLS_nFaces)
+                memLS_lhs,     memLS_ls,  memLS_nFaces, &
+                uMesh) !ALE variables added MAF 06/10/2016
 
 
             else          ! scalar type solve
@@ -1435,7 +1452,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         x,      xdist,    xdnv, &
         shp,    shgl,     shpb,   shglb, &
         iBC,    BC,       iper,   ilwork, &
-        rowp,   colm,     lhsK,   lhsP )
+        rowp,   colm,     lhsK,   lhsP , &
+                uMesh) !ALE variables added MAF 06/10/2016
 
     endif
 
@@ -1539,6 +1557,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
+    
+
     integer jj
     integer ifail
     integer numberOfOutputNodesOnThisProcessor
@@ -1556,6 +1576,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     ! if (nrcractive) then
     !     call callCPPUpdateAllRCRS_Pressure_n1_withflow()
     ! end if
+
+    ! write(*,*) "begin itrdrv_iter_finalize"
 
     if (newCoronaryActive .eq. 1) then
         ! call callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
@@ -1592,6 +1614,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     ac = acold
     u = uold
 
+    ! write(*,*) "   itrdrv_iter_finalize 1"
+
     !
     !.... update average displacement
     !
@@ -1614,14 +1638,24 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         write(*,*) 'updating uref with avg'
     end if
 
+    ! write(*,*) "   itrdrv_iter_finalize 2"
+
     !
-    ! ... calculate relative velocity KDL, MA
+    ! ... calculate relative velocity KDL, MAF
     ! 
 
-    call getMeshVelocities(uMesh1, uMesh2, uMesh3, nshg)
-    relativeVelocity(:,1) = y(:,1) - uMesh1(:)
-    relativeVelocity(:,2) = y(:,2) - uMesh2(:)
-    relativeVelocity(:,3) = y(:,3) - uMesh3(:)
+    ! ! call getMeshVelocities(uMesh1, uMesh2, uMesh3, nshg)
+    relativeVelocity(:,1) = y(:,1) - uMesh(:,1)
+    relativeVelocity(:,2) = y(:,2) - uMesh(:,2)
+    relativeVelocity(:,3) = y(:,3) - uMesh(:,3)
+
+
+    ! write(*,*) "   itrdrv_iter_finalize 3"
+
+    ! call getMeshVelocities(uMesh1, uMesh2, uMesh3, nshg)
+    ! relativeVelocity(:,1) = y(:,1) 
+    ! relativeVelocity(:,2) = y(:,2)
+    ! relativeVelocity(:,3) = y(:,3) 
 
     ! calculate updated mesh coordinates
     ! x is stored in the global arrays module
@@ -1675,7 +1709,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     endif
     ! ------------- End code for writing out specific nodal solution (pressure and velocity) data ----------------
 
-
+! write(*,*) "   itrdrv_iter_finalize 4"
     !
     ! ... write out the solution
     !
@@ -1717,6 +1751,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         ! call hrt%write_activation_history_hrt(currentTimestepIndex) !moved this to avoid missing latest activation value...
 
     end if
+
+    ! write(*,*) "   itrdrv_iter_finalize 5"
 
     ! ************************** !
     ! ************************** !
@@ -1780,7 +1816,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     end if 
     !Now the files are in the computer!
 
-
+    ! write(*,*) "   itrdrv_iter_finalize 6"
 
     !
     ! ... update flow and pressure history of time-varying RCR BCs
@@ -1789,6 +1825,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call UpdHistConv(y, nsrflistTRCR, numTRCRSrfs)
         call UpdTRCR(y, nsrflistTRCR, numTRCRSrfs)
     endif
+
+    ! write(*,*) "   itrdrv_iter_finalize 6.1"
 
 !    ! Nan rcr ----------------------------------
 !    if(numGRCRSrfs.gt.0) then
@@ -1803,6 +1841,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call UpdHistConv(y,nsrflistCOR,numCORSrfs) !uses currentTimestepIndex
         call UpdHistPlvConv(y,Delt(itseq),currentTimestepIndex,nsrflistCOR, numCORSrfs)
     endif
+
+    ! write(*,*) "   itrdrv_iter_finalize 6.2"
     !
     ! ... update the flow history for the CalcSurfaces
     !
@@ -1816,6 +1856,8 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
         call UpdateLagrangeCoef(y,colm,rowp,nsrflistLagrange,numLagrangeSrfs)
     endif
 
+    ! write(*,*) "   itrdrv_iter_finalize 6.3"
+
     !
     !.... compute the consistent boundary flux
     !
@@ -1824,8 +1866,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     x,         xdist,      xdnv, &
     shp,       shgl,       shpb,    &
     shglb,     ilwork,     iBC, &
-    BC,        iper)
+    BC,        iper, &
+    uMesh   ) !ALE variables added MAF 06/10/2016))
 
+    ! write(*,*) "   itrdrv_iter_finalize 6.4"
 
     !...  dump TIME SERIES
 
@@ -1875,6 +1919,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     endif
 
+    ! write(*,*) "   itrdrv_iter_finalize 7"
 
     !
     !.... update and the aerodynamic forces
@@ -1952,6 +1997,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
 !2000  continue
 
+! write(*,*) "end itrdrv_iter_finalize"
 
 
 end subroutine itrdrv_iter_finalize

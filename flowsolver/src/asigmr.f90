@@ -1,7 +1,10 @@
-        subroutine AsIGMR (y,       ac,      x,       xmudmi, &
+        subroutine AsIGMR (y,       ac, &
+                           uMesh, &   !ALE variables added MAF 06/10/2016))
+                           x,       xmudmi, &
                            shp,     shgl,    ien,             &
                            res,     qres,                     &
                            xKebe,   xGoC,    rerr, CFLworst)
+                           
 !
 !----------------------------------------------------------------------
 !
@@ -47,6 +50,9 @@
         dimension CFLworst(npro)
 !
         real*8 rerrl(npro,nshl,6), rerr(nshg,10)
+
+        dimension    uMesh(nshg,3) !MAF 07/10/2016
+        real*8    uMeshl(npro,nshl,3) !MAF 06/10/2016
 !
 !.... gather the variables
 !
@@ -61,6 +67,10 @@
         call localy(ac,    acl,     ien,    ndofl,  'gather  ')
         call localx(x,      xl,     ien,    nsd,    'gather  ')
         call local (qres,   ql,     ien,    idflx,  'gather  ')
+
+        !get local uMesh -> uMeshl
+        call local(uMesh, uMeshl, ien, 3, 'gather  ')
+
 !        if (iRANS .eq. -2) then ! kay-epsilon
 !           call localx (d2wall,   dwl,     ien,    1,     'gather  ')
 !        endif
@@ -89,6 +99,7 @@
         if(ierrcalc.eq.1) rerrl = zero
 
         call e3  (yl,      acl,     dwl,     shp, &
+                  uMeshl, &   !ALE variables added MAF 06/10/2016))
                   shgl,    xl,      rl,           &
                   ql,      xKebe,   xGoC,    xmudmi, & 
                   sgn,     rerrl,  rlsl,     CFLworst)

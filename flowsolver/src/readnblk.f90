@@ -650,12 +650,12 @@
       !.... initialize ALE because we need update coordinates and velocities at this point
 
 
-      if (aleOn.eq.1) then
+      ! if (aleOn.eq.1) then
 
           ! call readUpdatedMeshVariablesFromFile(irstart,numnp)
           ! call updateMeshVariables(x,y,numnp)
 
-      endif
+      ! endif
 
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)

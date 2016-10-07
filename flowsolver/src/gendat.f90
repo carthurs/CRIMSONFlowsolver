@@ -244,13 +244,19 @@
 !
 !
 ! *** initialise ALE 
-!
-      call readGlobalMeshVelocity() !
-      write (*,*) "globalMeshVelocity = ",globalMeshVelocity
+!     
+      
+      call initialize_ALE(aleType)
+
+      ! write(*,*) "aleRigid = ",aleRigid
+
+      ! call readGlobalMeshVelocity() !
       ! write (*,*) "rigidOn =",rigidOn
       ! write (*,*) "globalRigidVelocity = ",globalRigidVelocity
 
-      call addGlobalMeshVelocityToSolution(y,nshg,ndof)
+      if (aleRigid.eq.1) then ! add rigid body velocity to solution
+          call addGlobalRigidVelocityToInitialSolution(y,nshg,ndof)
+      end if
 !
 ! *** end of initialise ALE 
 !

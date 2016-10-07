@@ -46,26 +46,17 @@ int input_fform() {
 		timpar.ntseq = inp.GetValue("ntseq");
 		solpar.imap = inp.GetValue("imap");
 
-		// ALE
-		if( boost::iequals((string) inp.GetValue("Arbitrary Lagrangian Eulerian description"), "True"))
+		// ALE flags; MAF, 06/10/2016
+		aleFlags.aleType = (int) inp.GetValue("Type NS-ALE");
+		if (aleFlags.aleType == 0)
 		{
-			aleFlags.aleOn = 1; 
-		}			
+			aleFlags.aleOn = 0;
+		}
 		else
 		{
-			aleFlags.aleOn = 0; 
-		} 
+			aleFlags.aleOn = 1;
+		}
 
-		if( (string) inp.GetValue("Rigid body motion") == "True")
-		{
-			aleFlags.rigidOn = 1; 
-		}			
-		else
-		{
-			aleFlags.rigidOn = 0; 
-		} 
-		
-		
 		// Solution Control Keywords
 
 		if (boost::iequals((string) inp.GetValue("Equation of State"), "Incompressible"))

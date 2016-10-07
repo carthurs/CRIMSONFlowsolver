@@ -56,7 +56,7 @@
 
       character(50) :: filename, dimchar 
       
-      ! get mesh velocity KDL, MA
+      
       ! uMesh1(:) = globalMeshVelocity(1)
       ! uMesh2(:) = globalMeshVelocity(2)
       ! uMesh3(:) = globalMeshVelocity(3)      
@@ -66,9 +66,17 @@
       ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
       ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
       ! else
-      uMesh1(:) = globalMeshVelocity(1)
-      uMesh2(:) = globalMeshVelocity(2)
-      uMesh3(:) = globalMeshVelocity(3)
+
+      ! get mesh velocity KDL, MAF
+      if (aleRigid.eq.1) then
+        uMesh1(:) = globalRigidVelocity(1)
+        uMesh2(:) = globalRigidVelocity(2)
+        uMesh3(:) = globalRigidVelocity(3)
+      else
+        uMesh1(:) = real(0.0,8)
+        uMesh2(:) = real(0.0,8)
+        uMesh3(:) = real(0.0,8)
+      endif
       ! endif
       
       lhsFct = alfi * gami * Delt(itseq)
@@ -165,7 +173,7 @@
 ! here the ubar velocity is missing the subtraction of the mesh velocity
 ! tmp1 is alpha deltaT gamma rho - see eqn 3.85 in Alberto's thesis
 ! definition of ubar_k is: ubar_k = v_k - (tau_M/rho)*L_k
-! KDL, MA
+! KDL, MAF
 
 
         ! write(dimchar,'(i3)') b
@@ -214,7 +222,7 @@
          t2(:,3) = rmu  * shg(:,b,3)
 
 
-! u1, u2, u3 refer to v_m in eq (3.85) Alberto's thesis, KDL, MA  
+! u1, u2, u3 refer to v_m in eq (3.85) Alberto's thesis, KDL, MAF  
 ! tmp1 is a scalar product    
 ! tmp1 is tauM*(rho u_m N^b_j,m)*alpha_f*gamma*deltat*WdetJ
          tmp1 = tauM   * ( (u1 - uMesh1)  * shg(:,b,1)   &
@@ -228,7 +236,7 @@
                          + rLui(:,3) * shg(:,b,3) )
 
 
-! u1, u2, u3 refer to v_k in eq (3.85) Alberto's thesis, KDL, MA      
+! u1, u2, u3 refer to v_k in eq (3.85) Alberto's thesis, KDL, MAF      
 ! t3 is (mu*N^b_j,k + u_k tauM*(rho u_m N^b_j,m)+ L_k*taubar*(L_mN^b_j,m )*alpha_f*gamma*deltat*WdetJ     
 ! which is line 2 page 40 of Whiting
 ! ALMOST (waiting to get hit with N^a_{i,k}

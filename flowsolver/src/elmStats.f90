@@ -82,7 +82,8 @@
                               shp,      shgl,  &
                               shpb,     shglb,       iBC,     BC,  &
                               iper,     ilwork,      rowp,    colm, &
-                              lhsK,     lhsP )
+                              lhsK,     lhsP, &
+                              uMesh   ) !ALE variables added MAF 06/10/2016)
       
       use stats
       use phcommonvars
@@ -103,7 +104,8 @@
       integer iBC(nshg),                iper(nshg), &
               ilwork(nlwork),           rowp(nshg,nnz), &
               colm(nshg+1)
-      
+
+      real*8 uMesh(nshg,3)           
 
       lhs    = 0
       stsVec = zero
@@ -118,7 +120,8 @@
                    BC,        shpb,       shglb, &
                    res,       iper,       ilwork,    &
                    rowp,      colm,       lhsK,       &
-                   lhsP,      rjunk   )
+                   lhsP,      rjunk, &
+                   uMesh   ) !ALE variables added MAF 06/10/2016)
       stsResFlg = 0
       ierrcalc=ierrcalctmp  ! reset it back to original value
       return 

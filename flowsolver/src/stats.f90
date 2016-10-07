@@ -190,7 +190,9 @@
                               x,      xdist,  xdnv, &
                               shp,    shgl,   shpb,   shglb, &
                               iBC,    BC,     iper,   ilwork, &
-                              rowp,   colm,   lhsK,   lhsP )
+                              rowp,   colm,   lhsK,   lhsP, &
+                              uMesh   ) !ALE variables added MAF 06/10/2016)
+
       
       use     stats
 
@@ -220,6 +222,8 @@
               DInv(3),                B(3), &
               CInv(6)
       
+      real*8  uMesh(nshg,3) !MAF 06/10/2016              
+      
       real*8 u1, u2, u3, r0, r1, r2, r3, r4, r5, t3, t4, t5
 
       integer i
@@ -241,7 +245,8 @@
                            shp,      shgl,  &
                            shpb,     shglb,       iBC,     BC,  &
                            iper,     ilwork,      rowp,    colm, &
-                           lhsK,     lhsP  )
+                           lhsK,     lhsP, &
+                           uMesh   ) !ALE variables added MAF 06/10/2016)
 
 !
 !.... compute the statistics

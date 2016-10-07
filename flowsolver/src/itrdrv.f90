@@ -747,6 +747,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! It's a least-bad hack to get around the chicken-and-egg initialisation
     ! order issues for the 3D and multidomain. If we want to avoid this,
     ! the Fortran code needs refactoring.
+    write(*,*) "setting pressure for C++ RCRs"
     call callCPPSetPressureFromFortran()
     ! call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 
@@ -1044,6 +1045,11 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !     end if
     ! end if
 
+#if DEBUG_ALE == 1
+    write(*,*) "ipvsq = ",ipvsq
+    write(*,*) "numResistSrfs = ",numResistSrfs
+#endif     
+
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
     ! write(*,*) "setting pressure for C++ RCRs 2"
@@ -1253,6 +1259,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     iter=0
     ilss=0  ! this is a switch thrown on first solve of LS redistance
 
+    ! write(*,*) "lstep inside itrdrv_iter_step is ",lstep
+    ! write(*,*) "istep inside itrdrv_iter_step is ",istep
 
     do istepc=1,seqsize
         icode=stepseq(istepc)

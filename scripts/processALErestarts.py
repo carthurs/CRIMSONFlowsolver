@@ -6,7 +6,8 @@
 ###########################################################################################################################################
 import sys
 # sys.path.append(r'C:\Users\kl12\Documents\Work\Code\CRIMSON\PythonModules') 
-sys.path.append(r'/home/klau/dev/crimson/PythonModules') 
+# sys.path.append(r'/home/klau/dev/crimson/PythonModules') 
+sys.path.append(r'/home/miquel/dev/crimson/PythonModules')
 import vtk
 from vtk.util import numpy_support
 import PythonQtMock as PythonQt
@@ -28,6 +29,8 @@ geombcFilename = 'geombc.dat.1'
 geombcConfig = PhastaConfig.geombcConfig
 geombcReader = PhastaSolverIO.PhastaFileReader(geombcFilename, geombcConfig)
 
+
+
 # read restart
 restartFilename = 'restart.'+stepNumber+'.0'   
 print restartFilename
@@ -39,10 +42,23 @@ geombcDictionary = {}
 for i in xrange(geombcReader.solutionStorage.getNArrays()):
     geombcDictionary[geombcReader.solutionStorage.getArrayName(i)] = i
 
+
+
 # generate restart dictionary
 restartDictionary = {}
 for i in xrange(restartReader.solutionStorage.getNArrays()):
     restartDictionary[restartReader.solutionStorage.getArrayName(i)] = i
+
+
+print geombcDictionary
+print restartDictionary
+
+# # load coordinates from restart and convert to vtk points
+# coordinates = restartReader.solutionStorage.getArrayData(restartDictionary['updated mesh coordinates']).copy()
+# numberOfNodes = coordinates.shape[0]/3
+# coordinates = np.reshape(coordinates, (numberOfNodes, 3), order='C')
+# points = vtk.vtkPoints()    
+
 
 # load coordinates from restart and convert to vtk points
 coordinates = restartReader.solutionStorage.getArrayData(restartDictionary['updated mesh coordinates']).copy()
@@ -50,7 +66,7 @@ numberOfNodes = coordinates.shape[0]/3
 coordinates = np.reshape(coordinates, (numberOfNodes, 3), order='C')
 points = vtk.vtkPoints()    
 
-# load interior connectivity and convert to 0->n-1 indexing
+# # load interior connectivity and convert to 0->n-1 indexing
 interiorConnectivity = geombcReader.solutionStorage.getArrayData(geombcDictionary['connectivity interior linear tetrahedron']).copy()
 numberOfInteriorElements = interiorConnectivity.shape[0]/4
 interiorConnectivity = np.reshape(interiorConnectivity, (numberOfInteriorElements, 4), order='C')

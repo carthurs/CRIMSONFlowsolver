@@ -47,7 +47,7 @@ int input_fform() {
 		solpar.imap = inp.GetValue("imap");
 
 		// ALE
-		if( boost::iequals((string) inp.GetValue("Arbitary Lagrangian Eulerian description"), "True"))
+		if( boost::iequals((string) inp.GetValue("Arbitrary Lagrangian Eulerian description"), "True"))
 		{
 			aleFlags.aleOn = 1; 
 		}			
@@ -55,6 +55,16 @@ int input_fform() {
 		{
 			aleFlags.aleOn = 0; 
 		} 
+
+		if( (string) inp.GetValue("Rigid body motion") == "True")
+		{
+			aleFlags.rigidOn = 1; 
+		}			
+		else
+		{
+			aleFlags.rigidOn = 0; 
+		} 
+		
 		
 		// Solution Control Keywords
 
@@ -1047,6 +1057,40 @@ int input_fform() {
 		    {
 		      nomodule.inputHRandSP = int(0);
 		    }
+
+		    if((string)inp.GetValue("Simulate in Purely Zero Dimensions")=="True"){
+		      nomodule.pureZeroDSimulation = int(1);
+		    }
+		    else
+		    {
+		      nomodule.pureZeroDSimulation = int(0);
+		    }
+
+		    if (nomodule.num3DConnectedComponents = inp.GetValue("Number of Connected Components of 3D Domain"))
+			{
+				for (i=0; i<MAXSURF+1; i++)
+				{
+					nomodule.surfacesOfEachConnectedComponent[i] = 0;
+				}
+
+				bool domainHasMultipleConnectedComponents = (nomodule.num3DConnectedComponents > 1);
+				if (domainHasMultipleConnectedComponents)
+				{
+					ivec = inp.GetValue("List of Surfaces In Each Connected Component Separated by -1s");
+					int lengthOfConnectedComponentLineInSolverInp = nomodule.numNetlistLPNSrfs + nomodule.num3DConnectedComponents - 1;
+					for (i=0; i<lengthOfConnectedComponentLineInSolverInp; i++)
+					{
+						nomodule.surfacesOfEachConnectedComponent[i+1] = ivec[i];
+					}
+				}
+				else // If there's only one connected component, then this vector should just be the netlist surface indices (as the zeroD domain only supports Netlist boundary conditions currently.)
+				{
+					for (i=0; i<nomodule.numNetlistLPNSrfs; i++)
+					{
+						nomodule.surfacesOfEachConnectedComponent[i+1] = nomodule.indicesOfNetlistSurfaces[i+1];
+					}	
+				}
+			}
 
 			if (nomodule.numVisFluxSrfs = inp.GetValue(
 					"Number of Surfaces which zero out in-plane tractions")) {

@@ -102,6 +102,9 @@
 !
       	dimension xKebe(npro,9,nshl,nshl)
 
+        character(len=50):: file_name, file_name_aux  ! added by MA 02/06/2016
+        integer :: result                             ! added by MA 02/06/2016
+
 !
 !.... compute the nodes which lie on the boundary (hierarchic)
 !
@@ -166,7 +169,56 @@
                      rlKwall, &
                      xKebe)
         
-!        
+        ! write(*,*) "**************************************************"
+        ! write(*,*) "DEBUG_ALE = ",DEBUG_ALE
+        ! write(*,*) "**************************************************"
+
+#if DEBUG_ALE == 1 
+        ! write(*,*) "**************************************************"
+        ! write(*,*) "DEBUG_ALE inside = ",DEBUG_ALE
+        ! write(*,*) "**************************************************"
+        ! write(*,*) 'printing shpb inside e3b'
+        ! write(file_name_aux,'(i5.5)') intp
+        ! file_name = trim("shpb_")
+        ! file_name = trim("shpb_")//trim(file_name_aux)
+        ! file_name = trim(file_name)//'.dat'
+        ! file_name = trim(file_name)
+        ! open(795,file=file_name,status='new')
+        ! do i = 1, npro
+        !   write(795,'(1(i10),4(e20.10))') i,shapeVar(i,1), shapeVar(i,2), shapeVar(i,3),&
+        !                           shapeVar(i,4)                      
+        ! end do 
+        ! close(795)
+
+        ! write(*,*) 'printing shglb inside e3b'
+        ! write(file_name_aux,'(i5.5)') intp
+        ! file_name = trim("shglb_")
+        ! file_name = trim("shglb_")//trim(file_name_aux)
+        ! file_name = trim(file_name)//'.dat'
+        ! file_name = trim(file_name)
+        ! open(793,file=file_name,status='new')
+        ! do i = 1, npro
+        !   do j = 1, nsd
+        !   write(793,'(2(i10),4(e20.10))') i,j,shdrv(i,j,1), shdrv(i,j,2), shdrv(i,j,3),&
+        !                           shdrv(i,j,4) ! nenl = 4
+        !   end do                          
+        ! end do 
+        ! close(793)
+
+        ! write(*,*) 'printing shpb inside e3b'
+        ! write(file_name_aux,'(i5.5)') intp
+        ! file_name = trim("shpb_")
+        ! file_name = trim("shpb_")//trim(file_name_aux)
+        ! file_name = trim(file_name)//'.dat'
+        ! file_name = trim(file_name)
+        ! open(795,file=file_name,status='new')
+        ! do i = 1, npro
+        !   write(795,'(1(i10),4(e20.10))') i,shapeVar(i,1), shapeVar(i,2), shapeVar(i,3),&
+        !                           shapeVar(i,4)                      
+        ! end do 
+        ! close(795)
+
+#endif
 !.... -----------------> boundary conditions <-------------------
 !
         do iel = 1, npro
@@ -550,6 +602,10 @@
 !.... end of integration loop
 !
         enddo
+
+! #if DEBUG_ALE == 1 
+!         stop 
+! #endif
         
 !$$$        ttim(40) = ttim(40) + tmr()
 !

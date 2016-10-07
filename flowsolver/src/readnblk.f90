@@ -652,8 +652,8 @@
 
       if (aleOn.eq.1) then
 
-          call readUpdatedMeshVariablesFromFile(irstart,numnp)
-          call updateMeshVariables(x,y,numnp)
+          ! call readUpdatedMeshVariablesFromFile(irstart,numnp)
+          ! call updateMeshVariables(x,y,numnp)
 
       endif
 

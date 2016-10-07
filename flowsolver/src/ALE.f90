@@ -19,6 +19,7 @@ module ale
 
 	! public variables
 	real*8, public :: globalMeshVelocity(3) 
+	real*8, public :: globalRigidVelocity(3)
 
 	
 	! prescribed velocity flags
@@ -40,7 +41,7 @@ module ale
 	subroutine readGlobalMeshVelocity()
 		implicit none
 		integer :: ierr, rerr      
-		integer :: fnum = 145
+		integer :: fnum = 145, fnum2 = 146
 		real*8 :: testvalue
 
 		! open file and if no read error set global mesh velocity, else set zero
@@ -53,6 +54,15 @@ module ale
          	uniformConstantVelocity = int(0)      	
 		end if
       	close(fnum)     
+
+  !     	open(fnum2, file='globalRigidVelocity.dat', status='old', iostat=ierr)         	      	
+  !     	if (ierr .eq. int(0)) then           	
+  !        	read(fnum2,*,iostat=rerr) globalRigidVelocity(:)
+		! else  
+  !       	globalRigidVelocity(:) = real(0.0,8)
+		! end if
+  !     	close(fnum2)  
+
 	end subroutine readGlobalMeshVelocity
    
     ! subroutine to add global mesh velocity to initial solution

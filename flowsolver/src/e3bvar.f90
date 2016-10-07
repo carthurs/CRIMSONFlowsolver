@@ -54,6 +54,7 @@
       use phcommonvars
 
       use deformableWall
+      use ale
 
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
@@ -128,6 +129,24 @@
 
       integer logicPassed
 
+      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      
+
+      !     get mesh velocity KDL, MA
+      ! if (rigidOn.eq.1) then
+      ! write(*,*) "rigidOn"
+      ! ! uMesh1(:) = 0.0d0 !no relative stabilization for rigid body motion
+      ! ! uMesh2(:) = 0.0d0
+      ! ! uMesh3(:) = 0.0d0
+      ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
+      ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
+      ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
+      ! else
+      uMesh1(:) = globalMeshVelocity(1)
+      uMesh2(:) = globalMeshVelocity(2)
+      uMesh3(:) = globalMeshVelocity(3)
+      ! endif
+
 
 !
 !.... ------------------->  integration variables  <--------------------
@@ -167,6 +186,31 @@
          dxdxib(:,3,2) = dxdxib(:,3,2) + xlb(:,n,3) * shglb(:,2,n)
          dxdxib(:,3,3) = dxdxib(:,3,3) + xlb(:,n,3) * shglb(:,3,n)
       enddo
+
+      ! #if DEBUG_ALE == 1 
+      ! write(*,*) 'inside e3bvar then stop'
+
+      ! open(793,file='shglb.dat',status='new')
+      ! do i = 1, npro
+      !     do j = 1, nsd
+      !     write(793,'(2(i10),4(e20.10))') i,j,shglb(i,j,1), shglb(i,j,2), shglb(i,j,3),&
+      !                             shglb(i,j,4) ! nenl = 4
+      !     end do                          
+      ! end do 
+      ! close(793)
+
+      ! open(794,file='shpb.dat',status='new')
+      ! do i = 1, npro
+
+      !     write(794,'(1(i10),4(e20.10))') i,shpb(i,1), shpb(i,2), shpb(i,3),&
+      !                             shpb(i,4)                      
+      ! end do 
+      ! close(794)
+
+      ! ! stop
+
+      ! #endif
+
 !
 !.... compute the normal to the boundary
 !
@@ -356,6 +400,12 @@
 !.... mass flux
 !
       unm = bnorm(:,1) * u1 +bnorm(:,2) * u2  +bnorm(:,3) * u3
+      ! unm = bnorm(:,1) * (u1-uMesh1) + &
+      !       bnorm(:,2) * (u2-uMesh2) + &
+      !       bnorm(:,3) * (u3-uMesh3)
+
+
+
 ! no rho in continuity eq.
 
 
@@ -648,7 +698,9 @@
               enddo
 
 
-          enddo
+          enddo   ! end do n=1,nshlb MA
+
+
 
           rlKwall = zero
           LHSwall = zero
@@ -685,7 +737,7 @@
                       enddo
                   enddo
 
-              enddo
+              enddo ! end do m = 1, nshlb
 
               ! now add the legacy prestress contribution
               if(iUseSWB.gt.0) then
@@ -710,7 +762,7 @@
                   rlKwall(:,nodlcln,i) = rlKwall(:,nodlcln,i) * WdetJb * SWB(:,1)
               enddo
 
-          enddo
+          enddo ! end do n=1,nshlb, MA 
 
           ! mass term
 

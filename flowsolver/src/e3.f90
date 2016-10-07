@@ -66,7 +66,8 @@
         dimension rlsl(npro,nshl,6),      rlsli(npro,6)
 
         real*8    rerrl(npro,nshl,6)
-        integer   aa
+        integer   aa, i
+        logical :: exist
 
 !
 !     
@@ -106,6 +107,32 @@
                      ql,          rLui,      src, &
                      rerrl,       rlsl,      rlsli, &
                      dwl) 
+
+#if DEBUG_ALE == 1
+
+      ! write(*,*) 'printing rlui'
+      ! open(793,file='rlui.dat',status='unknown')
+      ! do i = 1, npro
+      !    write(793,'(3(e20.10))') rlui(i,1), rlui(i,2), rlui(i,3)                                     
+      ! end do 
+      ! close(793)
+      ! stop
+
+
+  ! write(*,*) 'printing rlui'    
+  ! inquire(file="rlui.dat", exist=exist)
+  ! if (exist) then
+  !   open(793, file="rlui.dat", status="old", position="append", action="write")
+  ! else
+  !   open(793, file="rlui.dat", status="new", action="write")
+  ! end if
+  ! do i = 1, npro
+  !        write(793,'(3(e20.10))') rlui(i,1), rlui(i,2), rlui(i,3)                                     
+  ! end do 
+  ! close(793)
+
+
+#endif 
 !
 !.... compute the stabilization terms
 !

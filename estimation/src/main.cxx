@@ -59,7 +59,10 @@ int main(int argc, char **argv) {
    char buildTime[100];
    getBuildNumber(buildNumber);
    getBuildTime(buildTime);
-   std::cout << "This is Simvascular version " << buildNumber << ", built at " << buildTime << "." << std::endl;
+   if (rank == 0)
+   {
+    std::cout << "This is Simvascular version " << buildNumber << ", built at " << buildTime << "." << std::endl;
+   }
 
    // Expiry date check (uncomment enableExpiryDate() call below to enable):
    expiryDate expiry = expiryDate();

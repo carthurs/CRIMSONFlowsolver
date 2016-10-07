@@ -31,13 +31,20 @@ void expiryDate::checkWhetherExpiryDatePassed()
 			theDate.getMonth() >= month &&
 			theDate.getDay() > day)
 			{
-			    std::cout << "This copy of Simvascular Flowsolver has expired." << std::endl;
+				if (mMpiRank==0)
+				{
+			    	std::cout << "This copy of Simvascular Flowsolver has expired." << std::endl;
+				}
+				MPI_Barrier(MPI_COMM_WORLD);
 			    std::exit(1);
 		    }
 	}
 	else
 	{
-		std::cout << "This Simvascular Flowsolver binary has no built-in expiry date." << std::endl;
+		if (mMpiRank==0)
+		{
+			std::cout << "This Simvascular Flowsolver binary has no built-in expiry date." << std::endl;
+		}
 	}
 }
 

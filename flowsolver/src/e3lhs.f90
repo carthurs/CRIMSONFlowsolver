@@ -1,4 +1,5 @@
       subroutine e3LHS ( u1,        u2,         u3, &
+                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 09/10/2016
                          uBar,      WdetJ,      rho, &
                          rLui,      rmu,        &
                          tauC,      tauM,       tauBar, &
@@ -52,7 +53,9 @@
       
       real*8    lhmFct, lhsFct,           tsFct(npro)
 
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro),  multfact_ubar(npro)
+      ! real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro),  multfact_ubar(npro)
+      real*8 multfact_ubar(npro)
+      dimension uMesh1(npro), uMesh2(npro), uMesh3(npro) !ALE variables added MAF 09/10/2016
 
       character(50) :: filename, dimchar 
       
@@ -67,16 +70,16 @@
       ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
       ! else
 
-      ! get mesh velocity KDL, MAF
-      if (aleRigid.eq.1) then
-        uMesh1(:) = globalRigidVelocity(1)
-        uMesh2(:) = globalRigidVelocity(2)
-        uMesh3(:) = globalRigidVelocity(3)
-      else
-        uMesh1(:) = real(0.0,8)
-        uMesh2(:) = real(0.0,8)
-        uMesh3(:) = real(0.0,8)
-      endif
+      ! ! get mesh velocity KDL, MAF
+      ! if (aleRigid.eq.1) then
+      !   uMesh1(:) = globalRigidVelocity(1)
+      !   uMesh2(:) = globalRigidVelocity(2)
+      !   uMesh3(:) = globalRigidVelocity(3)
+      ! else
+      !   uMesh1(:) = real(0.0,8)
+      !   uMesh2(:) = real(0.0,8)
+      !   uMesh3(:) = real(0.0,8)
+      ! endif
       ! endif
       
       lhsFct = alfi * gami * Delt(itseq)

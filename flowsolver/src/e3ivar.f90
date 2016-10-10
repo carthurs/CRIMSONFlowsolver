@@ -406,8 +406,10 @@
 !
 ! Calculate strong form of pde as well as the source term
 !      
-       call e3resStrongPDE( &
-            aci,  u1,   u2,   u3,   Temp, rho,  xx, &
+       call e3resStrongPDE_ALE( &
+            aci,  u1,   u2,   u3,   &
+            uMesh1,uMesh2,uMesh3, &
+            Temp, rho,  xx, &
                   g1yi, g2yi, g3yi, &
             rLui, src, divqi)
 !

@@ -1,5 +1,7 @@
       subroutine e3stab (rho,          u1,       u2, &
-                         u3,           dxidx,    rLui,    &
+                         u3,           &
+                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 08/10/2016
+                         dxidx,    rLui,    &
                          rmu,          tauC,     tauM,    &
                          tauBar,       uBar )  
 !
@@ -43,7 +45,7 @@
 
         !..... ALE variables
 
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      dimension uMesh1(npro), uMesh2(npro), uMesh3(npro)
       integer   i
       logical :: exist
 
@@ -59,15 +61,15 @@
       ! else
 
       !     get mesh velocity KDL, MAF
-      if (aleRigid.eq.1) then
-        uMesh1(:) = globalRigidVelocity(1)
-        uMesh2(:) = globalRigidVelocity(2)
-        uMesh3(:) = globalRigidVelocity(3)
-      else
-        uMesh1(:) = real(0.0,8) 
-        uMesh2(:) = real(0.0,8)
-        uMesh3(:) = real(0.0,8)        
-      endif
+      ! if (aleRigid.eq.1) then
+      !   uMesh1(:) = globalRigidVelocity(1)
+      !   uMesh2(:) = globalRigidVelocity(2)
+      !   uMesh3(:) = globalRigidVelocity(3)
+      ! else
+      !   uMesh1(:) = real(0.0,8) 
+      !   uMesh2(:) = real(0.0,8)
+      !   uMesh3(:) = real(0.0,8)        
+      ! endif
       ! endif
       
       ! MAYBE PRECALCULATE OUTSIDE ?

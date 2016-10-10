@@ -1028,6 +1028,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     use ResidualControl
     use phcommonvars
     use itrDrvVars
+    use ale
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -1049,6 +1050,13 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     write(*,*) "ipvsq = ",ipvsq
     write(*,*) "numResistSrfs = ",numResistSrfs
 #endif     
+
+    call getMeshVelocities(uMesh,nshg) !computing Mesh velocities before iteration sequence
+                                       !this is now used for the imposed mesh velocity or 
+                                       !rigid body motion case. When the mesh moving algorithm
+                                       !is in place, maybe will need to build a global iteration
+                                       !algorithm to solve in blocks the Fluid-solid and the mesh
+                                       !motion MAF 06/10/2016
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 
@@ -1271,12 +1279,12 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     ! write(*,*) "currentTimestepIndex inside itrdrv_iter_step is ",currentTimestepIndex
     ! write(*,*) "istep inside itrdrv_iter_step is ",istep
 
-    call getMeshVelocities(uMesh,nshg) !computing Mesh velocities before iteration sequence
-                                       !this is now used for the imposed mesh velocity or 
-                                       !rigid body motion case. When the mesh moving algorithm
-                                       !is in place, maybe will need to build a global iteration
-                                       !algorithm to solve in blocks the Fluid-solid and the mesh
-                                       !motion MAF 06/10/2016
+    ! call getMeshVelocities(uMesh,nshg) !computing Mesh velocities before iteration sequence
+    !                                    !this is now used for the imposed mesh velocity or 
+    !                                    !rigid body motion case. When the mesh moving algorithm
+    !                                    !is in place, maybe will need to build a global iteration
+    !                                    !algorithm to solve in blocks the Fluid-solid and the mesh
+    !                                    !motion MAF 06/10/2016
 
     do istepc=1,seqsize
         icode=stepseq(istepc)

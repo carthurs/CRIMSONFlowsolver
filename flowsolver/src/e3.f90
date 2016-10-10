@@ -143,13 +143,16 @@
 !.... compute the stabilization terms
 !
         call e3stab (rho,          u1,       u2, &
-                     u3,           dxidx,    rLui, &   
+                     u3,           &
+                     uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 08/10/2016
+                     dxidx,    rLui, &   
                      rmu,          tauC,     tauM,  & 
                      tauBar,       uBar )  
 !
 !.... compute the residual contribution at this integration point
 !
         call e3Res ( u1,        u2,         u3, &
+                     uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 08/10/2016
                      uBar,      aci,        WdetJ, &
                      g1yi,      g2yi,       g3yi, &
                      rLui,      rmu,        rho, &
@@ -162,6 +165,7 @@
 !
         if (lhs .eq. 1) then
            call e3LHS ( u1,        u2,         u3, &
+                        uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 09/10/2016
                         uBar,      WdetJ,      rho, &
                         rLui,      rmu, &
                         tauC,      tauM,       tauBar, &

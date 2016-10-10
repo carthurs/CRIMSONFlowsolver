@@ -129,7 +129,7 @@
 
       integer logicPassed
 
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      ! real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
       
 
 
@@ -146,15 +146,15 @@
 
 
       !     get mesh velocity KDL, MAF
-      if (aleRigid.eq.1) then
-        uMesh1(:) = globalRigidVelocity(1)
-        uMesh2(:) = globalRigidVelocity(2)
-        uMesh3(:) = globalRigidVelocity(3)
-      else
-        uMesh1(:) = real(0.0,8) 
-        uMesh2(:) = real(0.0,8)
-        uMesh3(:) = real(0.0,8)
-      endif
+      ! if (aleRigid.eq.1) then
+      !   uMesh1(:) = globalRigidVelocity(1)
+      !   uMesh2(:) = globalRigidVelocity(2)
+      !   uMesh3(:) = globalRigidVelocity(3)
+      ! else
+      !   uMesh1(:) = real(0.0,8) 
+      !   uMesh2(:) = real(0.0,8)
+      !   uMesh3(:) = real(0.0,8)
+      ! endif
 
 
 !

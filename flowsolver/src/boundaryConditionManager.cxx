@@ -334,51 +334,78 @@ std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionMana
     return &m_boundaryConditions;
 }
 
-void boundaryConditionManager::computeAllImplicitCoeff_solve(const int timestepNumber)
-{
-  for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
-  {
-    (*iterator)->computeImplicitCoeff_solve(timestepNumber);
-  }
-}
+// FULLY DEFINED IN HEADER SO OTHER TRANSLATION UNITS CAN USE IT
+// template <typename TemplateBoundaryConditionType>
+// void boundaryConditionManager::computeImplicitCoeff_solve(const int timestepNumber)
+// {
+//   for (auto&& boundaryCondition : m_boundaryConditions)
+//   {
+//     if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
+//     {
+//       boundaryCondition->computeImplicitCoeff_solve(timestepNumber);
+//     }
+//   }
+// }
 // ---WRAPPED BY--->
 extern "C" void callCppComputeAllImplicitCoeff_solve(int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeAllImplicitCoeff_solve(timestepNumber);
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<abstractBoundaryCondition>(timestepNumber);
+}
+// ---AND--->
+extern "C" void callCppComputeAllNetlistImplicitCoeff_solve(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<NetlistBoundaryCondition>(timestepNumber);
+}
+// ---AND--->
+extern "C" void callCppComputeAllCoronaryImplicitCoeff_solve(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<controlledCoronary>(timestepNumber);
+}
+// ---AND--->
+extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_solve(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<RCR>(timestepNumber);
 }
 
-void boundaryConditionManager::computeAllImplicitCoeff_update(const int timestepNumber)
+template <typename TemplateBoundaryConditionType>
+void boundaryConditionManager::computeImplicitCoeff_update(const int timestepNumber)
 {
-  for (auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
+  for (auto&& boundaryCondition : m_boundaryConditions)
   {
-    (*iterator)->computeImplicitCoeff_update(timestepNumber);
+    if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
+    {
+      boundaryCondition->computeImplicitCoeff_update(timestepNumber);
+    }
   }
 }
 // ---WRAPPED BY--->
 extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeAllImplicitCoeff_update(timestepNumber);
+  boundaryConditionManager_instance->computeImplicitCoeff_update<abstractBoundaryCondition>(timestepNumber);
 }
-
-void boundaryConditionManager::computeAllNetlistImplicitCoeff_solve(const int timestepNumber)
-{
-  for(auto&& boundaryCondition : m_boundaryConditions)
-  {
-    if (boost::dynamic_pointer_cast<NetlistBoundaryCondition> (boundaryCondition))
-    {
-      boundaryCondition->computeImplicitCoeff_solve(timestepNumber);
-    }
-  }
-}
-// ---WRAPPED BY--->
-extern "C" void callCppComputeAllNetlistImplicitCoeff_solve(int& timestepNumber)
+// ---AND--->
+extern "C" void callCppComputeAllNetlistImplicitCoeff_update(int& timestepNumber)
 {
   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeAllNetlistImplicitCoeff_solve(timestepNumber);
+  boundaryConditionManager_instance->computeImplicitCoeff_update<NetlistBoundaryCondition>(timestepNumber);
 }
-
+// ---AND--->
+extern "C" void callCppComputeAllCoronaryImplicitCoeff_update(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_update<controlledCoronary>(timestepNumber);
+}
+// ---AND--->
+extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_update(int& timestepNumber)
+{
+  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_update<RCR>(timestepNumber);
+}
 
 void boundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows)
 {

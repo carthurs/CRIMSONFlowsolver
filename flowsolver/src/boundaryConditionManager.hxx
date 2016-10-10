@@ -55,10 +55,21 @@ class abstractBoundaryCondition;
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<abstractBoundaryCondition>>* getBoundaryConditions();
 
-    void computeAllImplicitCoeff_solve(const int timestepNumber);
-    void computeAllImplicitCoeff_update(const int timestepNumber);
+    // Must be fully defined here in the header so that other translation units can instantiate the template
+    template <typename TemplateBoundaryConditionType>
+    void computeImplicitCoeff_solve(const int timestepNumber)
+    {
+      for (auto&& boundaryCondition : m_boundaryConditions)
+      {
+        if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
+        {
+          boundaryCondition->computeImplicitCoeff_solve(timestepNumber);
+        }
+      }
+    }
 
-    void computeAllNetlistImplicitCoeff_solve(const int timestepNumber);
+    template <typename TemplateBoundaryConditionType>
+    void computeImplicitCoeff_update(const int timestepNumber);
 
     void updateAllRCRS_Pressure_n1_withflow();
     void updateAllRCRS_setflow_n(const double* const flows);

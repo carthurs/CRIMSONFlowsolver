@@ -626,7 +626,7 @@
          procedure :: initialiseNetlistLPN => initialiseNetlistLPN
          procedure :: setimplicitcoeff_netlistLPN => setimplicitcoeff_netlistLPN
          procedure :: setflowpntrs_netlistLPN => setflowpntrs_netlistLPN
-         procedure, public :: generateLinearSystemFromPrescribedCircuit => generateLinearSystemFromPrescribedCircuit
+         ! procedure, public :: generateLinearSystemFromPrescribedCircuit => generateLinearSystemFromPrescribedCircuit
          procedure, public ::  getListOfNodesWithMultipleIncidentCurrents => getListOfNodesWithMultipleIncidentCurrents
          procedure :: getMapOfPressHistoriesToCorrectPressNodes => getMapOfPressHistoriesToCorrectPressNodes
          procedure :: getMapOfFlowHistoriesToCorrectComponents => getMapOfFlowHistoriesToCorrectComponents
@@ -1690,94 +1690,94 @@
       end subroutine writeRestart_controlledCoronaryModel
 
 
-      subroutine generateLinearSystemFromPrescribedCircuit(this,alfi_delt)
-         ! This subroutine assembles the system of (time-discretised) linear algebraic equations for the LPN.
+      ! subroutine generateLinearSystemFromPrescribedCircuit(this,alfi_delt)
+      !    ! This subroutine assembles the system of (time-discretised) linear algebraic equations for the LPN.
          
-          implicit none
+      !     implicit none
 
-          integer :: ll, mm
-          integer :: rowsDoneSoFar
-          integer :: tempIndexingShift
-          integer :: tempUnknownVariableIndexWithinLinearSystem
-          integer :: kk
+      !     integer :: ll, mm
+      !     integer :: rowsDoneSoFar
+      !     integer :: tempIndexingShift
+      !     integer :: tempUnknownVariableIndexWithinLinearSystem
+      !     integer :: kk
 
-          integer :: ierr
+      !     integer :: ierr
 
-          class(netlistLPN) :: this
-          real*8, intent(in) :: alfi_delt
+      !     class(netlistLPN) :: this
+      !     real*8, intent(in) :: alfi_delt
 
-          do kk=1, this%numberOfLPNSurfaces
-             do ll=1, this%numberOfComponents(kk)
-               if (this%circuitData_componentTypes(ll,kk) == 'r') then
-                  ! insert resistor relationship into equation system
-                  this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
-                  this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
-                  this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)
-               elseif (this%circuitData_componentTypes(ll,kk) == 'c') then
-                  ! insert capacitor relationship into equation system
-                  this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
-                  this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
-                  this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -alfi_delt/this%circuitData(ll,3,kk) ! note that this needs to change for alfi \todo
-                  this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,1,kk)),kk) + this%numberOfPressureNodes(kk),kk) = -1.0d0
-                  this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,2,kk)),kk) + this%numberOfPressureNodes(kk),kk) = 1.0d0
-               elseif (this%circuitData_componentTypes(ll,kk) == 'i') then
-                  ! insert inductor relationship into equation system
-                  this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
-                  this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
-                  this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)/alfi_delt
-                  this%systemMatrix(ll,this%componentIndexToFlowHistoryComponentOrderingMap(ll,kk) + this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + this%numberOfComponents(kk),kk) = this%circuitData(ll,3,kk)/alfi_delt
-               else
-                  write(*,*) 'EE: Unknown component type in netlist. Halting.'
-                  stop
-               end if
-             end do
+      !     do kk=1, this%numberOfLPNSurfaces
+      !        do ll=1, this%numberOfComponents(kk)
+      !          if (this%circuitData_componentTypes(ll,kk) == 'r') then
+      !             ! insert resistor relationship into equation system
+      !             this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
+      !             this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
+      !             this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)
+      !          elseif (this%circuitData_componentTypes(ll,kk) == 'c') then
+      !             ! insert capacitor relationship into equation system
+      !             this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
+      !             this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
+      !             this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -alfi_delt/this%circuitData(ll,3,kk) ! note that this needs to change for alfi \todo
+      !             this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,1,kk)),kk) + this%numberOfPressureNodes(kk),kk) = -1.0d0
+      !             this%systemMatrix(ll,this%nodeIndexToPressureHistoryNodeOrderingMap(int(this%circuitData(ll,2,kk)),kk) + this%numberOfPressureNodes(kk),kk) = 1.0d0
+      !          elseif (this%circuitData_componentTypes(ll,kk) == 'i') then
+      !             ! insert inductor relationship into equation system
+      !             this%systemMatrix(ll,int(this%circuitData(ll,1,kk)),kk) = 1.0d0
+      !             this%systemMatrix(ll,int(this%circuitData(ll,2,kk)),kk) = -1.0d0
+      !             this%systemMatrix(ll,ll+this%numberOfPressureNodes(kk)+this%numberOfHistoryPressures(kk),kk) = -this%circuitData(ll,3,kk)/alfi_delt
+      !             this%systemMatrix(ll,this%componentIndexToFlowHistoryComponentOrderingMap(ll,kk) + this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + this%numberOfComponents(kk),kk) = this%circuitData(ll,3,kk)/alfi_delt
+      !          else
+      !             write(*,*) 'EE: Unknown component type in netlist. Halting.'
+      !             stop
+      !          end if
+      !        end do
 
-             ! Do the equations for the nodes with multiple incident currents:
-             do mm=1, this%numberOfMultipleIncidentCurrentNodes(kk)
-               do ll=1, this%numberOfComponents(kk)
-                  if (int(this%circuitData(ll,2,kk)) .eq. this%listOfNodesWithMultipleIncidentCurrents(mm,kk)) then
-                     this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = 1.0d0
-                  end if
-                  if (int(this%circuitData(ll,1,kk)) .eq. this%listOfNodesWithMultipleIncidentCurrents(mm,kk)) then
-                     this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = -1.0d0
-                  end if
-               end do
-             end do
+      !        ! Do the equations for the nodes with multiple incident currents:
+      !        do mm=1, this%numberOfMultipleIncidentCurrentNodes(kk)
+      !          do ll=1, this%numberOfComponents(kk)
+      !             if (int(this%circuitData(ll,2,kk)) .eq. this%listOfNodesWithMultipleIncidentCurrents(mm,kk)) then
+      !                this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = 1.0d0
+      !             end if
+      !             if (int(this%circuitData(ll,1,kk)) .eq. this%listOfNodesWithMultipleIncidentCurrents(mm,kk)) then
+      !                this%systemMatrix(mm+this%numberOfComponents(kk), this%numberOfPressureNodes(kk) + this%numberOfHistoryPressures(kk) + ll,kk) = -1.0d0
+      !             end if
+      !          end do
+      !        end do
 
-             rowsDoneSoFar = this%numberOfComponents(kk) + this%numberOfMultipleIncidentCurrentNodes(kk)
+      !        rowsDoneSoFar = this%numberOfComponents(kk) + this%numberOfMultipleIncidentCurrentNodes(kk)
 
-             ! create the columnMap which tells us which system column each of the prescribed pressure, pressure-history or flow values belong to
-             tempIndexingShift = 0 ! we use this with zero initially, just for code readability in what follows
-             tempUnknownVariableIndexWithinLinearSystem = 0 ! we use this with zero initially, just for code readability in what follows
-             do ll=1, this%numberOfPrescribedPressures(kk)
-               this%columnMap(ll + tempIndexingShift,kk) = this%listOfPrescribedPressures(ll,kk) + tempUnknownVariableIndexWithinLinearSystem
-             end do
+      !        ! create the columnMap which tells us which system column each of the prescribed pressure, pressure-history or flow values belong to
+      !        tempIndexingShift = 0 ! we use this with zero initially, just for code readability in what follows
+      !        tempUnknownVariableIndexWithinLinearSystem = 0 ! we use this with zero initially, just for code readability in what follows
+      !        do ll=1, this%numberOfPrescribedPressures(kk)
+      !          this%columnMap(ll + tempIndexingShift,kk) = this%listOfPrescribedPressures(ll,kk) + tempUnknownVariableIndexWithinLinearSystem
+      !        end do
 
-             tempIndexingShift = tempIndexingShift + this%numberOfPrescribedPressures(kk) ! tempIndexingShift is zero before this line; I'm doing it like this for clarity & consistency
-             tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + this%numberOfPressureNodes(kk) ! tempUnknownVariableIndexWithinLinearSystem is zero before this line; I'm doing it like this for clarity & consistency
-             do ll=1, this%numberOfHistoryPressures(kk)
-               ! this%columnMap(ll + tempIndexingShift) = this%listOfHistoryPressures(ll) + tempUnknownVariableIndexWithinLinearSystem
-               this%columnMap(ll + tempIndexingShift,kk) = ll + tempUnknownVariableIndexWithinLinearSystem
-             end do
+      !        tempIndexingShift = tempIndexingShift + this%numberOfPrescribedPressures(kk) ! tempIndexingShift is zero before this line; I'm doing it like this for clarity & consistency
+      !        tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + this%numberOfPressureNodes(kk) ! tempUnknownVariableIndexWithinLinearSystem is zero before this line; I'm doing it like this for clarity & consistency
+      !        do ll=1, this%numberOfHistoryPressures(kk)
+      !          ! this%columnMap(ll + tempIndexingShift) = this%listOfHistoryPressures(ll) + tempUnknownVariableIndexWithinLinearSystem
+      !          this%columnMap(ll + tempIndexingShift,kk) = ll + tempUnknownVariableIndexWithinLinearSystem
+      !        end do
 
-             tempIndexingShift = tempIndexingShift + this%numberOfHistoryPressures(kk)
-             tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + this%numberOfHistoryPressures(kk)
-             do ll=1, this%numberOfPrescribedFlows(kk)
-               this%columnMap(ll + tempIndexingShift,kk) = this%listOfPrescribedFlows(ll,kk) + tempUnknownVariableIndexWithinLinearSystem
-             end do
+      !        tempIndexingShift = tempIndexingShift + this%numberOfHistoryPressures(kk)
+      !        tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + this%numberOfHistoryPressures(kk)
+      !        do ll=1, this%numberOfPrescribedFlows(kk)
+      !          this%columnMap(ll + tempIndexingShift,kk) = this%listOfPrescribedFlows(ll,kk) + tempUnknownVariableIndexWithinLinearSystem
+      !        end do
 
-             tempIndexingShift = tempIndexingShift + this%numberOfPrescribedFlows(kk)
-             tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + this%numberOfComponents(kk)
-             do ll=1, this%numberOfHistoryFlows(kk)
-               this%columnMap(ll + tempIndexingShift,kk) = ll + tempUnknownVariableIndexWithinLinearSystem
-             end do
+      !        tempIndexingShift = tempIndexingShift + this%numberOfPrescribedFlows(kk)
+      !        tempUnknownVariableIndexWithinLinearSystem = tempUnknownVariableIndexWithinLinearSystem + this%numberOfComponents(kk)
+      !        do ll=1, this%numberOfHistoryFlows(kk)
+      !          this%columnMap(ll + tempIndexingShift,kk) = ll + tempUnknownVariableIndexWithinLinearSystem
+      !        end do
 
-             ! Set the prescribed-value equations (i.e. pressure_1 (LHS) = pressure_1 (RHS) - so really just a way of setting the prescribed values within the linear system)
-             do ll = 1, this%systemSize(kk) - rowsDoneSoFar 
-               this%systemMatrix(rowsDoneSoFar + ll, this%columnMap(ll,kk),kk) = 1d0
-             end do
-         end do
-      end subroutine generateLinearSystemFromPrescribedCircuit
+      !        ! Set the prescribed-value equations (i.e. pressure_1 (LHS) = pressure_1 (RHS) - so really just a way of setting the prescribed values within the linear system)
+      !        do ll = 1, this%systemSize(kk) - rowsDoneSoFar 
+      !          this%systemMatrix(rowsDoneSoFar + ll, this%columnMap(ll,kk),kk) = 1d0
+      !        end do
+      !    end do
+      ! end subroutine generateLinearSystemFromPrescribedCircuit
 
 
       subroutine assembleRHS_netlistLPN(this,stepn)
@@ -7155,7 +7155,7 @@
             alfi_delt = delt
          end if
 
-         call this%generateLinearSystemFromPrescribedCircuit(alfi_delt)
+         ! call this%generateLinearSystemFromPrescribedCircuit(alfi_delt)
          call this%assembleRHS_netlistLPN(stepn)
 
          ! call MPI_COMM_RANK(MPI_COMM_WORLD,rank,ierr)

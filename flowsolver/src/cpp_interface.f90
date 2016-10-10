@@ -89,6 +89,13 @@ module cpp_interface
             end subroutine callCppComputeAllNetlistImplicitCoeff_solve
     end interface
 
+    interface
+            subroutine callCppComputeAllNetlistImplicitCoeff_update(timestepNumber) bind(c,name="callCppComputeAllNetlistImplicitCoeff_update")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllNetlistImplicitCoeff_update
+    end interface
+
 
 !   =============== Numerical RCR Block ===============
     interface
@@ -138,6 +145,20 @@ module cpp_interface
             end subroutine callCPPWritePHistAndQHistRCR
     end interface
 
+    interface
+            subroutine callCppComputeAllNumericalRCRImplicitCoeff_solve(timestepNumber) bind(c,name="callCppComputeAllNumericalRCRImplicitCoeff_solve")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllNumericalRCRImplicitCoeff_solve
+    end interface
+
+    interface
+            subroutine callCppComputeAllNumericalRCRImplicitCoeff_update(timestepNumber) bind(c,name="callCppComputeAllNumericalRCRImplicitCoeff_update")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllNumericalRCRImplicitCoeff_update
+    end interface    
+
 !   =============== Controlled Coronary Block ===============
     ! interface
     !         subroutine callCppSetSurfacePressure_controlledCoronary(coronarySurfacePressures) bind(c,name="callCppSetSurfacePressure_controlledCoronary")
@@ -145,6 +166,20 @@ module cpp_interface
     !             type(c_ptr) :: coronarySurfacePressures
     !         end subroutine callCppSetSurfacePressure_controlledCoronary
     ! end interface
+
+    interface
+            subroutine callCppComputeAllCoronaryImplicitCoeff_solve(timestepNumber) bind(c,name="callCppComputeAllCoronaryImplicitCoeff_solve")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllCoronaryImplicitCoeff_solve
+    end interface
+
+    interface
+            subroutine callCppComputeAllCoronaryImplicitCoeff_update(timestepNumber) bind(c,name="callCppComputeAllCoronaryImplicitCoeff_update")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllCoronaryImplicitCoeff_update
+    end interface    
 
     interface
             subroutine callCppGetImplicitCoeff_controlledCoronary(implicitCoeffs_toBeFilled_ptr) bind(c,name="callCppGetImplicitCoeff_controlledCoronary")

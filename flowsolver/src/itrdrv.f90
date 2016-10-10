@@ -1145,26 +1145,11 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
         call resetBoundaryConditionStateForKalmanFilter(yold, numNetlistLPNSrfs, indicesOfNetlistSurfaces)
     endif
 
-    ! ! Nan rcr ----------------------------------
-    ! if(numGRCRSrfs.gt.0) then
-    !     !call grcrbc_ComputeImplicitCoefficients(currentTimestepIndex, yold)
+    call callCppComputeAllNumericalRCRImplicitCoeff_solve(currentTimestepIndex)
+    call callCppComputeAllNumericalRCRImplicitCoeff_update(currentTimestepIndex)
 
-    !     if (nrcractive) then
-    !         ! first reset flow for the filter
-    !         call reset_flow_n(yold, nrcr)
-    !         ! calculate the implicit coefficients
-    !         ! call nrcr%setimplicitcoeff(currentTimestepIndex) !\cppHook
-
-    !         ! call callCppComputeAllImplicitCoeff_solve(currentTimestepIndex)
-    !         ! call callCppComputeAllImplicitCoeff_update(currentTimestepIndex)
-    !     end if
-
-    ! endif
-
-    ! Moved here from above - it's a generic update for everything,
-    ! so shouldn't need guarding
-    call callCppComputeAllImplicitCoeff_solve(currentTimestepIndex)
-    call callCppComputeAllImplicitCoeff_update(currentTimestepIndex)
+    call callCppComputeAllCoronaryImplicitCoeff_solve(currentTimestepIndex)
+    call callCppComputeAllCoronaryImplicitCoeff_update(currentTimestepIndex)
     ! ------------------------------------------
 
     !
@@ -1296,6 +1281,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         if(mod(icode,5).eq.0) then ! this is a solve
             isolve=icode/10
             if(icode.eq.0) then ! flow solve (encoded as 0)
+                call callCppComputeAllNetlistImplicitCoeff_solve(currentTimestepIndex)
                 !
                 iter   = iter+1
                 ifuncs(1)  = ifuncs(1) + 1
@@ -1406,6 +1392,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             ! call callCppComputeAllNetlistImplicitCoeff_solve(currentTimestepIndex)
 
         else ! this is an update  (mod did not equal zero)
+            call callCppComputeAllNetlistImplicitCoeff_update(currentTimestepIndex)
 
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !.... -----------------------> corrector phase <-----------------------

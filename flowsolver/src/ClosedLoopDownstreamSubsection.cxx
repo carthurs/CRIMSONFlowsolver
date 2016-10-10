@@ -121,7 +121,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
     for (auto upstreamBCCircuit = m_upstreamBoundaryConditionCircuits.begin(); upstreamBCCircuit != m_upstreamBoundaryConditionCircuits.end(); upstreamBCCircuit++)
     {
         Mat matrixContribution;
-        Vec rhsContribuiton;
+        Vec rhsContribution;
 
         boost::shared_ptr<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> downcastCircuit = boost::dynamic_pointer_cast<NetlistBoundaryCircuitWhenDownstreamCircuitsExist> (*upstreamBCCircuit);
         
@@ -132,8 +132,8 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         std::pair<int, Mat> matrixContributionTaggedWithIndexAmongstNetlistBCs = std::make_pair(indexAmongstNetlists, matrixContribution);
         m_matrixContributionsFromUpstreamBoundaryConditions.push(matrixContributionTaggedWithIndexAmongstNetlistBCs);
         
-        downcastCircuit->getRHSContribution(timestepNumber, rhsContribuiton);
-        m_rhsContributionsFromUpstreamBoundaryConditions.push(rhsContribuiton);
+        downcastCircuit->getRHSContribution(timestepNumber, rhsContribution);
+        m_rhsContributionsFromUpstreamBoundaryConditions.push(rhsContribution);
 
         // Record which entries in the eventual solution vector will belong to 
         // each upstream circuit:
@@ -446,15 +446,15 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         // Scoping unit just to add the downstream closed loop subsection to m_closedLoopRHS:
         {
             // Add the closed loop downstream circuit's RHS:
-            Vec rhsContribuiton;
-            mp_NetlistCircuit->getRHSContribution(timestepNumber, rhsContribuiton);
+            Vec rhsContribution;
+            mp_NetlistCircuit->getRHSContribution(timestepNumber, rhsContribution);
 
             PetscInt numberOfRows;
-            errFlag = VecGetSize(rhsContribuiton, &numberOfRows); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+            errFlag = VecGetSize(rhsContribution, &numberOfRows); CHKERRABORT(PETSC_COMM_SELF, errFlag);
 
             // Get the raw data to add to the RHS:
             PetscScalar* rawDataToAddToClosedLoopRHS;
-            errFlag = VecGetArray(rhsContribuiton, &rawDataToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+            errFlag = VecGetArray(rhsContribution, &rawDataToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
 
             PetscInt globalRowIndices[numberOfRows];
             createContiguousIntegerRange(m_nextBlankRhsRow, numberOfRows, globalRowIndices);
@@ -462,7 +462,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
             errFlag = VecAssemblyBegin(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
             errFlag = VecAssemblyEnd(m_closedLoopRHS); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-            errFlag = VecRestoreArray(rhsContribuiton, &rawDataToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
+            errFlag = VecRestoreArray(rhsContribution, &rawDataToAddToClosedLoopRHS); CHKERRABORT(PETSC_COMM_SELF, errFlag);
 
             m_nextBlankRhsRow += numberOfRows;
         }

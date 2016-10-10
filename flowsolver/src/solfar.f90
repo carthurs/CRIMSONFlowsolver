@@ -8,7 +8,8 @@
                          shpb,       shglb,      rowp,      &
                          colm,       lhsK,       lhsP,  &
                          solinc,     rerr,              &
-                         memLS_lhs,  memLS_ls,   memLS_nFaces  )
+                         memLS_lhs,  memLS_ls,   memLS_nFaces, &
+                         uMesh  ) !ALE variables added MAF 06/10/2016
 !
 !----------------------------------------------------------------------
 !
@@ -102,6 +103,8 @@
 
       real*8    rerr(nshg,10),            rtmp(nshg,4)
 
+      real*8    uMesh(nshg,3) !MAF 06/10/2016
+
       INTEGER dof, memLS_nFaces, i, j, k, l
       INTEGER, ALLOCATABLE :: incL(:)
       REAL*8, ALLOCATABLE :: faceRes(:), Res4(:,:), Val4(:,:)
@@ -133,7 +136,8 @@
                     BC,        shpb,       shglb, &
                     res,       iper,       ilwork,    &
                     rowp,      colm,       lhsK,       &
-                    lhsP,      rerr   )
+                    lhsP,      rerr, & 
+                    uMesh   ) !ALE variables added MAF 06/10/2016
 
 #if DEBUG_ALE == 1
       write(*,*) 'printing res after elmgmr'

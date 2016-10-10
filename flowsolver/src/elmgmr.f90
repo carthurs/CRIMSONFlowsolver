@@ -4,7 +4,8 @@
                            BC,        shpb,      shglb, &
                            res,       iper,      ilwork, &
                            rowp,      colm,      lhsK,       &
-                           lhsP,      rerr)
+                           lhsP,      rerr, &
+                           uMesh   ) !ALE variables added MAF 06/10/2016)
 !
 !----------------------------------------------------------------------
 !
@@ -64,6 +65,8 @@
 
         integer   i
         logical :: exist
+
+        dimension    uMesh(nshg,3) !MAF 06/10/2016
 !
 !.... set up the timer
 !
@@ -189,13 +192,14 @@
 
 
           call AsIGMR (y,                   ac, &
+                       uMesh, &                       !ALE variables added MAF 06/10/2016))
                        x,                   mxmudmi(iblk)%p,       &
                        tmpshp,  &
                        tmpshgl, &
                        mien(iblk)%p, &
                        res, &
                        qres,                xKebe, &
-                       xGoC,                rerr)
+                       xGoC,                rerr) 
 
 ! #if DEBUG_ALE == 1
           

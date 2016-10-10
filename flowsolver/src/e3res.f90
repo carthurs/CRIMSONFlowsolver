@@ -1,4 +1,5 @@
       subroutine e3Res ( u1,        u2,         u3, &
+                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 08/10/2016
                          uBar,      aci,        WdetJ, &
                          g1yi,      g2yi,       g3yi, &
                          rLui,      rmu,        rho, &
@@ -63,17 +64,23 @@
 !
 !..... ALE variables
 !
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      dimension uMesh1(npro), uMesh2(npro), uMesh3(npro)
 
-      !     get mesh velocity KDL, MA
+      !     get mesh velocity KDL, MAF
       ! if (rigidOn.eq.1) then
       ! uMesh1(:) = -1.0d0*globalRigidVelocity(1)
       ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
       ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
       ! else
-      uMesh1(:) = globalMeshVelocity(1)
-      uMesh2(:) = globalMeshVelocity(2)
-      uMesh3(:) = globalMeshVelocity(3)
+      ! if (aleRigid.eq.1) then
+      !   uMesh1(:) = globalRigidVelocity(1)
+      !   uMesh2(:) = globalRigidVelocity(2)
+      !   uMesh3(:) = globalRigidVelocity(3)
+      ! else
+      !   uMesh1(:) = real(0.0,8) 
+      !   uMesh2(:) = real(0.0,8)
+      !   uMesh3(:) = real(0.0,8)        
+      ! endif
       ! endif
       
       ! MAYBE PRECALCULATE OUTSIDE ?
@@ -129,7 +136,7 @@
       tmp3 =  rmu * ( g1yi(:,4) + g3yi(:,2) )
 
 
-      if(iconvflow.eq.2) then  ! advective form (NO IBP either)
+      if(iconvflow.eq.2) then  ! advective form (NO IBP either) !IBP = integration by parts, MAF
 
 !
 ! no density yet...it comes later
@@ -469,9 +476,15 @@
       ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
       ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
       ! else
-      uMesh1(:) = globalMeshVelocity(1)
-      uMesh2(:) = globalMeshVelocity(2)
-      uMesh3(:) = globalMeshVelocity(3)
+      if (aleRigid.eq.1) then
+        uMesh1(:) = globalRigidVelocity(1)
+        uMesh2(:) = globalRigidVelocity(2)
+        uMesh3(:) = globalRigidVelocity(3)
+      else 
+        uMesh1(:) = real(0.0,8)
+        uMesh2(:) = real(0.0,8)
+        uMesh3(:) = real(0.0,8)
+      endif
       ! endif
 
       ! MAYBE PRECALCULATE OUTSIDE ?
@@ -662,3 +675,127 @@
 !
       return
       end subroutine e3resStrongPDE
+
+
+
+
+!----------------------------------------------------------------------
+!     Calculate the strong PDE residual.
+!----------------------------------------------------------------------
+      subroutine e3resStrongPDE_ALE( &
+           aci,  u1,   u2,   u3,&
+              uMesh1,uMesh2,uMesh3,&
+              Temp, rho,  xx, &
+                 g1yi, g2yi, g3yi, &
+           rLui, src, divqi)
+      use phcommonvars
+      use ale
+      IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
+!     INPUTS
+      double precision, intent(in), dimension(npro,nsd) ::  &
+           aci, xx
+      double precision, intent(in), dimension(npro,nflow) ::  &
+           g1yi, g2yi, g3yi
+      double precision, intent(in), dimension(npro) :: &
+           u1, u2, u3, Temp, rho
+!     OUTPUTS
+      double precision, intent(out), dimension(npro,nsd) :: &
+           rLui, src
+!     LOCALS
+      double precision, dimension(npro) :: &
+           divu
+      double precision, dimension(npro,nsd) :: &
+           divqi
+      double precision, dimension(nsd) :: &
+           omega
+!     MESH VELOCITY TERMS
+      ! double precision, dimension(npro) :: uMesh1, uMesh2, uMesh3
+      dimension uMesh1(npro), uMesh2(npro), uMesh3(npro)
+
+      integer   i
+      logical :: exist
+!.... compute source term
+      src = zero
+      if(matflg(5,1) .ge. 1) then
+!        body force contribution to src
+         bfx      = datmat(1,5,1) ! Boussinesq, g*alfap
+         bfy      = datmat(2,5,1)
+         bfz      = datmat(3,5,1)
+         select case ( matflg(5,1) )
+         case ( 1 )             ! standard linear body force
+            src(:,1) = bfx
+            src(:,2) = bfy
+            src(:,3) = bfz
+         case ( 2 )             ! boussinesq body force
+            Tref = datmat(2,2,1)
+            src(:,1) = bfx * (Temp(:)-Tref)
+            src(:,2) = bfy * (Temp(:)-Tref)
+            src(:,3) = bfz * (Temp(:)-Tref)
+         case ( 3 )             ! user specified f(x,y,z)
+            !call e3source(xx, src)
+         end select
+      endif
+!     
+      if(matflg(6,1).eq.1) then
+!        coriolis force contribution to src
+         omega(1)=datmat(1,6,1)
+         omega(2)=datmat(2,6,1)
+         omega(3)=datmat(3,6,1)
+!  note that we calculate f as if it contains the usual source
+!  plus the Coriolis and the centrifugal forces taken to the rhs (sign change)
+!  as long as we are doing SUPG with no accounting for these terms in the
+!  LHS this is the only change (which will find its way to the RHS momentum
+!  equation (both Galerkin and SUPG parts)).
+!
+!  uncomment later if you want rotation always about z axis
+!                 orig_src - om x om x r       - two om x u
+!
+!$$$          src(:,1)=src(:,1)+omega(3)*omega(3)*xx(:,1)+two*omega(3)*u2
+!$$$          src(:,2)=src(:,2)+omega(3)*omega(3)*xx(:,2)-two*omega(3)*u1
+!
+! more general for testing
+!
+         src(:,1)=src(:,1) &
+              -omega(2)*(omega(1)*xx(:,2)-omega(2)*xx(:,1)) &
+              -omega(3)*(omega(1)*xx(:,3)-omega(3)*xx(:,1)) &
+              -two*(omega(2)*u3-omega(3)*u2)
+         src(:,2)=src(:,2) &
+              -omega(1)*(omega(2)*xx(:,1)-omega(1)*xx(:,2)) &
+              -omega(3)*(omega(2)*xx(:,3)-omega(3)*xx(:,2)) &
+              -two*(omega(3)*u1-omega(1)*u3)
+         src(:,3)=src(:,3) &
+              -omega(1)*(omega(3)*xx(:,1)-omega(1)*xx(:,3)) &
+              -omega(2)*(omega(3)*xx(:,2)-omega(2)*xx(:,3)) &
+              -two*(omega(1)*u2-omega(2)*u1)
+      endif
+
+
+
+!     calculate momentum residual
+      rLui(:,1) =(aci(:,1) + (u1 - uMesh1) * g1yi(:,2) &
+                           + (u2 - uMesh2) * g2yi(:,2) &
+                           + (u3 - uMesh3) * g3yi(:,2) - src(:,1) ) * rho &
+                           + g1yi(:,1) &
+                           - divqi(:,1)
+      rLui(:,2) =(aci(:,2) + (u1 - uMesh1) * g1yi(:,3) &
+                           + (u2 - uMesh2) * g2yi(:,3) &
+                           + (u3 - uMesh3) * g3yi(:,3) - src(:,2) ) * rho &
+                           + g2yi(:,1) &
+                           - divqi(:,2)
+      rLui(:,3) =(aci(:,3) + (u1 - uMesh1) * g1yi(:,4) &
+                           + (u2 - uMesh2) * g2yi(:,4) &
+                           + (u3 - uMesh3) * g3yi(:,4) - src(:,3) ) * rho &
+                           + g3yi(:,1) &
+                           - divqi(:,3)
+
+      if(iconvflow.eq.1) then
+
+         divu(:)  = (g1yi(:,2) + g2yi(:,3) + g3yi(:,4))*rho
+         rLui(:,1)=rlui(:,1)+u1(:)*divu(:)
+         rLui(:,2)=rlui(:,2)+u2(:)*divu(:)
+         rLui(:,3)=rlui(:,3)+u3(:)*divu(:)
+      endif
+
+!
+      return
+      end subroutine e3resStrongPDE_ALE

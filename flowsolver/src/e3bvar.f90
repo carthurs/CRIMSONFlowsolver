@@ -129,10 +129,10 @@
 
       integer logicPassed
 
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      ! real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
       
 
-      !     get mesh velocity KDL, MA
+
       ! if (rigidOn.eq.1) then
       ! write(*,*) "rigidOn"
       ! ! uMesh1(:) = 0.0d0 !no relative stabilization for rigid body motion
@@ -142,9 +142,18 @@
       ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
       ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
       ! else
-      uMesh1(:) = globalMeshVelocity(1)
-      uMesh2(:) = globalMeshVelocity(2)
-      uMesh3(:) = globalMeshVelocity(3)
+
+
+
+      !     get mesh velocity KDL, MAF
+      ! if (aleRigid.eq.1) then
+      !   uMesh1(:) = globalRigidVelocity(1)
+      !   uMesh2(:) = globalRigidVelocity(2)
+      !   uMesh3(:) = globalRigidVelocity(3)
+      ! else
+      !   uMesh1(:) = real(0.0,8) 
+      !   uMesh2(:) = real(0.0,8)
+      !   uMesh3(:) = real(0.0,8)
       ! endif
 
 
@@ -698,7 +707,7 @@
               enddo
 
 
-          enddo   ! end do n=1,nshlb MA
+          enddo   ! end do n=1,nshlb MAF
 
 
 
@@ -762,7 +771,7 @@
                   rlKwall(:,nodlcln,i) = rlKwall(:,nodlcln,i) * WdetJb * SWB(:,1)
               enddo
 
-          enddo ! end do n=1,nshlb, MA 
+          enddo ! end do n=1,nshlb, MAF 
 
           ! mass term
 

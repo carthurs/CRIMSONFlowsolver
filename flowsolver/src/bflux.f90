@@ -2,7 +2,8 @@
                          x,          xdist,     xdnv,   &
                          shp,        shgl,      shpb,   &
                          shglb,      ilwork,    iBC,    &
-                         BC,         iper  )
+                         BC,         iper, &
+                         uMesh) !ALE variables added MAF 06/10/2016
 !
 !----------------------------------------------------------------------
 !
@@ -66,8 +67,12 @@
       integer, allocatable, dimension(:,:)    :: ien2
       integer, allocatable, dimension(:)      :: map
       real*8, allocatable, dimension(:,:)     :: xmu2
+
+      real*8  uMesh(nshg,3) !MAF 06/10/2016    
 !
 !....  calculate the flux nodes
+
+      ! write(*,*) "inside bflux 1"
 !
       numflx  = 0
       invflx  = 0
@@ -91,6 +96,8 @@
             nodflx(numflx) = i
          endif
       enddo
+
+      ! write(*,*) "myrank = ",myrank," ;","inside bflux 2"
 !     
 !.... -------------------->   interior elements   <--------------------
 !     
@@ -99,6 +106,8 @@
       flxres = zero
       flxLHS = zero
       flxnrm = zero
+
+      ! write(*,*) "myrank = ",myrank," ;","inside bflux 3"
 
       if (numflx .ne. 0)  then !we have flux nodes
          qres   = zero
@@ -148,15 +157,18 @@
                endif 
 !     
 !.... compute and assemble the residuals
+
+               ! write(*,*) "myrank = ",myrank," ;","inside bflux 4, iblk = ",iblk
 !     
                call AsIGMR (y,                    ac, &
+                            uMesh, &              !ALE variables added MAF 06/10/2016))
                             x,                    xmu2(1:npro,:), &
                             shp(lcsyst,1:nshl,:), &
                             shgl(lcsyst,:,1:nshl,:), &
                             ien2(1:npro,:),          &
                             flxres,               qres, &
                             xKebe,                xGoC, &
-                            rtmp)
+                            rtmp) 
 !     
                deallocate ( xKebe )
                deallocate ( xGoC  )
@@ -171,6 +183,8 @@
             deallocate ( map   )
 !     
          enddo ! iblk = 1, nelblk
+
+          ! write(*,*) "myrank = ",myrank," ;","inside bflux 5"
          ierrcalc=ierrcalcsave
 !     
 !.... -------------------->   boundary elements   <--------------------
@@ -222,6 +236,8 @@
 !
          enddo !iblk = 1, nelblb
 
+         ! write(*,*) "myrank = ",myrank," ;","inside bflux 6"
+
       else
 !         print *, "in Bflux: partition ", myrank, " has no flux nodes!"
       endif  ! make sure the zero numflux processors still commu
@@ -255,6 +271,8 @@
             flxres(j,:) = flxres(i,:)
          endif
       enddo
+
+      ! write(*,*) "myrank = ",myrank," ;","inside bflux 7"
 !
 !        call bc3per(iBC,  flxres, iper, ilwork, nflow)
 
@@ -316,7 +334,8 @@
                flxnrm(:,3) = flxnrm(:,3) / temp
             endwhere
          endif !no flux nodes
-         
+       
+       ! write(*,*) "myrank = ",myrank," ;","inside bflux 8"    
 !     
 !.... ---------------------------->  Communications <-------------------
 !
@@ -426,6 +445,8 @@
             
             call closefile( irstin, c_char_"append"//c_null_char )
          endif! iowflux
+
+      ! write(*,*) "myrank = ",myrank," ;","inside bflux 9"         
 
 !     else
 !        print *, "in Bflux: ", myrank, " no printing surface flux"

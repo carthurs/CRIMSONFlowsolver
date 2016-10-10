@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 
 	double *qglobal, *qlocal, *xlocal, *xglobal, *aglobal, *fglobal, *dglobal, *dglobal_ref, *distglobal, *wglobal;
 	double *yglobal;
-	double *resglobal, *relativeVelocityGlobal, *updatedMeshCoordinatesGlobal; // ALE variables KDL, MA 2016
+	double *resglobal, *relativeVelocityGlobal, *updatedMeshCoordinatesGlobal; // ALE variables KDL, MAF 2016
 	float *qdx, *xdx;
 	int *iendx, nodes[8];
 	char rfname[40];

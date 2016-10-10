@@ -1,5 +1,7 @@
       subroutine e3stab (rho,          u1,       u2, &
-                         u3,           dxidx,    rLui,    &
+                         u3,           &
+                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 08/10/2016
+                         dxidx,    rLui,    &
                          rmu,          tauC,     tauM,    &
                          tauBar,       uBar )  
 !
@@ -43,11 +45,11 @@
 
         !..... ALE variables
 
-      real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
+      dimension uMesh1(npro), uMesh2(npro), uMesh3(npro)
       integer   i
       logical :: exist
 
-      !     get mesh velocity KDL, MA
+      
       ! if (rigidOn.eq.1) then
       ! write(*,*) "rigidOn"
       ! ! uMesh1(:) = 0.0d0 !no relative stabilization for rigid body motion
@@ -57,9 +59,17 @@
       ! uMesh2(:) = -1.0d0*globalRigidVelocity(2)
       ! uMesh3(:) = -1.0d0*globalRigidVelocity(3)
       ! else
-      uMesh1(:) = globalMeshVelocity(1)
-      uMesh2(:) = globalMeshVelocity(2)
-      uMesh3(:) = globalMeshVelocity(3)
+
+      !     get mesh velocity KDL, MAF
+      ! if (aleRigid.eq.1) then
+      !   uMesh1(:) = globalRigidVelocity(1)
+      !   uMesh2(:) = globalRigidVelocity(2)
+      !   uMesh3(:) = globalRigidVelocity(3)
+      ! else
+      !   uMesh1(:) = real(0.0,8) 
+      !   uMesh2(:) = real(0.0,8)
+      !   uMesh3(:) = real(0.0,8)        
+      ! endif
       ! endif
       
       ! MAYBE PRECALCULATE OUTSIDE ?
@@ -179,7 +189,7 @@
 !     this tau needs a u/h instead of a u*h so we contract with g_{ij} as
 !     follows  (i.e. u_i g_{ij} u_j approx u^2/(h^2)/4) 
 !
-!     the definition of gijd appears to be as follows ... KDL, MA
+!     the definition of gijd appears to be as follows ... KDL, MAF
 !     | g11 g12 g13 |    | gijd(1)  gijd(4) gijd(6) |
 !     | ... g22 g23 |  = | .......  gijd(2) gijd(5) |
 !     | ... ... g33 |    | .......  ....... gijd(3) |

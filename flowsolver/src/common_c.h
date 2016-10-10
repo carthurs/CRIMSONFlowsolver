@@ -52,7 +52,7 @@
 
       extern struct {
          int aleOn;
-         int rigidOn;
+         int aleType;
       } aleFlags;      
 
       extern struct { 

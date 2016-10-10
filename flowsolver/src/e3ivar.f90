@@ -1,4 +1,6 @@
       subroutine e3ivar (yl,          acl,       shpfun, &
+                         uMeshl, & !ALE variables added MAF 07/10/2016
+                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 07/10/2016
                          shgl,        xl,        &
                          aci,         g1yi,      g2yi,     &
                          g3yi,        shg,       dxidx,    &
@@ -78,7 +80,10 @@
         integer   iprint
         logical :: exist   
         real*8  grad_constant1(npro),grad_constant2(npro), &
-                grad_constant3(npro) , constant_value          
+                grad_constant3(npro) , constant_value    
+
+        dimension uMeshl(npro,nshl,3) !MAF 07/10/2016
+        dimension uMesh1(npro), uMesh2(npro), uMesh3(npro) !MAF 07/10/2016              
 !
 !.... ------------->  Primitive variables at int. point  <--------------
 !
@@ -143,6 +148,19 @@
           aci(:,2) = aci(:,2) + shpfun(:,n) * acl(:,n,3)
           aci(:,3) = aci(:,3) + shpfun(:,n) * acl(:,n,4)
        enddo
+
+!.... ----------------------->  mesh velocity at int. point  <---------------------- !MAF 07/10/2016  
+
+      uMesh1   = zero
+      uMesh2   = zero
+      uMesh3   = zero
+!
+      do n = 1, nshl 
+         uMesh1   = uMesh1   + shpfun(:,n) * uMeshl(:,n,1)
+         uMesh2   = uMesh2   + shpfun(:,n) * uMeshl(:,n,2)
+         uMesh3   = uMesh3   + shpfun(:,n) * uMeshl(:,n,3)
+      enddo
+
 !
 !.... --------------------->  Element Metrics  <-----------------------
 !
@@ -388,8 +406,10 @@
 !
 ! Calculate strong form of pde as well as the source term
 !      
-       call e3resStrongPDE( &
-            aci,  u1,   u2,   u3,   Temp, rho,  xx, &
+       call e3resStrongPDE_ALE( &
+            aci,  u1,   u2,   u3,   &
+            uMesh1,uMesh2,uMesh3, &
+            Temp, rho,  xx, &
                   g1yi, g2yi, g3yi, &
             rLui, src, divqi)
 !

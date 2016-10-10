@@ -74,6 +74,12 @@ module globalArrays
 
     real*8, allocatable, dimension(:,:) :: lhsP, lhsK, lhsS
 
+
+    !ALE global variables; MAF 06/10/2016
+    real (c_double), target, allocatable :: uMesh(:,:)
+    real (c_double), target, allocatable :: dispMesh(:,:)
+
+
 end module
 
 
@@ -138,6 +144,10 @@ subroutine initGlobalArrays
         if (.not. allocated(uhess)) allocate (uhess(nshg,27))
         if (.not. allocated(gradu)) allocate (gradu(nshg,9))
     endif
+    ! if(aleon.eq.1) then
+    if (.not. allocated(uMesh)) allocate (uMesh(nshg,3))
+    if (.not. allocated(dispMesh)) allocate (dispMesh(nshg,3))
+    ! endif
 
 end subroutine initGlobalArrays
 
@@ -177,6 +187,10 @@ subroutine destroyGlobalArrays
         if (allocated(uhess)) deallocate (uhess)
         if (allocated(gradu)) deallocate (gradu)
     endif
+    ! if(aleon.eq.1) then
+    if (allocated(uMesh)) deallocate (uMesh)
+    if (allocated(dispMesh)) deallocate (dispMesh)
+    ! endif
 
 end subroutine destroyGlobalArrays
 !

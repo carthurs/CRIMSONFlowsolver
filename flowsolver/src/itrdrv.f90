@@ -1051,12 +1051,17 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     write(*,*) "numResistSrfs = ",numResistSrfs
 #endif     
 
-    call getMeshVelocities(uMesh,nshg) !computing Mesh velocities before iteration sequence
-                                       !this is now used for the imposed mesh velocity or 
-                                       !rigid body motion case. When the mesh moving algorithm
-                                       !is in place, maybe will need to build a global iteration
-                                       !algorithm to solve in blocks the Fluid-solid and the mesh
-                                       !motion MAF 06/10/2016
+    call getMeshVelocities(aleType,uMesh,nshg,currentTimestepIndex+1) 
+    if (aleType.eq.2) then
+        call updateMeshVariables(x, nshg)
+    endif
+
+   !computing Mesh velocities before iteration sequence
+   !this is now used for the imposed mesh velocity or 
+   !rigid body motion case. When the mesh moving algorithm
+   !is in place, maybe will need to build a global iteration
+   !algorithm to solve in blocks the Fluid-solid and the mesh
+   !motion MAF 06/10/2016
 
     call callCPPInitialiseLPNAtStartOfTimestep_netlist()
 

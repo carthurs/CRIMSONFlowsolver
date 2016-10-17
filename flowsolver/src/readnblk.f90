@@ -209,6 +209,8 @@
       call readdatablock(igeom,fname1//c_null_char,xread,ixsiz, c_char_"double"//c_null_char,iotype)
       x = xread
 
+      x_iniMesh = x !Initial coordinates to be used when updating the ALE mesh displacement MAF 11/10/2016
+
 !
 !.... read the node tags
 !

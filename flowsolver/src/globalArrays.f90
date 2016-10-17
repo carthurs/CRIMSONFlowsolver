@@ -78,6 +78,7 @@ module globalArrays
     !ALE global variables; MAF 06/10/2016
     real (c_double), target, allocatable :: uMesh(:,:)
     real (c_double), target, allocatable :: dispMesh(:,:)
+    real (c_double), target, allocatable :: x_iniMesh(:,:)
 
 
 end module
@@ -146,7 +147,12 @@ subroutine initGlobalArrays
     endif
     ! if(aleon.eq.1) then
     if (.not. allocated(uMesh)) allocate (uMesh(nshg,3))
-    if (.not. allocated(dispMesh)) allocate (dispMesh(nshg,3))
+    if (.not. allocated(dispMesh)) allocate (dispMesh(numnp,3))
+    if (.not. allocated(x_iniMesh)) allocate (x_iniMesh(numnp,3)) ! I used numnp to be consistent with 
+                                                                  ! the allocation of x, but I think that
+                                                                  ! in our specific case (linear tetrahedrons)
+                                                                  ! numnp = nshg (to be verified) MAF 11/10/2016
+
     ! endif
 
 end subroutine initGlobalArrays

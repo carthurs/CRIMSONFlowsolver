@@ -1051,10 +1051,15 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     write(*,*) "numResistSrfs = ",numResistSrfs
 #endif     
 
-    call getMeshVelocities(aleType,uMesh,nshg,currentTimestepIndex+1) 
+    ! write(*,*) "before getMeshVelocities"
+
+    call getMeshVelocities(aleType,uMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
     if (aleType.eq.2) then
+    ! write(*,*) "before updateMeshVariables"
         call updateMeshVariables(x, nshg)
     endif
+
+    ! write(*,*) "after updateMeshVariables"
 
    !computing Mesh velocities before iteration sequence
    !this is now used for the imposed mesh velocity or 
@@ -1565,7 +1570,7 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     integer, allocatable :: outputNodesOnThisProcessor(:)
     logical fileExists
 
-    real*8 uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
+    ! real*8 uMesh1(nshg), uMesh2(nshg), uMesh3(nshg)
     real*8 relativeVelocity(nshg,3)
     real*8 updatedMeshCoordinates(nshg,3)
 
@@ -1664,6 +1669,13 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     updatedMeshCoordinates(:,3) = x(:,3)
 
 
+
+   dispMesh(:,1) = x(:,1) - x_iniMesh(:,1)
+   dispMesh(:,2) = x(:,2) - x_iniMesh(:,2)
+   dispMesh(:,3) = x(:,3) - x_iniMesh(:,3)
+
+
+
     ! ------------- Begin code for writing out specific nodal solution (pressure and velocity) data ----------------
     if (writeSpecificNodalDataEveryTimestep .eq. 1) then
         ! Read in the list of local nodes that this processor needs to write data for
@@ -1728,7 +1740,9 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 #endif
             ! call Write_Relative_Velocity(myrank, currentTimestepIndex, nshg, 3, relativeVelocity) 
             call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, relativeVelocity, "relative velocity") 
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, uMesh, "mesh velocity")
             call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, updatedMeshCoordinates, "updated mesh coordinates") 
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, dispMesh, "mesh displacement")
         end if 
         
     endif

@@ -371,17 +371,18 @@ extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_solve(int& timestepNu
   boundaryConditionManager_instance->computeImplicitCoeff_solve<RCR>(timestepNumber);
 }
 
-template <typename TemplateBoundaryConditionType>
-void boundaryConditionManager::computeImplicitCoeff_update(const int timestepNumber)
-{
-  for (auto&& boundaryCondition : m_boundaryConditions)
-  {
-    if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
-    {
-      boundaryCondition->computeImplicitCoeff_update(timestepNumber);
-    }
-  }
-}
+// FULLY DEFINED IN HEADER SO OTHER TRANSLATION UNITS CAN USE IT
+// template <typename TemplateBoundaryConditionType>
+// void boundaryConditionManager::computeImplicitCoeff_update(const int timestepNumber)
+// {
+//   for (auto&& boundaryCondition : m_boundaryConditions)
+//   {
+//     if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
+//     {
+//       boundaryCondition->computeImplicitCoeff_update(timestepNumber);
+//     }
+//   }
+// }
 // ---WRAPPED BY--->
 extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 {

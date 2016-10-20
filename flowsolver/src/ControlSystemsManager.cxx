@@ -514,3 +514,8 @@ void ControlSystemsManager::copyFileToWorkingDirectory(const boost::filesystem::
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 }
+
+int ControlSystemsManager::getNumberOfControlSystems() const
+{
+	return m_pythonControlSystems.size() + m_nonPythonControlSystems.size();
+}

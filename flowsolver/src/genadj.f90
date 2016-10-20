@@ -8,12 +8,15 @@
       integer rowp(nshg*nnz),         colm(nshg+1)
       integer icnt
       
-      integer adjcnt(nshg),    row_fill_list(nshg,6*nnz), mloc(1)
+      ! integer adjcnt(nshg),    row_fill_list(nshg,6*nnz), mloc(1)
+      integer, dimension(nshg,6*nnz) :: row_fill_list
+      integer, dimension(1) :: mloc
+      integer, dimension(nshg) :: adjcnt
 !                                          change ^ if overflow
 !                                   also change overflow check in asadj TWICE
       integer tmprdim(1)
       real*8, allocatable, dimension(:) :: tmpr
-
+      
       adjcnt=0
       
       do iblk = 1, nelblk

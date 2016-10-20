@@ -2,7 +2,7 @@
 !
 !.... maximum number of blocks
 !
-         parameter ( MAXBLK2 = 500000 ) ! Note compiler was complaining
+         parameter ( MAXBLK2 = 50000 ) ! Note compiler was complaining
 !                                       because MAXBLK in common.h be careful
 !                                       to change both places
 !

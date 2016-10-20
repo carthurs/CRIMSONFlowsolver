@@ -137,5 +137,6 @@ void multidom_finalise(){
   NetlistReader::Term();
   NetlistDownstreamCircuitReader::Term();
   NetlistXmlReader::Term();
+  NetlistDownstreamXmlReader::Term();
 }
 

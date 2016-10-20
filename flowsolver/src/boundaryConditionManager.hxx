@@ -59,7 +59,7 @@ class abstractBoundaryCondition;
     template <typename TemplateBoundaryConditionType>
     void computeImplicitCoeff_solve(const int timestepNumber)
     {
-      for (auto&& boundaryCondition : m_boundaryConditions)
+      for (auto& boundaryCondition : m_boundaryConditions)
       {
         if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
         {
@@ -72,7 +72,7 @@ class abstractBoundaryCondition;
     template <typename TemplateBoundaryConditionType>
     void computeImplicitCoeff_update(const int timestepNumber)
     {
-      for (auto&& boundaryCondition : m_boundaryConditions)
+      for (auto& boundaryCondition : m_boundaryConditions)
       {
         if (boost::dynamic_pointer_cast<TemplateBoundaryConditionType> (boundaryCondition))
         {
@@ -144,6 +144,8 @@ class abstractBoundaryCondition;
     void setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows);
 
     void debugPrintFlowPointerTarget_BCM();
+
+    int getNumberOfControlSystems() const;
 
     ~boundaryConditionManager()
     {

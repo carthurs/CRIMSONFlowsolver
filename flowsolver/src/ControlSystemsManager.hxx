@@ -34,6 +34,7 @@ public:
 	}
 	void createParameterController(const parameter_controller_t controllerType, const boost::shared_ptr<NetlistCircuit> boundaryCondition, const int nodeOrComponentIndex);
 	void updateBoundaryConditionControlSystems();
+	int getNumberOfControlSystems() const;
 
 	~ControlSystemsManager(){}
 private:

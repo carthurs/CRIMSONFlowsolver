@@ -1072,13 +1072,6 @@ void boundaryConditionManager::createControlSystems()
 
   }
 
-  // int boundaryConditionIndex = 1;
-  // int capacitorIndex = 2;
-  // auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (m_boundaryConditions.at(boundaryConditionIndex));
-  // // mp_controlSystemsManager->createParameterController(Controller_BleedCompliance, downcastNetlist, capacitorIndex);
-  // int resistorIndex = 3;
-  // mp_controlSystemsManager->createParameterController(Controller_BleedResistance, downcastNetlist, resistorIndex);
-
 }
 
 std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber)
@@ -1100,4 +1093,9 @@ std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoun
   }
   assert(pressuresOrFlowsAsAppropriate.size() == m_NumberOfNetlistSurfaces);
   return pressuresOrFlowsAsAppropriate;
+}
+
+int boundaryConditionManager::getNumberOfControlSystems() const
+{
+  return mp_controlSystemsManager->getNumberOfControlSystems();
 }

@@ -196,6 +196,7 @@ subroutine destroyGlobalArrays
     ! if(aleon.eq.1) then
     if (allocated(uMesh)) deallocate (uMesh)
     if (allocated(dispMesh)) deallocate (dispMesh)
+    if (allocated(x_iniMesh)) deallocate(x_iniMesh)
     ! endif
 
 end subroutine destroyGlobalArrays

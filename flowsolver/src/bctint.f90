@@ -346,7 +346,7 @@
       real*8   uMeshDirichletBC(nshg,3)   
       
 
-      if (aleRigid.eq.1) then
+      if (aleType.eq.1) then
          ! get global mesh velocity - to change to subroutine call
          uMeshDirichletBC(:,1) = globalRigidVelocity(1)
          uMeshDirichletBC(:,2) = globalRigidVelocity(2)

@@ -254,7 +254,7 @@
       ! write (*,*) "rigidOn =",rigidOn
       ! write (*,*) "globalRigidVelocity = ",globalRigidVelocity
 
-      if (aleRigid.eq.1) then ! add rigid body velocity to solution
+      if (aleType.eq.1) then ! add rigid body velocity to solution
           call addGlobalRigidVelocityToInitialSolution(y,nshg,ndof)
       end if
 !

@@ -19,12 +19,14 @@ module ale
 
 	! public variables
 	real*8, public :: globalRigidVelocity(3)
-	integer, public :: aleRigid = int(0)
-	integer, public :: aleImposedMeshMotion = int(0)
+	! integer, public :: aleRigid = int(0)
+	! integer, public :: aleImposedMeshMotion = int(0)
 
 	
 	real*8, allocatable :: updatedMeshCoordinates(:,:)
 	real*8, allocatable :: updatedMeshVelocities(:,:)
+	real*8, allocatable :: innerMeshMotionParameters(:)
+	character(len=50), public :: folderMeshEvolutionALE
 
 
 
@@ -35,19 +37,19 @@ module ale
 		integer :: aleType
 		integer :: ierr, rerr
 		integer :: fnum = 145
-		character(len=50) :: filename
+		integer :: nparam, i
+		character(len=100) :: filename
 		logical :: file_exists
 
-
-		if (aleType.eq.1) then
-			aleRigid = int(1) 
-		elseif (aleType.eq.2) then
-			aleImposedMeshMotion = int(1)
-		endif
+		! if (aleType.eq.1) then
+		! 	aleRigid = int(1) 
+		! elseif (aleType.eq.2) then
+		! 	aleImposedMeshMotion = int(1)
+		! endif
 
 		globalRigidVelocity(:) = real(0.0,8)
 
-		if (aleRigid.eq.1) then
+		if (aleType.eq.1) then
 			filename = 'globalRigidVelocity.dat'
 			inquire(file=filename, exist=file_exists)
 			if (file_exists) then
@@ -57,10 +59,66 @@ module ale
 		        endif
 		        write(*,*) "globalRigidVelocity =",globalRigidVelocity
 			else  
-	        	write(*,*) 'Error, Rigid Body Motion and file ', filename, ' not found. Exiting.'
+	        	write(*,*) 'Error, Rigid Body Motion. File ', filename, ' not found. Exiting.'
 				stop
 			endif     	
 	      	close(fnum) 
+
+	    elseif (aleType.eq.2) then	
+
+	    	filename = "innerMeshMotionParameters.dat"
+	    	inquire(file=filename, exist=file_exists)
+	    	if (file_exists) then
+	    		open(fnum, file='innerMeshMotionParameters.dat', status='old', iostat=ierr)
+	    		if (ierr .eq. int(0)) then           	
+		         	read(fnum,*,iostat=rerr) nparam
+		         	if (.not.allocated(innerMeshMotionParameters)) then
+						allocate(innerMeshMotionParameters(nparam))
+					endif 
+		         	do i=1,nparam
+						read(fnum,*) innerMeshMotionParameters(i)
+					enddo
+					write(*,*) "inner Mesh Motion Parameters: ",innerMeshMotionParameters
+		        endif    
+		        close(fnum)
+
+		  !       if (ierr .eq. int(0)) then
+				! 	do i=1,nnodes
+				! 		read(fnum,*) updatedMeshCoordinates(i,:)
+				! 	enddo
+				! else 
+
+
+		    else
+	    		write(*,*) 'Error, Inner Mesh motion. File',filename, ' not found. Exiting.'
+				stop
+	    	endif       
+
+	  !   	filename = "pathtoFolderMeshEvolution.dat"
+	  !   	inquire(file=filename, exist=file_exists)	
+	  !   	if (file_exists) then
+	  !   		open(fnum, file='pathtoFolderMeshEvolution.dat', status='old', iostat=ierr)         	      	
+		 !      	if (ierr .eq. int(0)) then           	
+		 !         	read(fnum,*,iostat=rerr) folderMeshEvolutionALE
+		 !        endif
+		 !        close(fnum) 
+		 !        write(*,*) "path to folder Mesh Evolution: ",folderMeshEvolutionALE
+	  !   	else
+	  !   		write(*,*) 'Error, Inner Mesh motion. File',filename, ' not found. Exiting.'
+			! 	stop
+	  !   	endif
+
+	  !   	! folderMeshEvolutionALE = "../../00.geometry/imposed_mesh_motion/"
+	  !   	filename = "coordinates_mesh00001.dat"
+	  !   	filename = trim(folderMeshEvolutionALE)//trim(filename)
+	  !   	inquire(file=filename, exist=file_exists)	
+	  !   	if (file_exists) then
+				
+			! else  
+	  !       	write(*,*) 'Error, Inner Mesh motion. File',filename, ' not found. Exiting.'
+			! 	stop
+			! endif
+
 	    endif
 
 
@@ -110,63 +168,144 @@ module ale
 		y(:,3) = y(:,3) + globalRigidVelocity(3)		
 	end subroutine addGlobalRigidVelocityToInitialSolution
 
-	! subroutine to return mesh velocity 
 
-	! subroutine getMeshVelocities(uMesh1,uMesh2,uMesh3,uMeshSize)
-	! 	implicit none
-	! 	integer :: uMeshSize
-	! 	real*8, intent(inout)  :: uMesh1(uMeshSize), uMesh2(uMeshSize), uMesh3(uMeshSize)
+	subroutine getMeshVelocities(aleType,uMesh,x_ini,nnodes,step_number,dt)
 
- !        ! if uniform velocity
- !        if (aleRigid.eq.1) then
-	!         uMesh1(:) = globalRigidVelocity(1)
-	!         uMesh2(:) = globalRigidVelocity(2)
-	!         uMesh3(:) = globalRigidVelocity(3)
- !    !   	endif 
- !    !     if (uniformConstantVelocity .eq. int(1)) then
- ! 			! uMesh1(:) = globalMeshVelocity(1) 
- ! 			! uMesh2(:) = globalMeshVelocity(2) 
- ! 			! uMesh3(:) = globalMeshVelocity(3) 
- ! 		else 
- !            uMesh1(:) = real(0.0,8)
- !            uMesh2(:) = real(0.0,8)
- !            uMesh3(:) = real(0.0,8)
- !        end if
-
-	! end subroutine getMeshVelocities
-
-
-
-	subroutine getMeshVelocities(uMesh,uMeshSize)
+	! (aleType,uMesh,x,nshg,currentTimestepIndex+1,Delt(1)) 
 		implicit none
-		integer :: uMeshSize
-		real*8, intent(inout)  :: uMesh(uMeshSize,3)
+		integer :: nnodes
+		integer :: aleType
+		integer :: step_number
+		real*8, intent(inout)  :: uMesh(nnodes,3)
+		real*8  :: dt, time_current
+		real*8  :: x_ini(nnodes,3)
+		real*8  :: x_ini1(nnodes), x_ini2(nnodes), x_ini3(nnodes)
+		real*8  :: R_ini(nnodes), phi_ini(nnodes)
+		real*8  :: aR, bR, aZ, bZ, lZ, lR, t0, tini
+		real*8  :: r_def(nnodes), x_def1(nnodes), x_def2(nnodes)
+		real*8  :: x_def3(nnodes), vr_def(nnodes), v3_def(nnodes)
+		real*8  :: sinx3(nnodes), sinr(nnodes)
+		real*8  :: v1_def(nnodes), v2_def(nnodes)
+		real*8  :: pi = 3.1415926535897932384626433832795d0
+
 
         ! if uniform velocity
-        if (aleRigid.eq.1) then
+        !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	    if (aleType.eq.1) then
 	        uMesh(:,1) = globalRigidVelocity(1)
 	        uMesh(:,2) = globalRigidVelocity(2)
 	        uMesh(:,3) = globalRigidVelocity(3)
-    !   	endif 
-    !     if (uniformConstantVelocity .eq. int(1)) then
- 			! uMesh1(:) = globalMeshVelocity(1) 
- 			! uMesh2(:) = globalMeshVelocity(2) 
- 			! uMesh3(:) = globalMeshVelocity(3) 
+
+	    ! if imposed inner mesh motion
+	    !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	    elseif (aleType.eq.2) then
+
+	    	! let's start hardwiring the mapping parameters
+	    	aR = innerMeshMotionParameters(1)
+	    	bR = innerMeshMotionParameters(2)
+	    	lR = innerMeshMotionParameters(3)
+
+	    	aZ = innerMeshMotionParameters(4)
+	    	bZ = innerMeshMotionParameters(5)
+	    	lZ = innerMeshMotionParameters(6)
+	    	
+	    	t0 = innerMeshMotionParameters(7)
+	    	tini = innerMeshMotionParameters(8)
+
+	    	!be careful because this routine changes the whole domain 
+	    	!(not only the interior nodes). Hopefully, all the boundary nodes
+	    	!are exactly at the analytical boundary....
+
+	    	
+	    	time_current = dt*step_number
+
+
+	    	!Get initial cartesian coordinates
+	    	!---------------------------------
+	    	x_ini1 = x_ini(:,1)
+	    	x_ini2 = x_ini(:,2)
+			x_ini3 = x_ini(:,3)
+
+			!Calculate initial cylindrical coordinates
+			!-----------------------------------------
+			R_ini = sqrt(x_ini1**2 + x_ini2**2)
+		    phi_ini = atan2(x_ini2,x_ini1)
+
+
+		    sinx3 = sin(2*pi*x_ini3*(1.0d0/lZ))
+		    sinr  = sin(2*pi*R_ini*(1.0d0/lR))
+
+		    !Calculate current cylindrical coordinates and velocity
+		    !------------------------------------------------------
+
+		    !Radial direction
+		    r_def = R_ini  + aR*sinx3*sinr*&
+		    		            sin(bR*pi*(time_current-tini)*(1.0d0/t0))
+
+			vr_def =         aR*sinx3*sinr*bR*pi*(1.0d0/t0)*&
+								cos(bR*pi*(time_current-tini)*(1.0d0/t0))	
+
+		    !Axial direction
+		    x_def3 = x_ini3 + aZ*sinx3*sinr*&
+		    					sin(bZ*pi*(time_current-tini)*(1.0d0/t0))		           
+			
+		    v3_def =          aZ*sinx3*sinr*bZ*pi*(1.0d0/t0)*&
+		    					 cos(bZ*pi*(time_current-tini)*(1.0d0/t0))
+			
+		    										
+		    !Calculate current cartesian coordinates and velocity
+		    !----------------------------------------------------					 	
+		    x_def1 = r_def*cos(phi_ini)
+		    x_def2 = r_def*sin(phi_ini) 
+
+		    v1_def = vr_def*cos(phi_ini)
+		    v2_def = vr_def*sin(phi_ini)	
+
+		    !Update uMesh and coordinates
+		    !-----------------------------
+		    if (.not.allocated(updatedMeshCoordinates)) then
+			allocate(updatedMeshCoordinates(nnodes,3))
+			endif
+
+			!If t<tini, nothing
+		    if (time_current.le.tini) then
+		    	uMesh(:,1) = 0.0d0
+		    	uMesh(:,2) = 0.0d0
+		    	uMesh(:,3) = 0.0d0
+
+		    	updatedMeshCoordinates(:,1) = x_ini1
+		    	updatedMeshCoordinates(:,2) = x_ini2
+		    	updatedMeshCoordinates(:,3) = x_ini3
+
+		    !Else, apply velocity
+		    else 
+		    	uMesh(:,1) = v1_def
+		    	uMesh(:,2) = v2_def
+		    	uMesh(:,3) = v3_def
+
+		    	updatedMeshCoordinates(:,1) = x_def1
+		    	updatedMeshCoordinates(:,2) = x_def2
+		    	updatedMeshCoordinates(:,3) = x_def3
+	    	endif
+
+
+	    ! if no ALE activated
+	    !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  		else 
             uMesh(:,1) = real(0.0,8)
             uMesh(:,2) = real(0.0,8)
             uMesh(:,3) = real(0.0,8)
-        end if
+        endif
 
 	end subroutine getMeshVelocities
 
 
-	subroutine readUpdatedMeshVariablesFromFile(step_number,nnodes)
+	subroutine readUpdatedMeshVariablesFromFile(nnodes,step_number)
 		implicit none
 		integer, intent(in) :: step_number
 		integer, intent(in) :: nnodes
 		integer :: i, ierr, fnum = 123
-		character(50) :: filename
+		character(100) :: filename
 
 
 		if (.not.allocated(updatedMeshCoordinates)) then
@@ -183,6 +322,8 @@ module ale
 		! Read mesh coordinates from file
 		
 		write(filename,'(a,I5.5,a)') 'coordinates_mesh',step_number,'.dat'
+		filename = trim(folderMeshEvolutionALE)//trim(filename)
+		! write(*,*) "opening ",filename
 		open(fnum, file=filename, status='old', iostat=ierr) 
 		if (ierr .eq. int(0)) then
 			do i=1,nnodes
@@ -197,6 +338,8 @@ module ale
 		! Read mesh velocities from file
 		
 		write(filename,'(a,I5.5,a)') 'velocities_mesh',step_number,'.dat'
+		filename = trim(folderMeshEvolutionALE)//trim(filename)
+		! write(*,*) "opening ",filename
 		open(fnum, file=filename, status='old', iostat=ierr) 
 		if (ierr .eq. int(0)) then
 			do i=1,nnodes
@@ -207,7 +350,7 @@ module ale
 		end if
 		close(fnum)
 
-		write(*,*) "HURRAH"
+		! write(*,*) "HURRAH"
 
 	end subroutine readUpdatedMeshVariablesFromFile
 
@@ -215,10 +358,10 @@ module ale
 
 
     ! subroutine to update mesh variables
-	subroutine updateMeshVariables(x, y, numnp)
+	subroutine updateMeshVariables(x, numnp)
 		implicit none
 		integer, intent(in) :: numnp
-		real*8, intent(inout) :: x(numnp,3), y(numnp,5)
+		real*8, intent(inout) :: x(numnp,3)
 
 		x(:,1:3) = updatedMeshCoordinates(:,1:3)
 

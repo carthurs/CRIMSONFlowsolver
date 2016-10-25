@@ -78,12 +78,11 @@ private:
 	boost::shared_ptr<NetlistCircuit> mp_NetlistCircuit;
 	static int numberOfInitialisedNetlistLPNs;
 
+	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
 	const int m_startingTimestepIndex;
 
 	int m_NumberOfAtomicSubcircuits; // These are what you get with all valves closed: no subcircuit divides an atomic subcircuit.
 	int m_NumberOfSubcircuits;
-
-	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
 
 	// boost::shared_ptr<AtomicSubcircuitConnectionManager> m_atomicSubcircuitConnectionManager;
 

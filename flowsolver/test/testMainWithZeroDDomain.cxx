@@ -627,13 +627,13 @@ TEST_F(testMainWithZeroDDomain, checkPythonPressureDatFilePrescriber)
   	windkesselFlows.readAndSplitMultiSurfaceRestartFile();
 
   	double flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(1,1000);
-  	EXPECT_NEAR(407584.54276605,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+  	EXPECT_NEAR(407584.54276605,flowInWindkesselThatHasPythonPrescribedPressure,2e-8);
 
   	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(2,1000);
   	EXPECT_NEAR(39466.4517277277,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
 
   	flowInWindkesselThatHasPythonPrescribedPressure = windkesselFlows.getReadFileData(3,1000);
-  	EXPECT_NEAR(368118.091038322,flowInWindkesselThatHasPythonPrescribedPressure,1e-8);
+  	EXPECT_NEAR(368118.091038322,flowInWindkesselThatHasPythonPrescribedPressure,2e-8);
 
   }
 }

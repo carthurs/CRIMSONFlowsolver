@@ -88,6 +88,29 @@ void CircuitComponent::setRestartFlowFromHistory()
 	flow = m_entireFlowHistory.back();
 }
 
+void CircuitComponent::appendToFlowHistory(const double flow)
+{
+	// m_flowHistoryBuffer.at(m_flowHistoryBufferNextWriteIndex) = flow;
+	// m_flowHistoryBufferNextWriteIndex++;
+	// if (m_flowHistoryBufferNextWriteIndex > m_flowHistoryBufferSize - 1)
+	// {
+	// 	m_flowHistoryBufferNextWriteIndex = 0;
+	// 	m_entireFlowHistory.insert(m_entireFlowHistory.end(), m_flowHistoryBuffer.begin(), m_flowHistoryBuffer.end());
+	// }
+
+	m_entireFlowHistory.push_back(flow);
+}
+
+double CircuitComponent::getFromFlowHistoryByTimestepIndex(const int timestepIndex) const
+{
+	return m_entireFlowHistory.at(timestepIndex);
+}
+
+int CircuitComponent::getFlowHistoryLength() const
+{
+	return m_entireFlowHistory.size();
+}
+
 bool CircuitComponent::hasPrescribedFlow() const
 {
 	return m_hasPrescribedFlow;

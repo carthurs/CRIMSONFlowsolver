@@ -35,7 +35,7 @@ public:
 	int getLengthOfHistoryData()
 	{
 		try {
-			return components.at(0)->m_entireFlowHistory.size();
+			return components.at(0)->getFlowHistoryLength();
 		} catch (const std::exception& e) {
 		    std::cout << e.what() << " observed at line " << __LINE__ << " of " << __FILE__ << std::endl;
 		    throw;

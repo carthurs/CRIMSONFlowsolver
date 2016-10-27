@@ -271,6 +271,7 @@ void NetlistCircuit::createBasicCircuitDescription()
     // a problem that it also re-writes some of the existing metadata
     // (rewrites - but does not change - the values are identical!)
     mp_circuitData->rebuildCircuitMetadata();
+    mp_circuitData->setupComponentNeighbourPointers();
 
     // mp_circuitData.switchDiodeStatesIfNecessary();
     // mp_circuitData.detectWhetherClosedDiodesStopAllFlowAt3DInterface();
@@ -390,7 +391,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
             boundaryConditionFlowistoryReader.getNextDatum(); // ditch the timestep index
             for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
             {
-              (*component)->m_entireFlowHistory.push_back(boundaryConditionFlowistoryReader.getNextDatum());
+              (*component)->appendToFlowHistory(boundaryConditionFlowistoryReader.getNextDatum());
             }
           }
 
@@ -474,7 +475,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
                 boundaryConditionFlowHistoryWriter.writeStepIndex(stepToWrite);
                 for (auto component=mp_circuitData->components.begin(); component!=mp_circuitData->components.end(); component++)
                 {
-                  boundaryConditionFlowHistoryWriter.writeToFile((*component)->m_entireFlowHistory.at(stepToWrite));
+                  boundaryConditionFlowHistoryWriter.writeToFile((*component)->getFromFlowHistoryByTimestepIndex(stepToWrite));
                 }
                 boundaryConditionFlowHistoryWriter.writeEndLine();
               }
@@ -702,7 +703,7 @@ void NetlistCircuit::recordPressuresFlowsAndVolumesInHistoryArrays()
     for (auto component=mp_circuitData->mapOfComponents.begin(); component!=mp_circuitData->mapOfComponents.end(); component++)
     {
         // Store the flow for writing to output file:
-        component->second->m_entireFlowHistory.push_back(component->second->flow);
+        component->second->appendToFlowHistory(component->second->flow);
     }
 
     // Store the volumes (currently just for VolumeTrackingPressureChambers. Make this more generic if new volume-tracking components are added later

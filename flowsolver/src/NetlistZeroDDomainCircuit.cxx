@@ -342,6 +342,7 @@ void NetlistZeroDDomainCircuit::createCircuitDescription()
     // a problem that it also re-writes some of the existing metadata
     // (rewrites - but does not change - the values are identical!)
     mp_circuitData->rebuildCircuitMetadata();
+    mp_circuitData->setupComponentNeighbourPointers();
 
     // Tell the node at the "3D" interface that it connects to the LPN domain:
     {

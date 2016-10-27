@@ -167,9 +167,6 @@
 				    throw;
 				}
 
-				// pointer manager?      
-				std::cout << "time info was: --------------" << inpdat.nstep[0] << std::endl;
-
 				for (int kk = 1; kk <= inpdat.nstep[0]; kk++)
 				{
 					try {

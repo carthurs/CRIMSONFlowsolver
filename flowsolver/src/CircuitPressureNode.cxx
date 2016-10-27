@@ -148,5 +148,13 @@ double CircuitPressureNode::getFromPressureHistoryByTimestepIndex(const int time
 
 void CircuitPressureNode::appendToPressureHistory(const double pressure)
 {
+	// m_pressureHistoryBuffer.at(m_pressureHistoryBufferNextWriteIndex) = pressure;
+	// m_pressureHistoryBufferNextWriteIndex++;
+	// if (m_pressureHistoryBufferNextWriteIndex > m_pressureHistoryBufferSize - 1)
+	// {
+	// 	m_pressureHistoryBufferNextWriteIndex = 0;
+	// 	m_entirePressureHistory.insert(m_entirePressureHistory.end(), m_pressureHistoryBuffer.begin(), m_pressureHistoryBuffer.end());
+	// }
+
 	m_entirePressureHistory.push_back(pressure);
 }

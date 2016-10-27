@@ -23,6 +23,10 @@ public:
 	    m_hasPythonParameterController = false;
 	    m_entirePressureHistory.reserve(m_hstep);
 	    m_prescribedPressurePointerIndex = 0;
+
+	    // m_pressureHistoryBufferSize = 100;
+	    // m_pressureHistoryBuffer.resize(m_pressureHistoryBufferSize);
+		// m_pressureHistoryBufferNextWriteIndex = 0;
 	}
 
 	double* getPressurePointer();
@@ -69,6 +73,10 @@ private:
 	bool m_hasPythonParameterController;
 	std::string m_pythonParameterControllerName;
 	double m_fixedPressure;
+
+	// std::vector<double> m_pressureHistoryBuffer;
+	// int m_pressureHistoryBufferNextWriteIndex;
+	// int m_pressureHistoryBufferSize;
 };
 
 #endif

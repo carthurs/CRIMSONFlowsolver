@@ -34,7 +34,6 @@ public:
 	double historyFlow;
 	bool hasHistoryFlow;
 	// bool hasTrackedVolume;
-	std::vector<double> m_entireFlowHistory;
 	CircuitComponent(const int hstep, const bool thisIsARestartedSimulation)
 	: m_hstep(hstep),
 	  m_thisIsARestartedSimulation(thisIsARestartedSimulation)
@@ -66,6 +65,10 @@ public:
 			m_hasPrescribedFlow = false;
 		// }
 		prescribedFlowPointerIndex = 0;
+
+		// m_flowHistoryBufferSize = 100;
+	    // m_flowHistoryBuffer.resize(m_flowHistoryBufferSize);
+		// m_flowHistoryBufferNextWriteIndex = 0;
 	}
 
 	virtual ~CircuitComponent()
@@ -96,6 +99,9 @@ public:
 	void setRestartFlowFromHistory();
 	void setHasHistoryVolume(const bool hasHistoryVolume);
 	bool getHasHistoryVolume();
+	void appendToFlowHistory(const double flow);
+	int getFlowHistoryLength() const;
+	double getFromFlowHistoryByTimestepIndex(const int timestepIndex) const;
 	parameter_controller_t getControlType() const;
 protected:
 	double m_currentParameterValue; // resistance or compliance or inductance or elastance etc.
@@ -106,6 +112,8 @@ private:
 	bool m_permitsFlow; // for diodes in particular
 	double m_valueOfPrescribedFlow;
 	bool m_hasHistoryVolume;
+
+	std::vector<double> m_entireFlowHistory;
 	
 	int m_indexInInputData;
 	const int m_hstep;
@@ -113,6 +121,10 @@ private:
 	bool m_connectsToNodeAtInterface;
 
 	bool m_hasPrescribedFlow;
+
+	// std::vector<double> m_flowHistoryBuffer;
+	// int m_flowHistoryBufferNextWriteIndex;
+	// int m_flowHistoryBufferSize;
 };
 
 // A slightly more complicated class of component, which prescribes its pressure

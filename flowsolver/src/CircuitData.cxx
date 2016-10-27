@@ -52,7 +52,7 @@ void CircuitData::rebuildCircuitMetadata()
 
 	rebuildCircuitPressureNodeMap();
 
-	setupComponentNeighbourPointers();
+	// setupComponentNeighbourPointers();
 
 	numberOfPrescribedPressures = mapOfPrescribedPressureNodes.size();
 	numberOfComponents = mapOfComponents.size();

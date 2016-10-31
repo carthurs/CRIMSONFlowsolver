@@ -143,7 +143,7 @@ public:
 	}
 
 	double getVolumeHistoryAtTimestep(int timestep);
-	void setVolumeHistoryAtTimestep(double historyVolume);
+	void appendToVolumeHistory(double historyVolume);
 	virtual void setStoredVolume(const double newVolume);
 	void setProposedVolume(const double proposedVolume);
 	double getVolume();

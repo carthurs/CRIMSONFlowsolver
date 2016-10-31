@@ -222,7 +222,7 @@ double VolumeTrackingComponent::getVolumeHistoryAtTimestep(int timestep)
 	return m_entireVolumeHistory.at(timestep);
 }
 
-void VolumeTrackingComponent::setVolumeHistoryAtTimestep(double historyVolume)
+void VolumeTrackingComponent::appendToVolumeHistory(double historyVolume)
 {
 	m_entireVolumeHistory.push_back(historyVolume);
 }

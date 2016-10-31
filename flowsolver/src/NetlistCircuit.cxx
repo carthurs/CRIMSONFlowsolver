@@ -421,7 +421,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
               if (volumeTrackingComponent != NULL)
               {
                 double readVolumeValue = boundaryConditionVolumeHistoryReader.getNextDatum();
-                volumeTrackingComponent->setVolumeHistoryAtTimestep(readVolumeValue);
+                volumeTrackingComponent->appendToVolumeHistory(readVolumeValue);
               }
             }
           }

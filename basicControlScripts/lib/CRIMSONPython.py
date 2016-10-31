@@ -4,9 +4,9 @@ import cPickle
 # This serializes the class so it can be re-loaded on restart.
 # OVERRIDE IN YOUR SUBCLASS IF YOU DONT WANT SERIALISATION
 # (I.E. IF YOU'RE USING UNSERIALISEABLE MEMBERS)
-def saveClassForRestart(objectToSave):
+def saveClassForRestart(objectToSave, timestepIndex):
 	if objectToSave.MPIRank == 0:
-		fullFileName = objectToSave.m_baseNameOfThisScript + objectToSave.controllerNameQualification + ".pickle"
+		fullFileName = objectToSave.m_baseNameOfThisScript + objectToSave.controllerNameQualification + "." + timestepIndex + ".pickle"
 		outputFile = open(fullFileName, "w")
 
 		cPickle.dump(objectToSave, outputFile, cPickle.HIGHEST_PROTOCOL)
@@ -29,8 +29,11 @@ def saveClassForRestart(objectToSave):
 # 	self.__dict__.update(odict)
 # 	self.setupOdeSolver(self.states) # On unpickle, manually recreate the things that you couldn't pickle
 #
-def loadClassOnRestart(fileName, MPIRank):
-	inputFile = open(fileName + ".pickle")
+def loadClassOnRestart(fileName, startingTimestepIndex, MPIRank):
+	try:
+		inputFile = open(fileName + "." + startingTimestepIndex + ".pickle")
+	except IOError: # legacy: handle case where users still have old pickle files, unqualified by the startingTimestepIndex
+		inputFile = open(fileName + ".pickle")
 	loadedObject = cPickle.load(inputFile)
 	inputFile.close()
 	# correct the MPI rank (the loaded class was pickled by the rank-zero thread, so need to reset it appropriately for each rank now).

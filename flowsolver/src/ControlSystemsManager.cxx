@@ -58,7 +58,7 @@ void ControlSystemsManager::writePythonControlSystemsRestarts()
 	{
 		for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
 		{
-			(*pythonControlSystem)->picklePythonController();
+			(*pythonControlSystem)->picklePythonController(m_currentTimestepIndex);
 		}
 	}
 	m_currentTimestepIndex++;

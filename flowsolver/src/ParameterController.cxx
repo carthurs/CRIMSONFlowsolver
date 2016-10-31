@@ -1,6 +1,7 @@
 #include "ParameterController.hxx"
 #include <iostream>
 #include "mpi.h"
+#include <boost/lexical_cast.hpp>
 
 int AbstractParameterController::getIndexOfAssociatedSurface() const
 {
@@ -140,6 +141,7 @@ void GenericPythonController::initialise()
 
 		std::string fullyQualifiedControllerName = m_controllerPythonScriptBaseName;
 		fullyQualifiedControllerName.append(controllerNameQualification);
+
 		PyObject* fullyQualifiedControllerName_py = PyString_FromString(fullyQualifiedControllerName.c_str());
 		
 		// Instantiate the Python controller class:
@@ -158,9 +160,11 @@ void GenericPythonController::initialise()
 				PyObject* unpickleMethod = PyObject_GetAttr(m_customPythonModule, unpickleMethodName_py);
 				safe_Py_DECREF(unpickleMethodName_py);
 
-				m_pythonControllerInstance = PyObject_CallFunctionObjArgs(unpickleMethod, fullyQualifiedControllerName_py, pyMPIRank, NULL);
+				PyObject* pyStartingTimestepIndex = PyString_FromString(boost::lexical_cast<std::string>(m_startingTimestepIndex_genericController).c_str());
+				m_pythonControllerInstance = PyObject_CallFunctionObjArgs(unpickleMethod, fullyQualifiedControllerName_py, pyStartingTimestepIndex, pyMPIRank, NULL);
 				picklingExplicitlyDisabledByController = (m_pythonControllerInstance == Py_None);
 				safe_Py_DECREF(unpickleMethod);
+				safe_Py_DECREF(pyStartingTimestepIndex);
 			}
 
 			if (picklingExplicitlyDisabledByController)
@@ -207,6 +211,7 @@ void GenericPythonController::initialise()
 		}
 
 		safe_Py_DECREF(controllerNameQualification_py);
+		safe_Py_DECREF(pyMPIRank);
 
 		// setup for pickling restarts:
 		std::string pickleMethodName("saveClassForRestart");
@@ -264,7 +269,7 @@ void GenericPythonController::updateControl()
 	}
 }
 
-void GenericPythonController::picklePythonController()
+void GenericPythonController::picklePythonController(const int currentTimestepIndex) const
 {
 	PyObject* pickleMethod = PyObject_GetAttr(m_customPythonModule, m_pickleMethodName_py);
 	if (pickleMethod==NULL)
@@ -284,8 +289,10 @@ void GenericPythonController::picklePythonController()
 	if (PyCallable_Check(pickleMethod) == 1)
 	{
 		// PyObject* arguments = PyTuple_Pack(1, m_pythonControllerInstance);
-		PyObject_CallFunctionObjArgs(pickleMethod, m_pythonControllerInstance, NULL);
+		PyObject* pyTimestepIndex = PyString_FromString(boost::lexical_cast<std::string>(currentTimestepIndex).c_str());
+		PyObject_CallFunctionObjArgs(pickleMethod, m_pythonControllerInstance, pyTimestepIndex, NULL);
 		// safe_Py_DECREF(arguments);
+		safe_Py_DECREF(pyTimestepIndex);
 		safe_Py_DECREF(pickleMethod);
 	}
 	else

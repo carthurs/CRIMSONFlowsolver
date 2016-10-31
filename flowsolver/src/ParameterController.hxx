@@ -38,8 +38,8 @@ protected:
 	const double m_originalValueOfParameter;
 	const int m_surfaceIndex;
 	const int m_nodeOrComponentIndex;
-	const int m_startingTimestepIndex;
 	const circuit_item_t m_typeOfControlledItem;
+	const int m_startingTimestepIndex;
 	virtual void setupControlStateOnRestart() {};
 };
 
@@ -122,14 +122,11 @@ public:
 	void getBroadcastStateData(PyObject*& stateDataBroadcastByThisController);
 	void giveStateDataFromOtherPythonControllers(PyObject* allPackagedBroadcastData);
 	long getPriority();
-	void picklePythonController();
+	void picklePythonController(const int currentTimestepIndex) const;
 	virtual void updateControl();
 	void initialise();
 protected:
 
-	const int m_startingTimestepIndex_genericController;
-
-	const std::string m_controllerPythonScriptBaseName;
 	std::string m_updateControlNameString;
 	std::string m_controllerClassName;
 	std::string m_passDataToPythonMethodName;
@@ -143,6 +140,9 @@ protected:
 	PyObject* m_customPythonModule;
 	PyObject* m_pythonControllerInstance;
 	PyObject* m_pickleMethodName_py;
+
+	const std::string m_controllerPythonScriptBaseName;
+	const int m_startingTimestepIndex_genericController;
 private:
 	virtual std::string getControllerNameQualification();
 };

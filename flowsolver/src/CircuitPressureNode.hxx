@@ -14,9 +14,9 @@ class CircuitPressureNode
 public:
 	std::vector<boost::weak_ptr<CircuitComponent>> listOfComponentstAttachedToThisNode;
 	CircuitPressureNode(const int indexInInputData, const circuit_nodal_pressure_prescription_t typeOfPrescribedPressure, const int hstep)
-	: m_indexInInputData(indexInInputData),
-	m_prescribedPressureType(typeOfPrescribedPressure),
-	m_hstep(hstep)
+	: m_hstep(hstep),
+	m_indexInInputData(indexInInputData),
+	m_prescribedPressureType(typeOfPrescribedPressure)
 	{
 		m_hasHistoryPressure = false;
 	    m_isAtBoundary = false;
@@ -64,12 +64,12 @@ private:
 	double m_historyPressure;
 	double m_historyHistoryPressure;
 	bool m_hasHistoryPressure;
-	circuit_nodal_pressure_prescription_t m_prescribedPressureType;
 	int m_prescribedPressurePointerIndex;
 	std::vector<double> m_entirePressureHistory;
 
 	bool m_isAtBoundary;
 	const int m_indexInInputData;
+	circuit_nodal_pressure_prescription_t m_prescribedPressureType;
 	bool m_hasPythonParameterController;
 	std::string m_pythonParameterControllerName;
 	double m_fixedPressure;

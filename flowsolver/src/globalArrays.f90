@@ -76,9 +76,13 @@ module globalArrays
 
 
     !ALE global variables; MAF 06/10/2016
+    real (c_double), target, allocatable :: aMesh(:,:)
     real (c_double), target, allocatable :: uMesh(:,:)
     real (c_double), target, allocatable :: dispMesh(:,:)
     real (c_double), target, allocatable :: x_iniMesh(:,:)
+    real (c_double), target, allocatable :: aMeshold(:,:)
+    real (c_double), target, allocatable :: uMeshold(:,:)
+    real (c_double), target, allocatable :: dispMeshold(:,:)
 
 
 end module
@@ -146,13 +150,16 @@ subroutine initGlobalArrays
         if (.not. allocated(gradu)) allocate (gradu(nshg,9))
     endif
     ! if(aleon.eq.1) then
+    if (.not. allocated(aMesh)) allocate (aMesh(nshg,3))
     if (.not. allocated(uMesh)) allocate (uMesh(nshg,3))
     if (.not. allocated(dispMesh)) allocate (dispMesh(numnp,3))
     if (.not. allocated(x_iniMesh)) allocate (x_iniMesh(numnp,3)) ! I used numnp to be consistent with 
                                                                   ! the allocation of x, but I think that
-                                                                  ! in our specific case (linear tetrahedrons)
+                                                                  ! in the specific case of linear tetrahedrons
                                                                   ! numnp = nshg (to be verified) MAF 11/10/2016
-
+    if (.not. allocated(aMeshold)) allocate (aMeshold(nshg,3))
+    if (.not. allocated(uMeshold)) allocate (uMeshold(nshg,3))
+    if (.not. allocated(dispMeshold)) allocate (dispMeshold(numnp,3))                                                                 
     ! endif
 
 end subroutine initGlobalArrays
@@ -194,9 +201,13 @@ subroutine destroyGlobalArrays
         if (allocated(gradu)) deallocate (gradu)
     endif
     ! if(aleon.eq.1) then
+    if (allocated(aMesh)) deallocate (aMesh)
     if (allocated(uMesh)) deallocate (uMesh)
     if (allocated(dispMesh)) deallocate (dispMesh)
     if (allocated(x_iniMesh)) deallocate(x_iniMesh)
+    if (allocated(aMeshold)) deallocate (aMeshold)
+    if (allocated(uMeshold)) deallocate (uMeshold)
+    if (allocated(dispMeshold)) deallocate (dispMeshold)
     ! endif
 
 end subroutine destroyGlobalArrays

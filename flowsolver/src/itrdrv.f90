@@ -1342,9 +1342,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 colm,          lhsK,      lhsP, &
                 solinc,        rerr, &
                 memLS_lhs,     memLS_ls,  memLS_nFaces, &
-                dispMesh, dispMeshold, uMesh, uMeshold) 
-                       !uMesh added MAF 06/10/2016
-                       !rest of ALE variables added MAF 03/11/2016
+                dispMesh, dispMeshold, uMesh, uMeshold, &
+                xMeshold) !uMesh added MAF 06/10/2016
+                          !rest of ALE variables added MAF 03/11/2016
+                       
 
 
             else          ! scalar type solve
@@ -1482,7 +1483,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         Dtgl =Dtglt
     endif
 
-    call itrUpdate( yold,  acold,   uold,  y,    ac,   u)
+    call itrUpdate( yold,  acold,   uold,  y,    ac,   u, &
+                    uMesh, aMesh, dispMesh, x, &
+                    uMeshold, aMeshold, dispMeshold, xMeshold)
 
     !
     ! once all non-linear iterations finished, update the container with the final y 

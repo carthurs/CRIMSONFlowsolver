@@ -9,8 +9,9 @@
                          colm,       lhsK,       lhsP,  &
                          solinc,     rerr,              &
                          memLS_lhs,  memLS_ls,   memLS_nFaces, &
-                         dispMesh, dispMeshold, uMesh, uMeshold) !uMesh added MAF 06/10/2016
-                                                                 !rest of ALE variables added MAF 03/11/2016
+                         dispMesh, dispMeshold, uMesh, uMeshold, &
+                         xMeshold)                 !uMesh added MAF 06/10/2016
+                                   !rest of ALE variables added MAF 03/11/2016
 !
 !----------------------------------------------------------------------
 !
@@ -108,6 +109,7 @@
       real*8    uMeshold(nshg,3) !MAF 03/11/2016
       real*8    dispMesh(numnp,nsd),  dispMeshold(numnp,nsd) !MAF 03/11/2016
       real*8    uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016
+      real*8    xMeshold(numnp,nsd) !MAF 03/11/2016
 
       INTEGER dof, memLS_nFaces, i, j, k, l
       INTEGER, ALLOCATABLE :: incL(:)
@@ -133,6 +135,10 @@
                       uMeshold, dispMeshold, &
                       uMesh, dispMesh, &
                       uMeshalpha, dispMeshalpha)
+
+      if (aleType.ge.3) then ! update fluid mesh coordinates at time step n+alpha MAF 03/11/2016
+           x = xMeshold + (dispMeshalpha-dispMeshold)
+      endif
 
 !
 !.... form the LHS matrices, the residual vector (at alpha)
@@ -478,6 +484,7 @@
                       uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
                       uMesh, dispMesh, &
                       uMeshalpha, dispMeshalpha)
+
 !
 !.... form the LHS matrices, the residual vector (at alpha)
 !
@@ -486,6 +493,8 @@
                        BC,        shpb,       shglb, &
                        res,       iper,       ilwork,    &
                        rowp,      colm,       lhsS   )
+
+
 
 !
 !.... lesSolve : main matrix solver

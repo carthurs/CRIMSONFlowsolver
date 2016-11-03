@@ -83,6 +83,7 @@ module globalArrays
     real (c_double), target, allocatable :: aMeshold(:,:)
     real (c_double), target, allocatable :: uMeshold(:,:)
     real (c_double), target, allocatable :: dispMeshold(:,:)
+    real (c_double), target, allocatable :: xMeshold(:,:)
 
 
 end module
@@ -149,7 +150,7 @@ subroutine initGlobalArrays
         if (.not. allocated(uhess)) allocate (uhess(nshg,27))
         if (.not. allocated(gradu)) allocate (gradu(nshg,9))
     endif
-    ! if(aleon.eq.1) then
+
     if (.not. allocated(aMesh)) allocate (aMesh(nshg,3))
     if (.not. allocated(uMesh)) allocate (uMesh(nshg,3))
     if (.not. allocated(dispMesh)) allocate (dispMesh(numnp,3))
@@ -157,10 +158,11 @@ subroutine initGlobalArrays
                                                                   ! the allocation of x, but I think that
                                                                   ! in the specific case of linear tetrahedrons
                                                                   ! numnp = nshg (to be verified) MAF 11/10/2016
-    if (.not. allocated(aMeshold)) allocate (aMeshold(nshg,3))
+    if (.not. allocated(aMeshold)) allocate (aMeshold(nshg,3)) 
     if (.not. allocated(uMeshold)) allocate (uMeshold(nshg,3))
-    if (.not. allocated(dispMeshold)) allocate (dispMeshold(numnp,3))                                                                 
-    ! endif
+    if (.not. allocated(dispMeshold)) allocate (dispMeshold(numnp,3))
+    if (.not. allocated(xMeshold)) allocate (xMeshold(numnp,3))                                                                 
+
 
 end subroutine initGlobalArrays
 
@@ -208,6 +210,7 @@ subroutine destroyGlobalArrays
     if (allocated(aMeshold)) deallocate (aMeshold)
     if (allocated(uMeshold)) deallocate (uMeshold)
     if (allocated(dispMeshold)) deallocate (dispMeshold)
+    if (allocated(xMeshold)) deallocate (xMeshold)
     ! endif
 
 end subroutine destroyGlobalArrays

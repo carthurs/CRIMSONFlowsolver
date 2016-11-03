@@ -53,15 +53,17 @@ void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterC
 
 void ControlSystemsManager::writePythonControlSystemsRestarts()
 {
-	bool theSimulationWasJustRestarted = (m_currentTimestepIndex == m_startingTimestepIndex);
-	if (m_currentTimestepIndex % m_timestepsBetweenRestarts == 0 && !theSimulationWasJustRestarted)
+	// We're at the end of timestep m_currentTimestepIndex...
+	m_currentTimestepIndex++; // ...so increment it before writing the pickle restarts...
+	// ...because the index on the pickle file is the step that the simulation will be started /from/ (i.e. 1 greater than the one that we just finished.)
+	
+	if (m_currentTimestepIndex % m_timestepsBetweenRestarts == 0)
 	{
 		for (auto pythonControlSystem = m_pythonControlSystems.begin(); pythonControlSystem != m_pythonControlSystems.end(); pythonControlSystem++)
 		{
 			(*pythonControlSystem)->picklePythonController(m_currentTimestepIndex);
 		}
 	}
-	m_currentTimestepIndex++;
 }
 
 // void ControlSystemsManager::updateAndPassStateInformationBetweenPythonParameterControllers()

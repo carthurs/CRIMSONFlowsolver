@@ -21,8 +21,6 @@
 #include "SimvascularGlobalArrayTransfer.h"
 #include "itrPC.h"
 #include "pureZeroDDriver.hxx"
-#include <sstream>
-#include "boost/filesystem.hpp"
 
 #ifdef intel
 #include <direct.h>

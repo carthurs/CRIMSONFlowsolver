@@ -186,7 +186,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				if (!componentWithUnstressedVolumeToControl) 
 				{
 					std::stringstream errorMessage;
-					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex(); 
 					errorMessage << " was tagged as having unstressed volume control, but the component has no unstressed volume parameter." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
@@ -217,7 +217,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				else
 				{
 					std::stringstream errorMessage;
-					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex();
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
@@ -256,7 +256,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				else
 				{
 					std::stringstream errorMessage;
-					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex();
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
@@ -313,7 +313,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				else
 				{
 					std::stringstream errorMessage;
-					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << "EE: A component of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex(); 
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}
@@ -353,7 +353,7 @@ void ControlSystemsManager::createParameterController(const parameter_controller
 				else
 				{
 					std::stringstream errorMessage;
-					errorMessage << "EE: A node of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex() << 
+					errorMessage << "EE: A node of the Netlist circuit at surface " << netlistCircuit->getSurfaceIndex();
 					errorMessage << " was tagged as having an external Python parameter controller, but none was found." << std::endl;
 					throw std::runtime_error(errorMessage.str());
 				}

@@ -4,7 +4,7 @@
 #include <set>
 #include <queue>
 #include <boost/shared_ptr.hpp>
-#include "abstractBoundaryCondition.hxx"
+#include "AbstractBoundaryCondition.hxx"
 #include "NetlistClosedLoopDownstreamCircuit.hxx"
 #include "NetlistBoundaryCircuitWhenDownstreamCircuitsExist.hxx"
 #include "petscsys.h"

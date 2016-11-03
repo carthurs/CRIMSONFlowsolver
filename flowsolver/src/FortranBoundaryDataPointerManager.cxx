@@ -1,16 +1,16 @@
-#include "fortranPointerManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
 #include <iostream>
 
 
 extern "C" void giveflowpointertocpp(int& surfaceIndex,double*& flowPointer) {
-	fortranBoundaryDataPointerManager::Get()->setBoundaryFlows(surfaceIndex,flowPointer);
+	FortranBoundaryDataPointerManager::Get()->setBoundaryFlows(surfaceIndex,flowPointer);
 }
 
 extern "C" void givepressurepointertocpp(int& surfaceIndex,double*& pressPointer) {
-	fortranBoundaryDataPointerManager::Get()->setBoundaryPressures(surfaceIndex,pressPointer);
+	FortranBoundaryDataPointerManager::Get()->setBoundaryPressures(surfaceIndex,pressPointer);
 }
 
-void fortranBoundaryDataPointerManager::setBoundaryFlows(int surfaceIndex, double* flowPointer)
+void FortranBoundaryDataPointerManager::setBoundaryFlows(int surfaceIndex, double* flowPointer)
 {
 	// This was a bug fix, so this is a guard against regression.
 	assert(pointerNotDuplicated(flowPointer));
@@ -18,7 +18,7 @@ void fortranBoundaryDataPointerManager::setBoundaryFlows(int surfaceIndex, doubl
 	m_boundaryFlows.insert(std::pair<int,double*>(surfaceIndex,flowPointer));
 	m_hasBoundaryFlows = true;
 }
-void fortranBoundaryDataPointerManager::setBoundaryPressures(int surfaceIndex, double* pressPointer)
+void FortranBoundaryDataPointerManager::setBoundaryPressures(int surfaceIndex, double* pressPointer)
 {
 	// This was a bug fix, so this is a guard against regression.
 	assert(pointerNotDuplicated(pressPointer));
@@ -27,7 +27,7 @@ void fortranBoundaryDataPointerManager::setBoundaryPressures(int surfaceIndex, d
 	m_hasBoundaryPressures = true;
 }
 
-double* fortranBoundaryDataPointerManager::getBoundaryFlows(int surfaceIndex)
+double* FortranBoundaryDataPointerManager::getBoundaryFlows(int surfaceIndex)
 {
 	assert(m_hasBoundaryFlows);
 	try {
@@ -38,7 +38,7 @@ double* fortranBoundaryDataPointerManager::getBoundaryFlows(int surfaceIndex)
 	    throw;
 	}
 }
-double* fortranBoundaryDataPointerManager::getBoundaryPressures(int surfaceIndex)
+double* FortranBoundaryDataPointerManager::getBoundaryPressures(int surfaceIndex)
 {
 	assert(m_hasBoundaryPressures);
 	try {
@@ -49,9 +49,9 @@ double* fortranBoundaryDataPointerManager::getBoundaryPressures(int surfaceIndex
 	}
 }
 
-bool fortranBoundaryDataPointerManager::pointerNotDuplicated(double* pointerAboutToBeStored)
+bool FortranBoundaryDataPointerManager::pointerNotDuplicated(double* pointerAboutToBeStored)
 {
-	// Change this in a moment if the pointerAboutToBeStored is already owned by fortranBoundaryDataPointerManager:
+	// Change this in a moment if the pointerAboutToBeStored is already owned by FortranBoundaryDataPointerManager:
 	bool pointerIsNotDuplicated = true;
 
 	// Ensure it's not in m_boundaryFlows

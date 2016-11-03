@@ -12,7 +12,7 @@ TEST_F(testMainWithZeroDDomain, checkWithNetlistRCRs) {
 
   // Check netlistPressures_surface_-1.dat.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(9);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -45,7 +45,7 @@ TEST_F(testMainWithZeroDDomain, checkWithNetlistRCRs) {
 
   // Check netlistFlows_surface_-1.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -74,7 +74,7 @@ TEST_F(testMainWithZeroDDomain, checkWithNetlistRCRs) {
 
   // Check netlistFlows_surface_5.dat
   {
-		histFileReader zeroDDomainFlows = histFileReader();
+		HistFileReader zeroDDomainFlows = HistFileReader();
 		zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
 		zeroDDomainFlows.setNumColumns(4);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -85,7 +85,7 @@ TEST_F(testMainWithZeroDDomain, checkWithNetlistRCRs) {
 
   // Check netlistFlows_surface_6.dat
   {
-		histFileReader zeroDDomainFlows = histFileReader();
+		HistFileReader zeroDDomainFlows = HistFileReader();
 		zeroDDomainFlows.setFileName("netlistFlows_surface_6.dat");
 		zeroDDomainFlows.setNumColumns(4);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -96,7 +96,7 @@ TEST_F(testMainWithZeroDDomain, checkWithNetlistRCRs) {
   
   // Check netlistFlows_surface_7.dat
   {
-		histFileReader zeroDDomainFlows = histFileReader();
+		HistFileReader zeroDDomainFlows = HistFileReader();
 		zeroDDomainFlows.setFileName("netlistFlows_surface_7.dat");
 		zeroDDomainFlows.setNumColumns(4);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -115,7 +115,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 
   // Check netlistPressures_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(9);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -148,7 +148,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 
   // Check netlistFlows_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -177,7 +177,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 
   // Check netlistFlows_surface_5.dat
   {
-		histFileReader zeroDDomainFlows = histFileReader();
+		HistFileReader zeroDDomainFlows = HistFileReader();
 		zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
 		zeroDDomainFlows.setNumColumns(6);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -188,7 +188,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
   	closedLoopDownstreamPressures.setNumColumns(5);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -208,7 +208,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeart) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
   	closedLoopDownstreamPressures.setNumColumns(4);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -233,7 +233,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeartAndEndNodeOfComponentCon
 
   // Check netlistPressures_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(9);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -266,7 +266,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeartAndEndNodeOfComponentCon
 
   // Check netlistFlows_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -295,7 +295,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeartAndEndNodeOfComponentCon
 
   // Check netlistFlows_surface_5.dat
   {
-		histFileReader zeroDDomainFlows = histFileReader();
+		HistFileReader zeroDDomainFlows = HistFileReader();
 		zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
 		zeroDDomainFlows.setNumColumns(6);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -306,7 +306,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeartAndEndNodeOfComponentCon
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
   	closedLoopDownstreamPressures.setNumColumns(5);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -326,7 +326,7 @@ TEST_F(testMainWithZeroDDomain, checkClosedLoopWithHeartAndEndNodeOfComponentCon
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
   	closedLoopDownstreamPressures.setNumColumns(4);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -356,7 +356,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 
   // Check netlistPressures_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(9);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -389,7 +389,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 
   // Check netlistFlows_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -418,7 +418,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 
   // Check netlistFlows_surface_5.dat
   {
-		histFileReader zeroDDomainFlows = histFileReader();
+		HistFileReader zeroDDomainFlows = HistFileReader();
 		zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
 		zeroDDomainFlows.setNumColumns(6);
 		zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -435,7 +435,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
   // timestep and confirm that it is what would be expected after 1000 steps
   // of cosine prescription.
   {
-		histFileReader heartModelPressures = histFileReader();
+		HistFileReader heartModelPressures = HistFileReader();
 		heartModelPressures.setFileName("netlistPressures_surface_5.dat");
 		heartModelPressures.setNumColumns(7);
 		heartModelPressures.readAndSplitMultiSurfaceRestartFile();
@@ -446,7 +446,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
   	closedLoopDownstreamPressures.setNumColumns(5);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -466,7 +466,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonElastanceController) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
   	closedLoopDownstreamPressures.setNumColumns(4);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -493,7 +493,7 @@ TEST_F(testMainWithZeroDDomain, checkDownstreamPythonElastanceController) {
 
 	  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
 	  {
-	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
 	  	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
 	  	closedLoopDownstreamPressures.setNumColumns(5);
 	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -513,7 +513,7 @@ TEST_F(testMainWithZeroDDomain, checkDownstreamPythonElastanceController) {
 
 	  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
 	  {
-	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
 	  	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
 	  	closedLoopDownstreamPressures.setNumColumns(4);
 	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -541,7 +541,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonFlowDatFilePrescriber)
 
   // Check netlistPressures_surface_7.dat (the Windkessel that has a flow controller on its distal resistor)
   {
-  	histFileReader flowControlledWindkesselPressures = histFileReader();
+  	HistFileReader flowControlledWindkesselPressures = HistFileReader();
   	flowControlledWindkesselPressures.setFileName("netlistPressures_surface_7.dat");
   	flowControlledWindkesselPressures.setNumColumns(5);
   	flowControlledWindkesselPressures.readAndSplitMultiSurfaceRestartFile();
@@ -561,7 +561,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonFlowDatFilePrescriber)
 
   // Check netlistFlows_surface_5.dat (the heart model circuit)
   {
-  	histFileReader heartModelFlows = histFileReader();
+  	HistFileReader heartModelFlows = HistFileReader();
   	heartModelFlows.setFileName("netlistFlows_surface_5.dat");
   	heartModelFlows.setNumColumns(6);
   	heartModelFlows.readAndSplitMultiSurfaceRestartFile();
@@ -595,7 +595,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonPressureDatFilePrescriber)
 
   // Check netlistPressures_surface_5.dat (the heart model circuit)
   {
-  	histFileReader heartPressureFile = histFileReader();
+  	HistFileReader heartPressureFile = HistFileReader();
   	heartPressureFile.setFileName("netlistPressures_surface_5.dat");
   	heartPressureFile.setNumColumns(7);
   	heartPressureFile.readAndSplitMultiSurfaceRestartFile();
@@ -621,7 +621,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonPressureDatFilePrescriber)
 
   // Check netlistFlows_surface_7.dat (the Windkessel that has a Python pressures controller on its downstream pressure node)
   {
-  	histFileReader windkesselFlows = histFileReader();
+  	HistFileReader windkesselFlows = HistFileReader();
   	windkesselFlows.setFileName("netlistFlows_surface_7.dat");
   	windkesselFlows.setNumColumns(4);
   	windkesselFlows.readAndSplitMultiSurfaceRestartFile();
@@ -654,7 +654,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlBroadcastsAndMasterController)
 
   // Check netlistPressures_surface_5.dat (the heart model circuit)
   {
-  	histFileReader heartPressureFile = histFileReader();
+  	HistFileReader heartPressureFile = HistFileReader();
   	heartPressureFile.setFileName("netlistPressures_surface_5.dat");
   	heartPressureFile.setNumColumns(7);
   	heartPressureFile.readAndSplitMultiSurfaceRestartFile();
@@ -680,7 +680,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlBroadcastsAndMasterController)
 
   // Check netlistFlows_surface_7.dat (the Windkessel that has a Python pressures controller on its downstream pressure node)
   {
-  	histFileReader windkesselFlows = histFileReader();
+  	HistFileReader windkesselFlows = HistFileReader();
   	windkesselFlows.setFileName("netlistFlows_surface_7.dat");
   	windkesselFlows.setNumColumns(4);
   	windkesselFlows.readAndSplitMultiSurfaceRestartFile();
@@ -697,7 +697,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlBroadcastsAndMasterController)
 
   // Check netlistPressures_zeroDDomainReplacement.dat
   {
-  	histFileReader zeroDDomainReplacementPressureFile = histFileReader();
+  	HistFileReader zeroDDomainReplacementPressureFile = HistFileReader();
   	zeroDDomainReplacementPressureFile.setFileName("netlistPressures_zeroDDomainReplacement.dat");
   	zeroDDomainReplacementPressureFile.setNumColumns(9);
   	zeroDDomainReplacementPressureFile.readAndSplitMultiSurfaceRestartFile();
@@ -729,7 +729,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlBroadcastsAndMasterController)
 
    // Check netlistPressures_downstreamCircuit_0.dat
   {
-  	histFileReader downstreamCircuitNodalPressureFile = histFileReader();
+  	HistFileReader downstreamCircuitNodalPressureFile = HistFileReader();
   	downstreamCircuitNodalPressureFile.setFileName("netlistPressures_downstreamCircuit_0.dat");
   	downstreamCircuitNodalPressureFile.setNumColumns(5);
   	downstreamCircuitNodalPressureFile.readAndSplitMultiSurfaceRestartFile();
@@ -757,7 +757,7 @@ TEST_F(testMainWithZeroDDomain, checkTwoDomainsWithClosedLoop) {
 
   // Check netlistPressures_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(13);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -802,7 +802,7 @@ TEST_F(testMainWithZeroDDomain, checkTwoDomainsWithClosedLoop) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamFlows = histFileReader();
+  	HistFileReader closedLoopDownstreamFlows = HistFileReader();
   	closedLoopDownstreamFlows.setFileName("netlistFlows_downstreamCircuit_0.dat");
   	closedLoopDownstreamFlows.setNumColumns(4);
   	closedLoopDownstreamFlows.readAndSplitMultiSurfaceRestartFile();
@@ -819,7 +819,7 @@ TEST_F(testMainWithZeroDDomain, checkTwoDomainsWithClosedLoop) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_1.dat");
   	closedLoopDownstreamPressures.setNumColumns(5);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -845,7 +845,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	{
-		histFileReader mvo2HistoryReader = histFileReader();
+		HistFileReader mvo2HistoryReader = HistFileReader();
 		mvo2HistoryReader.setFileName("MVO2History.dat");
 		mvo2HistoryReader.setNumColumns(1);
 		mvo2HistoryReader.readAndSplitMultiSurfaceRestartFile();
@@ -855,7 +855,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 	}
 
 	{
-		histFileReader r_d_historyReader = histFileReader();
+		HistFileReader r_d_historyReader = HistFileReader();
 		r_d_historyReader.setFileName("R_d_history.dat");
 		r_d_historyReader.setNumColumns(1);
 		r_d_historyReader.readAndSplitMultiSurfaceRestartFile();
@@ -865,7 +865,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 	}
 	
 	{
-		histFileReader r_p_historyReader = histFileReader();
+		HistFileReader r_p_historyReader = HistFileReader();
 		r_p_historyReader.setFileName("R_p_history.dat");
 		r_p_historyReader.setNumColumns(1);
 		r_p_historyReader.readAndSplitMultiSurfaceRestartFile();
@@ -875,7 +875,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonControlledCoronary) {
 	}
 
 	{
-		histFileReader flowHistReader = histFileReader();
+		HistFileReader flowHistReader = HistFileReader();
 		flowHistReader.setFileName("netlistFlows_surface_6.dat");
 		flowHistReader.setNumColumns(6);
 		flowHistReader.readAndSplitMultiSurfaceRestartFile();
@@ -899,7 +899,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
 
   // Check netlistPressures_surface_-1.dat.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(9);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -911,7 +911,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
 
   // Check netlistFlows_surface_-1.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -923,7 +923,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
 
   // Check netlistFlows_surface_5.dat
   {
-		histFileReader netlist1Flow = histFileReader();
+		HistFileReader netlist1Flow = HistFileReader();
 		netlist1Flow.setFileName("netlistFlows_surface_5.dat");
 		netlist1Flow.setNumColumns(4);
 		netlist1Flow.readAndSplitMultiSurfaceRestartFile();
@@ -934,7 +934,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
 
   // Check netlistFlows_surface_6.dat
   {
-		histFileReader netlist2Flow = histFileReader();
+		HistFileReader netlist2Flow = HistFileReader();
 		netlist2Flow.setFileName("netlistFlows_surface_6.dat");
 		netlist2Flow.setNumColumns(4);
 		netlist2Flow.readAndSplitMultiSurfaceRestartFile();
@@ -945,7 +945,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
   
   // Check netlistFlows_surface_7.dat
   {
-		histFileReader netlist3Flow = histFileReader();
+		HistFileReader netlist3Flow = HistFileReader();
 		netlist3Flow.setFileName("netlistFlows_surface_7.dat");
 		netlist3Flow.setNumColumns(4);
 		netlist3Flow.readAndSplitMultiSurfaceRestartFile();
@@ -956,7 +956,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartWithNetlistRCRs) {
 
   // Check netlistPressures_surface_5.dat
   {
-		histFileReader netlist1Pressure = histFileReader();
+		HistFileReader netlist1Pressure = HistFileReader();
 		netlist1Pressure.setFileName("netlistPressures_surface_5.dat");
 		netlist1Pressure.setNumColumns(5);
 		netlist1Pressure.readAndSplitMultiSurfaceRestartFile();
@@ -975,7 +975,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartTwoDomainsWithClosedLoop) {
 
   // Check netlistPressures_zeroDDomainReplacement.dat
   {
-	  histFileReader zeroDDomainPressures = histFileReader();
+	  HistFileReader zeroDDomainPressures = HistFileReader();
 	  zeroDDomainPressures.setFileName("netlistPressures_zeroDDomainReplacement.dat");
 	  zeroDDomainPressures.setNumColumns(13);
 	  zeroDDomainPressures.readAndSplitMultiSurfaceRestartFile();
@@ -1020,7 +1020,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartTwoDomainsWithClosedLoop) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamFlows = histFileReader();
+  	HistFileReader closedLoopDownstreamFlows = HistFileReader();
   	closedLoopDownstreamFlows.setFileName("netlistFlows_downstreamCircuit_0.dat");
   	closedLoopDownstreamFlows.setNumColumns(4);
   	closedLoopDownstreamFlows.readAndSplitMultiSurfaceRestartFile();
@@ -1037,7 +1037,7 @@ TEST_F(testMainWithZeroDDomain, checkRestartTwoDomainsWithClosedLoop) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-  	histFileReader closedLoopDownstreamPressures = histFileReader();
+  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
   	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_1.dat");
   	closedLoopDownstreamPressures.setNumColumns(5);
   	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -1071,7 +1071,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonUnpicklers) {
 
 	  // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
 	  {
-	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
 	  	closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
 	  	closedLoopDownstreamPressures.setNumColumns(5);
 	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -1091,7 +1091,7 @@ TEST_F(testMainWithZeroDDomain, checkPythonUnpicklers) {
 
 	  // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
 	  {
-	  	histFileReader closedLoopDownstreamPressures = histFileReader();
+	  	HistFileReader closedLoopDownstreamPressures = HistFileReader();
 	  	closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
 	  	closedLoopDownstreamPressures.setNumColumns(4);
 	  	closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -1122,7 +1122,7 @@ TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
 
   // Check netlistPressures_surface_-1.dat.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -1138,7 +1138,7 @@ TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
 
   // Check netlistFlows_surface_-1.dat
   {
-	  histFileReader zeroDDomainFlows = histFileReader();
+	  HistFileReader zeroDDomainFlows = HistFileReader();
 	  zeroDDomainFlows.setFileName("netlistFlows_zeroDDomainReplacement.dat");
 	  zeroDDomainFlows.setNumColumns(8);
 	  zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -1153,7 +1153,7 @@ TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
 
   // Check netlistFlows_surface_5.dat
   {
-		histFileReader netlist1Flow = histFileReader();
+		HistFileReader netlist1Flow = HistFileReader();
 		netlist1Flow.setFileName("netlistFlows_surface_5.dat");
 		netlist1Flow.setNumColumns(4);
 		netlist1Flow.readAndSplitMultiSurfaceRestartFile();
@@ -1164,7 +1164,7 @@ TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
 
   // Check netlistFlows_surface_6.dat
   {
-		histFileReader netlist2Flow = histFileReader();
+		HistFileReader netlist2Flow = HistFileReader();
 		netlist2Flow.setFileName("netlistFlows_surface_6.dat");
 		netlist2Flow.setNumColumns(4);
 		netlist2Flow.readAndSplitMultiSurfaceRestartFile();
@@ -1175,7 +1175,7 @@ TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
   
   // Check netlistPressures_surface_5.dat
   {
-		histFileReader netlist1Pressure = histFileReader();
+		HistFileReader netlist1Pressure = HistFileReader();
 		netlist1Pressure.setFileName("netlistPressures_surface_5.dat");
 		netlist1Pressure.setNumColumns(5);
 		netlist1Pressure.readAndSplitMultiSurfaceRestartFile();
@@ -1186,7 +1186,7 @@ TEST_F(testMainWithZeroDDomain, checkBctFlowPrescriber) {
 
   // Check netlistPressures_surface_6.dat
   {
-		histFileReader netlist1Pressure = histFileReader();
+		HistFileReader netlist1Pressure = HistFileReader();
 		netlist1Pressure.setFileName("netlistPressures_surface_6.dat");
 		netlist1Pressure.setNumColumns(5);
 		netlist1Pressure.readAndSplitMultiSurfaceRestartFile();

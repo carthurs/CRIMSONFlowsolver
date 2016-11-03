@@ -4,7 +4,7 @@
 #include <sstream>
 
 // nextTimestepWrite_start will be updated and returned to caller of this function.
-void writeNetlistFlowsPressuresAndVolumes(const std::vector<boost::shared_ptr<abstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, int& nextTimestepWrite_start)
+void writeNetlistFlowsPressuresAndVolumes(const std::vector<boost::shared_ptr<AbstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, int& nextTimestepWrite_start)
 {
   int nextTimestepWrite_inout;
   for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
@@ -37,7 +37,7 @@ void writeNetlistFlowsPressuresAndVolumes(const std::vector<boost::shared_ptr<ab
   nextTimestepWrite_start = nextTimestepWrite_inout;
 }
 
-// void loadNetlistPressuresFlowsAndVolumesOnRestart(const std::vector<boost::shared_ptr<abstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, const int startingTimeStepIndex)
+// void loadNetlistPressuresFlowsAndVolumesOnRestart(const std::vector<boost::shared_ptr<AbstractBoundaryCondition>>& boundaryConditions, const std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> netlistDownstreamLoopClosingSubsections, const int startingTimeStepIndex)
 // {
 //   for (auto boundaryCondition=boundaryConditions.begin(); boundaryCondition!=boundaryConditions.end(); boundaryCondition++)
 //   {

@@ -19,9 +19,9 @@
 #include "partition.h"
 #include "input_fform.h"
 #include "multidom.hxx"
-#include "fortranPointerManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
 #include "fileReaders.hxx"
-#include "boundaryConditionManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include "SimvascularGlobalArrayTransfer.h"
 
 #include "debuggingToolsForCpp.hxx"
@@ -125,7 +125,7 @@
 				// proces();
 
 				try {
-					// just initialise the time values that the abstractBoundaryCondition needs (when it's called in multidom_initialise).
+					// just initialise the time values that the AbstractBoundaryCondition needs (when it's called in multidom_initialise).
 					// This will be called again during itrdrv_init.
 					// This is really ugly, but a proper fix will take days - it's a BIG refactor.
 					int dummyInitialItseqValue=1;
@@ -219,9 +219,9 @@
 	  virtual void TearDown() {
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
-	    fortranBoundaryDataPointerManager::Get()->tearDown();
+	    FortranBoundaryDataPointerManager::Get()->tearDown();
 	    SimvascularGlobalArrayTransfer::Get()->tearDown();
-	    // boundaryConditionManager::Instance()->Term();
+	    // BoundaryConditionManager::Instance()->Term();
 	  }
 	private:
 		int m_rank;

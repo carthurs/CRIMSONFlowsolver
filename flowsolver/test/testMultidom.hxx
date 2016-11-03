@@ -3,9 +3,9 @@
 
 #include "multidom.hxx"
 #include "fileReaders.hxx"
-#include "abstractBoundaryCondition.hxx"
-#include "fortranPointerManager.hxx"
-#include "boundaryConditionManager.hxx"
+#include "AbstractBoundaryCondition.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include "gtest/gtest.h"
 #include "common_c.h"
 #include <typeinfo>
@@ -20,11 +20,11 @@
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
 
-	   rcrtReader* rcrtReader_instance;
-	   controlledCoronaryReader* controlledCoronaryReader_instance;
-	   std::vector<boost::shared_ptr<abstractBoundaryCondition>>* retrievedBoundaryConditions;
-	   boundaryConditionManager* boundaryConditionManager_instance;
-	   fortranBoundaryDataPointerManager* fortranPointerManager_instance;
+	   RcrtReader* rcrtReader_instance;
+	   ControlledCoronaryReader* controlledCoronaryReader_instance;
+	   std::vector<boost::shared_ptr<AbstractBoundaryCondition>>* retrievedBoundaryConditions;
+	   BoundaryConditionManager* boundaryConditionManager_instance;
+	   FortranBoundaryDataPointerManager* fortranPointerManager_instance;
 	   NetlistReader* netlistReader_instance;
 
 	   double press1;
@@ -47,7 +47,7 @@
 
 	  virtual ~testMultidom() {
 	    // You can do clean-up work that doesn't throw exceptions here.
-	    // (*fortranPointerManager_instance).~fortranBoundaryDataPointerManager();
+	    // (*fortranPointerManager_instance).~FortranBoundaryDataPointerManager();
 	  }
 
 	  // If the constructor and destructor are not enough for setting up
@@ -58,7 +58,7 @@
 	    // before each test).
 	  	overrideMissingDataForTesting();
 
-	  	boundaryConditionManager_instance = boundaryConditionManager::Instance();
+	  	boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 
 	  	boundaryConditionManager_instance->setDelt(0.001);
 		boundaryConditionManager_instance->setHstep(5);
@@ -81,8 +81,8 @@
 	    flow4 = 132;
 
 	    // Create fake (i.e. non-FORTRAN) pointer manager
-	    // fortranBoundaryDataPointerManager* fortranPointerManager_instance;
-	    fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
+	    // FortranBoundaryDataPointerManager* fortranPointerManager_instance;
+	    fortranPointerManager_instance = FortranBoundaryDataPointerManager::Get();
 	    
 	    fortranPointerManager_instance->m_boundaryFlows.clear();
 	    fortranPointerManager_instance->m_boundaryPressures.clear();
@@ -109,12 +109,12 @@
 	    fortranPointerManager_instance->m_hasBoundaryPressures = true;
 
 	  	// Setup the file reader for the RCRTs
-		rcrtReader_instance = rcrtReader::Instance();
+		rcrtReader_instance = RcrtReader::Instance();
 		rcrtReader_instance->setFileName("rcrt_test.dat");
 		rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
 
 		// Setup the file reader for the coronaries:
-		controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+		controlledCoronaryReader_instance = ControlledCoronaryReader::Instance();
 		controlledCoronaryReader_instance->setFileName("controlled_coronaries_test.dat");
 		controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
 
@@ -150,7 +150,7 @@
 		boundaryConditionManager_instance->setSimulationModePurelyZeroD(0);
 		boundaryConditionManager_instance->setSurfaceList(surfaceList);
 		
-		retrievedBoundaryConditions = boundaryConditionManager::Instance()->getBoundaryConditions();
+		retrievedBoundaryConditions = BoundaryConditionManager::Instance()->getBoundaryConditions();
 		
 
 		(*retrievedBoundaryConditions)[0]->dp_dq = 1.234;

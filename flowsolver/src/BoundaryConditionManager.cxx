@@ -1,8 +1,8 @@
-#include "boundaryConditionManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include "RCR.hxx"
-#include "controlledCoronary.hxx"
+#include "ControlledCoronary.hxx"
 #include "NetlistBoundaryCondition.hxx"
-#include "fortranPointerManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
 #include "fileWriters.hxx"
 #include "fileIOHelpers.hxx"
 #include "../../estimation/src/SimvascularGlobalArrayTransfer.h"
@@ -12,20 +12,20 @@
 // This includes functions which can be called from Fortran, and should be the sole point of interface between Fortran and C++
 // for the boundary conditions, as far as is possible.
 //
-// One thing that might be though of as an exception to this rule is the fortranBoundaryDataPointerManager class, but this
+// One thing that might be though of as an exception to this rule is the FortranBoundaryDataPointerManager class, but this
 // is really a way of setting up the link between Fortran and C++, not so much a way of allowing Fortran to control the BCs.
 //
 // Another exception is that some of the global data is accessed directly by the C++ classes, such as in the constructor
-// for the abstractBoundaryCondition. This is not ideal, and should be phased out slowly so that we have fewer points
+// for the AbstractBoundaryCondition. This is not ideal, and should be phased out slowly so that we have fewer points
 // of interface between the two languages.
 
 // Static class static member variables:
-boundaryConditionManager* boundaryConditionManager::instance = 0;
-histFileReader* boundaryConditionManager::PHistReader = NULL;
-bool boundaryConditionManager::m_thisIsARestartedSimulation = false;
+BoundaryConditionManager* BoundaryConditionManager::instance = 0;
+HistFileReader* BoundaryConditionManager::PHistReader = NULL;
+bool BoundaryConditionManager::m_thisIsARestartedSimulation = false;
 
 // Functions which affect features of the abstract class:
-void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
+void BoundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
 {
   assert(m_NumberOfRCRSurfaces == 0);
   m_NumberOfRCRSurfaces = numGRCRSrfs;
@@ -33,21 +33,21 @@ void boundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
   SimvascularGlobalArrayTransfer::Get()->initialiseForRCRFiltering(numGRCRSrfs);
 }
 
-void boundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)
+void BoundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)
 {
   assert(m_NumberOfControlledCoronarySurfaces == 0);
   m_NumberOfControlledCoronarySurfaces = numControlledCoronarySrfs;
   m_numberOfBoundaryConditionsManaged += numControlledCoronarySrfs;
 }
 
-void boundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs)
+void BoundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs)
 {
   assert(m_NumberOfNetlistSurfaces == 0);
   m_NumberOfNetlistSurfaces = numNetlistLPNSrfs;
   m_numberOfBoundaryConditionsManaged += m_NumberOfNetlistSurfaces;
 }
 
-void boundaryConditionManager::setMasterControlScriptPresent(const int masterControlScriptPresent)
+void BoundaryConditionManager::setMasterControlScriptPresent(const int masterControlScriptPresent)
 {
   if (masterControlScriptPresent == 1)
   {
@@ -59,25 +59,25 @@ void boundaryConditionManager::setMasterControlScriptPresent(const int masterCon
   }
 }
 
-void boundaryConditionManager::setDelt(const double delt)
+void BoundaryConditionManager::setDelt(const double delt)
 {
   m_delt = delt;
   m_deltHasBeenSet = true;
 }
 
-void boundaryConditionManager::setHstep(const int hstep)
+void BoundaryConditionManager::setHstep(const int hstep)
 {
   m_hstep = hstep;
   m_hstepHasBeenSet = true;
 }
 
-void boundaryConditionManager::setAlfi(const double alfi)
+void BoundaryConditionManager::setAlfi(const double alfi)
 {
   m_alfi = alfi;
   m_alfiHasBeenSet = true;
 }
 
-void boundaryConditionManager::setSimulationModePurelyZeroD(const int simulationIsPurelyZeroD)
+void BoundaryConditionManager::setSimulationModePurelyZeroD(const int simulationIsPurelyZeroD)
 {
   if (simulationIsPurelyZeroD == 1)
   {
@@ -90,13 +90,13 @@ void boundaryConditionManager::setSimulationModePurelyZeroD(const int simulation
   
 }
 
-// void boundaryConditionManager::setLstep(const int currentTimestepIndex)
+// void BoundaryConditionManager::setLstep(const int currentTimestepIndex)
 // {
 //   m_currentTimestepIndex = currentTimestepIndex;
 //   m_currentTimestepIndexHasBeenSet = true;
 // }
 
-void boundaryConditionManager::setStartingTimestepIndex(const int startingTimestepIndex)
+void BoundaryConditionManager::setStartingTimestepIndex(const int startingTimestepIndex)
 {
   assert(!m_startingTimestepIndexHasBeenSet);
   m_startingTimestepIndex = startingTimestepIndex;
@@ -104,7 +104,7 @@ void boundaryConditionManager::setStartingTimestepIndex(const int startingTimest
   m_startingTimestepIndexHasBeenSet = true;
 } 
 
-void boundaryConditionManager::incrementTimestepIndex()
+void BoundaryConditionManager::incrementTimestepIndex()
 {
   // assert(m_currentTimestepIndexHasBeenSet);
 
@@ -118,31 +118,31 @@ void boundaryConditionManager::incrementTimestepIndex()
   }
 }
 
-void boundaryConditionManager::setNtout(const int ntout)
+void BoundaryConditionManager::setNtout(const int ntout)
 {
   m_ntout = ntout;
   m_ntoutHasBeenSet = true;
 }
 
-void boundaryConditionManager::setMaxsurf(const int maxsurf)
+void BoundaryConditionManager::setMaxsurf(const int maxsurf)
 {
   m_maxsurf = maxsurf;
   m_maxsurfHasBeenSet = true;
 }
 
-void boundaryConditionManager::setNstep(const int nstep)
+void BoundaryConditionManager::setNstep(const int nstep)
 {
   m_nstep = nstep;
   m_nstepHasBeenSet = true;
 }
 
-void boundaryConditionManager::setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits)
+void BoundaryConditionManager::setNumLoopClosingnetlistCircuits(const int numLoopClosingCircuits)
 {
   m_numLoopClosingNetlistCircuits = numLoopClosingCircuits;
   m_numLoopClosingNetlistCircuitsHasBeenSet = true;
 }
 
-void boundaryConditionManager::checkIfThisIsARestartedSimulation()
+void BoundaryConditionManager::checkIfThisIsARestartedSimulation()
 {
   SimpleFileReader numstartReader("numstart.dat");
 
@@ -167,7 +167,7 @@ void boundaryConditionManager::checkIfThisIsARestartedSimulation()
 }
 
 
-void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
+void BoundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int* ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
   for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -177,13 +177,13 @@ void boundaryConditionManager::giveBoundaryConditionsListsOfTheirAssociatedMeshN
 // ---WRAPPED BY--->
 extern "C" void callCPPGiveBoundaryConditionsListsOfTheirAssociatedMeshNodes(const int*& ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->giveBoundaryConditionsListsOfTheirAssociatedMeshNodes(ndsurf_nodeToBoundaryAssociationArray, lengthOfNodeToBoundaryAssociationArray);
 }
 
 
 // RCR Boundary condition specific functions
-void boundaryConditionManager::setPressureFromFortran()
+void BoundaryConditionManager::setPressureFromFortran()
 {
   // see the called funciton setPressureFromFortran comments for details of what this does.
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
@@ -199,11 +199,11 @@ void boundaryConditionManager::setPressureFromFortran()
 // ---WRAPPED BY--->
 extern "C" void callCPPSetPressureFromFortran()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->setPressureFromFortran();
 }
 
-void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled)
+void BoundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
   // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
@@ -229,11 +229,11 @@ void boundaryConditionManager::getImplicitCoeff_rcr(double* const implicitCoeffs
 // ---WRAPPED BY--->
 extern "C" void callCppGetImplicitCoeff_rcr(double*& implicitCoeffs_toBeFilled)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getImplicitCoeff_rcr(implicitCoeffs_toBeFilled);
 }
 
-void boundaryConditionManager::updateAllRCRS_Pressure_n1_withflow()
+void BoundaryConditionManager::updateAllRCRS_Pressure_n1_withflow()
 {
   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
@@ -246,11 +246,11 @@ void boundaryConditionManager::updateAllRCRS_Pressure_n1_withflow()
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 }
 
-// void boundaryConditionManager::storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep()
+// void BoundaryConditionManager::storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep()
 // {
 //   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
 //   {
@@ -258,7 +258,7 @@ extern "C" void callCPPUpdateAllRCRS_Pressure_n1_withflow()
 //   }
 // }
 
-void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,boundary_condition_t>> surfaceList)
+void BoundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,boundary_condition_t>> surfaceList)
 {
   // Defensive:
   assert(m_deltHasBeenSet);
@@ -275,7 +275,7 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   m_hasSurfaceList = true;
 
   // Build a factory
-  boundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits, m_simulationIsPurelyZeroD, m_startingTimestepIndex);
+  BoundaryConditionFactory factory(m_hstep, m_delt, m_alfi, m_maxsurf, m_nstep, m_numLoopClosingNetlistCircuits, m_simulationIsPurelyZeroD, m_startingTimestepIndex);
 
   factory.createNetlistLoopClosingCircuits(m_netlistDownstreamLoopClosingSubsections);
 
@@ -285,7 +285,7 @@ void boundaryConditionManager::setSurfaceList(const std::vector<std::pair<int,bo
   }
 }
 
-void boundaryConditionManager::markClosedLoopLinearSystemsForRebuilding()
+void BoundaryConditionManager::markClosedLoopLinearSystemsForRebuilding()
 {
   // Only do this if this simulation is using a closed loop:
   for (auto downstreamLoopClosingSubsection = m_netlistDownstreamLoopClosingSubsections.begin(); downstreamLoopClosingSubsection != m_netlistDownstreamLoopClosingSubsections.end(); downstreamLoopClosingSubsection++)
@@ -295,7 +295,7 @@ void boundaryConditionManager::markClosedLoopLinearSystemsForRebuilding()
   }
 }
 
-void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows)
+void BoundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double* zeroDDomainPressures, double* zeroDDomainFlows)
 {
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -313,7 +313,7 @@ void boundaryConditionManager::setZeroDDomainReplacementPressuresAndFlows(double
   }
 }
 
-void boundaryConditionManager::ifRestartingLoadNecessaryData()
+void BoundaryConditionManager::ifRestartingLoadNecessaryData()
 {
   if (m_thisIsARestartedSimulation)
   {
@@ -321,7 +321,7 @@ void boundaryConditionManager::ifRestartingLoadNecessaryData()
     // LPN at the boundary when restarting
     if (m_NumberOfRCRSurfaces > 0)
     {
-      PHistReader = new histFileReader();
+      PHistReader = new HistFileReader();
       PHistReader->setFileName("PHistRCR.dat");
       PHistReader->setNumColumns(m_NumberOfRCRSurfaces+1);
       PHistReader->readAndSplitMultiSurfaceRestartFile();
@@ -329,14 +329,14 @@ void boundaryConditionManager::ifRestartingLoadNecessaryData()
   }
 }
 
-std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionManager::getBoundaryConditions()
+std::vector<boost::shared_ptr<AbstractBoundaryCondition>>* BoundaryConditionManager::getBoundaryConditions()
 {
     return &m_boundaryConditions;
 }
 
 // FULLY DEFINED IN HEADER SO OTHER TRANSLATION UNITS CAN USE IT
 // template <typename TemplateBoundaryConditionType>
-// void boundaryConditionManager::computeImplicitCoeff_solve(const int timestepNumber)
+// void BoundaryConditionManager::computeImplicitCoeff_solve(const int timestepNumber)
 // {
 //   for (auto&& boundaryCondition : m_boundaryConditions)
 //   {
@@ -349,31 +349,31 @@ std::vector<boost::shared_ptr<abstractBoundaryCondition>>* boundaryConditionMana
 // ---WRAPPED BY--->
 extern "C" void callCppComputeAllImplicitCoeff_solve(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeImplicitCoeff_solve<abstractBoundaryCondition>(timestepNumber);
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<AbstractBoundaryCondition>(timestepNumber);
 }
 // ---AND--->
 extern "C" void callCppComputeAllNetlistImplicitCoeff_solve(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeImplicitCoeff_solve<NetlistBoundaryCondition>(timestepNumber);
 }
 // ---AND--->
 extern "C" void callCppComputeAllCoronaryImplicitCoeff_solve(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeImplicitCoeff_solve<controlledCoronary>(timestepNumber);
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<ControlledCoronary>(timestepNumber);
 }
 // ---AND--->
 extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_solve(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeImplicitCoeff_solve<RCR>(timestepNumber);
 }
 
 // FULLY DEFINED IN HEADER SO OTHER TRANSLATION UNITS CAN USE IT
 // template <typename TemplateBoundaryConditionType>
-// void boundaryConditionManager::computeImplicitCoeff_update(const int timestepNumber)
+// void BoundaryConditionManager::computeImplicitCoeff_update(const int timestepNumber)
 // {
 //   for (auto&& boundaryCondition : m_boundaryConditions)
 //   {
@@ -386,29 +386,29 @@ extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_solve(int& timestepNu
 // ---WRAPPED BY--->
 extern "C" void callCppComputeAllImplicitCoeff_update(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeImplicitCoeff_update<abstractBoundaryCondition>(timestepNumber);
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_update<AbstractBoundaryCondition>(timestepNumber);
 }
 // ---AND--->
 extern "C" void callCppComputeAllNetlistImplicitCoeff_update(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeImplicitCoeff_update<NetlistBoundaryCondition>(timestepNumber);
 }
 // ---AND--->
 extern "C" void callCppComputeAllCoronaryImplicitCoeff_update(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
-  boundaryConditionManager_instance->computeImplicitCoeff_update<controlledCoronary>(timestepNumber);
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_update<ControlledCoronary>(timestepNumber);
 }
 // ---AND--->
 extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_update(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeImplicitCoeff_update<RCR>(timestepNumber);
 }
 
-void boundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows)
+void BoundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows)
 {
   int readLocation = 0;
   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
@@ -423,12 +423,12 @@ void boundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllRCRS_setflow_n(double*& flows)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateAllRCRS_setflow_n(flows); 
 }
 
 
-void boundaryConditionManager::updateAllRCRS_setflow_n1(const double* const flows)
+void BoundaryConditionManager::updateAllRCRS_setflow_n1(const double* const flows)
 {
   int readLocation = 0;
   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
@@ -443,11 +443,11 @@ void boundaryConditionManager::updateAllRCRS_setflow_n1(const double* const flow
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllRCRS_setflow_n1(double*& flows)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateAllRCRS_setflow_n1(flows); 
 }
 
-void boundaryConditionManager::recordPressuresAndFlowsInHistoryArrays()
+void BoundaryConditionManager::recordPressuresAndFlowsInHistoryArrays()
 {
   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
@@ -457,18 +457,18 @@ void boundaryConditionManager::recordPressuresAndFlowsInHistoryArrays()
 // ---WRAPPED BY--->
 extern "C" void callCPPRecordPressuresAndFlowsInHistoryArrays()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->recordPressuresAndFlowsInHistoryArrays();
 }
 
-void boundaryConditionManager::writePHistAndQHistRCR()
+void BoundaryConditionManager::writePHistAndQHistRCR()
 {
   // Open a file writer to append to Phist
-  basicFileWriter phistrcr_writer;
+  BasicFileWriter phistrcr_writer;
   phistrcr_writer.setFileName("PHistRCR.dat");
 
   // Open a file writer to append to Qhist
-  basicFileWriter qhistrcr_writer;
+  BasicFileWriter qhistrcr_writer;
   qhistrcr_writer.setFileName("QHistRCR.dat");
 
   // Loop over all the updates since the last restart was written:
@@ -494,19 +494,19 @@ void boundaryConditionManager::writePHistAndQHistRCR()
 // ---WRAPPED BY--->
 extern "C" void callCPPWritePHistAndQHistRCR()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->writePHistAndQHistRCR();
 }
 
 
 // =========== Controlled Coronary Block ===========
 
-// void boundaryConditionManager::setSurfacePressure_controlledCoronary(double* coronarySurfacePressures)
+// void BoundaryConditionManager::setSurfacePressure_controlledCoronary(double* coronarySurfacePressures)
 // {
 //   int readLocation = int(0);
 //   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
 //   {
-//     if (typeid(**iterator)==typeid(controlledCoronary))
+//     if (typeid(**iterator)==typeid(ControlledCoronary))
 //     {
 //      (*iterator)->setLPNInflowPressure(coronarySurfacePressures[readLocation]);
 //      readLocation++;
@@ -516,11 +516,11 @@ extern "C" void callCPPWritePHistAndQHistRCR()
 // // ---WRAPPED BY--->
 // extern "C" void callCppSetSurfacePressure_controlledCoronary(double*& coronarySurfacePressures)
 // {
-//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 //   boundaryConditionManager_instance->setSurfacePressure_controlledCoronary(coronarySurfacePressures);
 // }
 
-void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const implicitCoeffs_toBeFilled)
+void BoundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
   // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
@@ -530,7 +530,7 @@ void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const
   
   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
   {
-    if (typeid(**iterator)==typeid(controlledCoronary))
+    if (typeid(**iterator)==typeid(ControlledCoronary))
     {
       
       implicitCoeffs_toBeFilled[writeLocation] = (*iterator)->getdp_dq();
@@ -545,15 +545,15 @@ void boundaryConditionManager::getImplicitCoeff_controlledCoronary(double* const
 // ---WRAPPED BY--->
 extern "C" void callCppGetImplicitCoeff_controlledCoronary(double*& implicitCoeffs_toBeFilled) 
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getImplicitCoeff_controlledCoronary(implicitCoeffs_toBeFilled);
 }
 
-void boundaryConditionManager::updateAllControlledCoronaryLPNs()
+void BoundaryConditionManager::updateAllControlledCoronaryLPNs()
 {
   for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
-    boost::shared_ptr<controlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<controlledCoronary> (*boundaryCondition);
+    boost::shared_ptr<ControlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<ControlledCoronary> (*boundaryCondition);
     if (downcastCoronary != NULL)
     {
       downcastCoronary->updateLPN();
@@ -563,16 +563,16 @@ void boundaryConditionManager::updateAllControlledCoronaryLPNs()
 // ---WRAPPED BY--->
 extern "C" void callCppUpdateAllControlledCoronaryLPNs()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateAllControlledCoronaryLPNs();
 }
 
 
-void boundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
+void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
 {
   for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
-    boost::shared_ptr<controlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<controlledCoronary> (*boundaryCondition);
+    boost::shared_ptr<ControlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<ControlledCoronary> (*boundaryCondition);
     if (downcastCoronary != NULL)
     {
       downcastCoronary->finalizeLPNAtEndOfTimestep();
@@ -582,11 +582,11 @@ void boundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
 // ---WRAPPED BY--->
 extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_controlledCoronary();
 }
 
-void boundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
+void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
 {
   for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -606,11 +606,11 @@ void boundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
 // ---WRAPPED BY--->
 extern "C" void callCppfinalizeLPNAtEndOfTimestep_netlists()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_netlists();
 }
 
-std::vector<double*> boundaryConditionManager::getPointersToAllNetlistCapacitorNodalHistoryPressures() const
+std::vector<double*> BoundaryConditionManager::getPointersToAllNetlistCapacitorNodalHistoryPressures() const
 {
   std::vector<double*> capacitorNodalHistoryPressuresPointers;
   for (auto boundaryCondition : m_boundaryConditions)
@@ -628,11 +628,11 @@ std::vector<double*> boundaryConditionManager::getPointersToAllNetlistCapacitorN
 }
 
 
-// void boundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
+// void BoundaryConditionManager::updateAllControlledCoronaryLPNs_Pressure_n1_withflow()
 // {
 //   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
 //   {
-//     if (typeid(**iterator)==typeid(controlledCoronary))
+//     if (typeid(**iterator)==typeid(ControlledCoronary))
 //     {
 //       (*iterator)->updpressure_n1_withflow();
 //     }
@@ -641,14 +641,14 @@ std::vector<double*> boundaryConditionManager::getPointersToAllNetlistCapacitorN
 // // ---WRAPPED BY--->
 // extern "C" void callCPPUpdateAllControlledCoronaryLPNs_Pressure_n1_withflow()
 // {
-//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 //   boundaryConditionManager_instance->updateAllRCRS_Pressure_n1_withflow();
 // }
 
 // ========== Controlled Coronary Block End =========
 
 // ========== Netlist LPN Block Start =========
-void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
+void BoundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
 {
   for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -668,12 +668,12 @@ void boundaryConditionManager::initialiseLPNAtStartOfTimestep_netlist()
 // ---WRAPPED BY--->
 extern "C" void callCPPInitialiseLPNAtStartOfTimestep_netlist()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->initialiseLPNAtStartOfTimestep_netlist();
 }
 
 
-void boundaryConditionManager::updateAllNetlistLPNs(const int timestepNumber)
+void BoundaryConditionManager::updateAllNetlistLPNs(const int timestepNumber)
 {
   for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -687,11 +687,11 @@ void boundaryConditionManager::updateAllNetlistLPNs(const int timestepNumber)
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateAllNetlistLPNs(int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateAllNetlistLPNs(timestepNumber);
 }
 
-std::map<int,std::pair<double,double>> boundaryConditionManager::getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement()
+std::map<int,std::pair<double,double>> BoundaryConditionManager::getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement()
 {
   std::map<int,std::pair<double,double>> allNetlistImplicitCoefficients;
   
@@ -713,7 +713,7 @@ std::map<int,std::pair<double,double>> boundaryConditionManager::getImplicitCoef
   return allNetlistImplicitCoefficients;
 }
 
-void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled)
+void BoundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implicitCoeffs_toBeFilled)
 {
   // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
   // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
@@ -740,7 +740,7 @@ void boundaryConditionManager::getImplicitCoeff_netlistLPNs(double* const implic
 // ---WRAPPED BY--->
 extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBeFilled) 
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getImplicitCoeff_netlistLPNs(implicitCoeffs_toBeFilled);
 }
 
@@ -749,7 +749,7 @@ extern "C" void callCPPGetImplicitCoeff_netlistLPNs(double*& implicitCoeffs_toBe
 // It provides the Fortran code with an array of zeros and ones, one for each boundary node in the mesh;
 // a 1 indicates that the boundary codes should be left as-is (meaning flow is disallowed),
 // whereas a 0 indicates that it should be Neumann.
-void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength)
+void BoundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int* const binaryMask, const int binaryMaskLength)
 {
   // Begin by setting the binary mask to all ones (i.e. flagging 1 to set Dirichlet boundary conditions at all nodes)
   // ... we will set zeros where we want Neumann conditions in a moment...
@@ -766,11 +766,11 @@ void boundaryConditionManager::getBinaryMaskToAdjustNodalBoundaryConditions(int*
 // ---WRAPPED BY--->
 extern "C" void callCPPGetBinaryMaskToAdjustNodalBoundaryConditions(int*& binaryMask, const int& binaryMaskLength)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getBinaryMaskToAdjustNodalBoundaryConditions(binaryMask, binaryMaskLength);
 }
 
-void boundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(int& numBCsWhichDisallowFlow)
+void BoundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(int& numBCsWhichDisallowFlow)
 {
   // Ensure we start from zero, before we count the surfaces which disallow flow due to closed valves (so we have to switch to Dirichlet)
   numBCsWhichDisallowFlow = 0;
@@ -790,22 +790,22 @@ void boundaryConditionManager::getNumberOfBoundaryConditionsWhichCurrentlyDisall
 // ---WRAPPED BY--->
 extern "C" void callCPPGetNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(int& numBCsWhichDisallowFlow)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getNumberOfBoundaryConditionsWhichCurrentlyDisallowFlow(numBCsWhichDisallowFlow);
 }
 
-void boundaryConditionManager::getNumberOfBoundaryConditionManagerBoundaryConditions_reference(int& totalNumberOfManagedBoundaryConditions) const
+void BoundaryConditionManager::getNumberOfBoundaryConditionManagerBoundaryConditions_reference(int& totalNumberOfManagedBoundaryConditions) const
 {
   totalNumberOfManagedBoundaryConditions = m_numberOfBoundaryConditionsManaged;
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPGetNumberOfCppManagedBoundaryConditions(int& totalNumberOfManagedBoundaryConditions)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getNumberOfBoundaryConditionManagerBoundaryConditions_reference(totalNumberOfManagedBoundaryConditions);
 }
 
-void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(int& numBCsWhichAllowFlow)
+void BoundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(int& numBCsWhichAllowFlow)
 {
   // Ensure we start from zero, before we count the surfaces which allow flow due to closed valves (so we have to switch to Dirichlet)
   numBCsWhichAllowFlow = 0;
@@ -825,13 +825,13 @@ void boundaryConditionManager::getNumberOfNetlistBoundaryConditionsWhichCurrentl
 // ---WRAPPED BY--->
 extern "C" void callCPPGetNumberOfNetlistsWhichCurrentlyAllowFlow(int& numBCsWhichAllowFlow)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->getNumberOfNetlistBoundaryConditionsWhichCurrentlyAllowFlow(numBCsWhichAllowFlow);
 }
 
 // Takes a surface index and a reference to an int - if flow is allowed across this surface,
 // returns 1 in the referenced int, otherwise returns zero in that int.
-void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted)
+void BoundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted)
 {
   // Begin by assuming flow is permitted; this will be changed below if flow is not permitted.
   flowIsPermitted = 1;
@@ -853,11 +853,11 @@ void boundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const i
 //---WRAPPED BY--->
 extern "C" void callCPPDiscoverWhetherFlowPermittedAcrossSurface(const int& queriedSurfaceIndex, int& flowIsPermitted)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->discoverWhetherFlowPermittedAcrossSurface(queriedSurfaceIndex, flowIsPermitted);
 }
 
-void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged)
+void BoundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged)
 {
   // Warning: This thing is broken: the booleans it checks for are not reset correctly currently. Do not use without fixing first!
   assert(false);
@@ -880,11 +880,11 @@ void boundaryConditionManager::haveBoundaryConditionTypesChanged(int& boundaryCo
 //---WRAPPED BY--->
 extern "C" void callCPPHaveBoundaryConditionTypesChanged(int& boundaryConditionTypesHaveChanged)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->haveBoundaryConditionTypesChanged(boundaryConditionTypesHaveChanged);
 }
 
-// void boundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)
+// void BoundaryConditionManager::setSurfacePressure_netlistLPNs(double* netlistSurfacePressures)
 // {
 //   int readLocation = int(0);
 //   for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
@@ -899,22 +899,22 @@ extern "C" void callCPPHaveBoundaryConditionTypesChanged(int& boundaryConditionT
 // // ---WRAPPED BY--->
 // extern "C" void callCppSetSurfacePressure_netlistLPNs(double*& netlistSurfacePressures)
 // {
-//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 //   boundaryConditionManager_instance->setSurfacePressure_netlistLPNs(netlistSurfacePressures);
 // }
 
-void boundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
+void BoundaryConditionManager::writeAllNetlistComponentFlowsAndNodalPressures()
 {
   writeNetlistFlowsPressuresAndVolumes(m_boundaryConditions, m_netlistDownstreamLoopClosingSubsections, m_nextTimestepWrite_netlistBoundaries_start);
 }
 // ---WRAPPED BY--->
 extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->writeAllNetlistComponentFlowsAndNodalPressures();
 }
 
-// void boundaryConditionManager::loadAllNetlistComponentFlowsAndNodalPressures()
+// void BoundaryConditionManager::loadAllNetlistComponentFlowsAndNodalPressures()
 // {
 //   assert(m_startingTimestepIndexHasBeenSet);
 //   loadNetlistPressuresFlowsAndVolumesOnRestart(m_boundaryConditions, m_netlistDownstreamLoopClosingSubsections, m_startingTimestepIndex);
@@ -922,12 +922,12 @@ extern "C" void callCPPWriteAllNetlistComponentFlowsAndNodalPressures()
 // // ---WRAPPED BY--->
 // extern "C" void callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 // {
-//   boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+//   BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 //   boundaryConditionManager_instance->loadAllNetlistComponentFlowsAndNodalPressures();
 // }
 
 // Control systems specific functions
-void boundaryConditionManager::updateBoundaryConditionControlSystems()
+void BoundaryConditionManager::updateBoundaryConditionControlSystems()
 {
   if (m_controlSystemsPresent)
   {
@@ -937,11 +937,11 @@ void boundaryConditionManager::updateBoundaryConditionControlSystems()
 // ---WRAPPED BY--->
 extern "C" void callCPPUpdateBoundaryConditionControlSystems()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->updateBoundaryConditionControlSystems();
 }
 
-void boundaryConditionManager::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int surfaceIndex, const int timestepNumber)
+void BoundaryConditionManager::resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int surfaceIndex, const int timestepNumber)
 {
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
@@ -954,11 +954,11 @@ void boundaryConditionManager::resetStateUsingKalmanFilteredEstimate(const doubl
 // ---WRAPPED BY--->
 extern "C" void callCPPResetStateUsingKalmanFilteredEstimate(double& flow, double& pressure, int& surfaceIndex, int& timestepNumber)
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->resetStateUsingKalmanFilteredEstimate(flow, pressure, surfaceIndex, timestepNumber);
 }
 
-void boundaryConditionManager::debugPrintFlowPointerTarget_BCM()
+void BoundaryConditionManager::debugPrintFlowPointerTarget_BCM()
 {
   for (auto const &boundaryCondition : m_boundaryConditions) {
     boundaryCondition->debugPrintFlowPointerTarget();
@@ -967,11 +967,11 @@ void boundaryConditionManager::debugPrintFlowPointerTarget_BCM()
 // ---WRAPPED BY--->
 extern "C" void callCPPDebugPrintFlowPointerTarget_BCM()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->debugPrintFlowPointerTarget_BCM();
 }
 
-void boundaryConditionManager::createControlSystems()
+void BoundaryConditionManager::createControlSystems()
 {
   assert(m_startingTimestepIndexHasBeenSet);
   assert(m_ntoutHasBeenSet);
@@ -1074,7 +1074,7 @@ void boundaryConditionManager::createControlSystems()
 
 }
 
-std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement()
+std::vector<std::pair<boundary_data_t,double>> BoundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement()
 {
   std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAsAppropriate;
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
@@ -1095,7 +1095,7 @@ std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoun
   return pressuresOrFlowsAsAppropriate;
 }
 
-int boundaryConditionManager::getNumberOfControlSystems() const
+int BoundaryConditionManager::getNumberOfControlSystems() const
 {
   return mp_controlSystemsManager->getNumberOfControlSystems();
 }

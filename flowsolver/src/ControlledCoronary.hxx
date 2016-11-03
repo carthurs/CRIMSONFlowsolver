@@ -1,22 +1,22 @@
 #ifndef CONTROLLEDCORONARY_HXX_
 #define CONTROLLEDCORONARY_HXX_
 
-#include "abstractBoundaryCondition.hxx"
-#include "boundaryConditionManager.hxx"
+#include "AbstractBoundaryCondition.hxx"
+#include "BoundaryConditionManager.hxx"
 #include "fileReaders.hxx"
 
-class controlledCoronary : public abstractBoundaryCondition
+class ControlledCoronary : public AbstractBoundaryCondition
 {
 public:
-	controlledCoronary(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
-	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, currentTimestepIndex, maxsurf, nstep)
+	ControlledCoronary(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
+	: AbstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, currentTimestepIndex, maxsurf, nstep)
 	{
 		// Note the index of this RCR (zero-indexed), and count its existance
 		// (the order of these two lines is correct!)
 		indexOfThisCoronary = numberOfInitialisedCoronaries;
 		numberOfInitialisedCoronaries++;
 		
-		controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+		ControlledCoronaryReader* controlledCoronaryReader_instance = ControlledCoronaryReader::Instance();
 
 		resistanceNearAorta = controlledCoronaryReader_instance->getResistanceNearAorta().at(indexOfThisCoronary);
 		complianceNearAorta = controlledCoronaryReader_instance->getComplianceNearAorta().at(indexOfThisCoronary);
@@ -50,7 +50,7 @@ public:
 
 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) {std::cout << "kalman filter not implemented in NetlistBoundaryCondition";};
 
-	~controlledCoronary() override
+	~ControlledCoronary() override
 	{
 		numberOfInitialisedCoronaries--;
 	}

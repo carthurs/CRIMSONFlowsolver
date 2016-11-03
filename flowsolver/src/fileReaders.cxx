@@ -8,8 +8,8 @@
 #include "NetlistXmlReader.hxx"
 #include <boost/filesystem.hpp>
 
-rcrtReader* rcrtReader::instance = 0;
-controlledCoronaryReader* controlledCoronaryReader::instance = 0;
+RcrtReader* RcrtReader::instance = 0;
+ControlledCoronaryReader* ControlledCoronaryReader::instance = 0;
 NetlistReader* NetlistReader::instance = 0;
 NetlistDownstreamCircuitReader* NetlistDownstreamCircuitReader::downstreamReaderInstance = 0;
 
@@ -17,7 +17,7 @@ NetlistDownstreamCircuitReader* NetlistDownstreamCircuitReader::downstreamReader
 // Reads a file line, returns a successful-read bool.
 // Stores the read data in a member std::vector<std::string>, which is
 // the read line from the file, split by spaces.
-bool abstractFileReader::readNextLine()
+bool AbstractFileReader::readNextLine()
 {
 	if (mp_file->eof())
 	{
@@ -81,7 +81,7 @@ bool abstractFileReader::readNextLine()
 	return fileNotEnded;
 }
 
-bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
+bool AbstractFileReader::readNextLineWithKnownNumberOfColumns()
 {
 	assert(m_hasNumberOfColumns);
 	int index;
@@ -128,7 +128,7 @@ bool abstractFileReader::readNextLineWithKnownNumberOfColumns()
 
 }
 
-double abstractFileReader::getNextDatum()
+double AbstractFileReader::getNextDatum()
 {
 	assert(m_hasNumberOfColumns);
 
@@ -151,7 +151,7 @@ double abstractFileReader::getNextDatum()
 }
 
 // The columnIndex refers to the file columns. It's zero-indexed.
-double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
+double AbstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 {
 	if (!m_fileHasBeenRead)
 	{
@@ -172,7 +172,7 @@ double abstractFileReader::getReadFileData(int columnIndex, int timestepNumber)
 	return returnValue;
 }
 
-void abstractFileReader::readFileInternalMetadata()
+void AbstractFileReader::readFileInternalMetadata()
 {
 	if (!m_metadataOnNumberOfLinesInFileAvailable)
 	{
@@ -189,7 +189,7 @@ void abstractFileReader::readFileInternalMetadata()
 	}
 }
 
-void histFileReader::readAndSplitMultiSurfaceRestartFile()
+void HistFileReader::readAndSplitMultiSurfaceRestartFile()
 {
 	int lineIndex = 0;
 	while(readNextLineWithKnownNumberOfColumns())
@@ -208,7 +208,7 @@ void histFileReader::readAndSplitMultiSurfaceRestartFile()
 
 // The output objects are std::vectors at the top level, with each vector
 // entry corresponding to one surface
-void rcrtReader::readAndSplitMultiSurfaceInputFile()
+void RcrtReader::readAndSplitMultiSurfaceInputFile()
 {
 	std::pair<double,double> tempTimeAndPdistval;
 	std::vector<std::pair<double,double>> tempTimeDataPdist;
@@ -242,37 +242,37 @@ void rcrtReader::readAndSplitMultiSurfaceInputFile()
 	m_fileHasBeenRead = true;
 }
 
-int rcrtReader::getPdmax()
+int RcrtReader::getPdmax()
 {
 	return pdmax;
 }
 
-std::vector<double> rcrtReader::getR1()
+std::vector<double> RcrtReader::getR1()
 {
 	return r1;
 }
 
-std::vector<double> rcrtReader::getC()
+std::vector<double> RcrtReader::getC()
 {
 	return c;
 }
 
-std::vector<double> rcrtReader::getR2()
+std::vector<double> RcrtReader::getR2()
 {
 	return r2;
 }
 
-std::vector<std::vector<std::pair<double,double>>> rcrtReader::getTimeDataPdist()
+std::vector<std::vector<std::pair<double,double>>> RcrtReader::getTimeDataPdist()
 {
 	return timeDataPdist;
 }
 
-std::vector<int> rcrtReader::getNumDataRCR()
+std::vector<int> RcrtReader::getNumDataRCR()
 {
     return numDataRCR;
 }
 
-void controlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
+void ControlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
 {
 
 	// Loop over the rest of the file to get the relevant RCR data for this boundary:
@@ -332,87 +332,87 @@ void controlledCoronaryReader::readAndSplitMultiSurfaceInputFile()
 	m_fileHasBeenRead = true;
 }
 
-std::vector<double> controlledCoronaryReader::getResistanceNearAorta()
+std::vector<double> ControlledCoronaryReader::getResistanceNearAorta()
 {
 	return resistanceNearAorta;
 }
 
-std::vector<double> controlledCoronaryReader::getComplianceNearAorta()
+std::vector<double> ControlledCoronaryReader::getComplianceNearAorta()
 {
 	return complianceNearAorta;
 }
 
-std::vector<double> controlledCoronaryReader::getMidResistance()
+std::vector<double> ControlledCoronaryReader::getMidResistance()
 {
 	return midResistance;
 }
 
-std::vector<double> controlledCoronaryReader::getIntramyocardialCompliance()
+std::vector<double> ControlledCoronaryReader::getIntramyocardialCompliance()
 {
 	return intramyocardialCompliance;
 }
 
-std::vector<double> controlledCoronaryReader::getDistalResistance()
+std::vector<double> ControlledCoronaryReader::getDistalResistance()
 {
 	return distalResistance;
 }
 
-std::vector<double> controlledCoronaryReader::getMinimumAllowedResistance()
+std::vector<double> ControlledCoronaryReader::getMinimumAllowedResistance()
 {
 	return minimumAllowedResistance;
 }
 
-std::vector<double> controlledCoronaryReader::getMaximumAllowedResistance()
+std::vector<double> ControlledCoronaryReader::getMaximumAllowedResistance()
 {
 	return maximumAllowedResistance;
 }
 
-std::vector<double> controlledCoronaryReader::getPerfusionBedMVO2_previous()
+std::vector<double> ControlledCoronaryReader::getPerfusionBedMVO2_previous()
 {
 	return perfusionBedMVO2_previous;
 }
 
-std::vector<double> controlledCoronaryReader::getPerfusionBedMVO2_current()
+std::vector<double> ControlledCoronaryReader::getPerfusionBedMVO2_current()
 {
 	return perfusionBedMVO2_current;
 }
 
-std::vector<double> controlledCoronaryReader::getProportionOfMyocardiumPerfusedByThisSurface()
+std::vector<double> ControlledCoronaryReader::getProportionOfMyocardiumPerfusedByThisSurface()
 {
 	return proportionOfMyocardiumPerfusedByThisSurface;
 }
 
-std::vector<double> controlledCoronaryReader::getMetabolicFeedbackGain()
+std::vector<double> ControlledCoronaryReader::getMetabolicFeedbackGain()
 {
 	return metabolicFeedbackGain;
 }
 
-std::vector<double> controlledCoronaryReader::getAlphaAdrenergicFeedforwardGain()
+std::vector<double> ControlledCoronaryReader::getAlphaAdrenergicFeedforwardGain()
 {
 	return alphaAdrenergicFeedforwardGain;
 }
 
-std::vector<double> controlledCoronaryReader::getBetaAdrenergicFeedforwardGain()
+std::vector<double> ControlledCoronaryReader::getBetaAdrenergicFeedforwardGain()
 {
 	return betaAdrenergicFeedforwardGain;
 }
 
-std::vector<double> controlledCoronaryReader::getFeedbackDamping()
+std::vector<double> ControlledCoronaryReader::getFeedbackDamping()
 {
 	return feedbackDamping;
 }
 
-std::vector<double> controlledCoronaryReader::getO2DemandIntegrationWindow()
+std::vector<double> ControlledCoronaryReader::getO2DemandIntegrationWindow()
 {
 	return O2DemandIntegrationWindow;
 }
 
-std::vector<double> controlledCoronaryReader::getCapacitorNearAortaTopPressure()
+std::vector<double> ControlledCoronaryReader::getCapacitorNearAortaTopPressure()
 {
 	return capacitorNearAortaTopPressure;
 }
 
-std::vector<double> controlledCoronaryReader::getIntramyocardialCapacitorTopPressure()
+std::vector<double> ControlledCoronaryReader::getIntramyocardialCapacitorTopPressure()
 {
 	return intramyocardialCapacitorTopPressure;
 }

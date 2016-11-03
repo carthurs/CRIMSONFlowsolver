@@ -1,10 +1,10 @@
-#include "controlledCoronary.hxx"
+#include "ControlledCoronary.hxx"
 #include <boost/math/special_functions/round.hpp>
 
 // Statics
-int controlledCoronary::numberOfInitialisedCoronaries = 0;
+int ControlledCoronary::numberOfInitialisedCoronaries = 0;
 
-std::pair<double,double> controlledCoronary::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
+std::pair<double,double> ControlledCoronary::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
     // Get the intramyocardial pressure for the previous time-step and previous-previous time-step
     // note that these should both really be evaluated one time-step later, but to avoid the need
@@ -51,7 +51,7 @@ std::pair<double,double> controlledCoronary::computeImplicitCoefficients(const i
     return returnCoeffs;
 }
 
-void controlledCoronary::initialiseModel()
+void ControlledCoronary::initialiseModel()
 {
 	// allocate(this%deltaMVO2(this%numberOfControlledCoronaryModelSurfaces))
 	// allocate(this%deltaMVO2PerTimestepOverPreviousBeat(this%numberOfControlledCoronaryModelSurfaces)) // There's some redundancy between this and deltaMVO2 at the time of writing, but the separation is likely to be useful in future modifications
@@ -84,7 +84,7 @@ void controlledCoronary::initialiseModel()
 		// Initialise the pressure using the value from the PHistRCR.dat.
 		std::cout << "this is all wrong... restart not set up yet!" << std::endl;
 		std::exit(1);
-		// pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisCoronary+1,timdat.currentTimestepIndex);
+		// pressure_n = (BoundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisCoronary+1,timdat.currentTimestepIndex);
     }
     else
     {
@@ -173,7 +173,7 @@ void controlledCoronary::initialiseModel()
          // endif
 }
 
-void controlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
+void ControlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
 {
     // We're now going to solve the 2x2 system m*[P_1;P_2] = rhs.
     // Define the LPN system matrix by its components (name format: m(row)(column)):
@@ -201,13 +201,13 @@ void controlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
 //    The coronary system-solve in setimplicitcoeff_controlledCoronary relies on knowing the 
 //    values of the pressure at various points throughout the LPN model. These need updating
 //    each step; this is done by the subroutine updateLPN_coronary.
-void controlledCoronary::updateLPN()
+void ControlledCoronary::updateLPN()
 {
 	double alfi_delt = alfi_local*delt;
 	computeCapacitorsTopPressures(alfi_delt);
 }
 
-void controlledCoronary::finalizeLPNAtEndOfTimestep()
+void ControlledCoronary::finalizeLPNAtEndOfTimestep()
 {
     double alfi_delt = delt;
 

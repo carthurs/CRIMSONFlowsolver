@@ -1,6 +1,6 @@
 #include "RCR.hxx"
-#include "fortranPointerManager.hxx"
-#include "boundaryConditionManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
+#include "BoundaryConditionManager.hxx"
 
 // Statics
 int RCR::s_numberOfInitialisedRCRs = 0;
@@ -144,10 +144,10 @@ void RCR::getPressureAndFlowPointersFromFortran()
     // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
     // NB: Need to add a method in fortran to set a value for non-zero restarting!
     assert(flow_n_ptrs.size()==0);
-    double* flowPointer = fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
+    double* flowPointer = FortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex);
     flow_n_ptrs.push_back(flowPointer);
     assert(pressure_n_ptrs.size()==0);
-    pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
+    pressure_n_ptrs.push_back(FortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
 
     flow_n = *(flow_n_ptrs.at(0));
     flow_n1 = 0.0;
@@ -155,7 +155,7 @@ void RCR::getPressureAndFlowPointersFromFortran()
     if (m_thisIsARestartedSimulation)
     {
       // Initialise the pressure using the value from the PHistRCR.dat.
-      pressure_n = (boundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1, m_currentTimestepIndex);
+      pressure_n = (BoundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1, m_currentTimestepIndex);
     }
     else
     {

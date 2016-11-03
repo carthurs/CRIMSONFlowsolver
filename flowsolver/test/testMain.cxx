@@ -10,7 +10,7 @@ TEST_F(testMain, checkRCRSimpleShortSimulation) {
   clearOutOldFiles();
   runSimulation();
 
-  histFileReader* QHistReader = new histFileReader();
+  HistFileReader* QHistReader = new HistFileReader();
   QHistReader->setFileName("QHistRCR.dat");
   QHistReader->setNumColumns(2);
   QHistReader->readAndSplitMultiSurfaceRestartFile();
@@ -29,7 +29,7 @@ TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
   clearOutOldFiles();
 
   runSimulation();
-  histFileReader* PHistReader = new histFileReader();
+  HistFileReader* PHistReader = new HistFileReader();
   PHistReader->setFileName("PHistRCR.dat");
   PHistReader->setNumColumns(2);
   PHistReader->readAndSplitMultiSurfaceRestartFile();
@@ -50,7 +50,7 @@ TEST_F(testMain, checkCoronarySimpleShortSimulation) {
   runSimulation();
 
   // Check a value in FlowHist.dat
-  histFileReader FlowHistReader = histFileReader();
+  HistFileReader FlowHistReader = HistFileReader();
   FlowHistReader.setFileName("FlowHist.dat");
   FlowHistReader.setNumColumns(2);
   FlowHistReader.readFileInternalMetadata();
@@ -60,7 +60,7 @@ TEST_F(testMain, checkCoronarySimpleShortSimulation) {
   EXPECT_NEAR(finalFlowHistValue,3.628656482154824E-003,1e-10);
 
   // Check a value in PressHist.dat
-  histFileReader PressHistReader = histFileReader();
+  HistFileReader PressHistReader = HistFileReader();
   PressHistReader.setFileName("PressHist.dat");
   PressHistReader.setNumColumns(2);
   PressHistReader.readFileInternalMetadata();
@@ -79,7 +79,7 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
   runSimulation();
 
   // Check PressHist.dat
-  histFileReader PressHistReader = histFileReader();
+  HistFileReader PressHistReader = HistFileReader();
   PressHistReader.setFileName("PressHist.dat");
   PressHistReader.setNumColumns(2);
   PressHistReader.readFileInternalMetadata();
@@ -89,7 +89,7 @@ TEST_F(testMain, checkCoronaryCanEmulateKnownRCRResults) {
   EXPECT_NEAR(10645.5858581080,readResult,1e-7);
 
   // Check FlowHist.dat
-  histFileReader FlowHistReader = histFileReader();
+  HistFileReader FlowHistReader = HistFileReader();
   FlowHistReader.setFileName("FlowHist.dat");
   FlowHistReader.setNumColumns(2);
   FlowHistReader.readFileInternalMetadata();
@@ -107,7 +107,7 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
   runSimulation();
 
   // Check PressHist.dat
-  histFileReader PressHistReader = histFileReader();
+  HistFileReader PressHistReader = HistFileReader();
   PressHistReader.setFileName("PressHist.dat");
   PressHistReader.setNumColumns(2);
   PressHistReader.readFileInternalMetadata();
@@ -117,7 +117,7 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
   EXPECT_NEAR(10645.5858581080,readResult,1e-7);
 
   // Check FlowHist.dat
-  histFileReader FlowHistReader = histFileReader();
+  HistFileReader FlowHistReader = HistFileReader();
   FlowHistReader.setFileName("FlowHist.dat");
   FlowHistReader.setNumColumns(2);
   FlowHistReader.readFileInternalMetadata();
@@ -136,7 +136,7 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
 //   // runSimulation();
 
 //   // Check PressHist.dat
-//   // histFileReader PressHistReader = histFileReader();
+//   // HistFileReader PressHistReader = HistFileReader();
 //   // PressHistReader.setFileName("PressHist.dat");
 //   // PressHistReader.setNumColumns(2);
 //   // PressHistReader.readFileInternalMetadata();
@@ -146,7 +146,7 @@ TEST_F(testMain, checkNetlistCanEmulateKnownRCRResults) {
 //   // EXPECT_NEAR(10645.5858581080,readResult,1e-8);
 
 //   // // Check FlowHist.dat
-//   // histFileReader FlowHistReader = histFileReader();
+//   // HistFileReader FlowHistReader = HistFileReader();
 //   // FlowHistReader.setFileName("FlowHist.dat");
 //   // FlowHistReader.setNumColumns(2);
 //   // FlowHistReader.readFileInternalMetadata();
@@ -164,7 +164,7 @@ TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
   runSimulation();
 
   // Check PressHist.dat
-  histFileReader PressHistReader = histFileReader();
+  HistFileReader PressHistReader = HistFileReader();
   PressHistReader.setFileName("PressHist.dat");
   PressHistReader.setNumColumns(2);
   PressHistReader.readFileInternalMetadata();
@@ -174,7 +174,7 @@ TEST_F(testMain, checkPreKalmanPreGlobalNodeNumberingGeombcRuns) {
   EXPECT_NEAR(106420.076723820,pressHistResult,1e-8);
 
   // Check FlowHist.dat
-  histFileReader FlowHistReader = histFileReader();
+  HistFileReader FlowHistReader = HistFileReader();
   FlowHistReader.setFileName("FlowHist.dat");
   FlowHistReader.setNumColumns(2);
   FlowHistReader.readFileInternalMetadata();
@@ -197,7 +197,7 @@ TEST_F(testMain, checkNetlistHeartModel) {
   runSimulation();
 
   // Check PressHist.dat
-  histFileReader PressHistReader = histFileReader();
+  HistFileReader PressHistReader = HistFileReader();
   PressHistReader.setFileName("PressHist.dat");
   PressHistReader.setNumColumns(3);
   PressHistReader.readFileInternalMetadata();
@@ -214,7 +214,7 @@ TEST_F(testMain, checkNetlistHeartModel) {
   EXPECT_NEAR(544.651629587945,pressHistResult,1e-1);
 
   // Check FlowHist.dat
-  histFileReader FlowHistReader = histFileReader();
+  HistFileReader FlowHistReader = HistFileReader();
   FlowHistReader.setFileName("FlowHist.dat");
   FlowHistReader.setNumColumns(3);
   FlowHistReader.readFileInternalMetadata();
@@ -245,7 +245,7 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
 
   // Check PressHist.dat
   {
-    histFileReader zeroDDomainPressures = histFileReader();
+    HistFileReader zeroDDomainPressures = HistFileReader();
     zeroDDomainPressures.setFileName("PressHist.dat");
     zeroDDomainPressures.setNumColumns(3);
     zeroDDomainPressures.readFileInternalMetadata();
@@ -264,7 +264,7 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
 
   // Check FlowHist.dat
   {
-    histFileReader zeroDDomainFlows = histFileReader();
+    HistFileReader zeroDDomainFlows = HistFileReader();
     zeroDDomainFlows.setFileName("FlowHist.dat");
     zeroDDomainFlows.setNumColumns(3);
     zeroDDomainFlows.readFileInternalMetadata();
@@ -283,7 +283,7 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
 
   // Check netlistFlows_surface_5.dat
   {
-    histFileReader zeroDDomainFlows = histFileReader();
+    HistFileReader zeroDDomainFlows = HistFileReader();
     zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
     zeroDDomainFlows.setNumColumns(6);
     zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -294,7 +294,7 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-    histFileReader closedLoopDownstreamPressures = histFileReader();
+    HistFileReader closedLoopDownstreamPressures = HistFileReader();
     closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
     closedLoopDownstreamPressures.setNumColumns(5);
     closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -314,7 +314,7 @@ TEST_F(testMain, checkClosedLoopWithHeart) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-    histFileReader closedLoopDownstreamPressures = histFileReader();
+    HistFileReader closedLoopDownstreamPressures = HistFileReader();
     closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
     closedLoopDownstreamPressures.setNumColumns(4);
     closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -342,7 +342,7 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
 
    // Check PressHist.dat
   {
-    histFileReader pressHistData = histFileReader();
+    HistFileReader pressHistData = HistFileReader();
     pressHistData.setFileName("PressHist.dat");
     pressHistData.setNumColumns(3);
     pressHistData.readFileInternalMetadata();
@@ -361,7 +361,7 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
 
   // Check FlowHist.dat
   {
-    histFileReader flowHistData = histFileReader();
+    HistFileReader flowHistData = HistFileReader();
     flowHistData.setFileName("FlowHist.dat");
     flowHistData.setNumColumns(3);
     flowHistData.readFileInternalMetadata();
@@ -380,7 +380,7 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
 
   // Check netlistFlows_surface_5.dat
   {
-    histFileReader zeroDDomainFlows = histFileReader();
+    HistFileReader zeroDDomainFlows = HistFileReader();
     zeroDDomainFlows.setFileName("netlistPressures_surface_5.dat");
     zeroDDomainFlows.setNumColumns(7);
     zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -390,7 +390,7 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
   }
 
   {
-    histFileReader* PHistReader = new histFileReader();
+    HistFileReader* PHistReader = new HistFileReader();
     PHistReader->setFileName("PHistRCR.dat");
     PHistReader->setNumColumns(3);
     PHistReader->readAndSplitMultiSurfaceRestartFile();
@@ -405,7 +405,7 @@ TEST_F(testMain, checkMixedNetlistAndRCRT)
   }  
 
   {
-    histFileReader* QHistReader = new histFileReader();
+    HistFileReader* QHistReader = new HistFileReader();
     QHistReader->setFileName("QHistRCR.dat");
     QHistReader->setNumColumns(3);
     QHistReader->readAndSplitMultiSurfaceRestartFile();
@@ -431,7 +431,7 @@ TEST_F(testMain, checkClosedLoopWithHeartRestart) {
 
   // Check PressHist.dat
   {
-    histFileReader zeroDDomainPressures = histFileReader();
+    HistFileReader zeroDDomainPressures = HistFileReader();
     zeroDDomainPressures.setFileName("PressHist.dat");
     zeroDDomainPressures.setNumColumns(3);
     zeroDDomainPressures.readFileInternalMetadata();
@@ -450,7 +450,7 @@ TEST_F(testMain, checkClosedLoopWithHeartRestart) {
 
   // Check FlowHist.dat
   {
-    histFileReader zeroDDomainFlows = histFileReader();
+    HistFileReader zeroDDomainFlows = HistFileReader();
     zeroDDomainFlows.setFileName("FlowHist.dat");
     zeroDDomainFlows.setNumColumns(3);
     zeroDDomainFlows.readFileInternalMetadata();
@@ -469,7 +469,7 @@ TEST_F(testMain, checkClosedLoopWithHeartRestart) {
 
   // Check netlistFlows_surface_5.dat
   {
-    histFileReader zeroDDomainFlows = histFileReader();
+    HistFileReader zeroDDomainFlows = HistFileReader();
     zeroDDomainFlows.setFileName("netlistFlows_surface_5.dat");
     zeroDDomainFlows.setNumColumns(6);
     zeroDDomainFlows.readAndSplitMultiSurfaceRestartFile();
@@ -480,7 +480,7 @@ TEST_F(testMain, checkClosedLoopWithHeartRestart) {
 
   // Check netlistPressures_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-    histFileReader closedLoopDownstreamPressures = histFileReader();
+    HistFileReader closedLoopDownstreamPressures = HistFileReader();
     closedLoopDownstreamPressures.setFileName("netlistPressures_downstreamCircuit_0.dat");
     closedLoopDownstreamPressures.setNumColumns(5);
     closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();
@@ -500,7 +500,7 @@ TEST_F(testMain, checkClosedLoopWithHeartRestart) {
 
   // Check netlistFlows_downstreamCircuit_0.dat (the loop-closing circuit)
   {
-    histFileReader closedLoopDownstreamPressures = histFileReader();
+    HistFileReader closedLoopDownstreamPressures = HistFileReader();
     closedLoopDownstreamPressures.setFileName("netlistFlows_downstreamCircuit_0.dat");
     closedLoopDownstreamPressures.setNumColumns(4);
     closedLoopDownstreamPressures.readAndSplitMultiSurfaceRestartFile();

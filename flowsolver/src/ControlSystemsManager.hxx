@@ -12,7 +12,7 @@
 
 // The job of this class is to hold and manage calls to the control systems
 // (for example, derived classes of the AbstractParameterController).
-// It should be instantiated in boundaryConditionManager, which should
+// It should be instantiated in BoundaryConditionManager, which should
 // provide any necessary links to Fortran, and also tell the
 // ControlSystemsManager when to do things.
 class ControlSystemsManager

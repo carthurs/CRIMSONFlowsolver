@@ -357,7 +357,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
     {
         {
           // Write the netlistPressures_zeroDDomainReplacement.dat
-          histFileReader boundaryConditionPressureHistoryReader;
+          HistFileReader boundaryConditionPressureHistoryReader;
           boundaryConditionPressureHistoryReader.setFileName(m_PressureHistoryFileName);
           boundaryConditionPressureHistoryReader.setNumColumns(mp_circuitData->numberOfPressureNodes + 1); // +1 for the timestep indexing column
           boundaryConditionPressureHistoryReader.readAndSplitMultiSurfaceRestartFile();
@@ -380,7 +380,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
 
         {
           // Write the netlistFlows_surface_X.dat
-          histFileReader boundaryConditionFlowistoryReader;
+          HistFileReader boundaryConditionFlowistoryReader;
           boundaryConditionFlowistoryReader.setFileName(m_FlowHistoryFileName);
           boundaryConditionFlowistoryReader.setNumColumns(mp_circuitData->numberOfComponents + 1); // +1 for the timestep indexing column
           boundaryConditionFlowistoryReader.readAndSplitMultiSurfaceRestartFile();
@@ -405,7 +405,7 @@ void NetlistCircuit::loadPressuresFlowsAndVolumesOnRestart()
         if (mp_circuitData->m_numberOfVolumeTrackingComponenets > 0)
         {
           // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
-          histFileReader boundaryConditionVolumeHistoryReader;
+          HistFileReader boundaryConditionVolumeHistoryReader;
           boundaryConditionVolumeHistoryReader.setFileName(m_VolumeHistoryFileName);
           boundaryConditionVolumeHistoryReader.setNumColumns(mp_circuitData->m_numberOfVolumeTrackingComponenets + 1); // +1 for the timestep indexing column
           boundaryConditionVolumeHistoryReader.readAndSplitMultiSurfaceRestartFile();
@@ -450,7 +450,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
       try {
             {
               // Write the netlistPressures_zeroDDomainReplacement.dat
-              basicFileWriter boundaryConditionPressureHistoryWriter;
+              BasicFileWriter boundaryConditionPressureHistoryWriter;
               boundaryConditionPressureHistoryWriter.setFileName(m_PressureHistoryFileName);
       
               for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
@@ -466,7 +466,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
       
             {
               // Write the netlistFlows_surface_X.dat
-              basicFileWriter boundaryConditionFlowHistoryWriter;
+              BasicFileWriter boundaryConditionFlowHistoryWriter;
               boundaryConditionFlowHistoryWriter.setFileName(m_FlowHistoryFileName);
       
               for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
@@ -483,7 +483,7 @@ void NetlistCircuit::writePressuresFlowsAndVolumes(int& nextTimestepWrite_start)
       
             {
               // Write the volumes of the volume tracking components, as netlistVolumes_surface_X.dat
-              basicFileWriter boundaryConditionVolumeHistoryWriter;
+              BasicFileWriter boundaryConditionVolumeHistoryWriter;
               boundaryConditionVolumeHistoryWriter.setFileName(m_VolumeHistoryFileName);
               for (int stepToWrite=nextTimestepWrite_start; stepToWrite<nextTimestepWrite_end; stepToWrite++)
               {
@@ -1390,7 +1390,7 @@ void NetlistCircuit::assembleRHS(const bool useHistoryHistoryPressure)
         // Coming from 'l' for 'left-ventricular' in the input data:
         else if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_LeftVentricular)
         {
-            std::cerr << "this requires heart model. Also should make boundaryConditionManager able to provide P_IM..whatevers." << std::endl;
+            std::cerr << "this requires heart model. Also should make BoundaryConditionManager able to provide P_IM..whatevers." << std::endl;
             std::exit(1);
         }
         else if (prescribedPressureNode->second->getPressurePrescriptionType() == Pressure_3DInterface)

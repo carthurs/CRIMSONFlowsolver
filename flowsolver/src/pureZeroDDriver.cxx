@@ -118,8 +118,8 @@ void PureZeroDDriver::iter_step()
 	// Also need to actually solve the boundary conditions etc. here!
 
 	m_pressuresOrFlowsAtBoundaries = boundaryConditionManager_instance->getBoundaryPressuresOrFlows_zeroDDomainReplacement();
-	boundaryConditionManager_instance->computeImplicitCoeff_solve<abstractBoundaryCondition>(m_timestepNumber);
-	boundaryConditionManager_instance->computeImplicitCoeff_update<abstractBoundaryCondition>(m_timestepNumber);
+	boundaryConditionManager_instance->computeImplicitCoeff_solve<AbstractBoundaryCondition>(m_timestepNumber);
+	boundaryConditionManager_instance->computeImplicitCoeff_update<AbstractBoundaryCondition>(m_timestepNumber);
 	std::map<int,std::pair<double,double>> allNetlistBoundaryImplicitCoeffs = boundaryConditionManager_instance->getImplicitCoeff_netlistLPNs_toPassTo3DDomainReplacement();
 	for (int ii =0; ii<m_numberOfNetlistsUsedAsBoundaryConditions; ii++)
 	{

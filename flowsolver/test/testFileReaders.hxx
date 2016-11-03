@@ -12,10 +12,10 @@
 	 protected:
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
-	 rcrtReader* rcrtReader_instance;
+	 RcrtReader* rcrtReader_instance;
 
 	  testFileReaders() {
-		rcrtReader_instance = rcrtReader::Instance();
+		rcrtReader_instance = RcrtReader::Instance();
 		rcrtReader_instance->setFileName("rcrt_test.dat");
 		rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
 	  }

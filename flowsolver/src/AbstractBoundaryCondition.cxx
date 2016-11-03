@@ -1,35 +1,35 @@
-#include "abstractBoundaryCondition.hxx"
+#include "AbstractBoundaryCondition.hxx"
 #include <stdexcept>
 #include <cmath>
 
 
 // Statics
-int abstractBoundaryCondition::numberOfConstructedBoundaryConditions = 0;
+int AbstractBoundaryCondition::numberOfConstructedBoundaryConditions = 0;
 
 // initialise the multidomain/LPN objects, this will need IFDEF for 3D and 1D codes
-double abstractBoundaryCondition::getHop()
+double AbstractBoundaryCondition::getHop()
 {
   return Hop;
 }
 
-double abstractBoundaryCondition::getdp_dq()
+double AbstractBoundaryCondition::getdp_dq()
 {
   return dp_dq;
 }
 
-// void abstractBoundaryCondition::setLPNInflowPressure(double inflowPressure)
+// void AbstractBoundaryCondition::setLPNInflowPressure(double inflowPressure)
 // {
 //  // This will not be needed by all subclasses!
 //     LPNInflowPressure = inflowPressure;
 // }
 
-bool abstractBoundaryCondition::flowPermittedAcross3DInterface()
+bool AbstractBoundaryCondition::flowPermittedAcross3DInterface()
 {
-  // This is only ever false in some cases, where some subclass of abstractBoundaryCondition overrides this method.
+  // This is only ever false in some cases, where some subclass of AbstractBoundaryCondition overrides this method.
   return true;
 }
 
-void abstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNumber)
+void AbstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNumber)
 {
   if (flowPermittedAcross3DInterface())
   {
@@ -52,7 +52,7 @@ void abstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNum
   }
 }
 
-void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNumber)
+void AbstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNumber)
 {
   if (flowPermittedAcross3DInterface())
   {
@@ -74,7 +74,7 @@ void abstractBoundaryCondition::computeImplicitCoeff_update(const int timestepNu
   }
 }
 
-void abstractBoundaryCondition::updatePressureAndFlowHistory()
+void AbstractBoundaryCondition::updatePressureAndFlowHistory()
 {
   pressurehist[m_currentTimestepIndex] = pressure_n;
   try {
@@ -85,12 +85,12 @@ void abstractBoundaryCondition::updatePressureAndFlowHistory()
   }
 }
 
-void abstractBoundaryCondition::updpressure_n1_withflow()
+void AbstractBoundaryCondition::updpressure_n1_withflow()
 {
   pressure_n = dp_dq_n1 * (*(flow_n_ptrs.at(0))) + Hop_n1;
 }
 
-void abstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
+void AbstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray)
 {
   for (int node = 0; node < lengthOfNodeToBoundaryAssociationArray; node++)
   {
@@ -102,21 +102,21 @@ void abstractBoundaryCondition::setListOfMeshNodesAtThisBoundary(const int* cons
   hasListOfMeshNodesAtThisBoundary = true;
 }
 
-void abstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
+void AbstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
 {
   // here we set the initial values of the flow and pressure using the pointers to the multidomaincontainer.
   // NB: Need to add a method in fortran to set a value for non-zero restarting!
   assert(flow_n_ptrs.size() == 0);
-  flow_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
+  flow_n_ptrs.push_back(FortranBoundaryDataPointerManager::Get()->getBoundaryFlows(surfaceIndex));
   assert(pressure_n_ptrs.size() == 0);
-  pressure_n_ptrs.push_back(fortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
+  pressure_n_ptrs.push_back(FortranBoundaryDataPointerManager::Get()->getBoundaryPressures(surfaceIndex));
 
   flow_n = *(flow_n_ptrs.at(0));
   flow_n1 = 0.0;
   pressure_n = *(pressure_n_ptrs.at(0));
 }
 
-// void abstractBoundaryCondition::storeFlowAndPressureAtStartOfTimestep()
+// void AbstractBoundaryCondition::storeFlowAndPressureAtStartOfTimestep()
 // {
 //   assert(flow_n_ptrs.at(0) != NULL);
 //   std::cout << "flow_n pre: "<<flow_n<<std::endl;
@@ -129,7 +129,7 @@ void abstractBoundaryCondition::getPressureAndFlowPointersFromFortran()
 //   std::cout << "pressure_n post: "<<pressure_n<<std::endl;
 // }
 
-void abstractBoundaryCondition::incrementTimestepIndex()
+void AbstractBoundaryCondition::incrementTimestepIndex()
 {
   m_currentTimestepIndex++;
 }
@@ -138,7 +138,7 @@ void abstractBoundaryCondition::incrementTimestepIndex()
 // This boundary condition knows which mesh nodes lie at its surface (checked by the assert),
 // and it sets 0 in binaryMask at the appropriate location for these nodes, if the boundary
 // condition type is currently Dirichlet.
-void abstractBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
+void AbstractBoundaryCondition::setDirichletConditionsIfNecessary(int* const binaryMask)
 {
   assert(hasListOfMeshNodesAtThisBoundary);
   // set zero in the binaryMask at the locations necessary to impose Dirichlet at this surface
@@ -148,7 +148,7 @@ void abstractBoundaryCondition::setDirichletConditionsIfNecessary(int* const bin
   }
 }
 
-void abstractBoundaryCondition::debugPrintFlowPointerTarget()
+void AbstractBoundaryCondition::debugPrintFlowPointerTarget()
 {
   std::cout << "Boundary condition for surface index " << surfaceIndex << " has flow " << flow_n << " and flow pointer target " << *(flow_n_ptrs.at(0)) << std::endl;
 }

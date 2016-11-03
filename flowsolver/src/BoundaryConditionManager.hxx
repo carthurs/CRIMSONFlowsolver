@@ -2,26 +2,26 @@
 #define BOOUNDARYCONDITIONMANAGER_HXX_
 
 #include "fileReaders.hxx"
-#include "boundaryConditionFactory.hxx"
-#include "abstractBoundaryCondition.hxx"
+#include "BoundaryConditionFactory.hxx"
+#include "AbstractBoundaryCondition.hxx"
 #include "ControlSystemsManager.hxx"
 #include "ClosedLoopDownstreamSubsection.hxx"
 #include <boost/lexical_cast.hpp>
 
 // Forward declarations:
-class abstractBoundaryCondition;
+class AbstractBoundaryCondition;
 
- class boundaryConditionManager
+ class BoundaryConditionManager
  {
  	friend class testMultidom;
  public:
 
- 	static histFileReader* PHistReader;
+ 	static HistFileReader* PHistReader;
  
-    static boundaryConditionManager* Instance()
+    static BoundaryConditionManager* Instance()
 	{
 		if (!instance) {
-			instance = new boundaryConditionManager();
+			instance = new BoundaryConditionManager();
 		}
 		return instance;
 	}
@@ -30,10 +30,10 @@ class abstractBoundaryCondition;
 	{
 		if (m_thisIsARestartedSimulation)
 		{
-            if (boundaryConditionManager::PHistReader != NULL)
+            if (BoundaryConditionManager::PHistReader != NULL)
             {
-			     delete boundaryConditionManager::PHistReader;
-                 boundaryConditionManager::PHistReader = NULL;
+			     delete BoundaryConditionManager::PHistReader;
+                 BoundaryConditionManager::PHistReader = NULL;
             }
 		}
 		delete instance;
@@ -53,7 +53,7 @@ class abstractBoundaryCondition;
     
     void setPressureFromFortran();
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
-    std::vector<boost::shared_ptr<abstractBoundaryCondition>>* getBoundaryConditions();
+    std::vector<boost::shared_ptr<AbstractBoundaryCondition>>* getBoundaryConditions();
 
     // Must be fully defined here in the header so that other translation units can instantiate the template
     template <typename TemplateBoundaryConditionType>
@@ -147,12 +147,12 @@ class abstractBoundaryCondition;
 
     int getNumberOfControlSystems() const;
 
-    ~boundaryConditionManager()
+    ~BoundaryConditionManager()
     {
     }
  
  private:
-    boundaryConditionManager()
+    BoundaryConditionManager()
     {
         m_numberOfBoundaryConditionsManaged = 0;
 
@@ -177,7 +177,7 @@ class abstractBoundaryCondition;
 
         checkIfThisIsARestartedSimulation();
     }
-    std::vector<boost::shared_ptr<abstractBoundaryCondition>> m_boundaryConditions;
+    std::vector<boost::shared_ptr<AbstractBoundaryCondition>> m_boundaryConditions;
     std::vector<boost::shared_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubsections;
     // std::map<int,std::pair<double,double>> implicitCoefficientMap;
 
@@ -223,10 +223,10 @@ class abstractBoundaryCondition;
     // I've made it private on purpose!
     void tearDown()
     {
-		boundaryConditionManager::Instance()->Term();
+		BoundaryConditionManager::Instance()->Term();
     }
 
-    static boundaryConditionManager* instance;
+    static BoundaryConditionManager* instance;
  };
 
  #endif

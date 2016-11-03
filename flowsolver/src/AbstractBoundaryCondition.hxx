@@ -4,17 +4,17 @@
 #include "gtest/gtest_prod.h"
 #include <string>
 #include <stdexcept>
-#include "fortranPointerManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
 #include "debuggingToolsForCpp.hxx"
 
 // Forward declarations:
-class boundaryConditionManager;
+class BoundaryConditionManager;
 
-class abstractBoundaryCondition
+class AbstractBoundaryCondition
  {
- 	friend class boundaryConditionManager;
+ 	friend class BoundaryConditionManager;
  	friend class testMultidom;
- 	friend class basicFileWriter;
+ 	friend class BasicFileWriter;
  	FRIEND_TEST(testMultidom, checkBoundaryConditionsMadeProperly);
  	FRIEND_TEST(testMultidom, checkRCRLinearInterpolators);
  	// FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
@@ -22,7 +22,7 @@ class abstractBoundaryCondition
  	FRIEND_TEST(testMultidom, checkImplicitConditionComputation_update);
  	FRIEND_TEST(testMultidom, checkFlowAndPressureSetters);
  public:
-    abstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
+    AbstractBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
     : surfaceIndex(surfaceIndex_in),
       hstep(hstep_in),
       delt(delt_in),
@@ -57,7 +57,7 @@ class abstractBoundaryCondition
     virtual void getPressureAndFlowPointersFromFortran();
     virtual bool flowPermittedAcross3DInterface();
 
-    virtual ~abstractBoundaryCondition()
+    virtual ~AbstractBoundaryCondition()
     {
         delete[] flowhist;
         delete[] pressurehist;

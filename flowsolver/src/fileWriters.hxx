@@ -9,10 +9,10 @@
 #include "multidom.hxx"
 
 
-class basicFileWriter
+class BasicFileWriter
 {
 public:
-	basicFileWriter()
+	BasicFileWriter()
 	{
 	}
 	
@@ -34,7 +34,7 @@ public:
 	void writeToFile(double valueToWrite);
 	void writeEndLine();
 	
-	~basicFileWriter()
+	~BasicFileWriter()
 	{
 		fileHandle->close();
 		delete fileHandle;

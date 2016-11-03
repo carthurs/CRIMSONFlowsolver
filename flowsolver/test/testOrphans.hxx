@@ -4,7 +4,7 @@
 #include "multidom.hxx"
 #include "fileReaders.hxx"
 #include "NetlistXmlReader.hxx"
-#include "boundaryConditionManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include "gtest/gtest.h"
 #include "common_c.h"
 #include <typeinfo>
@@ -20,19 +20,19 @@
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
 	  NetlistReader* netlistReader_instance;
-	  boundaryConditionManager* boundaryConditionManager_instance;
-	  fortranBoundaryDataPointerManager* fortranPointerManager_instance;
+	  BoundaryConditionManager* boundaryConditionManager_instance;
+	  FortranBoundaryDataPointerManager* fortranPointerManager_instance;
 
 	  testOrphans() {
 	  	// get the boundary condition manager
-	  	timdat.currentTimestepIndex = 0; // this is needed because the boundaryConditionManager constructor looks for it explicitly!
-  		boundaryConditionManager_instance = boundaryConditionManager::Instance();
+	  	timdat.currentTimestepIndex = 0; // this is needed because the BoundaryConditionManager constructor looks for it explicitly!
+  		boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   		overrideMissingDataForTesting();
 	  }
 
 	  virtual ~testOrphans() {
 	    // You can do clean-up work that doesn't throw exceptions here.
-	    // (*fortranPointerManager_instance).~fortranBoundaryDataPointerManager();
+	    // (*fortranPointerManager_instance).~FortranBoundaryDataPointerManager();
 	  }
 
 	  // If the constructor and destructor are not enough for setting up

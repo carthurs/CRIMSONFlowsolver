@@ -2,7 +2,7 @@
 #define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
 
 #include "SimvascularVerdandiModel.hxx"
-#include "boundaryConditionManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include <boost/algorithm/string.hpp>
 
 //! Checks for existance of file
@@ -183,7 +183,7 @@ void SimvascularVerdandiModel::Initialize() {
     proces();
 
     {
-       // just initialise the time values that the abstractBoundaryCondition needs (when it's called in multidom_initialise).
+       // just initialise the time values that the AbstractBoundaryCondition needs (when it's called in multidom_initialise).
        // This will be called again during itrdrv_init.
        // This is really ugly, but a proper fix will take days - it's a BIG refactor.
      int dummyInitialItseqValue=1;
@@ -578,7 +578,7 @@ void SimvascularVerdandiModel::initialiseNetlistFiltering()
 {
 	SimvascularAugStatePart state_part;
 	state_part.Initialize("NetlistCapacitorPressureNodes");
-	std::vector<double*> netlistCapacitorNodalHistoryPressurePointers = boundaryConditionManager::Instance()->getPointersToAllNetlistCapacitorNodalHistoryPressures();
+	std::vector<double*> netlistCapacitorNodalHistoryPressurePointers = BoundaryConditionManager::Instance()->getPointersToAllNetlistCapacitorNodalHistoryPressures();
 	for (auto nodalPressureSharedPointer : netlistCapacitorNodalHistoryPressurePointers)
 	{
 		std::cout << "In initialiseNetlistFiltering(), adding pointer: " << *(nodalPressureSharedPointer) << std::endl;

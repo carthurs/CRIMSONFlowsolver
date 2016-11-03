@@ -1,7 +1,7 @@
 #ifndef NETLISTBOUNDARYCONDITION_HXX_
 #define NETLISTBOUNDARYCONDITION_HXX_
 
-#include "abstractBoundaryCondition.hxx"
+#include "AbstractBoundaryCondition.hxx"
 #include <set>
 #include <vector>
 #include "datatypesInCpp.hxx"
@@ -14,10 +14,10 @@
 // The NetlistBoundaryCondition is really a manager class for a collection
 // of subcircuits, divided by the diodes/valves in the input data.
 // It determines which subcircuits should be used on any given time-step,
-// and presents to the boundaryConditionManager an interface which is consistent
-// with the other boundary condition types (such as the RCR), so boundaryConditionManager
+// and presents to the BoundaryConditionManager an interface which is consistent
+// with the other boundary condition types (such as the RCR), so BoundaryConditionManager
 // needn't concern itself with the fine details.
-class NetlistBoundaryCondition : public abstractBoundaryCondition
+class NetlistBoundaryCondition : public AbstractBoundaryCondition
 {
 	friend class testMultidom;
 	FRIEND_TEST(testMultidom,checkNetlistComponentNeighbourPointers);
@@ -25,7 +25,7 @@ class NetlistBoundaryCondition : public abstractBoundaryCondition
 	FRIEND_TEST(testMultidom,checkClosedDiodeWithoutRemainingOpenPathDetected);
 public:
 	NetlistBoundaryCondition(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double startingTimestepIndex, const int maxsurf, const int nstep, const std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> downstreamSubcircuits)
-	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, startingTimestepIndex, maxsurf, nstep),
+	: AbstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, startingTimestepIndex, maxsurf, nstep),
 	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits),
 	m_startingTimestepIndex(startingTimestepIndex)
 	{

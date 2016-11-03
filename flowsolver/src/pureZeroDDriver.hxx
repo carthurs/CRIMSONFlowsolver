@@ -3,7 +3,7 @@
 
 #include "NetlistBoundaryCondition.hxx"
 #include "Netlist3DDomainReplacement.hxx"
-#include "boundaryConditionManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include <boost/shared_ptr.hpp>
 
 class PureZeroDDriver
@@ -13,7 +13,7 @@ public:
 	m_numberOfDirichletSurfaces(numberOfDirichletSurfaces),
 	m_compliancesToGiveCentralCapacitors(centralCapacitorsCompliances)
 	{
-		boundaryConditionManager_instance = boundaryConditionManager::Instance();
+		boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 		checkIfThisIsARestartedSimulation();
 
 		m_deltHasBeenSet = false;
@@ -38,7 +38,7 @@ private:
 	// this is not really a boundary condition here; we just use the machinery of the Netlist to make
 	// a replacement for the 3D domain.
 	boost::shared_ptr<Netlist3DDomainReplacement> m_zeroDDomainLPN;
-	boundaryConditionManager* boundaryConditionManager_instance;
+	BoundaryConditionManager* boundaryConditionManager_instance;
 	std::vector<std::pair<boundary_data_t,double>> m_pressuresOrFlowsAtBoundaries;
 	double* mp_interfaceFlowsToBeReadByBoundaryConditions;
 	double* mp_interfacePressuresToBeReadByBoundaryConditions;

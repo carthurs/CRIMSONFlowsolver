@@ -8,7 +8,7 @@ int PullInMyLibrary() { return 0; }
 
 // Tests that the fileReader reads the first entry of the test-case rcrt.dat
 TEST_F(testFileReaders, checkFileReaderGotFirstRCR) {
-  rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+  RcrtReader* rcrtReader_instance = RcrtReader::Instance();
 
   int pdmax = rcrtReader_instance->getPdmax();
   EXPECT_EQ(3,pdmax);
@@ -36,7 +36,7 @@ TEST_F(testFileReaders, checkFileReaderGotFirstRCR) {
 
 // Tests that the fileReader reads the second entry of the test-case rcrt.dat
 TEST_F(testFileReaders, checkFileReaderGotSecondRCR) {
-  rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+  RcrtReader* rcrtReader_instance = RcrtReader::Instance();
 
   // Second RCR Params
   int numberOfRCRDatapoints2 = rcrtReader_instance->getNumDataRCR()[1];
@@ -62,7 +62,7 @@ TEST_F(testFileReaders, checkFileReaderGotSecondRCR) {
 }
 
 TEST_F(testFileReaders, checkControlledCoronaryReader) {
-  controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+  ControlledCoronaryReader* controlledCoronaryReader_instance = ControlledCoronaryReader::Instance();
   controlledCoronaryReader_instance->setFileName("controlled_coronaries_test.dat");
   controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
 
@@ -141,7 +141,7 @@ TEST_F(testFileReaders, checkControlledCoronaryReader) {
 }
 
 TEST_F(testFileReaders, checkControlledCoronaryReaderMalformedFileDetection) {
-  controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+  ControlledCoronaryReader* controlledCoronaryReader_instance = ControlledCoronaryReader::Instance();
   controlledCoronaryReader_instance->setFileName("controlled_coronaries_test_malformed.dat");
   
   EXPECT_ANY_THROW(controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile());
@@ -151,7 +151,7 @@ TEST_F(testFileReaders, checkControlledCoronaryReaderMalformedFileDetection) {
 
 TEST_F(testFileReaders, checkHistFileReader) {
   
-  histFileReader histFileReader_instance = histFileReader();
+  HistFileReader histFileReader_instance = HistFileReader();
 
   histFileReader_instance.setFileName("PressHist.dat");
   histFileReader_instance.setNumColumns(2);

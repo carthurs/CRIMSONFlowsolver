@@ -19,14 +19,14 @@
 #include <boost/property_tree/xml_parser.hpp>
 // #include <boost/property_tree/json_parser.hpp>
 
-class abstractFileReader
+class AbstractFileReader
 {
 	friend class testMain;
 	friend class testFileReaders;
  	FRIEND_TEST(testMain, checkRCRSimpleShortSimulation);
  	FRIEND_TEST(testMain, checkRestartWorks_RCRSimpleShortSimulation);
 public:
-	abstractFileReader()
+	AbstractFileReader()
 	{
 		m_fileHasBeenRead = false;
 		m_metadataOnNumberOfLinesInFileAvailable = false;
@@ -58,7 +58,7 @@ public:
 		m_hasNumberOfColumns = true;
 	}
 	
-	virtual ~abstractFileReader()
+	virtual ~AbstractFileReader()
 	{
 		mp_file->close();
 		delete mp_file;
@@ -98,7 +98,7 @@ private:
 
 // This abstract class is desigend for extenntion to classes which read a single file which contains data for multiple boundaries
 // It also acts as a container for the data, from which it can be easily copied to the relevant boundary condition classes
-class abstractMultipleSurfaceFileReader : public abstractFileReader
+class abstractMultipleSurfaceFileReader : public AbstractFileReader
 {
 public:
 	virtual void readAndSplitMultiSurfaceInputFile() = 0;
@@ -111,7 +111,7 @@ public:
 	}
 };
 
-class SimpleFileReader : public abstractFileReader
+class SimpleFileReader : public AbstractFileReader
 {
 public:
 	SimpleFileReader(std::string fileNameIn)
@@ -149,27 +149,27 @@ private:
 
 };
 
-class histFileReader : public abstractFileReader
+class HistFileReader : public AbstractFileReader
 {
 public:
-	histFileReader()
+	HistFileReader()
 	{
-		m_nextRowReadLoacation = 1; // indexing is 1-indexed for hist files, so we override this value from the abstractFileReader constructor.
+		m_nextRowReadLoacation = 1; // indexing is 1-indexed for hist files, so we override this value from the AbstractFileReader constructor.
 	}
 	void readAndSplitMultiSurfaceRestartFile();
 };
 
 
-class rcrtReader : public abstractMultipleSurfaceFileReader
+class RcrtReader : public abstractMultipleSurfaceFileReader
 {
 	friend class testFileReaders;
 	friend class testMultidom;
 public:
-	static rcrtReader* Instance()
+	static RcrtReader* Instance()
 	{
 		if (!instance)
 		{
-			instance = new rcrtReader();
+			instance = new RcrtReader();
 		}
 		return instance;
 	}
@@ -191,10 +191,10 @@ public:
 	std::vector<std::vector<std::pair<double,double>>> getTimeDataPdist();
 	std::vector<int> getNumDataRCR();
 private:
-	static rcrtReader* instance;
+	static RcrtReader* instance;
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Instance().
-	rcrtReader()
+	RcrtReader()
 	{
 	}
 
@@ -223,14 +223,14 @@ private:
 	int lengthOfTimeDataPdist;
 };
 
-class controlledCoronaryReader : public abstractMultipleSurfaceFileReader
+class ControlledCoronaryReader : public abstractMultipleSurfaceFileReader
 {
 public:
-	static controlledCoronaryReader* Instance()
+	static ControlledCoronaryReader* Instance()
 	{
 		if (!instance)
 		{
-			instance = new controlledCoronaryReader();
+			instance = new ControlledCoronaryReader();
 		}
 		return instance;
 	}
@@ -267,11 +267,11 @@ public:
 	std::vector<double> getIntramyocardialCapacitorTopPressure();
 
 private:
-	controlledCoronaryReader()
+	ControlledCoronaryReader()
 	{
 	}
 
-	static controlledCoronaryReader* instance;
+	static ControlledCoronaryReader* instance;
 
 	std::vector<double> resistanceNearAorta;
 	std::vector<double> complianceNearAorta;

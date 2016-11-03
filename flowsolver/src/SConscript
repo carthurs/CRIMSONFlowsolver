@@ -42,11 +42,11 @@ sources=string.split("""
 	NetlistXmlReader.cxx
 	fileReaders.cxx
 	fileWriters.cxx
-	fortranPointerManager.cxx
+	FortranBoundaryDataPointerManager.cxx
 	debuggingToolsForCpp.cxx
-	abstractBoundaryCondition.cxx
-	boundaryConditionManager.cxx
-	boundaryConditionFactory.cxx
+	AbstractBoundaryCondition.cxx
+	BoundaryConditionManager.cxx
+	BoundaryConditionFactory.cxx
 	RCR.cxx
 	ClosedLoopDownstreamSubsection.cxx
 	NetlistBoundaryCondition.cxx
@@ -64,7 +64,7 @@ sources=string.split("""
 	pureZeroDDriver.cxx
 	Netlist3DDomainReplacement.cxx
 	fileIOHelpers.cxx
-	controlledCoronary.cxx
+	ControlledCoronary.cxx
 	indexShifters.cxx
 	blend.cxx
 	blendDrv.cxx

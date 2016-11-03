@@ -3,7 +3,7 @@
 #include "mpi.h"
 
 
-void basicFileWriter::writeStepIndex(int stepIndex)
+void BasicFileWriter::writeStepIndex(int stepIndex)
 {
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -13,7 +13,7 @@ void basicFileWriter::writeStepIndex(int stepIndex)
 	}
 }
 
-void basicFileWriter::writeToFile(double valueToWrite)
+void BasicFileWriter::writeToFile(double valueToWrite)
 {
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -23,7 +23,7 @@ void basicFileWriter::writeToFile(double valueToWrite)
 	}
 }
 
-void basicFileWriter::writeEndLine()
+void BasicFileWriter::writeEndLine()
 {
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);

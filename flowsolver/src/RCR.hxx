@@ -1,15 +1,15 @@
 #ifndef RCR_HXX_
 #define RCR_HXX_
 
-#include "abstractBoundaryCondition.hxx"
+#include "AbstractBoundaryCondition.hxx"
 #include "fileReaders.hxx"
 #include "../../estimation/src/SimvascularGlobalArrayTransfer.h"
 
-class RCR : public abstractBoundaryCondition
+class RCR : public AbstractBoundaryCondition
 {
 public:
 	RCR(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
-	: abstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, currentTimestepIndex, maxsurf, nstep)
+	: AbstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, currentTimestepIndex, maxsurf, nstep)
 	{
 		// Note the index of this RCR (zero-indexed), and count its existance
 		// (the order of these two lines is correct!)
@@ -18,7 +18,7 @@ public:
 		m_needsPressureToBeInitialisedFromFortran = false;
 		
 		initialiseModel();
-		rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+		RcrtReader* rcrtReader_instance = RcrtReader::Instance();
 		proximalResistance = rcrtReader_instance->getR1()[indexOfThisRCR];
 		capacitance = rcrtReader_instance->getC()[indexOfThisRCR];
 		distalResistance = rcrtReader_instance->getR2()[indexOfThisRCR];

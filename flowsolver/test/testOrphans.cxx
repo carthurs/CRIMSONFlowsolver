@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "testOrphans.hxx"
 #include "fileReaders.hxx"
-#include "fortranPointerManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
 #include "NetlistBoundaryCondition.hxx"
 #include <stdexcept>
 
@@ -11,7 +11,7 @@ int PullInMyLibraryTestOrphans() { return 0; }
 // The component at the 3D interface must have a node which connects to no other components (i.e. just to the 3D domain)
 TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
   // Create fake (i.e. non-FORTRAN) pointer manager
-  fortranPointerManager_instance = fortranBoundaryDataPointerManager::Get();
+  fortranPointerManager_instance = FortranBoundaryDataPointerManager::Get();
 
   fortranPointerManager_instance->m_boundaryFlows.clear();
   fortranPointerManager_instance->m_boundaryPressures.clear();
@@ -42,7 +42,7 @@ TEST_F(testOrphans, checkNetlistDetectsBadComponentAt3DInterface) {
   surfaceList.push_back(std::pair <int,boundary_condition_t> (2,BoundaryCondition_Netlist));
 
   // get the boundary condition manager
-  boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   // Testing for "EE: Only one component may be directly connected to the 3D interface in the Netlist."
   EXPECT_THROW(boundaryConditionManager_instance->setSurfaceList(surfaceList), std::runtime_error);
   // boundaryConditionManager_instance->setSurfaceList(surfaceList);

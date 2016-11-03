@@ -7,22 +7,22 @@
 
 #include "common_c.h"
 #include "multidom.hxx"
-#include "fortranPointerManager.hxx"
+#include "FortranBoundaryDataPointerManager.hxx"
 #include "fileWriters.hxx"
 #include <typeinfo>
 #include "fileReaders.hxx"
-#include "boundaryConditionManager.hxx"
+#include "BoundaryConditionManager.hxx"
 #include <boost/filesystem.hpp>
 
 
 void multidom_initialise(){
 
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 
   // Global data is a terrible idea, so we turn int into class data instead.
   // Pass the necessary variables in to the boundary condition manager
   // ...please try not to access anything in the common block at any level
-  // lower than the boundaryConditionManager - if you need something from 
+  // lower than the BoundaryConditionManager - if you need something from 
   // the common block to use in a boundary condition, make a set method here
   // and pass it in explicitly to the BC. It's much easier to keep track of this way.
   boundaryConditionManager_instance->setSimulationModePurelyZeroD(nomodule.pureZeroDSimulation);
@@ -45,14 +45,14 @@ void multidom_initialise(){
   // and make them read their files:
   if (boundaryConditionManager_instance->getNumberOfRCRSurfaces() > 0)
   {
-    rcrtReader* rcrtReader_instance = rcrtReader::Instance();
+    RcrtReader* rcrtReader_instance = RcrtReader::Instance();
     rcrtReader_instance->setFileName("rcrt.dat");
     rcrtReader_instance->readAndSplitMultiSurfaceInputFile();
   }
 
   if (boundaryConditionManager_instance->getNumberOfControlledCoronarySurfaces() > 0)
   {
-    controlledCoronaryReader* controlledCoronaryReader_instance = controlledCoronaryReader::Instance();
+    ControlledCoronaryReader* controlledCoronaryReader_instance = ControlledCoronaryReader::Instance();
     controlledCoronaryReader_instance->setFileName("controlled_coronaries.dat");
     controlledCoronaryReader_instance->readAndSplitMultiSurfaceInputFile();
   }
@@ -84,7 +84,7 @@ void multidom_initialise(){
   }
 
   // Assemble the list of global surface numbers and types. This will be used
-  // by the boundaryConditionFactory to build the boundary conditions.
+  // by the BoundaryConditionFactory to build the boundary conditions.
   std::vector<std::pair<int,boundary_condition_t>> surfaceList;
   for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfRCRSurfaces(); ii++)
   {
@@ -105,7 +105,7 @@ void multidom_initialise(){
 
 void multidomSetupControlSystems()
 {
-  boundaryConditionManager* boundaryConditionManager_instance = boundaryConditionManager::Instance();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
 
   if (boundaryConditionManager_instance->getNumberOfNetlistSurfaces() > 0)
   {
@@ -125,15 +125,15 @@ void multidom_iter_step()
 
 void multidom_iter_finalise()
 {
-  boundaryConditionManager::Instance()->markClosedLoopLinearSystemsForRebuilding();
-  boundaryConditionManager::Instance()->incrementTimestepIndex();
-  // boundaryConditionManager::Instance()->storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep();
+  BoundaryConditionManager::Instance()->markClosedLoopLinearSystemsForRebuilding();
+  BoundaryConditionManager::Instance()->incrementTimestepIndex();
+  // BoundaryConditionManager::Instance()->storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep();
 }
 
 void multidom_finalise(){
-  boundaryConditionManager::Term();
-  rcrtReader::Term();
-  controlledCoronaryReader::Term();
+  BoundaryConditionManager::Term();
+  RcrtReader::Term();
+  ControlledCoronaryReader::Term();
   NetlistReader::Term();
   NetlistDownstreamCircuitReader::Term();
   NetlistXmlReader::Term();

@@ -5,7 +5,7 @@
 #include <cassert>
 #include "gtest/gtest_prod.h"
 
-class fortranBoundaryDataPointerManager {
+class FortranBoundaryDataPointerManager {
 	friend class testMultidom;
 	friend class testMain;
 	friend class testOrphans;
@@ -14,9 +14,9 @@ class fortranBoundaryDataPointerManager {
 	FRIEND_TEST(testOrphans,checkNetlistDetectsBadComponentAt3DInterface);
 public:
 
-	static fortranBoundaryDataPointerManager* Get()
+	static FortranBoundaryDataPointerManager* Get()
 	{
-		static fortranBoundaryDataPointerManager instance;
+		static FortranBoundaryDataPointerManager instance;
 		return &instance;
 	}
 
@@ -28,20 +28,20 @@ public:
 private:
 	// Make the constructor private; it's only ever called as a static method
 	// via the public Get().
-	fortranBoundaryDataPointerManager()
+	FortranBoundaryDataPointerManager()
 	{
 		m_hasBoundaryPressures = false;
 		m_hasBoundaryFlows = false;
 	};
 
 	// Ban (via making private) the copy constructor
-	fortranBoundaryDataPointerManager(const fortranBoundaryDataPointerManager &old);
+	FortranBoundaryDataPointerManager(const FortranBoundaryDataPointerManager &old);
 
 	// Ban (via making private) the assignment operator
-	fortranBoundaryDataPointerManager &operator=(const fortranBoundaryDataPointerManager &old);
+	FortranBoundaryDataPointerManager &operator=(const FortranBoundaryDataPointerManager &old);
 
 	// Ban (via making private) the destructor:
-	~fortranBoundaryDataPointerManager(){};
+	~FortranBoundaryDataPointerManager(){};
 
 	void tearDown()
     {

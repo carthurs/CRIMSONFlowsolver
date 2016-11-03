@@ -80,7 +80,9 @@
 !    Predict solution at time n+1
 !
 !-----------------------------------------------------------------------
-      subroutine itrPredict (yold,  y,  acold,   ac,   uold,   u)
+      subroutine itrPredict (yold,  y,  acold,   ac,   uold,   u, &
+                             dispMesh,dispMeshold,uMesh,uMeshold,&
+                              aMesh,aMeshold)
       
       use pointer_data
       use LagrangeMultipliers 
@@ -91,7 +93,11 @@
       
       real*8        y(nshg,ndof),               ac(nshg,ndof), &
                     u(nshg,nsd),                yold(nshg,ndof), &
-                    acold(nshg,ndof),           uold(nshg,nsd)
+                    acold(nshg,ndof),           uold(nshg,nsd), &
+                    uMesh(nshg,nsd),            uMeshold(nshg,nsd), &
+                    aMesh(nshg,nsd),            aMeshold(nshg,nsd), &
+                    dispMesh(numnp,nsd),       dispMeshold(numnp,nsd)
+
 
       
       if ( ipred.eq.1) then     ! yn+1_pred=yn
@@ -127,6 +133,22 @@
 !     
       if (Lagrange .gt. 0) then
          Lag = Lagold
+      end if
+
+
+      ! Predictor mesh moving variables MAF 02/11/2016
+      if (aleType.ge.3) then 
+         fct = (gami-one)/gami
+         
+         uMesh = uMeshold
+         
+         aMesh = aMeshold*fct
+
+         dispMesh = dispMeshold + &
+         Delt(itseq)*uMeshold + &
+         pt5*((gami-two*betai)/gami)* &
+         Delt(itseq)*Delt(itseq)*aMeshold
+
       end if
       
       return

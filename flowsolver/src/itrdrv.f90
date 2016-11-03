@@ -1051,15 +1051,15 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     write(*,*) "numResistSrfs = ",numResistSrfs
 #endif     
 
-    ! write(*,*) "before getMeshVelocities"
-
-    call getMeshVelocities(aleType,uMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
-    if (aleType.eq.2) then
-    ! write(*,*) "before updateMeshVariables"
-        call updateMeshVariables(x, nshg)
+    ! if aleType = 1,2 impose mesh velocity at beginning of time step
+    ! else, just give increment of mesh accelerations or 
+    ! calculate them directly using mesh moving algorithm. MAF 01/11/2016
+    if (aleType.le.2) then 
+        call getMeshVelocities(aleType,uMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
+        if (aleType.eq.2) then
+            call updateMeshVariables(x, nshg)
+        endif
     endif
-
-    ! write(*,*) "after updateMeshVariables"
 
    !computing Mesh velocities before iteration sequence
    !this is now used for the imposed mesh velocity or 
@@ -1252,7 +1252,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     !.... -----------------------> predictor phase <-----------------------
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    call itrPredict(yold, y,   acold,  ac ,  uold,  u)
+    call itrPredict(yold, y,   acold,  ac ,  uold,  u, &
+                    dispMesh,dispMeshold,uMesh,uMeshold,&
+                    aMesh,aMeshold)
 
     call itrBC (y,  ac,  iBC,  BC,  iper,ilwork)
 

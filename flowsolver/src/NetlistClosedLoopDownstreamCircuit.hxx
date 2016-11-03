@@ -56,12 +56,12 @@ public:
 		mp_circuitData = boost::shared_ptr<CircuitData> (new ClosedLoopDownstreamCircuitData(hstep));
 	}
 
-	void createCircuitDescription();
-	void initialiseCircuit();
+	void createCircuitDescription() override;
+	void initialiseCircuit() override;
 
 	void getMatrixContribution(const double alfi_delt, Mat& matrixFromThisDownstreamCircuit);
 	void getRHSContribution(Vec& rhsFromThisDownstreamCircuit);
-	void initialiseAtStartOfTimestep();
+	void initialiseAtStartOfTimestep() override;
 
 	int getCircuitIndex() const;
 
@@ -96,10 +96,10 @@ private:
 	int m_numberOfNodesConnectingToAnotherCircuit;
 
 	void appendClosedLoopSpecificCircuitDescription();
-	bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
+	bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const override;
 
 	// Disabling methods that should never be called:
-	void detectWhetherClosedDiodesStopAllFlowAt3DInterface();
+	void detectWhetherClosedDiodesStopAllFlowAt3DInterface() override;
 };
 
 #endif

@@ -106,7 +106,7 @@ public:
 	{
 	}
 
-	virtual ~abstractMultipleSurfaceFileReader()
+	virtual ~abstractMultipleSurfaceFileReader() override
 	{
 	}
 };
@@ -183,7 +183,7 @@ public:
 		}
 	}
 
-	void readAndSplitMultiSurfaceInputFile();
+	void readAndSplitMultiSurfaceInputFile() override;
 	int getPdmax();
 	std::vector<double> getR1();
 	std::vector<double> getC();
@@ -244,7 +244,7 @@ public:
 		}
 	}
 
-	void readAndSplitMultiSurfaceInputFile();
+	void readAndSplitMultiSurfaceInputFile() override;
 
 	std::vector<double> getResistanceNearAorta();
 	std::vector<double> getComplianceNearAorta();
@@ -317,7 +317,7 @@ public:
 		}
 	}
 
-	virtual void readAndSplitMultiSurfaceInputFile();
+	virtual void readAndSplitMultiSurfaceInputFile() override;
 
 	std::vector<std::vector<circuit_component_t>> getComponentTypes();
 	std::vector<std::vector<int>> getComponentStartNodes();
@@ -349,7 +349,7 @@ public:
 
 protected:
 	int m_indexOfNetlistCurrentlyBeingReadInFile;
-	virtual ~NetlistReader()
+	virtual ~NetlistReader() override
 	{
 	}
 
@@ -431,7 +431,7 @@ public:
 		}
 	}
 
-	void readAndSplitMultiSurfaceInputFile();
+	void readAndSplitMultiSurfaceInputFile() override;
 
 	void writeDownstreamCircuitSpecificationInXmlFormat();
 
@@ -443,8 +443,8 @@ public:
 
 private:
 	static NetlistDownstreamCircuitReader* downstreamReaderInstance;
-	std::vector<int> getIndicesOfNodesAt3DInterface();
-	int getNumberOfNetlistSurfaces();
+	std::vector<int> getIndicesOfNodesAt3DInterface() override;
+	int getNumberOfNetlistSurfaces() override;
 	void readBoundaryConditionConnectivity();
 	void checkForBadCircuitDesign();
 	void addUpstreamConnectivityInfoToPropertyTree();

@@ -107,8 +107,8 @@ public:
 	m_numberOfNetlistsUsedAsBoundaryConditions(numberOfNetlistsUsedAsBoundaryConditions)
 	{
 	}
-	bool hasPrescribedFlowAcrossInterface() const;
-	bool hasPrescribedPressureAcrossInterface() const;
+	bool hasPrescribedFlowAcrossInterface() const override;
+	bool hasPrescribedPressureAcrossInterface() const override;
 	void initialiseNodesAndComponentsAtInterface_vector(std::vector<int> threeDInterfaceNodeIndices);
 	void setBoundaryPrescriptionsAndBoundaryConditionTypes(std::vector<std::pair<boundary_data_t,double>>& boundaryFlowsOrPressuresAsAppropriate);
 	boost::shared_ptr<CircuitComponent> getDpDqResistorByIndex(int index);
@@ -130,7 +130,7 @@ public:
 	CircuitData(hstep)
 	{
 	}
-	void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex)
+	void initialiseNodeAndComponentAtInterface(int threeDInterfaceNodeIndex) override
 	{
 		// Does nothing, as there's no node at 3D interface. \todo this could be tidier, but not essential.
 	}

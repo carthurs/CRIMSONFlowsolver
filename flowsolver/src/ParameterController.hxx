@@ -60,7 +60,7 @@ public:
 		setupControlStateOnRestart();
 	}
 
-	void updateControl();
+	void updateControl() override;
 private:
 	const double m_delt;
 	
@@ -76,7 +76,7 @@ private:
 	double getElastance();
 
 	void updatePeriodicTime();
-	void setupControlStateOnRestart();
+	void setupControlStateOnRestart() override;
 };
 
 class BleedController : public AbstractParameterController
@@ -89,7 +89,7 @@ public:
 		int triggerTimestep = 1600;
 		mp_timer = boost::shared_ptr<BasicTimer> (new BasicTimer(initialTimestep, triggerTimestep));
 	}
-	void updateControl();
+	void updateControl() override;
 private:
 	boost::shared_ptr<BasicTimer> mp_timer;
 	bool m_bleedingOn;
@@ -164,9 +164,9 @@ public:
 		// initialise();
 	}
 
-	void updateControl();
+	void updateControl() override;
 
-	~UserDefinedCustomPythonParameterController()
+	~UserDefinedCustomPythonParameterController() override
 	{
 		// Py_DECREF(); is like deleting stuff (marking it for deletion by Python garbage
 		// collection by decrementing the reference count - deletion happens when
@@ -174,7 +174,7 @@ public:
 	}
 
 private:
-	std::string getControllerNameQualification();
+	std::string getControllerNameQualification() override;
 
 	const std::vector<std::pair<int,double*>> m_pressurePointerPairs;
 	const std::vector<std::pair<int,double*>> m_flowPointerPairs;

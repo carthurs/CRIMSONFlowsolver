@@ -32,7 +32,7 @@ public:
 
 	std::vector<double> getBoundaryPressures();
 	std::vector<double> getBoundaryFlows();
-	void solveSystem(const int timestepNumber);
+	void solveSystem();
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
 	void createCircuitDescription();
 	void initialiseAtStartOfTimestep();

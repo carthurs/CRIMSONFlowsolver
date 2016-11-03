@@ -19,9 +19,9 @@ std::vector<double> Netlist3DDomainReplacement::getBoundaryFlows()
 	return flows;
 }
 
-void Netlist3DDomainReplacement::solveSystem(const int timestepNumber)
+void Netlist3DDomainReplacement::solveSystem()
 {
-    mp_NetlistZeroDDomainCircuit->solveSystem(timestepNumber);
+    mp_NetlistZeroDDomainCircuit->solveSystem();
 }
 
 void Netlist3DDomainReplacement::initialiseAtStartOfTimestep()

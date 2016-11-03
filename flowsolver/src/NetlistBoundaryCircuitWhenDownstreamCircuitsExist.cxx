@@ -36,7 +36,7 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::updateLPN(const int time
     // this time. Otherwise, the system state has already been computed, and we don't need to do anything
 	for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
     {
-        downstreamSubcircuit->lock()->buildAndSolveLinearSystemForUpdateIfNotYetDone(timestepNumber, m_delt);
+        downstreamSubcircuit->lock()->buildAndSolveLinearSystemForUpdateIfNotYetDone(m_delt);
     }
 
     // Extract & get the m_solutionVector for just this circuit back from the big downstream
@@ -80,7 +80,7 @@ std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::comp
     // this time. Otherwise, the system state has already been computed, and we don't need to do anything
     for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
     {
-        downstreamSubcircuit->lock()->buildAndSolveLinearSystemIfNotYetDone(timestepNumber, alfi_delt);
+        downstreamSubcircuit->lock()->buildAndSolveLinearSystemIfNotYetDone(alfi_delt);
     }
 
     // Call the downstream circuits to get the implicit coefficients that they computed for this
@@ -102,7 +102,7 @@ std::pair<double,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::comp
     return returnValue;
 }
 
-std::pair<boundary_data_t,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
+std::pair<boundary_data_t,double> NetlistBoundaryCircuitWhenDownstreamCircuitsExist::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement()
 {
 	// Call the downstream circuit(s?) and tell them to contact each NetlistBoundaryCondition to get
     // their contributions to the (closed loop)-type matrix, build the full matrix and solve it
@@ -111,7 +111,7 @@ std::pair<boundary_data_t,double> NetlistBoundaryCircuitWhenDownstreamCircuitsEx
     // this time. Otherwise, the system state has already been computed, and we don't need to do anything
     for (auto downstreamSubcircuit = m_netlistDownstreamLoopClosingSubcircuits.begin(); downstreamSubcircuit != m_netlistDownstreamLoopClosingSubcircuits.end(); downstreamSubcircuit++)
     {
-        downstreamSubcircuit->lock()->buildAndSolveLinearSystemIfNotYetDone(timestepNumber, m_delt);
+        downstreamSubcircuit->lock()->buildAndSolveLinearSystemIfNotYetDone(m_delt);
     }
 
     // Call the downstream circuits to get the pressure of flow that they computed for this
@@ -163,9 +163,9 @@ void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getMatrixContribution(co
     matrixFromThisBoundary = m_systemMatrix;
 }
 
-void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getRHSContribution(const int timestepNumber, Vec& rhsFromThisBoundary)
+void NetlistBoundaryCircuitWhenDownstreamCircuitsExist::getRHSContribution(Vec& rhsFromThisBoundary)
 {
-    assembleRHS(timestepNumber, false);
+    assembleRHS(false);
     rhsFromThisBoundary = m_RHS;
 }
 

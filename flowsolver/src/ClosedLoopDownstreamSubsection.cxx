@@ -98,7 +98,7 @@ std::vector<PetscScalar> ClosedLoopDownstreamSubsection::getSolutionVectorEntrie
     return returnData;
 }
 
-void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt)
+void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const double alfi_delt)
 {
     PetscErrorCode errFlag;
     terminatePetscArrays(); // This does nothing if the arrays don't yet exist. \todo consider refactoring the matrix creation/termination.
@@ -132,7 +132,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         std::pair<int, Mat> matrixContributionTaggedWithIndexAmongstNetlistBCs = std::make_pair(indexAmongstNetlists, matrixContribution);
         m_matrixContributionsFromUpstreamBoundaryConditions.push(matrixContributionTaggedWithIndexAmongstNetlistBCs);
         
-        downcastCircuit->getRHSContribution(timestepNumber, rhsContribution);
+        downcastCircuit->getRHSContribution(rhsContribution);
         m_rhsContributionsFromUpstreamBoundaryConditions.push(rhsContribution);
 
         // Record which entries in the eventual solution vector will belong to 
@@ -447,7 +447,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const in
         {
             // Add the closed loop downstream circuit's RHS:
             Vec rhsContribution;
-            mp_NetlistCircuit->getRHSContribution(timestepNumber, rhsContribution);
+            mp_NetlistCircuit->getRHSContribution(rhsContribution);
 
             PetscInt numberOfRows;
             errFlag = VecGetSize(rhsContribution, &numberOfRows); CHKERRABORT(PETSC_COMM_SELF, errFlag);
@@ -510,25 +510,25 @@ void ClosedLoopDownstreamSubsection::store3DInterfaceFlowSigns()
     }
 }
 
-void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt)
+void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemIfNotYetDone(const double alfi_delt)
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
     // std::cout << "called buildAndSolveLinearSystemIfNotYetDone 1 " << m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep<<std::endl;
     if (!m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep)
     {
-        buildAndSolveLinearSystem_internal(timestepNumber, alfi_delt);
+        buildAndSolveLinearSystem_internal(alfi_delt);
         // Set the "done for this timestep" flag. Reset this with ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingBuildingAgain() (from BC manager for now)
         m_linearSystemAlreadyBuiltAndSolvedOnThisTimestep = true;
     }
 }
 
-void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemForUpdateIfNotYetDone(const int timestepNumber, const double delt)
+void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystemForUpdateIfNotYetDone(const double delt)
 {
     // Check whether the linear system still needs to be built and solved; if not, do nothing.
     // std::cout << "called buildAndSolveLinearSystemIfNotYetDone 2 " << m_linearSystemAlreadyUpdatedOnThisTimestep << std::endl;
     if (!m_linearSystemAlreadyUpdatedOnThisTimestep)
     {
-        buildAndSolveLinearSystem_internal(timestepNumber, delt);
+        buildAndSolveLinearSystem_internal(delt);
         // Set the "done for this timestep" flag. Reset this with ClosedLoopDownstreamSubsection::markLinearSystemAsNeedingUpdatingAgain() (from BC manager for now)
         m_linearSystemAlreadyUpdatedOnThisTimestep = true;
     }

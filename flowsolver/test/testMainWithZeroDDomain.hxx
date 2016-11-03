@@ -78,7 +78,6 @@
 		void runSimulation()
 		{
 		   int numProcs;
-		   int ierr = 0;
 		   char pathToProcsCaseDir[100];
 
 		   // The zero-D domain should just be run single-threaded

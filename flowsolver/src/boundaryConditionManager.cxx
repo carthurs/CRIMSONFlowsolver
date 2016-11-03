@@ -1074,7 +1074,7 @@ void boundaryConditionManager::createControlSystems()
 
 }
 
-std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement(const int timestepNumber)
+std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoundaryPressuresOrFlows_zeroDDomainReplacement()
 {
   std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAsAppropriate;
   for (auto boundaryCondition = m_boundaryConditions.begin(); boundaryCondition != m_boundaryConditions.end(); boundaryCondition++)
@@ -1082,7 +1082,7 @@ std::vector<std::pair<boundary_data_t,double>> boundaryConditionManager::getBoun
     if (typeid(**boundaryCondition) == typeid(NetlistBoundaryCondition))
     {
       boost::shared_ptr<NetlistBoundaryCondition> downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
-      pressuresOrFlowsAsAppropriate.push_back(downcastNetlist->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(timestepNumber));
+      pressuresOrFlowsAsAppropriate.push_back(downcastNetlist->computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement());
     }
     else
     {

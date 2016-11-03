@@ -54,8 +54,8 @@ public:
 	void finalizeLPNAtEndOfTimestep();
 	bool boundaryConditionCircuitConnectsToThisDownstreamSubsection(const int boundaryConditionIndex) const;
 	void setPointerToNeighbouringBoundaryConditionCircuit(boost::shared_ptr<NetlistCircuit> upstreamBC);
-	void buildAndSolveLinearSystemIfNotYetDone(const int timestepNumber, const double alfi_delt);
-	void buildAndSolveLinearSystemForUpdateIfNotYetDone(const int timestepNumber, const double alfi_delt);
+	void buildAndSolveLinearSystemIfNotYetDone(const double alfi_delt);
+	void buildAndSolveLinearSystemForUpdateIfNotYetDone(const double alfi_delt);
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 	// void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
 	std::pair<double,double> getImplicitCoefficients(const int boundaryConditionIndex) const;
@@ -111,7 +111,7 @@ private:
 	void createVectorsAndMatricesForCircuitLinearSystem();
 	int getCircuitIndexFromSurfaceIndex(const int upstreamSurfaceIndex) const;
 	void generateCircuitInterfaceNodeData();
-	void buildAndSolveLinearSystem_internal(const int timestepNumber, const double alfi_delt);
+	void buildAndSolveLinearSystem_internal(const double alfi_delt);
 
 	void initialiseModel();
 	void createContiguousIntegerRange(const int startingInteger, const int numberOfIntegers, PetscInt* const arrayToFill);

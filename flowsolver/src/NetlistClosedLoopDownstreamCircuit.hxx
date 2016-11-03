@@ -60,7 +60,7 @@ public:
 	void initialiseCircuit();
 
 	void getMatrixContribution(const double alfi_delt, Mat& matrixFromThisDownstreamCircuit);
-	void getRHSContribution(const int timestepNumber, Vec& rhsFromThisDownstreamCircuit);
+	void getRHSContribution(Vec& rhsFromThisDownstreamCircuit);
 	void initialiseAtStartOfTimestep();
 
 	int getCircuitIndex() const;

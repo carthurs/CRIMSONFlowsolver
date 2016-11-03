@@ -471,9 +471,9 @@ std::vector<double> NetlistZeroDDomainCircuit::getBoundaryFlows()
     return flows;
 }
 
-void NetlistZeroDDomainCircuit::solveSystem(const int timestepNumber)
+void NetlistZeroDDomainCircuit::solveSystem()
 {
-    buildAndSolveLinearSystem(timestepNumber,m_delt);
+    buildAndSolveLinearSystem(m_delt);
 }
 
 void NetlistZeroDDomainCircuit::setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries)

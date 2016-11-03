@@ -24,7 +24,7 @@ public:
 	std::vector<double> getBoundaryPressures();
 	std::vector<double> getBoundaryFlows();
 
-	void solveSystem(const int timestepNumber);
+	void solveSystem();
 
 	void setPointersToBoundaryPressuresAndFlows(double* const interfacePressuresToBeReadBy3DDomainReplacement, double* const interfaceFlowsToBeReadBy3DDomainReplacement, const int& numberOfPointers);
 

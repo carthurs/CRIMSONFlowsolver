@@ -65,7 +65,7 @@ public:
 		numberOfInitialisedNetlistLPNs--;
 	}
 
-	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement();
 
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
 	void initialiseModel();

@@ -1237,7 +1237,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     use itrDrvVars
 
     use cpp_interface
-    use ale
+    ! use ale
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -1443,6 +1443,18 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             endif
         endif         !end of switch between solve or update
 
+
+        if (aleType.ge.3) then ! compute increment in mesh acceleration at current time step
+                               ! and current iteration step MAF 03/11/2016
+            if (aleType.eq.3) then
+                
+            endif
+
+            call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x)
+
+        endif
+
+
         ! call callCPPDebugPrintFlowPointerTarget_BCM()
 
         if(rescontrol .gt. 0) then
@@ -1453,6 +1465,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 exit
             endif
         endif
+
+
+
 
     enddo            ! loop over sequence in step
 

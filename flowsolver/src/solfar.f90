@@ -138,6 +138,7 @@
 
       if (aleType.ge.3) then ! update fluid mesh coordinates at time step n+alpha MAF 03/11/2016
            x = xMeshold + (dispMeshalpha-dispMeshold)
+           uMesh = uMeshalpha ! send uMeshalpha to ElmGMR
       endif
 
 !

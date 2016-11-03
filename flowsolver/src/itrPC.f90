@@ -251,6 +251,32 @@
       return
       end
 
+!-----------------------------------------------------------------------
+!
+!    Correct solution at time n+1 for ALE variables MAF 03/11/2016
+!
+!-----------------------------------------------------------------------
+      subroutine itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x)
+      use phcommonvars    
+      real*8        uMesh(nshg,nsd), &
+                    aMesh(nshg,nsd), &
+                    dispMesh(numnp,nsd), &
+                    aMeshinc(nshg,nsd), &
+                    x(numnp,nsd),&
+                    fct1, fct2
+
+      
+      fct1 = gami*Delt(itseq)
+      fct2 = betai*Delt(itseq)*Delt(itseq)
+
+      aMesh = aMesh + aMeshinc
+      uMesh = uMesh + fct1*aMeshinc
+      dispMesh = dispMesh + fct2*aMeshinc
+      x = x + fct2*aMeshinc
+
+      return
+      end      
+
 
 !-----------------------------------------------------------------------
 !

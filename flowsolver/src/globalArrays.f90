@@ -84,6 +84,7 @@ module globalArrays
     real (c_double), target, allocatable :: uMeshold(:,:)
     real (c_double), target, allocatable :: dispMeshold(:,:)
     real (c_double), target, allocatable :: xMeshold(:,:)
+    real (c_double), target, allocatable :: aMeshinc(:,:)
 
 
 end module
@@ -162,7 +163,7 @@ subroutine initGlobalArrays
     if (.not. allocated(uMeshold)) allocate (uMeshold(nshg,3))
     if (.not. allocated(dispMeshold)) allocate (dispMeshold(numnp,3))
     if (.not. allocated(xMeshold)) allocate (xMeshold(numnp,3))                                                                 
-
+    if (.not. allocated(aMeshold)) allocate (aMeshinc(nshg,3)) 
 
 end subroutine initGlobalArrays
 
@@ -211,6 +212,7 @@ subroutine destroyGlobalArrays
     if (allocated(uMeshold)) deallocate (uMeshold)
     if (allocated(dispMeshold)) deallocate (dispMeshold)
     if (allocated(xMeshold)) deallocate (xMeshold)
+    if (allocated(aMeshinc)) deallocate (aMeshinc)
     ! endif
 
 end subroutine destroyGlobalArrays

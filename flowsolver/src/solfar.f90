@@ -9,7 +9,8 @@
                          colm,       lhsK,       lhsP,  &
                          solinc,     rerr,              &
                          memLS_lhs,  memLS_ls,   memLS_nFaces, &
-                         uMesh  ) !ALE variables added MAF 06/10/2016
+                         dispMesh, dispMeshold, uMesh, uMeshold) !uMesh added MAF 06/10/2016
+                                                                 !rest of ALE variables added MAF 03/11/2016
 !
 !----------------------------------------------------------------------
 !
@@ -104,6 +105,9 @@
       real*8    rerr(nshg,10),            rtmp(nshg,4)
 
       real*8    uMesh(nshg,3) !MAF 06/10/2016
+      real*8    uMeshold(nshg,3) !MAF 03/11/2016
+      real*8    dispMesh(numnp,nsd),  dispMeshold(numnp,nsd) !MAF 03/11/2016
+      real*8    uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016
 
       INTEGER dof, memLS_nFaces, i, j, k, l
       INTEGER, ALLOCATABLE :: incL(:)
@@ -125,7 +129,10 @@
 !
       call itrYAlpha( uold,    yold,    acold,        &
                       u,       y,       ac,             &
-                      uAlpha,  yAlpha,  acAlpha)
+                      uAlpha,  yAlpha,  acAlpha, & 
+                      uMeshold, dispMeshold, &
+                      uMesh, dispMesh, &
+                      uMeshalpha, dispMeshalpha)
 
 !
 !.... form the LHS matrices, the residual vector (at alpha)
@@ -392,7 +399,8 @@
                          apermS,     atempS,     iper,        &
                          ilwork,     shp,        shgl,  &
                          shpb,       shglb,      rowp,      &
-                         colm,       lhsS,       solinc)
+                         colm,       lhsS,       solinc, &
+                         dispMesh, dispMeshold, uMesh, uMeshold)
 !
 !----------------------------------------------------------------------
 !
@@ -452,6 +460,13 @@
                 lesP(nshg,1),               lesQ(nshg,1), &
                 solinc(nshg,1)
 
+      real*8    uMesh(nshg,3) !MAF 03/11/2016
+      real*8    uMeshold(nshg,3) !MAF 03/11/2016
+      real*8    dispMesh(numnp,nsd),  dispMeshold(numnp,nsd) !MAF 03/11/2016
+      real*8    uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016          
+
+                
+
 !
 !.... *******************>> Element Data Formation <<******************
 !
@@ -459,7 +474,10 @@
 !
       call itrYAlpha( uold,    yold,    acold,  &
                       u,       y,       ac,   &
-                      uAlpha,  yAlpha,  acAlpha)
+                      uAlpha,  yAlpha,  acAlpha, &
+                      uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
+                      uMesh, dispMesh, &
+                      uMeshalpha, dispMeshalpha)
 !
 !.... form the LHS matrices, the residual vector (at alpha)
 !

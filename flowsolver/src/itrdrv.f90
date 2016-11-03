@@ -1254,7 +1254,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
     call itrPredict(yold, y,   acold,  ac ,  uold,  u, &
                     dispMesh,dispMeshold,uMesh,uMeshold,&
-                    aMesh,aMeshold)
+                    aMesh,aMeshold) ! ALE variables added MAF 02/11/2016
 
     call itrBC (y,  ac,  iBC,  BC,  iper,ilwork)
 
@@ -1342,7 +1342,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 colm,          lhsK,      lhsP, &
                 solinc,        rerr, &
                 memLS_lhs,     memLS_ls,  memLS_nFaces, &
-                uMesh) !ALE variables added MAF 06/10/2016
+                dispMesh, dispMeshold, uMesh, uMeshold) 
+                       !uMesh added MAF 06/10/2016
+                       !rest of ALE variables added MAF 03/11/2016
 
 
             else          ! scalar type solve
@@ -1390,7 +1392,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 ilwork,        shp,       shgl, &
                 shpb,          shglb,     rowp,      &
                 colm,          lhsS(1,j),  &
-                solinc(1,isclr+5))
+                solinc(1,isclr+5), &
+                dispMesh, dispMeshold, uMesh, uMeshold) 
 
 
             endif         ! end of scalar type solve
@@ -1460,7 +1463,8 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         shp,    shgl,     shpb,   shglb, &
         iBC,    BC,       iper,   ilwork, &
         rowp,   colm,     lhsK,   lhsP , &
-                uMesh) !ALE variables added MAF 06/10/2016
+        dispMesh, dispMeshold, uMesh, uMeshold) !uMesh added MAF 06/10/2016
+                                !rest of ALE variables added MAF 03/11/2016
 
     endif
 

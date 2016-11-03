@@ -259,7 +259,11 @@
 !-----------------------------------------------------------------------
       subroutine itrYAlpha ( uold,        yold,        acold,         &
                              u,           y,           ac, &
-                             uAlpha,      yAlpha,      acAlpha )
+                             uAlpha,      yAlpha,      acAlpha, &
+                             uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
+                             uMesh, dispMesh, &
+                             uMeshalpha, dispMeshalpha)
+ 
 
 !      use readarrays       !reads in uold and acold  
       use pointer_data   
@@ -274,6 +278,10 @@
                     yAlpha(nshg,ndof),          acAlpha(nshg,ndof), &
                     u(nshg,nsd),                uold(nshg,nsd), &
                     uAlpha(nshg,nsd)
+      
+      real*8    uMesh(nshg,3), uMeshold(nshg,3), & !MAF 03/11/2016
+                dispMesh(numnp,nsd),  dispMeshold(numnp,nsd), & 
+                uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd)                  
 
       acAlpha(:,4) = zero  !pressure acceleration is never used but....
 

@@ -93,7 +93,7 @@ public:
 	bool hasPrescribedPressureAcross3DInterface() const;
 	bool hasPrescribedFlowAcross3DInterface() const;
 
-	void computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const int timestepNumber, const double alfi_delt);
+	void computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const double alfi_delt);
 
 	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
 
@@ -113,7 +113,7 @@ public:
 	virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
 	virtual void updateLPN(const int timestepNumber);
 
-	virtual std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	virtual std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement();
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
 	boost::shared_ptr<CircuitPressureNode> getNodeByInputDataIndex(const int componentIndex);
 	int getNumberOfHistoryPressures() const;
@@ -156,13 +156,13 @@ protected:
 	void getMapOfVolumeHistoriesToCorrectComponents();
 	void getMapOfTrackedVolumesToCorrectComponents();
 	void generateLinearSystemFromPrescribedCircuit(const double alfi_delt);
-	void assembleRHS(const int timestepNumber, const bool useHistoryHistoryPressure); // useHistoryHistoryPressure should usually be "false"
+	void assembleRHS(const bool useHistoryHistoryPressure); // useHistoryHistoryPressure should usually be "false"
 	void giveNodesTheirPressuresFromSolutionVector();
 	void giveComponentsTheirFlowsFromSolutionVector();
 	void giveComponentsTheirVolumesFromSolutionVector();
 	void giveComponentsTheirProposedVolumesFromSolutionVector();
 	std::vector<double> getVolumesFromSolutionVector();
-	bool areThereNegativeVolumes(const int timestepNumber, const double alfi_delt);
+	bool areThereNegativeVolumes(const double alfi_delt);
 	void initialiseCircuit_common();
 	void setInternalHistoryPressureFlowsAndVolumes();
 
@@ -213,7 +213,7 @@ protected:
 
   	const int m_IndexOfThisNetlistLPNInInputFile;
 	
-	void buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt);
+	void buildAndSolveLinearSystem(const double alfi_delt);
 	void generateLinearSystemWithoutFactorisation(const double alfi_delt);
 
 private:
@@ -225,7 +225,7 @@ private:
 	void setupCustomPythonControlSystems();
 	void countVolumeTrackingPressureChambers();
 	void solveLinearSystem();
-	void buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(const int timestepNumber, const double alfi_delt);
+	void buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(const double alfi_delt);
 	void recordPressureHistory();
 	void recordPressureHistoryHistory();
 	// void createInitialCircuitDescriptionWithoutDiodes();

@@ -44,12 +44,12 @@ public:
 
 	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPNInInputFile;}
  	// void updpressure_n1_withflow(){}
- 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt);
+ 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
 	virtual void updateLPN(const int timestepNumber);
 	void initialiseAtStartOfTimestep();
-	bool flowPermittedAcross3DInterface();
+	bool flowPermittedAcross3DInterface() override;
 	bool boundaryConditionTypeHasJustChanged();
-	void setDirichletConditionsIfNecessary(int* const binaryMask);
+	void setDirichletConditionsIfNecessary(int* const binaryMask) override;
 	void finalizeLPNAtEndOfTimestep();
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 	// void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
@@ -60,19 +60,19 @@ public:
 
 	std::vector<double*> getCapacitorNodalHistoryPressurePointers() const;
 
-	~NetlistBoundaryCondition()
+	~NetlistBoundaryCondition() override
 	{
 		numberOfInitialisedNetlistLPNs--;
 	}
 
-	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement();
 
 	void setPressureAndFlowPointers(double* pressurePointer, double* flowPointer);
-	void initialiseModel();
+	void initialiseModel() override;
 	int m_IndexOfThisNetlistLPNInInputFile;
 
 	boost::shared_ptr<CircuitComponent> getComponentByInputDataIndex(const int componentIndex);
-	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber);
+	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) override;
 protected:
 private:
 	boost::shared_ptr<NetlistCircuit> mp_NetlistCircuit;

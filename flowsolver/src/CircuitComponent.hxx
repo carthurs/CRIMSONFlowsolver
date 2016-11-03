@@ -176,7 +176,7 @@ public:
 		m_unstressedVolume = initialUnstressedVolume;
 	}
 	
-	void setStoredVolume(const double newVolume);
+	void setStoredVolume(const double newVolume) override;
 	double getUnstressedVolume();
 	double* getUnstressedVolumePointer();
 private:

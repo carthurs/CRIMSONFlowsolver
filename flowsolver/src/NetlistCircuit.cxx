@@ -1,7 +1,6 @@
 #include "NetlistCircuit.hxx"
 #include "fileReaders.hxx"
 #include "fileWriters.hxx"
-#include <boost/make_shared.hpp>
 #include "indexShifters.hxx"
 #include "SimvascularGlobalArrayTransfer.h"
 
@@ -1368,7 +1367,7 @@ void NetlistCircuit::findLinearSystemIndicesOf3DInterfacePressureAndFlow()
 
 // useHistoryHistoryPressure is for the Kalman filter, so we can update the Xn-1 variables to match
 // the current Kalman particle
-void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistoryHistoryPressure)
+void NetlistCircuit::assembleRHS(const bool useHistoryHistoryPressure)
 {
 
     PetscErrorCode errFlag;
@@ -1582,7 +1581,7 @@ void NetlistCircuit::assembleRHS(const int timestepNumber, const bool useHistory
 
 void NetlistCircuit::updateLPN(const int timestepNumber)
 {
-    buildAndSolveLinearSystem(timestepNumber, m_delt);
+    buildAndSolveLinearSystem(m_delt);
 
     // Get the updated nodal pressures:
     giveNodesTheirPressuresFromSolutionVector();
@@ -1705,18 +1704,18 @@ std::vector<double> NetlistCircuit::getVolumesFromSolutionVector()
   return volumesToReturn;
 }
 
-void NetlistCircuit::buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(const int timestepNumber, const double alfi_delt)
+void NetlistCircuit::buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(const double alfi_delt)
 {
     generateLinearSystemFromPrescribedCircuit(alfi_delt);
-    assembleRHS(timestepNumber, true);
+    assembleRHS(true);
 
     solveLinearSystem();
 }
 
-void NetlistCircuit::buildAndSolveLinearSystem(const int timestepNumber, const double alfi_delt)
+void NetlistCircuit::buildAndSolveLinearSystem(const double alfi_delt)
 {
   generateLinearSystemFromPrescribedCircuit(alfi_delt);
-  assembleRHS(timestepNumber, false);
+  assembleRHS(false);
 
   solveLinearSystem();
 }
@@ -1733,9 +1732,9 @@ void NetlistCircuit::solveLinearSystem()
   errFlag = MatMult(m_inverseOfSystemMatrix,m_RHS,m_solutionVector); CHKERRABORT(PETSC_COMM_SELF,errFlag);
 }
 
-std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber)
+std::pair<boundary_data_t,double> NetlistCircuit::computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement()
 {
-  buildAndSolveLinearSystem(timestepNumber,m_delt);
+  buildAndSolveLinearSystem(m_delt);
 
   PetscErrorCode errFlag;
 
@@ -1766,7 +1765,7 @@ std::pair<double,double> NetlistCircuit::computeImplicitCoefficients(const int t
 {
     assert(mp_circuitData->connectsTo3DDomain());
 
-    buildAndSolveLinearSystem(timestepNumber,alfi_delt);
+    buildAndSolveLinearSystem(alfi_delt);
 
     // Extract the implicit coeffcients, for eventual passing to the FORTRAN
     // linear solve
@@ -1805,18 +1804,18 @@ double NetlistCircuit::getInterfaceFlowSign() const
     return mp_circuitData->getSignForPrescribed3DInterfaceFlow();
 }
 
-void NetlistCircuit::computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const int timestepNumber, const double alfi_delt)
+void NetlistCircuit::computeHistoryVariablesToMatchCurrentKalmanFilterParticle(const double alfi_delt)
 {
-    buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(timestepNumber, alfi_delt);
+    buildAndSolveLinearSystemForUpdatingHistoryVariablesToMatchCurrentKalmanParticle(alfi_delt);
     giveNodesTheirPressuresFromSolutionVector();
     recordPressureHistory();
 }
 
 // This subroutine detects whether the last circuit linear system solve was invalid due to its producing negative
 // volumes. The returned bool can be used to enforce a re-solve, with any negative pressures re-prescribed to be zero.
-bool NetlistCircuit::areThereNegativeVolumes(const int timestepNumber, const double alfi_delt)
+bool NetlistCircuit::areThereNegativeVolumes(const double alfi_delt)
 {
-  buildAndSolveLinearSystem(timestepNumber, alfi_delt);
+  buildAndSolveLinearSystem(alfi_delt);
   // These volumes are "proposed", because if any are negative, we 
   // re-solve with zero-volume prescribed
   giveComponentsTheirProposedVolumesFromSolutionVector();

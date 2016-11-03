@@ -32,8 +32,13 @@ def saveClassForRestart(objectToSave, timestepIndex):
 def loadClassOnRestart(fileName, startingTimestepIndex, MPIRank):
 	try:
 		inputFile = open(fileName + "." + startingTimestepIndex + ".pickle")
-	except IOError: # legacy: handle case where users still have old pickle files, unqualified by the startingTimestepIndex
-		inputFile = open(fileName + ".pickle")
+	except IOError, ioError: # legacy: handle case where users still have old pickle files, unqualified by the startingTimestepIndex
+		try:
+			inputFile = open(fileName + ".pickle")
+		except IOError:
+			# If the legacy pickle file didn't exist either, we want to raise the original exception so that the error message indicates a new-form <timestepIndex>.pickle file was not found, rather than a legacy one.
+			raise ioError
+
 	loadedObject = cPickle.load(inputFile)
 	inputFile.close()
 	# correct the MPI rank (the loaded class was pickled by the rank-zero thread, so need to reset it appropriately for each rank now).

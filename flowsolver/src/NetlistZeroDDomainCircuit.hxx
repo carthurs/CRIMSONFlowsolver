@@ -32,14 +32,14 @@ public:
 
 	std::vector<double> getBoundaryPressures();
 	std::vector<double> getBoundaryFlows();
-	void solveSystem(const int timestepNumber);
+	void solveSystem();
 	void setDpDqResistances(std::map<int,std::pair<double,double>> allImplicitCoefficients, std::vector<std::pair<boundary_data_t,double>> pressuresOrFlowsAtBoundaries);
-	void createCircuitDescription();
-	void initialiseAtStartOfTimestep();
+	void createCircuitDescription() override;
+	void initialiseAtStartOfTimestep() override;
 
 	boost::shared_ptr<std::vector<std::pair<parameter_controller_t, int>>> getControlTypesAndComponentIndices() const;
 private:
-	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode);
+	void setupPressureNode(const int indexOfNodeInInputData, boost::shared_ptr<CircuitPressureNode>& node, boost::shared_ptr<CircuitComponent> componentNeighbouringThisNode) override;
 
 	int getConnectedTopologicalComponentIndexForInnerResistor(const int componentIndex) const;
 	void findNumberOfConnectedComponentsOf3DDomain();

@@ -13,23 +13,23 @@ public:
 	:NetlistCircuit(hstep, surfaceIndex, indexOfThisNetlistLPN, thisIsARestartedSimulation, alfi, delt, startingTimestepIndex),
 	m_netlistDownstreamLoopClosingSubcircuits(downstreamSubcircuits)
 	{}
-	void initialiseCircuit();
-	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
+	void initialiseCircuit() override;
+	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt) override;
 	void getMatrixContribution(const double alfi_delt, Mat& matrixFromThisBoundary);
-	void getRHSContribution(const int timestepNumber, Vec& rhsFromThisBoundary);
+	void getRHSContribution(Vec& rhsFromThisBoundary);
 	int getLocationOf3DInterfaceComputedFlowInSolutionVector() const;
 	int getLocationOf3DInterfaceComputedPressureInSolutionVector() const;
 	int getColumnOf3DInterfacePrescribedPressureInLinearSystem() const;
 	int getColumnOf3DInterfacePrescribedFlowInLinearSystem() const;
-	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement(const int timestepNumber);
+	std::pair<boundary_data_t,double> computeAndGetFlowOrPressureToGiveToZeroDDomainReplacement() override;
 	int getCircuitIndex() const;
-	void updateLPN(const int timestepNumber);
+	void updateLPN(const int timestepNumber) override;
 protected:
 private:
 	std::set<int> m_pressureNodesWhichConnectToDownstreamCircuits;
 	int m_numberOfNodesConnectingToAnotherCircuit;
 	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
-	bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const;
+	bool kirchoffEquationAtNodeDeferredToInterfacingCircuit(const int nodeIndex) const override;
 };
 
 #endif

@@ -32,11 +32,11 @@ public:
 		SimvascularGlobalArrayTransfer::Get()->setPointerToRCRSurfacePressure(&pressure_n, indexOfThisRCR);
 	}
 	
- 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt);
+ 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timeAtStepNplus1, const double alfi_delt) override;
 
  	void setPressureFromFortran();
- 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber);
- 	void getPressureAndFlowPointersFromFortran();
+ 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) override;
+ 	void getPressureAndFlowPointersFromFortran() override;
 
 
 	
@@ -46,7 +46,7 @@ public:
 //     procedure :: writexvars_rcr => writexvars_rcr
 //     procedure :: assign_ptrs_ext_rcr => assign_ptrs_ext_rcr
 
-	~RCR()
+	~RCR() override
 	{
 		s_numberOfInitialisedRCRs--;
 	}
@@ -54,7 +54,7 @@ protected:
 	double linInterpolateTimeData(const double &currentTime, const int timeDataLength);
 
 private:
-	void initialiseModel();
+	void initialiseModel() override;
 	static int s_numberOfInitialisedRCRs;
 	int indexOfThisRCR;
 	int pdmax;

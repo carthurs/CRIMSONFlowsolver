@@ -23,10 +23,21 @@ env.Replace(F90=bop.F90)
 env.Replace(FORTRAN=bop.F90)
 env.Replace(AR=bop.AR)
 
-# Get command line arguments:
+sconsCleanRequested = env.GetOption('clean') # check for scons -c in command line invocation
+if sconsCleanRequested:
+   print "(II) Enabling all build targets to force clean..."
+   enableTargetGoogleTest = 1
+   bop.MAKE_WITH_PRESOLVER = 1
+   bop.MAKE_WITH_POSTSOLVER = 1
+   bop.MAKE_WITH_FLOWSOLVER = 1
+   bop.MAKE_WITH_ESTIMATOR = 1
+else:
+   # Get command line invocation target options to scons:
+   enableTargetGoogleTest = ARGUMENTS.get('test', 0)
+
+# Get command line invocation options to scons:
 debug = ARGUMENTS.get('debug', 0)
-test = ARGUMENTS.get('test', 0)
-profileOn = ARGUMENTS.get('profile',0)
+profileOn = ARGUMENTS.get('profile',0) 
 
 if int(profileOn) and not int(debug):
       print("WARNING: The user requested profiling without debug, so I'm enabling debug too.")
@@ -83,7 +94,7 @@ if (bop.MAKE_WITH_PRESOLVER==1):
 	SConscript('./presolver/src/SConscript',exports='env')
 if (bop.MAKE_WITH_POSTSOLVER==1):
 	SConscript('./postsolver/src/SConscript',exports='env')
-if int(test):
+if int(enableTargetGoogleTest):
    print "including " + bop.GOOGLETEST_TOP+"/src/SConscript"
    SConscript(bop.GOOGLETEST_TOP+'/src/SConscript',exports='env')
    SConscript('./flowsolver/test/SConscript',exports='env')

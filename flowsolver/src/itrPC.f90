@@ -288,7 +288,8 @@
                              uAlpha,      yAlpha,      acAlpha, &
                              uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
                              uMesh, dispMesh, &
-                             uMeshalpha, dispMeshalpha)
+                             uMeshalpha, dispMeshalpha, &
+                             xMeshalpha, xMeshold, xMesh)
  
 
 !      use readarrays       !reads in uold and acold  
@@ -307,7 +308,8 @@
       
       real*8    uMesh(nshg,3), uMeshold(nshg,3), & !MAF 03/11/2016
                 dispMesh(numnp,nsd),  dispMeshold(numnp,nsd), & 
-                uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd)                  
+                uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd), &   
+                xMeshalpha(numnp,nsd), xMeshold(numnp,nsd), xMesh(numnp,nsd)              
 
       acAlpha(:,4) = zero  !pressure acceleration is never used but....
 
@@ -344,6 +346,10 @@
       if (aleType.ge.3) then
          uMeshalpha = uMeshold + alfi*(uMesh - uMeshold)
          dispMeshalpha = dispMeshold + alfi*(dispMesh - dispMeshold)
+         xMeshalpha = xMeshold + (dispMeshalpha-dispMeshold)
+      else 
+         uMeshalpha = uMesh
+         xMeshalpha = xMesh         
       end if
 
       return

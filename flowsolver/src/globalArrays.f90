@@ -163,7 +163,7 @@ subroutine initGlobalArrays
     if (.not. allocated(uMeshold)) allocate (uMeshold(nshg,3))
     if (.not. allocated(dispMeshold)) allocate (dispMeshold(numnp,3))
     if (.not. allocated(xMeshold)) allocate (xMeshold(numnp,3))                                                                 
-    if (.not. allocated(aMeshold)) allocate (aMeshinc(nshg,3)) 
+    if (.not. allocated(aMeshinc)) allocate (aMeshinc(nshg,3)) 
 
 end subroutine initGlobalArrays
 

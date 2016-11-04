@@ -191,7 +191,8 @@
                               shp,    shgl,   shpb,   shglb, &
                               iBC,    BC,     iper,   ilwork, &
                               rowp,   colm,   lhsK,   lhsP, &
-                              dispMesh, dispMeshold, uMesh, uMeshold) !uMesh added MAF 06/10/2016
+                              dispMesh, dispMeshold, uMesh, uMeshold, &
+                              xMeshold) !uMesh added MAF 06/10/2016
                                                       !rest of ALE variables added MAF 03/11/2016
 
       
@@ -226,7 +227,8 @@
       real*8  uMesh(nshg,3) !MAF 06/10/2016 
       real*8  uMeshold(nshg,3) !MAF 03/11/2016
       real*8  dispMesh(numnp,nsd),  dispMeshold(numnp,nsd) !MAF 03/11/2016
-      real*8  uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016             
+      real*8  uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016
+      real*8  xMeshalpha(numnp,nsd), xMeshold(numnp,nsd)  !MAF 03/11/2016               
       
       real*8 u1, u2, u3, r0, r1, r2, r3, r4, r5, t3, t4, t5
 
@@ -241,7 +243,8 @@
                       uAlpha,   yAlpha,   acAlpha, &
                       uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
                       uMesh, dispMesh, &
-                      uMeshalpha, dispMeshalpha)
+                      uMeshalpha, dispMeshalpha, &
+                      xMeshalpha, xMeshold, x)
       
 !
 !.... assemble the residual

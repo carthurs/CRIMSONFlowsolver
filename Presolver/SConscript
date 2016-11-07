@@ -68,7 +68,7 @@ def performGitPull():
 	checkFailureDuringGitPull(failure, failurePositionMarker)
 
 	# Put the SConscript file back:
-	failure |= call(['cp','./SConscript','./Presolver/SConscript'])
+	failure |= call(['mv','./SConscript','./Presolver/SConscript'])
 	checkFailureDuringGitPull(failure, failurePositionMarker)
 	chdir('./Presolver/')
 

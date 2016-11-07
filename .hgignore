@@ -88,3 +88,12 @@ flowsolver/src/#e3bvar.f90#
 netlist_surfaces.xml
 buildoptions.py.old
 zzz-gtest-1.7.0-fromrepository/src/SConscript
+.git
+Presolver/3rdParty
+Presolver/CMake
+Presolver/Fortran
+Presolver/Testing
+Presolver/*.cxx
+Presolver/*.c
+Presolver/*.h
+Presolver/presolver

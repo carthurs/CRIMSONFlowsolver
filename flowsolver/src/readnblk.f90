@@ -663,6 +663,8 @@
       !----------------------------------------
       call initialize_ALE(aleType)
 
+      write(*,*) "ale initialized 1"
+
       aMesh(:,:) = zero
       aMeshold(:,:) = zero
 
@@ -675,10 +677,14 @@
       x_iniMesh = x !Initial coordinates to be used when updating the ALE mesh displacement MAF 11/10/2016
       xMeshold = x
 
+      write(*,*) "ale initialized 2"
+
       if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
           call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
+          write(*,*) "ale initialized 3"
           uMeshold = uMesh
           aMeshold = aMesh
+          write(*,*) "ale initialized 4"
       endif
 
       if (aleType.eq.1) then ! add rigid body velocity to solution

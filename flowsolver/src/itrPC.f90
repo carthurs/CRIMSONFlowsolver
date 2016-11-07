@@ -251,6 +251,32 @@
       return
       end
 
+!-----------------------------------------------------------------------
+!
+!    Correct solution at time n+1 for ALE variables MAF 03/11/2016
+!
+!-----------------------------------------------------------------------
+      subroutine itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x)
+      use phcommonvars    
+      real*8        uMesh(nshg,nsd), &
+                    aMesh(nshg,nsd), &
+                    dispMesh(numnp,nsd), &
+                    aMeshinc(nshg,nsd), &
+                    x(numnp,nsd),&
+                    fct1, fct2
+
+      
+      fct1 = gami*Delt(itseq)
+      fct2 = betai*Delt(itseq)*Delt(itseq)
+
+      aMesh = aMesh + aMeshinc
+      uMesh = uMesh + fct1*aMeshinc
+      dispMesh = dispMesh + fct2*aMeshinc
+      x = x + fct2*aMeshinc
+
+      return
+      end      
+
 
 !-----------------------------------------------------------------------
 !
@@ -259,7 +285,12 @@
 !-----------------------------------------------------------------------
       subroutine itrYAlpha ( uold,        yold,        acold,         &
                              u,           y,           ac, &
-                             uAlpha,      yAlpha,      acAlpha )
+                             uAlpha,      yAlpha,      acAlpha, &
+                             uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
+                             uMesh, dispMesh, &
+                             uMeshalpha, dispMeshalpha, &
+                             xMeshalpha, xMeshold, xMesh)
+ 
 
 !      use readarrays       !reads in uold and acold  
       use pointer_data   
@@ -274,6 +305,11 @@
                     yAlpha(nshg,ndof),          acAlpha(nshg,ndof), &
                     u(nshg,nsd),                uold(nshg,nsd), &
                     uAlpha(nshg,nsd)
+      
+      real*8    uMesh(nshg,3), uMeshold(nshg,3), & !MAF 03/11/2016
+                dispMesh(numnp,nsd),  dispMeshold(numnp,nsd), & 
+                uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd), &   
+                xMeshalpha(numnp,nsd), xMeshold(numnp,nsd), xMesh(numnp,nsd)              
 
       acAlpha(:,4) = zero  !pressure acceleration is never used but....
 
@@ -306,6 +342,16 @@
       if (Lagrange .gt. 0) then
          Lagalpha(:,1:3) = Lag(:,1:3)
       end if
+
+      if (aleType.ge.3) then
+         uMeshalpha = uMeshold + alfi*(uMesh - uMeshold)
+         dispMeshalpha = dispMeshold + alfi*(dispMesh - dispMeshold)
+         xMeshalpha = xMeshold + (dispMeshalpha-dispMeshold)
+      else 
+         uMeshalpha = uMesh
+         xMeshalpha = xMesh         
+      end if
+
       return
       end
 
@@ -315,7 +361,9 @@
 !
 !-----------------------------------------------------------------------
       subroutine itrUpdate( yold,          acold,        uold, &
-                            y,             ac,           u )
+                            y,             ac,           u, &
+                            uMesh, aMesh, dispMesh, x, &
+                            uMeshold, aMeshold, dispMeshold, xMeshold)
 
 !      use readarrays            !reads in uold and acold
       use pointer_data
@@ -328,6 +376,10 @@
       real*8        yold(nshg,ndof),            acold(nshg,ndof), &
                     y(nshg,ndof),               ac(nshg,ndof), &
                     u(nshg,nsd),                uold(nshg,nsd)
+      real*8        uMesh(nshg,nsd),            uMeshold(nshg,nsd), & !ALE variables added MAF 03/11/2016
+                    aMesh(nshg,nsd),            aMeshold(nshg,nsd), &
+                    dispMesh(numnp,nsd),       dispMeshold(numnp,nsd), &  
+                    x(numnp,nsd),              xMeshold(numnp,nsd)                  
 
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!            
@@ -354,6 +406,17 @@
       if (Lagrange .gt. 0) then
          Lagold = Lag
       end if
+
+      if (aleType.ge.3) then 
+         
+         uMeshold = uMesh
+         aMeshold = aMesh
+         dispMeshold = dispMesh
+         xMeshold = x
+
+      end if
+
+
       return
       end
 

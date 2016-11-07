@@ -605,6 +605,12 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     endif
     yold = y
     acold = ac
+ 
+    ! uMeshold = uMesh
+    ! aMeshold = aMesh
+    ! dispMeshold = dispMesh
+    ! xMeshold = x
+
 
     !
     !.... loop through the time sequences
@@ -1055,7 +1061,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     ! else, just give increment of mesh accelerations or 
     ! calculate them directly using mesh moving algorithm. MAF 01/11/2016
     if (aleType.le.2) then 
-        call getMeshVelocities(aleType,uMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
+        call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
         if (aleType.eq.2) then
             call updateMeshVariables(x, nshg)
         endif
@@ -1243,6 +1249,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
     integer j
+    real*8    aMesh_new(nshg,3) ! auxiliar ALE variables calculated at the end of each iteration
+    real*8    uMesh_new(nshg,3) ! (only for the specific case aleType = 3 ) MAF 04/11/2016
+
+
     ! integer boundaryConditionRebuildNeeded
 
 
@@ -1254,7 +1264,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
     call itrPredict(yold, y,   acold,  ac ,  uold,  u, &
                     dispMesh,dispMeshold,uMesh,uMeshold,&
-                    aMesh,aMeshold)
+                    aMesh,aMeshold) ! ALE variables added MAF 02/11/2016
 
     call itrBC (y,  ac,  iBC,  BC,  iper,ilwork)
 
@@ -1342,7 +1352,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 colm,          lhsK,      lhsP, &
                 solinc,        rerr, &
                 memLS_lhs,     memLS_ls,  memLS_nFaces, &
-                uMesh) !ALE variables added MAF 06/10/2016
+                dispMesh, dispMeshold, uMesh, uMeshold, &
+                xMeshold) !uMesh added MAF 06/10/2016
+                          !rest of ALE variables added MAF 03/11/2016
+                       
 
 
             else          ! scalar type solve
@@ -1390,7 +1403,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 ilwork,        shp,       shgl, &
                 shpb,          shglb,     rowp,      &
                 colm,          lhsS(1,j),  &
-                solinc(1,isclr+5))
+                solinc(1,isclr+5), &
+                dispMesh, dispMeshold, uMesh, uMeshold, &
+                xMeshold) 
 
 
             endif         ! end of scalar type solve
@@ -1439,6 +1454,21 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             endif
         endif         !end of switch between solve or update
 
+
+        if (aleType.ge.3) then ! compute increment in mesh acceleration at current time step
+                               ! and current iteration step MAF 03/11/2016
+            
+            if (aleType.eq.3) then !impose increment for mesh acceleration
+                call getMeshVelocities(aleType,aMesh_new,aMesh_new,x_iniMesh,nshg, &
+                     currentTimestepIndex+1,Delt(1))
+                aMeshinc = aMesh_new - aMesh
+            endif
+
+            call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x)
+
+        endif
+
+
         ! call callCPPDebugPrintFlowPointerTarget_BCM()
 
         if(rescontrol .gt. 0) then
@@ -1450,6 +1480,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             endif
         endif
 
+
+
+
     enddo            ! loop over sequence in step
 
     if (ioform .eq. 2) then
@@ -1460,7 +1493,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         shp,    shgl,     shpb,   shglb, &
         iBC,    BC,       iper,   ilwork, &
         rowp,   colm,     lhsK,   lhsP , &
-                uMesh) !ALE variables added MAF 06/10/2016
+        dispMesh, dispMeshold, uMesh, uMeshold, &
+        xMeshold) !uMesh added MAF 06/10/2016
+                                !rest of ALE variables added MAF 03/11/2016
 
     endif
 
@@ -1478,7 +1513,12 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
         Dtgl =Dtglt
     endif
 
-    call itrUpdate( yold,  acold,   uold,  y,    ac,   u)
+
+
+    ! Update yold, acold, uold, etc. for the nex time step MAF 04/11/2016
+    call itrUpdate( yold,  acold,   uold,  y,    ac,   u, &
+                    uMesh, aMesh, dispMesh, x, &
+                    uMeshold, aMeshold, dispMeshold, xMeshold)
 
     !
     ! once all non-linear iterations finished, update the container with the final y 

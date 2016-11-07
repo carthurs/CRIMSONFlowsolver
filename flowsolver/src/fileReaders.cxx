@@ -43,7 +43,7 @@ bool AbstractFileReader::readNextLine()
 	// Read the next line from the file
 	m_currentLine.clear();
 
-	bool fileNotEnded = std::getline(*mp_file,m_currentLine);
+	bool fileNotEnded = (bool) std::getline(*mp_file,m_currentLine);
 
 	// If the end of the file had not been reached before the above read:
 	if (fileNotEnded)
@@ -53,7 +53,7 @@ bool AbstractFileReader::readNextLine()
 		while(m_currentLine.compare(0,1,"#") == int(0))
 		{
 			m_currentLine.clear();
-			fileNotEnded = std::getline(*mp_file,m_currentLine);
+			fileNotEnded = (bool) std::getline(*mp_file,m_currentLine);
 		}
 
 		if (fileNotEnded)

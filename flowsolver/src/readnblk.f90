@@ -209,7 +209,7 @@
       call readdatablock(igeom,fname1//c_null_char,xread,ixsiz, c_char_"double"//c_null_char,iotype)
       x = xread
 
-      x_iniMesh = x !Initial coordinates to be used when updating the ALE mesh displacement MAF 11/10/2016
+      
 
 !
 !.... read the node tags
@@ -659,6 +659,34 @@
 
       ! endif
 
+      ! Initialize ALE variables MAF 04/11/2016
+      !----------------------------------------
+      call initialize_ALE(aleType)
+
+      aMesh(:,:) = zero
+      aMeshold(:,:) = zero
+
+      uMesh(:,:) = zero
+      uMeshold(:,:) = zero
+
+      dispMesh(:,:) = zero
+      dispMeshold(:,:) = zero
+
+      x_iniMesh = x !Initial coordinates to be used when updating the ALE mesh displacement MAF 11/10/2016
+      xMeshold = x
+
+      if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
+          call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
+          uMeshold = uMesh
+          aMeshold = aMesh
+      endif
+
+      if (aleType.eq.1) then ! add rigid body velocity to solution
+          call addGlobalRigidVelocityToInitialSolution(y,nshg,ndof)
+      end if
+      !--------------------------------------------------
+
+      
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)
       if (geombcHasObservationFields .eq. 1) then

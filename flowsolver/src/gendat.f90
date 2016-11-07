@@ -246,7 +246,7 @@
 ! *** initialise ALE 
 !     
       
-      call initialize_ALE(aleType)
+      ! call initialize_ALE(aleType)
 
       ! write(*,*) "aleRigid = ",aleRigid
 
@@ -254,9 +254,9 @@
       ! write (*,*) "rigidOn =",rigidOn
       ! write (*,*) "globalRigidVelocity = ",globalRigidVelocity
 
-      if (aleType.eq.1) then ! add rigid body velocity to solution
-          call addGlobalRigidVelocityToInitialSolution(y,nshg,ndof)
-      end if
+      ! if (aleType.eq.1) then ! add rigid body velocity to solution
+      !     call addGlobalRigidVelocityToInitialSolution(y,nshg,ndof)
+      ! end if
 !
 ! *** end of initialise ALE 
 !

@@ -9,7 +9,9 @@
                          colm,       lhsK,       lhsP,  &
                          solinc,     rerr,              &
                          memLS_lhs,  memLS_ls,   memLS_nFaces, &
-                         uMesh  ) !ALE variables added MAF 06/10/2016
+                         dispMesh, dispMeshold, uMesh, uMeshold, &
+                         xMeshold)                 !uMesh added MAF 06/10/2016
+                                   !rest of ALE variables added MAF 03/11/2016
 !
 !----------------------------------------------------------------------
 !
@@ -104,6 +106,10 @@
       real*8    rerr(nshg,10),            rtmp(nshg,4)
 
       real*8    uMesh(nshg,3) !MAF 06/10/2016
+      real*8    uMeshold(nshg,3) !MAF 03/11/2016
+      real*8    dispMesh(numnp,nsd),  dispMeshold(numnp,nsd) !MAF 03/11/2016
+      real*8    uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016
+      real*8    xMeshold(numnp,nsd), xMeshalpha(numnp,nsd) !MAF 03/11/2016
 
       INTEGER dof, memLS_nFaces, i, j, k, l
       INTEGER, ALLOCATABLE :: incL(:)
@@ -125,19 +131,28 @@
 !
       call itrYAlpha( uold,    yold,    acold,        &
                       u,       y,       ac,             &
-                      uAlpha,  yAlpha,  acAlpha)
+                      uAlpha,  yAlpha,  acAlpha, & 
+                      uMeshold, dispMeshold, &
+                      uMesh, dispMesh, &
+                      uMeshalpha, dispMeshalpha, &
+                      xMeshalpha, xMeshold, x)
+
+      ! if (aleType.ge.3) then ! update fluid mesh coordinates at time step n+alpha MAF 03/11/2016
+           ! x = xMeshold + (dispMeshalpha-dispMeshold)
+           ! uMesh = uMeshalpha ! send uMeshalpha to ElmGMR
+      ! endif
 
 !
 !.... form the LHS matrices, the residual vector (at alpha)
 !
       call ElmGMR ( uAlpha,    yAlpha,     acAlpha,     &
-                    x,         xdist,      xdnv, &
+                    xMeshalpha,         xdist,      xdnv, &
                     shp,       shgl,       iBC,        &
                     BC,        shpb,       shglb, &
                     res,       iper,       ilwork,    &
                     rowp,      colm,       lhsK,       &
                     lhsP,      rerr, & 
-                    uMesh   ) !ALE variables added MAF 06/10/2016
+                    uMeshalpha   ) !ALE variables added MAF 06/10/2016
 
 #if DEBUG_ALE == 1
       write(*,*) 'printing res after elmgmr'
@@ -392,7 +407,9 @@
                          apermS,     atempS,     iper,        &
                          ilwork,     shp,        shgl,  &
                          shpb,       shglb,      rowp,      &
-                         colm,       lhsS,       solinc)
+                         colm,       lhsS,       solinc, &
+                         dispMesh, dispMeshold, uMesh, uMeshold, &
+                         xMeshold)
 !
 !----------------------------------------------------------------------
 !
@@ -452,6 +469,14 @@
                 lesP(nshg,1),               lesQ(nshg,1), &
                 solinc(nshg,1)
 
+      real*8    uMesh(nshg,3) !MAF 03/11/2016
+      real*8    uMeshold(nshg,3) !MAF 03/11/2016
+      real*8    dispMesh(numnp,nsd),  dispMeshold(numnp,nsd) !MAF 03/11/2016
+      real*8    uMeshalpha(nshg,3),  dispMeshalpha(numnp,nsd) !MAF 03/11/2016
+      real*8    xMeshalpha(numnp,nsd), xMeshold(numnp,nsd)          
+
+                
+
 !
 !.... *******************>> Element Data Formation <<******************
 !
@@ -459,7 +484,12 @@
 !
       call itrYAlpha( uold,    yold,    acold,  &
                       u,       y,       ac,   &
-                      uAlpha,  yAlpha,  acAlpha)
+                      uAlpha,  yAlpha,  acAlpha, &
+                      uMeshold, dispMeshold, &   !ALE variables added MAF 03/11/2016
+                      uMesh, dispMesh, &
+                      uMeshalpha, dispMeshalpha, &
+                      xMeshalpha, xMeshold, x)
+
 !
 !.... form the LHS matrices, the residual vector (at alpha)
 !
@@ -468,6 +498,8 @@
                        BC,        shpb,       shglb, &
                        res,       iper,       ilwork,    &
                        rowp,      colm,       lhsS   )
+
+
 
 !
 !.... lesSolve : main matrix solver

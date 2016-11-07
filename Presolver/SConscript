@@ -1,0 +1,127 @@
+import buildoptions as bop
+import string
+from subprocess import call
+from sys import exit
+from os import chdir
+from os.path import isdir
+
+def checkFailureDuringGitPull(failureFlag, failurePositionMarker):
+	if failureFlag:
+		raise RuntimeError("Failed during git pull, code " + str(failurePositionMarker[0]) + ".\nContact the developers.")
+	failurePositionMarker[0] += 1
+
+def deleteExistingPresolverFiles():
+	userResponse = raw_input("About to delete existing local Presolver source. You should not edit it here; edit in the CRIMSON GUI repository.\nProceed with delete? [y/n]").lower()
+	validPositiveResponses = ['y','yes']
+	validNegativeResponses = ['n','no']
+	while userResponse not in (validPositiveResponses + validNegativeResponses):
+		userResponse = raw_input("Please enter \'y\' or \'n\'").lower()
+	if userResponse in validPositiveResponses:
+
+		failure = 0
+		failurePositionMarker = [0]
+		# save the SConscript file
+		chdir('../')
+		call('pwd')
+		failure |= call(['cp','./Presolver/SConscript','.'])
+		checkFailureDuringGitPull(failure, failurePositionMarker)
+		
+		print "Removing Presolver folder:"
+		# Dont check for errors here, as the dir may not be present:
+		call(['rm','-rf','Presolver'])
+		print "Removing existing .git repository:"
+		# Dont check for errors here, as the dir may not be present:
+		call(['rm','-rf','.git'])
+
+	elif userResponse in validNegativeResponses:
+		print "Cancelling build. Try again, or remove the presolver build flag from the command line."
+		exit(1)
+	else:
+		raise RuntimeError("Logic error in selecting presolver build. Contact the developers.")
+
+def performGitPull():
+	zeroIfGitCallSucceeded=call(['git','--version'])
+
+	if not (zeroIfGitCallSucceeded == 0):
+		raise RuntimeError("Could not build Presolver: git was not available.\nPlease install it using your system package manager and ensure it\'s on your PATH.")
+
+	presolverSourceGitRepository = raw_input("Please give the URL for the CRIMSON GUI Git repositry (e.g. https://<USERNAME>@bitbucket.org/cafa/crimson.git): ")
+
+	deleteExistingPresolverFiles()
+	failure = 0
+	failurePositionMarker = [1000]
+	failure |= call(['git','init'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	failure |= call(['git','config','core.sparseCheckout','true'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	failure |= call(['git','config','--global','http.postBuffer','1048576000'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	failure |= call(['git','config','--list'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	failure |= call(['git','repack','-a','-f','-d','--window=250','--depth=250'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	failure |= call(['git', 'remote', 'add', '-f', 'origin', presolverSourceGitRepository])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	with open(".git/info/sparse-checkout","a") as gitConfigFile:
+		gitConfigFile.write("Presolver\n")
+	failure |= call(['git','pull','origin','master'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+
+	# Put the SConscript file back:
+	failure |= call(['cp','./SConscript','./Presolver/SConscript'])
+	checkFailureDuringGitPull(failure, failurePositionMarker)
+	chdir('./Presolver/')
+
+def askUserIfTheyWantToRePull():
+	userWantsToRePullResponse = False
+	userResponse = raw_input("A Git repository, presumably for the Presolver, already exists.\nReplace it with the remote repository for the CRIMSON GUI Presolver? [y/n]").lower()
+	validPositiveResponses = ['y','yes']
+	validNegativeResponses = ['n','no']
+	while userResponse not in (validPositiveResponses + validNegativeResponses):
+		userResponse = raw_input("Please enter \'y\' or \'n\'").lower()
+	if userResponse in validPositiveResponses:
+		userWantsToRePullResponse = True
+	elif userResponse in validNegativeResponses:
+		userWantsToRePullResponse = False
+	else:
+		raise RuntimeError("Logic error in selecting presolver build. Contact the developers.")
+	return userWantsToRePullResponse
+
+Import('env')
+
+localGitRepositoryExists = isdir('../.git')
+if localGitRepositoryExists:
+	if askUserIfTheyWantToRePull():
+		performGitPull()
+else:
+	performGitPull()
+
+env.Append(CPPPATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)
+env.Append(F90PATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)
+
+env.Append(LIBPATH=bop.SPARSE_LIBSDIR+bop.NSPCG_LIBSDIR+bop.ZLIB_LIBSDIR)
+env.Append(LIBS=bop.SPARSE_LIBSLIST+bop.NSPCG_LIBSLIST+bop.ZLIB_LIBSLIST)
+
+sources=string.split("""
+	directsolve.c
+	cmd.cxx
+	displacements.cxx
+	helpers.cxx
+	supre-cmds.cxx
+	supre.cxx
+	Fortran/stannspcg.f
+	""")
+
+object_list=env.Object(source=sources)
+
+# Strip out the .mod files (not needed for linking!)
+object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
+
+
+# Set the source and output file name ("target"):
+default = env.Program(target='presolver', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../bin/presolver", "./presolver", Copy("$TARGET", "$SOURCE"))
+
+
+# Define SCons' default action:
+Default(default,copyLibrary)

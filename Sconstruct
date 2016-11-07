@@ -27,7 +27,6 @@ sconsCleanRequested = env.GetOption('clean') # check for scons -c in command lin
 if sconsCleanRequested:
    print "(II) Enabling all build targets to force clean..."
    enableTargetGoogleTest = 1
-   bop.MAKE_WITH_PRESOLVER = 1
    bop.MAKE_WITH_POSTSOLVER = 1
    bop.MAKE_WITH_FLOWSOLVER = 1
    bop.MAKE_WITH_ESTIMATOR = 1
@@ -38,6 +37,19 @@ else:
 # Get command line invocation options to scons:
 debug = ARGUMENTS.get('debug', 0)
 profileOn = ARGUMENTS.get('profile',0) 
+bop.MAKE_WITH_PRESOLVER = ARGUMENTS.get('presolver', 0)
+if bop.MAKE_WITH_PRESOLVER:
+   userResponse = raw_input("\nPresolver can be built here, but is stored in the CRIMSON GUI repository, and will be downloaded automatically from there.\n\nPlease note: if you wish to edit the presolver source, please do not do it here as your changes will be lost.\n\nProceed with building presolver? [y/n]").lower()
+   validPositiveResponses = ['y','yes']
+   validNegativeResponses = ['n','no']
+   while userResponse not in (validPositiveResponses + validNegativeResponses):
+      userResponse = raw_input("Please enter \'y\' or \'n\'").lower()
+   if userResponse in validPositiveResponses:
+      bop.MAKE_WITH_PRESOLVER = 1 # it was already equal to 1 if we got here, but set it for clarity
+   elif userResponse in validNegativeResponses:
+      bop.MAKE_WITH_PRESOLVER = 0 # cancel building the presolver
+   else:
+      raise RuntimeError("Logic error in selecting presolver build. Contact the developers.")
 
 if int(profileOn) and not int(debug):
       print("WARNING: The user requested profiling without debug, so I'm enabling debug too.")
@@ -77,9 +89,7 @@ env.Append(FFLAGS=bop.GLOBAL_DEFINES)
 # env.Append(FFLAGS=bop.DEBUG_FFLAGS)
 # env.Append(FFLAGS=bop.OPT_FFLAGS)
 
-
 # env.ParseConfig("ldconfig -p")
-
 
 # Tell the C++ compiler the location of the Fortran RTL
 # env.Append(LIBPATH = ['/usr/lib/gcc/x86_64-linux-gnu/4.6.3'])
@@ -91,7 +101,7 @@ if (bop.MAKE_WITH_FLOWSOLVER==1):
 if (bop.MAKE_WITH_ESTIMATOR==1):
 	SConscript('./estimation/src/SConscript',exports='env')
 if (bop.MAKE_WITH_PRESOLVER==1):
-	SConscript('./presolver/src/SConscript',exports='env')
+	SConscript('./Presolver/SConscript',exports='env')
 if (bop.MAKE_WITH_POSTSOLVER==1):
 	SConscript('./postsolver/src/SConscript',exports='env')
 if int(enableTargetGoogleTest):

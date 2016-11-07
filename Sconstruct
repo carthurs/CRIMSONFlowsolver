@@ -23,22 +23,13 @@ env.Replace(F90=bop.F90)
 env.Replace(FORTRAN=bop.F90)
 env.Replace(AR=bop.AR)
 
-sconsCleanRequested = env.GetOption('clean') # check for scons -c in command line invocation
-if sconsCleanRequested:
-   print "(II) Enabling all build targets to force clean..."
-   enableTargetGoogleTest = 1
-   bop.MAKE_WITH_POSTSOLVER = 1
-   bop.MAKE_WITH_FLOWSOLVER = 1
-   bop.MAKE_WITH_ESTIMATOR = 1
-else:
-   # Get command line invocation target options to scons:
-   enableTargetGoogleTest = ARGUMENTS.get('test', 0)
-
 # Get command line invocation options to scons:
 debug = ARGUMENTS.get('debug', 0)
 profileOn = ARGUMENTS.get('profile',0) 
 bop.MAKE_WITH_PRESOLVER = ARGUMENTS.get('presolver', 0)
-if bop.MAKE_WITH_PRESOLVER:
+bop.sconsCleanRequested = env.GetOption('clean') # check for scons -c in command line invocation
+
+if bop.MAKE_WITH_PRESOLVER and not bop.sconsCleanRequested:
    userResponse = raw_input("\nPresolver can be built here, but is stored in the CRIMSON GUI repository, and will be downloaded automatically from there.\n\nPlease note: if you wish to edit the presolver source, please do not do it here as your changes will be lost.\n\nProceed with building presolver? [y/n]").lower()
    validPositiveResponses = ['y','yes']
    validNegativeResponses = ['n','no']
@@ -50,6 +41,17 @@ if bop.MAKE_WITH_PRESOLVER:
       bop.MAKE_WITH_PRESOLVER = 0 # cancel building the presolver
    else:
       raise RuntimeError("Logic error in selecting presolver build. Contact the developers.")
+
+if bop.sconsCleanRequested:
+   print "(II) Enabling all build targets to force clean..."
+   enableTargetGoogleTest = 1
+   bop.MAKE_WITH_POSTSOLVER = 1
+   bop.MAKE_WITH_FLOWSOLVER = 1
+   bop.MAKE_WITH_ESTIMATOR = 1
+   bop.MAKE_WITH_PRESOLVER = 1
+else:
+   # Get command line invocation target options to scons:
+   enableTargetGoogleTest = ARGUMENTS.get('test', 0)
 
 if int(profileOn) and not int(debug):
       print("WARNING: The user requested profiling without debug, so I'm enabling debug too.")

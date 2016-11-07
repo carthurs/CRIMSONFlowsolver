@@ -89,12 +89,13 @@ def askUserIfTheyWantToRePull():
 
 Import('env')
 
-localGitRepositoryExists = isdir('../.git')
-if localGitRepositoryExists:
-	if askUserIfTheyWantToRePull():
+if not bop.sconsCleanRequested:
+	localGitRepositoryExists = isdir('../.git')
+	if localGitRepositoryExists:
+		if askUserIfTheyWantToRePull():
+			performGitPull()
+	else:
 		performGitPull()
-else:
-	performGitPull()
 
 env.Append(CPPPATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)
 env.Append(F90PATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)

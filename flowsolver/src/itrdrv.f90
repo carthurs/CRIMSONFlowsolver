@@ -1459,8 +1459,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                                ! and current iteration step MAF 03/11/2016
             
             if (aleType.eq.3) then !impose increment for mesh acceleration
-                call getMeshVelocities(aleType,aMesh_new,aMesh_new,x_iniMesh,nshg, &
-                     currentTimestepIndex+1,Delt(1))
+                call getMeshVelocities(aleType,uMesh_new,aMesh_new,x_iniMesh,nshg, &
+                     currentTimestepIndex,Delt(itseq)) !not sure if I have to use currentTimestepIndex
+                                                       !or currenTimestepIndex+1 MAF 04/11/2016
                 aMeshinc = aMesh_new - aMesh
             endif
 
@@ -1711,10 +1712,12 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     updatedMeshCoordinates(:,3) = x(:,3)
 
 
-
-   dispMesh(:,1) = x(:,1) - x_iniMesh(:,1)
-   dispMesh(:,2) = x(:,2) - x_iniMesh(:,2)
-   dispMesh(:,3) = x(:,3) - x_iniMesh(:,3)
+    if(aleType<3) then ! calculate mesh displacement since it's not calculated 
+                       ! elsewhere
+    dispMesh(:,1) = x(:,1) - x_iniMesh(:,1)
+    dispMesh(:,2) = x(:,2) - x_iniMesh(:,2)
+    dispMesh(:,3) = x(:,3) - x_iniMesh(:,3)
+    endif
 
 
 

@@ -122,10 +122,10 @@ void CInput::get_input_lines(vector<string> *text, ifstream &infile)
 void CInput::build_map(map<string,string,caseInsensitveStringLessThanComparator> *inmap, vector<string> *intext)
 {
   // iterate through input_text of text and separate at :'s
-  for (int i = 0 ; i < intext->size(); i++) {
+  for (size_t i = 0 ; i < intext->size(); i++) {
     string textlineALL = (*intext)[i];
     string textline;
-    int pos  = 0;
+    size_t pos  = 0;
      
     // modification introduced so that comments starting midway in a file 
     // can be handled.

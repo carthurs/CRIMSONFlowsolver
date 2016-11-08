@@ -24,9 +24,9 @@ env.Replace(FORTRAN=bop.F90)
 env.Replace(AR=bop.AR)
 
 # Get command line invocation options to scons:
-debug = ARGUMENTS.get('debug', 0)
-profileOn = ARGUMENTS.get('profile',0) 
-bop.MAKE_WITH_PRESOLVER = ARGUMENTS.get('presolver', 0)
+debug = int(ARGUMENTS.get('debug', 0))
+profileOn = int(ARGUMENTS.get('profile',0))
+bop.MAKE_WITH_PRESOLVER = int(ARGUMENTS.get('presolver', 0))
 bop.sconsCleanRequested = env.GetOption('clean') # check for scons -c in command line invocation
 
 if bop.MAKE_WITH_PRESOLVER and not bop.sconsCleanRequested:
@@ -53,10 +53,10 @@ else:
    # Get command line invocation target options to scons:
    enableTargetGoogleTest = ARGUMENTS.get('test', 0)
 
-if int(profileOn) and not int(debug):
+if profileOn and not debug:
       print("WARNING: The user requested profiling without debug, so I'm enabling debug too.")
       debug = 1
-if int(debug):
+if debug:
    env.Append(CFLAGS=['-g'])
    print("Performing debug build...")
    bop.GLOBAL_CXXFLAGS = bop.BUILDFLAGS+bop.DEBUG_FLAGS
@@ -69,7 +69,7 @@ else:
    bop.GLOBAL_CFLAGS   = bop.BUILDFLAGS+bop.OPT_FLAGS
    bop.GLOBAL_FFLAGS   = bop.BUILDFLAGS+bop.OPT_FFLAGS
 
-if int(profileOn):
+if profileOn:
    env.Append(LINKFLAGS = ['-pg'])
    bop.GLOBAL_CXXFLAGS = bop.GLOBAL_CXXFLAGS + ['-pg']
    bop.GLOBAL_CFLAGS   = bop.GLOBAL_CFLAGS + ['-pg']

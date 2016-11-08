@@ -158,7 +158,6 @@ readDataArray(int fileId, const char* format, const char* arrayName, int nIntsIn
 }
 
 void Partition_Problem(int numProcs) {
-	int rank = 0;
 	int stepno;
 	int igeombc; /* file handle for geombc */
 	int irestart; /* file handle for restart */
@@ -169,7 +168,6 @@ void Partition_Problem(int numProcs) {
 	int iseven = 7;
 	int ieight = 8;
 	int isize;
-	int ierr;
 	int nitems;
 
 	char iformat[80];
@@ -625,7 +623,7 @@ void Partition_Problem(int numProcs) {
 				 * ien, so need to invert it */
 
 				int* ient = new int[blockIEN.size() * CurrentBlock[2]];
-				for (int h = 0; h < blockIEN.size(); h++) {
+				for (size_t h = 0; h < blockIEN.size(); h++) {
 					for (int y = 0; y < CurrentBlock[2]; y++) {
 						ient[y * blockIEN.size() + h] = blockIEN[h][y];
 	#if defined ( DEBUG )
@@ -933,7 +931,7 @@ void Partition_Problem(int numProcs) {
 		readdatablock_(&igeombc, "boundary condition array", (void*) BC, &iarray[0],
 				"double", iformat);
 
-		int* inumpbc = new int[numProcs];
+		size_t* inumpbc = new size_t[numProcs];
 		for (int c = 0; c < numProcs; c++)
 			inumpbc[c] = 0;
 		vector < map<int, int> > nBCpart(numProcs);
@@ -999,7 +997,7 @@ void Partition_Problem(int numProcs) {
 			writestring_(&fgeom, filename);
 
 			bzero_old((void*) filename, 255);
-			sprintf(filename, "number of nodes with Dirichlet BCs : < 0 > %d\n",
+			sprintf(filename, "number of nodes with Dirichlet BCs : < 0 > %zu\n",
 					inumpbc[p]);
 			writestring_(&fgeom, filename);
 
@@ -1039,7 +1037,7 @@ void Partition_Problem(int numProcs) {
 			int* iiBC = new int[inumpbc[p]];
 			if (inumpbc[p] != iBCpart[p].size())
 				cerr << "Error 1" << __LINE__ << endl;
-			for (int i = 0; i < inumpbc[p]; i++) {
+			for (size_t i = 0; i < inumpbc[p]; i++) {
 				iiBC[i] = iBCpart[p][i];
 	#if defined ( DEBUG )
 				fprintf( cfascii, "%d\n", iiBC[ i ] );
@@ -1062,7 +1060,7 @@ void Partition_Problem(int numProcs) {
 					&nitems, &isize, "double", oformat);
 
 			double* BCf = new double[inumpbc[p] * numEBC];
-			for (int a = 0; a < inumpbc[p]; a++) {
+			for (size_t a = 0; a < inumpbc[p]; a++) {
 				for (int b = 0; b < numEBC; b++) {
 					BCf[b * inumpbc[p] + a] = BCpart[p][a * numEBC + b];
 
@@ -1099,8 +1097,6 @@ void Partition_Problem(int numProcs) {
 
 		int numNBC = ndof + 1;
 		int nPropshere = nomodule.nProps;
-		int nPropsTS = 2;
-		int nPropsEst = 1;
 
 		readheader_(&igeombc, "number of boundary tpblocks", (void*) iarray, &ione,
 				"integer", iformat);
@@ -1291,7 +1287,7 @@ void Partition_Problem(int numProcs) {
 				 * ien, so need to invert it */
 
 				int* ient = new int[blockIEN.size() * CurrentBlock[2]];
-				for (int h = 0; h < blockIEN.size(); h++) {
+				for (size_t h = 0; h < blockIEN.size(); h++) {
 					for (int y = 0; y < CurrentBlock[2]; y++) {
 						ient[y * blockIEN.size() + h] = blockIEN[h][y];
 	#if defined ( DEBUG )
@@ -1317,7 +1313,7 @@ void Partition_Problem(int numProcs) {
 	#endif
 
 				int* iBCBf = new int[blockIEN.size() * 2];
-				for (int u = 0; u < blockIEN.size(); u++) {
+				for (size_t u = 0; u < blockIEN.size(); u++) {
 					iBCBf[u] = iBCBpart[p][CurrentBlock][u * 2];
 					iBCBf[u + blockIEN.size()] =
 							iBCBpart[p][CurrentBlock][u * 2 + 1];
@@ -1350,7 +1346,7 @@ void Partition_Problem(int numProcs) {
 				fascii.precision( 8 );
 	#endif
 				double* BCBf = new double[blockIEN.size() * numNBC];
-				for (int u = 0; u < blockIEN.size(); u++) {
+				for (size_t u = 0; u < blockIEN.size(); u++) {
 					for (int v = 0; v < numNBC; v++) {
 						BCBf[v * blockIEN.size() + u] = BCBpart[p][CurrentBlock][u
 								* numNBC + v];
@@ -1393,7 +1389,7 @@ void Partition_Problem(int numProcs) {
 						fascii.precision( 8 );
 	#endif
 						double* SWBf = new double[blockIEN.size() * nPropshere];
-						for (int u = 0; u < blockIEN.size(); u++) {
+						for (size_t u = 0; u < blockIEN.size(); u++) {
 							for (int v = 0; v < nPropshere; v++) {
 								SWBf[v * blockIEN.size() + u] =
 										SWBpart[p][CurrentBlock][u * nPropshere + v];
@@ -1426,7 +1422,7 @@ void Partition_Problem(int numProcs) {
 
 					if (nomodule.iuseBET != 0) {
 						int* BETf = new int[blockIEN.size() * nomodule.numBETFields];
-						for (int u = 0; u < blockIEN.size(); u++)
+						for (size_t u = 0; u < blockIEN.size(); u++)
 							for (int v = 0; v < nomodule.numBETFields; v++)
 								BETf[v*blockIEN.size()+u] = boundaryTagspart[p][CurrentBlock][u*nomodule.numBETFields+v];
 
@@ -1687,7 +1683,7 @@ void Partition_Problem(int numProcs) {
 					"integer", oformat);
 
 			int* filwork = new int[ilwork.size()];
-			for (int r = 0; r < ilwork.size(); r++)
+			for (size_t r = 0; r < ilwork.size(); r++)
 				filwork[r] = ilwork[r];
 			nitems = ilwork.size();
 			writedatablock_(&fgeom, "ilwork ", (void*) (filwork), &nitems,

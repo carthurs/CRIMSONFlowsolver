@@ -102,18 +102,17 @@ protected:
 	//! Flags to denote that individual CPP Windkessel-RCR R1 are estimated
 	std::vector<int> cp_rcr_include_distal_resistance_cpp_;
 
-
 	//! Pointer to the singleton instance of SimvascularGlobalArrayTransfer
 	SimvascularGlobalArrayTransfer *gat;
-
-	//! Shifted time
-	double time_shifted_;
 
 	//! Dynamic start
 	int dynamic_start_;
 
 	//! Event started
 	int event_started_;
+
+	//! Shifted time
+	double time_shifted_;
 
 	//! Size of the estimated portion of duplicated_state_
 	int Nreduced_;
@@ -129,14 +128,6 @@ protected:
 
 	//! Size of the non-distributed augmented state variables
 	int shared_parts_size_;
-
-
-	//! Rank of the MPI process
-	int rank_;
-
-	//! Number of MPI processes
-	int numProcs_;
-
 
 	//! Flag to denote that vessel wall parameters are estimated
 	int nreduced_has_wall_parameters_;
@@ -168,6 +159,15 @@ protected:
 	//! Flag to denote that CPP Windkessel-RCR distal resistances are estimated
 	int cp_rcr_estimate_distal_resistance_cpp_;
 
+	//! Rank of the MPI process
+	int rank_;
+
+	//! Number of MPI processes
+	int numProcs_;
+
+	//! MPI communicator
+	MPI_Comm iNewComm_C_;
+
 
 	//! Flag to denote that Heart model EMax is estimated - KDL
 	int cp_hrt_estimate_emax_;
@@ -180,9 +180,6 @@ protected:
 
     //! Flag to denote that Heart model VLV is estimated - KDL
 	int cp_hrt_estimate_vlv_;
-
-    //! MPI communicator
-	MPI_Comm iNewComm_C_;
 
 	//! File stream for outputing estimated parameters
 	ofstream Eoutfile_;

@@ -748,7 +748,7 @@ void ROUKFModified<T, Model, ObservationManager>::Analyze() {
 				" simplex' cases.");
 	}
 
-	if (this->option_display_["show_time"] & this->rank_ == 0)
+	if (this->option_display_["show_time"] & (this->rank_ == 0))
 		cout << " done." << endl;
 
 	Verdandi::MessageHandler::Send(*this, "model", "analysis");

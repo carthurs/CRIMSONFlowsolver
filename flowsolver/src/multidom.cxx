@@ -94,7 +94,7 @@ void multidom_initialise(){
   {
     surfaceList.push_back(std::pair <int,boundary_condition_t> (nomodule.indicesOfCoronarySurfaces[ii+1],BoundaryCondition_ControlledCoronary));
   }
-  for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfNetlistSurfaces() ; ii++)
+  for (size_t ii = 0; ii < boundaryConditionManager_instance->getNumberOfNetlistSurfaces() ; ii++)
   {
     surfaceList.push_back(std::pair<int,boundary_condition_t> (nomodule.indicesOfNetlistSurfaces[ii+1],BoundaryCondition_Netlist));
   }

@@ -380,8 +380,6 @@ SimvascularFlowPressObservation::~SimvascularFlowPressObservation() {
 
 void SimvascularFlowPressObservation::Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) {
 
-	int icounter = 0, ncounter = 0;
-
 	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
 	gat = SimvascularGlobalArrayTransfer::Get();
 
@@ -489,7 +487,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 	geom_UGrid_->SetPoints(geom_points_);
 	geom_UGrid_def_->SetPoints(geom_points_def_);
 
-	for (int kk = 0; kk < gat->global_mien.size(); kk++)
+	for (size_t kk = 0; kk < gat->global_mien.size(); kk++)
 		for (int jj = 0; jj < gat->global_npro[kk]; jj++) {
 
 			for (int ii = 0; ii < 4; ii++) {

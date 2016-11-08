@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 
    kalmanFilterActive.kalmanFilterOn = false;
    int rank;
-   int numProcsTotal,numProcs;
+   int numProcsTotal;
    int ierr = 0;
    char pathToProcsCaseDir[100];
 
@@ -140,8 +140,8 @@ int main(int argc, char **argv) {
      multidomSetupControlSystems();
      itrdrv_init(); // initialize solver
 
-     FortranBoundaryDataPointerManager* pointerManager;
-     pointerManager = FortranBoundaryDataPointerManager::Get();
+     // FortranBoundaryDataPointerManager* pointerManager;
+     // pointerManager = FortranBoundaryDataPointerManager::Get();
 
      for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
       multidom_iter_initialise();

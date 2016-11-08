@@ -71,13 +71,14 @@ subroutine locate_soln(y, x, xts, soln)
         call localx(x, xl, mien(iblk)%p, nsd, 'gather  ')
         call localy(y, ycl, mien(iblk)%p, ndofl, 'gather  ')
 
-        call locate_soln_blk(ycl, xl, sgn, xts, soln)
+        ! call locate_soln_blk(ycl, xl, sgn, xts, soln) CA 8/11/2016 - removed "sgn" parameter as there were only 4 arguments in this subroutine's signature. Guessing from the variable and dummy names that this is the correct way to call it.
+        call locate_soln_blk(ycl, xl, xts, soln)
 
     end do
 
 end subroutine
 
-subroutine locate_soln_blk(ycl, xl,  xts, soln)
+subroutine locate_soln_blk(ycl, xl, xts, soln)
 
     use phcommonvars
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -97,7 +98,7 @@ subroutine locate_soln_blk(ycl, xl,  xts, soln)
 
     integer e
 
-    tolval = 2*2**-53
+    tolval = 2*2**(-53)
 
     if (lcsyst.eq.1) then !tet
 

@@ -12,9 +12,7 @@ class BoundaryConditionManager;
 
 class AbstractBoundaryCondition
  {
- 	friend class BoundaryConditionManager;
- 	friend class testMultidom;
- 	friend class BasicFileWriter;
+    friend class testMultidom;
  	FRIEND_TEST(testMultidom, checkBoundaryConditionsMadeProperly);
  	FRIEND_TEST(testMultidom, checkRCRLinearInterpolators);
  	// FRIEND_TEST(testMultidom, checkDpDqAndHopFortranPasser)
@@ -77,6 +75,14 @@ class AbstractBoundaryCondition
     virtual void setDirichletConditionsIfNecessary(int* const binaryMask);
     virtual void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) = 0;
     void debugPrintFlowPointerTarget();
+    void setFlowN(const double flowN);
+    void setFlowN1(const double flowN);
+    void setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray);
+    void updatePressureAndFlowHistory();
+    double getPressureHistoryValueByTimestepIndex(const int timestepIndex) const;
+    double getFlowHistoryValueByTimestepIndex(const int timestepIndex) const;
+    void computeImplicitCoeff_solve(const int timestepNumber);
+    void computeImplicitCoeff_update(const int timestepNumber);
  protected:
  	double dp_dq;
  	double Hop;
@@ -84,7 +90,13 @@ class AbstractBoundaryCondition
  	double Hop_n1;
  	double pressure_n;
  	double flow_n;
- 	int surfaceIndex;
+ 	const int surfaceIndex;
+    const int hstep;
+    const double delt;
+    const double alfi_local;
+    int m_currentTimestepIndex;
+    const int m_maxsurf;
+    const int m_nstep;
  	int isactive;
  	double* flowhist;
  	double* pressurehist;
@@ -95,24 +107,15 @@ class AbstractBoundaryCondition
     std::vector<double*> pressure_n_ptrs;
     // double implicitcoeff;
     // double implicitcoeff_n1; 
-    const int hstep;
-    int m_currentTimestepIndex;
-    const double delt;
-    const double alfi_local;
-    const int m_maxsurf;
-    const int m_nstep;
+
     bool m_thisIsARestartedSimulation;
     std::vector<int> listOfMeshNodesAtThisBoundary;
     bool hasListOfMeshNodesAtThisBoundary;
 
     // double LPNInflowPressure;
 
-    void setListOfMeshNodesAtThisBoundary(const int* const & ndsurf_nodeToBoundaryAssociationArray, const int& lengthOfNodeToBoundaryAssociationArray);
-    void computeImplicitCoeff_solve(const int timestepNumber);
- 	void computeImplicitCoeff_update(const int timestepNumber);
     virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
 
-	void updatePressureAndFlowHistory();
     // virtual void updateLPN() = 0;
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{

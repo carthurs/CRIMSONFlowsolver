@@ -75,8 +75,6 @@
 
 		void runSimulation()
 		{
-		   int numProcs;
-		   int ierr = 0;
 		   char pathToProcsCaseDir[100];
 
 		   // Moved this to the gtest_main.cc
@@ -146,8 +144,8 @@
 
 		   itrdrv_init(); // initialize solver
 
-		   FortranBoundaryDataPointerManager* pointerManager;
-		   pointerManager = FortranBoundaryDataPointerManager::Get();
+		   // FortranBoundaryDataPointerManager* pointerManager;
+		   // pointerManager = FortranBoundaryDataPointerManager::Get();
 		   for (int kk = 1; kk <= inpdat.nstep[0]; kk++) {
 		   	   multidom_iter_initialise();
 			   itrdrv_iter_init();

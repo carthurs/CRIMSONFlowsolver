@@ -121,9 +121,9 @@ public:
 protected:
 	// Overload constructor for subclasses to call:
 	NetlistCircuit(const int hstep, const int indexOfThisNetlistLPN, const bool thisIsARestartedSimulation, const double alfi, const double delt, const int startingTimestepIndex)
-	: m_hstep(hstep),
-	m_surfaceIndex(-1),
+	: m_surfaceIndex(-1),
 	m_IndexOfThisNetlistLPNInInputFile(indexOfThisNetlistLPN),
+	m_hstep(hstep),
 	m_thisIsARestartedSimulation(thisIsARestartedSimulation),
 	m_delt(delt),
 	m_alfi(alfi),
@@ -136,10 +136,11 @@ protected:
 	std::string m_VolumeHistoryFileName;
 	boost::shared_ptr<CircuitData> mp_circuitData;
 	const int m_surfaceIndex;
+	const int m_IndexOfThisNetlistLPNInInputFile;
+	const int m_hstep;
 	const bool m_thisIsARestartedSimulation;
 	const double m_delt;
 	const double m_alfi;
-	const int m_hstep;
 	const int m_startingTimestepIndex;
 	std::vector<double*> pressure_n_ptrs;
 	std::vector<double*> flow_n_ptrs;
@@ -210,8 +211,6 @@ protected:
 
 	PetscScalar m_interfaceFlow;
   	PetscScalar m_interfacePressure;
-
-  	const int m_IndexOfThisNetlistLPNInInputFile;
 	
 	void buildAndSolveLinearSystem(const double alfi_delt);
 	void generateLinearSystemWithoutFactorisation(const double alfi_delt);

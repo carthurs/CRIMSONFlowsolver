@@ -337,22 +337,27 @@ protected:
 	//! Inverse of the observation error covariance matrix
 	error_variance error_variance_inverse_;
 
-
     /*** Model domain ***/
-
-	//! pointer to the single instance of SimvascularGlobalArrayTransfer
-	SimvascularGlobalArrayTransfer *gat;
 
     //! The size of a model state.
     int Nstate_model_;
 
+    //! Rank of MPI Process
+	int rank_;
+
+	//! Number of MPI Processes
+	int numProcs_;
+
     /*** Observation data (measurements) ***/
+
+    //! Lower value for linear interpolation
+    int current_lower_bound_;
 
     //! Upper value for linear interpolation
     int current_upper_bound_;
 
-    //! Lower value for linear interpolation
-    int current_lower_bound_;
+    //! pointer to the single instance of SimvascularGlobalArrayTransfer
+	SimvascularGlobalArrayTransfer *gat;
 
     //! Arrays for linear interpolation
     Vector<double> dataarrays_lower_;
@@ -365,12 +370,6 @@ protected:
 
 	//! MPI communicator
 	MPI_Comm iNewComm_C_;
-
-	//! Rank of MPI Process
-	int rank_;
-
-	//! Number of MPI Processes
-	int numProcs_;
 
 public:
 

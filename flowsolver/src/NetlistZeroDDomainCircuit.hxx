@@ -43,14 +43,14 @@ private:
 
 	int getConnectedTopologicalComponentIndexForInnerResistor(const int componentIndex) const;
 	void findNumberOfConnectedComponentsOf3DDomain();
-	const int m_numberOfNetlistsUsedAsBoundaryConditions;
 	const double m_oneResistanceToGiveEachResistor;
 	const std::vector<double> m_elastancesToGiveCentralCapacitors;
 	const double m_initialDomainPressure;
+	const int m_numberOfNetlistsUsedAsBoundaryConditions;
+	const std::map<int,int> m_mapFromZeroDSurfaceIndexToConnectedComponentIndex;
 	const int m_numberOfDirichletBCTSurfaces;
     int m_numberOfOutlets;
 	int m_numberOfConnectedComponentsOf3DDomain;
-	const std::map<int,int> m_mapFromZeroDSurfaceIndexToConnectedComponentIndex;
 };
 
 #endif

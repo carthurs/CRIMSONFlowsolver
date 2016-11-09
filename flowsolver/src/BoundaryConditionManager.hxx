@@ -110,7 +110,7 @@ class AbstractBoundaryCondition;
     // void loadAllNetlistComponentFlowsAndNodalPressures();
 
     int getNumberOfRCRSurfaces(){return m_NumberOfRCRSurfaces;}
-    int getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
+    size_t getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
     int getNumberOfControlledCoronarySurfaces(){return m_NumberOfControlledCoronarySurfaces;}
     int getNumberOfDownsreamClosedLoopCircuits(){return m_numLoopClosingNetlistCircuits;}
     void getNumberOfBoundaryConditionManagerBoundaryConditions_reference(int& totalNumberOfManagedBoundaryConditions) const;
@@ -188,7 +188,7 @@ class AbstractBoundaryCondition;
     static bool m_thisIsARestartedSimulation;
     int m_numberOfBoundaryConditionsManaged;
     int m_NumberOfRCRSurfaces;
-    int m_NumberOfNetlistSurfaces;
+    size_t m_NumberOfNetlistSurfaces;
     int m_NumberOfControlledCoronarySurfaces;
     double m_delt;
     int m_hstep;

@@ -84,7 +84,6 @@ bool AbstractFileReader::readNextLine()
 bool AbstractFileReader::readNextLineWithKnownNumberOfColumns()
 {
 	assert(m_hasNumberOfColumns);
-	int index;
 	double doubleJustRead;
 
 	m_dataReadFromFile_line.clear();
@@ -1127,9 +1126,9 @@ std::set<int> NetlistDownstreamCircuitReader::getSetOfNodesInBoundaryConditionWh
 	std::set<int> nodesInBoundaryConditionWhichConnectToSomeDownstreamCircuit;
 
 	// Find all the downstream circuits which connect to the requested boundary condition (boundaryConditionIndex)
-	for (int downstreamCircuitIndex = 0; downstreamCircuitIndex < m_connectedCircuitSurfaceIndices.size(); downstreamCircuitIndex++)
+	for (unsigned int downstreamCircuitIndex = 0; downstreamCircuitIndex < m_connectedCircuitSurfaceIndices.size(); downstreamCircuitIndex++)
 	{
-		for (int attachedBoundaryConditionIndex = 0; attachedBoundaryConditionIndex < m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).size(); attachedBoundaryConditionIndex++)
+		for (unsigned int attachedBoundaryConditionIndex = 0; attachedBoundaryConditionIndex < m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).size(); attachedBoundaryConditionIndex++)
 		{
 			if (m_connectedCircuitSurfaceIndices.at(downstreamCircuitIndex).at(attachedBoundaryConditionIndex) == boundaryConditionIndex)
 			{
@@ -1233,7 +1232,7 @@ void NetlistDownstreamCircuitReader::addUpstreamConnectivityInfoToPropertyTree()
 		{
 			int currentNodeIndex = node.second.get<int>("index");
 			// see if we have any connectivity data to write for this node:
-			for (int indexAmongstUpstreamConnectionsForThisDownstreamCircuit = 0; indexAmongstUpstreamConnectionsForThisDownstreamCircuit < m_localBoundaryConditionInterfaceNodes.at(currentDownstreamCircuitIndex).size(); indexAmongstUpstreamConnectionsForThisDownstreamCircuit++)
+			for (unsigned int indexAmongstUpstreamConnectionsForThisDownstreamCircuit = 0; indexAmongstUpstreamConnectionsForThisDownstreamCircuit < m_localBoundaryConditionInterfaceNodes.at(currentDownstreamCircuitIndex).size(); indexAmongstUpstreamConnectionsForThisDownstreamCircuit++)
 			{
 				int localInterfaceNodeIndex = m_localBoundaryConditionInterfaceNodes.at(currentDownstreamCircuitIndex).at(indexAmongstUpstreamConnectionsForThisDownstreamCircuit);
 				if (currentNodeIndex == localInterfaceNodeIndex)

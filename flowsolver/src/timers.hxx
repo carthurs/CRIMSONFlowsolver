@@ -14,8 +14,8 @@ public:
 	bool hasTheTimeCome();
 	void incrementTimer();
 private:
-	const int m_triggerTimestep;
 	const int m_initialTimestep;
+	const int m_triggerTimestep;
 	int m_currentTimestep;
 };
 

@@ -62,8 +62,6 @@ phastaIO::phastaIO () {
     LastHeaderNotFound_ = false;
     Wrong_Endian_ = false ;
     binary_format_ = true; 
-    char *mode_ = NULL;
-    char *fname_ = NULL;
 }
 
 phastaIO::~phastaIO () {
@@ -134,7 +132,6 @@ int phastaIO::readHeader (const char* keyphrase,int* valueArray,
    rewindFile();
    int rewinded = 0;
 
-   int lengthOfToken;
    originalPreColonTokenOnLine_.clear();
    originalPreColonTokenOnLine_.append("Not a token - reset at start of call to readHeader.");
    previousOriginalPreColonTokenOnLine_.erase();
@@ -329,7 +326,6 @@ int phastaIO::readDataBlock ( const char* keyphrase,
         if ( Wrong_Endian_ ) SwapArrayByteOrder( valueArray, type_size, nItems );
         
     } else { 
-        char junk;
         switch( type_of_data_ ) {
         case INT:
             valueArrayInt  = static_cast<int*>( valueArray );
@@ -528,7 +524,7 @@ char* phastaIO::StringStripper ( const char*  istring ) {
         int namelength = strcspn( istring, " " );
         fname = new char [ namelength+1 ];
         strncpy( fname, istring , namelength );
-        fname [ namelength ] = NULL;
+        fname [ namelength ] = '\0';
         return fname;
 }
 
@@ -725,7 +721,7 @@ int main (int argc, char **agrv) {
 
 void bzero_old(void* ptr, size_t sz) {
    char *cptr = (char*) ptr;
-   for (int i=0; i < sz; i++) {
+   for (size_t i=0; i < sz; i++) {
       cptr[i]=0;
    }
 }

@@ -415,7 +415,7 @@ void BoundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows
   {
     if (typeid(**iterator)==typeid(RCR))
     {
-      (*iterator)->flow_n = flows[readLocation];
+      (*iterator)->setFlowN(flows[readLocation]);
       readLocation++;
     }
   }
@@ -435,7 +435,7 @@ void BoundaryConditionManager::updateAllRCRS_setflow_n1(const double* const flow
   {
     if (typeid(**iterator)==typeid(RCR))
     {
-      (*iterator)->flow_n1 = flows[readLocation];
+      (*iterator)->setFlowN1(flows[readLocation]);
       readLocation++;
     }
   }
@@ -472,19 +472,19 @@ void BoundaryConditionManager::writePHistAndQHistRCR()
   qhistrcr_writer.setFileName("QHistRCR.dat");
 
   // Loop over all the updates since the last restart was written:
-  for (int i=m_currentTimestepIndex-m_ntout+int(1); i<m_currentTimestepIndex+int(1); i++)
+  for (int timestepToWrite = m_currentTimestepIndex - m_ntout + 1; timestepToWrite < m_currentTimestepIndex + 1; timestepToWrite++)
   {
-    phistrcr_writer.writeStepIndex(i);
-    qhistrcr_writer.writeStepIndex(i);
+    phistrcr_writer.writeStepIndex(timestepToWrite);
+    qhistrcr_writer.writeStepIndex(timestepToWrite);
 
     // Loop the boundary conditions looking for the RCRs
     for(auto iterator=m_boundaryConditions.begin(); iterator!=m_boundaryConditions.end(); iterator++)
     {
       if (typeid(**iterator)==typeid(RCR))
       {
-        // Write the pressure and flow for this timestep (indexed i)
-        phistrcr_writer.writeToFile((*iterator)->pressurehist[i]);
-        qhistrcr_writer.writeToFile((*iterator)->flowhist[i]);
+        // Write the pressure and flow for this timestep (indexed timestepToWrite)
+        phistrcr_writer.writeToFile((*iterator)->getPressureHistoryValueByTimestepIndex(timestepToWrite));
+        qhistrcr_writer.writeToFile((*iterator)->getFlowHistoryValueByTimestepIndex(timestepToWrite));
       }
     }
     phistrcr_writer.writeEndLine();
@@ -839,7 +839,7 @@ void BoundaryConditionManager::discoverWhetherFlowPermittedAcrossSurface(const i
   for (auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
   {
     bool thisIsANetlist = typeid(**boundaryCondition)==typeid(NetlistBoundaryCondition);
-    if ((*boundaryCondition)->surfaceIndex == queriedSurfaceIndex && thisIsANetlist)
+    if ((*boundaryCondition)->getSurfaceIndex() == queriedSurfaceIndex && thisIsANetlist)
     {
       // Discover whether we should report that flow is permitted or not:
       NetlistBoundaryCondition* downcastNetlist = static_cast<NetlistBoundaryCondition*>(boundaryCondition->get());

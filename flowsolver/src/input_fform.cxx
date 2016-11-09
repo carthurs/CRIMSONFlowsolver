@@ -15,7 +15,7 @@ void print_error_code(int ierr);
 int input_fform() {
 
 	int ierr = 0;
-	int i, j;
+	int i;
 	char* path_to_config = 0, *inpfilename_env = 0;
 	char complete_filename[256], inpfname[256];
 
@@ -781,7 +781,7 @@ int input_fform() {
 			nomodule.bcttimescale = inp.GetValue("BCT Time Scale Factor");
 
 		nomodule.ipvsq = 0;
-		if (nomodule.icardio = inp.GetValue("Number of Coupled Surfaces")) {
+		if ((nomodule.icardio = inp.GetValue("Number of Coupled Surfaces"))) {
 			if (nomodule.icardio > MAXSURF) {
 				cout << "Number of Coupled Surfaces > MAXSURF \n";
 				exit(1);
@@ -907,8 +907,7 @@ int input_fform() {
 					nomodule.incpfile = 0;
 				}
 			}
-			if (nomodule.numResistSrfs = inp.GetValue(
-					"Number of Resistance Surfaces")) {
+			if ((nomodule.numResistSrfs = inp.GetValue("Number of Resistance Surfaces"))) {
 				ivec = inp.GetValue("List of Resistance Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
 					nomodule.nsrflistResist[i] = 0;
@@ -922,8 +921,7 @@ int input_fform() {
 					nomodule.ValueListResist[i + 1] = vec[i];
 				vec.erase(vec.begin(), vec.end());
 			}
-			if (nomodule.numImpSrfs = inp.GetValue(
-					"Number of Impedance Surfaces")) {
+			if ((nomodule.numImpSrfs = inp.GetValue("Number of Impedance Surfaces"))) {
 				ivec = inp.GetValue("List of Impedance Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
 					nomodule.nsrflistImp[i] = 0;
@@ -940,7 +938,7 @@ int input_fform() {
 				}
 			}
 			nomodule.ircrfile = 0; // value remains if RCR Values From File == False; changed below if True
-			if (nomodule.numRCRSrfs = inp.GetValue("Number of RCR Surfaces")) {
+			if ((nomodule.numRCRSrfs = inp.GetValue("Number of RCR Surfaces"))) {
 				ivec = inp.GetValue("List of RCR Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
 					nomodule.nsrflistRCR[i] = 0;
@@ -975,7 +973,7 @@ int input_fform() {
 ////				}
 //			}
 			// Nan rcr ---------------------------
-			if(grcrbccom.numGRCRSrfs=inp.GetValue("Number of experimental RCR Surfaces")){
+			if((grcrbccom.numGRCRSrfs=inp.GetValue("Number of experimental RCR Surfaces"))){
 				ivec = inp.GetValue("List of experimental RCR Surfaces");
 				for(i=0;i<MAXSURF+1; i++)
 					grcrbccom.nsrflistGRCR[i] = 0;
@@ -989,8 +987,7 @@ int input_fform() {
 
 			}
 			// -----------------------------------
-			if (nomodule.numCORSrfs = inp.GetValue(
-					"Number of Coronary Surfaces")) {
+			if ((nomodule.numCORSrfs = inp.GetValue("Number of Coronary Surfaces"))) {
 				ivec = inp.GetValue("List of Coronary Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
 					nomodule.nsrflistCOR[i] = 0;
@@ -1007,7 +1004,7 @@ int input_fform() {
 				}
 			}
 
-			if(nomodule.numControlledCoronarySrfs=inp.GetValue("Number of Controlled Coronary Surfaces"))
+			if((nomodule.numControlledCoronarySrfs=inp.GetValue("Number of Controlled Coronary Surfaces")))
 			{
 				ivec = inp.GetValue("List of Controlled Coronary Surfaces");
 
@@ -1023,7 +1020,7 @@ int input_fform() {
 
 			}
 
-			if (nomodule.numNetlistLPNSrfs = inp.GetValue("Number of Netlist LPN Surfaces"))
+			if ((nomodule.numNetlistLPNSrfs = inp.GetValue("Number of Netlist LPN Surfaces")))
 			{
 				ivec = inp.GetValue("List of Netlist LPN Surfaces");
 
@@ -1057,7 +1054,7 @@ int input_fform() {
 		      nomodule.pureZeroDSimulation = int(0);
 		    }
 
-		    if (nomodule.num3DConnectedComponents = inp.GetValue("Number of Connected Components of 3D Domain"))
+		    if ((nomodule.num3DConnectedComponents = inp.GetValue("Number of Connected Components of 3D Domain")))
 			{
 				for (i=0; i<MAXSURF+1; i++)
 				{
@@ -1083,8 +1080,7 @@ int input_fform() {
 				}
 			}
 
-			if (nomodule.numVisFluxSrfs = inp.GetValue(
-					"Number of Surfaces which zero out in-plane tractions")) {
+			if ((nomodule.numVisFluxSrfs = inp.GetValue("Number of Surfaces which zero out in-plane tractions"))) {
 				ivec = inp.GetValue(
 						"List of Surfaces which zero out in-plane tractions");
 				for (i = 0; i < MAXSURF + 1; i++)
@@ -1093,8 +1089,7 @@ int input_fform() {
 					nomodule.nsrflistVisFlux[i + 1] = ivec[i];
 				}
 			}
-			if (nomodule.numCalcSrfs = inp.GetValue(
-					"Number of Surfaces which Output Pressure and Flow")) {
+			if ((nomodule.numCalcSrfs = inp.GetValue("Number of Surfaces which Output Pressure and Flow"))) {
 				ivec = inp.GetValue("List of Output Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
 					nomodule.nsrflistCalc[i] = 0;
@@ -1102,9 +1097,7 @@ int input_fform() {
 					nomodule.nsrflistCalc[i + 1] = ivec[i];
 				}
 			}
-			if (nomodule.numDirCalcSrfs =
-					inp.GetValue(
-							"Number of Dirichlet Surfaces Which Output Pressure and Flow")) {
+			if ((nomodule.numDirCalcSrfs = inp.GetValue("Number of Dirichlet Surfaces Which Output Pressure and Flow"))) {
 				ivec = inp.GetValue("List of Dirichlet Surfaces");
 				for (i = 0; i < MAXSURF + 1; i++)
 					nomodule.nsrflistDirCalc[i] = 0;
@@ -1282,7 +1275,7 @@ int input_fform() {
 
 			// wall regions
 			if (nomodule.iUseSWB == 0 || (nomodule.iUseSWB == 1 && nomodule.iUseSWBthickonly == 1 )) {
-				if (nomodule.numWallRegions = inp.GetValue("Number of Wall Regions")) {
+				if ((nomodule.numWallRegions = inp.GetValue("Number of Wall Regions"))) {
 
 					cout << "Number of Wall Regions " << nomodule.numWallRegions << endl;
 

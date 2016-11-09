@@ -152,3 +152,23 @@ void AbstractBoundaryCondition::debugPrintFlowPointerTarget()
 {
   std::cout << "Boundary condition for surface index " << surfaceIndex << " has flow " << flow_n << " and flow pointer target " << *(flow_n_ptrs.at(0)) << std::endl;
 }
+
+void AbstractBoundaryCondition::setFlowN(const double flowN)
+{
+  flow_n = flowN;
+}
+
+void AbstractBoundaryCondition::setFlowN1(const double flowN1)
+{
+  flow_n1 = flowN1;
+}
+
+double AbstractBoundaryCondition::getPressureHistoryValueByTimestepIndex(const int timestepIndex) const
+{
+  return pressurehist[timestepIndex];
+}
+
+double AbstractBoundaryCondition::getFlowHistoryValueByTimestepIndex(const int timestepIndex) const
+{
+  return flowhist[timestepIndex];
+}

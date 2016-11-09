@@ -214,7 +214,7 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
 	endif
 
     !If t<tini, nothing
-    if (time_current.le.tini) then
+    if (time_current<tini) then
         uMesh(:,1) = 0.0d0
         uMesh(:,2) = 0.0d0
         uMesh(:,3) = 0.0d0

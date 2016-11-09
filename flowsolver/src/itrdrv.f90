@@ -1248,9 +1248,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
-    integer j
+    integer j, i
     real*8    aMesh_new(nshg,3) ! auxiliar ALE variables calculated at the end of each iteration
     real*8    uMesh_new(nshg,3) ! (only for the specific case aleType = 3 ) MAF 04/11/2016
+    logical :: exist
 
 
     ! integer boundaryConditionRebuildNeeded
@@ -1427,6 +1428,19 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 call itrCorrect ( y,    ac,    u,   solinc)
                 call itrBC (y,  ac,  iBC,  BC, iper, ilwork)
 
+                if (aleType.ge.3) then ! compute increment in mesh acceleration at current time step
+                               ! and current iteration step MAF 03/11/2016     
+                    if (aleType.eq.3) then !impose increment for mesh acceleration
+                        call getMeshVelocities(aleType,uMesh_new,aMesh_new,x_iniMesh,nshg, &
+                             currentTimestepIndex+1,Delt(1)) !not sure if I have to use currentTimestepIndex
+                                                               !or currenTimestepIndex+1 MAF 04/11/2016
+                        aMeshinc = aMesh_new - aMesh
+                    endif
+                    ! write(*,*) "correcting mesh solution; time step =",currentTimestepIndex
+                    call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x,x_iniMesh, &
+                                        istepc,currentTimestepIndex+1)
+                endif
+
             else  ! update scalar
 
                 isclr=iupdate  !unless
@@ -1452,22 +1466,20 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                 call itrBCSclr (  y,  ac,  iBC,  BC, iper, &
                 ilwork)
             endif
+        
+
+
+
+
+
+
+
         endif         !end of switch between solve or update
 
 
-        if (aleType.ge.3) then ! compute increment in mesh acceleration at current time step
-                               ! and current iteration step MAF 03/11/2016
-            
-            if (aleType.eq.3) then !impose increment for mesh acceleration
-                call getMeshVelocities(aleType,uMesh_new,aMesh_new,x_iniMesh,nshg, &
-                     currentTimestepIndex,Delt(itseq)) !not sure if I have to use currentTimestepIndex
-                                                       !or currenTimestepIndex+1 MAF 04/11/2016
-                aMeshinc = aMesh_new - aMesh
-            endif
 
-            call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x)
 
-        endif
+
 
 
         ! call callCPPDebugPrintFlowPointerTarget_BCM()
@@ -1515,12 +1527,13 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
     endif
 
 
-
     ! Update yold, acold, uold, etc. for the nex time step MAF 04/11/2016
     call itrUpdate( yold,  acold,   uold,  y,    ac,   u, &
                     uMesh, aMesh, dispMesh, x, &
                     uMeshold, aMeshold, dispMeshold, xMeshold)
 
+
+    ! stop
     !
     ! once all non-linear iterations finished, update the container with the final y 
     ! note this is being done for each particle, it must also be done with the final 
@@ -1619,6 +1632,10 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 
     CHARACTER*256 outputNodesListFileName
     CHARACTER*256 outputNodesDataFileName
+
+    integer i
+    logical :: exist
+
 
     ! ! Update boundary conditions to the final pressure, conforming to the final flow:
     ! if (nrcractive) then
@@ -1720,7 +1737,6 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     endif
 
 
-
     ! ------------- Begin code for writing out specific nodal solution (pressure and velocity) data ----------------
     if (writeSpecificNodalDataEveryTimestep .eq. 1) then
         ! Read in the list of local nodes that this processor needs to write data for
@@ -1783,11 +1799,13 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
 #if DEBUG_ALE == 1
             call Write_Residual(myrank, currentTimestepIndex, nshg, 4, res) 
 #endif
-            ! call Write_Relative_Velocity(myrank, currentTimestepIndex, nshg, 3, relativeVelocity) 
+
             call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, relativeVelocity, "relative velocity") 
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, numnp, 3, updatedMeshCoordinates, "updated mesh coordinates") 
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, numnp, 3, dispMesh, "mesh displacement")
             call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, uMesh, "mesh velocity")
-            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, updatedMeshCoordinates, "updated mesh coordinates") 
-            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, dispMesh, "mesh displacement")
+            call appendDoubleFieldToRestart(myrank, currentTimestepIndex, nshg, 3, aMesh, "mesh acceleration")
+
         end if 
         
     endif

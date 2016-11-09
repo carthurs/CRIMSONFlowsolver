@@ -256,14 +256,18 @@
 !    Correct solution at time n+1 for ALE variables MAF 03/11/2016
 !
 !-----------------------------------------------------------------------
-      subroutine itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x)
+      subroutine itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x,x_ini, &
+                                        iseq_current,time_step_current)
       use phcommonvars    
       real*8        uMesh(nshg,nsd), &
                     aMesh(nshg,nsd), &
                     dispMesh(numnp,nsd), &
                     aMeshinc(nshg,nsd), &
                     x(numnp,nsd),&
+                    x_ini(numnp,nsd),&
                     fct1, fct2
+      integer  iseq_current,time_step_current, i
+      logical :: exist               
 
       
       fct1 = gami*Delt(itseq)
@@ -272,7 +276,7 @@
       aMesh = aMesh + aMeshinc
       uMesh = uMesh + fct1*aMeshinc
       dispMesh = dispMesh + fct2*aMeshinc
-      x = x + fct2*aMeshinc
+      x = x_ini + dispMesh
 
       return
       end      

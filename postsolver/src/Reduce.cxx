@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 	double *qglobal, *qlocal, *xlocal, *xglobal, *aglobal, *fglobal, *dglobal, *dglobal_ref, *distglobal, *wglobal;
 	double *yglobal;
 	double *resglobal, *relativeVelocityGlobal, *updatedMeshCoordinatesGlobal; // ALE variables KDL, MAF 2016
-	double *uMeshGlobal, *dispMeshglobal; // ALE variables MAF, 11/10/2016
+	double *dispMeshglobal, *uMeshGlobal, *aMeshGlobal;// ALE variables MAF, 11/10/2016
 	float *qdx, *xdx;
 	int *iendx, nodes[8];
 	char rfname[40];
@@ -511,8 +511,9 @@ int main(int argc, char* argv[])
 #endif
 		relativeVelocityGlobal = (double *) malloc( 3*nshgtot * sizeof(double));
 		updatedMeshCoordinatesGlobal = (double *) malloc( 3*nshgtot * sizeof(double));
+		dispMeshglobal = (double *) malloc( 3*nshgtot * sizeof(double));
 		uMeshGlobal = (double *) malloc( 3*nshgtot * sizeof(double));
-		dispMeshglobal = (double *) malloc( 3*nshgtot * sizeof(double));		
+		aMeshGlobal = (double *) malloc( 3*nshgtot * sizeof(double));		
 	}
 
 	if (RequestedYbar) {
@@ -793,6 +794,42 @@ int main(int argc, char* argv[])
 				}
 			}
 
+			// read in mesh acceleration field for current processor 
+			sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+			printf("Reducing : %s for mesh acceleration\n", rfname);
+			openfile_(rfname, "read", &irstin   );
+			readheader_(&irstin,"mesh acceleration",(void*)iarray,&ithree,"double",iotype);
+			nshgl_res=iarray[0];
+			numvar_res=iarray[1];
+			lstep_res=iarray[2];
+			iqsiz=nshgl_res*numvar_res;
+			readdatablock_(&irstin,"mesh acceleration",(void*)qlocal, &iqsiz, "double", iotype);
+			closefile_( &irstin, "read" );
+			/* map solution to global */
+			for(k=0; k< numvar_res; k++){
+				for(j=0; j< nshgl_res ; j++){
+					aMeshGlobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+				}
+			}
+
+			// // read in uMesh field for current processor  (JUST TESTING, IT SHOULD BE mesh velocity)
+			// sprintf(rfname,"restart.%d.%d",stepnumber, i+1);
+			// printf("Reducing : %s for uMesh\n", rfname);
+			// openfile_(rfname, "read", &irstin   );
+			// readheader_(&irstin,"uMesh",(void*)iarray,&ithree,"double",iotype);
+			// nshgl_res=iarray[0];
+			// numvar_res=iarray[1];
+			// lstep_res=iarray[2];
+			// iqsiz=nshgl_res*numvar_res;
+			// readdatablock_(&irstin,"uMesh",(void*)qlocal, &iqsiz, "double", iotype);
+			// closefile_( &irstin, "read" );
+			// /* map solution to global */
+			// for(k=0; k< numvar_res; k++){
+			// 	for(j=0; j< nshgl_res ; j++){
+			// 		uMeshGlobal[k*nshgtot+ncorp2d[i][j]-1] = qlocal[k*nshgl_res+j];
+			// 	}
+			// }
+
 		}
 
 	}
@@ -984,6 +1021,31 @@ int main(int argc, char* argv[])
 			nitems = size;
 			writedatablock_( &irstin, "mesh velocity ",
 						( void* )(uMeshGlobal), &nitems, "double", iotype );
+
+			// write out mesh acceleration
+			nitems = 3;
+			iarray[ 0 ] = nshgtot;
+			iarray[ 1 ] = 3;
+			iarray[ 2 ] = currentTimestepIndex;
+			size = 3*nshgtot;
+			writeheader_( &irstin, "mesh acceleration ",
+						( void* )iarray, &nitems, &size,"double", iotype );
+			nitems = size;
+			writedatablock_( &irstin, "mesh acceleration ",
+						( void* )(aMeshGlobal), &nitems, "double", iotype );
+
+
+			// // write out uMesh
+			// nitems = 3;
+			// iarray[ 0 ] = nshgtot;
+			// iarray[ 1 ] = 3;
+			// iarray[ 2 ] = currentTimestepIndex;
+			// size = 3*nshgtot;
+			// writeheader_( &irstin, "uMesh ",
+			// 			( void* )iarray, &nitems, &size,"double", iotype );
+			// nitems = size;
+			// writedatablock_( &irstin, "uMesh ",
+			// 			( void* )(uMeshGlobal), &nitems, "double", iotype );
 
 				
 
@@ -1462,8 +1524,10 @@ int main(int argc, char* argv[])
 #endif	
 		free(relativeVelocityGlobal);
 		free(updatedMeshCoordinatesGlobal);
-		free(uMeshGlobal);
 		free(dispMeshglobal);
+		free(uMeshGlobal);
+		free(aMeshGlobal);
+		
 	}
 	free(xglobal);
 	free(ien);

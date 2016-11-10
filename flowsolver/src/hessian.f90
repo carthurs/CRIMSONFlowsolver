@@ -279,6 +279,8 @@
       integer vsize
       dimension rmass(nshg), qres( nshg, vsize), &
                 iBC(nshg), iper(nshg)
+
+      dimension ilwork(nlwork) ! CA 8/11/2016 - fixing compiler warning - "Warning: Rank mismatch in argument 'ilwork' at (1) (scalar and rank-1)"
 !
 !
 !.... compute qi for node A, i.e., qres <-- qres/rmass

@@ -137,7 +137,7 @@ extern "C"
  {
   void lesPrepDiag( UsrHd  usrHd  )
   {
-      char*   funcName = "lesPrepDiag" ; /* function name */
+      // char*   funcName = "lesPrepDiag" ; /* function name */
 
       if ( (usrHd->eqnType) == 1 ) {  /* continuity & momentum */
 
@@ -178,7 +178,7 @@ void lesDiagScaleCp ( UsrHd   usrHd,
                       Integer diagOff,
                       Integer nDims )
 {
-    char*    funcName = "lesDiagScaleCp" ; /* function name */
+    // char*    funcName = "lesDiagScaleCp" ; /* function name */
     Integer  nDofs ;                       /* No. of Dofs   */
     Real*    dstpnt ;                      /* destination   */
     Real*    srcpnt ;                      /* source */
@@ -231,7 +231,7 @@ void lesZero ( UsrHd   usrHd,
                Integer dstId,
                Integer nDims )
 {   
-    char*      funcName = "lesZero" ;  /* function namea        */
+    // char*      funcName = "lesZero" ;  /* function namea        */
     Real*      dstpnt ;                /* destination           */   
     Integer    dstOff ;                /* destination offset    */
 
@@ -256,7 +256,7 @@ void lesCp ( UsrHd   usrHd,
              Integer dstId,
              Integer nDims )
 {
-    char*    funcName = "lesCp" ; /* function name      */
+    // char*    funcName = "lesCp" ; /* function name      */
     Real*    srcpnt ;             /* source             */
     Real*    dstpnt ;             /* destination        */
     Integer  dim ;                /* a simple dimension */
@@ -287,7 +287,7 @@ void lesScale ( UsrHd   usrHd,
                 Real    coef,
                 Integer nDims )
 {
-    char*       funcName = "lesScale" ; /* function name      */
+    // char*       funcName = "lesScale" ; /* function name      */
     Real*       dstpnt ;                /* destination        */
     Integer     dstOff ;                /* destination offset */
     Integer     dim ;                   /* a simple dimension */
@@ -317,7 +317,7 @@ void lesScaleCp ( UsrHd   usrHd,
                   Real    coef,
                   Integer nDims )
 {
-    char*         funcName = "lesScaleCp" ; /* function name      */
+    // char*         funcName = "lesScaleCp" ; /* function name      */
     Real*         srcpnt ;                  /* source             */
     Real*         dstpnt ;                  /* destination        */
     Integer       dim ;                     /* a simple dimension */
@@ -352,7 +352,7 @@ void lesAdd ( UsrHd   usrHd,
               Integer dstId,
               Integer nDims )
 {
-    char*     funcName = "lesAdd" ; /* function name      */
+    // char*     funcName = "lesAdd" ; /* function name      */
     Real*     srcpnt ;              /* source             */
     Real*     dstpnt ;              /* destination        */
     Integer   srcOff ;              /* source offset      */  
@@ -386,7 +386,7 @@ void lesSub ( UsrHd   usrHd,
               Integer dstId,
               Integer nDims )
 {
-     char*    funcName = "lesSub" ; /* function name      */
+     // char*    funcName = "lesSub" ; /* function name      */
      Real*    srcpnt ;              /* source             */
      Real*    dstpnt ;              /* destination        */
      Integer  srcOff ;              /* source offset      */
@@ -419,7 +419,7 @@ Real lesDot1 ( UsrHd   usrHd,
                Integer srcId,
                Integer nDims )
 {
-    char*      funcName = "lesDot1" ; /* function name                   */
+    // char*      funcName = "lesDot1" ; /* function name                   */
     Real*      srcpnt ;               /* source                          */
     Integer    srcOff ;               /* source offset                   */
     Integer    dim ;                  /* a simple dimension              */
@@ -456,7 +456,7 @@ Real lesDot2 ( UsrHd   usrHd,
                Integer src2Id, 
                Integer nDims )
 {
-    char*      funcName = "lesDot2" ; /* function name                   */
+    // char*      funcName = "lesDot2" ; /* function name                   */
     Real*      src1pnt ;              /* source 1                        */
     Real*      src2pnt ;              /* source 2                        */
     Integer    src1Off ;              /* source 1 offset                 */
@@ -498,7 +498,7 @@ void lesDaxpy ( UsrHd   usrHd,
                 Real    coef,
                 Integer nDims )
 {
-    char*       funcName = "lesDapxy" ; /* function name      */
+    // char*       funcName = "lesDapxy" ; /* function name      */
     Real*       srcpnt ;                /* source             */
     Real*       dstpnt ;                /* destination        */
     Integer     srcOff ;                /* source offset      */
@@ -534,7 +534,7 @@ void lesDxpay ( UsrHd   usrHd,
                 Real    coef,
                 Integer nDims )
 {
-    char*       funcName = "lesDxpay" ; /* function name      */
+    // char*       funcName = "lesDxpay" ; /* function name      */
     Real*       srcpnt ;                /* source             */
     Real*       dstpnt ;                /* destination        */
     Integer     srcOff ;                /* source offset      */
@@ -568,7 +568,7 @@ void lesInv ( UsrHd   usrHd,
               Integer dstId,
               Integer nDims )
 {
-    char*     funcName = "lesInv" ; /* function name      */
+    // char*     funcName = "lesInv" ; /* function name      */
     Integer   dim ;                 /* a simple dimension */
     Real*     dstpnt ;              /* destination        */
     Integer   dstOff ;              /* destination offset */
@@ -597,7 +597,7 @@ void lesBlkDot2 ( UsrHd   usrHd,
                   Integer mDims,
                   Integer nDims )
 {
-    char*         funcName = "lesBlkDot2" ; /* function name      */
+    // char*         funcName = "lesBlkDot2" ; /* function name      */
     Real*         src1pnt ;                 /* source 1           */
     Real*         src2pnt ;                 /* source 2           */ 
     Integer       src1Off ;                 /* source 1 offset    */
@@ -648,7 +648,7 @@ void lesBlkDaxpy ( UsrHd   usrHd,
                    Integer mDims,
                    Integer nDims )
 {
-    char*          funcName = "lesBlkDaxpy" ; /* function name      */
+    // char*          funcName = "lesBlkDaxpy" ; /* function name      */
     Real*          srcpnt ;                   /* source             */
     Real*          dstpnt ;                   /* destination        */
     Integer        srcOff ;                   /* source offset      */
@@ -689,7 +689,7 @@ void lesBlkDyeax ( UsrHd   usrHd,
                    Integer mDims,
                    Integer nDims )
 {   
-    char*          funcName = "lesBlkDyeax" ; /* function name      */
+    // char*          funcName = "lesBlkDyeax" ; /* function name      */
     Real*          srcpnt ;                   /* source             */
     Real*          dstpnt ;                   /* destination        */
     Integer        srcOff ;                   /* source offset      */
@@ -731,7 +731,7 @@ void lesBlkDmaxpy ( UsrHd   usrHd,
                     Integer mDims,
                     Integer nDims )
 {
-    char*           funcName = "lesBlkDmaxpy" ; /* function name      */
+    // char*           funcName = "lesBlkDmaxpy" ; /* function name      */
     Real*           srcpnt ;                    /* source             */
     Real*           dstpnt ;                    /* destination        */
     Integer         srcOff ;                    /* source offset      */
@@ -774,7 +774,7 @@ void lesVdimCp ( UsrHd   usrHd,
                  Integer dstOff,
                  Integer nDims )
 {
-    char*        funcName = "lesVdimCp"; /* function name */
+    // char*        funcName = "lesVdimCp"; /* function name */
     Real*        srcpnt ;                /* source        */
     Real*        dstpnt ;                /* destination   */
 
@@ -807,7 +807,7 @@ void lesVdimDot2 ( UsrHd   usrHd,
                    Integer src2Off,
                    Integer nDims )
 {
-    char*          funcName = "lesVdimDot2" ; /* function name */
+    // char*          funcName = "lesVdimDot2" ; /* function name */
     Real*          src1pnt ;                  /* source 1      */
     Real*          src2pnt ;                  /* source 2      */
     Real*          coefp ;                    /* temporary coef on proc */
@@ -855,7 +855,7 @@ void lesVdimDaxpy ( UsrHd   usrHd,
                     Integer dstOff,
                     Integer nDims )
 {
-    char*           funcName = "lesVdimDaxpy" ; /* function name */
+    // char*           funcName = "lesVdimDaxpy" ; /* function name */
     Real*           srcpnt ;                    /* source        */
     Real*           dstpnt ;                    /* destination   */
 
@@ -891,7 +891,7 @@ void lesApG ( UsrHd   usrHd,
               Integer nDstDims,
               Integer dstOff )
 {
-    char*     funcName = "lesApG" ; /* function name      */
+    // char*     funcName = "lesApG" ; /* function name      */
     Integer   nDofs ;               /* No. of dofs        */
     Integer   nPs ;                 /* No. of P dimension */
     Integer   nQs ;                 /* No. of Q dimension */
@@ -959,7 +959,7 @@ void lesApKG ( UsrHd   usrHd,
                Integer nDstDims,
                Integer dstOff )
 {
-    char*      funcName = "lesApKG" ; /* function name      */
+    // char*      funcName = "lesApKG" ; /* function name      */
     Integer    nDofs ;                /* No. of Dofs        */
     Integer    p1Off ;                /* Diag offset for P  */
     Integer    p2Off ;                /* Diag offset for Q  */
@@ -1041,7 +1041,7 @@ void lesApNGt ( UsrHd   usrHd,
                 Integer nDstDims,
                 Integer dstOff )
 {   
-    char*       funcName = "lesApNGt" ; /* function name      */
+    // char*       funcName = "lesApNGt" ; /* function name      */
     Integer     pOff ;                  /* Diag offset for P  */
     Integer     qOff ;                  /* Diag offset for Q  */
     Integer     nDofs ;                 /* No. of Dofs        */
@@ -1109,7 +1109,7 @@ void lesApNGtC ( UsrHd   usrHd,
                  Integer nDstDims,
                  Integer dstOff )
 {
-     char*       funcName = "lesApNGtC" ; /* function name      */
+     // char*       funcName = "lesApNGtC" ; /* function name      */
      Integer     p1Off ;                  /* Diag offset for P  */
      Integer     p2Off ;                  /* Diag offset for P  */
      Integer     qOff ;                   /* Diag offset for Q  */
@@ -1190,7 +1190,7 @@ void lesApFull ( UsrHd   usrHd,
                  Integer nDstDims,
                  Integer dstOff )
 {    
-     char*       funcName = "lesApFull" ; /* function name      */
+     // char*       funcName = "lesApFull" ; /* function name      */
      Integer     pOff ;                   /* Diag offset for P  */
      Integer     qOff ;                   /* Diag offset for Q  */
      Integer     nDofs ;                  /* No. of Dofs        */
@@ -1253,7 +1253,7 @@ void lesApSclr ( UsrHd   usrHd,
                  Integer nDstDims,
                  Integer dstOff )
 {
-     char*       funcName = "lesApSclr" ; /* function name      */
+     // char*       funcName = "lesApSclr" ; /* function name      */
      Integer     pOff ;                   /* Diag offset for P  */
      Integer     qOff ;                   /* Diag offset for Q  */
      Integer     nDofs ;                  /* No. of Dofs        */

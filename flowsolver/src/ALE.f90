@@ -65,7 +65,7 @@ if (aleType.eq.1) then
 	endif     
     close(fnum) 
 
-elseif (aleType.eq.2) then
+elseif ((aleType.eq.2).or.(aleType.eq.3)) then
     filename = "innerMeshMotionParameters.dat"
     inquire(file=filename, exist=file_exists)
     if (file_exists) then
@@ -183,7 +183,7 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
     vr_def =         aR*sinx3*sinr*bR*pi*(1.0d0/t0)*&
                cos(bR*pi*(time_current-tini)*(1.0d0/t0))
 
-    ar_def =    (-1.0d0)*aR*sinx3*sinr*((bR*pi*(1.0d0/t0))**(two))*&
+    ar_def =    (-1.0d0)*aR*sinx3*sinr*((bR*pi*(1.0d0/t0))**2)*&
                sin(bR*pi*(time_current-tini)*(1.0d0/t0))
 
     !Axial direction
@@ -193,7 +193,7 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
     v3_def =          aZ*sinx3*sinr*bZ*pi*(1.0d0/t0)*&
                cos(bZ*pi*(time_current-tini)*(1.0d0/t0))
 
-    a3_def =     (-1.0d0)*aZ*sinx3*sinr*((bZ*pi*(1.0d0/t0))**(two))*&
+    a3_def =     (-1.0d0)*aZ*sinx3*sinr*((bZ*pi*(1.0d0/t0))**2)*&
                sin(bZ*pi*(time_current-tini)*(1.0d0/t0))            
 
     !Calculate current cartesian coordinates and velocity
@@ -214,7 +214,7 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
 	endif
 
     !If t<tini, nothing
-    if (time_current.le.tini) then
+    if (time_current<tini) then
         uMesh(:,1) = 0.0d0
         uMesh(:,2) = 0.0d0
         uMesh(:,3) = 0.0d0

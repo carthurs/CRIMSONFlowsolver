@@ -72,9 +72,9 @@ def performGitPull():
 	checkFailureDuringGitPull(failure, failurePositionMarker)
 	chdir('./Presolver/')
 
-def askUserIfTheyWantToRePull():
+def askUser(promptMessage):
 	userWantsToRePullResponse = False
-	userResponse = raw_input("A Git repository, presumably for the Presolver, already exists.\nReplace it with the remote repository for the CRIMSON GUI Presolver? [y/n]").lower()
+	userResponse = raw_input(promptMessage).lower()
 	validPositiveResponses = ['y','yes']
 	validNegativeResponses = ['n','no']
 	while userResponse not in (validPositiveResponses + validNegativeResponses):
@@ -92,7 +92,7 @@ Import('env')
 if not bop.sconsCleanRequested:
 	localGitRepositoryExists = isdir('../.git')
 	if localGitRepositoryExists:
-		if askUserIfTheyWantToRePull():
+		if askUser("\n\nA Git repository, presumably for the Presolver, already exists.\nReplace it with the remote repository for the CRIMSON GUI Presolver? [y/n]"):
 			performGitPull()
 	else:
 		performGitPull()

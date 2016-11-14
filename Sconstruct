@@ -98,11 +98,11 @@ if not bop.sconsCleanRequested:
    class Base
    {
       virtual void overrideMe(){}
-   }
+   };
    class Derived : public Base
    {
       void overrideMe() override {}
-   }
+   };
    int main()
    {
       return 0;
@@ -110,7 +110,7 @@ if not bop.sconsCleanRequested:
    '''
 
    def checkCompilerSupportsCppOverrideIdentifier(context):
-      context.Message('Checking for C++11 `override` identifier...')
+      context.Message('Checking for C++11 `override` identifier support...')
       result = context.TryLink(sourceForOverrideIdentifierTest,'.cpp')
       context.Result(result)
       return result

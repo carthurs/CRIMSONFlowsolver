@@ -336,14 +336,14 @@
 
       use specialBC                       ! brings in itvn,nbct, bct, numbct, nptsmax
       use ale                             ! ALE module
-      use phcommonvars  
+      use phcommonvars
       IMPLICIT REAL*8 (a-h,o-z)           ! change default real type to be double precision
 
       real*8   BC(nshg,ndofBC), timel, t, x(numnp,nsd)            
       integer  iBC(numnp),nlast,i,j,nper 
 
       ! mesh velocity for Direchlet BC, here size of nshg, i.e. number of nodes on this processor
-      real*8   uMeshDirichletBC(nshg,3)   
+      real*8   uMeshDirichletBC(nshg,3)
       
 
       if (aleType.eq.1) then
@@ -358,7 +358,9 @@
       endif
 
       ! initialise the BC values with the mesh velocity
+      if (aleType < 3) then
       BC(:,3:5) = uMeshDirichletBC(:,1:3)
+      endif
 
       do i = 1, itvn                      ! itvn is the number of varying nodes on this proc 
 

@@ -1439,6 +1439,10 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                     ! write(*,*) "correcting mesh solution; time step =",currentTimestepIndex
                     call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x,x_iniMesh, &
                                         istepc,currentTimestepIndex+1)
+                    if (aleType.ge.3) then
+                      BC(meshBCwallIDnodes,3:5) = uMesh(meshBCwallIDnodes,:)
+                      ! write(*,*) "mWNodes = ",mWNodes%p
+                    endif
                 endif
 
             else  ! update scalar

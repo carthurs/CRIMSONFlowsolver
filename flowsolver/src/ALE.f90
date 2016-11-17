@@ -22,6 +22,9 @@ real*8, public :: globalRigidVelocity(3)
 ! integer, public :: aleRigid = int(0)
 ! integer, public :: aleImposedMeshMotion = int(0)
 
+integer, allocatable, public :: meshBCwallIDnodes(:)
+integer, public :: meshBCwallnnodes
+! integer, allocatable, public :: noslipnodes(:)
 
 real*8, allocatable :: updatedMeshCoordinates(:,:)
 real*8, allocatable :: updatedMeshVelocities(:,:)

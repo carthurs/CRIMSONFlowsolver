@@ -17,7 +17,8 @@
         use deformableWall
         use phcommonvars
         use multidomain     
-        use ale    
+        use ale
+        use specialBC                       ! brings in itvn,nbct, bct, numbct, nptsmax    
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
 ! arrays in the following line are now dimensioned in readnblk
@@ -44,6 +45,11 @@
         integer wnodestp(numel*nshlb)
         integer wnodesgtlmap(nshg)
         integer wnodefnd
+
+! ALE
+        integer nwnp_test
+        integer flag_bct   
+        integer wnodestp_test(nshg)     
         
 !
 !.... start the timer
@@ -202,6 +208,8 @@
             end if
          end do
       end do     
+
+      write(*,*) "number of nodes on the wall, nwnp = ",nwnp
       
 !    
 ! Copy to the global array
@@ -242,9 +250,20 @@
 !
 ! *** end of intialise multidomain models   
 !
-!
-! *** initialise ALE 
-!     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       
       ! call initialize_ALE(aleType)
 
@@ -270,6 +289,111 @@
                      ilwork,   ifath,      velbar,   &
                      nsons,    x, &
                      shp,     shgl,    shpb,    shglb) 
+
+
+! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+! *** initialise ALE 
+!
+
+nwnp_test = 0
+wnodestp_test = 0
+
+! iBC(nshg)
+
+! call getbnodes(lnode)
+do i=1,nshg
+     if (ibits(ibc(i),3,3) .eq.7) then
+        flag_bct = 0
+        do j = 1, itvn      
+            if (i.eq.nbct(j)) then
+            flag_bct = 1
+            endif
+        enddo
+        if (flag_bct.eq.0) then
+        nwnp_test = nwnp_test + 1
+        wnodestp_test(nwnp_test) = i
+        endif
+     endif
+end do
+
+! allocate(noslipnodes(nwnp_test))
+! do i=1,nwnp_test
+!    noslipnodes(i) = wnodestp_test(i)
+! end do
+
+
+
+
+! meshBCnodes = wnodestp_test(1:nwnp_test)
+
+
+write(*,*) "nshg = ",nshg
+write(*,*) "number of nodes viscous (is it wall?), nwnp_test = ",nwnp_test
+
+
+if(ideformwall.eq.1) then
+   meshBCwallnnodes = nwnp
+   allocate(meshBCwallIDnodes(meshBCwallnnodes))
+   do i=1,meshBCwallnnodes
+   meshBCwallIDnodes(i) = mWNodes%p(i)
+   end do
+else
+   meshBCwallnnodes = nwnp_test
+   allocate(meshBCwallIDnodes(meshBCwallnnodes))
+   do i=1,meshBCwallnnodes
+   meshBCwallIDnodes(i) = wnodestp_test(i)
+   end do
+endif
+! write(*,*) "nshg = ",nshg
+write(*,*) "number of nodes where to apply uMesh = ufluid :  ",meshBCwallnnodes
+
+
+! write(*,*) "meshBCwallIDnodes = ",meshBCwallIDnodes
+
+! deallocate(wnodestp_test)
+
+
+! do iblk = 1, nelblb
+!    iel = lcblkb(1,iblk)
+!    npro = lcblkb(1,iblk+1) - iel
+!    do i=1,npro
+! !            write(*,*) btest(miBCB(iblk)%p(i,1),4)
+!       if (btest(miBCB(iblk)%p(i,1),3)) then ! check element viscous?
+!          do j=1,nshlb
+         
+!             n = lnode(j)
+         
+!             wnodefnd = 0
+!             do k=1,nwnp_test
+!                if (wnodestp(k).eq.mienb(iblk)%p(i,n)) then
+!                   wnodefnd = 1  
+!                   exit
+!                end if
+!             end do
+         
+!             if (wnodefnd.eq.0) then
+!                nwnp_test = nwnp_test+1
+!                wnodestp(nwnp) = mienb(iblk)%p(i,n)
+! !
+! ! this mapping takes a global node number and returns a wall node number
+! ! from 1 to the nwnp (the number of nodes on the wall)
+! !                     
+!                wnodesgtlmap(mienb(iblk)%p(i,n)) = nwnp_test
+
+!             end if
+         
+!          end do                  
+!       end if
+!    end do
+! end do     
+
+! write(*,*) "number of nodes viscous (is it wall?), nwnp_test = ",nwnp_test
+
+
+
+! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 !
 !.... close the geometry, boundary condition and material files
 !

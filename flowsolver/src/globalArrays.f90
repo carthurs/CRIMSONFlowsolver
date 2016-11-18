@@ -85,6 +85,7 @@ module globalArrays
     real (c_double), target, allocatable :: dispMeshold(:,:)
     real (c_double), target, allocatable :: xMeshold(:,:)
     real (c_double), target, allocatable :: aMeshinc(:,:)
+    ! integer, allocatable :: meshBCwallIDnodes(:)
 
 
 end module
@@ -171,6 +172,7 @@ subroutine destroyGlobalArrays
     !
     use globalArrays
     use phcommonvars
+    use ale
     IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
     if (allocated(nodetagfield)) deallocate (nodetagfield)
     if (allocated(y)) deallocate (y)
@@ -213,6 +215,7 @@ subroutine destroyGlobalArrays
     if (allocated(dispMeshold)) deallocate (dispMeshold)
     if (allocated(xMeshold)) deallocate (xMeshold)
     if (allocated(aMeshinc)) deallocate (aMeshinc)
+    if (allocated(meshBCwallIDnodes)) deallocate (meshBCwallIDnodes)
     ! endif
 
 end subroutine destroyGlobalArrays

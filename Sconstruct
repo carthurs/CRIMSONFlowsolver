@@ -30,7 +30,7 @@ bop.MAKE_WITH_PRESOLVER = int(ARGUMENTS.get('presolver', 0))
 bop.sconsCleanRequested = env.GetOption('clean') # check for scons -c in command line invocation
 
 if bop.MAKE_WITH_PRESOLVER and not bop.sconsCleanRequested:
-   userResponse = raw_input("\nPresolver can be built here, but is stored in the CRIMSON GUI repository, and will be downloaded automatically from there.\n\nPlease note: if you wish to edit the presolver source, please do not do it here as your changes will be lost.\n\nProceed with building presolver? [y/n]").lower()
+   userResponse = raw_input("\nPresolver can be built here, but is stored in the CRIMSON GUI repository, and will be downloaded automatically from there.\n\nPlease note: if you wish to edit the presolver source, please do not do it here as your changes will be lost.\n\nIf you know what you're doing, you will be given the option to not re-pull,\nthus preserving your local changes to the Presolver for now.\n\nPlease commit your Presolver changes to its separate git repository manually, if you wish to keep them.\n\nProceed with building presolver? [y/n]").lower()
    validPositiveResponses = ['y','yes']
    validNegativeResponses = ['n','no']
    while userResponse not in (validPositiveResponses + validNegativeResponses):
@@ -92,6 +92,34 @@ env.Append(FFLAGS=bop.GLOBAL_DEFINES)
 # env.Append(FFLAGS=bop.OPT_FFLAGS)
 
 # env.ParseConfig("ldconfig -p")
+
+if not bop.sconsCleanRequested:
+   sourceForOverrideIdentifierTest = '''
+   class Base
+   {
+      virtual void overrideMe(){}
+   };
+   class Derived : public Base
+   {
+      void overrideMe() override {}
+   };
+   int main()
+   {
+      return 0;
+   }
+   '''
+
+   def checkCompilerSupportsCppOverrideIdentifier(context):
+      context.Message('Checking for C++11 `override` identifier support...')
+      result = context.TryLink(sourceForOverrideIdentifierTest,'.cpp')
+      context.Result(result)
+      return result
+
+   conf = Configure(env, custom_tests={'checkCompilerSupportsCppOverrideIdentifier' : checkCompilerSupportsCppOverrideIdentifier})
+   if not conf.checkCompilerSupportsCppOverrideIdentifier():
+      print "No C++ `override` identifier support. Disabling"
+      env.Append(CPPDEFINES=[("override","")]) # overwrite `override` with blank, because the compiler doesn't support it
+   env = conf.Finish()
 
 # Tell the C++ compiler the location of the Fortran RTL
 # env.Append(LIBPATH = ['/usr/lib/gcc/x86_64-linux-gnu/4.6.3'])

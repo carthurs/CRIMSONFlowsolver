@@ -334,13 +334,16 @@ write(*,*) "number of nodes viscous (is it wall?), nwnp_test = ",nwnp_test
 
 if(ideformwall.eq.1) then
    meshBCwallnnodes = nwnp
-   allocate(meshBCwallIDnodes(meshBCwallnnodes))
+   if (.not. allocated(meshBCwallIDnodes)) &
+        allocate (meshBCwallIDnodes(meshBCwallnnodes))
    do i=1,meshBCwallnnodes
    meshBCwallIDnodes(i) = mWNodes%p(i)
    end do
 else
    meshBCwallnnodes = nwnp_test
-   allocate(meshBCwallIDnodes(meshBCwallnnodes))
+   if (.not. allocated(meshBCwallIDnodes)) &
+        allocate (meshBCwallIDnodes(meshBCwallnnodes))
+   ! allocate(meshBCwallIDnodes(meshBCwallnnodes))
    do i=1,meshBCwallnnodes
    meshBCwallIDnodes(i) = wnodestp_test(i)
    end do

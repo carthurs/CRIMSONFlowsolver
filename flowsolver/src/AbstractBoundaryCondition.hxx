@@ -114,12 +114,6 @@ class AbstractBoundaryCondition
 
     // double LPNInflowPressure;
 
-    // virtual void updateLPN() = 0;
-	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
-	{
-    	throw std::runtime_error("Disallowed call to non-overridden (e.g. non-RCR).");
-    	return 0.0;
-    };
  private:
  	static int numberOfConstructedBoundaryConditions;
     virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;

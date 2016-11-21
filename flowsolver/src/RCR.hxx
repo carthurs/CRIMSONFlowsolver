@@ -9,6 +9,7 @@
 
 class RCR : public AbstractBoundaryCondition
 {
+	FRIEND_TEST(testMultidom, checkRCRLinearInterpolators);
 public:
 	RCR(const int surfaceIndex_in, const double hstep_in, const double delt_in, const double alfi_in, const double currentTimestepIndex, const int maxsurf, const int nstep)
 	: AbstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, currentTimestepIndex, maxsurf, nstep),

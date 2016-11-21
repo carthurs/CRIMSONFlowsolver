@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 #include "fileReaders.hxx"
+#include "fileWriters.hxx"
 
 #define WHILE_LOOP_WARNING_ITERATION_COUNT 1000000
 
@@ -19,10 +20,10 @@ std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients
 	//    ImpConvCoef(j,:) = ValueListImp(j-1,:)/numTpoints
 	// enddo
 	std::vector<double> ImpConvCoef(m_numberOfTimePointsInData + 1, 0.0);
-	for (int index = 2; index < m_numberOfTimePointsInData; index++)
+	for (size_t index = 2; index < m_numberOfTimePointsInData; index++)
 	{
 		double interpolateToTime = (m_numberOfTimePointsInData + 1 - index) * delt; // Just mirroring the old Fortran here..
-		ImpConvCoef.at(index) = m_impedanceLinearInterpolator.interpolateInTimeWithPeriodicExtrapolation(interpolateToTime) / (m_numberOfTimePointsInData - 1);
+		ImpConvCoef.at(index) = mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(interpolateToTime) / (m_numberOfTimePointsInData - 1);
 	}
       
 	// ImpConvCoef(1,:) =zero
@@ -33,7 +34,7 @@ std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients
 	// ImpConvCoef(numTpoints+2,:) =  &
 	//            ValueListImp(numTpoints+1,:)/numTpoints
 	double interpolateToTime = 0.0;
-	ImpConvCoef.at(m_numberOfTimePointsInData) = m_impedanceLinearInterpolator.interpolateInTimeWithPeriodicExtrapolation(interpolateToTime) / (m_numberOfTimePointsInData - 1);
+	ImpConvCoef.at(m_numberOfTimePointsInData) = mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(interpolateToTime) / (m_numberOfTimePointsInData - 1);
 
 // ! compensate for yalpha passed not y in Elmgmr()
       // ImpConvCoef(numTpoints+1,:)= ImpConvCoef(numTpoints+1,:) &
@@ -49,12 +50,13 @@ std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients
 
     // from the old subroutine pHist:
     double poldImp = 0.0;
-    for (int ii=0; ii < m_numberOfTimePointsInData; ii++)
+    for (size_t ii = 0; ii < m_numberOfTimePointsInData; ii++)
     {
         poldImp += m_qHistImp.at(ii) * ImpConvCoef.at(ii);
     }
 
     Hop = poldImp;
+    return std::make_pair(dp_dq, Hop);
 }
 
 void ImpedanceBoundaryCondition::loadInputFiles()
@@ -143,7 +145,12 @@ void ImpedanceBoundaryCondition::readTimeDomainImpedance()
 		checkSafetyCounter(safetyCounter, currentActionInfoMessage);
 	}
 
-	m_impedanceLinearInterpolator = LinearInterpolator(m_timeVaryingImpedance);
+	#ifdef BOOST_NO_CXX11_SMART_PTR
+	mp_impedanceLinearInterpolator = std::shared_ptr<LinearInterpolator>(new LinearInterpolator(m_timeVaryingImpedance));
+	#else
+	// prefer unique_ptr if it's available
+	mp_impedanceLinearInterpolator = std::unique_ptr<LinearInterpolator>(new LinearInterpolator(m_timeVaryingImpedance));
+	#endif
 }
 
 // Replaces the code in subroutine UpdHistConv

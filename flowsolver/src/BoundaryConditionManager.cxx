@@ -1019,7 +1019,6 @@ void BoundaryConditionManager::createControlSystems()
   mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt, m_masterControlScriptPresent, m_startingTimestepIndex, m_ntout));
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
-  NetlistReader* netlistReader_instance = NetlistReader::Instance();
   NetlistXmlReader* netlistXmlReader_instance = NetlistXmlReader::Instance();
   
   // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)

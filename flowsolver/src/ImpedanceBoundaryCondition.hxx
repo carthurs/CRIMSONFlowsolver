@@ -8,6 +8,10 @@
 #include "datatypesInCpp.hxx"
 #include "Interpolators.hxx"
 
+#ifdef BOOST_NO_CXX11_SMART_PTR
+#include <boost/shared_ptr.hpp>
+#endif
+
 void checkSafetyCounter(const int safetyCounter, const char* currentAction);
 
 class ImpedanceBoundaryCondition : public AbstractBoundaryCondition
@@ -44,11 +48,18 @@ private:
 	void loadInputFiles();
 	void readTimeDomainImpedance();
 	void readImpedanceFlowHistory();
+	void updateStoredFlowHistory();
 	std::deque<double> m_qHistImp;
 	std::vector<double> m_qHistTry;
 	std::vector<double> m_qHistTryF;
 	TimeValuePairVector m_timeVaryingImpedance;
-	LinearInterpolator m_impedanceLinearInterpolator;
+	
+	#ifdef BOOST_NO_CXX11_SMART_PTR
+	boost::shared_ptr<LinearInterpolator> mp_impedanceLinearInterpolator;
+	#else
+	// prefer unique_ptr if it's available
+	std::unique_ptr<LinearInterpolator> mp_impedanceLinearInterpolator;
+	#endif
 
 	size_t m_numberOfTimePointsInData;
 	std::string m_impedanceFlowHistoryFileName;

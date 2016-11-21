@@ -1300,6 +1300,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             isolve=icode/10
             if(icode.eq.0) then ! flow solve (encoded as 0)
                 call callCppComputeAllNetlistImplicitCoeff_solve(currentTimestepIndex)
+                call callCppComputeAllImpedanceImplicitCoeff_solve(currentTimestepIndex)
                 !
                 iter   = iter+1
                 ifuncs(1)  = ifuncs(1) + 1
@@ -1416,6 +1417,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
         else ! this is an update  (mod did not equal zero)
             call callCppComputeAllNetlistImplicitCoeff_update(currentTimestepIndex)
+            call callCppComputeAllImpedanceImplicitCoeff_update(currentTimestepIndex)
 
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !.... -----------------------> corrector phase <-----------------------

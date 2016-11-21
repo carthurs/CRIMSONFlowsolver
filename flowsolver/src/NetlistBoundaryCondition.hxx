@@ -32,11 +32,11 @@ public:
 		m_IndexOfThisNetlistLPNInInputFile = numberOfInitialisedNetlistLPNs;
 		if (m_netlistDownstreamLoopClosingSubcircuits.size() > 0)
 		{
-			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, m_thisIsARestartedSimulation, alfi_local, delt, m_netlistDownstreamLoopClosingSubcircuits, startingTimestepIndex));
+			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistBoundaryCircuitWhenDownstreamCircuitsExist(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, m_thisIsARestartedSimulation, m_generalizedAlphaMethodAlpha, delt, m_netlistDownstreamLoopClosingSubcircuits, startingTimestepIndex));
 		}
 		else
 		{
-			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, m_thisIsARestartedSimulation, alfi_local, delt, startingTimestepIndex));
+			mp_NetlistCircuit = boost::shared_ptr<NetlistCircuit> (new NetlistCircuit(hstep,surfaceIndex_in, m_IndexOfThisNetlistLPNInInputFile, m_thisIsARestartedSimulation, m_generalizedAlphaMethodAlpha, delt, startingTimestepIndex));
 		}
 		// initialiseModel();
 		numberOfInitialisedNetlistLPNs++;
@@ -44,7 +44,6 @@ public:
 
 	int getIndexAmongstNetlists(){return m_IndexOfThisNetlistLPNInInputFile;}
  	// void updpressure_n1_withflow(){}
- 	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
 	virtual void updateLPN(const int timestepNumber);
 	void initialiseAtStartOfTimestep();
 	bool flowPermittedAcross3DInterface() override;
@@ -77,6 +76,8 @@ protected:
 private:
 	boost::shared_ptr<NetlistCircuit> mp_NetlistCircuit;
 	static int numberOfInitialisedNetlistLPNs;
+
+	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
 
 	std::vector<boost::weak_ptr<ClosedLoopDownstreamSubsection>> m_netlistDownstreamLoopClosingSubcircuits;
 	const int m_startingTimestepIndex;

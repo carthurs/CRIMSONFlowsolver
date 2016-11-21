@@ -24,7 +24,7 @@ class AbstractBoundaryCondition
     : surfaceIndex(surfaceIndex_in),
       hstep(hstep_in),
       delt(delt_in),
-      alfi_local(alfi_in),
+      m_generalizedAlphaMethodAlpha(alfi_in),
       m_currentTimestepIndex(currentTimestepIndex),
       m_maxsurf(maxsurf),
       m_nstep(nstep)
@@ -93,7 +93,7 @@ class AbstractBoundaryCondition
  	const int surfaceIndex;
     const int hstep;
     const double delt;
-    const double alfi_local;
+    const double m_generalizedAlphaMethodAlpha;
     int m_currentTimestepIndex;
     const int m_maxsurf;
     const int m_nstep;
@@ -114,8 +114,6 @@ class AbstractBoundaryCondition
 
     // double LPNInflowPressure;
 
-    virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
-
     // virtual void updateLPN() = 0;
 	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
 	{
@@ -124,6 +122,7 @@ class AbstractBoundaryCondition
     };
  private:
  	static int numberOfConstructedBoundaryConditions;
+    virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
  };
 
 #endif

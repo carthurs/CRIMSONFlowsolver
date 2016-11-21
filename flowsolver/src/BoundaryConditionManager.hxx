@@ -53,6 +53,7 @@ class AbstractBoundaryCondition;
     
     void setPressureFromFortran();
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
+    void getImplicitCoeff_impedanceBoundaryConditions(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<AbstractBoundaryCondition>>* getBoundaryConditions();
 
     // Must be fully defined here in the header so that other translation units can instantiate the template
@@ -146,6 +147,8 @@ class AbstractBoundaryCondition;
     void debugPrintFlowPointerTarget_BCM();
 
     int getNumberOfControlSystems() const;
+
+    void finaliseOnTimeStep();
 
     ~BoundaryConditionManager()
     {

@@ -203,7 +203,7 @@ void ControlledCoronary::computeCapacitorsTopPressures(const double alfi_delt)
 //    each step; this is done by the subroutine updateLPN_coronary.
 void ControlledCoronary::updateLPN()
 {
-	double alfi_delt = alfi_local*delt;
+	double alfi_delt = m_generalizedAlphaMethodAlpha * delt;
 	computeCapacitorsTopPressures(alfi_delt);
 }
 

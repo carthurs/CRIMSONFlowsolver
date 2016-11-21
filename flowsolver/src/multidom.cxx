@@ -125,8 +125,10 @@ void multidom_iter_step()
 
 void multidom_iter_finalise()
 {
-  BoundaryConditionManager::Instance()->markClosedLoopLinearSystemsForRebuilding();
-  BoundaryConditionManager::Instance()->incrementTimestepIndex();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->finaliseOnTimeStep();
+  boundaryConditionManager_instance->markClosedLoopLinearSystemsForRebuilding();
+  boundaryConditionManager_instance->incrementTimestepIndex();
   // BoundaryConditionManager::Instance()->storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep();
 }
 

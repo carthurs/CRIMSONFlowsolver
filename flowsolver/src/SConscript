@@ -33,6 +33,7 @@ env.Append(LIBS=bop.PETSC_LIBSLIST+bop.PYTHON_LIBSLIST)
 
 sources=string.split("""
 	customCRIMSONContainers.cxx
+	Interpolators.cxx
 	newshape.cxx
 	Cinput.cxx
 	input_fform.cxx
@@ -48,6 +49,7 @@ sources=string.split("""
 	BoundaryConditionManager.cxx
 	BoundaryConditionFactory.cxx
 	RCR.cxx
+	ImpedanceBoundaryCondition.cxx
 	ClosedLoopDownstreamSubsection.cxx
 	NetlistBoundaryCondition.cxx
 	NetlistCircuit.cxx

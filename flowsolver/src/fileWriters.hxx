@@ -18,14 +18,14 @@ public:
 	
 	void setFileName(std::string fileNameIn)
 	{
-	    fileName = fileNameIn;
-		fileHandle = new std::ofstream(fileName.c_str(), std::ios::app);
+	    m_fileName = fileNameIn;
+		openFile();
 
-		fileHandle->precision(15);
+		m_fileHandle->precision(15);
 		
-		if (!fileHandle->is_open())
+		if (!m_fileHandle->is_open())
 		{
-			std::cout << "Failed to open " << fileName << " for writing!" << std::endl;
+			std::cout << "Failed to open " << m_fileName << " for writing!" << std::endl;
 			std::exit(1);
 		}
 	}
@@ -34,20 +34,26 @@ public:
 	void writeToFile(double valueToWrite);
 	void writeEndLine();
 	
-	~BasicFileWriter()
+	virtual ~BasicFileWriter()
 	{
-		fileHandle->close();
-		delete fileHandle;
+		m_fileHandle->close();
+		delete m_fileHandle;
 	}
 protected:
-	std::ofstream* fileHandle;
-	std::string currentLine;
-	std::string fileName;
+	std::ofstream* m_fileHandle;
+	std::string m_fileName;
 	// double* arrayToWriteOut;
 
 	int numColumns;
 	bool appendLine();
 private:
+	virtual void openFile();
+};
+
+class FileReplacingFileWriter : public BasicFileWriter
+{
+private:
+	void openFile() override;
 };
 
 #endif

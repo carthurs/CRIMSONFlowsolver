@@ -427,6 +427,7 @@
 !   read the data in initImpt
 !   interpolate the data to match the process time step in Impint
 !-----------------------------------------------------------------------
+! #DONE
       subroutine initImpt()
       
       use convolImpFlow
@@ -454,7 +455,7 @@
       end
       
       
-      
+      ! #DONE
       subroutine Impint(ctime,jstep)
       
       use convolImpFlow
@@ -467,7 +468,7 @@
          
       do k =1,numImpSrfs
          nlast=numImpt(k)     ! number of time series to interpolate from
-         nper=ctime/ValueImpt(nlast,1,k)!number of periods completed to shift off
+         nper=ctime/ValueImpt(nlast,1,k)!number of periods completed to shift off ! CA 2016-11-18: note the implicit integer conversion here to nper!
          ptime = ctime-nper*ValueImpt(nlast,1,k)  ! now time in periodic domain
             
          do j=2,nlast   !loop to find the interval that we are in

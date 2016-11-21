@@ -2,16 +2,16 @@ module cpp_interface
     interface
     		subroutine giveflowpointertocpp(surfaceIndex, flowPointer) bind(c,name="giveflowpointertocpp")
     			use iso_c_binding
-    			integer(c_int) :: surfaceIndex
-    			type(c_ptr) :: flowPointer
+                integer(c_int) :: surfaceIndex
+                type(c_ptr) :: flowPointer
     		end subroutine giveflowpointertocpp
     end interface
     
     interface
     		subroutine givepressurepointertocpp(surfaceIndex, pressPointer) bind(c,name="givepressurepointertocpp")
     			use iso_c_binding
-    			integer(c_int) :: surfaceIndex
-    			type(c_ptr) :: pressPointer
+                integer(c_int) :: surfaceIndex
+                type(c_ptr) :: pressPointer
     		end subroutine givepressurepointertocpp
     end interface
 
@@ -78,7 +78,7 @@ module cpp_interface
     interface
     		subroutine callCppComputeAllImplicitCoeff_update(timestepNumber) bind(c,name="callCppComputeAllImplicitCoeff_update")
     			use iso_c_binding
-    			integer(c_int) :: timestepNumber
+                integer(c_int) :: timestepNumber
     		end subroutine callCppComputeAllImplicitCoeff_update
     end interface
 
@@ -107,7 +107,7 @@ module cpp_interface
     interface
     		subroutine callCppGetImplicitCoeff_rcr(implicitCoeffs_toBeFilled_ptr) bind(c,name="callCppGetImplicitCoeff_rcr")
     			use iso_c_binding
-    			type(c_ptr) :: implicitCoeffs_toBeFilled_ptr
+                type(c_ptr) :: implicitCoeffs_toBeFilled_ptr
     		end subroutine callCppGetImplicitCoeff_rcr
     end interface
 
@@ -121,14 +121,14 @@ module cpp_interface
     interface
     		subroutine callCPPUpdateAllRCRS_setflow_n(flows) bind(c,name="callCPPUpdateAllRCRS_setflow_n")
     			use iso_c_binding
-    			type(c_ptr) :: flows
+                type(c_ptr) :: flows
     		end subroutine callCPPUpdateAllRCRS_setflow_n
     end interface
 
     interface
     		subroutine callCPPUpdateAllRCRS_setflow_n1(flows) bind(c,name="callCPPUpdateAllRCRS_setflow_n1")
     			use iso_c_binding
-    			type(c_ptr) :: flows
+                type(c_ptr) :: flows
     		end subroutine callCPPUpdateAllRCRS_setflow_n1
     end interface
 !   ============= Numerical RCR Block End =============
@@ -279,6 +279,28 @@ module cpp_interface
             integer(c_int) :: timestepNumber
         end subroutine callCPPResetStateUsingKalmanFilteredEstimate
     end interface
+
+    interface
+        subroutine callCPPGetImplicitCoeff_impedanceBoundaryConditions(implicitCoeffs_toBeFilled_ptr) bind(c, name="callCPPGetImplicitCoeff_impedanceBoundaryConditions")
+            use iso_c_binding
+            type(c_ptr) :: implicitCoeffs_toBeFilled_ptr
+        end subroutine callCPPGetImplicitCoeff_impedanceBoundaryConditions
+    end interface
+
+    interface
+            subroutine callCppComputeAllImpedanceImplicitCoeff_solve(timestepNumber) bind(c,name="callCppComputeAllImpedanceImplicitCoeff_solve")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllImpedanceImplicitCoeff_solve
+    end interface    
+
+    interface
+            subroutine callCppComputeAllImpedanceImplicitCoeff_update(timestepNumber) bind(c,name="callCppComputeAllImpedanceImplicitCoeff_update")
+                use iso_c_binding
+                integer(c_int) :: timestepNumber
+            end subroutine callCppComputeAllImpedanceImplicitCoeff_update
+    end interface    
+    
     
 
 end module cpp_interface

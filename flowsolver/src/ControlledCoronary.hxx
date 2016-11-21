@@ -42,8 +42,6 @@ public:
 
 	}
 
-	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
-
 	void updateLPN();
 
 	void finalizeLPNAtEndOfTimestep();
@@ -60,6 +58,7 @@ private:
 	static int numberOfInitialisedCoronaries;
 
 	void computeCapacitorsTopPressures(const double alfi_delt);
+	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
 
 	double resistanceNearAorta;
 	double complianceNearAorta;

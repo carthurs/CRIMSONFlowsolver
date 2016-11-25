@@ -130,6 +130,9 @@ real*8  :: v1_def(nnodes), v2_def(nnodes)
 real*8  :: a1_def(nnodes), a2_def(nnodes)
 real*8  :: pi = 3.1415926535897932384626433832795d0
 real*8  :: two    = 2.0000000000000000000000000000000d0
+integer :: option_analytical
+
+option_analytical = 1
 
 
 ! if uniform velocity
@@ -154,12 +157,16 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
 
     t0 = innerMeshMotionParameters(7)
     tini = innerMeshMotionParameters(8)
+    
 
     !be careful because this routine changes the whole domain 
     !(not only the interior nodes). Hopefully, all the boundary nodes
     !are exactly at the analytical boundary....
 
     time_current = dt*step_number
+
+    ! write(*,*) "tini = ",tini
+    ! write(*,*) "tcurrent = ",time_current
 
     !Get initial cartesian coordinates
     !---------------------------------
@@ -179,25 +186,53 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
     !Calculate current cylindrical coordinates and velocity
     !------------------------------------------------------
 
-    !Radial direction
-    r_def = R_ini  + aR*sinx3*sinr*&
-               sin(bR*pi*(time_current-tini)*(1.0d0/t0))
+    if (option_analytical.eq.1) then
+        !Radial direction
+        r_def = R_ini  + aR*sinx3*sinr*&
+                   sin(bR*pi*(time_current-tini)*(1.0d0/t0))
 
-    vr_def =         aR*sinx3*sinr*bR*pi*(1.0d0/t0)*&
-               cos(bR*pi*(time_current-tini)*(1.0d0/t0))
+        vr_def =         aR*sinx3*sinr*bR*pi*(1.0d0/t0)*&
+                   cos(bR*pi*(time_current-tini)*(1.0d0/t0))
 
-    ar_def =    (-1.0d0)*aR*sinx3*sinr*((bR*pi*(1.0d0/t0))**2)*&
-               sin(bR*pi*(time_current-tini)*(1.0d0/t0))
+        ar_def =    (-1.0d0)*aR*sinx3*sinr*((bR*pi*(1.0d0/t0))**2)*&
+                   sin(bR*pi*(time_current-tini)*(1.0d0/t0))
+                 
 
-    !Axial direction
-    x_def3 = x_ini3 + aZ*sinx3*sinr*&
-               sin(bZ*pi*(time_current-tini)*(1.0d0/t0))
+        !Axial direction
+        x_def3 = x_ini3 + aZ*sinx3*sinr*&
+                   sin(bZ*pi*(time_current-tini)*(1.0d0/t0))
 
-    v3_def =          aZ*sinx3*sinr*bZ*pi*(1.0d0/t0)*&
-               cos(bZ*pi*(time_current-tini)*(1.0d0/t0))
+        v3_def =          aZ*sinx3*sinr*bZ*pi*(1.0d0/t0)*&
+                   cos(bZ*pi*(time_current-tini)*(1.0d0/t0))
 
-    a3_def =     (-1.0d0)*aZ*sinx3*sinr*((bZ*pi*(1.0d0/t0))**2)*&
-               sin(bZ*pi*(time_current-tini)*(1.0d0/t0))            
+        a3_def =     (-1.0d0)*aZ*sinx3*sinr*((bZ*pi*(1.0d0/t0))**2)*&
+                   sin(bZ*pi*(time_current-tini)*(1.0d0/t0)) 
+    elseif (option_analytical.eq.2) then
+        !Radial direction
+        r_def = R_ini  + aR*sinx3*sinr*&
+                   (cos(bR*pi*(time_current-tini)*(1.0d0/t0))-1.0d0)
+
+        vr_def =         (-1.0d0)*aR*sinx3*sinr*bR*pi*(1.0d0/t0)*&
+                   sin(bR*pi*(time_current-tini)*(1.0d0/t0))
+
+        ar_def =    (-1.0d0)*aR*sinx3*sinr*((bR*pi*(1.0d0/t0))**2)*&
+                   cos(bR*pi*(time_current-tini)*(1.0d0/t0))
+                 
+
+        !Axial direction
+        x_def3 = x_ini3 + aZ*sinx3*sinr*&
+                   (cos(bZ*pi*(time_current-tini)*(1.0d0/t0))-1.0d0)
+
+        v3_def =          (-1.0d0)*aZ*sinx3*sinr*bZ*pi*(1.0d0/t0)*&
+                   sin(bZ*pi*(time_current-tini)*(1.0d0/t0))
+
+        a3_def =     (-1.0d0)*aZ*sinx3*sinr*((bZ*pi*(1.0d0/t0))**2)*&
+                   cos(bZ*pi*(time_current-tini)*(1.0d0/t0)) 
+
+
+    endif   
+
+
 
     !Calculate current cartesian coordinates and velocity
     !----------------------------------------------------					 	
@@ -218,6 +253,7 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
 
     !If t<tini, nothing
     if (time_current<tini) then
+        ! write(*,*) "time_current < tini"
         uMesh(:,1) = 0.0d0
         uMesh(:,2) = 0.0d0
         uMesh(:,3) = 0.0d0
@@ -230,8 +266,13 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
         updatedMeshCoordinates(:,2) = x_ini2
         updatedMeshCoordinates(:,3) = x_ini3
 
+        ! write(*,*) "aMesh = 0"
+        ! write(*,*) aMesh(1800:1810,1)
+        ! write(*,*) aMesh(1800:1810,2)
+
     !Else, apply velocity
     else 
+        ! write(*,*) "time_current not < tini"
         uMesh(:,1) = v1_def
         uMesh(:,2) = v2_def
         uMesh(:,3) = v3_def
@@ -243,6 +284,10 @@ elseif ((aleType.eq.2).or.(aleType.eq.3)) then
         updatedMeshCoordinates(:,1) = x_def1
         updatedMeshCoordinates(:,2) = x_def2
         updatedMeshCoordinates(:,3) = x_def3
+
+        ! write(*,*) "aMesh = adef"
+        ! write(*,*) aMesh(1800:1810,1)
+        ! write(*,*) aMesh(1800:1810,2)
     endif
 
 

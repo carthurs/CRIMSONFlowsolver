@@ -101,6 +101,7 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     use phcommonvars
     use itrDrvVars
     use multidomain
+    use ale
 
     implicit none
     !IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
@@ -757,6 +758,18 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     call callCPPSetPressureFromFortran()
     ! call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 
+    if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
+        call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
+        write(*,*) "ale initialized 3"
+        uMeshold = uMesh
+        aMeshold = aMesh
+        write(*,*) "ale initialized 4"
+        !add mesh velocity to initial condition
+        y(:,1) = y(:,1) + uMesh(:,1)
+        y(:,2) = y(:,2) + uMesh(:,2)
+        y(:,3) = y(:,3) + uMesh(:,3)
+    endif
+
     CONTAINS
 
     ! SUBROUTINE AddNeumannBCTomemLS(srfID, faIn)
@@ -786,6 +799,8 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     ! RETURN
     ! END SUBROUTINE AddNeumannBCTomemLS
+
+    
 
 end subroutine itrdrv_init
 !
@@ -1061,9 +1076,10 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     ! else, just give increment of mesh accelerations or 
     ! calculate them directly using mesh moving algorithm. MAF 01/11/2016
     if (aleType.le.2) then 
-        call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
+        call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,currentTimestepIndex,Delt(1)) 
         if (aleType.eq.2) then
             call updateMeshVariables(x, nshg)
+            dispMesh = x-x_iniMesh
         endif
     endif
 
@@ -1267,7 +1283,9 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                     dispMesh,dispMeshold,uMesh,uMeshold,&
                     aMesh,aMeshold) ! ALE variables added MAF 02/11/2016
 
+    BC(meshBCwallIDnodes,3:5) = uMesh(meshBCwallIDnodes,:)
     call itrBC (y,  ac,  iBC,  BC,  iper,ilwork)
+
 
     if(nsolt.eq.1) then
         isclr=0
@@ -1426,24 +1444,28 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             if(icode.eq.1) then !update flow
 
                 call itrCorrect ( y,    ac,    u,   solinc)
-                call itrBC (y,  ac,  iBC,  BC, iper, ilwork)
+                
 
                 if (aleType.ge.3) then ! compute increment in mesh acceleration at current time step
                                ! and current iteration step MAF 03/11/2016     
                     if (aleType.eq.3) then !impose increment for mesh acceleration
                         call getMeshVelocities(aleType,uMesh_new,aMesh_new,x_iniMesh,nshg, &
-                             currentTimestepIndex+1,Delt(1)) !not sure if I have to use currentTimestepIndex
+                             currentTimestepIndex,Delt(1)) !not sure if I have to use currentTimestepIndex
                                                                !or currenTimestepIndex+1 MAF 04/11/2016
                         aMeshinc = aMesh_new - aMesh
                     endif
                     ! write(*,*) "correcting mesh solution; time step =",currentTimestepIndex
                     call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x,x_iniMesh, &
-                                        istepc,currentTimestepIndex+1)
-                    if (aleType.ge.3) then
+                                        istepc,currentTimestepIndex)
+                    
+                endif
+
+                if (aleType.ge.2) then
                       BC(meshBCwallIDnodes,3:5) = uMesh(meshBCwallIDnodes,:)
                       ! write(*,*) "mWNodes = ",mWNodes%p
-                    endif
                 endif
+
+                call itrBC (y,  ac,  iBC,  BC, iper, ilwork)
 
             else  ! update scalar
 

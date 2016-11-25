@@ -679,13 +679,19 @@
 
       write(*,*) "ale initialized 2"
 
-      if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
-          call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
-          write(*,*) "ale initialized 3"
-          uMeshold = uMesh
-          aMeshold = aMesh
-          write(*,*) "ale initialized 4"
-      endif
+      ! if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
+      !     call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
+      !     write(*,*) "ale initialized 3"
+      !     uMeshold = uMesh
+      !     aMeshold = aMesh
+      !     write(*,*) "ale initialized 4"
+      !     !add mesh velocity to initial condition
+      !     y(:,1) = y(:,1) + uMesh(:,1)
+      !     y(:,2) = y(:,2) + uMesh(:,2)
+      !     y(:,3) = y(:,3) + uMesh(:,3)
+      ! endif
+
+      ! stop
 
       if (aleType.eq.1) then ! add rigid body velocity to solution
           call addGlobalRigidVelocityToInitialSolution(y,nshg,ndof)

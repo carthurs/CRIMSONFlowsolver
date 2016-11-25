@@ -138,6 +138,7 @@
 
       ! Predictor mesh moving variables MAF 02/11/2016
       if (aleType.ge.3) then 
+
          fct = (gami-one)/gami
          
          uMesh = uMeshold
@@ -148,6 +149,7 @@
          Delt(itseq)*uMeshold + &
          pt5*((gami-two*betai)/gami)* &
          Delt(itseq)*Delt(itseq)*aMeshold
+
 
       end if
       
@@ -273,10 +275,12 @@
       fct1 = gami*Delt(itseq)
       fct2 = betai*Delt(itseq)*Delt(itseq)
 
+
       aMesh = aMesh + aMeshinc
       uMesh = uMesh + fct1*aMeshinc
       dispMesh = dispMesh + fct2*aMeshinc
-      x = x_ini + dispMesh
+      ! x = x_ini + dispMesh
+      x = x + fct2*aMeshinc
 
       return
       end      
@@ -347,7 +351,7 @@
          Lagalpha(:,1:3) = Lag(:,1:3)
       end if
 
-      if (aleType.ge.3) then
+      if (aleType.ge.2) then
          uMeshalpha = uMeshold + alfi*(uMesh - uMeshold)
          dispMeshalpha = dispMeshold + alfi*(dispMesh - dispMeshold)
          xMeshalpha = xMeshold + (dispMeshalpha-dispMeshold)
@@ -411,7 +415,7 @@
          Lagold = Lag
       end if
 
-      if (aleType.ge.3) then 
+      if (aleType.ge.2) then 
          
          uMeshold = uMesh
          aMeshold = aMesh

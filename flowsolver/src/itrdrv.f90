@@ -1076,7 +1076,7 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     ! else, just give increment of mesh accelerations or 
     ! calculate them directly using mesh moving algorithm. MAF 01/11/2016
     if (aleType.le.2) then 
-        call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,currentTimestepIndex,Delt(1)) 
+        call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,currentTimestepIndex+1,Delt(1)) 
         if (aleType.eq.2) then
             call updateMeshVariables(x, nshg)
             dispMesh = x-x_iniMesh
@@ -1450,13 +1450,12 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
                                ! and current iteration step MAF 03/11/2016     
                     if (aleType.eq.3) then !impose increment for mesh acceleration
                         call getMeshVelocities(aleType,uMesh_new,aMesh_new,x_iniMesh,nshg, &
-                             currentTimestepIndex,Delt(1)) !not sure if I have to use currentTimestepIndex
+                             currentTimestepIndex+1,Delt(1)) !not sure if I have to use currentTimestepIndex
                                                                !or currenTimestepIndex+1 MAF 04/11/2016
                         aMeshinc = aMesh_new - aMesh
                     endif
                     ! write(*,*) "correcting mesh solution; time step =",currentTimestepIndex
-                    call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x,x_iniMesh, &
-                                        istepc,currentTimestepIndex)
+                    call itrCorrectALE (dispMesh,uMesh,aMesh,aMeshinc,x,x_iniMesh)
                     
                 endif
 

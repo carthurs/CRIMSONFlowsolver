@@ -207,7 +207,7 @@ void ControlledCoronary::updateLPN()
 	computeCapacitorsTopPressures(alfi_delt);
 }
 
-void ControlledCoronary::finalizeLPNAtEndOfTimestep()
+void ControlledCoronary::finaliseAtEndOfTimestep()
 {
     double alfi_delt = delt;
 

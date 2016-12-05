@@ -1,6 +1,7 @@
 #include "Interpolators.hxx"
 #include <cmath>
 #include <stdexcept>
+#include <iostream>
 
 // Linear interpolator, with constant value extrapolation for values outside the data range
 // (returns the first value for time < first time point; returns the final value for time > final time point).
@@ -35,11 +36,11 @@ double LinearInterpolator::interpolateInTimeWithPeriodicExtrapolation(const doub
   double dataStartTime = m_dataToInterpolate.front().first;
   double dataEndTime = m_dataToInterpolate.back().first;
 
-  if (dataStartTime < timeToInterpolateTo && timeToInterpolateTo < dataEndTime)
+  if (dataStartTime <= timeToInterpolateTo && timeToInterpolateTo < dataEndTime)
   {
     return interpolate(timeToInterpolateTo);
   }
-  else if (timeToInterpolateTo > dataStartTime) // timeToInterpolateTo > dataEndtime too if we got here
+  else if (timeToInterpolateTo >= dataEndTime) // timeToInterpolateTo > dataEndTime too if we got here
   {
     double dataWidthInTime = dataEndTime - dataStartTime;
     double timeToInterpolateTo_shiftedToDataInterval = std::fmod(timeToInterpolateTo - dataStartTime, dataWidthInTime) + dataStartTime;
@@ -62,7 +63,7 @@ double LinearInterpolator::interpolate(const double& timeToInterpolateTo) const
   checkInterpolatorIsValid();
 
   int timepointIndexAfterTimeToInterpolateTo = 0; // we're about to find this...
-  while (m_dataToInterpolate.at(timepointIndexAfterTimeToInterpolateTo).first < timeToInterpolateTo)
+  while (m_dataToInterpolate.at(timepointIndexAfterTimeToInterpolateTo).first <= timeToInterpolateTo)
   {
     timepointIndexAfterTimeToInterpolateTo++;
   }

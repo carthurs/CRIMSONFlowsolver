@@ -49,7 +49,7 @@ public:
 	bool flowPermittedAcross3DInterface() override;
 	bool boundaryConditionTypeHasJustChanged();
 	void setDirichletConditionsIfNecessary(int* const binaryMask) override;
-	void finalizeLPNAtEndOfTimestep();
+	void finaliseAtEndOfTimestep() override;
 	void writePressuresFlowsAndVolumes(int& nextTimestepWrite_start);
 	// void loadPressuresFlowsAndVolumesOnRestart(const int startingTimeStepIndex);
 	boost::shared_ptr<NetlistCircuit> getNetlistCircuit();

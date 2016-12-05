@@ -21,6 +21,7 @@ public:
 	: AbstractBoundaryCondition(surfaceIndex_in, hstep_in, delt_in, alfi_in, startingTimestepIndex, maxsurf, nstep),
 	m_startingTimestepIndex(startingTimestepIndex)
 	{
+
 		{
 			std::stringstream filename;
 			filename << "Qhistor_impedance_surface_" << surfaceIndex << ".dat";
@@ -32,15 +33,14 @@ public:
 			filename << "time_varying_impedance_surface_" << surfaceIndex << ".dat"; // formerly impt.dat
 			m_timeDomainImpedanceFileName = filename.str();
 		}
-
 		// if (impfile > 0) // then !for impedance BC #fortran
 		// {
 		loadInputFiles();
 		// }
 	}
-	void writeImpedanceSpecificFlowHistory() const;
 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) {std::cout << "kalman filter not implemented in ImpedanceBoundaryCondition";};
 	void initialiseModel() {}; // not currently used for ImpedanceBoundaryCondition
+	void finaliseAtEndOfTimestep() override;
 private:
 	const int m_startingTimestepIndex;
 
@@ -49,6 +49,7 @@ private:
 	void readTimeDomainImpedance();
 	void readImpedanceFlowHistory();
 	void updateStoredFlowHistory();
+	void writeImpedanceSpecificFlowHistory() const;
 	std::deque<double> m_qHistImp;
 	std::vector<double> m_qHistTry;
 	std::vector<double> m_qHistTryF;

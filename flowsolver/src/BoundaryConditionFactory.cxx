@@ -4,6 +4,7 @@
 #include "ControlledCoronary.hxx"
 #include "datatypesInCpp.hxx"
 #include "ClosedLoopDownstreamSubsection.hxx"
+#include "ImpedanceBoundaryCondition.hxx"
 #include <boost/weak_ptr.hpp>
 
 boost::shared_ptr<AbstractBoundaryCondition> BoundaryConditionFactory::createBoundaryCondition (int surfaceIndex, boundary_condition_t boundaryType)
@@ -63,6 +64,18 @@ boost::shared_ptr<AbstractBoundaryCondition> BoundaryConditionFactory::createBou
     if (!m_simulationIsPurelyZeroD) {
       boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
     }
+
+    return boundaryConditionToReturn;
+  }
+  else if (boundaryType == BoundaryCondition_Impedance)
+  {
+    std::cout << "making impedance BC " << surfaceIndex << std::endl;
+    boundaryConditionToReturn = boost::shared_ptr<AbstractBoundaryCondition> (new ImpedanceBoundaryCondition(surfaceIndex, m_hstep, m_delt, m_alfi, m_startingTimestepIndex, m_maxsurf, m_nstep));
+    std::cout << "about to get flow ptrs for impedance BC " << surfaceIndex << std::endl;
+    if (!m_simulationIsPurelyZeroD) {
+      boundaryConditionToReturn->getPressureAndFlowPointersFromFortran();
+    }
+    std::cout << "Finished making impedance BC " << surfaceIndex << std::endl;
 
     return boundaryConditionToReturn;
   }

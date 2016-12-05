@@ -4,7 +4,7 @@
 #include <vector>
 #include <utility>
 
-enum boundary_condition_t {BoundaryCondition_Null, BoundaryCondition_RCR, BoundaryCondition_ControlledCoronary, BoundaryCondition_Netlist};
+enum boundary_condition_t {BoundaryCondition_Null, BoundaryCondition_RCR, BoundaryCondition_ControlledCoronary, BoundaryCondition_Netlist, BoundaryCondition_Impedance};
 
 enum circuit_component_t {Component_Null, Component_Resistor, Component_Capacitor, Component_Inductor, Component_Diode, Component_MonopolePressureNode, Component_VolumeTracking, Component_VolumeTrackingPressureChamber};
 

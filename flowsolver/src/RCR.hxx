@@ -41,7 +41,7 @@ public:
  	void getPressureAndFlowPointersFromFortran() override;
 
 
-	
+	void finaliseAtEndOfTimestep() override { throw std::logic_error("Call to unused method RCR::finaliseAtEndOfTimestep(). Contact the developers.");}
 //  	procedure :: setimplicitcoeff_rcr => setimplicitcoeff_rcr
         // void setImplicitCoeff();
 //     procedure :: updxvars_rcr => updxvars_rcr         

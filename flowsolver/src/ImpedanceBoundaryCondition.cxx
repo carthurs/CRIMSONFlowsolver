@@ -1,5 +1,6 @@
 #include "ImpedanceBoundaryCondition.hxx"
 #include <iostream>
+#include <algorithm>
 #include <boost/lexical_cast.hpp>
 #include "fileReaders.hxx"
 #include "fileWriters.hxx"
@@ -46,16 +47,29 @@ std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients
        // formerly "ImpConvCoef(numTpoints+2,:)":
     // dp_dq = ValueListImp(numTpoints + 1) / numTpoints / m_generalizedAlphaMethodAlpha;
     double firstTimestepImpedance = m_timeVaryingImpedance.front().second;
-    dp_dq = firstTimestepImpedance / (m_numberOfTimePointsInData - 1) / m_generalizedAlphaMethodAlpha; // very suspicious of this... but it is as the fortran code did it...
+    // dp_dq = firstTimestepImpedance / (m_numberOfTimePointsInData - 1) / m_generalizedAlphaMethodAlpha; // very suspicious of this... but it is as the fortran code did it...
+    double cardiacCycleLength = m_timeVaryingImpedance.back().first / 2.0; //  <=====WARNING REMOVE THE 2.0 HERE! JUST A TEST!
+    // remove delt on next line:
+    dp_dq = delt * firstTimestepImpedance / cardiacCycleLength / m_generalizedAlphaMethodAlpha; // very suspicious of this... but it is as the fortran code did it...
 
     // from the old subroutine pHist:
     double poldImp = 0.0;
-    for (size_t ii = 0; ii < m_numberOfTimePointsInData; ii++)
+    std::cout << "current time in impedance BC: " << timen_1 << std::endl;
+    for (size_t ii = 0; ii < m_numberOfTimePointsInData - 1; ii++)
     {
-        poldImp += m_qHistImp.at(ii) * ImpConvCoef.at(ii);
+        // poldImp += m_qHistImp.at(ii) * ImpConvCoef.at(ii);
+        double convolutionTime = timen_1 - ii * delt;
+        // remove delt on next line:
+        poldImp += delt * m_qHistImp.at(m_numberOfTimePointsInData - ii - 1) * mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(convolutionTime) / cardiacCycleLength / m_generalizedAlphaMethodAlpha;
+        // std::cout << "convolution: " << ii << " " << m_qHistImp.at(ii) << " " << ImpConvCoef.at(ii) << std::endl;
     }
+    // std::cout << "Working with: " << m_qHistImp.at(3) << " " << ImpConvCoef.at(3) << std::endl;
 
     Hop = poldImp;
+
+    Hop = 0.0;
+    dp_dq = mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(timen_1);
+    std::cout <<"just computed dp/dq and Hop: " << dp_dq << " " << Hop << std::endl;
     return std::make_pair(dp_dq, Hop);
 }
 
@@ -81,7 +95,8 @@ void ImpedanceBoundaryCondition::readImpedanceFlowHistory()
 	// from genini.f90 around line 100
 	std::stringstream currentActionInfoMessage;
 	currentActionInfoMessage << "Reading " << m_impedanceFlowHistoryFileName << std::endl;
-	std::cout << currentActionInfoMessage;
+	std::cout << currentActionInfoMessage.str();
+
 	SimpleFileReader simpleFileReader(m_impedanceFlowHistoryFileName);
 
 	// Read the file into m_qHistImp:
@@ -98,6 +113,7 @@ void ImpedanceBoundaryCondition::readImpedanceFlowHistory()
 		safetyCounter++;
 		checkSafetyCounter(safetyCounter, currentActionInfoMessage);
 	}
+
 	m_numberOfTimePointsInData = m_qHistImp.size(); // note that this is actually equal to ntimeptpT+1 in genini.
 }
 
@@ -112,7 +128,8 @@ void ImpedanceBoundaryCondition::readTimeDomainImpedance()
 {
 	std::stringstream currentActionInfoMessage;
 	currentActionInfoMessage << "Reading " << m_timeDomainImpedanceFileName << std::endl;
-	std::cout << currentActionInfoMessage;
+	std::cout << currentActionInfoMessage.str();
+
 	SimpleFileReader timeDomainImpedanceDatReader(m_timeDomainImpedanceFileName);
 
 	int safetyCounter = 0;
@@ -170,4 +187,10 @@ void ImpedanceBoundaryCondition::writeImpedanceSpecificFlowHistory() const
 		fileWriter.writeToFile(value);
 		fileWriter.writeEndLine();
 	}
+}
+
+void ImpedanceBoundaryCondition::finaliseAtEndOfTimestep()
+{
+	updateStoredFlowHistory();
+	writeImpedanceSpecificFlowHistory();
 }

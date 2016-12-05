@@ -48,6 +48,13 @@ void BoundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLP
   m_numberOfBoundaryConditionsManaged += m_NumberOfNetlistSurfaces;
 }
 
+void BoundaryConditionManager::setNumberOfImpedanceSurfaces(const int numImpedanceSurfaces)
+{
+  assert(m_NumberOfImpedanceSurfaces == 0);
+  m_NumberOfImpedanceSurfaces = numImpedanceSurfaces;
+  m_numberOfBoundaryConditionsManaged += m_NumberOfImpedanceSurfaces;
+}
+
 void BoundaryConditionManager::setMasterControlScriptPresent(const int masterControlScriptPresent)
 {
   if (masterControlScriptPresent == 1)
@@ -588,7 +595,7 @@ void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
     boost::shared_ptr<ControlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<ControlledCoronary> (*boundaryCondition);
     if (downcastCoronary != NULL)
     {
-      downcastCoronary->finalizeLPNAtEndOfTimestep();
+      downcastCoronary->finaliseAtEndOfTimestep();
     }
   }
 }
@@ -632,7 +639,7 @@ void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
     auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     if (downcastNetlist != NULL)
     {
-      downcastNetlist->finalizeLPNAtEndOfTimestep();
+      downcastNetlist->finaliseAtEndOfTimestep();
     }
   }
 
@@ -1138,13 +1145,15 @@ int BoundaryConditionManager::getNumberOfControlSystems() const
   return mp_controlSystemsManager->getNumberOfControlSystems();
 }
 
+// Put all the end-of-timestep cleanup work here
+// (some of it is still located in Fortran at the time of writing 2016-11-22, but much of it can probably be moved here to reduce linking with Fortran)
 void BoundaryConditionManager::finaliseOnTimeStep()
 {
   for (auto& boundaryCondition : m_boundaryConditions){
     boost::shared_ptr<ImpedanceBoundaryCondition> downcastImpedanceBC = boost::dynamic_pointer_cast<ImpedanceBoundaryCondition> (boundaryCondition);
     if (downcastImpedanceBC)
     {
-      downcastImpedanceBC->writeImpedanceSpecificFlowHistory();
+      downcastImpedanceBC->finaliseAtEndOfTimestep();
     }
   }
 }

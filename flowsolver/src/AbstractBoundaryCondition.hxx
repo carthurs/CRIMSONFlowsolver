@@ -69,7 +69,6 @@ class AbstractBoundaryCondition
 
     // void setLPNInflowPressure(double inflowPressure);
     void updpressure_n1_withflow();
-    // virtual void finalizeLPNAtEndOfTimestep() = 0;
     double getSurfaceIndex() const {return surfaceIndex;}
     void incrementTimestepIndex();
     virtual void setDirichletConditionsIfNecessary(int* const binaryMask);
@@ -83,6 +82,7 @@ class AbstractBoundaryCondition
     double getFlowHistoryValueByTimestepIndex(const int timestepIndex) const;
     void computeImplicitCoeff_solve(const int timestepNumber);
     void computeImplicitCoeff_update(const int timestepNumber);
+    virtual void finaliseAtEndOfTimestep() = 0;
  protected:
  	double dp_dq;
  	double Hop;

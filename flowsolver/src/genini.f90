@@ -221,6 +221,10 @@
           if (numNetlistLPNSrfs .gt. int(0)) then
            call multidom%addsurfids(numNetlistLPNSrfs,indicesOfNetlistSurfaces)
           end if
+
+          if (numImpSrfs .gt. int(0)) then
+            call multidom%addsurfids(numImpSrfs, nsrflistImp)
+          end if
         end if
 !
 !.... satisfy the boundary conditions

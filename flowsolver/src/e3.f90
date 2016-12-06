@@ -96,9 +96,6 @@
         call getshp(shp,          shgl,      sgn, &
                     shpfun,       shdrv)
 !
-!.... get necessary fluid properties (including eddy viscosity)
-!
-        call getdiff(dwl,  yl,     shpfun,     xmudmi, xl,   rmu, rho)
 !
 !.... calculate the integration variables
 !
@@ -113,6 +110,11 @@
                      ql,          rLui,      src, &
                      rerrl,       rlsl,      rlsli, &
                      dwl) 
+
+!Order of e3ivar and getdiff switched in order to get the values of g1yi, g2yi, and g3yi SL, MAF 6/12/16
+!.... get necessary fluid properties (including eddy viscosity)
+!
+        call getdiff(dwl,  yl,     shpfun,     xmudmi, xl,   rmu, rho)
 
 #if DEBUG_ALE == 1
 

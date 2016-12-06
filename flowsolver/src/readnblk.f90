@@ -38,6 +38,7 @@
       use globalArrays
       use phcommonvars
       use ale
+      use nnw
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
       real (c_double), allocatable :: xread(:,:), qread(:,:), acread(:,:)
@@ -679,6 +680,7 @@
 
       write(*,*) "ale initialized 2"
 
+
       ! if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
       !     call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
       !     write(*,*) "ale initialized 3"
@@ -698,6 +700,9 @@
       end if
       !--------------------------------------------------
 
+      !Initialize non-Newtonian variables
+      !----------------------------------
+      call initialize_NNW(nnwType)
       
 
       call PhAssignPointerInt(c_loc(inodesuniq), c_char_"local index of unique nodes"//c_null_char)

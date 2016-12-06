@@ -131,9 +131,9 @@
 !.... compute the Na,i multiplier
 !
       tmp  = -pres + tauC * (g1yi(:,2) + g2yi(:,3) + g3yi(:,4)) !think this is div(v)
-      tmp1 =  rmu * ( g2yi(:,2) + g1yi(:,3) )
-      tmp2 =  rmu * ( g3yi(:,3) + g2yi(:,4) )
-      tmp3 =  rmu * ( g1yi(:,4) + g3yi(:,2) )
+      tmp1 =  rmu * ( g2yi(:,2) + g1yi(:,3) )  ! 1st row of (gradv + (gradv)^T), SL, MAF
+      tmp2 =  rmu * ( g3yi(:,3) + g2yi(:,4) )  ! 2nd row of (gradv + (gradv)^T), SL, MAF 
+      tmp3 =  rmu * ( g1yi(:,4) + g3yi(:,2) )  ! 3rd row of (gradv + (gradv)^T), SL, MAF
 
 
       if(iconvflow.eq.2) then  ! advective form (NO IBP either) !IBP = integration by parts, MAF

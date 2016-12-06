@@ -12,6 +12,8 @@
               dwl(npro,nshl),     sclr(npro), &
               xl(npro,nenl,nsd)
       integer n, e
+      real*8 xelem(npro,nsd)
+      real*8 relem(npro)
 
       !real*8  epsilon_ls, kay, epsilon, &
 !      real*8  kay, epsilon, &
@@ -36,8 +38,18 @@
 
 !      if (iLSet .eq. 0)then
 
-         rho  = datmat(1,1,1)	! single fluid model, i.e., only 1 density
-         rmu = datmat(1,2,1)
+         rho  = datmat(1,1,1) ! single fluid model, i.e., only 1 density
+         if (nnwType.eq.0) then
+            rmu = datmat(1,2,1)
+         elseif(nnwType.eq.1) then
+            xelem = (1.0d0/4.0d0)*(xl(:,1,:)+xl(:,2,:)+xl(:,3,:)+xl(:,4,:))
+            relem = sqrt(xelem(:,1)**2.0d0 + xelem(:,2)**2.0d0)  
+            rmu = -1.0d0*datmat(1,2,1)*(relem+1.0d0)*(relem-1.0d0)*(relem)**2.0d0 
+         ! elseif(nnwType.eq.3) then
+         !    call compute_non_newtonian_viscosity(rmu)
+         else
+            rmu = datmat(1,2,1)
+         endif 
 
 !      else     !  two fluid properties used in this model
 

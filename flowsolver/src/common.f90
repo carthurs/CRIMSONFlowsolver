@@ -153,6 +153,12 @@ module phcommonvars
     !----------------------------------------------------------
 
     !----------------------------------------------------------
+    integer nnwOn, nnwType
+    common /nnwFlags/ nnwOn, nnwType
+    bind(C, name="nnwFlags") :: /nnwFlags/
+    !----------------------------------------------------------
+
+    !----------------------------------------------------------
     integer :: master != 0
     integer numpe, myrank
     common /workfc/ master, numpe, myrank

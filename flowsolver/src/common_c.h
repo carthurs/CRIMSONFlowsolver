@@ -53,7 +53,12 @@
       extern struct {
          int aleOn;
          int aleType;
-      } aleFlags;      
+      } aleFlags; 
+
+      extern struct {
+         int nnwOn;
+         int nnwType;
+      } nnwFlags; 
 
       extern struct { 
          int master;

@@ -57,6 +57,17 @@ int input_fform() {
 			aleFlags.aleOn = 1;
 		}
 
+		// NON NEWTONIAN flags; SL, MAF, 06/12/2016
+		nnwFlags.nnwType = (int) inp.GetValue("Type viscosity");
+		if (nnwFlags.nnwType == 0)
+		{
+			nnwFlags.nnwOn = 0;
+		}
+		else
+		{
+			nnwFlags.nnwOn = 1;
+		}
+
 		// Solution Control Keywords
 
 		if (boost::iequals((string) inp.GetValue("Equation of State"), "Incompressible"))

@@ -37,7 +37,7 @@ void NetlistBoundaryCondition::initialiseModel()
     // m_atomicSubcircuitConnectionManager = boost::shared_ptr<AtomicSubcircuitConnectionManager>( toPassToSharedPtr );
 }
 
-void NetlistBoundaryCondition::finalizeLPNAtEndOfTimestep()
+void NetlistBoundaryCondition::finaliseAtEndOfTimestep()
 {
     mp_NetlistCircuit->finalizeLPNAtEndOfTimestep();
 }

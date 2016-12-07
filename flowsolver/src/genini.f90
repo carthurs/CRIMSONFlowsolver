@@ -96,6 +96,7 @@
         endif
 
         if (impfile .gt. 0 ) then !for impedance BC
+          ! #DONE
            do irank=1, numpe
               call MPI_BARRIER (INEWCOMM,ierr)
               if((irank-1).eq.myrank) then 
@@ -219,6 +220,10 @@
 !
           if (numNetlistLPNSrfs .gt. int(0)) then
            call multidom%addsurfids(numNetlistLPNSrfs,indicesOfNetlistSurfaces)
+          end if
+
+          if (numImpSrfs .gt. int(0)) then
+            call multidom%addsurfids(numImpSrfs, nsrflistImp)
           end if
         end if
 !

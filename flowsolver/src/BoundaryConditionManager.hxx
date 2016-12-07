@@ -53,6 +53,7 @@ class AbstractBoundaryCondition;
     
     void setPressureFromFortran();
     void getImplicitCoeff_rcr(double* const implicitCoeffs_toBeFilled);
+    void getImplicitCoeff_impedanceBoundaryConditions(double* const implicitCoeffs_toBeFilled);
     std::vector<boost::shared_ptr<AbstractBoundaryCondition>>* getBoundaryConditions();
 
     // Must be fully defined here in the header so that other translation units can instantiate the template
@@ -111,6 +112,7 @@ class AbstractBoundaryCondition;
 
     int getNumberOfRCRSurfaces(){return m_NumberOfRCRSurfaces;}
     size_t getNumberOfNetlistSurfaces(){return m_NumberOfNetlistSurfaces;}
+    size_t getNumberOfImpedanceSurfaces(){return m_NumberOfImpedanceSurfaces;}
     int getNumberOfControlledCoronarySurfaces(){return m_NumberOfControlledCoronarySurfaces;}
     int getNumberOfDownsreamClosedLoopCircuits(){return m_numLoopClosingNetlistCircuits;}
     void getNumberOfBoundaryConditionManagerBoundaryConditions_reference(int& totalNumberOfManagedBoundaryConditions) const;
@@ -118,6 +120,7 @@ class AbstractBoundaryCondition;
     void setNumberOfRCRSurfaces(const int numGRCRSrfs);
     void setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs);
     void setNumberOfNetlistSurfaces(const int numNetlistLPNSrfs);
+    void setNumberOfImpedanceSurfaces(const int numImpedanceSurfaces);
     void setDelt(const double delt);
     void setHstep(const int hstep);
     void setAlfi(const double alfi);
@@ -147,6 +150,8 @@ class AbstractBoundaryCondition;
 
     int getNumberOfControlSystems() const;
 
+    void finaliseOnTimeStep();
+
     ~BoundaryConditionManager()
     {
     }
@@ -158,6 +163,7 @@ class AbstractBoundaryCondition;
 
         m_NumberOfRCRSurfaces = 0;
         m_NumberOfNetlistSurfaces = 0;
+        m_NumberOfImpedanceSurfaces = 0;
         m_NumberOfControlledCoronarySurfaces = 0;
 
         m_deltHasBeenSet = false;
@@ -189,6 +195,7 @@ class AbstractBoundaryCondition;
     int m_numberOfBoundaryConditionsManaged;
     int m_NumberOfRCRSurfaces;
     size_t m_NumberOfNetlistSurfaces;
+    size_t m_NumberOfImpedanceSurfaces;
     int m_NumberOfControlledCoronarySurfaces;
     double m_delt;
     int m_hstep;

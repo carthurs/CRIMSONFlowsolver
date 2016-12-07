@@ -639,9 +639,9 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
 
     !...initialize the coefficients for the impedance convolution,
     !   which are functions of alphaf so need to do it after itrSetup
-    if(numImpSrfs.gt.zero) then
-        call calcImpConvCoef (numImpSrfs, ntimeptpT)
-    endif
+    ! if(numImpSrfs.gt.zero) then ! DISABLED DURING CPP IMPEDANCEBOUNDARYCONDITION REPLACEMENT
+    !     call calcImpConvCoef (numImpSrfs, ntimeptpT)
+    ! endif
     !
     !...initialize the initial condition P(0)-RQ(0)-Pd(0) for RCR BC
     !   need ndsurf so should be after initNABI
@@ -1144,8 +1144,8 @@ subroutine itrdrv_iter_init() bind(C, name="itrdrv_iter_init")
     !
     ! ... calc the pressure contribution that depends on the history for the imp BC
     !
-    if(numImpSrfs.gt.0) call pHist(poldImp,QHistImp,ImpConvCoef, &
-    ntimeptpT,numImpSrfs)
+    ! if(numImpSrfs.gt.0) call pHist(poldImp,QHistImp,ImpConvCoef, & ! removed CA 2016-11-22 during port of impedance BC to C++
+    ! ntimeptpT,numImpSrfs)
     !
     ! ... calc the pressure contribution that depends on the history for the RCR BC
     !
@@ -1318,6 +1318,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
             isolve=icode/10
             if(icode.eq.0) then ! flow solve (encoded as 0)
                 call callCppComputeAllNetlistImplicitCoeff_solve(currentTimestepIndex)
+                call callCppComputeAllImpedanceImplicitCoeff_solve(currentTimestepIndex)
                 !
                 iter   = iter+1
                 ifuncs(1)  = ifuncs(1) + 1
@@ -1434,6 +1435,7 @@ subroutine itrdrv_iter_step() bind(C, name="itrdrv_iter_step")
 
         else ! this is an update  (mod did not equal zero)
             call callCppComputeAllNetlistImplicitCoeff_update(currentTimestepIndex)
+            call callCppComputeAllImpedanceImplicitCoeff_update(currentTimestepIndex)
 
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !.... -----------------------> corrector phase <-----------------------
@@ -1862,9 +1864,9 @@ subroutine itrdrv_iter_finalize() bind(C, name="itrdrv_iter_finalize")
     !
     ! ... update the flow history for the impedance convolution, filter it and write it out
     !
-    if(numImpSrfs.gt.zero) then
-        call UpdHistConv(y,nsrflistImp,numImpSrfs) !uses Delt(1)
-    endif
+    ! if(numImpSrfs.gt.zero) then ! removed CA 2016-11-22 during port of impedance BC to C++
+    !     call UpdHistConv(y,nsrflistImp,numImpSrfs) !uses Delt(1)
+    ! endif
 
     !
     ! ... update the flow history for the RCR convolution

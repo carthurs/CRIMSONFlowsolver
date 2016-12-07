@@ -1,7 +1,10 @@
 #ifndef DATATYPESINCPP_HXX_
 #define DATATYPESINCPP_HXX_
 
-enum boundary_condition_t {BoundaryCondition_Null, BoundaryCondition_RCR, BoundaryCondition_ControlledCoronary, BoundaryCondition_Netlist};
+#include <vector>
+#include <utility>
+
+enum boundary_condition_t {BoundaryCondition_Null, BoundaryCondition_RCR, BoundaryCondition_ControlledCoronary, BoundaryCondition_Netlist, BoundaryCondition_Impedance};
 
 enum circuit_component_t {Component_Null, Component_Resistor, Component_Capacitor, Component_Inductor, Component_Diode, Component_MonopolePressureNode, Component_VolumeTracking, Component_VolumeTrackingPressureChamber};
 
@@ -16,5 +19,7 @@ enum parameter_controller_t {Controller_Null, Controller_LeftVentricularElastanc
 enum boundary_data_t {Boundary_Pressure, Boundary_Flow};
 
 enum circuit_item_t {Circuit_Component, Circuit_Node};
+
+typedef std::vector<std::pair<double,double>> TimeValuePairVector;
 
 #endif

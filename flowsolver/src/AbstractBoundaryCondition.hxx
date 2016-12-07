@@ -24,7 +24,7 @@ class AbstractBoundaryCondition
     : surfaceIndex(surfaceIndex_in),
       hstep(hstep_in),
       delt(delt_in),
-      alfi_local(alfi_in),
+      m_generalizedAlphaMethodAlpha(alfi_in),
       m_currentTimestepIndex(currentTimestepIndex),
       m_maxsurf(maxsurf),
       m_nstep(nstep)
@@ -69,7 +69,6 @@ class AbstractBoundaryCondition
 
     // void setLPNInflowPressure(double inflowPressure);
     void updpressure_n1_withflow();
-    // virtual void finalizeLPNAtEndOfTimestep() = 0;
     double getSurfaceIndex() const {return surfaceIndex;}
     void incrementTimestepIndex();
     virtual void setDirichletConditionsIfNecessary(int* const binaryMask);
@@ -83,6 +82,7 @@ class AbstractBoundaryCondition
     double getFlowHistoryValueByTimestepIndex(const int timestepIndex) const;
     void computeImplicitCoeff_solve(const int timestepNumber);
     void computeImplicitCoeff_update(const int timestepNumber);
+    virtual void finaliseAtEndOfTimestep() = 0;
  protected:
  	double dp_dq;
  	double Hop;
@@ -93,7 +93,7 @@ class AbstractBoundaryCondition
  	const int surfaceIndex;
     const int hstep;
     const double delt;
-    const double alfi_local;
+    const double m_generalizedAlphaMethodAlpha;
     int m_currentTimestepIndex;
     const int m_maxsurf;
     const int m_nstep;
@@ -114,16 +114,9 @@ class AbstractBoundaryCondition
 
     // double LPNInflowPressure;
 
-    virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
-
-    // virtual void updateLPN() = 0;
-	virtual double linInterpolateTimeData(const double &currentTime, const int timeDataLength)
-	{
-    	throw std::runtime_error("Disallowed call to non-overridden (e.g. non-RCR).");
-    	return 0.0;
-    };
  private:
  	static int numberOfConstructedBoundaryConditions;
+    virtual std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) = 0;
  };
 
 #endif

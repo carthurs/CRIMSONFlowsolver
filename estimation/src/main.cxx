@@ -90,7 +90,11 @@ int main(int argc, char **argv) {
        {
            static volatile int debuggerPresent =0;
            std::cout << "Debug flag spotted on the command line. Pausing to await debugger connection..." << std::endl;
-           while (!debuggerPresent ); // assign debuggerPresent=1
+           while (!debuggerPresent )
+           {
+             sleep(2);
+             std::cout << "Awaiting debugger connection..." << std::endl;
+           }; // assign debuggerPresent=1
        }
      }
    }

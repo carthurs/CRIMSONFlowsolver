@@ -36,6 +36,7 @@ void multidom_initialise(){
   boundaryConditionManager_instance->setNumberOfRCRSurfaces(grcrbccom.numGRCRSrfs);
   boundaryConditionManager_instance->setNumberOfControlledCoronarySurfaces(nomodule.numControlledCoronarySrfs);
   boundaryConditionManager_instance->setNumberOfNetlistSurfaces(nomodule.numNetlistLPNSrfs);
+  boundaryConditionManager_instance->setNumberOfImpedanceSurfaces(nomodule.numImpSrfs);
   boundaryConditionManager_instance->setNumLoopClosingnetlistCircuits(nomodule.numLoopClosingCircuits);
   boundaryConditionManager_instance->setMasterControlScriptPresent(nomodule.hasMasterPythonControlScript);
 
@@ -88,15 +89,19 @@ void multidom_initialise(){
   std::vector<std::pair<int,boundary_condition_t>> surfaceList;
   for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfRCRSurfaces(); ii++)
   {
-    surfaceList.push_back(std::pair <int,boundary_condition_t> (grcrbccom.nsrflistGRCR[ii+1],BoundaryCondition_RCR));
+    surfaceList.push_back(std::pair <int, boundary_condition_t> (grcrbccom.nsrflistGRCR[ii+1], BoundaryCondition_RCR));
   }
   for (int ii = 0; ii < boundaryConditionManager_instance->getNumberOfControlledCoronarySurfaces(); ii++)
   {
-    surfaceList.push_back(std::pair <int,boundary_condition_t> (nomodule.indicesOfCoronarySurfaces[ii+1],BoundaryCondition_ControlledCoronary));
+    surfaceList.push_back(std::pair <int, boundary_condition_t> (nomodule.indicesOfCoronarySurfaces[ii+1], BoundaryCondition_ControlledCoronary));
   }
   for (size_t ii = 0; ii < boundaryConditionManager_instance->getNumberOfNetlistSurfaces() ; ii++)
   {
-    surfaceList.push_back(std::pair<int,boundary_condition_t> (nomodule.indicesOfNetlistSurfaces[ii+1],BoundaryCondition_Netlist));
+    surfaceList.push_back(std::pair<int, boundary_condition_t> (nomodule.indicesOfNetlistSurfaces[ii+1], BoundaryCondition_Netlist));
+  }
+  for (size_t ii = 0; ii < boundaryConditionManager_instance->getNumberOfImpedanceSurfaces() ; ii++)
+  {
+    surfaceList.push_back(std::pair<int, boundary_condition_t> (nomodule.nsrflistImp[ii+1], BoundaryCondition_Impedance));
   }
   // Write loops here for all the other surface types!
 
@@ -125,8 +130,10 @@ void multidom_iter_step()
 
 void multidom_iter_finalise()
 {
-  BoundaryConditionManager::Instance()->markClosedLoopLinearSystemsForRebuilding();
-  BoundaryConditionManager::Instance()->incrementTimestepIndex();
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->finaliseOnTimeStep();
+  boundaryConditionManager_instance->markClosedLoopLinearSystemsForRebuilding();
+  boundaryConditionManager_instance->incrementTimestepIndex();
   // BoundaryConditionManager::Instance()->storeAllBoundaryConditionFlowsAndPressuresAtStartOfTimestep();
 }
 

@@ -5,38 +5,6 @@
 // Statics
 int RCR::s_numberOfInitialisedRCRs = 0;
 
-double RCR::linInterpolateTimeData(const double &currentTime, const int timeDataLength)
-{
-  // Linearly interpolates between pairs of (Time,Value) pairs, in time.
-  // If we've reached a Time past the end of the last value in the array,
-  // this just returns the final value of Value
-
-  if (timeDataPdist[timeDataLength-1].first <= currentTime)
-  {
-    // Case where we're off the final end of the time data series.
-    return timeDataPdist[timeDataLength-1].second;
-  }
-  else if (timeDataPdist[0].first >= currentTime)
-  {
-    // Case wehre we're at (or before) the beginning of the time data series.
-    return timeDataPdist[0].second;
-  }
-
-  int ii = 0;
-  while (timeDataPdist[ii].first < currentTime)
-  {
-    ii++;
-  }
-
-  double distanceThroughTimeInterval;
-  distanceThroughTimeInterval = (currentTime - timeDataPdist[ii-1].first) / (timeDataPdist[ii].first - timeDataPdist[ii-1].first);
-
-  return timeDataPdist[ii-1].second*(1.0 - distanceThroughTimeInterval) + timeDataPdist[ii].second*distanceThroughTimeInterval;
-
-}
-
-
-//
 /*  >>>>>>>>>>>>>>>>>>>>     RUUUULE BRITANNIAAAA! <<<<<<<<<<<<<<<<<<<<<<<<<<
 ZZZ         888888888888888888888   ZZZZZZZZ  888888888888888888888   ZZZZZZ    
 ZZZZZZ         888888888888888888   ZZZZZZZZ  888888888888888888   ZZZZZZ       
@@ -66,7 +34,6 @@ ZZZZZ$  :888888888888888888888888   ZZZZZZZZ  8888888888888888888888887        I
 */
 void RCR::initialiseModel()
 {
-    isactive = int(1);
     // History arrays      
     for(int ii=0; ii<hstep; ii++)
     {
@@ -83,8 +50,8 @@ std::pair<double,double> RCR::computeImplicitCoefficients(const int timestepNumb
 {
   double timeAtStepN = delt*((double)timestepNumber);
 
-  double pdistn = linInterpolateTimeData(timeAtStepN,lengthOftimeDataPdist);
-  double pdistn_1 = linInterpolateTimeData(timeAtStepNplus1,lengthOftimeDataPdist);
+  double pdistn = m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(timeAtStepN);
+  double pdistn_1 = m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(timeAtStepNplus1);
 
   // // parameters overwritten
   // // dirty hack for filtering
@@ -155,7 +122,7 @@ void RCR::getPressureAndFlowPointersFromFortran()
     if (m_thisIsARestartedSimulation)
     {
       // Initialise the pressure using the value from the PHistRCR.dat.
-      pressure_n = (BoundaryConditionManager::Instance()->PHistReader)->getReadFileData(indexOfThisRCR+1, m_currentTimestepIndex);
+      pressure_n = (BoundaryConditionManager::Instance()->PHistReader)->getReadFileData(m_indexOfThisRCR+1, m_currentTimestepIndex);
     }
     else
     {

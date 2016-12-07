@@ -54,7 +54,7 @@
 ! compensate for yalpha passed not y in Elmgmr()
       ImpConvCoef(numTpoints+1,:)= ImpConvCoef(numTpoints+1,:) &
                         - ImpConvCoef(numTpoints+2,:)*(1.0-alfi)/alfi 
-      ImpConvCoef(numTpoints+2,:)= ImpConvCoef(numTpoints+2,:)/alfi 
+      ImpConvCoef(numTpoints+2,:)= ImpConvCoef(numTpoints+2,:)/alfi
       return
       end
 

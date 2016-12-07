@@ -1,0 +1,90 @@
+#!/bin/bash
+#!/usr/bin/awk -mr 20000 
+# script to convert rcr data to gnuplot format 
+
+if [[ $# -lt 1 ]]; then
+   echo '=>>'
+   echo '=>> convert rcr data to gnuplot format'
+   echo '=>> usage: write_rcr_dat <pressure/flow filename>'
+
+else
+
+FOLDERNAME=$(ls | grep 'procs')
+
+if [ -d "$FOLDERNAME" ]; then
+   INPUTFILE="$FOLDERNAME/$1"
+fi
+
+if [ ! -d "$FOLDERNAME" ]; then
+   INPUTFILE="$1"
+fi
+
+if [ ! -f $INPUTFILE ]; then
+    echo " =>> error: file not found !! "
+    exit 0
+fi
+
+filename=$(basename "$INPUTFILE")
+extension="${filename##*.}"
+filename="${filename%.*}"
+OUTPUTFILE="$filename.gplot"
+# echo $filename
+# echo $OUTPUTFILE
+
+awk 'BEGIN {
+
+print "=>> input file: '"$INPUTFILE"'"
+print "=>> output file: '"$OUTPUTFILE"'"
+
+getline  < "'"$INPUTFILE"'"
+
+# number of timesteps 
+nstep = $1
+print "=>> number of time steps: "nstep
+
+# number of data points
+ndata = 0
+
+# number of lines
+nline = 0
+
+while (getline < "'"$INPUTFILE"'")
+{
+   
+  # line count 
+  nline = nline + 1
+
+  for (i=1;i<=NF;i++)
+  { 
+    # data count
+    ndata = ndata + 1
+
+    # store ith field 
+    data[ndata] = $i                
+
+   }
+
+}
+
+ngroup = ndata/nstep
+
+print "=>> number of lines: "nline
+print "=>> number of data points: "ndata
+print "=>> number of outlets: "ngroup
+
+for (j=0;j<nstep;j++)
+{
+  
+  printf("%i %e",j,data[j*ngroup+1]) >  "'"$OUTPUTFILE"'" # "PHistRCR.gplot"
+ 
+  for(k=1;k<ngroup;k++){
+     printf(" %e",data[j*ngroup+1+k]) > "'"$OUTPUTFILE"'" # "PHistRCR.gplot"
+  }; 
+ 
+  printf("\n") > "'"$OUTPUTFILE"'" #"PHistRCR.gplot"
+
+}  
+
+}' 
+
+fi

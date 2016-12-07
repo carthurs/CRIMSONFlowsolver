@@ -17,6 +17,13 @@ void checkSafetyCounter(const int safetyCounter, const std::stringstream& curren
 std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
     double firstTimestepImpedance = m_timeVaryingImpedance.front().second;
+
+    // This is just the first entry of the impedance; it is really part
+    // of the convolution, but the flow value it needs to be multiplied
+    // by in the convolution is not known yet; the 3D domain will
+    // find that value and multiply it by this dp_dq during the solver.
+    //
+    // No delt required in this as it's a discrete convolution
     dp_dq = firstTimestepImpedance / m_generalizedAlphaMethodAlpha;
 
     // c.f. the old subroutine pHist:
@@ -24,6 +31,7 @@ std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients
     for (size_t ii = 0; ii < m_numberOfTimePointsInData - 1; ii++)
     {
         double convolutionTime = (ii+1) * delt;
+        // No delt required in this as it's a discrete convolution
         poldImp += m_qHistImp.at(m_numberOfTimePointsInData - ii - 1) * mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(convolutionTime) / m_generalizedAlphaMethodAlpha;
     }
 

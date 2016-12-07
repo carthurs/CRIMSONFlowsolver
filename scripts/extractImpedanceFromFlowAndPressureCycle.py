@@ -76,6 +76,9 @@ extractedFlowCycles = flowData[cycleStartTimestepIndex-1:cycleEndTimestepIndex-1
 pressureFft = numpy.fft.fft(extractedPressureCycles)
 flowFft = numpy.fft.fft(extractedFlowCycles)
 
+# numpy.savetxt('pressureFft.dat', numpy.abs(pressureFft))
+# numpy.savetxt('flowFft.dat', numpy.abs(flowFft))
+
 impedanceInFrequencyDomain = pressureFft / flowFft
 
 numpy.savetxt('impedanceInFreqencyDomain.dat', numpy.abs(impedanceInFrequencyDomain))

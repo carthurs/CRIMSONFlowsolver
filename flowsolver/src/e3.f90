@@ -37,7 +37,9 @@
 ! C. H. Whiting,  Winter 1999.   (advective form formulation)
 !----------------------------------------------------------------------
 !
-        use phcommonvars  
+        use phcommonvars 
+        use nnw, only : get_shear_rate
+
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
         dimension yl(npro,nshl,ndof), &
@@ -70,9 +72,13 @@
         integer   aa, i
         logical :: exist
 
+        ! ALE variables
         dimension uMeshl(npro,nshl,3) !MAF 07/10/2016
         real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro) !MAF 07/10/2016
- 
+        
+        ! non-Newtonian flow variables
+        real*8 gamma_shear(npro) !SL, MAF 06/12/2016
+        real*8 gradv_x1(npro,3),gradv_x2(npro,3),gradv_x3(npro,3) !SL, MAF 06/12/2016
 !
 !     
 !.... local reconstruction of diffusive flux vector for quadratics
@@ -97,6 +103,8 @@
                     shpfun,       shdrv)
 !
 !
+        call getdiff(dwl,  yl,     shpfun,     xmudmi, xl,   rmu, rho)
+
 !.... calculate the integration variables
 !
         call e3ivar (yl,          acl,       shpfun, &
@@ -109,38 +117,7 @@
                      u1,          u2,        u3, &          
                      ql,          rLui,      src, &
                      rerrl,       rlsl,      rlsli, &
-                     dwl) 
-
-!Order of e3ivar and getdiff switched in order to get the values of g1yi, g2yi, and g3yi SL, MAF 6/12/16
-!.... get necessary fluid properties (including eddy viscosity)
-!
-        call getdiff(dwl,  yl,     shpfun,     xmudmi, xl,   rmu, rho)
-
-#if DEBUG_ALE == 1
-
-      ! write(*,*) 'printing rlui'
-      ! open(793,file='rlui.dat',status='unknown')
-      ! do i = 1, npro
-      !    write(793,'(3(e20.10))') rlui(i,1), rlui(i,2), rlui(i,3)                                     
-      ! end do 
-      ! close(793)
-      ! stop
-
-
-  ! write(*,*) 'printing rlui'    
-  ! inquire(file="rlui.dat", exist=exist)
-  ! if (exist) then
-  !   open(793, file="rlui.dat", status="old", position="append", action="write")
-  ! else
-  !   open(793, file="rlui.dat", status="new", action="write")
-  ! end if
-  ! do i = 1, npro
-  !        write(793,'(3(e20.10))') rlui(i,1), rlui(i,2), rlui(i,3)                                     
-  ! end do 
-  ! close(793)
-
-
-#endif 
+                     dwl, rmu) 
 !
 !.... compute the stabilization terms
 !
@@ -192,7 +169,9 @@
       endif
 !
 !.... return
-!
+!     
+      ! write(*,*) "end of e3"
+
       return
       end
 

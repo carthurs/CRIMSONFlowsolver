@@ -56,6 +56,9 @@
       use deformableWall
       use ale
 
+      use nnw, only : get_shear_rate, get_mu 
+
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
       dimension   yl(npro,nshl,ndof),        rmu(npro), &
@@ -128,6 +131,8 @@
       integer   aa, b, iblk
 
       integer logicPassed
+
+      real*8  gamma_shear(npro) !SL, MAF 06/12/16
 
       ! real*8 uMesh1(npro), uMesh2(npro), uMesh3(npro)
       
@@ -412,6 +417,14 @@
       ! unm = bnorm(:,1) * (u1-uMesh1) + &
       !       bnorm(:,2) * (u2-uMesh2) + &
       !       bnorm(:,3) * (u3-uMesh3)
+   
+      if (nnwType.eq.3) then  ! Recalculating rmu for non-Newtonian flow (We needed the gradients that are calcualted here)
+        call get_shear_rate(gamma_shear,npro,g1yi(:,2:4),g2yi(:,2:4),g3yi(:,2:4))
+        call get_mu(rmu,gamma_shear,npro)
+      endif
+
+
+
 
 
 

@@ -1,14 +1,14 @@
-      subroutine e3ivar (yl,          acl,       shpfun, &
-                         uMeshl, & !ALE variables added MAF 07/10/2016
-                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 07/10/2016
-                         shgl,        xl,        &
-                         aci,         g1yi,      g2yi,     &
-                         g3yi,        shg,       dxidx,    &
-                         WdetJ,       rho,       pres,  &
-                         u1,          u2,        u3,               &
-                         ql,          rLui,      src, &
-                         rerrl,       rlsl,      rlsli, &
-                         dwl)
+      subroutine e3ivar (yl,          acl,       shpfun, &                           
+                         uMeshl, & !ALE variables added MAF 07/10/2016                  !4
+                         uMesh1, uMesh2, uMesh3, & !ALE variables added MAF 07/10/2016  !7
+                         shgl,        xl,        &                                      !9
+                         aci,         g1yi,      g2yi,     &                            !12 
+                         g3yi,        shg,       dxidx,    &                            !15
+                         WdetJ,       rho,       pres,  &                               !18
+                         u1,          u2,        u3,               &                    !21
+                         ql,          rLui,      src, &                                 !24
+                         rerrl,       rlsl,      rlsli, &                               !27
+                         dwl, rmu)                                                      !29
 !
 !----------------------------------------------------------------------
 !
@@ -51,6 +51,9 @@
 !----------------------------------------------------------------------
 !
       use phcommonvars  
+      use nnw, only : get_shear_rate, get_mu
+      
+
   IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
 !  passed arrays
@@ -83,7 +86,11 @@
                 grad_constant3(npro) , constant_value    
 
         dimension uMeshl(npro,nshl,3) !MAF 07/10/2016
-        dimension uMesh1(npro), uMesh2(npro), uMesh3(npro) !MAF 07/10/2016              
+        dimension uMesh1(npro), uMesh2(npro), uMesh3(npro) !MAF 07/10/2016  
+
+        real*8  gamma_shear(npro) !SL, MAF 07/12/16
+        real*8  rmu(npro) !SL, MAF 07/12/16
+                  
 !
 !.... ------------->  Primitive variables at int. point  <--------------
 !
@@ -189,6 +196,14 @@
           g3yi(:,3) = g3yi(:,3) + shg(:,n,3) * yl(:,n,3)
           g3yi(:,4) = g3yi(:,4) + shg(:,n,3) * yl(:,n,4)
        enddo
+
+      
+      if (nnwType.eq.3) then  ! Recalculating rmu for non-Newtonian flow (We needed the gradients that are calcualted here)
+        call get_shear_rate(gamma_shear,npro,g1yi(:,2:4),g2yi(:,2:4),g3yi(:,2:4))
+        call get_mu(rmu,gamma_shear,npro)
+      endif
+
+
 
 #if DEBUG_ALE == 1   
       write(*,*) 'printing inside e3ivar'    
@@ -484,6 +499,7 @@
                             diffus,      srcRat)
 !
       use phcommonvars  
+      use nnw, only : get_shear_rate, get_mu 
   IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
 !  passed arrays
@@ -509,6 +525,8 @@
              src(npro,nsd),      rho(npro), &
              rmu(npro)
       real*8 uBar(npro,nsd), xmudmi(npro,ngauss)
+
+      real*8 :: gamma_shear(npro) !SL, MAF 06/12/2016  
 
 !
 !.... ------------->  Primitive variables at int. point  <--------------
@@ -627,6 +645,12 @@
           src(:,3)=u3           !
 !         e3uBar calculates Tau_M and assembles uBar
           call getdiff(dwl, yl, shpfun, xmudmi, xl, rmu, rho)
+
+          if (nnwType.eq.3) then  ! Recalculating rmu for non-Newtonian flow (We needed the gradients that are calcualted here)
+            call get_shear_rate(gamma_shear,npro,g1yi(:,2:4),g2yi(:,2:4),g3yi(:,2:4))
+            call get_mu(rmu,gamma_shear,npro)
+          endif
+
           call e3uBar(rho, src, dxidx, rLui, rmu, uBar)
           u1=ubar(:,1)          ! the entire scalar residual
           u2=ubar(:,2)          ! is based on the modified

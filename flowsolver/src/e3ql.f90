@@ -21,6 +21,8 @@
 !
       use local_mass
       use phcommonvars
+      use nnw, only : get_shear_rate, get_mu
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
       dimension yl(npro,nshl,ndof),        dwl(npro,nshl), &
@@ -43,6 +45,7 @@
 
 
         real*8 tmp(npro)
+        real*8 :: gamma_shear(npro)
 !
 !.... loop through the integration points
 !
@@ -65,6 +68,11 @@
                         dxidx,        WdetJ )
 
          call getdiff(dwl,  yl, shapeVar, xmudmi, xl,rmu, tmp)
+
+         if (nnwType.eq.3) then  ! Recalculating rmu for non-Newtonian flow (We needed the gradients that are calcualted here)
+            call get_shear_rate(gamma_shear,npro,g1yi(:,2:4),g2yi(:,2:4),g3yi(:,2:4))
+            call get_mu(rmu,gamma_shear,npro)
+         endif
 !
 !.... diffusive flux in x1-direction
 !

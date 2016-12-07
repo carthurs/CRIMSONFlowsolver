@@ -103,7 +103,6 @@
 !
 !.... compute and assemble diffusive flux vector residual, qres,
 !     and lumped mass matrix, rmass
-
               call AsIq (y,                x,                        &
                          shp(lcsyst,1:nshl,:),  &
                          shgl(lcsyst,:,1:nshl,:), &

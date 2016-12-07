@@ -59,6 +59,8 @@
         use cpp_interface
 !
         use phcommonvars  
+        use nnw, only : get_shear_rate 
+        
         IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 !
         dimension yl(npro,nshl,ndof),          iBCB(npro,ndiBCB), &
@@ -104,7 +106,7 @@
 
         character(len=50):: file_name, file_name_aux  ! added by MA 02/06/2016
         integer :: result                             ! added by MA 02/06/2016
-
+        real*8 :: gamma_shear(npro)
 !
 !.... compute the nodes which lie on the boundary (hierarchic)
 !
@@ -146,6 +148,7 @@
 !
         xmudmi=zero
 !
+        ! call get_shear_rate_boundary (yl, shg, nshl, ndof, nsd, npro, gamma_shear)
 !.... get necessary fluid properties (including eddy viscosity)
 !
         call getdiff(dwl, yl,     shapeVar,     xmudmi, xlb,   rmu, rho)

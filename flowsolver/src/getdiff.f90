@@ -5,6 +5,9 @@
 !-----------------------------------------------------------------------
       !use turbSA
       use phcommonvars
+      use nnw, only : get_mu
+
+
       IMPLICIT REAL*8 (a-h,o-z)  ! change default real type to be double precision
 
       real*8  yl(npro,nshl,ndof), rmu(npro), xmudmi(npro,ngauss), &
@@ -45,8 +48,6 @@
             xelem = (1.0d0/4.0d0)*(xl(:,1,:)+xl(:,2,:)+xl(:,3,:)+xl(:,4,:))
             relem = sqrt(xelem(:,1)**2.0d0 + xelem(:,2)**2.0d0)  
             rmu = -1.0d0*datmat(1,2,1)*(relem+1.0d0)*(relem-1.0d0)*(relem)**2.0d0 
-         ! elseif(nnwType.eq.3) then
-         !    call compute_non_newtonian_viscosity(rmu)
          else
             rmu = datmat(1,2,1)
          endif 

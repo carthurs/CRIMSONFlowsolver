@@ -1,0 +1,62 @@
+#!/bin/bash
+# script to return time and residual
+
+FOLDERNAME=$(ls | grep 'procs')
+
+if [ -d "$FOLDERNAME" ]; then
+   INPUTFILE="$FOLDERNAME/histor.dat"
+fi
+
+if [ ! -d "$FOLDERNAME" ]; then
+   INPUTFILE="histor.dat"
+fi
+
+#INPUTFILE="$FOLDERNAME/histor.dat"
+
+# Uncomment if you just want to use the histor.dat in the current folder:
+#INPUTFILE=histor.dat
+
+if [ ! -f $INPUTFILE ]; then
+    echo " *** error no histor.dat found *** "
+    exit 0
+fi
+
+awk 'BEGIN {
+
+
+getline  < "'"$INPUTFILE"'"
+
+n1 = $1
+t1 = $2 
+r1 = $3
+
+i = 1
+
+ndata[i] = n1
+tdata[i] = t1
+rdata[i] = r1
+
+while (getline < "'"$INPUTFILE"'")
+{
+   n2 = $1
+   t2 = $2 
+   r2 = $3
+
+   if (n2 > n1) 
+   {
+      i = i + 1
+      ndata[i] = n1
+      tdata[i] = t1
+      rdata[i] = r1
+      print ndata[i]," ",tdata[i]," ",rdata[i]
+   }
+
+   n1 = n2
+   t1 = t2
+   r1 = r2
+
+}
+
+}' > histor.gplot
+
+#gnuplot -persist plotresidual.gpi

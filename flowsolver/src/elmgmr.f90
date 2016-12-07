@@ -1810,7 +1810,6 @@
             faIn = faIn + 1
             call callCPPGetImplicitCoeff_impedanceBoundaryConditions(c_loc(implicitcoeffs(1,1)))
             ! faceRes(faIn) = ImpConvCoef(ntimeptpT+2,k) ! removed CA 2016-11-22 during port of impedance BC to C++
-            write(*,*) "setting implicit coeff for impedance BC:", implicitcoeffs(k,1)
             faceRes(faIn) = implicitcoeffs(k,1)
          END DO
          DO k = 1, numRCRSrfs

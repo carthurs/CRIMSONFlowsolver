@@ -24,6 +24,7 @@ class AbstractFileReader
 	friend class testMain;
 	friend class testFileReaders;
  	FRIEND_TEST(testMain, checkRCRSimpleShortSimulation);
+ 	FRIEND_TEST(testMain, checkImpedanceMimickingWindkessel);
  	FRIEND_TEST(testMain, checkRestartWorks_RCRSimpleShortSimulation);
 public:
 	AbstractFileReader()
@@ -35,6 +36,7 @@ public:
 		m_nextRowReadLoacation = 0;
 		mp_currentLineSplitBySpaces = new std::vector<std::string>;
 		mp_file = new std::ifstream();
+		m_skipHeaderLinesAlreadyCalled = false;
 	}
 	
 	void setFileName(std::string fileNameIn)
@@ -57,6 +59,8 @@ public:
 		m_numColumns = numberOfColumns;
 		m_hasNumberOfColumns = true;
 	}
+
+	void skipHeaderLines(const int numberOfHeaderLinesToSkip);
 	
 	virtual ~AbstractFileReader()
 	{
@@ -93,6 +97,7 @@ protected:
 	int m_nextColumnReadLocation;
 	int m_nextRowReadLoacation;
 private:
+	bool m_skipHeaderLinesAlreadyCalled;
 };
 
 

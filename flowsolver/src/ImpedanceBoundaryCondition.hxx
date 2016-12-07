@@ -33,10 +33,8 @@ public:
 			filename << "time_varying_impedance_surface_" << surfaceIndex << ".dat"; // formerly impt.dat
 			m_timeDomainImpedanceFileName = filename.str();
 		}
-		// if (impfile > 0) // then !for impedance BC #fortran
-		// {
+		
 		loadInputFiles();
-		// }
 	}
 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) {std::cout << "kalman filter not implemented in ImpedanceBoundaryCondition";};
 	void initialiseModel() {}; // not currently used for ImpedanceBoundaryCondition

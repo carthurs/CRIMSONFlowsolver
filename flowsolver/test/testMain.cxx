@@ -41,6 +41,35 @@ TEST_F(testMain, checkRestartWorks_RCRSimpleShortSimulation) {
   delete PHistReader;
 }
 
+TEST_F(testMain, checkImpedanceMimickingWindkessel) {
+  std::string simDir = "mainTests/basic/impedanceCpp";
+  setSimDirectory(simDir);
+  clearOutOldFiles();
+  runSimulation();
+
+  {
+    HistFileReader PressHistReader;
+    PressHistReader.setFileName("PressHist.dat");
+    PressHistReader.setNumColumns(3);
+    PressHistReader.skipHeaderLines(1);
+    PressHistReader.readAndSplitMultiSurfaceRestartFile();
+
+    double finalImpedanceSurfacePressureValue = ((PressHistReader.m_dataReadFromFile).at(15011))[1];
+    EXPECT_NEAR(finalImpedanceSurfacePressureValue,23125.530750631657,1e-5);
+  }
+
+  {
+    HistFileReader FlowHistReader;
+    FlowHistReader.setFileName("FlowHist.dat");
+    FlowHistReader.setNumColumns(3);
+    FlowHistReader.skipHeaderLines(1);
+    FlowHistReader.readAndSplitMultiSurfaceRestartFile();
+
+    double finalImpedanceSurfaceFlowValue = ((FlowHistReader.m_dataReadFromFile).at(15011))[1];
+    EXPECT_NEAR(finalImpedanceSurfaceFlowValue,-2.3149613243352420,1e-5);
+  }
+}
+
 TEST_F(testMain, checkCoronarySimpleShortSimulation) {
 
   std::string simDir = "mainTests/coronary/completeLPN";

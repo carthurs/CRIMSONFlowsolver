@@ -16,60 +16,18 @@ void checkSafetyCounter(const int safetyCounter, const std::stringstream& curren
 
 std::pair<double,double> ImpedanceBoundaryCondition::computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt)
 {
-	//..try easiest convolution Q and Z constant per time step
-	// do j=3,numTpoints+1
-	//    ImpConvCoef(j,:) = ValueListImp(j-1,:)/numTpoints
-	// enddo
-	std::vector<double> ImpConvCoef(m_numberOfTimePointsInData + 1, 0.0);
-	for (size_t index = 2; index < m_numberOfTimePointsInData; index++)
-	{
-		double interpolateToTime = (m_numberOfTimePointsInData + 1 - index) * delt; // Just mirroring the old Fortran here..
-		ImpConvCoef.at(index) = mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(interpolateToTime) / (m_numberOfTimePointsInData - 1);
-	}
-      
-	// ImpConvCoef(1,:) =zero
-	ImpConvCoef.at(0) = 0.0;
-	// ImpConvCoef(2,:) =zero
-	ImpConvCoef.at(1) = 0.0;
-
-	// ImpConvCoef(numTpoints+2,:) =  &
-	//            ValueListImp(numTpoints+1,:)/numTpoints
-	double interpolateToTime = 0.0;
-	ImpConvCoef.at(m_numberOfTimePointsInData) = mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(interpolateToTime) / (m_numberOfTimePointsInData - 1);
-
-// ! compensate for yalpha passed not y in Elmgmr()
-      // ImpConvCoef(numTpoints+1,:)= ImpConvCoef(numTpoints+1,:) &
-      //                   - ImpConvCoef(numTpoints+2,:)*(1.0-alfi)/alfi 
-	ImpConvCoef.at(m_numberOfTimePointsInData - 1) -= ImpConvCoef.at(m_numberOfTimePointsInData) / m_generalizedAlphaMethodAlpha;
-      // ImpConvCoef(numTpoints+2,:)= ImpConvCoef(numTpoints+2,:)/alfi
-	ImpConvCoef.at(m_numberOfTimePointsInData) /= m_generalizedAlphaMethodAlpha;
-
-       // formerly "ImpConvCoef(numTpoints+2,:)":
-    // dp_dq = ValueListImp(numTpoints + 1) / numTpoints / m_generalizedAlphaMethodAlpha;
     double firstTimestepImpedance = m_timeVaryingImpedance.front().second;
-    // dp_dq = firstTimestepImpedance / (m_numberOfTimePointsInData - 1) / m_generalizedAlphaMethodAlpha; // very suspicious of this... but it is as the fortran code did it...
-    double cardiacCycleLength = m_timeVaryingImpedance.back().first / 2.0; //  <=====WARNING REMOVE THE 2.0 HERE! JUST A TEST!
-    // remove delt on next line:
-    dp_dq = delt * firstTimestepImpedance / cardiacCycleLength / m_generalizedAlphaMethodAlpha; // very suspicious of this... but it is as the fortran code did it...
+    dp_dq = firstTimestepImpedance / m_generalizedAlphaMethodAlpha;
 
-    // from the old subroutine pHist:
+    // c.f. the old subroutine pHist:
     double poldImp = 0.0;
-    std::cout << "current time in impedance BC: " << timen_1 << std::endl;
     for (size_t ii = 0; ii < m_numberOfTimePointsInData - 1; ii++)
     {
-        // poldImp += m_qHistImp.at(ii) * ImpConvCoef.at(ii);
-        double convolutionTime = timen_1 - ii * delt;
-        // remove delt on next line:
-        poldImp += delt * m_qHistImp.at(m_numberOfTimePointsInData - ii - 1) * mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(convolutionTime) / cardiacCycleLength / m_generalizedAlphaMethodAlpha;
-        // std::cout << "convolution: " << ii << " " << m_qHistImp.at(ii) << " " << ImpConvCoef.at(ii) << std::endl;
+        double convolutionTime = (ii+1) * delt;
+        poldImp += m_qHistImp.at(m_numberOfTimePointsInData - ii - 1) * mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(convolutionTime) / m_generalizedAlphaMethodAlpha;
     }
-    // std::cout << "Working with: " << m_qHistImp.at(3) << " " << ImpConvCoef.at(3) << std::endl;
 
     Hop = poldImp;
-
-    Hop = 0.0;
-    dp_dq = mp_impedanceLinearInterpolator->interpolateInTimeWithPeriodicExtrapolation(timen_1);
-    std::cout <<"just computed dp/dq and Hop: " << dp_dq << " " << Hop << std::endl;
     return std::make_pair(dp_dq, Hop);
 }
 
@@ -78,16 +36,6 @@ void ImpedanceBoundaryCondition::loadInputFiles()
 
 	readImpedanceFlowHistory();
 	readTimeDomainImpedance();
-         
-         // qHistImp.reserve(ntimeptpT+1);
-         // qHistTry.reserve(ntimeptpT);
-         // qHistTryF.reserve(ntimeptpT);
-         // readTimeDomainImpedance(); //read impedance data and initialize begin/end values
-         // do i=2,ntimeptpT
-         //    call Impint((ntimeptpT-i+1)*Delt(1),i) //return Imp values in reverse order ZN->Z0 - fills ValueListImp - now m_timeVaryingImpedance
-         // enddo
-
-         // allocate (poldImp(0:MAXSURF)) //for pressure part that depends on the history only
 }
 
 void ImpedanceBoundaryCondition::readImpedanceFlowHistory()

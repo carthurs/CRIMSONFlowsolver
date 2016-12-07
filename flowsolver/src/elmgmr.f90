@@ -1181,12 +1181,22 @@
 !
       if(numImpSrfs.gt.zero) then
         call GetFlowQ(p,y,nsrflistImp,numImpSrfs)  !Q pushed into p but at this point
-                          ! p is just the full Q for each surface
+                                                   ! p is just the full Q for each surface
+        
+        ! Because the C++/FORTRAN interface doesn't yet support passing of arrays of
+        ! indefinite (run-time-set) size, we pass a pointer to entry (1,1) of this array,
+        ! and then dereference that manually in the C++ to write the data to the
+        ! correct places in the whole array, so that it can be accessed from FORTRAN.
+        !
+        call callCPPGetImplicitCoeff_impedanceBoundaryConditions(c_loc(implicitcoeffs(1,1)))
+
         do j = 1,numImpSrfs
             if(sign.lt.zero) then ! RHS so -1
-               p(j)= sign*(poldImp(j) + p(j)*ImpConvCoef(ntimeptpT+2,j))  !pressure p=pold+ Qbeta
+               ! p(j)= sign*(poldImp(j) + p(j)*ImpConvCoef(ntimeptpT+2,j))  !pressure p=pold+ Qbeta
+               p(j)= sign*(implicitcoeffs(j,2) + p(j)*implicitcoeffs(j,1))  !pressure p=pold+ Qbeta
             elseif(sign.gt.zero) then ! LHS so sign is positive
-               p(j)= sign*p(j)*ImpConvCoef(ntimeptpT+2,j)
+               ! p(j)= sign*p(j)*ImpConvCoef(ntimeptpT+2,j)
+               p(j)= sign*p(j)*implicitcoeffs(j,1)
             endif
         enddo
 !
@@ -1196,8 +1206,7 @@
           do k = 1,numImpSrfs
               irankCoupled = 0
               if (nsrflistImp(k).eq.ndsurf(i)) then
-                  irankCoupled=k
-                  res(i,1:3)=res(i,1:3) + p(irankCoupled)*NABI(i,1:3)
+                  res(i,1:3)=res(i,1:3) + p(k)*NABI(i,1:3)
               endif
           enddo
        enddo
@@ -1798,7 +1807,9 @@
          END DO
          DO k = 1, numImpSrfs
             faIn = faIn + 1
-            faceRes(faIn) = ImpConvCoef(ntimeptpT+2,k)
+            call callCPPGetImplicitCoeff_impedanceBoundaryConditions(c_loc(implicitcoeffs(1,1)))
+            ! faceRes(faIn) = ImpConvCoef(ntimeptpT+2,k) ! removed CA 2016-11-22 during port of impedance BC to C++
+            faceRes(faIn) = implicitcoeffs(k,1)
          END DO
          DO k = 1, numRCRSrfs
             faIn = faIn + 1

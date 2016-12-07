@@ -35,8 +35,8 @@ void AbstractBoundaryCondition::computeImplicitCoeff_solve(const int timestepNum
   {
     std::pair<double, double> temp;
 
-    double timeAtStepNplus1 = delt * ((double)timestepNumber + alfi_local);
-    double alfi_delt = alfi_local * delt;
+    double timeAtStepNplus1 = delt * ((double)timestepNumber + m_generalizedAlphaMethodAlpha);
+    double alfi_delt = m_generalizedAlphaMethodAlpha * delt;
 
     temp = computeImplicitCoefficients(timestepNumber, timeAtStepNplus1, alfi_delt);
 

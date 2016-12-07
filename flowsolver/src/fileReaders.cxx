@@ -43,7 +43,7 @@ bool AbstractFileReader::readNextLine()
 	// Read the next line from the file
 	m_currentLine.clear();
 
-	bool fileNotEnded = (bool) std::getline(*mp_file,m_currentLine);
+	bool fileNotEnded = (bool) std::getline(*mp_file, m_currentLine);
 
 	// If the end of the file had not been reached before the above read:
 	if (fileNotEnded)
@@ -53,7 +53,7 @@ bool AbstractFileReader::readNextLine()
 		while(m_currentLine.compare(0,1,"#") == int(0))
 		{
 			m_currentLine.clear();
-			fileNotEnded = (bool) std::getline(*mp_file,m_currentLine);
+			fileNotEnded = (bool) std::getline(*mp_file, m_currentLine);
 		}
 
 		if (fileNotEnded)
@@ -79,6 +79,30 @@ bool AbstractFileReader::readNextLine()
 	}
 
 	return fileNotEnded;
+}
+
+void AbstractFileReader::skipHeaderLines(const int numberOfHeaderLinesToSkip)
+{
+	if (!m_skipHeaderLinesAlreadyCalled)
+	{
+		for (int lineIndex = 0; lineIndex < numberOfHeaderLinesToSkip; lineIndex++)
+		{
+			std::string ignoredHeaderLine;
+			bool fileNotEnded = (bool) std::getline(*mp_file, ignoredHeaderLine);
+			if (!fileNotEnded)
+			{
+				std::stringstream errorMessage;
+				errorMessage << "File " << m_fileName << " ended unexpectedly during call to skipHeaderLines().";
+				throw std::runtime_error(errorMessage.str());
+			}
+		}
+
+		m_skipHeaderLinesAlreadyCalled = true;
+	}
+	else
+	{
+		std::cout << "Warning: skipHeaderLines() called twice on same file. Only the first call has an effect." << std::endl;
+	}
 }
 
 bool AbstractFileReader::readNextLineWithKnownNumberOfColumns()

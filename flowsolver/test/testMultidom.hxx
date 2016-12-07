@@ -38,7 +38,7 @@
 	   double flow4;
 
 	   // A fake timdat for testing
-	   double alfi_local;
+	   double m_generalizedAlphaMethodAlpha;
 	   // Fake delt
 	   double delt;
 

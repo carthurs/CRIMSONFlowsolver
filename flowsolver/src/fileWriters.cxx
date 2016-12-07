@@ -2,6 +2,10 @@
 #include "fileWriters.hxx"
 #include "mpi.h"
 
+void BasicFileWriter::openFile()
+{
+	m_fileHandle = new std::ofstream(m_fileName.c_str(), std::ios::app);
+}
 
 void BasicFileWriter::writeStepIndex(int stepIndex)
 {
@@ -9,7 +13,7 @@ void BasicFileWriter::writeStepIndex(int stepIndex)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank==0)
 	{
-		(*fileHandle) << std::setw(10) << std::left << stepIndex;
+		(*m_fileHandle) << std::setw(10) << std::left << stepIndex;
 	}
 }
 
@@ -19,7 +23,7 @@ void BasicFileWriter::writeToFile(double valueToWrite)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank==0)
 	{
-		(*fileHandle) << " " << std::setw(23) << std::left << valueToWrite;
+		(*m_fileHandle) << " " << std::setw(23) << std::left << valueToWrite;
 	}
 }
 
@@ -29,6 +33,11 @@ void BasicFileWriter::writeEndLine()
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	if (rank==0)
 	{
-		(*fileHandle) << std::endl;
+		(*m_fileHandle) << std::endl;
 	}
+}
+
+void FileReplacingFileWriter::openFile()
+{
+	m_fileHandle = new std::ofstream(m_fileName.c_str(), std::ios::trunc);
 }

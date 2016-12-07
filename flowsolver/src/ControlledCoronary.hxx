@@ -42,11 +42,9 @@ public:
 
 	}
 
-	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
-
 	void updateLPN();
 
-	void finalizeLPNAtEndOfTimestep();
+	void finaliseAtEndOfTimestep() override;
 
 	void resetStateUsingKalmanFilteredEstimate(const double flow, const double pressure, const int timestepNumber) {std::cout << "kalman filter not implemented in NetlistBoundaryCondition";};
 
@@ -60,6 +58,7 @@ private:
 	static int numberOfInitialisedCoronaries;
 
 	void computeCapacitorsTopPressures(const double alfi_delt);
+	std::pair<double,double> computeImplicitCoefficients(const int timestepNumber, const double timen_1, const double alfi_delt) override;
 
 	double resistanceNearAorta;
 	double complianceNearAorta;

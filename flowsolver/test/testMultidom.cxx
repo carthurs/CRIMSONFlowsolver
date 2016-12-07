@@ -46,21 +46,24 @@ TEST_F(testMultidom, checkRCRLinearInterpolators)
 	// Test using the values read from rcrt_test.dat	
 	double testValue;
 
-	testValue = (*retrievedBoundaryConditions)[2]->linInterpolateTimeData(-1.0,3);
-	EXPECT_DOUBLE_EQ(testValue,0.0);
-	testValue = ((*retrievedBoundaryConditions)[2])->linInterpolateTimeData(0.25,3);
-	EXPECT_DOUBLE_EQ(testValue,0.85);
-	testValue = (*retrievedBoundaryConditions)[2]->linInterpolateTimeData(0.5,3);
-	EXPECT_DOUBLE_EQ(testValue,1.7);
-	testValue = (*retrievedBoundaryConditions)[2]->linInterpolateTimeData(0.6,3);
-	EXPECT_DOUBLE_EQ(testValue,1.85);
-	testValue = (*retrievedBoundaryConditions)[2]->linInterpolateTimeData(10.0,3);
-	EXPECT_DOUBLE_EQ(testValue,2.3);
-
-	// Check the netlists throw an exception when we try to call their 
-	// non-existent linInterpolateTimeData (should hit the virtual method 
-	// in the base class, and throw.)
-	EXPECT_ANY_THROW((*retrievedBoundaryConditions)[1]->linInterpolateTimeData(10.0,3));
+	boost::shared_ptr<RCR> downcastRcrBoundaryCondition = boost::dynamic_pointer_cast<RCR>((*retrievedBoundaryConditions)[2]);
+	if (downcastRcrBoundaryCondition)
+	{
+		testValue = downcastRcrBoundaryCondition->m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(-1.0);
+		EXPECT_DOUBLE_EQ(testValue,0.0);
+		testValue = downcastRcrBoundaryCondition->m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(0.25);
+		EXPECT_DOUBLE_EQ(testValue,0.85);
+		testValue = downcastRcrBoundaryCondition->m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(0.5);
+		EXPECT_DOUBLE_EQ(testValue,1.7);
+		testValue = downcastRcrBoundaryCondition->m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(0.6);
+		EXPECT_DOUBLE_EQ(testValue,1.85);
+		testValue = downcastRcrBoundaryCondition->m_pDistLinearInterpolator.interpolateInTimeWithConstantExtrapolation(10.0);
+		EXPECT_DOUBLE_EQ(testValue,2.3);
+	}
+	else
+	{
+		throw std::runtime_error("Failed to perform expected downcast of an AbstractBoundaryCondition to a RCR.");
+	}
 }
 
 TEST_F(testMultidom, checkDpDqAndHopFortranPasser)

@@ -195,7 +195,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const do
         // assert(m_indicesOfFirstRowOfEachSubcircuitContributionInClosedLoopMatrix.size() == 0);
         // assert(m_indicesOfFirstColumnOfEachSubcircuitContributionInClosedLoopMatrix.size() == 0);
 
-        for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
+        for (size_t upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
         {
             std::pair<int, Mat> indexAmongstNetlistTagAndMatrix = m_matrixContributionsFromUpstreamBoundaryConditions.front();
             Mat nextMatrixToAddToSystem = indexAmongstNetlistTagAndMatrix.second;
@@ -423,7 +423,7 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const do
         // Zero out the RHS ready for the construction on this timestep:
         errFlag = VecZeroEntries(m_closedLoopRHS);CHKERRABORT(PETSC_COMM_SELF,errFlag);
 
-        for (int upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
+        for (size_t upstreamCircuit = 0; upstreamCircuit < m_numberOfUpstreamCircuits; upstreamCircuit++)
         {
             Vec nextVectorToAddToClosedLoopRHS = m_rhsContributionsFromUpstreamBoundaryConditions.front();
             m_rhsContributionsFromUpstreamBoundaryConditions.pop();
@@ -503,7 +503,6 @@ void ClosedLoopDownstreamSubsection::buildAndSolveLinearSystem_internal(const do
 
 void ClosedLoopDownstreamSubsection::store3DInterfaceFlowSigns()
 {
-    for (int upstreamCircuitIndex = 0; upstreamCircuitIndex < m_upstreamBoundaryConditionCircuits.size(); upstreamCircuitIndex++)
     for (auto upstreamCircuitSharedPtr : m_upstreamBoundaryConditionCircuits)
     {
         m_signForPrescribed3DInterfaceFlow.insert(std::make_pair(upstreamCircuitSharedPtr->getIndexAmongstNetlists(), upstreamCircuitSharedPtr->getInterfaceFlowSign()));
@@ -614,7 +613,7 @@ void ClosedLoopDownstreamSubsection::generateCircuitInterfaceNodeData()
     std::vector<int> upstreamSurfaceIndices;
     mp_NetlistCircuit->getSharedNodeDownstreamAndUpstreamAndCircuitUpstreamIndices(downstreamNodeIndices, upstreamNodeIndices, upstreamSurfaceIndices);
 
-    for (int interfaceConnectionIndex = 0; interfaceConnectionIndex < upstreamNodeIndices.size(); interfaceConnectionIndex++)
+    for (size_t interfaceConnectionIndex = 0; interfaceConnectionIndex < upstreamNodeIndices.size(); interfaceConnectionIndex++)
     {
         int downstreamNode;
         int upstreamSurface;
@@ -730,7 +729,7 @@ void ClosedLoopDownstreamSubsection::writePartOfKirchoffEquationIntoClosedLoopSy
     PetscErrorCode errFlag;
     // Do the equations for the nodes with multiple incident currents (just the part for the upstream boundary condition circuit first...
     // we'll append the currents for the components in the downstream closed loop circuit in a moment...)
-    for (int component = 0; component < circuitData->numberOfComponents; component++)
+    for (size_t component = 0; component < circuitData->numberOfComponents; component++)
     {
       int column = component + circuitData->numberOfPressureNodes + numberOfHistoryPressures + columnOffset;
       bool foundMultipleIncidentCurrentsForEndNode;
@@ -787,7 +786,7 @@ void ClosedLoopDownstreamSubsection::enforcePressureEqualityBetweenDuplicatedNod
         upstreamCircuitIndices.push_back(upstreamCircuitIndex);
     }
 
-    for (int sharedNodeIndex = 0; sharedNodeIndex < downstreamNodeIndices.size(); sharedNodeIndex++)
+    for (size_t sharedNodeIndex = 0; sharedNodeIndex < downstreamNodeIndices.size(); sharedNodeIndex++)
     {
         // The entry for the upstream copy of the pressure node:
         {

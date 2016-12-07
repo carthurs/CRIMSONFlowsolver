@@ -2,6 +2,7 @@
 #include "RCR.hxx"
 #include "ControlledCoronary.hxx"
 #include "NetlistBoundaryCondition.hxx"
+#include "ImpedanceBoundaryCondition.hxx"
 #include "FortranBoundaryDataPointerManager.hxx"
 #include "fileWriters.hxx"
 #include "fileIOHelpers.hxx"
@@ -45,6 +46,13 @@ void BoundaryConditionManager::setNumberOfNetlistSurfaces(const int numNetlistLP
   assert(m_NumberOfNetlistSurfaces == 0);
   m_NumberOfNetlistSurfaces = numNetlistLPNSrfs;
   m_numberOfBoundaryConditionsManaged += m_NumberOfNetlistSurfaces;
+}
+
+void BoundaryConditionManager::setNumberOfImpedanceSurfaces(const int numImpedanceSurfaces)
+{
+  assert(m_NumberOfImpedanceSurfaces == 0);
+  m_NumberOfImpedanceSurfaces = numImpedanceSurfaces;
+  m_numberOfBoundaryConditionsManaged += m_NumberOfImpedanceSurfaces;
 }
 
 void BoundaryConditionManager::setMasterControlScriptPresent(const int masterControlScriptPresent)
@@ -370,6 +378,12 @@ extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_solve(int& timestepNu
   BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeImplicitCoeff_solve<RCR>(timestepNumber);
 }
+// ---AND--->
+extern "C" void callCppComputeAllImpedanceImplicitCoeff_solve(int& timestepNumber)
+{
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_solve<ImpedanceBoundaryCondition>(timestepNumber);
+}
 
 // FULLY DEFINED IN HEADER SO OTHER TRANSLATION UNITS CAN USE IT
 // template <typename TemplateBoundaryConditionType>
@@ -406,6 +420,12 @@ extern "C" void callCppComputeAllNumericalRCRImplicitCoeff_update(int& timestepN
 {
   BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
   boundaryConditionManager_instance->computeImplicitCoeff_update<RCR>(timestepNumber);
+}
+// ---AND--->
+extern "C" void callCppComputeAllImpedanceImplicitCoeff_update(int& timestepNumber)
+{
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->computeImplicitCoeff_update<ImpedanceBoundaryCondition>(timestepNumber);
 }
 
 void BoundaryConditionManager::updateAllRCRS_setflow_n(const double* const flows)
@@ -575,7 +595,7 @@ void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_controlledCoronary()
     boost::shared_ptr<ControlledCoronary> downcastCoronary = boost::dynamic_pointer_cast<ControlledCoronary> (*boundaryCondition);
     if (downcastCoronary != NULL)
     {
-      downcastCoronary->finalizeLPNAtEndOfTimestep();
+      downcastCoronary->finaliseAtEndOfTimestep();
     }
   }
 }
@@ -586,6 +606,32 @@ extern "C" void callCppfinalizeLPNAtEndOfTimestep_controlledCoronary()
   boundaryConditionManager_instance->finalizeLPNAtEndOfTimestep_controlledCoronary();
 }
 
+void BoundaryConditionManager::getImplicitCoeff_impedanceBoundaryConditions(double* const implicitCoeffs_toBeFilled)
+{
+  // This code is a bit tricky, becase FORTRAN/C++ interfacing doesn't yet support passing arrays which are sized
+  // at run-time to C++ from FORTRAN. Therefore, I've had to just pass a pointer to the first entry, and then manage
+  // dereferencing of that pointer manually to fill the whole array, but with the FORTRAN column-major array structure,
+  // as opposed to the C++ row-major standard.
+  int writeLocation = 0;
+
+  for (auto& boundaryCondition : m_boundaryConditions)
+  {
+    boost::shared_ptr<ImpedanceBoundaryCondition> downcastImpedanceBC = boost::dynamic_pointer_cast<ImpedanceBoundaryCondition> (boundaryCondition);
+    if (downcastImpedanceBC)
+    {
+      implicitCoeffs_toBeFilled[writeLocation] = downcastImpedanceBC->getdp_dq();
+      implicitCoeffs_toBeFilled[writeLocation+m_maxsurf+1] = downcastImpedanceBC->getHop();
+      writeLocation++;
+    }
+  }
+}
+// ---WRAPPED BY--->
+extern "C" void callCPPGetImplicitCoeff_impedanceBoundaryConditions(double*& implicitCoeffs_toBeFilled)
+{
+  BoundaryConditionManager* boundaryConditionManager_instance = BoundaryConditionManager::Instance();
+  boundaryConditionManager_instance->getImplicitCoeff_impedanceBoundaryConditions(implicitCoeffs_toBeFilled);
+}
+
 void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
 {
   for(auto boundaryCondition=m_boundaryConditions.begin(); boundaryCondition!=m_boundaryConditions.end(); boundaryCondition++)
@@ -593,7 +639,7 @@ void BoundaryConditionManager::finalizeLPNAtEndOfTimestep_netlists()
     auto downcastNetlist = boost::dynamic_pointer_cast<NetlistBoundaryCondition> (*boundaryCondition);
     if (downcastNetlist != NULL)
     {
-      downcastNetlist->finalizeLPNAtEndOfTimestep();
+      downcastNetlist->finaliseAtEndOfTimestep();
     }
   }
 
@@ -980,7 +1026,6 @@ void BoundaryConditionManager::createControlSystems()
   mp_controlSystemsManager = boost::shared_ptr<ControlSystemsManager>(new ControlSystemsManager(m_delt, m_masterControlScriptPresent, m_startingTimestepIndex, m_ntout));
   
   // Get the reader class for the netlist data file, and ask it for the control description data:
-  NetlistReader* netlistReader_instance = NetlistReader::Instance();
   NetlistXmlReader* netlistXmlReader_instance = NetlistXmlReader::Instance();
   
   // Get info for the components that need control (number of these, the component indices in the netlist, and the control types for each)
@@ -1098,4 +1143,17 @@ std::vector<std::pair<boundary_data_t,double>> BoundaryConditionManager::getBoun
 int BoundaryConditionManager::getNumberOfControlSystems() const
 {
   return mp_controlSystemsManager->getNumberOfControlSystems();
+}
+
+// Put all the end-of-timestep cleanup work here
+// (some of it is still located in Fortran at the time of writing 2016-11-22, but much of it can probably be moved here to reduce linking with Fortran)
+void BoundaryConditionManager::finaliseOnTimeStep()
+{
+  for (auto& boundaryCondition : m_boundaryConditions){
+    boost::shared_ptr<ImpedanceBoundaryCondition> downcastImpedanceBC = boost::dynamic_pointer_cast<ImpedanceBoundaryCondition> (boundaryCondition);
+    if (downcastImpedanceBC)
+    {
+      downcastImpedanceBC->finaliseAtEndOfTimestep();
+    }
+  }
 }

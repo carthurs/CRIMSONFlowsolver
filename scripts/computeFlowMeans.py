@@ -23,9 +23,5 @@ print "\n  ===> Sum of means of of all except the first column:"
 #print columnMeans[2:len(columnMeans)]
 print numpy.sum(columnMeans[1:len(columnMeans)])
 
-intervalDurationInTime = (endTimestepIndex - startTimestepIndex) * timestep
-print "\n\n ===> Mean flows per unit time in each column:\n"
-print columnMeans * timestep * intervalDurationInTime
-
 columnIntegrals=numpy.sum(file[startTimestepIndex:endTimestepIndex,:],axis=0)*timestep
 print "\n\n ===> Column integrals:\n\n", columnIntegrals, "\n"

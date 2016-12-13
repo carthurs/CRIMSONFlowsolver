@@ -70,29 +70,29 @@ minimumPressureArray = numpy.transpose(minimumPressureArray)
 pulsePressureArray = peakPressureArray - minimumPressureArray
 
 if solverInpAvailable: # (incidentally, if this is true, so is prettyPrentingAvailable)
-    print "Detected timestep of ===>", timestep, "<=== from solver.inp. CHECK! If this is incorrect, the flow means will be incorrect."
+    print "Detected timestep of ===>", timestep, "<=== from solver.inp. CHECK! If this is incorrect, the reported data duration will be incorrect."
 
-    print "The duration of the requested data range is therefore", timestep * (endTimestepIndex - startTimestepIndex), "seconds."
+    dataDurationInSeconds = timestep * (endTimestepIndex - startTimestepIndex)
+
+    print "The duration of the requested data range is therefore", dataDurationInSeconds, "seconds."
     
-    print "\nI'm assuming the model is in mm, so scaling the flows to litres per minute.\n"
+print "\nI'm assuming the model is in mm, so scaling the flows to litres per minute.\n"
 
-    flowFile = numpy.loadtxt("FlowHist.gplot")
-    userRequestedFlowDataRange = flowFile[startTimestepIndex:endTimestepIndex,:] / ((endTimestepIndex - startTimestepIndex) * timestep) / 1.0e6 * 60
+flowFile = numpy.loadtxt("FlowHist.gplot")
+userRequestedFlowDataRange = flowFile[startTimestepIndex:endTimestepIndex,:] / 1.0e6 * 60
 
-    flowMeansArray = numpy.mean(userRequestedFlowDataRange, axis=0)
-    flowMeansArray = numpy.delete(flowMeansArray, 0)
-    flowMeansArray = numpy.transpose(flowMeansArray)
+flowMeansArray = numpy.mean(userRequestedFlowDataRange, axis=0)
+flowMeansArray = numpy.delete(flowMeansArray, 0)
+flowMeansArray = numpy.transpose(flowMeansArray)
     
-    indexOfInflowInData = numpy.argmin(flowMeansArray) # assume that the inflow is the most negative. Inform the user and warn them that this must be correct.
-    surfaceIndexOfInflow = outputSurfacesList[indexOfInflowInData]
-    print "\nI think the inflow is surface ===>", surfaceIndexOfInflow, "<=== with name", faceIdToFaceNameDictionary[surfaceIndexOfInflow], "CHECK! If This is incorrect, the flow splits will be incorrect.\n\n"
+indexOfInflowInData = numpy.argmin(flowMeansArray) # assume that the inflow is the most negative. Inform the user and warn them that this must be correct.
+surfaceIndexOfInflow = outputSurfacesList[indexOfInflowInData]
+print "\nI think the inflow is surface ===>", surfaceIndexOfInflow, "<=== with name", faceIdToFaceNameDictionary[surfaceIndexOfInflow], "CHECK! If This is incorrect, the flow splits will be incorrect.\n\n"
 
-    meanInflowRateLitresPerMinute = flowMeansArray[indexOfInflowInData]
+meanInflowRateLitresPerMinute = flowMeansArray[indexOfInflowInData]
 
-    flowSplits = flowMeansArray / -meanInflowRateLitresPerMinute
+flowSplits = flowMeansArray / -meanInflowRateLitresPerMinute
 
-else:
-    print "Solver.inp was not available, so I don\'t know what the timestep is. No flow means will be available."
 
 
 
@@ -104,9 +104,8 @@ else:
     print "Means of each column of PressHist:"
     print "----"
     print pressureMeansArray
-    if solverInpAvailable:
-        print "\n\nMeans of each column of FlowHist:"
-        print "----"
-        print flowMeansArray
+    print "\n\nMeans of each column of FlowHist:"
+    print "----"
+    print flowMeansArray
 
 print "\n"

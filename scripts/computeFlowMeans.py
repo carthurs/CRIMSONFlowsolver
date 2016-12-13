@@ -10,18 +10,22 @@ if len(sys.argv) < 5:
 
 fileName = sys.argv[4]
 
-print "Means of each column of " + fileName + " FlowHist (including the time index column!) :"
+print "\n\n ===> Means of each column of " + fileName + " FlowHist (including the time index column!):\n"
 
 startTimestepIndex = int(sys.argv[1])
 endTimestepIndex = int(sys.argv[2])
+timestep = float(sys.argv[3])
 
 file = numpy.loadtxt(fileName)
 columnMeans=numpy.mean(file[startTimestepIndex:endTimestepIndex,:],axis=0)
 print columnMeans
-print "Sum of means of of all except the first column:"
+print "\n  ===> Sum of means of of all except the first column:"
 #print columnMeans[2:len(columnMeans)]
 print numpy.sum(columnMeans[1:len(columnMeans)])
 
-timestep = float(sys.argv[3])
+intervalDurationInTime = (endTimestepIndex - startTimestepIndex) * timestep
+print "\n\n ===> Mean flows per unit time in each column:\n"
+print columnMeans * timestep * intervalDurationInTime
+
 columnIntegrals=numpy.sum(file[startTimestepIndex:endTimestepIndex,:],axis=0)*timestep
-print "Column integrals: ", columnIntegrals
+print "\n\n ===> Column integrals:\n\n", columnIntegrals, "\n"

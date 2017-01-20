@@ -1,4 +1,4 @@
-#!/sw/lsa/centos7/python-anaconda2/201607/bin/python
+#!/apps/anaconda/bin/python
 
 import numpy
 import sys
@@ -94,13 +94,16 @@ meanInflowRateLitresPerMinute = flowMeansArray[indexOfInflowInData]
 
 flowSplits = flowMeansArray / -meanInflowRateLitresPerMinute
 
-
+if prettyPrintingAvailable:
+    excelFileName = 'haemodynamicSummary_timestep_range_' + str(startTimestepIndex) + '_to_' + str(endTimestepIndex) + '.xlsx'
+    excelDataWriter = pandas.ExcelWriter(excelFileName, engine='xlsxwriter')
 
 print "\nPressures are in mmHg, flows are in litres per minute.\n"
 if prettyPrintingAvailable:
     stackedData = numpy.transpose(numpy.row_stack((pressureMeansArray, pulsePressureArray,  peakPressureArray, minimumPressureArray, flowMeansArray, flowSplits)))
-    dataFrame = pandas.DataFrame(stackedData, index=orderedDataLabels, columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure', 'Mean Flow', 'Proportion Of Inflow'])
-    print dataFrame
+    dataFrame3DDomainData = pandas.DataFrame(stackedData, index=orderedDataLabels, columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure', 'Mean Flow', 'Proportion Of Inflow'])
+    print dataFrame3DDomainData
+    dataFrame3DDomainData.to_excel(excelDataWriter, sheet_name='3D_domain_pressures_and_flows')
 else:
     print "Means of each column of PressHist:"
     print "----"
@@ -139,9 +142,14 @@ if prettyPrintingAvailable:
         pulsePressureArray = peakPressureArray - minimumPressureArray
 
         stackedData = numpy.transpose(numpy.row_stack((pressureMeansArray, pulsePressureArray,  peakPressureArray, minimumPressureArray)))
-        dataFrame = pandas.DataFrame(stackedData, index=range(1, len(pressureMeansArray)+1), columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure'])
+        dataFrameDownstreamCircuitPressures = pandas.DataFrame(stackedData, index=range(1, len(pressureMeansArray)+1), columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure'])
         print "Nodal pressure data from", downstreamPressureFile + ":\n"
-        print dataFrame
+        print dataFrameDownstreamCircuitPressures
+
+        # Excel sheet names are limited (by Excel, not Pandas) to have at most 31 characters. Fantastic!
+        sheetName = 'from ' + downstreamPressureFile[-26:-1]
+        dataFrameDownstreamCircuitPressures.to_excel(excelDataWriter, sheet_name=sheetName)
+
 
 if prettyPrintingAvailable:
     downstreamFlowFiles = []
@@ -181,8 +189,15 @@ if prettyPrintingAvailable:
 
 
         stackedData = numpy.transpose(numpy.row_stack((flowMeansArray, maxFlowArray, minimumFlowArray)))
-        dataFrame = pandas.DataFrame(stackedData, index=flowComponentRowLabels, columns=['Component Flow Means', 'Peak Flow', 'Minimum Flow'])
+        dataFrameDownstreamCircuitFlows = pandas.DataFrame(stackedData, index=flowComponentRowLabels, columns=['Component Flow Means', 'Peak Flow', 'Minimum Flow'])
         print "\n\nComponent flow data from", downstreamFlowFile + ":\n"
         print "Note that flow sign is dependent upon the component orientation in your netlist circuit specification."
-        print dataFrame
+        print dataFrameDownstreamCircuitFlows
 
+        # Excel sheet names are limited (by Excel, not Pandas) to have at most 31 characters. Fantastic!
+        sheetName = 'from ' + downstreamFlowFile[-26:-1]
+        dataFrameDownstreamCircuitFlows.to_excel(excelDataWriter, sheet_name=sheetName)
+
+
+if prettyPrintingAvailable:
+    excelDataWriter.save()

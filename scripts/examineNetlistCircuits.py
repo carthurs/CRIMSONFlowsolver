@@ -46,7 +46,7 @@ if __name__ == '__main__':
     all_circuits = netlist_surfaces_xml_tree.getroot()
 
 #    print all_circuits.tag, all_circuits.attrib
-    total_resistance_all_boundaries = 0.0
+    total_reciprocal_resistance_all_boundaries = 0.0
     for circuit in all_circuits:
 #        print circuit.tag, circuit.attrib
         print "    ==== Circuit number", circuit.find('circuitIndex').text + " ===="
@@ -70,10 +70,11 @@ if __name__ == '__main__':
             if is_resistor(component):
                 total_circuit_resistance += float(get_xml_attribute('parameterValue'))
 
-        total_resistance_all_boundaries += total_circuit_resistance
-        print "\nTotal circuit resistance (resistors only; ignoring diodes):", total_circuit_resistance
+        if total_circuit_resistance != 0.0:
+            total_reciprocal_resistance_all_boundaries += 1.0/total_circuit_resistance
+        print "\nSum of circuit resistance (resistors only; ignoring diodes - note that this is a straight sum, NOT an equivalent resistance):", total_circuit_resistance
         print "============================================"
 
-    print "\n\nTotal resistance of model (NOT total peripheral resistance - all circuits are included, so e.g. any resistances in a heart model are counted here)", total_resistance_all_boundaries
+    print "\n\nPotentially Useless Resistance Metric: (NOT total peripheral resistance - unless all Netlists are outflows and all resistances in outflows are sequential)", 1.0/total_reciprocal_resistance_all_boundaries
     print "\n"
 

@@ -33,7 +33,7 @@ if __name__ == '__main__':
          
 
     circuit_number = 1
-    total_resistance_all_rcrs = 0.0
+    total_resistance_all_rcrs_gatherer = 0.0
     for circuit in all_circuit_data_blocks:
         print "    ==== Circuit number", str(circuit_number) + " ===="
         print "Resistor Rp has resistance", float(circuit[1])
@@ -42,10 +42,10 @@ if __name__ == '__main__':
         total_circuit_resistance = float(circuit[1]) + float(circuit[3])
 
         print "Total resistance is", total_circuit_resistance
-        total_resistance_all_rcrs += total_circuit_resistance
+        total_resistance_all_rcrs_gatherer += 1.0/total_circuit_resistance
         circuit_number += 1
         print "============================================"
 
-    print "\n\nTotal resistance of RCRs contained in rcrt.dat: (This is only equal to total peripheral resistance if there are only rcrt.dat RCRs at outflows)", total_resistance_all_rcrs
+    print "\n\nEquivalent resistance of RCRs contained in rcrt.dat: (This is only equal to total peripheral resistance if there are only rcrt.dat RCRs at outflows)", 1.0/total_resistance_all_rcrs_gatherer
     print "\n"
 

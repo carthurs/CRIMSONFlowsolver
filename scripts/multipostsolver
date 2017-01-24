@@ -15,7 +15,7 @@ for ((i=$1 ;i<=$2; i+=$3));
 do
   echo "Multipostsolver is reducing timestep: $i"
   let k++
-  /home/carthurs/workspace/hg_simvascular/simvascular_systemic/bin/postsolver -sn $i -newsn $i -ph -td -bflux -wss $5 $6
+   /home/chris/workspace/simvascular_flowsolver_estimator/bin/postsolver -sn $i -newsn $i -ph -td -bflux -wss $5 $6
 done
 
 # now create the Paraview PHT file

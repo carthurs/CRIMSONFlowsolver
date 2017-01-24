@@ -1,7 +1,8 @@
-#!/sw/lsa/centos7/python-anaconda2/201607/bin/python
+#!/apps/anaconda/bin/python
 
 import numpy
 import sys
+import os
 
 try:
     import pandas
@@ -93,13 +94,16 @@ meanInflowRateLitresPerMinute = flowMeansArray[indexOfInflowInData]
 
 flowSplits = flowMeansArray / -meanInflowRateLitresPerMinute
 
+if prettyPrintingAvailable:
+    excelFileName = 'haemodynamicSummary_timestep_range_' + str(startTimestepIndex) + '_to_' + str(endTimestepIndex) + '.xlsx'
+    excelDataWriter = pandas.ExcelWriter(excelFileName, engine='xlsxwriter')
 
-
-
+print "\nPressures are in mmHg, flows are in litres per minute.\n"
 if prettyPrintingAvailable:
     stackedData = numpy.transpose(numpy.row_stack((pressureMeansArray, pulsePressureArray,  peakPressureArray, minimumPressureArray, flowMeansArray, flowSplits)))
-    dataFrame = pandas.DataFrame(stackedData, index=orderedDataLabels, columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure', 'Mean Flow', 'Proportion Of Inflow'])
-    print dataFrame
+    dataFrame3DDomainData = pandas.DataFrame(stackedData, index=orderedDataLabels, columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure', 'Mean Flow', 'Proportion Of Inflow'])
+    print dataFrame3DDomainData
+    dataFrame3DDomainData.to_excel(excelDataWriter, sheet_name='3D_domain_pressures_and_flows')
 else:
     print "Means of each column of PressHist:"
     print "----"
@@ -109,3 +113,91 @@ else:
     print flowMeansArray
 
 print "\n"
+
+
+# Gather any interesting files that we also want to summarise:
+if prettyPrintingAvailable:
+    downstreamPressureFiles = []
+    for file in os.listdir('.'):
+        if 'netlistPressures_downstream' in file:
+           downstreamPressureFiles += [file]
+
+    for downstreamPressureFile in downstreamPressureFiles:
+        pressureFile = numpy.loadtxt(downstreamPressureFile)
+                
+        userRequestedPressureDataRange = pressureFile[startTimestepIndex:endTimestepIndex,:]/pressureScaling
+
+        pressureMeansArray = numpy.mean(userRequestedPressureDataRange,axis=0)
+        pressureMeansArray = numpy.delete(pressureMeansArray, 0) # remove the timestep index mean from the start (it's useless data)
+        pressureMeansArray = numpy.transpose(pressureMeansArray)
+
+        peakPressureArray = numpy.max(userRequestedPressureDataRange, axis=0)
+        peakPressureArray = numpy.delete(peakPressureArray, 0)
+        peakPressureArray = numpy.transpose(peakPressureArray)
+
+        minimumPressureArray = numpy.min(userRequestedPressureDataRange, axis=0)
+        minimumPressureArray = numpy.delete(minimumPressureArray, 0)
+        minimumPressureArray = numpy.transpose(minimumPressureArray)
+
+        pulsePressureArray = peakPressureArray - minimumPressureArray
+
+        stackedData = numpy.transpose(numpy.row_stack((pressureMeansArray, pulsePressureArray,  peakPressureArray, minimumPressureArray)))
+        dataFrameDownstreamCircuitPressures = pandas.DataFrame(stackedData, index=range(1, len(pressureMeansArray)+1), columns=['Pressure Means', 'Pulse Pressure', 'Systolic Pressure', 'Diastolic Pressure'])
+        print "Nodal pressure data from", downstreamPressureFile + ":\n"
+        print dataFrameDownstreamCircuitPressures
+
+        # Excel sheet names are limited (by Excel, not Pandas) to have at most 31 characters. Fantastic!
+        sheetName = 'from ' + downstreamPressureFile[-26:-1]
+        dataFrameDownstreamCircuitPressures.to_excel(excelDataWriter, sheet_name=sheetName)
+
+
+if prettyPrintingAvailable:
+    downstreamFlowFiles = []
+    for file in os.listdir('.'):
+        if 'netlistFlows_downstream' in file and not 'componentLabels_' in file:
+           downstreamFlowFiles += [file]
+
+    for downstreamFlowFile in downstreamFlowFiles:
+        flowFile = numpy.loadtxt(downstreamFlowFile)
+                
+        userRequestedFlowDataRange = flowFile[startTimestepIndex:endTimestepIndex,:]/ 1.0e6 * 60.0
+
+        flowMeansArray = numpy.mean(userRequestedFlowDataRange,axis=0)
+        flowMeansArray = numpy.delete(flowMeansArray, 0) # remove the timestep index mean from the start (it's useless data)
+        flowMeansArray = numpy.transpose(flowMeansArray)
+
+        maxFlowArray = numpy.max(userRequestedFlowDataRange, axis=0)
+        maxFlowArray = numpy.delete(maxFlowArray, 0)
+        maxFlowArray = numpy.transpose(maxFlowArray)
+
+        minimumFlowArray = numpy.min(userRequestedFlowDataRange, axis=0)
+        minimumFlowArray = numpy.delete(minimumFlowArray, 0)
+        minimumFlowArray = numpy.transpose(minimumFlowArray)
+
+        try:
+            with open('componentLabels_'+downstreamFlowFile, 'r') as componentLabelsFile:
+                componentLabelsDictionary ={}
+                for line in componentLabelsFile:
+                    spaceDelimitedLine = line.split()
+                    componentLabelsDictionary[spaceDelimitedLine[0]] = spaceDelimitedLine[1]
+            
+            flowComponentRowLabels = [componentLabelsDictionary[str(index)] for index in range(1,len(flowMeansArray)+1)]
+        except IOError:
+            flowComponentRowLabels = range(1,len(flowMeansArray)+1)
+            print "(II) No custom labels for the components found for file", downstreamFlowFiles, "create one with two columns: component index and friendly nametag, with name", "componentLabels_"+downstreamFlowFile
+
+
+
+        stackedData = numpy.transpose(numpy.row_stack((flowMeansArray, maxFlowArray, minimumFlowArray)))
+        dataFrameDownstreamCircuitFlows = pandas.DataFrame(stackedData, index=flowComponentRowLabels, columns=['Component Flow Means', 'Peak Flow', 'Minimum Flow'])
+        print "\n\nComponent flow data from", downstreamFlowFile + ":\n"
+        print "Note that flow sign is dependent upon the component orientation in your netlist circuit specification."
+        print dataFrameDownstreamCircuitFlows
+
+        # Excel sheet names are limited (by Excel, not Pandas) to have at most 31 characters. Fantastic!
+        sheetName = 'from ' + downstreamFlowFile[-26:-1]
+        dataFrameDownstreamCircuitFlows.to_excel(excelDataWriter, sheet_name=sheetName)
+
+
+if prettyPrintingAvailable:
+    excelDataWriter.save()

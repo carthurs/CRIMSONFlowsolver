@@ -119,7 +119,7 @@ void ImpedanceBoundaryCondition::readTimeDomainImpedance()
 	}
 
 	#ifdef BOOST_NO_CXX11_SMART_PTR
-	mp_impedanceLinearInterpolator = std::shared_ptr<LinearInterpolator>(new LinearInterpolator(m_timeVaryingImpedance));
+	mp_impedanceLinearInterpolator = boost::shared_ptr<LinearInterpolator>(new LinearInterpolator(m_timeVaryingImpedance));
 	#else
 	// prefer unique_ptr if it's available
 	mp_impedanceLinearInterpolator = std::unique_ptr<LinearInterpolator>(new LinearInterpolator(m_timeVaryingImpedance));

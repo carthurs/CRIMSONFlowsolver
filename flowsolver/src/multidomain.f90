@@ -3004,7 +3004,9 @@
             allocate(a%stabilisationpressure(0:maxsurf))     
             a%stabilisationpressure(0:maxsurf) = real(0.0,8)   
 
-            allocate(a%stb_pres(0:maxsurf))     
+            if (.not.associated(a%stb_pres)) then
+                allocate(a%stb_pres(0:maxsurf))
+            end if
             a%stb_pres(0:maxsurf) = real(0.0,8)
 !            
         end if
@@ -3150,7 +3152,9 @@
       subroutine resetstb_pres(this)      
       implicit none
       class(multidomaincontainer) :: this
-      ! prior initialisation with real(0.0,8) was causing problems in gfortran
+      if (.not.associated(this%stb_pres)) then 
+          allocate(this%stb_pres(0:maxsurf))
+      end if
       this%stb_pres(:) = 0.0 
       end subroutine
 !

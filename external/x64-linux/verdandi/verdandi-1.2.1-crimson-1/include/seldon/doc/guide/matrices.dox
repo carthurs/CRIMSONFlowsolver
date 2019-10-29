@@ -1,0 +1,209 @@
+/*! \file matrices.dox
+    \brief Matrices.
+*/
+
+/*!
+\page matrices Matrices
+
+<h2>Definition</h2>
+
+<p> Matrices are instances of the class <code>Matrix</code>. Class <code>Matrix</code> is a template class: <code>Matrix&lt;T, Prop, Storage, Allocator&gt;</code>. As for vectors, <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>).  </p>
+
+<p> <code>Prop</code> indicates that the matrix has given properties (symmetric, hermitian, positive definite or whatever). This template parameter is rarely used by %Seldon; so the user may define its own properties. Thanks to this template parameter, the user may overload some functions based on the properties of the matrix. %Seldon defines two properties: <code>General</code> (default) and <code>Symmetric</code>.  </p>
+
+<p> <code>Storage</code> defines how the matrix is stored. Matrices may be stored in several ways:</p>
+
+<ul>
+
+  <li> <code>ColMajor</code>: dense matrix stored by columns (as in Fortran);</li>
+  
+  <li> <code>RowMajor</code>: dense matrix stored by rows (recommended in C++);</li>
+  
+  <li> <code>ColUpTriang</code>: upper triangular matrix stored in a dense matrix and by columns;</li>
+  
+  <li> <code>ColLoTriang</code>: lower triangular matrix stored in a dense matrix and by columns;</li>
+  
+  <li> <code>RowUpTriang</code>: upper triangular matrix stored in a dense matrix and by rows;</li>
+  
+  <li> <code>RowLoTriang</code>: lower triangular matrix stored in a dense matrix and by rows;</li>
+  
+  <li> <code>ColUpTriangPacked</code>: upper triangular matrix stored in packed form (Blas format) and by columns;</li>
+  
+  <li> <code>ColLoTriangPacked</code>: lower triangular matrix stored in packed form (Blas format) and by columns;</li>
+  
+  <li> <code>RowUpTriangPacked</code>: upper triangular matrix stored in packed form (Blas format) and by rows;</li>
+  
+  <li> <code>RowLoTriangPacked</code>: lower triangular matrix stored in packed form (Blas format) and by rows;</li>
+  
+  <li> <code>ColSym</code>: symmetric matrix stored in a dense matrix and by columns;</li>
+  
+  <li> <code>RowSym</code>: symmetric matrix stored in a dense matrix and by rows;</li>
+  
+  <li> <code>ColSymPacked</code>: symmetric matrix stored in packed form (Blas format) and by columns;</li>
+  
+  <li> <code>RowSymPacked</code>: symmetric matrix stored in packed form (Blas format) and by rows;</li>
+  
+  <li> <code>ColHerm</code>: hermitian matrix stored in a dense matrix and by columns;</li>
+  
+  <li> <code>RowHerm</code>: hermitian matrix stored in a dense matrix and by rows;</li>
+  
+  <li> <code>ColHermPacked</code>: hermitian matrix stored in packed form (Blas format) and by columns;</li>
+  
+  <li> <code>RowHermPacked</code>: hermitian matrix stored in packed form (Blas format) and by rows;</li>
+  
+  <li> <code>ColSparse</code>: sparse matrix (Harwell-Boeing form) stored by columns;</li>
+  
+  <li> <code>RowSparse</code>: sparse matrix (Harwell-Boeing form) stored by rows;</li>
+  
+  <li> <code>ColSymSparse</code>: symmetric sparse matrix (Harwell-Boeing form, storing only the upper part) stored by columns;</li>
+  
+  <li> <code>RowSymSparse</code>: symmetric sparse matrix (Harwell-Boeing form, storing only the upper part) stored by rows;</li>
+  
+  <li> <code>ColComplexSparse</code>: complex sparse matrix (Harwell-Boeing form) stored by columns and for which the real part and the imaginary part are splitted into two sparse matrices;</li>
+  
+  <li> <code>RowComplexSparse</code>: complex sparse matrix (Harwell-Boeing form) stored by rows and for which the real part and the imaginary part are splitted into two sparse matrices;</li>
+  
+  <li> <code>ColSymComplexSparse</code>: symmetric sparse matrix (Harwell-Boeing form, storing only the upper part) stored by columns and for which the real part and the imaginary part are splitted into two sparse matrices;</li>
+  
+  <li> <code>RowSymComplexSparse</code>: symmetric sparse matrix (Harwell-Boeing form, storing only the upper part) stored by rows and for which the real part and the imaginary part are splitted into two sparse matrices.</li>
+  
+  <li> <code> ArrayRowSparse</code>: sparse matrix, each row being stored as a sparse vector. </li>
+
+  <li> <code> ArrayColSparse</code>: sparse matrix, each column being stored as a sparse vector. </li>
+
+  <li> <code> ArrayRowSymSparse</code>: symmetric sparse matrix, each row being stored as a sparse vector. Only upper part of the matrix is stored. </li>
+
+  <li> <code> ArrayColSymSparse</code>: symmetric sparse matrix, each column being stored as a sparse vector. Only upper part of the matrix is stored. </li>
+
+  <li> <code> ArrayRowComplexSparse</code>: sparse matrix, each row being stored as a sparse vector. Real part and imaginary part are stored separately. </li>
+
+  <li> <code> ArrayRowSymComplexSparse</code>: symmetric sparse matrix, each row being stored as a sparse vector. Real part and imaginary part are stored separately. </li>
+
+</ul>
+
+<p><code>RowMajor</code> is the default storage.  </p>
+
+<p> Finally, <code>Allocator</code> defines the way memory is managed. It is close to STL allocators. See the section "Allocators" for further details.  </p>
+
+<h2>Declaration</h2>
+
+<p> There is a default <code>Allocator</code> (see the section "Allocators"), a default <code>Storage</code> (<code>RowMajor</code>) and a default property <code>Prop</code> (<code>General</code>). It means that the three last template parameters may be omitted. Then a matrix of integers may be declared thanks to the line: </p>
+
+\precode Matrix<int> M;\endprecode
+
+<p> This defines a matrix of size 0 x 0, that is to say an empty matrix. To define a matrix of size 5 x 3, one may write: </p>
+
+\precode Matrix<int> M(5, 3);\endprecode
+
+<p> Other declarations may be: </p>
+
+\precode Matrix<int, Symmetric> M(20, 30);
+Matrix<int, General, ColMajor> M(20, 20);
+Matrix<int, General, RowSparse, NewAlloc<int> > M;\endprecode
+
+<h2>Use of matrices</h2>
+
+<p> Access to elements is achieved through the <code>operator(int, int)</code>, and indices start at 0: </p>
+
+\precode Matrix<double> M(5, 6);
+M(0, 1) = -3.1;
+M(0, 0) = 1.2 * M(0, 1);
+\endprecode
+
+<p> To display matrices, there are two convenient options: </p>
+
+\precode M.Print();
+cout << M << endl;
+\endprecode
+
+<p> There are lots of methods that are described in the <a href="class_matrix.php">documentation</a>. One may point out:</p>
+
+<ul>
+
+  <li> <code>GetM()</code> and <code>GetN()</code> return respectively the number of rows and the number of columns.</li>
+  
+  <li> <code>Fill</code> fills with 1, 2, 3, etc. or fills the matrix with a given value.</li>
+  
+  <li> <code>Reallocate</code> resizes the matrix (warning, data may be lost, depending on the allocator).</li>
+  
+  <li> <code>Resize</code> resizes the matrix while keeping previous entries </li>
+
+  <li> <code>Read</code>, <code>ReadText</code>, <code>Write</code>, <code>WriteText</code> are useful methods for input/ouput operations.</li>
+  
+</ul>
+
+<p> Symmetric matrices in packed form are managed as square full matrices. There is a difference. If one affects the element (i, j) in the matrix, the element (j, i) will be affected at the same time, without any cost.  A comprehensive test of full matrices is achieved in file <code>test/program/matrices_test.cpp</code>. </p>
+
+<h2>Sparse matrices - Harwell-Boeing form </h2>
+
+<p> Sparse matrices are not managed as full matrices. The access operator <code>operator(int, int)</code> is still available, but it doesn't allow any affectation, because it may return a (non-stored) zero of the matrix. In practice, one should deal with the underlying vectors that define elements and their indices: the vector of values <code>data_</code>, the vector of "start indices" <code>ptr_</code> (i.e. indices - in the vector <code>data_</code> - of the first element of each row or column) and the vector of row or column indices <code>ind_</code>.  </p>
+
+<p> Six types of storage are available : RowSparse, ColSparse, RowSymSparse, ColSymSparse, RowComplexSparse, RowSymComplexSparse.  To deal with sparse matrices, the following methods should be useful:</p>
+
+<ul>
+
+  <li> <code>SetData</code> (or the constructor with the same arguments) to set the three vectors <code>data_</code>, <code>ptr_</code> and <code>ind_</code>.</li>
+  
+  <li> <code>GetData</code>, <code>GetPtr</code> and <code>GetInd</code> which return respectively <code>data_</code>, <code>ptr_</code> and <code>ind_</code> described above.</li>
+  
+  <li> <code>GetDataSize</code>, <code>GetPtrSize</code> and <code>GetIndSize</code> which return respectively sizes of <code>data_</code>, <code>ptr_</code> and <code>ind_</code>.</li>
+  
+</ul>
+
+<h2> Sparse matrices - array of sparse vectors </h2>
+
+<p> Since the Harwell-Boeing form is difficult to handle, a more flexible form can be used in %Seldon. Four types of storage are available : ArrayRowSparse, ArrayRowSymSparse, ArrayRowComplexSparse, ArrayRowSymComplexSparse. Their equivalents with a storage of columns : ArrayColSparse, ArrayColSymSparse, ArrayColComplexSparse, ArrayColSymComplexSparse are available as well, but often functions are implemented only for storage by rows. Therefore the user is strongly encourage to use only storages by rows.  In this form, each row is stored as a sparse vector, allowing fast insertions of entries. Moreover, the access operator has the same functionnality as for dense matrices, because it allows affections. However the drawback of such functionally is that non-zero entries are added each time operator () is called even on a right hand side expression. In order to avoid this phenomenon, the matrix has to be declared const. </p>
+ 
+ <p> The following methods should be useful:</p>
+
+<ul>
+
+  <li> <code>Reallocate</code> initialization of the matrix with a number of rows and columns. Previous entries are cleared. </li>
+  
+  <li> <code>Resize</code> The number of rows and columns are modified, previous entries are kept.</li>
+  
+  <li> <code>GetDataSize</code> returns number of stored values.</li>
+
+  <li> <code>AddInteraction</code> adds/inserts an entry in the matrix </li>
+  
+  <li> <code> AddInteractionRow</code> adds/inserts severals entries in a row of the matrix </li>
+  
+  <li> <code>ReadText/WriteText</code> reads/writes matrix in ascii. </li>  
+</ul>
+
+<p>The methods <code>AddInteraction</code> and <code>AddInteractionRow</code> inserts or adds entries in the right position, so that each row contains sorted elements (column numbers are sorted in ascending order). The function <code> Copy</code> converts matrices in any form, especially Harwell-Boeing form, since this last form induces faster matrix-vector product. </p>
+
+\precode
+int m = 10, n = 5;
+Matrix<double, General, ArrayRowSparse> A(m, n);
+
+// you can use AddInteraction
+A.AddInteraction(3, 4, 3.0);
+// or directly use the operator ()
+// if the entry doesn't exist, it is added
+A(2, 3) = 2.0;
+// the following instruction also adds an entry :
+double y = A(3, 0); 
+// or add several entries at the same time
+int nb_elt = 3;
+IVect col_number(nb_elt);
+DVect values(nb_elt);
+col_number(0) = 1; col_number(0) = 3; col_number(0) = 2;
+values(0) = 1.0; values(1) = -1.5; values(2) = 3.0;
+A.AddInteractionRow(2, col_number, values);
+
+// you can read/write the matrix
+A.WriteText("Ah.dat"); A.ReadText("Ah.dat");
+// and convert the matrix if you want a faster matrix-vector product
+Matrix<double, General, RowSparse> Acsr;
+Copy(A, Acsr);
+A.Clear();
+DVect x(n), b(m);
+x.Fill();
+// b = A*x
+MltAdd(1.0, A, x, 0, b);
+\endprecode
+
+<p>A comprehensive test of sparse matrices is achieved in file <code>test/program/sparse_matrices_test.cpp</code>. </p>
+
+*/

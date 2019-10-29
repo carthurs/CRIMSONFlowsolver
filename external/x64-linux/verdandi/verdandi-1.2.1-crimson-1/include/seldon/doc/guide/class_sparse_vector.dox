@@ -1,0 +1,1325 @@
+/*! \file class_sparse_vector.dox
+    \brief Sparse vectors.
+*/
+
+/*!
+\page class_sparse_vector Sparse Vectors
+
+<p> In that page, methods and functions related to sparse vectors are detailed. Sparse vectors consist of row numbers and values. In order to have efficient algorithms, row numbers are always sorted in ascending order.  </p>
+
+
+<h2>Basic declaration :</h2>
+\precode
+// sparse vector of doubles
+Vector<double, VectSparse> V;
+\endprecode
+
+
+<h2>Methods :</h2>
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#constructor"> Vector constructors </a> </td> <td></td></tr>
+
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#operator"> Vector operators </a> </td> <td></td></tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetM </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getm"> GetLength </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetSize </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getindex"> GetIndex </a> </td>
+ <td class="category-table-td"> returns a pointer to the row numbers </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdata"> GetData </a> </td>
+ <td class="category-table-td"> returns a pointer to the values</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetDataConst </a> </td>
+ <td class="category-table-td"> returns a pointer to the values </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdata"> GetDataVoid </a> </td>
+ <td class="category-table-td"> returns a pointer to the values </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetDataConstVoid </a> </td>
+ <td class="category-table-td"> returns a pointer to the values </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#clear"> Clear </a> </td>
+ <td class="category-table-td"> removes all elements of the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#reallocate"> Reallocate </a> </td>
+ <td class="category-table-td"> changes the size of vector (removes previous elements) </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#resize"> Resize </a> </td>
+ <td class="category-table-td"> changes the size of vector (keeps previous elements) </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#setdata"> SetData </a> </td>
+ <td class="category-table-td"> sets the pointer to the array contained in the vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#nullify"> Nullify </a> </td>
+ <td class="category-table-td"> clears the vector without releasing memory</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#index"> Index </a> </td>
+ <td class="category-table-td"> access to row number</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#value"> Value </a> </td>
+ <td class="category-table-td"> access to value </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#copy"> Copy </a> </td>
+ <td class="category-table-td"> copies a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#assemble"> Assemble </a> </td>
+ <td class="category-table-td"> sorts row numbers </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetDataSize </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#zero"> Zero </a> </td>
+ <td class="category-table-td"> sets all elements to zero </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#fill"> Fill </a> </td>
+ <td class="category-table-td"> sets all elements to a given value </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#fillrand"> FillRand </a> </td>
+ <td class="category-table-td"> fills randomly the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#addinteraction"> AddInteraction </a> </td>
+ <td class="category-table-td"> adds a coefficient to the vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#addinteractionrow"> AddInteractionRow </a> </td>
+ <td class="category-table-td"> adds coefficients to the vector</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getnorminf"> GetNormInf </a> </td>
+ <td class="category-table-td"> returns highest absolute value </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getnorminf"> GetNormInfIndex </a> </td>
+ <td class="category-table-td"> returns the index of the highest absolute value </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#print"> Print </a> </td>
+ <td class="category-table-td"> displays the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#write"> Write </a> </td>
+ <td class="category-table-td"> writes the vector in binary format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#read"> Read </a> </td>
+ <td class="category-table-td"> reads the vector in binary format </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#writetext"> WriteText </a> </td>
+ <td class="category-table-td"> writes the vector in text format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#readtext"> ReadText </a> </td>
+ <td class="category-table-td"> reads the vector in text format </td> </tr>
+</table>
+
+
+<h2>Functions :</h2>
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#mlt">Mlt </a></td> 
+ <td class="category-table-td"> multiplies the elements of the vector by a scalar </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#add">Add </a></td> 
+ <td class="category-table-td"> adds two vectors </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#copy">Copy </a></td> 
+ <td class="category-table-td"> copies one vector into another one </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#swap">Swap </a></td> 
+ <td class="category-table-td"> exchanges two vectors </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#dotprod">DotProd </a></td> 
+ <td class="category-table-td"> scalar product between two vectors</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#dotprod">DotProdConj </a></td> 
+ <td class="category-table-td"> scalar product between two vectors, first vector being conjugated</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#conjugate">Conjugate </a></td> 
+ <td class="category-table-td"> conjugates a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#getmaxabsindex">GetMaxAbsIndex </a></td> 
+ <td class="category-table-td"> returns index where highest absolute value is reached </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#norm1">Norm1 </a></td> 
+ <td class="category-table-td"> returns 1-norm of a vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#norm2">Norm2 </a></td> 
+ <td class="category-table-td"> returns 2-norm of a vector</td> </tr>
+</table>
+
+
+
+<div class="separator"><a name="constructor"></a></div>
+
+
+
+<h3>Vector constructors</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  Vector();
+  Vector(const Vector&amp; X );
+  Vector(int n);
+</pre>
+
+
+<h4> Example : </h4>
+\precode
+// default constructor -> empty vector
+Vector<int, VectSparse> U;
+cout << "Number of elements " << U.GetM() << endl; // It should return 0 
+// then you can use Reallocate to change the number of non-zero entries
+U.Reallocate(3);
+// you need to initialize row numbers (in ascending order)
+U.Index(0) = 0;
+U.Index(1) = 4;
+U.Index(2) = 14;
+// for values, you can use Fill
+U.Fill();
+
+// copy constructor (V -> U)
+Vector<int, VectSparse> V = U;
+
+// constructor specifying the number of non-zero entries
+Vector<double, VectSparse> W(2);
+// W is not initialized, you have to fill it
+W.Fill(1.0);
+// and row numbers as well
+W.Index(0) = 7;
+W.Index(1) = 4;
+// if you forgot to sort numbers, call Assemble
+W.Assemble();
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocate">Reallocate</a><br/>
+<a href="#assemble">Assemble</a><br/>
+<a href="#index">Index</a><br/>
+<a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="operator"></a></div>
+
+
+
+<h3>Vector operators</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T operator () const;
+  Vector&amp; operator =(const Vector&amp; );
+  Vector&amp; operator *=(const T0&amp; alpha);
+</pre>
+
+
+<p> The access operator () can be used to retrieve the value of V at index i. If the index i
+ does not correspond to a non-zero entry, it will return 0. This operator cannot be used to modify the vector,
+ use Get instead.  </p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+// use of Get to insert non-zero entry.
+V.Get(2) = 1.5;
+V.Get(5) = -1.0;
+// you can display value of V at row i
+// V(4) should return 0 (zero entry)
+cout << "V(4) = " << V(4) << endl;
+// but V(2) should return 1.5
+cout << "V(2) = " << V(2) << endl;
+
+// everything is fine, and 'val' is equal to 0.
+double val = V(20);
+
+Vector<double, VectSparse> W;
+// use of operator = to copy contents of vector V
+W = V;
+
+// multiplication by a scalar
+W *= 1.5;
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#copy">Copy</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="Get"></a></div>
+
+
+
+<h3>Get</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T& Get(int i);
+</pre>
+
+
+<p> This function can be used to modify (or insert) a non-zero entry in the sparse vector. This function
+ should be used in replacement of operator () when the user wants to modify the sparse vector. </p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+// use of Get to insert non-zero entry
+V.Get(2) = 1.5;
+V.Get(5) = -1.0;
+// you can display value of V at row i
+// V(4) should return 0 (zero entry)
+cout << "V(4) = " << V(4) << endl;
+// but V(2) should return 1.5
+cout << "V(2) = " << V(2) << endl;
+
+// warning: a non-zero entry V(20) will be created here:
+double val = V.Get(20);
+ 
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#operator">Operators</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="getm"></a></div>
+
+
+
+<h3>GetM, GetLength, GetSize, GetDataSize</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetM() const;
+  int GetLength() const;
+  int GetSize() const;
+  int GetDataSize() const;
+</pre>
+
+
+<p>All those methods are identic and return the number of non-zero entries contained in the vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<float, VectSparse> V(3);
+cout << "Number of elements of V " << V.GetM() << endl;
+V.Reallocate(5);
+cout << "Number of elements of V " << V.GetSize() << endl;
+\endprecode
+
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector_Base</code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="getindex"></a></div>
+
+
+
+<h3>GetIndex</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  int* GetIndex();
+</pre>
+
+
+<p>This method is used to retrieve the pointer to the row numbers and should be used in conjunction with method <a href="#getdata">GetData</a>.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+V(3) = -3.5;
+V(1) = 1.3;
+int* index = V.GetIndex();
+// you can use index as a normal C array
+cout << "row number 1 : " << index[0] << endl;
+\endprecode
+
+
+
+<h4>Related topics : </h4>
+<p><a href="#getdata">GetData</a><br/>
+<a href="#index">Index</a><br/>
+<a href="#setdata">SetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="getdata"></a></div>
+
+
+
+<h3>GetData, GetDataConst, GetDataVoid, GetDataConstVoid</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T* GetData() const;
+  const T* GetDataConst() const;
+  void* GetDataVoid() const;
+  const void* GetDataConstVoid() const;
+</pre>
+
+
+<p>Those methods are useful to retrieve the pointer to the values.  In practice, you can use those methods in order to interface fortran subroutines or to realize some low level operations.  But in this last case, you have to be careful, because debugging operations will be more tedious.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse>; V;
+V(3) = -3.5;
+V(1) = 1.3;
+double* data = V.GetData();
+// you can use data as a normal C array
+// here the sum of elements is computed
+double sum = 0;
+for (int i = 0; i < V.GetM(); i++)
+  sum += data[i];
+
+// this would be equivalent and safer to write
+sum = 0;
+for (int i = 0; i < V.GetM(); i++)
+  sum += V.Value(i);
+
+// if you want to call a fortran subroutine daxpy
+Vector<double, VectSparse> X(3), Y(3); 
+double coef = 2.0;
+// in this case, X is constant
+int m = X.GetM();
+int n = Y.GetM();
+daxpy_(&coef, &m, X.GetDataConst(), X.GetIndex(),
+       &n, Y.GetData(), Y.GetIndex());
+
+// for complex numbers, conversion to void* is needed :
+Vector<complex<double>, VectSparse> Xc(3), Yc(3);
+complex<double> beta(1,1);
+zaxpy(reinterpret_cast<const void*>(beta), >m,
+      Xc.GetDataConstVoid(), Xc.GetIndex(), >n,
+      Yc.GetDataVoid(), Yc.GetIndex());
+\endprecode
+
+
+
+<h4>Related topics : </h4>
+<p><a href="#getindex">GetIndex</a><br/>
+<a href="#value">Value</a><br/>
+<a href="#setdata">SetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector_Base</code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="clear"></a></div>
+
+
+
+<h3>Clear</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Clear();
+</pre>
+
+<p>This method removes all the non-zero entries of the vector.  After calling this method, the vector is equal to 0.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+V(2) = 1.5;
+// clears vector V
+V.Clear();
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="reallocate"></a></div>
+
+
+
+<h3>Reallocate</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Reallocate(int);
+</pre>
+
+
+<p>This method changes the number of non-zero entries contained in the vector, but removes previous values. For sparse vectors, this may be a better solution to use methods <a href="#addinteraction">AddInteraction</a>, <a href="#addinteractionrow">AddInteractionRow</a> or the access operator.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<long double, VectSparse> V;
+V(1) = 1.5;
+V(5) = -1.0;
+// resizes vector V
+V.Reallocate(20);
+// you need to initialize all new values
+V.Fill(1.0);
+// and row numbers as well
+for (int k = 0; k < 20; k++)
+  V.Index(k) = 2*k+3;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#resize">Resize</a><br/>
+<a href="#addinteraction">AddInteraction</a><br/>
+<a href="#addinteractionrow">AddInteractionRow</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="resize"></a></div>
+
+
+
+<h3>Resize</h3>
+
+<h4>Syntax : </h4>
+<pre class="syntax-box">
+  void Resize(int);
+</pre>
+
+
+<p>This method changes the size of the vector, and keeps previous elements. For sparse vectors, this may be a better solution to use methods <a href="#addinteraction">AddInteraction</a>, <a href="#addinteractionrow">AddInteractionRow</a> or the access operator.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<long double, VectSparse> V;
+V.AddInteraction(3, 1.4);
+V.AddInteraction(7, -1.5;
+// resizes vector V
+V.Resize(4);
+// you need to initialize new elements if there are new
+// here two new elements
+V.Index(2) = 0; V.Value(2) = 0.8;
+V.Index(3) = 6; V.Value(3) = -0.7;
+// Assemble should be called to sort row numbers
+V.Assemble(); 
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#addinteraction">AddInteraction</a><br/>
+<a href="#addinteractionrow">AddInteractionRow</a><br/>
+<a href="#reallocate">Reallocate</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+<div class="separator"><a name="setdata"></a></div>
+
+
+
+<h3>SetData</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetData(int, T*, int*);
+  void SetData(Vector&lt;T&gt;, Vector&lt;int&gt;);
+</pre>
+
+
+<p>This method sets the row numbers and values.  This method should be used carefully, and generally in conjunction with method Nullify.</p>
+
+
+<h4>Example : </h4>
+\precode
+// for example, you can construct the sparse vector
+// with two arrays row and values
+IVect row(2);
+Vector<double> values(2);
+row(0) = 4; values(0) = 1.5;
+row(1) = 1; values(1) = -0.5;
+Vector<double, VectSparse> U;
+
+// and provide those arrays with SetData
+U.SetData(values, row);
+
+// but here, the row numbers are not sorted
+U.Assemble();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#assemble">Assemble</a><br/>
+<a href="#getdata">GetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="nullify"></a></div>
+
+
+
+<h3>Nullify</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Nullify();
+</pre>
+
+
+<p>This method clears the vector without releasing memory.  This method should be used carefully, and generally in conjunction with method SetData. You can look at the example shown in the explanation of method SetData.</p>
+
+
+<h4>Related topics :</h4>
+<p><a href="#setdata">SetData</a><br/>
+<a href="#getdata">GetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="index"></a></div>
+
+
+
+<h3>Index</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  int Index(int) const;
+  int&amp; Index(int);
+</pre>
+
+
+<p>This method gives a direct access to a non-zero entry</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V(3);
+// you can use Index and Value to modify sparse vector
+V.Index(0) = 1; // row number of first non-zero entry 
+V.Value(0) = 0.7; // value of first non-zero entry
+V.Index(1) = 5; // row number of first non-zero entry
+V.Value(1) = -0.7;
+V.Index(2) = 7;
+V.Value(2) = 1.2;
+
+// we display non-zero entries
+for (int k = 0; k < V.GetM(); k++)
+  cout << "Interaction at row " << V.Index(k)
+       << " value : " << V.Value(k) << endl;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#value">Value</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="value"></a></div>
+
+
+
+<h3>Value</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T Value(int) const;
+  T&amp; Value(int);
+</pre>
+
+
+
+<p>This method gives a direct access to a non-zero entry</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V(3);
+// you can use Index and Value to modify sparse vector
+V.Index(0) = 1; // row number of first non-zero entry 
+V.Value(0) = 0.7; // value of first non-zero entry
+V.Index(1) = 5; // row number of first non-zero entry
+V.Value(1) = -0.7;
+V.Index(2) = 7;
+V.Value(2) = 1.2;
+
+// we display non-zero entries
+for (int k = 0; k < V.GetM(); k++)
+  cout << "Interaction at row " << V.Index(k)
+       << " value : " << V.Value(k) << endl;
+\endprecode
+
+
+
+<h4>Related topics :</h4>
+<p><a href="#index">Index</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="copy"></a></div>
+
+
+
+<h3>Copy</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Copy(const Vector&lt;T&gt;&amp;);
+</pre>
+
+
+
+<p>This method copies a vector into the current vector.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+// copy of a vector V
+Vector<double, VectSparse> V(2), W;
+V.Index(0) = 1; V.Index(1) = 3;
+V.FillRand();
+W.Copy(V);
+// this is equivalent to use operator =
+W = V;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#operator">Vector operators</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="assemble"></a></div>
+
+
+
+<h3>Assemble</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Assemble();
+</pre>
+
+
+
+<p>This method sorts row numbers, and adds values if there are two same row numbers. You don't need to call this method if you are using the access operator () or methods <a href="#addinteraction">AddInteraction</a>.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V(3);
+V.Index(0) = 2; V.Value(0) = 0.3;
+V.Index(1) = 0; V.Value(1) = -0.5;
+V.Index(2) = 2; V.Value(2) = 1.2;
+// here the row numbers given by using Index are not sorted
+V.Assemble();
+// V should be equal to [0 -0.5, 2 1.5]
+cout << "V = " << V << endl;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#index">Index</a><br/>
+<a href="#value">Value</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="zero"></a></div>
+
+
+
+<h3>Zero</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Zero();
+</pre>
+
+
+
+<p>This method fills memory of 0. All non-zero entries have their values set to 0. This is useful in order to keep the same profile for the vector, and initialize it to 0, before adding new interactions. Since the profile is conserved, there is no insertion of non-zero entries, therefore the strategy is more efficient</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+// we add two interactions
+V.AddInteraction(5, 1.3);
+V.AddInteraction(2, -10);
+
+// now we want to keep the same profile but with null values
+V.Zero();
+// V should be equal to [2 0.0, 5 0.0]
+cout << "V =  " << V << endl;
+
+// after you can add coefficients in that profile
+// so that you are more efficient (no insertion)
+V.AddInteraction(2, 3.0);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, Vect_Full&gt;<br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+<div class="separator"><a name="fill"></a></div>
+
+
+
+<h3>Fill</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Fill();
+  void Fill(const T0&amp; );
+</pre>
+
+
+
+<p>This method sets values of non-zero entries with 0, 1, 2, etc or with a given value. Row numbers are not affected.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(4);
+// row numbers
+V.Index(0) = 2;
+V.Index(1) = 4;
+V.Index(2) = 6;
+V.Index(3) = 7;
+// for values, we call fill
+V.Fill();
+// V should contain [2 0.0, 4 1.0, 6 2.0, 7 3.0]
+
+// you can specify the coefficient for all values
+V.Fill(2);
+// V should contain [2 2.0, 4 2.0, 6 2.0, 7 2.0]
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#zero">Zero</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, Vect_Full&gt;<br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="fillrand"></a></div>
+
+
+
+<h3>FillRand</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void FillRand();
+</pre>
+
+
+
+<p>This method sets values of non-zero entries randomly.  Row numbers are not affected.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(4);
+// row numbers
+V.Index(0) = 2;
+V.Index(1) = 4;
+V.Index(2) = 6;
+V.Index(3) = 7;
+// for values, we ask random values
+V.FillRand();
+// V should contain [2 r0, 4 r1, 6 r2, 7 r3]
+// where r0, r1, r2 and r3 are random numbers
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, Vect_Full&gt;<br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="addinteraction"></a></div>
+
+
+
+<h3>AddInteraction</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void AddInteraction(int, T);
+</pre>
+
+<p>This method adds/inserts a coefficient to the sparse vector.  If the entry doesn't exist, it is inserted at the correct position, so that row numbers stay sorted in ascending order.  </p>
+
+<h4>Example : </h4>
+\precode
+// empty vector
+Vector<double, VectSparse> V;
+
+// a non-zero entry is created by using AddInteraction
+V.AddInteraction(3, 2.5);
+
+// if the non-zero entry exists, the coefficient is added
+V.AddInteraction(3, -1.0);
+
+// V is now equal to 3 1.5 
+cout << "V = " << endl;
+
+// if you want to set the value, you can use operator ()
+V(3) = -0.8;
+// V is now equal to 3 -0.8 
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#operator">Vector operators</a><br/>
+<a href="#addinteractionrow">AddInteractionRow</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="addinteractionrow"></a></div>
+
+
+
+<h3>AddInteractionRow</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void AddInteractionRow(Vector&lt;int&gt;, Vector&lt;T&gt;);
+</pre>
+
+
+
+<p>This method adds/inserts coefficients to the sparse vector.  If there is no entry, it is inserted at the correct position, so that row numbers stay sorted in ascending order.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+// empty vector
+Vector<double, VectSparse> V;
+
+// non-zero entries are created by using AddInteractionRow
+IVect row(2);
+Vector<double> value(2);
+row(0) = 6; value(0) = 1.3;
+row(1) = 3; value(1) = -0.8;
+
+V.AddInteractionRow(row, value);
+// V is now equal to [3 -0.8, 6 1.3] 
+cout << "V = " << endl;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#operator">Vector operators</a><br/>
+<a href="#addinteraction">AddInteraction</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="getnorminf"></a></div>
+
+
+
+<h3>GetNormInf, GetNormInfIndex</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T GetNormInf();
+  int GetNormInfIndex();
+</pre>
+
+
+
+<p><code>GetNormInf</code> returns the highest absolute value whereas <code>GetNormInfIndex</code> returns the index where this maximum is reached. This returns the index and not the row number. This method does not work for complex numbers.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> > V;
+V(0) = 1; V(3) = -2.2; V(4) = 0.5;
+int imax = V.GetNormInf(); // should return 2.2
+int pos = V.GetNormInfIndex(); // should return 1
+// if you want the row number, you can use Index
+cout << "maximum reached at row " << V.Index(pos) << endl;
+\endprecode
+
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, Vect_Full&gt;<br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="print"></a></div>
+
+
+
+<h3>Print</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Print() const;
+</pre>
+
+
+
+<p>This method displays the vector with 1-index convention for row numbers.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+V.AddInteraction(5, -1.0);
+V.AddInteraction(2, 1.5);
+V.Print(); // should display 3 1.5 \n 6 -1.0
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="write"></a></div>
+
+
+
+<h3>Write</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Write(string) const;
+  void Write(ofstream&amp;) const;
+</pre>
+
+
+
+<p>This method writes the vector on a file/stream in binary format.  The file will contain the number of non-zero entries, the list of row numbers, and then the list of values.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+V(1) = 1.0; V(3) = 0.5; 
+// you can write directly in a file
+V.Write("vector.dat");
+
+// or open a stream with other datas
+ofstream file_out("vector.dat");
+int my_info = 3;
+file_out.write(reinterpret_cast<char*>(&my_info), sizeof(int));
+V.Write(file_out);
+file_out.close();
+\endprecode
+
+
+
+<h4>Related topics :</h4>
+<p><a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="read"></a></div>
+
+
+
+<h3>Read</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Read(string);
+  void Read(istream&amp;);
+</pre>
+
+
+
+<p>This method reads the vector from a file/stream in binary format.  The file will contain the number of non-zero entries, the list of row numbers, and then the list of values.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V; 
+// you can read directly on a file
+V.Read("vector.dat");
+
+// or read from a stream
+ifstream file_in("vector.dat");
+int my_info;
+file_in.read(reinterpret_cast<char*>(&my_info), sizeof(int));
+V.Read(file_in);
+file_in.close();
+\endprecode
+
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="writetext"></a></div>
+
+
+
+<h3>WriteText</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void WriteText(string) const;
+  void WriteText(ofstream&amp;) const;
+</pre>
+
+
+
+<p>This method writes the vector on a file/stream in text format.  The file will contain the list of non-zero entries, each line of the file will contain a row number and a value.  The 1-index convention is used for row numbers.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V;
+V.AddInteraction(6, 3.1);
+V.AddInteraction(2, -1.3);
+// you can write directly in a file
+V.WriteText("vector.dat");
+
+// or open a stream with other datas
+ofstream file_out("vector.dat");
+int my_info = 3;
+file_out << my_info << '\n';
+V.WriteText(file_out);
+file_out.close();
+\endprecode
+
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+
+
+<div class="separator"><a name="readtext"></a></div>
+
+
+
+<h3>ReadText</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ReadText(string);
+  void ReadText(istream&amp;);
+</pre>
+
+
+
+<p>This method reads the vector on a file/stream in text format.  The used format is detailed above in the explanation of the method <a href="#writetext">WriteText</a>.</p>
+
+
+
+<h4>Example : </h4>
+\precode
+Vector<double, VectSparse> V; 
+// you can read directly on a file
+V.ReadText("vector.dat");
+
+// or read from a stream
+ifstream file_in("vector.dat");
+int my_info;
+file_in >> my_info;
+V.ReadText(file_in);
+file_in.close();
+\endprecode
+
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Vector&lt;T, VectSparse&gt;<br/>
+SparseVector.hxx<br/>
+SparseVector.cxx</p>
+
+*/

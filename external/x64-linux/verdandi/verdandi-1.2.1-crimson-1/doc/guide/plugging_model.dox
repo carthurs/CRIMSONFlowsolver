@@ -1,0 +1,123 @@
+/*! \file plugging_model.dox
+    \brief Plugging the Model.
+*/
+
+/*!
+\page plugging_model Plugging a Model
+
+
+\section own_model Create your own model
+
+
+Start from the \link Verdandi::ModelTemplate ModelTemplate\endlink. The complete interface of the model class is described \link Verdandi::ModelTemplate here\endlink. With a complete interface, one can apply any data assimilation method in Verdandi. But for a given data assimilation method, not all methods are required.
+
+<ul>
+<li>
+In the model directory, copy the \link Verdandi::ModelTemplate ModelTemplate\endlink and rename it to \"MyModel\". E.g., under Linux or MacOS, in command line:
+
+\precode
+$ cd verdandi/model/
+$ cp ModelTemplate.hxx MyModel.hxx
+$ cp ModelTemplate.cxx MyModel.cxx
+\endprecode
+
+</li>
+
+
+<li>
+Open the files <code>MyModel.*xx</code>, rename the preprocessing variables.
+
+\precode
+#ifndef VERDANDI_FILE_MODEL_MODELTEMPLATE_*XX
+#define VERDANDI_FILE_MODEL_MODELTEMPLATE_*XX
+\endprecode
+
+into
+
+\precode
+#ifndef VERDANDI_FILE_MODEL_MYMODEL_*XX
+#define VERDANDI_FILE_MODEL_MYMODEL_*XX
+\endprecode
+</li>
+
+ <li>
+ Replace all "ModelTemplate" occurrences with "MyModel".
+
+</li>
+
+<li>
+In a first step, it is advised to write the interface for the \link Verdandi::ForwardDriver ForwardDriver\endlink method which requires only a limited number of methods to be implemented.
+
+Create a directory <code>my_model</code> in the <code>example</code> directory. Copy in <code>my_model</code> the following files: <code>example/quadratic_model/SConstruct</code>, <code>example/quadratic_model/forward.cpp</code> and the configuration file <code>example/quadratic_model/configuration/truth.lua</code>. E.g.:
+</li>
+
+\precode
+$ cd verdandi/example/
+$ mkdir -p my_model/configuration
+$ cp quadratic_model/{SConstruct,forward.cpp} my_model/
+$ cp quadratic_model/configuration/truth.lua my_model/configuration/
+\endprecode
+
+<li> In the file <code>forward.cpp</code> replace all "ModelTemplate" occurrences with "MyModel".</li>
+
+<li> Compile the program forward.cpp.
+</li>
+
+\precode
+$ scons forward
+\endprecode
+
+<li> Run the forward program.
+
+\precode
+$ ./forward configuration/truth.lua
+\endprecode
+
+
+  At run time, if a method is needed in the model class, and if this method is not implemented, the program will launch an exception.
+  For instance, if the method \link Verdandi::ModelTemplate::HasFinished HasFinished\endlink is undefined, an exception will be thrown to report you this error.
+  Then, see the contract of this method (\link Verdandi::ModelTemplate::HasFinished HasFinished\endlink) and implement it. You can also have a look into the example models in <code>verdandi/model/</code>.
+
+</li>
+</ul>
+
+\section existing_model Plugging an existing model
+
+Usually, one wants to create an interface for an existing model and to rely on existing model compilation tools.
+
+We recommend the following procedure:
+<ol>
+    <li> Create a class which <b>encapsulates</b> the existing model and which implements the Verdandi model interface (follow the same steps as in the previous section, \ref own_model "Create your own model").
+    </li>
+    <li> Create an object file from this class using your own compilation tools.</li>
+    <li> Add this object file to the Verdandi SConstruct <code>dependency_list</code> variable.
+    Edit <code>SConstruct</code> file from the current project directory so that it looks like this:
+\precode
+import os
+
+# Put the path to Verdandi.
+# Also editable from command line with option "verdandi".
+verdandi_path = "MY_VERDANDI_PATH/verdandi-[version]"
+
+dependency_list = ["MyModel.o"]
+
+execfile(os.path.join(verdandi_path, "share/SConstruct"))
+\endprecode
+
+
+    </li>
+    <li>
+        In the same way, update the Verdandi SConstruct <code>include_path</code> variable.
+    </li>
+    <li>
+        If your model has other dependencies, add the required include paths and library paths to the <code>include_path</code> and <code>library_path</code> variables.
+    </li>
+    <li>
+    Compile your program with SCons.
+    </li>
+
+
+</ol>
+
+
+*/

@@ -1,0 +1,54 @@
+/*! \file notation.dox
+    \brief Notation.
+*/
+
+/*!
+\page notation Notation
+
+Unless otherwise specified, the notation used throughout the whole documentation (including the reference documentation) is that detailed below.
+
+\section model Model and State Vectors
+
+The time index \f$h\f$ is associated with the time \f$t_h\f$. The model time steps are denoted \f$\Delta t_h\f$, so that \f$t_h = t_0 + \sum_{h' = 0}^{h' < h} \Delta t_{h'}\f$.
+
+The state equation is
+\f[x^t_{h+1} = \mathcal{M}_h(x^t_h, p_h) + e^m_h\,,\f]
+where \f$x^t_h \in \mathbb{R}^n\f$ is the true model state vector, \f$\mathcal{M}_h\f$ is the model operator, \f$p_h \in \mathbb{R}^l\f$ is the vector of model parameters, and \f$e^m_h\f$ is the model error. <br>
+
+The model error can be decomposed into a systematic error \f$\bar e^m_h\f$ and a fluctuation \f$\tilde e^m_h\f$:
+\f[e^m_h = \bar e^m_h + \tilde e^m_h\,.\f]
+
+If the model error is a random vector, then \f$\bar e^m_h\f$ is its expectation: \f$\bar e^m_h = \mathrm{E}(e^m_h)\f$.
+
+A tangent linear model is denoted \f$M_h\f$.
+
+In the course of a simulation with data assimilation, one distinguishes the forecast state vector \f$x^f_h\f$ and the analysis state vector \f$x^a_h\f$. The later is the result of the assimilation, while the former is often defined as
+\f[x^f_{h+1} = \mathcal{M}_h(x^a_h, p_h)\,.\f]
+
+The forecast and analysis errors are defined as
+\f[e^f_h = x^f_h - x^t_h\,,\f]
+\f[e^a_h = x^a_h - x^t_h\,.\f]
+
+The variances of the errors are denoted \f$P^f_h\f$ for the forecast error, \f$P^a_h\f$ for the analysis error and \f$Q_h\f$ for the model error:
+\f[P^f_h = \mathrm{E}\left(\left(e^f_h - \mathrm{E}(e^f_h)\right)\,\left(e^f_h - \mathrm{E}(e^f_h)\right)^T\right)\,,\f]
+\f[P^a_h = \mathrm{E}\left(\left(e^a_h - \mathrm{E}(e^a_h)\right)\,\left(e^a_h - \mathrm{E}(e^a_h)\right)^T\right)\,,\f]
+\f[Q_h = \mathrm{E}\left(\tilde e^m_h (\tilde e^m_h)^T\right)\,.\f]
+
+\section observations Observations
+
+The observation vector at time \f$t_h\f$ is denoted \f$y_h \in \mathbb{R}^m\f$. It satisfies
+\f[y_h = \mathcal{H}_h(x^t_h) + e^o_h\f]
+
+The observation operator \f$\mathcal{H}_h\f$ maps the model state space into the observation space. A tangent linear operator is denoted \f$H_h\f$.
+
+The observation error can be decomposed into a systematic error \f$\bar e^o_h\f$ and a fluctuation \f$\tilde e^o_h\f$:
+\f[e^o_h = \bar e^o_h + \tilde e^o_h\,,\f]
+with \f$\bar e^o_h = \mathrm{E}(e^o_h)\f$ in a stochastic framework.
+
+The observational error covariance matrix is
+\f[R_h = \mathrm{E}\left(\tilde e^o_h (\tilde e^o_h)^T\right)\,.\f]
+
+The innovation, defined as the discrepancy between the observations and the corresponding model forecast, is denoted
+\f[d_h = y_h - \mathcal{H}_h(x^f_h)\,.\f]
+
+*/

@@ -1,0 +1,241 @@
+/*! \file example_programs.dox
+    \brief Example Programs.
+*/
+
+/*!
+\page example_programs Example Programs
+
+All examples are located in the <code>example</code> directory.
+
+\section shallow_water Shallow Water
+
+The \ref models "Shallow Water model" describes the flow below a pressure surface in a fluid. The different boundary and initial conditions are described in the configuration files in <code>example/shallow_water/configuration</code>.
+
+First compile the examples with
+\precode
+$ scons
+\endprecode
+in the directory <code>example/shallow_water</code>. This will compile an example with \link Verdandi::ForwardDriver ForwardDriver\endlink and an example with \link Verdandi::OptimalInterpolation OptimalInterpolation\endlink (see the documentation of \ref optimal_interpolation "optimal interpolation").
+
+
+\subsection observations Generate observations
+
+Since no observations are given yet, we have to generate some. Execute the following command:
+\precode
+$ forward configuration/truth.lua
+\endprecode
+to run the model with the initial conditions described in <code>truth.lua</code>, without data assimilation. This should generate a few result files in the directory <code>example/shallow_water/result/</code>. The water height is stored in the file <code>truth-state_forecast.bin</code>, and the horizontal velocity along x and y in respectively <code>u.bin</code> and <code>v.bin</code>. These files store time trajectories.
+
+The generated state (water height) will serve as observations for the assimilation. To plot it, you can use <a href="http://ipython.scipy.org/">IPython</a> with the module pylab. Refer to the \ref python section to make sure you can use the Python interface of Verdandi.
+
+The following code will plot the water height at time t=0 and t=10.
+\precode
+$ ipython -pylab
+
+In  [1]: from verdandi import *
+In  [2]: truth = load_vector_list("result/truth-state_forecast.bin")
+In  [3]: plot(truth[0], label = "time t=0")
+In  [4]: plot(truth[10], label = "time t=10")
+In  [5]: legend()
+
+\endprecode
+
+This should be the output:
+
+\image html shallow_water_truth_t0_10.png
+
+The initial condition is a rectangular function in the center and the boundary condition is a flow from the left side. These conditions are described in <code>example/shallow_water/configuration/shallow_water.lua</code>.
+
+\subsection assimilation Data assimilation with optimal interpolation
+
+The observations are here managed by the \ref linear_observation_manager "linear observation manager". The parameters for the observations are stored in <code>example/shallow_water/configuration/observation.lua</code>. By default, the observation operator is a scaled identity matrix with diagonal values of 1, which means that the whole state is observed. For a more illustrative example, we can choose to restrain the observations to specific components of the state.
+
+In the file <code>example/shallow_water/configuration/observation.lua</code>, change the parameter <code>observation.operator.scaled_identity</code> from <code>true</code> to <code>false</code> and put the following code at the end of the file :
+\precode
+for i = 1, 100 do
+   for j = 1, 3 do
+      observation.operator.value[(i-1)*3 + j] = 0.
+   end
+end
+
+observation.operator.value[80] = 1.
+observation.operator.value[100 + 81] = 1.
+observation.operator.value[200 + 82] = 1.
+\endprecode
+This will restrict the observations to three components of the water height vector with indexes 79, 80 and 81. See the \ref linear_observation_manager linear documentation about LinearObservationManager for further details. Note that the indexes in Lua structures start at 1 while the indexes in the rest of Verdandi (Python, C++, documentation, integers given in the configuration) start at 0.
+
+To use the \ref optimal_interpolation "Optimal Interpolation" method, execute the following command.
+\precode
+$ optimal_interpolation configuration/assimilation.lua
+\endprecode
+This runs the model with the initial conditions described in <code>example/shallow_water/configuration/assimilation.lua</code>. This should generate several files in the directory <code>result/</code>. The analysis states \f$x^a_h\f$ are stored in the file <code>result/oi-state_analysis.bin</code>, the forecasted state  \f$x^f_h\f$ in <code>oi-state_forecast.bin</code> and the horizontal velocity along x and y in respectively <code>result/u.bin</code> and <code>result/v.bin</code>.
+
+We can now observe the results of data assimilation.
+\precode
+$ ipython -pylab
+
+In  [1]: from verdandi import *
+In  [2]: truth = load_vector_list("result/truth-state_forecast.bin")
+In  [3]: oi_state_forecast = load_vector_list("result/oi-state_forecast.bin")
+In  [4]: oi_state_analysis = load_vector_list("result/oi-state_analysis.bin")
+In  [5]: x=10; plot(truth[x]); plot(oi_state_forecast[x]); plot(oi_state_analysis[x])
+\endprecode
+
+This should plot:
+
+\image html shallow_water_t10.png
+
+Since we have restricted the observations to the points x = 79, 80 and 81, and since the observations have the same values as the forecast at these locations (that is, 1), the increment \f$y_h - H_h x_h\f$ is zero and the assimilation has no impact.
+
+Let us take a look at a later time step. In the same ipython console, type:
+
+\precode
+In  [6]: clf()
+In  [7]: x=20; plot(truth[x]); plot(oi_state_forecast[x]); plot(oi_state_analysis[x])
+\endprecode
+
+for the following result:
+
+\image html shallow_water_t20.png
+Here, the observed wave originating from the rectangular initial condition has reached the observed locations. This produces an analysis which corrects the forecasted state \f$x_h^f\f$ (in green) according to the observations. This analysis \f$x^a_h\f$ is then reinjected in the model for the next time step \f$h+1\f$.
+
+More pronounced at t=30:
+
+\precode
+In  [8]: clf()
+In  [9]: x=30; plot(truth[x]); plot(oi_state_forecast[x]); plot(oi_state_analysis[x])
+\endprecode
+
+\image html shallow_water_t30.png
+
+Let us change the parameters in the configuration files and see the effects. For example, in <code>example/shallow_water/configuration/shallow_water.lua</code>, change the value of <code>shallow_water.state_error.variance</code> from <code>100.</code> to <code>25.</code>.
+
+Execute optimal_interpolation once again and visualize the results:
+\precode
+$ optimal_interpolation configuration/assimilation.lua
+
+$ ipython -pylab
+
+In  [1]: from verdandi import *
+In  [2]: truth = load_vector_list("result/truth-state_forecast.bin")
+In  [3]: oi_state_forecast = load_vector_list("result/oi-state_forecast.bin")
+In  [4]: oi_state_analysis = load_vector_list("result/oi-state_analysis.bin")
+In  [5]: x=30; plot(truth[x]); plot(oi_state_forecast[x]); plot(oi_state_analysis[x])
+\endprecode
+
+\image html shallow_water_t30_2.png
+
+Since we lowered the variance of the state error (diagonal of \f$B_h\f$), the analysis stays closer to the forecast.
+
+
+\section clamped_bar Clamped Bar
+
+The \ref models "Clamped Bar model" describes the vibration of a bar clamped at one end.
+The boundary and initial conditions are described in the configuration files
+found in <code>example/clamped_bar/configuration</code>.
+
+First compile the examples with
+\precode
+$ scons
+\endprecode
+in the directory <code>example/clamped_bar</code>. This will compile an example
+with each of the <b>data assimilation methods</b> \link Verdandi::ForwardDriver ForwardDriver\endlink,
+\link Verdandi::OptimalInterpolation OptimalInterpolation\endlink (\ref optimal_interpolation "optimal interpolation"),
+\link Verdandi::ExtendedKalmanFilter ExtendedKalmanFilter\endlink (\ref extended_kalman_filter "extended Kalman filter"),
+\link Verdandi::UnscentedKalmanFilter UnscentedKalmanFilter\endlink (\ref unscented_kalman_filter "unscented Kalman filter"),
+\link Verdandi::ReducedOrderExtendedKalmanFilter ReducedOrderExtendedKalmanFilter\endlink (\ref reduced_order_extended_kalman_filter "reduced order extended Kalman filter"),
+\link Verdandi::ReducedOrderUnscentedKalmanFilter ReducedOrderUnscentedKalmanFilter\endlink (\ref reduced_order_unscented_kalman_filter "reduced order unscented Kalman filter"),
+ and \link Verdandi::FourDimensionalVariational FourDimensionalVariational\endlink (\ref four_dimensional_variational "four dimensional variational").
+
+\subsection observations Generate observations
+
+Since no observations are given yet, we have to generate some. Execute the following command:
+\precode
+$ forward configuration/truth.lua
+\endprecode
+to run the model with the initial conditions described in <code>truth.lua</code>, without data assimilation.
+This should generate a result file (<code>truth-state_forecast.bin</code>) in the directory <code>example/clamped_bar/result/</code>. This file store the state (displacement, velocity, \f$ \theta_{f} \f$) trajectory.
+
+The generated state (displacement, velocity, \f$ \theta_{f} \f$) will serve as observations for the assimilation. To plot it, you can use <a href="http://ipython.scipy.org/">IPython</a> with the module pylab. Refer to the \ref python section to make sure you can use the Python interface of Verdandi.
+
+The following code will plot the displacement at time t=0 and t=10.
+\precode
+$ ipython -pylab
+
+In  [1]: from verdandi import *
+In  [2]: truth = load_vector_list("result/truth-state_forecast.bin")
+In  [3]: N = 10
+In  [4]: v = truth[0]
+In  [5]: v.Resize(N)
+In  [6]: w = truth[1000]
+In  [7]: w.Resize(N)
+In  [8]: plot(v); plot(w);legend(("time=0", "time=10"), "upper left");
+
+\endprecode
+
+The output should look something like this:
+
+\image html clamped_bar_truth_t0_10.png
+
+At the initial time, the bar is fixed and horizontal.
+
+During the simulation, a force \f$F(\theta_f) = \sin(\frac{\pi t}{t_f}) M_{\theta_f} (1 ... 1)^T\f$ is applied to the bar at each point.
+For the parameter \f$ \theta_f \f$, we supposed that the bar is divided into two regions of the same length. In the first region ([0, 4]), we have \f$ \theta_f = 1.5 \f$
+while, in the second region ([5, 9]), we have \f$ \theta_f = 1.7\f$. These conditions are described in <code>example/clamped_bar/configuration/clamped_bar.lua</code>.
+
+
+
+\subsection assimilation2 Data assimilation with ROEKF and ROUKF.
+
+The observations are managed by the \ref linear_observation_manager "linear observation manager". The parameters for the observations are stored in <code>example/clamped_bar/configuration/observation.lua</code>. By default, the observation operator is a scaled identity matrix with diagonal values of 1, which means that the whole state is observed. For a more illustrative example, we can choose to restrain the observations to specific components of the state.
+
+In the file <code>example/clamped_bar/configuration/observation.lua</code>, change the parameter <code>observation.operator.scaled_identity</code> from <code>true</code> to <code>false</code> and put the following code at the end of the file :
+\precode
+Nstate = 22
+Nobservation = 10
+for i = 1, Nobservation * Nstate do
+    observation.operator.value[i] = 0.
+end
+for i = 1, Nobservation do
+    for j = 1, Nobservation do
+        if i == j then
+            observation.operator.value[Nstate * (i - 1) + j] = 1.0
+        end
+    end
+end
+\endprecode
+This will restrict the observations to the displacements. See the \ref linear_observation_manager documentation for further details. Note that the indexes in Lua structures start at 1 while the indexes in the rest of Verdandi (Python, C++, documentation, integers given in the configuration) start at 0.
+
+To use the \ref reduced_order_extended_kalman_filter "Reduced Order Extended Kalman Filter" and the \ref reduced_order_unscented_kalman_filter "Reduced Order Unscented Kalman Filter" methods, execute the following commands.
+\precode
+$ reduced_order_extended_kalman_filter configuration/assimilation.lua
+$ reduced_order_unscented_kalman_filter configuration/assimilation.lua
+\endprecode
+This runs the model with the initial conditions described in <code>example/clamped_bar/configuration/assimilation.lua</code>. The simulation begins with erroneous values for the parameter \f$ \theta_f \f$.
+This should generate several files in the directory <code>result/</code>. The analysis states \f$x^a_h\f$ are stored in the files <code>result/roekf-state_analysis.bin</code> and <code>result/roukf-state_analysis.bin</code>,
+the forecasted state  \f$x^f_h\f$ in <code>roekf-state_forecast.bin</code> and <code>roukf-state_forecast.bin</code>.
+
+We can now observe the results of data assimilation.
+\precode
+$ ipython -pylab
+
+In  [1]: from verdandi import *
+In  [2]: N = 22
+In  [3]: roekf = loadtxt("result/roekf-state_analysis.dat", usecols = range(0, N))
+In  [4]: roukf = loadtxt("result/roukf-state_analysis.dat", usecols = range(0, N))
+In  [5]: x = 20; plot(roekf[:, x]); plot(roukf[:, x]);legend(("roekf", "roukf"), "lower right");
+In  [6]: clf()
+In  [7]: x = 21; plot(roekf[:, x]); plot(roukf[:, x]);legend(("roekf", "roukf"), "lower right");
+\endprecode
+
+This should plot:
+
+\image html clamped_bar_1.png
+
+\image html clamped_bar_2.png
+
+Since the \ref models "Clamped Bar model" is linear with respect to the parameter \f$ \theta_f \f$, the \ref reduced_order_extended_kalman_filter "Reduced Order Extended Kalman Filter" and the \ref reduced_order_unscented_kalman_filter "Reduced Order Unscented Kalman Filter" methods give the same results.
+In this simulation, we start from erroneous values of the parameter \f$ \theta_f = (1.0, 1.0)\f$ and the methods converge to the correct values \f$ (1.5, 1.7)\f$.
+
+
+*/

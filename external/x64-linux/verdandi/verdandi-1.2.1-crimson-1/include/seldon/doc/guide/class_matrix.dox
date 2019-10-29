@@ -1,0 +1,1324 @@
+/*! \file class_matrix.dox
+    \brief Dense Matrices.
+*/
+
+/*!
+\page class_matrix Dense Matrices
+
+<p> In that page, methods and functions related to dense matrices are detailed. </p>
+
+<h2>Basic declaration :</h2>
+
+<h4>Classes :</h4>
+<p><a>Matrix&lt;T,Prop,RowMajor&gt;</a> <br/>
+<a>Matrix&lt;T,Prop,RowSymPacked&gt;</a> <br/>
+<a>Matrix&lt;T,Prop,RowHermPacked&gt;</a> <br/>
+<a>Matrix&lt;T,Prop,RowUpTriangPacked&gt;</a><br/>
+<a>Matrix&lt;T,Prop,RowLoTriangPacked&gt;</a></p>
+
+<h4>Example :</h4>
+\precode
+// dense matrix of doubles
+Matrix<double> A;
+
+// dense symmetric matrix
+Matrix<float, Symmetric, RowSymPacked> B;
+
+// dense hermitian matrix
+Matrix<double, General, RowHermPacked> C;
+
+// dense lower triangular matrix
+Matrix<double, General, RowLoTriangPacked> D;
+
+// dense upper triangular matrix
+Matrix<double, General, RowUpTriangPacked> E;
+\endprecode
+
+<h2>Methods :</h2>
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#constructor"> Matrix constructors </a> </td> <td></td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#operator"> Matrix operators </a> </td> <td></td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetM </a> </td>
+ <td class="category-table-td"> returns the number of rows in the
+ matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getn"> GetN </a> </td>
+ <td class="category-table-td"> returns the number of columns in the matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getsize"> GetSize </a> </td>
+ <td class="category-table-td"> returns the number of elements in the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdatasize"> GetDataSize </a> </td>
+ <td class="category-table-td"> returns the number of elements effectively stored </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetData </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing the values </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdata"> GetDataConst </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing the values </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetDataVoid </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing the values </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdata"> GetDataConstVoid </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing the values </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#clear"> Clear </a> </td>
+ <td class="category-table-td"> removes all elements of the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#reallocate"> Reallocate </a> </td>
+ <td class="category-table-td"> changes the size of matrix (does not keep previous elements) </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#resize"> Resize </a> </td>
+ <td class="category-table-td"> changes the size of matrix (keeps previous elements) </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#setdata"> SetData </a> </td>
+ <td class="category-table-td"> sets the pointer to the array containing the values</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#nullify"> Nullify </a> </td>
+ <td class="category-table-td"> clears the matrix without releasing memory</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#val"> Val </a> </td>
+ <td class="category-table-td"> access to a matrix element</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#copy"> Copy </a> </td>
+ <td class="category-table-td"> copies a matrix</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#zero"> Zero </a> </td>
+ <td class="category-table-td"> sets all elements to zero </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#setidentity"> SetIdentity </a> </td>
+ <td class="category-table-td"> sets matrix to identity matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#fill"> Fill </a> </td>
+ <td class="category-table-td"> sets all elements to a given value </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#fillrand"> FillRand </a> </td>
+ <td class="category-table-td"> fills randomly the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#print"> Print </a> </td>
+ <td class="category-table-td"> displays the matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#write"> Write </a> </td>
+ <td class="category-table-td"> writes the matrix in binary format </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#read"> Read </a> </td>
+ <td class="category-table-td"> reads the matrix in binary format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#writetext"> WriteText </a> </td>
+ <td class="category-table-td"> writes the matrix in text format </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#readtext"> ReadText </a> </td>
+ <td class="category-table-td"> reads the matrix in text format </td> </tr>
+</table>
+
+<h2>Functions :</h2>
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#mlt">Mlt </a></td> 
+ <td class="category-table-td"> multiplication by a scalar or matrix-vector product </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#mltadd">MltAdd </a></td> 
+ <td class="category-table-td"> performs a matrix-vector or
+ matrix-matrix product </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#add">Add </a></td> 
+ <td class="category-table-td"> adds two matrices </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#copy">Copy </a></td> 
+ <td class="category-table-td"> copies a matrix into another one
+ </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#rank1update">Rank1Update </a></td> 
+ <td class="category-table-td"> Adds a contribution X.Y' to a matrix
+ </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#rank2update">Rank2Update </a></td> 
+ <td class="category-table-td"> Adds a contribution X.Y' + Y.X' to a symmetric matrix
+ </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#solve">Solve </a></td> 
+ <td class="category-table-td"> solves a triangular system </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#transpose">Transpose </a></td> 
+ <td class="category-table-td"> replaces a matrix by its transpose </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#transpose">TransposeConj </a></td> 
+ <td class="category-table-td"> replaces a matrix by its conjugate transpose </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#maxabs">MaxAbs </a></td> 
+ <td class="category-table-td"> returns highest absolute value of A </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#norm1">Norm1 </a></td> 
+ <td class="category-table-td"> returns 1-norm of A </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#norminf">NormInf </a></td> 
+ <td class="category-table-td"> returns infinity-norm of A </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#getrow">GetRow </a></td> 
+ <td class="category-table-td"> returns a matrix row </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#setrow">SetRow </a></td> 
+ <td class="category-table-td"> changes a matrix row </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#getcol">GetCol </a></td> 
+ <td class="category-table-td"> returns a matrix column </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#setcol">SetCol </a></td> 
+ <td class="category-table-td"> changes a matrix column </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getlu">GetLU</a></td> 
+ <td class="category-table-td"> performs a LU (or LDL^t) factorization</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#getlu">SolveLU</a></td> 
+ <td class="category-table-td"> solve linear system by using LU factorization</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#refinesolutionlu">RefineSolutionLU</a></td> 
+ <td class="category-table-td"> improves solution computed by SolveLU</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#reciprocalconditionnumber">ReciprocalConditionNumber </a></td> 
+ <td class="category-table-td"> computes the inverse of matrix condition number</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getscalingfactors">GetScalingFactors </a></td> 
+ <td class="category-table-td"> computes row and column scalings to equilibrate a matrix</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#getinverse">GetInverse </a></td> 
+ <td class="category-table-td"> computes the matrix inverse </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getqr">GetQR </a></td> 
+ <td class="category-table-td"> QR factorization of matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#getlq">GetLQ </a></td> 
+ <td class="category-table-td"> LQ factorization of matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getq_fromqr">GetQ_FromQR </a></td> 
+ <td class="category-table-td"> Forms explicitely Q from QR factorization</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#mltq_fromqr">MltQ_FromQR </a></td> 
+ <td class="category-table-td"> multiplies vector by Q </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getqr">SolveQR </a></td> 
+ <td class="category-table-td"> solves least-square problems by using QR factorization</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#getlq">SolveLQ </a></td> 
+ <td class="category-table-td"> solves least-square problems by using
+ LQ factorization </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#geteigenvalues">GetEigenvalues </a></td> 
+ <td class="category-table-td"> computes eigenvalues</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#geteigenvalueseigenvec">GetEigenvaluesEigenvectors </a></td> 
+ <td class="category-table-td"> computes eigenvalues and
+ eigenvectors</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getsvd">GetSVD </a></td> 
+ <td class="category-table-td"> performs singular value decomposition (SVD) </td> </tr>
+</table>
+
+
+
+<div class="separator"><a name="constructor"></a></div>
+
+
+
+<h3>Matrix constructors</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  Matrix();
+  Matrix(int, int );
+</pre>
+
+
+<h4> Example : </h4>
+\precode
+// default constructor -> empty matrix
+Matrix<int> V;
+cout << "Number of elements "<< V.GetSize() << endl; // should return 0 
+// then you can use Reallocate to set the number of rows and columns
+V.Reallocate(3, 2);
+V.Fill();
+
+// we construct matrix with 4 rows and 3 columns
+Matrix<double> W(4, 3);
+// W is not initialized, you have to fill it
+W.Fill(1.0);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocate">Reallocate</a><br/>
+<a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="operator"></a></div>
+
+
+
+<h3>Matrix operators</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  const T&amp; operator (int i, int j) const;
+  T&amp; operator (int i, int j);
+  T&amp; operator [int i];
+  const T&amp; operator [int i] const;
+  Matrix&amp; operator =(const Matrix&amp; )
+  Vector&amp; operator =(const T0&amp; alpha)
+  Vector&amp; operator *=(const T0&amp; alpha)
+</pre>
+
+
+<p>The operator [] should not be used in normal use. The operator () can't be used to modify values of matrix for specific storages, e.g.  RowSym, RowHerm, RowUpTriang.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V(3, 3);
+// use of operator () to modify matrix
+V(0, 0) = 2.0;
+V(1, 0) = V(0, 0) + 1.0;
+
+// operator [] should be used with caution
+V[3] = V[0] + 1.4;
+
+Matrix<double> W;
+// use of operator = to copy contents of vector V
+W = V;
+
+// set all elements to a given value
+W = 1;
+
+// multiplication by a scalar
+Matrix<double> A(3, 2);
+A.Fill();
+A *= 1.5;
+\endprecode
+
+
+
+<h4>Related topics : </h4>
+<p><a href="#copy">Copy</a><br/>
+<a href="#val">Val</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="getm"></a></div>
+
+
+
+<h3>GetM</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetM() const;
+</pre>
+
+
+<p>This method returns the number of rows </p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float> V(3, 2);
+// V.GetM() should return 3 
+cout << "Number of rows of V " << V.GetM() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Matrix_Base.hxx<br/>
+Matrix_Base.cxx</p>
+
+
+
+<div class="separator"><a name="getn"></a></div>
+
+
+
+<h3>GetN</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetN() const;
+</pre>
+
+
+<p>This method returns the number of columns.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float> V(3, 2);
+// V.GetN() should return 2 
+cout << "Number of rows of V " << V.GetM() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Matrix_Base.hxx<br/>
+Matrix_Base.cxx</p>
+
+
+
+<div class="separator"><a name="getsize"></a></div>
+
+
+
+<h3>GetSize</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetSize() const;
+</pre>
+
+
+
+<p>This method returns the number of elements in the matrix</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float, Symmetric, RowSymPacked> V(3, 3);
+// V.GetSize() should return 9
+cout << "Number of elements of V " << V.GetSize() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Matrix_Base.hxx<br/>
+Matrix_Base.cxx</p>
+
+
+
+<div class="separator"><a name="getdatasize"></a></div>
+
+
+
+<h3>GetDataSize</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetDataSize() const;
+</pre>
+
+
+<p>This method returns the number of elements effectively stored in the matrix.  This is different from <code>GetSize</code> for some storages, e.g. RowSymPacked, RowHermPacked, RowUpTriangPacked.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float, Symmetric, RowSymPacked> V(3, 3);
+// V.GetDataSize() should return 6
+cout << "Number of elements of V " << V.GetDataSize() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="getdata"></a></div>
+
+
+
+<h3>GetData, GetDataConst, GetDataVoid, GetDataConstVoid</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T* GetData() const;
+  const T* GetDataConst() const;
+  void* GetDataVoid() const;
+  const void* GetDataConstVoid() const;
+</pre>
+
+
+<p>These methods are useful to retrieve the pointer to the values.  In practice, you can use those methods in order to interface with C/fortran subroutines or to perform some low level operations.  But in this last case, you have to be careful, because debugging operations will be more tedious.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V(3, 4); V.Fill();
+double* data = V.GetData();
+// you can use data as a normal C array
+// here the sum of elements is computed
+double sum = 0;
+for (int i = 0; i < V.GetDataSize(); i++)
+  sum += data[i];
+
+// if you want to call a fortran subroutine daxpy
+Matrix<double> X(3, 3); 
+double coef = 2.0;
+int m = X.GetM();
+int n = X.GetN();
+daxpy_(&coef, &m, &n, X.GetData(),);
+
+// for complex numbers, conversion to void* is needed :
+Matrix<complex<double> > Xc(4, 4);
+complex<double> beta(1,1);
+zaxpy(reinterpret_cast<const void*>(beta), Xc.GetDataVoid());
+\endprecode
+
+<h4>Related topics : </h4>
+<p><a href="#setdata">SetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Matrix_Base.hxx<br/>
+Matrix_Base.cxx</p>
+
+
+
+<div class="separator"><a name="clear"></a></div>
+
+
+
+<h3>Clear</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Clear();
+</pre>
+
+
+<p>This method removes all the elements of the matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> A(3, 2);
+A.Fill();
+// clears matrix A
+A.Clear();
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="reallocate"></a></div>
+
+
+
+<h3>Reallocate</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Reallocate(int, int);
+</pre>
+
+
+<p>This method changes the size of the matrix, but removes previous elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<long int> A(5, 4);
+V.Fill();
+// resizes matrix A
+A.Reallocate(4, 3);
+// you need to initialize all elements of A
+A.Zero();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#resize">Resize</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="resize"></a></div>
+
+
+
+<h3>Resize</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Resize(int, int);
+</pre>
+
+
+<p>This method changes the size of the matrix, and keeps previous elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<long double> A(3,3);
+A.Fill();
+// resizes matrix A
+A.Resize(4,4);
+// you need to initialize new elements if there are new
+for (int i = 0; i < 4; i++)
+  A(4,i) = A(i,4) = 0;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#reallocate">Reallocate</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="setdata"></a></div>
+
+
+
+<h3>SetData</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetData(int, int, T*);
+</pre>
+
+
+<p>This method sets the pointer to the array containing elements.  This method should be used carefully, and generally in conjunction with method Nullify. </p>
+
+
+<h4>Example : </h4>
+\precode
+// for example, you can define a function with a pointer as argument
+void f(int m, int n, double* data)
+{
+  // and sets this array into a Matrix instance
+  Matrix<double> A;
+  // m : number of rows, n : number of columns
+  A.SetData(m, n, data);
+  // then you use a C++ method
+  double coef = Norm1(A);
+  // you don't release memory, because data is used after the function
+  A.Nullify();
+}
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#getdata">GetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="nullify"></a></div>
+
+
+
+<h3>Nullify</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Nullify();
+</pre>
+
+
+<p>This method clears the matrix without releasing memory.  This method should be used carefully, and generally in conjunction with method Nullify. You can look at the example shown in the explanation of method SetData.  </p>
+
+
+<h4>Related topics :</h4>
+<p><a href="#setdata">SetData</a><br/>
+<a href="#getdata">GetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="copy"></a></div>
+
+
+
+<h3>Copy</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Copy(const Matrix&amp;);
+</pre>
+
+
+<p>This method copies a matrix into the current matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+// copy of a matrix M
+Matrix<double> M(3, 3), A;
+M.FillRand();
+A.Copy(M);
+// this is equivalent to use operator =
+A = M;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#operator">Matrix operators</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="val"></a></div>
+
+
+
+<h3>Val</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T&amp; Val(int, int);
+  const T&amp; Val(int, int) const;
+</pre>
+
+
+<p>This method is similar to operator (), except that it always works, especially for storages like RowSym, RowHerm, RowUpTriang.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, RowUpTriang> A(3,3);
+// operator () does not work to change the value
+// A(0,0) = 1;  => Error during compilation
+A.Val(0,0) = 2.0;  // Okay it works
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#operator">Operators</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="zero"></a></div>
+
+
+
+<h3>Zero</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Zero();
+</pre>
+
+
+<p>This method fills memory of 0, is convenient for matrices made of doubles, integers, floats, but not for more complicated types.  In that case, it is better to use the method <a href="#fill">Fill</a>.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V(5, 3);
+// initialization
+V.Fill();
+
+Matrix<IVect> W(10, 2);
+// W.Zero() is incorrect and would generate an error at the execution
+// a good initialization is to use Fill
+IVect zero(5); zero.Zero();
+W.Fill(zero);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="setidentity"></a></div>
+
+
+
+<h3>SetIdentity</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetIdentity();
+</pre>
+
+
+<p>This method sets all elements to 0, except on the diagonal set to 1.  This forms the so-called identity matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V(5, 5);
+// initialization
+V.SetIdentity();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="fill"></a></div>
+
+
+
+<h3>Fill</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Fill();
+  template&lt;class T0&gt;
+  void Fill(const T0&amp; );
+</pre>
+
+
+<p>This method fills matrix with 0, 1, 2, etc or with a given value.</p>
+
+<h4>Example : </h4>
+\precode
+Matrix<int> A(2,2);
+A.Fill();
+// A should contain [0 1; 2 3]
+
+A.Fill(2);
+// A should contain [2 2; 2 2]
+\endprecode
+
+<h4>Related topics :</h4>
+<p><a href="#zero">Zero</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="fillrand"></a></div>
+
+
+
+<h3>FillRand</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void FillRand();
+</pre>
+
+
+<p>This method fills the matrix with random values.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> A(5, 3);
+A.FillRand();
+// A should contain 15 random values
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="print"></a></div>
+
+
+
+<h3>Print</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Print() const;
+  void Print(int) const;
+  void Print(int, int, int, int) const;
+</pre>
+
+
+<p>This method displays the matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<string> A(2, 2);
+A(0,0) = string("hello");
+A(0,1) = string("world");
+A(1,0) = string("you");
+A(1,1) = string("welcome");
+A.Print(); 
+// should display :
+// hello world
+// you welcome
+
+// you can also display a sub-matrix
+A.Print(0, 0, 0, 1); 
+// should display "hello world"
+
+// A.Print(2); is equivalent to A.Print(0, 0, 2, 2);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="write"></a></div>
+
+
+
+<h3>Write</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Write(string) const;
+  void Write(ofstream&amp;) const;
+</pre>
+
+
+<p>This method writes the matrix on a file/stream in binary format.  The file will contain the number of rows, columns, then the list of elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> A(2, 2); 
+// you can write directly in a file
+A.Fill();
+A.Write("matrix.dat");
+
+// or open a stream with other datas
+ofstream file_out("matrix.dat");
+int my_info = 3;
+file_out.write(reinterpret_cast<char*>(>my_info), sizeof(int));
+A.Write(file_out);
+file_out.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+<h4>Location :</h4>
+<p>Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="read"></a></div>
+
+
+
+<h3>Read</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Read(string);
+  void Read(ifstream&amp;);
+</pre>
+
+
+<p>This method sets the matrix from a file/stream in binary format.  The file contains the number of rows, columns, then the list of elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V(3, 4); 
+// you can read directly on a file
+V.Read("matrix.dat");
+
+// or read from a stream
+ifstream file_in("matrix.dat");
+int my_info;
+file_in.read(reinterpret_cast<char*<(>my_info), sizeof(int));
+V.Read(file_in);
+file_in.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="writetext"></a></div>
+
+
+
+<h3>WriteText</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void WriteText(string) const;
+  void WriteText(ofstream&amp;) const;
+</pre>
+
+
+<p>This method writes the matrix on a file/stream in text format.  The file will contain the list of elements.</p>
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V(2); 
+// you can write directly in a file
+V.Fill();
+V.WriteText("matrix.dat");
+
+// or open a stream with other datas
+ofstream file_out("matrix.dat");
+int my_info = 3;
+file_out << my_info << '\n';
+V.WriteText(file_out);
+file_out.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+
+
+<div class="separator"><a name="readtext"></a></div>
+
+
+
+<h3>ReadText</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ReadText(string);
+  void ReadText(ifstream&amp;);
+</pre>
+
+
+<p>This method sets the matrix from a file/stream in text format.  The file contains the list of elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double> V; 
+// you can read directly on a file
+V.ReadText("matrix.dat");
+
+// or read from a stream
+ifstream file_in("matrix.dat");
+int my_info;
+file_in >> my_info;
+V.ReadText(file_in);
+file_in.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Pointers<br/>
+Class Matrix_Symmetric<br/>
+Class Matrix_SymPacked<br/>
+Class Matrix_Hermitian<br/>
+Class Matrix_HermPacked<br/>
+Class Matrix_Triangular<br/>
+Class Matrix_TriangPacked<br/>
+Matrix_Pointers.hxx Matrix_Pointers.cxx<br/>
+Matrix_Symmetric.hxx Matrix_Symmetric.cxx<br/>
+Matrix_SymPacked.hxx Matrix_SymPacked.cxx<br/>
+Matrix_Hermitian.hxx Matrix_Hermitian.cxx<br/>
+Matrix_HermPacked.hxx Matrix_HermPacked.cxx<br/>
+Matrix_Triangular.hxx Matrix_Triangular.cxx<br/>
+Matrix_TriangPacked.hxx Matrix_TriangPacked.cxx</p>
+
+*/

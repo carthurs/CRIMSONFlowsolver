@@ -1,0 +1,91 @@
+/*! \file assimilation_methods.dox
+    \brief Assimilation Methods.
+*/
+
+/*!
+\page assimilation_methods Assimilation Methods
+
+
+Below are the <b>data assimilation methods</b> available in Verdandi:
+
+<ul>
+<li> \ref optimal_interpolation "optimal interpolation (OI)"; </li>
+<li> \ref extended_kalman_filter "extended Kalman filter (EKF)"; </li>
+<li> \ref reduced_order_extended_kalman_filter "reduced order extended Kalman filter (ROEKF)"; </li>
+<li> \ref unscented_kalman_filter "unscented Kalman filter (UKF)"; </li>
+<li> \ref reduced_order_unscented_kalman_filter "reduced order unscented Kalman filter (ROUKF)"; </li>
+<li> \ref reduced_minimax_filter "reduced minimax filter (RMF)"; </li>
+<li> \ref four_dimensional_variational "four dimensional variational (4DVAR)"; </li>
+<li> \ref ensemble_kalman_filter "ensemble Kalman filter (EnKF)". </li>
+</ul>
+
+
+Not all assimilation methods are compatible with all example models, because the latter may not have a interface complete enough. The following table indicates which methods can be applied to which example models.
+
+<table>
+<tr>
+<th>    </th>
+<th> \ref models "Clamped Bar&nbsp;&nbsp;&nbsp;"</th>
+<th> \ref models "Shallow Water&nbsp;&nbsp;&nbsp;"</th>
+<th> \ref models "Lorenz&nbsp;&nbsp;&nbsp;"</th>
+<th> \ref models "Quadratic Model"</th>
+</tr>
+<tr>
+<td> \ref optimal_interpolation "Optimal interpolation" </td>
+<td><code>yes</code></td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+<tr>
+<td>\ref extended_kalman_filter "Extended Kalman filter" </td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+<tr>
+<td>\ref reduced_order_extended_kalman_filter "Reduced order extended Kalman filter" </td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+<tr>
+<td>\ref unscented_kalman_filter "Unscented Kalman filter" </td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+<tr>
+<td>\ref reduced_order_unscented_kalman_filter "Reduced order unscented Kalman filter&nbsp;&nbsp;&nbsp;" </td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+<tr>
+<td>\ref reduced_minimax_filter "Reduced minimax filter" </td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+<tr>
+<td>\ref four_dimensional_variational "Four dimensional variational" </td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+<td><code>no</code></td>
+</tr>
+<tr>
+<td>\ref ensemble_kalman_filter "Ensemble Kalman filter" </td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+<td><code>no</code></td>
+<td><code>yes</code></td>
+</tr>
+</table>
+
+*/

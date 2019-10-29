@@ -1,0 +1,10 @@
+/*! \file tools.dox
+    \brief Tools.
+*/
+
+/*!
+\page tools Tools
+
+Verdandi includes a \ref perturbation_manager "perturbation manager" which allows the user to perturb a variable by using a random number generator. An example of its use in a method can be found in the \ref monte_carlo "Monte Carlo method".
+
+*/

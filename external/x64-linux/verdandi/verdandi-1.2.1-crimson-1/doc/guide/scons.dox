@@ -1,0 +1,10 @@
+/*! \file scons.dox
+    \brief SCons.
+*/
+
+/*!
+\page scons SCons
+
+<a href="http://scons.org/">SCons</a> is a software construction tool, used for building every example of Verdandi. It uses Python scripts as configuration files.
+
+*/

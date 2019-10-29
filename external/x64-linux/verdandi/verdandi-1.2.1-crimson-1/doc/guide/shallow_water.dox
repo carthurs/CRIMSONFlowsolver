@@ -1,0 +1,36 @@
+/*! \file shallow_water.dox
+    \brief Shallow-water.
+*/
+
+/*!
+\page shallow_water_model Shallow-water
+
+The shallow-water equations (also called Saint Venant equations) are a set of hyperbolic partial differential equations that describe the flow below a pressure surface in a fluid. It is suitable for flows with a free surface and small depth. For instance, these equations can be applied to model the behavior of a lake or a river. The model describes the evolution of the water height \f$h(x,y)\f$ and the horizontal velocity \f$(u(x,y),v(x,y))\f$. A simplified expression of the model is: <br>
+
+<center>
+\f$\partial_th + \partial_x(hu) + \partial_y(hv) = 0\f$  <br>
+\f$\partial_t(hu) + \partial_x(huu) + \partial_y(huv) +\frac{1}2g\partial_xh^2 = 0\f$ <br>
+\f$\partial_t(hv) + \partial_x(huv) + \partial_y(hvv) +\frac{1}2g\partial_yh^2 = 0\f$  <br>
+</center>
+
+One can define several boundary conditions:
+<ol>
+        <li>an incoming flow rate \f$q_b = h_bu_b\f$ (or \f$q_b = h_bv_b\f$ along \f$y\f$), with the sign of \f$u_b\f$ (or \f$v_b\f$) being determined by the considered boundary (for instance, \f$u \le 0\f$ on the right boundary); </li>
+        <li>a homogeneous Neumann condition for \f$(h, u, v)\f$; </li>
+        <li> an impermeability condition: the flow rate is zero at the boundary; </li>
+        <li>a fixed height \f$h_b\f$.</li>
+</ol>
+
+The shallow-water model is implemented in <code>ShallowWater.hxx</code> and <code>ShallowWater.cxx</code>. The class \link Verdandi::ShallowWater ShallowWater\endlink is a template class: <code>ShallowWater<T></code>. <code>T</code> is the numerical type of the variables (e.g., <code>double</code>).
+
+The state contains:
+<ul>
+<li> the water height (stored in the matrix <code>h_</code>); </li>
+<li> the horizontal velocity along x (stored in matrix <code>u_</code>); </li>
+<li> the horizontal velocity along y (stored in matrix <code>v_</code>). </li>
+</ul>
+
+For details about how to apply <b>data assimilation methods</b> on this model see
+\ref shallow_water.
+
+*/

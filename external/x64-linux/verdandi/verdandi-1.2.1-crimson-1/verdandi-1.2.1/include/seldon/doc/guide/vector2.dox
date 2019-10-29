@@ -1,0 +1,80 @@
+/*! \file vector2.dox
+    \brief Vector2.
+*/
+
+/*!
+\page vector2 Vector2
+
+<h2>Definition</h2>
+
+<p> Seldon::Vector2 is a structure that acts like a vector of full vectors. The inner vectors can be of any dimension, so that this structure is more flexible than a matrix. </p>
+
+<p> Vector2 is a template class: <code> Vector2<T, Allocator0, Allocator1></code>. <code>T</code> is the numerical type of the inner vectors.  <code>Allocator0</code> is the allocator for the inner vectors. It has the same default value as for vectors and matrices: SELDON_DEFAULT_ALLOCATOR.  <code>Allocator1</code> is the allocator for the vector of vectors. It is recommended to choose NewAlloc or, for more efficient in reallocations, MallocObject: these allocators can manage an array of inner vectors. The default allocator is MallocObject, in which case <code>Allocator1</code> is the same as <code>MallocObject<Vector<T, VectFull, Allocator0> ></code>.  </p>
+
+<h2>Declaration</h2>
+
+\precode
+Vector2<double> V;
+\endprecode
+
+<p> This defines an empty vector (of vectors). </p>
+
+<p>To define a Vector2 with 5 empty inner vectors: </p>
+
+\precode
+Vector2<double> V(5);
+\endprecode
+
+<p>To define a Vector2 with 3 inner vectors of size 2, 3 and 7: </p>
+
+\precode
+Vector<int> length(3);
+length(0) = 2;
+length(1) = 3;
+length(2) = 7;
+Vector2<double> V(length);
+\endprecode
+
+<h2>Use of Vector2</h2>
+
+<p> Seldon::Vector2 comes with the following methods: </p>
+
+<ul>
+
+  <li>\link Seldon::Vector2::Reallocate(int) Reallocate(int M)\endlink and \link Seldon::Vector2::Reallocate(int, int) Reallocate(int i, int N)\endlink which allow to reallocate the vector of vectors and the i-th inner vector, respectively.</li>
+
+  <li>\link Seldon::Vector2::GetLength() GetLength()\endlink which returns the number of inner vectors. </li>
+
+  <li>\link Seldon::Vector2::GetLength(int) GetLength(int i)\endlink which returns the length of an inner vector. </li>
+
+  <li>\link Seldon::Vector2::operator()(int) operator()(int i)\endlink which returns the i-th inner vector. </li>
+
+  <li>\link Seldon::Vector2::operator()(int, int) operator()(int i, int j)\endlink which returns the j-th element of the i-th inner vector. </li>
+
+</ul>
+
+<p>The other methods are described in the \link Seldon::Vector2 reference documentation\endlink.</p>
+
+\section example An Example
+
+\includeexample{vector2.cpp}
+
+Output:
+
+\prescreen
+Vector 0: 2     2       
+Vector 1: 5     5       5       
+Vector 2: 2     2       2       2       2       2       2       
+First element of the second inner vector: 5
+Vector 0: 2     2       
+Vector 1: 5     5       5       
+Vector 2: 2     2       2       2       2       2       2       
+Vector 3: 0     1       2       3       
+After setting to -10 the second element of the last inner vector:
+Vector 0: 2     2       
+Vector 1: 5     5       5       
+Vector 2: 2     2       2       2       2       2       2       
+Vector 3: 0     -10     2       3       
+\endprescreen
+
+*/

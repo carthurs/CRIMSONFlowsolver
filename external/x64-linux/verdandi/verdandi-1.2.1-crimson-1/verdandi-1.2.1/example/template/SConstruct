@@ -1,0 +1,7 @@
+import os
+
+# Put the path to Verdandi.
+# Also editable from command line with option "verdandi".
+verdandi_path = "../.."
+
+execfile(os.path.join(verdandi_path, "share/SConstruct"))

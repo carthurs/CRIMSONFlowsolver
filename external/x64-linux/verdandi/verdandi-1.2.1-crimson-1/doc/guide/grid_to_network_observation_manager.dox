@@ -1,0 +1,12 @@
+/*! \file grid_to_network_observation_manager.dox
+    \brief Grid To Network Observation Manager.
+*/
+
+/*!
+\page grid_to_network_observation_manager Grid To Network Observation Manager
+
+This observation manager defines a grid-to-network observation operator \f$\mathcal{H}_h = H\f$, where \f$H\f$ is a time-independent matrix.
+
+It is implemented in <code>GridToNetworkObservationManager.hxx</code> and <code>GridToNetworkObservationManager.cxx</code>. The class \link Verdandi::GridToNetworkObservationManager GridToNetworkObservationManager\endlink is a template class: <code>GridToNetworkObservationManager<T></code>. <code>T</code> is the numerical type (e.g., <code>double</code>).
+
+*/

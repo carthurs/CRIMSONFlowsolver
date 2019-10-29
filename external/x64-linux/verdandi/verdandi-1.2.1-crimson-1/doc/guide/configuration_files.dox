@@ -1,0 +1,92 @@
+*! \file configuration_files.dox
+    \brief Lua Configuration Files.
+*/
+
+/*!
+\page configuration_files Lua Configuration Files
+
+\section basic_use Basic usage
+
+Configuration files must be written in <a href="http://www.lua.org/manual/5.1/">Lua 5.1</a> and are read by the library <a href="http://gitorious.org/libops/pages/Home/">Ops</a>. Here is an example file :
+
+\precode
+-- Lines starting with "--" are comment lines.
+
+-- This defines an integer. 
+Nx = 100
+-- Calculations are possible.
+Ny = 2 * Nx - 10
+
+-- This defines a floating number in double precision.
+Delta_t_model = 0.03
+-- Another example calculation:
+Delta_t_sqrt = math.sqrt(Delta_t_model) * 1.5e-7
+
+-- Here is a string.
+output_directory = "result/"
+-- Concatenation of strings is carried out by "..".
+output_file = output_directory .. "output.bin"
+
+
+----------------------------------- MODEL ------------------------------------
+
+
+-- Configuration entries are provided in sections and subsections.
+model = {
+
+   definition = {
+
+      -- You can provide a vector.
+      initial_state = {0.3, 0.3},
+
+      -- Binary options (Boolean).
+      with_linear_term = true,
+      with_constant_term = false,
+
+      -- Reference to a previously defined entry.
+      Delta_t = Delta_t_model
+
+   }
+
+}
+
+-- Entries can be overwritten:
+model.definition.initial_state =  {1.,
+                                   1.6}
+\endprecode
+
+\section advanced_use Advanced usage
+
+\precode
+-- A list of vectors is provided as a single vector (which will be split by
+-- Ops).
+vector_list = {u_1, u_2, u_3,
+               v_1, v_2, v_3,
+               w_1, w_2, w_3}
+
+-- Note that the following syntax is absolutely equivalent (Lua does not pay
+-- attention to line breaks).
+vector_list = {u_1, u_2, u_3, v_1, v_2, v_3, w_1, w_2, w_3}
+
+-- A list of matrices is also provided as a single vector (which will be split
+-- by Ops).
+matrix_list = {u_11, u_12,
+               u_21, u_22,
+               v_11, v_12,
+               v_21, v_22}
+\endprecode
+
+<code>vector_list</code> represents three vectors defined as:
+\f[(u_1, u_2, u_3)^T\f]
+\f[(v_1, v_2, v_3)^T\f]
+\f[(w_1, w_2, w_3)^T\f]
+
+<code>matrix_list</code> represents two matrices:
+\f[\left(\begin{array}{cc}
+u_{11} & u_{12}\\
+u_{21} & u_{22}\\ \end{array} \right)\f]
+\f[\left(\begin{array}{cc}
+v_{11} & v_{12}\\
+v_{21} & v_{22}\\ \end{array} \right)\f]
+
+*/

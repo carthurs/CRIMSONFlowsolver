@@ -1,0 +1,86 @@
+/*! \file clamped_bar.dox
+    \brief Clamped Bar.
+*/
+
+/*!
+\page clamped_bar_model Clamped Bar
+
+Below is the physical description of the clamped bar model. For details about how to apply <b>data assimilation methods</b> on this model see
+\ref clamped_bar.
+
+\section clamped_bar_algo The Clamped Bar model
+
+The clamped bar model describes the vibration of a bar clamped at one end. The bar is discretized with <code>Nx</code> finite elements of the same length. With the hypothesis of "small displacements", it follows the linear system:
+
+<center>
+\f$ M_{\theta_m} \ddot Y + C_{\theta_c} \dot Y + K_{\theta_k} Y = F_{\theta_f}\f$  <br>
+</center>
+
+where \f$M_{\theta_m}\f$ is the mass matrix, \f$K_{\theta_k}\f$ is the stiffness matrix, \f$C_{\theta_c} = \alpha M_{\theta_c} + \beta M_{\theta_c} \f$ is
+the damp matrix and \f$F_{\theta_f}\f$ is the effort vector.
+
+The clamped bar model is solved numerically using a Newmark scheme (middle point) for integration in time:
+
+<center>
+\f$ \left\{
+\begin{array}{l}
+\ddot Y_{h + \frac{1}{2}} = \frac{\ddot Y_{h+1} + \ddot Y_{h} }2 =  \frac{\dot Y_{h+1} - \dot Y_{h} } {\Delta t}\\
+\dot Y_{h + \frac{1}{2}} = \frac{\dot Y_{h+1} + \dot Y_{h} }2 =  \frac{Y_{h+1} - Y_{h} } {\Delta t}
+\end{array} \right. \\ \f$
+</center>
+
+Algorithmically, it follows:
+
+<center>
+\f$ \left\{
+\begin{array}{l}
+\dot Y_{h + 1} = \frac{2}{\Delta t}(Y_{h+1} - Y_{h}) - \dot Y_{h} \\
+(\frac{1}2K_{\theta_k} + \frac{1}{\Delta t}C_{\theta_c} + \frac{2}{\Delta t^2}M_{\theta_m})Y_{h+1} = (-\frac{1}2 K_{\theta_k} + \frac{1}{\Delta t}C_{\theta_c} + \frac{2}{\Delta t^2}M_{\theta_m})Y_{h} + \frac{2}{\Delta t}M_{\theta_m}\dot Y_{h} + F_{h + \frac{1}{2}}(\theta_f)
+\end{array} \right. \\ \f$
+</center>
+
+
+\section clamped_bar_simu Simulation
+
+
+During the simulation, a force \f$F(\theta_f) = \sin(\frac{\pi t}{t_f}) M_{\theta_f} (1 ... 1)^T\f$ is applied to the bar at each point.
+
+
+For each parameter (\f$ \theta_m \f$, \f$ \theta_c \f$, \f$ \theta_k \f$, \f$ \theta_f \f$), the bar can be divided into several regions of the same length.
+
+For example, if we supposed that the bar is divided, for the parameter \f$ \theta_f \f$, into four regions of the same length, with \f$ \theta_f = (0.8, 1.5, 0.6, 2.0)\f$,
+the output should look something like this:
+
+\image html clamped_bar.png
+
+One can define several parameters:
+<ol>
+        <li> <code>bar_length</code>: the length of the bar; </li>
+        <li><code>Nx</code>: the number of elements; </li>
+        <li><code>Delta_t</code>: the time step; </li>
+        <li> <code>final_time</code>: the duration of the simulation; </li>
+        <li><code>Young_modulus</code>: the Young's modulus; </li>
+        <li><code>mass_density</code>: the mass density; </li>
+        <li><code> theta_mass </code>: vector that contains the initial values of \f$\theta_m\f$; </li>
+        <li><code> theta_damp </code>: vector that contains the initial values of \f$\theta_c\f$; </li>
+        <li><code> alpha </code>: damp coefficient \f$\alpha\f$; </li>
+        <li><code> beta </code>: damp coefficient \f$\beta\f$; </li>
+        <li><code> theta_stiffness </code>: vector that contains the initial values of \f$\theta_k\f$; </li>
+        <li><code> theta_force </code>: vector that contains the initial values of \f$\theta_f\f$. </li>
+</ol>
+
+The clamped-bar model is implemented in <code>ClampedBar.hxx</code> and <code>ClampedBar.cxx</code>. The class \link Verdandi::ClampedBar ClampedBar\endlink is a template class: <code>ClampedBar<T></code>. <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>).
+
+The state may contain:
+<ul>
+<li> <code>"displacement"</code>: the vertical displacement along y; </li>
+<li> <code>"velocity"</code>: the vertical velocity along y; </li>
+<li> <code>"theta_mass"</code>: the vector \f$\theta_m\f$; </li>
+<li> <code>"theta_damp"</code>: the vector \f$\theta_c\f$;
+<li> <code>"theta_stiffness"</code>: the vector \f$\theta_k\f$; </li>
+<li><code>"theta_force"</code>: the vector \f$\theta_f\f$. </li>
+</ul>
+
+<br> The displacement and the velocity at the first point are equal to zero since the bar is clamped. These zeroes are removed from the state. The size of the state is therefore  <code> 2 (Nx - 1) + Ntheta_mass + Ntheta_damp + Ntheta_stiffness + Ntheta_force </code>.
+
+*/

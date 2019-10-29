@@ -1,0 +1,1294 @@
+/*! \file direct.dox
+    \brief Direct Solvers.
+*/
+
+/*!
+\page direct Direct Solvers
+
+<p>%Seldon is interfaced with libraries performing the direct resolution of very large sparse linear systems : <b><a href="http://mumps.enseeiht.fr/">MUMPS</a></b>, <b><a href="http://crd.lbl.gov/~xiaoye/SuperLU/">SuperLU</a></b>, <b><a href="http://www.cise.ufl.edu/research/sparse/umfpack/">UmfPack</a></b> and <b><a href="http://pastix.gforge.inria.fr/">Pastix</a></b>. An example file is located in test/program/direct_test.cpp. If you want to test the interface with <b>MUMPS</b>, assuming that MUMPS has been compiled in directory <code>MumpsDir</code>, you can compile this file by typing :</p>
+
+
+<pre class="fragment">g++ -DSELDON_WITH_MUMPS direct_test.cpp -IMumpsDir/include -IMumpsDir/libseq \
+  -IMetisDir/Lib -LMumpsDir/lib -ldmumps -lzmumps -lmumps_common -lpord \
+  -LMumpsDir/libseq -lmpiseq -LScotchDir/lib -lesmumps -lscotch \
+  -lscotcherr -lgfortran -lm -lpthread -LMetisDir -lmetis -llapack -lblas
+</pre>
+
+
+<p>You can simplify the last command, if you didn't install <a href="http://glaros.dtc.umn.edu/gkhome/views/metis/">Metis</a> and <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch</a> and didn't compile MUMPS with those libraries. For linking with Mumps in parallel compilation, the command line would be : </p>
+
+<pre class="fragment"> g++ -DSELDON_WITH_MUMPS -DSELDON_WITH_MPI direct_test.cpp -IMumpsDir/include -IMumpsDir/libseq \
+  -IMetisDir/Lib -LMumpsDir/lib -ldmumps -lzmumps -lmumps_common -lpord \
+  -lscalapack -lblacs -LScotchDir/lib -lesmumps -lscotch \
+  -lscotcherr -lgfortran -lm -lpthread -LMetisDir -lmetis -llapack -lblas
+</pre>
+
+
+<p> For <b>UmfPack</b>, if <code>UmfPackDir</code> denotes the directory where UmfPack has been installed, you have to type :</p>
+
+
+<pre class="fragment">g++ -DSELDON_WITH_UMFPACK direct_test.cpp
+  -IUmfPackDir/AMD/Include -IUmfPackDir/UMFPACK/Include \
+  -IUmfPackDir/UMFPACK/UFconfig -LUmfPackDir/UMFPACK/Lib \
+  -lumfpack -LUmfPackDir/AMD/Lib -lamd -llapack -lblas</pre>
+
+
+<p>For <b>SuperLU</b>, the compilation line reads
+(<code>SuperLUdir</code> is the directory where SuperLU is located) :</p>
+
+
+<pre class="fragment">g++ -DSELDON_WITH_SUPERLU direct_test.cpp -ISuperLUdir/SRC -LSuperLUdir -lsuperlu</pre>
+
+
+<p>The interface with Pastix can only be compiled in parallel. When compiling PastiX, you
+ can select usual integers (32 bits) or long integers (64 bits). It is advised to compile it
+ with ptscotch (and flag -DDISTRIBUTED), so that you can use it in parallel with a distributed matrix.
+ The compilation line reads
+(<code>PastiXdir</code> is the directory where PastiX is located) :</p>
+
+<pre class="fragment">g++ -DSELDON_WITH_PASTIX -DSELDON_WITH_MPI direct_test.cpp -IPastiXdir/install 
+ -lpastix -LScotchDir -lptscotch -lptscotcherr -lptscotchparmetis -lrt </pre>
+
+<p> All in all, <b>MUMPS</b> seems more efficient, and includes more
+functionnalities than the other libraries.</p>
+
+
+<h2>Syntax</h2>
+
+
+<p>The syntax of all direct solvers is similar </p>
+
+
+<pre class="syntax-box">
+void GetLU(Matrix&amp;, MatrixMumps&amp;);
+void SolveLU(MatrixMumps&amp;, Vector&amp;);
+</pre>
+
+
+<p>The interface has been done only for double precision (real or complex numbers), since single precision is not accurate enough when very large sparse linear systems are solved.</p>
+
+
+<h2>Basic use</h2>
+
+
+<p> We provide an example of direct resolution using SuperLU.</p>
+
+
+\precode
+// first we construct a sparse matrix
+int n = 1000; // size of linear system
+// we assume that you know how to fill arrays values, ptr, ind
+Matrix<double, General, RowSparse> A(n, n, nnz, values, ptr, ind);
+
+// then we declare vectors
+Vector<double> b(n), x(n);
+
+// you fill right-hand side
+b.Fill();
+
+// you perform the factorization (real matrix)
+MatrixSuperLU<double> mat_lu;
+GetLU(A, mat_lu);
+
+// then you can solve as many linear systems as you want
+x = b;
+SolveLU(mat_lu, x);
+
+\endprecode
+
+
+<p>If you are hesitating about which direct solver to use, or if you 
+prefer to choose the direct solver in an input file for example, a class SparseDirectSolver 
+ has been implemented. This class regroups all the direct solvers interfaced by Seldon, it provides also 
+ a default sparse solver (but slow). Here an example how to use this class : </p>
+
+\precode
+
+// first we construct a sparse matrix
+int n = 1000; // size of linear system
+// we assume that you know how to fill arrays values, ptr, ind
+Matrix<double, General, RowSparse> A(n, n, nnz, values, ptr, ind);
+
+// declaring the sparse solver
+// this solver will try to use in order of preference
+// Pastix, then Mumps, then UmfPack, then SuperLU
+// if finally the default sparse solver if none of the previous
+// libraries were available
+SparseDirectSolver<double> mat_lu;
+
+// displaying messages if you want
+mat_lu.ShowMessages();
+
+// completing factorization of linear system
+mat_lu.Factorize(A);
+
+// then we declare vectors
+Vector<double> b(n), x(n);
+
+// you fill right-hand side
+b.Fill();
+
+// then you can solve as many linear systems as you want
+x = b;
+mat_lu.Solve(x);
+
+// you can also force a direct solver :
+mat_lu.SelectDirectSolver(mat_lu.SUPERLU);
+// and an ordering
+mat_lu.SelectMatrixOrdering(SparseMatrixOrdering::SCOTCH);
+
+\endprecode
+
+<h2>Methods of SparseDirectSolver :</h2>
+
+<table class="category-table">
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#messages"> HideMessages </a></td>
+<td class="category-table-td"> Hides all messages of the direct solver </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#messages"> ShowMessages </a></td>
+<td class="category-table-td"> Shows a reasonable amount of the messages of the direct solver </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#messages"> ShowFullHistory </a></td>
+<td class="category-table-td"> Shows all the messages that the direct solver can display </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetM"> GetN </a></td>
+<td class="category-table-td"> Returns the number of columns of the factorized linear system </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetM"> GetM </a></td>
+<td class="category-table-td"> Returns the number of rows of the factorized linear system </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetTypeOrdering"> GetTypeOrdering </a></td>
+<td class="category-table-td"> Returns the ordering to use when the matrix will be reordered </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SelectOrdering"> SelectOrdering </a></td>
+<td class="category-table-td"> Sets the ordering to use when the matrix will be reordered </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#SetPermutation"> SetPermutation </a></td>
+<td class="category-table-td"> Provides manually the permutation array used to reorder the matrix </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SetNbThreadPerNode"> SetNbThreadPerNode </a></td>
+<td class="category-table-td"> Sets the number of threads per node (relevant for Pastix only) </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SelectDirectSolver"> SelectDirectSolver </a></td>
+<td class="category-table-td"> Sets the direct solver to use (e.g. Mumps, Pastix, SuperLU) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetDirectSolver"> GetDirectSolver </a></td>
+<td class="category-table-td"> Returns the direct solver that will be used during the factorization </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetInfoFactorization"> GetInfoFactorization </a></td>
+<td class="category-table-td"> Returns an error code associated with the factorization (0 if successful) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#Factorize"> Factorize </a></td>
+<td class="category-table-td"> Performs the factorization of a sparse matrix </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#Solve"> Solve </a></td>
+<td class="category-table-td"> Solves A x = b or A<sup>T</sup> x = b, assuming that Factorize has been called</td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#FactorizeDistributed"> FactorizeDistributed </a></td>
+<td class="category-table-td"> Performs the factorization of a distributed matrix (parallel execution) </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SolveDistributed"> SolveDistributed </a></td>
+<td class="category-table-td"> Solves A x = b or A<sup>T</sup> x = b, assuming that FactorizeDistributed has been called </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#Clear"> Clear </a></td>
+<td class="category-table-td"> Releases memory used by factorization </td> </tr>
+</table>
+
+
+<h2>Methods of MatrixMumps, MatrixSuperLU, MatrixPastix, MatrixUmfPack :</h2>
+
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#Clear"> Clear </a></td>
+<td class="category-table-td"> Releases memory used by factorization </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#SelectOrdering">SelectOrdering</a></td>
+<td class="category-table-td"> Sets the ordering to use during factorization </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#SetPermutation">SetPermutation</a></td>
+<td class="category-table-td"> Provides manually the permutation array to use when reordering the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#messages">HideMessages</a></td>
+<td class="category-table-td"> Hides messages of direct solver</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#messages">ShowMessages</a></td>
+<td class="category-table-td"> Shows messages of direct solver</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#messages">ShowFullHistory</a></td>
+<td class="category-table-td"> Shows all possible messages of direct solver</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#EnableOutOfCore">EnableOutOfCore</a></td>
+<td class="category-table-td"> Enables out-of-core computations</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#EnableOutOfCore">DisableOutOfCore</a></td>
+<td class="category-table-td"> Disable out-of-core computations</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#RefineSolution">RefineSolution</a></td>
+<td class="category-table-td"> Refines the solution when calling solve</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#RefineSolution">DoNotRefineSolution</a></td>
+<td class="category-table-td"> Does not refine the solution when calling solve</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#GetInfoFactorization">GetInfoFactorization</a></td>
+<td class="category-table-td"> returns the error code generated by the factorization</td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SetNbThreadPerNode"> SetNbThreadPerNode </a></td>
+<td class="category-table-td"> Sets the number of threads per node (relevant for Pastix only) </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#FindOrdering">FindOrdering</a></td>
+<td class="category-table-td"> computes a new ordering of rows and
+ columns</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#Factorize">FactorizeMatrix</a></td>
+<td class="category-table-td"> performs LU factorization</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#PerformAnalysis">PerformAnalysis</a></td>
+<td class="category-table-td"> Performs an analysis of linear system to factorize</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#PerformAnalysis">PerformFactorization</a></td>
+<td class="category-table-td"> Performs a factorization of linear system, assuming that PerformAnalysis has been called</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#GetSchurMatrix">GetSchurMatrix</a></td>
+<td class="category-table-td"> forms Schur complement</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#Solve">Solve</a></td>
+<td class="category-table-td"> uses LU factorization to solve a linear
+ system</td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#FactorizeDistributed"> FactorizeDistributedMatrix </a></td>
+<td class="category-table-td"> Performs the factorization of a distributed matrix (parallel execution) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#SolveDistributed"> SolveDistributed </a></td>
+<td class="category-table-td"> Solves A x = b or A<sup>T</sup> x = b, assuming that FactorizeDistributed has been called </td> </tr>
+</table>
+
+
+<h2>Functions :</h2>
+
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetLU"> GetLU </a></td>
+<td class="category-table-td"> performs a LU factorization </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#SolveLU">SolveLU</a></td>
+<td class="category-table-td"> uses LU factorization to solve a linear
+ system</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#GetSchurMatrix_func">GetSchurMatrix</a></td>
+<td class="category-table-td"> forms Schur complement</td> </tr>
+</table>
+
+<p><br/> <br/></p>
+
+
+
+<div class="separator"><a name="messages"></a></div>
+
+
+
+<h3>ShowMessages, HideMessages, ShowFullHistory </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void ShowMessages();
+  void HideMessages();
+  void ShowFullHistory();
+</pre>
+
+
+<p><code>ShowMessages</code> allows the direct solver to display informations about the factorization and resolution phases, while <code>HideMessages</code> forbids any message to be displayed. <code>ShowFullHistory</code> displays all the possible messages the direct solver is able to give. By default, no messages are displayed. </p>
+
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A;
+// you declare a Mumps structure
+MatrixMumps<double> mat_lu;
+// you can display messages for the factorization :
+mat_lu.ShowMessages();
+GetLU(A, mat_lu);
+// then hide messages for each resolution
+mat_lu.HideMessages();
+SolveLU(mat_lu, x);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetM"></a></div>
+
+
+
+<h3>GetM, GetN </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetM();
+  int GetN();
+</pre>
+
+
+<p>This method returns the number of rows (or columns) of the matrix. For direct solvers, we consider
+ only square matrices. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A;
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you factorize the matrix
+mat_lu.Factorize(A);
+// then you can use GetM, since A has been cleared
+int n = mat_lu.GetM();
+cout << "Number of rows : " << n << endl;
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetTypeOrdering"></a></div>
+
+
+
+<h3>GetTypeOrdering </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetTypeOrdering();
+</pre>
+
+
+<p>This method returns the ordering algorithm used by the direct solver. It is only available
+ in class SparseDirectSolver. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A;
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// ordering to be used ?
+int type_ordering = mat_lu.GetTypeOrdering();
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="SelectOrdering"></a></div>
+
+
+
+<h3>SelectOrdering </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SelectOrdering(int type);
+</pre>
+
+
+<p>This method sets the ordering algorithm used by the direct solver. For Mumps, Pastix, SuperLU and UmfPack, the available orderings (and their numbers) are detailed in the documentation of each direct solver. For class SparseDirectSolver, 
+the ordering is listed in SparseMatrixOrdering : </p>
+
+<ul>
+<li>IDENTITY : no reordering </li>
+<li>REVERSE_CUTHILL_MCKEE : reverse Cuthill-McKee algorithm (Seldon) </li>
+<li>PORD : ordering defined in Mumps (Mumps) </li>
+<li>SCOTCH : ordering provided by Scotch library (Pastix) </li>
+<li>METIS : ordering provided by Metis library (Mumps) </li>
+<li>AMD : Approximate Minimum Degree (UmfPack) </li>
+<li>COLAMD : Column Approximate Minimum Degree (UmfPack) </li>
+<li>QAMD : Quasi Approximate Minimum Degree (Mumps) </li>
+<li>USER : Permutation array directly set by the user </li>
+<li>AUTO : Ordering chosen automatically by the direct solver </li>
+</ul>
+
+<p> AUTO is the default ordering, and means that the code will select the more "natural" ordering for the specified direct solver (e.g. SCOTCH with Pastix, COLAMD with UmfPack). USER means that the code assumes that the user provides manually the permutation array through SetPermutation method.</p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A;
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you specify an ordering :
+mat_lu.SelectOrdering(SparseMatrixOrdering::QAMD);
+// then you can factorize with this ordering algorithm
+mat_lu.Factorize(A);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>
+SparseSolver.cxx</p>
+
+
+<div class="separator"><a name="SetPermutation"></a></div>
+
+
+
+<h3>SetPermutation </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetPermutation(IVect& );
+</pre>
+
+
+<p>This method sets the ordering permutation array used by the direct solver. It is up to the user
+ to check that this array is valid. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you specify how A will be reordered by giving directly new row numbers
+IVect permutation(n);
+permutation.Fill();
+mat_lu.SetPermutation(permutation);
+// then you can factorize with this ordering
+mat_lu.Factorize(A);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>
+Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="SetNbThreadPerNode"></a></div>
+
+
+
+<h3>SetNbThreadPerNode </h3>
+
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetNbThreadPerNode(int n);
+</pre>
+
+
+<p>This method sets the number of threads for each node. It is only relevant for Pastix. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// 8 threads per node if each node contains 8 cores
+mat_lu.SetNbThreadPerNode(8);
+// then you can factorize with this ordering
+mat_lu.Factorize(A);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="SelectDirectSolver"></a></div>
+
+
+
+<h3>SelectDirectSolver </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SelectDirectSolver(int type);
+</pre>
+
+
+<p>This method sets the direct solver to use, you can choose between : </p>
+
+<ul>
+<li> SELDON_SOLVER : Basic sparse solver proposed by Seldon (slow) </li>
+<li> UMFPACK </li>
+<li> SUPERLU </li>
+<li> MUMPS </li>
+<li> PASTIX </li>
+<li> ILUT : Incomplete factorization (approximate) </li>
+</ul>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you select which solver you want to use
+mat_lu.SelectDirectSolver(mat_lu.MUMPS);
+// then you can factorize with this solver
+mat_lu.Factorize(A);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetDirectSolver"></a></div>
+
+
+
+<h3>GetDirectSolver </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetDirectSolver();
+</pre>
+
+
+<p>This method returns the direct solver used. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// which solver used by default ?
+int type_solver = mat_lu.GetDirectSolver();
+if (type_solver == mat_lu.SELDON_SOLVER)
+  cout << "Warning : this solver is slow" << endl;
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetInfoFactorization"></a></div>
+
+
+
+<h3>GetInfoFactorization </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void GetInfoFactorization();
+</pre>
+
+
+<p>This method returns the error code provided by the used direct solver. For SparseDirectSolver, the
+ error codes are listed in an enum attribute, and can be : </p>
+
+<ul>
+<li> FACTO_OK : successful factorization (= 0 ) </li>
+<li> STRUCTURALLY_SINGULAR_MATRIX : the matrix is structurally singular. It is probably because
+ there is an empty row or column. </li>
+<li> NUMERICALLY_SINGULAR_MATRIX : the matrix is numerically singular. It happens when a null pivot has been found,
+ it may occur if the condition number of the matrix is very large. </li>
+<li> OUT_OF_MEMORY : there is not enough memory to complete the factorization. </li>
+<li> INVALID_ARGUMENT : the arguments provided to the direct solver are not correct. </li>
+<li> INCORRECT_NUMBER_OF_ROWS : the number of rows specified is incorrect (usually negative or null) </li>
+<li> MATRIX_INDICES_INCORRECT : the indices are incorrect (usually out of range, i.e. negative or greater than the dimensions of the matrix) </li>
+<li> INVALID_PERMUTATION : the permutation array is not valid (probably, not defining a bijection). </li>
+<li> ORDERING_FAILED : the computation of an appropriate ordering (by Metis, Scotch, etc) has failed</li>
+<li> INTERNAL_ERROR : unknown error, you should look at the documentation of the used solver </li>
+</ul>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A;
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you factorize the matrix
+mat_lu.Factorize(A);
+// to know if there is a problem
+int info = mat_lu.GetInfoFactorization();
+if (info == mat_lu.OUT_OF_MEMORY)
+  {
+    cout << "The matrix is too large, not enough memory" << endl;
+  }
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="Factorize"></a></div>
+
+
+
+<h3>Factorize, FactorizeMatrix </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Factorize(Matrix&amp;);
+  void Factorize(Matrix&amp;, bool);
+  void FactorizeMatrix(Matrix&amp;);
+  void FactorizeMatrix(Matrix&amp;, bool);
+</pre>
+
+
+<p>This method factorizes the given matrix. FactorizeMatrix is denoted Factorize for SparseDirectSolver. In parallel execution, this method will consider that the linear system to solve is restricted to the current processor. For example, you can use this method to factorize independant linear systems. If the matrix is distributed overall severall processors, you should call FactorizeDistributed. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you factorize the matrix
+mat_lu.Factorize(A);
+// to know if there is a problem
+int info = mat_lu.GetInfoFactorization();
+if (info == mat_lu.OUT_OF_MEMORY)
+  {
+    cout << "The matrix is too large, not enough memory" << endl;
+  }
+// once the matrix is factorized, you can solve systems
+Vector<double> x(n);
+mat_lu.Solve(x);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="Solve"></a></div>
+
+
+
+<h3>Solve </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Solve(Vector&amp;);
+</pre>
+
+
+<p>This method computes the solution of <code>A x = b</code> or <code>A<sup>T</sup> x = b</code>, assuming that <code>GetLU</code> (or Factorize/FactorizeMatrix) has been called before.  This is equivalent to use function <a href="#SolveLu">SolveLU</a>. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a sparse Solver
+SparseDirectSolver<double> mat_lu;
+// you factorize the matrix
+mat_lu.Factorize(A);
+// once the matrix is factorized, you can solve systems
+Vector<double> x(n), b(n);
+b.Fill();
+x = b;
+mat_lu.Solve(x);
+// to solve A^T x = b :
+x = b;
+mat_lu.Solve(SeldonTrans, x);
+\endprecode
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="FactorizeDistributed"></a></div>
+
+
+
+<h3>FactorizeDistributed, FactorizeDistributedMatrix </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void FactorizeDistributed(MPI::Comm& comm, Vector& Ptr,
+                            Vector& Ind, Vector& Val, IVect& glob_num,
+                            bool sym, bool keep_matrix);
+
+  void FactorizeDistributed(MPI::Comm& comm, Vector& Ptr,
+                            Vector& Ind, Vector& Val, IVect& glob_num,
+                            bool sym);
+</pre>
+
+
+<p>This method factorizes a distributed matrix, which is given through arrays Ptr, Ind, Val (CSC format). glob_num is a local to global array (glob_num(i) is the global row number of local row i). Each column of the global system is assumed to be distributed to one processor and only one. Each processor is assumed to have at least one column affected to its-self. Arrays Ptr and Ind may consist of 64-bit integers (in order to be compatible with 64-bit versions of Pastix). If sym is true, the matrix is symmetric, and we assume that Ptr, Ind, Val are representing the lower part of the matrix. If sym is false, the matrix is considered non-symmetric.  The communicator given in argument regroup all the processors involved in the factorization. This method is working only if you have selected Pastix or Mumps. </p>
+
+<h4>Example :</h4>
+\precode
+  // initialization of MPI_Init_thread needed if Pastix has been compiled
+  // with threads, otherwise you can use MPI_Init
+  int required = MPI_THREAD_MULTIPLE;
+  int provided = -1;
+  MPI_Init_thread(&argc, &argv, required, &provided);
+    
+  // declaration of the sparse solve
+  SparseDirectSolver<double> mat_lu;
+  
+  // considered global matrix
+  // A = |1.5  1    0    0  -0.3 |
+  //     | 1  2.0   0  -1.0   0  |
+  //     | 0   0   2.0  0    0.8 |
+  //     | 0  -1.0  0   3.0  1.2 |
+  //     | -0.3  0.0  0.8  1.2  3.0 |
+  
+  // global right hand side (solution is 1, 2, 3, 4, 5)
+  // B = |2 1 10 16 21.9|
+
+  if (MPI::COMM_WORLD.Get_rank() == 0)
+    {
+      // on first processor, we provide columns 1, 2 and 5
+      // only lower part since matrix is symmetric
+      int n = 3;
+      Matrix<double, General, ArrayColSparse> A(5, n); 
+      A(0, 0) = 1.5; A(1,0) = 1.0; A(4,0) = -0.3;
+      A(1,1) = 2.0; A(3,1) = -1.0; A(4,2) = 3.0;
+      Vector<double> b(n);
+      b(0) = 2; b(1) = 1; b(2) = 21.9;
+      IVect num_loc(n); num_loc(0) = 0; num_loc(1) = 1; num_loc(2) = 4;
+      
+      // converting to csc format
+      IVect Ptr, IndRow; Vector<double> Val;
+      General prop;
+      ConvertToCSC(A, prop, Ptr, IndRow, Val);
+      
+      // factorization
+      mat_lu.FactorizeDistributed(MPI::COMM_WORLD, Ptr, IndRow, Val,
+                                  num_loc, true);
+      
+      // then resolution
+      mat_lu.SolveDistributed(MPI::COMM_WORLD, SeldonNoTrans, b, num_loc);
+      
+      DISP(b);
+    }
+  else
+    {
+      // on second processor, we provide columns 3 and 4
+      // only lower part since matrix is symmetric
+      int n = 2;
+      Matrix<double, General, ArrayColSparse> A(5, n);
+      A(2, 0) = 2.0; A(4, 0) = 0.8; A(3,1) = 3.0; A(4,1) = 1.2;
+      Vector<double> b(n);
+      b(0) = 10; b(1) = 16;
+      IVect num_loc(n);
+      num_loc(0) = 2; num_loc(1) = 3;
+
+      // converting to csc format
+      IVect Ptr, IndRow; Vector<double> Val;
+      General prop;
+      ConvertToCSC(A, prop, Ptr, IndRow, Val);
+
+      // factorization
+      mat_lu.FactorizeDistributed(MPI::COMM_WORLD, Ptr, IndRow, Val,
+                                  num_loc, true);
+      
+      // then resolution
+      mat_lu.SolveDistributed(MPI::COMM_WORLD, SeldonNoTrans, b, num_loc);
+      
+      DISP(b);
+    }
+  
+  MPI_Finalize();
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="SolveDistributed"></a></div>
+
+
+
+<h3>SolveDistributed </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void FactorizeDistributed(MPI::Comm& comm, Vector& x,
+                            IVect& glob_num);
+
+  void FactorizeDistributed(SeldonTrans, MPI::Comm& comm, Vector& x,
+                            IVect& glob_num);
+</pre>
+
+
+<p>This method solves distributed linear system (or its transpose), once FactorizeDistributed
+ has been called. This method is working only if you have selected Pastix or Mumps. </p>
+
+<h4>Example :</h4>
+\precode
+  // initialization of MPI_Init_thread needed if Pastix has been compiled
+  // with threads, otherwise you can use MPI_Init
+  int required = MPI_THREAD_MULTIPLE;
+  int provided = -1;
+  MPI_Init_thread(&argc, &argv, required, &provided);
+    
+  // declaration of the sparse solve
+  SparseDirectSolver<double> mat_lu;
+  
+  // considered global matrix
+  // A = |1.5  1    0    0  -0.3 |
+  //     | 1  2.0   0  -1.0   0  |
+  //     | 0   0   2.0  0    0.8 |
+  //     | 0  -1.0  0   3.0  1.2 |
+  //     | -0.3  0.0  0.8  1.2  3.0 |
+  
+  // global right hand side (solution is 1, 2, 3, 4, 5)
+  // B = |2 1 10 16 21.9|
+
+  if (MPI::COMM_WORLD.Get_rank() == 0)
+    {
+      // on first processor, we provide columns 1, 2 and 5
+      // only lower part since matrix is symmetric
+      int n = 3;
+      Matrix<double, General, ArrayColSparse> A(5, n); 
+      A(0, 0) = 1.5; A(1,0) = 1.0; A(4,0) = -0.3;
+      A(1,1) = 2.0; A(3,1) = -1.0; A(4,2) = 3.0;
+      Vector<double> b(n);
+      b(0) = 2; b(1) = 1; b(2) = 21.9;
+      IVect num_loc(n); num_loc(0) = 0; num_loc(1) = 1; num_loc(2) = 4;
+      
+      // converting to csc format
+      IVect Ptr, IndRow; Vector<double> Val;
+      General prop;
+      ConvertToCSC(A, prop, Ptr, IndRow, Val);
+      
+      // factorization
+      mat_lu.FactorizeDistributed(MPI::COMM_WORLD, Ptr, IndRow, Val,
+                                  num_loc, true);
+      
+      // then resolution
+      mat_lu.SolveDistributed(MPI::COMM_WORLD, SeldonNoTrans, b, num_loc);
+      
+      DISP(b);
+    }
+  else
+    {
+      // on second processor, we provide columns 3 and 4
+      // only lower part since matrix is symmetric
+      int n = 2;
+      Matrix<double, General, ArrayColSparse> A(5, n);
+      A(2, 0) = 2.0; A(4, 0) = 0.8; A(3,1) = 3.0; A(4,1) = 1.2;
+      Vector<double> b(n);
+      b(0) = 10; b(1) = 16;
+      IVect num_loc(n);
+      num_loc(0) = 2; num_loc(1) = 3;
+
+      // converting to csc format
+      IVect Ptr, IndRow; Vector<double> Val;
+      General prop;
+      ConvertToCSC(A, prop, Ptr, IndRow, Val);
+
+      // factorization
+      mat_lu.FactorizeDistributed(MPI::COMM_WORLD, Ptr, IndRow, Val,
+                                  num_loc, true);
+      
+      // then resolution
+      mat_lu.SolveDistributed(MPI::COMM_WORLD, SeldonNoTrans, b, num_loc);
+      
+      DISP(b);
+    }
+  
+  MPI_Finalize();
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="Clear"></a></div>
+
+
+
+<h3>Clear</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Clear();
+</pre>
+
+
+<p>This method releases the memory used by the factorization. It is available for every direct solver. </p>
+
+
+<h4> Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A;
+MatrixUmfPack<double> mat_lu;
+// you fill A as you want
+// then a first factorization is achieved
+GetLU(A, mat_lu);
+// then solve needed linear systems
+SolveLU(mat_lu, x);
+// and if you need to spare memory, you can clear factorization
+mat_lu.Clear();
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+SuperLU.cxx<br/>
+Pastix.cxx<br/>
+SparseSolver.cxx</p>
+
+
+
+<div class="separator"><a name="EnableOutOfCore"></a></div>
+
+
+
+<h3>EnableOutOfCore</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void EnableOutOfCore();
+  void DisableOutOfCore();
+</pre>
+
+
+<p>This method allows the direct solver to write a part of the matrix on the disk. This option
+ is enabled only for Mumps.  </p>
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx</p>
+
+
+
+<div class="separator"><a name="RefineSolution"></a></div>
+
+
+
+<h3>RefineSolution, DoNotRefineSolution</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void RefineSolution();
+  void DoNotRefineSolution();
+</pre>
+
+
+<p>This method is avaible for Pastix only, it includes (or not) an additional refinement step
+ in the resolution phase. The obtained solution should be more accurate, but the resolution cost should be twice
+higher.  </p>
+
+
+<h4>Location :</h4>
+<p>Pastix.cxx</p>
+
+
+
+<div class="separator"><a name="PerformAnalysis"></a></div>
+
+
+
+<h3>PerformAnalysis, PerformFactorization</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void PerformAnalysis(Matrix& A);
+  void PerformFactorization(Matrix& A);
+</pre>
+
+
+<p>The method "PerformAnalysis" should reorder matrix, and perform a "symbolic" factorization of the matrix,
+ whereas the method "PerformFactorization" should perform only numerical factorization. The aim here is to reduce
+ the amount of work when we consider a family of linear systems which have the same pattern. In that configuration,
+ the input matrix is not cleared. </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a Mumps solver
+MatrixMumps<double> mat_lu;
+// symbolic factorization
+mat_lu.PerformAnalysis(A);
+// then factorization
+mat_lu.PerformFactorization(A);
+// you can solve a system
+mat_lu.Solve(x);
+
+// then construct another matrix A, but with the same 
+// pattern. For example FillRand will modify the values
+A.FillRand();
+// and solve the new system
+mat_lu.PerformFactorization(A);
+mat_lu.Solve(x);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Pastix.cxx</p>
+
+
+
+<div class="separator"><a name="FindOrdering"></a></div>
+
+
+
+<h3>FindOrdering </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void FindOrdering(Matrix&amp;, Vector&lt;int&gt;&amp;);
+  void FindOrdering(Matrix&amp;, Vector&lt;int&gt;&amp;, bool);
+</pre>
+
+
+<p>This method computes the new row numbers of the matrix by using available algorithms in Mumps/Pastix.
+ It is currently not implemented for UmfPack/SuperLU. </p>
+
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A;
+// you declare a Mumps structure
+MatrixMumps<double> mat_lu;
+IVect permutation;
+// we find the best numbering of A 
+// by default, the matrix A is erased
+mat_lu.FindOrdering(A, permutation);
+// if last argument is true, A is not modified
+mat_lu.FindOrdering(A, permutation, true);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+Pastix.cxx</p>
+
+
+
+<div class="separator"><a name="GetSchurMatrix"></a></div>
+
+
+
+<h3>GetSchurMatrix (only for MatrixMumps)</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void GetSchurMatrix(Matrix&amp;, Vector&lt;int&gt;&amp;, Matrix&amp;);
+  void GetSchurMatrix(Matrix&amp;, Vector&lt;int&gt;&amp;, Matrix&amp;, bool);
+</pre>
+
+
+<p>This method computes the schur complement when a matrix and row numbers of the Schur matrix are provided. It is equivalent to use the function <a href="#GetSchurMatrix_func">GetSchurMatrix</a>.  </p>
+
+<h4>Example :</h4>
+\precode
+// you fill a sparse matrix
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you declare a Mumps structure
+MatrixMumps<double> mat_lu;
+
+// then you set some row numbers num that will be associated
+// with a sub-matrix A22 : A = [A11 A12; A21 A22]
+IVect num(3);
+num(0) = 4; num(1) = 10; num(2) = 12;
+
+// computation of Schur complement : A22 - A21 A11^-1 A12
+Matrix<double> schur_cplt;
+mat_lu.GetSchurMatrix(A, num, schur_cplt);
+
+// the size of matrix schur_cplt should be the same as the size of num
+\endprecode
+
+<h4>Location :</h4>
+<p>Mumps.cxx</p>
+
+
+
+<div class="separator"><a name="GetLU"></a></div>
+
+
+
+<h3>GetLU</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void GetLU(Matrix&amp;, MatrixMumps&amp;);
+  void GetLU(Matrix&amp;, MatrixUmfPack&amp;);
+  void GetLU(Matrix&amp;, MatrixSuperLU&amp;);
+  void GetLU(Matrix&amp;, MatrixMumps&amp;, bool);
+  void GetLU(Matrix&amp;, MatrixUmfPack&amp;, bool);
+  void GetLU(Matrix&amp;, MatrixSuperLU&amp;, bool);
+</pre>
+
+
+<p>This method performs a LU factorization. The last argument is optional. When omitted, the initial matrix is erased, when equal to true, the initial matrix is not modified. This function is not defined for SparseDirectSolver, you have to use method Factorize instead. </p>
+
+
+<h4>Example :</h4>
+\precode
+// sparse matrices, use of Mumps for example
+MatrixMumps<double> mat_lu;
+Matrix<double, General, ArrayRowSparse> Asp(n, n);
+// you add all non-zero entries to matrix Asp
+// then you call GetLU to factorize the matrix
+GetLU(Asp, mat_lu);
+// Asp is empty after GetLU
+// you can solve Asp x = b 
+X = B;
+SolveLU(mat_lu, X);
+// if you want to solve Asp^T x = b
+X = B;
+SolveLU(SeldonTrans, mat_lu, X);
+
+// if you want to keep initial matrix
+GetLU(Asp, mat_lu, true);
+\endprecode
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+Pastix.cxx<br/>
+SuperLU.cxx</p>
+
+
+<div class="separator"><a name="SolveLU"></a></div>
+
+
+
+<h3>SolveLU</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SolveLU(MatrixMumps&amp;, Vector&amp;);
+  void SolveLU(MatrixUmfPack&amp;, Vector&amp;);
+  void SolveLU(MatrixSuperLU&amp;, Vector&amp;);
+  void SolveLU(SeldonTrans, MatrixSuperLU&amp;, Vector&amp;);
+</pre>
+
+
+<p>This method uses the LU factorization computed by <code>GetLU</code> in order to solve a linear system or its transpose. The right hand side is overwritten by the result. This function is not defined for SparseDirectSolver, you have to use method Solve instead.</p>
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx<br/>
+UmfPack.cxx<br/>
+Pastix.cxx<br/>
+SuperLU.cxx</p>
+
+
+
+<div class="separator"><a name="GetSchurMatrix_func"></a></div>
+
+
+
+<h3>GetSchurMatrix (only for MatrixMumps)</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void GetSchurMatrix(Matrix&amp;, MatrixMumps&amp;, Vector&lt;int&gt;&amp;, Matrix&amp;);
+</pre>
+
+
+<p>This method computes the so-called Schur matrix (or Schur complement) from a given matrix. </p>
+
+
+<h4>Example :</h4>
+\precode
+MatrixMumps<double> mat_lu;
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// you add all non-zero entries to matrix A
+// then you specify row numbers for schur matrix
+IVect num(5); 
+num.Fill();
+// somehow, A can be written under the form A = [A11 A12; A21 A22]
+// A22 is related to row numbers of the Schur matrix
+// Schur matrix is dense
+Matrix<double> mat_schur(5, 5);
+GetSchurMatrix(A, mat_lu, num, mat_schur);
+
+// then you should obtain A22 - A21*inv(A11)*A12 -> mat_schur
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Mumps.cxx</p>
+
+*/

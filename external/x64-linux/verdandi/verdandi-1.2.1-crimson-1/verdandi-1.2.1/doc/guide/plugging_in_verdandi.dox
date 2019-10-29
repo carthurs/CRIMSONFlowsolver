@@ -1,0 +1,160 @@
+/*! \file plugging_in_verdandi.dox
+    \brief Plugging in Verdandi.
+*/
+
+/*!
+\page plugging_in_verdandi Plugging in %Verdandi
+
+\section howto_plug How To Plug a Model and Observations in Verdandi
+
+This section of the documentation explains how to plug an external model and observations in %Verdandi. The first step is to build an \ref plugging_model "interface to the model". The second step is either having an existing observation manager \ref plugging_observation "read the observations", or writing a \ref plugging_observation "new observation manager".
+
+\section reference_notation Reference Notation
+
+The tables below list the variables involved in data assimilation. For each variable, the name of the C++ type (a <code>typedef</code>) and the recommended C++ variable name are given.
+
+\subsection model_table Model
+
+<table>
+<tr>
+<th>Variable(s)</th>
+<td>&nbsp;&nbsp;</td>
+<th>Typedef</th>
+<td>&nbsp;&nbsp;</td>
+<th>C++ Variable(s)</th>
+</tr>
+<tr>
+<td>\f$x, x^f, x^a\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>state</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>x, xf, xa</code></td>
+</tr>
+<tr>
+<td>\f$P, P^f, P^a\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>state_error_variance</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>P, Pf, Pa</code></td>
+</tr>
+<tr>
+<td>Row of \f$P, P^f, P^a\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>state_error_variance_row</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>P_row, Pf_row, Pa_row</code></td>
+</tr>
+<tr>
+<td>\f$Q\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>error_variance</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>Q</code></td>
+</tr>
+<tr>
+<td>\f$\bar e^m\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>systematic_error</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>em_bar</code></td>
+</tr>
+<tr>
+<td>\f$\mathrm{M}\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>tangent_linear_operator</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>M</code></td>
+</tr>
+<tr>
+<td></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>matrix_state_observation</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code></code></td>
+</tr>
+</table>
+
+<code>matrix_state_observation</code> determines the type of matrices of size \f$n \times m\f$.
+
+\subsection observation_table Observation Manager
+
+<table>
+<tr>
+<th>Variable(s)</th>
+<td>&nbsp;&nbsp;</td>
+<th>Typedef</th>
+<td>&nbsp;&nbsp;</td>
+<th>C++ Variable(s)</th>
+</tr>
+<tr>
+<td>\f$y\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>observation</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>y</code></td>
+</tr>
+<tr>
+<td>\f$R\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>observation_error_variance</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>R</code></td>
+</tr>
+<tr>
+<td>\f$\bar e^o\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>observation_systematic_error</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>eo_bar</code></td>
+</tr>
+<tr>
+<td>\f$H\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>tangent_linear_operator</code></td>
+<td>&nbsp;&nbsp;</td>
+<td><code>H</code></td>
+</tr>
+</table>
+
+<br>
+
+\subsection Notes
+
+In the assimilation algorithms, the same <code>typedef</code>s are defined with <code>model_</code> or <code>observation_</code> prepended. There are two exceptions: nothing is not prepended to <code>matrix_state_observation</code> and <code>observation</code> (\f$y\f$).
+
+The <code>typedef</code>s should be public in the model class and the observation class, so that the assimilation method may access to them.
+
+In the assimilation methods, the following variables are also used.
+
+<table>
+<tr>
+<th>Variable(s)</th>
+<td>&nbsp;&nbsp;</td>
+<th>Meaning</th>
+<td>&nbsp;&nbsp;</td>
+<th>C++ Variable(s)</th>
+</tr>
+<tr>
+<td>\f$l\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td>Number of model parameters (size of \f$p\f$)</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>Nparameter</code></td>
+</tr>
+<tr>
+<td>\f$m\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td>Number of observations (size of \f$y\f$)</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>Nobservation</code></td>
+</tr>
+<tr>
+<td>\f$n\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td>Size of the state vector \f$x\f$</td>
+<td>&nbsp;&nbsp;</td>
+<td><code>Nstate</code></td>
+</tr>
+</table>
+
+*/

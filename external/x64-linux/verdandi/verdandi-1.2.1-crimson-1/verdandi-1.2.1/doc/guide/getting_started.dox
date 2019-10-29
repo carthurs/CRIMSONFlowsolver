@@ -1,0 +1,32 @@
+/*! \file getting_started.dox
+    \brief Getting Started.
+*/
+
+/*!
+\page getting_started Getting Started
+
+\section how_to_use How to Use Verdandi
+
+\subsection Installation
+
+First read the \ref installation "installation section". At the end of the section, you should be able to run an example program.
+
+\subsection Notation
+
+Read the \ref notation "notation section" so as to be comfortable with the variables used in the documentation.
+
+\subsection picking_method Picking a data assimilation method
+
+You can browse the available \ref assimilation_methods "assimilation methods". If you do not know which method to choose, you may try with the simplest method called \ref optimal_interpolation "optimal interpolation".
+
+\subsection applying_example Applying the assimilation method to one of the examples
+
+You may apply the selected assimilation method to one of the example models. Not all models support all assimilation methods. You can always pick the quadratic model (which is initially configured as a linear model).
+
+You should launch a few simulations with and without assimilation. You may analyze and display the results with the tools provided in %Verdandi.
+
+\subsection _ Plugging your own model and observations
+
+Once you applied a data assimilation method and got familiar with %Verdandi, you can start writing an interface for your model and an observation manager.
+
+*/

@@ -180,7 +180,7 @@ ZLIB_LIBSLIST  = ['z']
 # Verdandi and Seldon includes # 
 ################################
 
-VERDANDI_TOP  = HOME_DIR+'/../verdandi-1.2.1'  # setme
+VERDANDI_TOP  = '/home/chris/crimson/CRIMSONFlowsolver/external/x64-linux/verdandi/verdandi-1.2.1-crimson-1/'
 VERDANDI_INCDIR  = [VERDANDI_TOP, \
 		 VERDANDI_TOP+'/container', \
 		 VERDANDI_TOP+'/error', \

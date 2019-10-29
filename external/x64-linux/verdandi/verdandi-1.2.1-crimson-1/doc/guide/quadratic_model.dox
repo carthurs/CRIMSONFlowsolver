@@ -1,0 +1,24 @@
+/*! \file quadratic_model.dox
+    \brief Quadratic Model.
+*/
+
+/*!
+\page quadratic_model Quadratic Model
+
+In order to define the quadratic model, we introduce:
+- \f$n\f$ matrices \f$ S_i \in \mathbb{R}^{n \times n} \f$ for the quadratic part of the model,
+- one matrix \f$ L \in \mathbb{R}^{n \times n} \f$ for the linear part of the model, and
+- a vector \f$b \in \mathbb{R}^n \f$ for the constant part of the model.
+
+The equation of the \f$i\f$th state component of the quadratic model (\f$ i \in \{1,\ldots,n\}\f$) is
+\f[
+\frac{\mathrm{d} x_i}{\mathrm{d} t} = x^T S_i x + L_i x + b_i,
+\f]
+where \f$L_i\f$ is the \f$i\f$th line of \f$L\f$.
+
+In case the model has no quadratic part, the state equation is simply
+\f[
+\frac{\mathrm{d} x}{\mathrm{d} t} = L x + b.
+\f]
+
+*/

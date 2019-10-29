@@ -1,0 +1,62 @@
+/*! \file perturbation_manager.dox
+    \brief Perturbation manager.
+*/
+
+/*!
+\page perturbation_manager Perturbation manager
+
+A perturbation manager in %Verdandi is a tool to generate pseudo-random numbers. Two random numbers generator libraries are at this time interfaced : <a href="http://www.robertnz.net/nr03doc.htm">Newran</a> and <a href="http://trng.berlios.de/">TRNG</a>. One may find the implementations in the base class <code>BasePerturbationManager.hxx</code> and <code>BasePerturbationManager.cxx</code> and the derived classes for each library : <code>NewranPerturbationManager.hxx</code> and <code>NewranPerturbationManager.cxx</code> for Newran, <code>TRNGPerturbationManager.hxx</code> and <code>TRNGPerturbationManager.cxx</code> for TRNG.
+
+\section configuration Configuration options
+
+In models, the perturbation manager can be used to perturb a variable with randomly generated numbers. Here are the main parameters.
+
+<ol>
+        <li><code>distribution</code>: the type of the distribution for the random vector; </li>
+        <li><code>mean</code>: mean of the distribution</li>
+        <li> <code>variance</code>: covariance matrix of the distribution; </li>
+        <li><code>parameter</code>: vector either empty or that contains two values for clipping the distribution; </li>
+        <li><code>correlation</code>: vector that contains the correlation between sub-vectors; </li>
+        <li><code>option</code>: defines when the perturbations are to be applied (at the first step only or at every step). </li>
+</ol>
+
+Here is one example derived from the \ref quadratic_model configuration file. We want to apply a perturbation on the constant term.
+\precode
+quadratic_model = {
+
+   definition = {
+
+      constant = {1.,
+                  -1.}
+  },
+
+
+  uncertainty = {
+
+      constant = {
+
+         distribution = "Normal",
+         mean = {0.5,
+                 0.5},
+         variance = {1., 0.,
+                     0., 1.},
+         parameter = {-1., 1.},
+	 correlation = {},
+         option = "init_step"
+
+      }
+
+   }
+\endprecode
+
+Keep in mind that the <code>mean</code> parameter is the mean of the perturbation, so that the mean of the perturbed variable will be <code>constant + mean</code>. Here, the perturbed vector will the sum of \f[\left(\begin{array}{cc}
+-1.\\
+1.\\ \end{array} \right) + \left(\begin{array}{cc}
+0.5.\\
+0.5\\ \end{array} \right) \f] and a random vector generated with a centered normal distribution of variance \f[\left(\begin{array}{cc}
+1. & 0.\\
+0. & 1.\\ \end{array} \right) .\f] 
+The <code>parameter</code> vector ensures that the all random numbers will be between -1. and 1. The <code>correlation</code> parameter correlates the first sub-vector with each of the following. Since here we have only one vector to perturb, there is no correlation to apply.
+
+
+*/

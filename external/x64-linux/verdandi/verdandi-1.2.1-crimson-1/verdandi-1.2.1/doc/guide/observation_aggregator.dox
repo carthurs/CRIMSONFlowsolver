@@ -1,0 +1,80 @@
+/*! \file observation_aggregator.dox
+    \brief Observation Aggregator.
+*/
+
+/*!
+\page observation_aggregator Observation Aggregator
+
+The \ref observation_aggregator "Observation Aggregator" allows to compute
+aggregated and flattened observations. The class
+\link Verdandi::ObservationAggregator ObservationAggregator\endlink
+is implemented in <code>ObservationAggregator.hxx</code> and
+<code>ObservationAggregator.cxx</code>. It is a template class:
+ <code>ObservationAggregator<T></code>. <code>T</code> is
+ the numerical type (e.g., <code>double</code>).
+
+
+When a <b>data assimilation method</b> requests for observations to
+an <b>observation manager</b> at a given time \f$t_h\f$, it could be possible
+that no observation is available at this time.
+
+ An <b>observation manager</b> can associate to each available observation \f$y_i\f$
+ a contribution \f$ \alpha_i\f$. The \ref observation_aggregator "Observation Aggregator" enables to
+ compute, at each time \f$t_h\f$, the contribution of each observation according to
+ several rules: 'step', 'interpolation', 'triangle'.
+
+\section step Step interpolation
+
+In this mode, any observation is selected if its date belongs to a left-closed and right-open interval centered on \f$t_h\f$.
+
+\precode
+aggregator = {
+
+   type = "step",
+   width_left = 0.05,
+   width_right = 0.07,
+    ...
+\endprecode
+
+\section interpolation Interpolation
+
+In this mode, the closest left observation from \f$t_h\f$ and the closest
+right observation are selected. The two observations are then interpolated.
+One should define an observation interval. It is assumed that the
+observations outside this interval have no contribution.
+
+\precode
+aggregator = {
+
+   type = "interpolation",
+   -- Observation interval.
+   width_left_upper_bound = 1.,
+   width_right_upper_bound = 1.,
+    ...
+\endprecode
+
+
+\section triangle Triangle interpolation
+
+In this mode, one should define an observation interval (left-closed and right-open). All observations
+available in this interval are considered. The observations outside this interval have no contribution.
+They are interpolated by a triangle
+centered on \f$t_h\f$. The widths of the triangles may not be constant.
+
+\precode
+observation = {
+    ...
+
+   width_file = "configuration/width.bin",
+
+   aggregator = {
+
+      type = "triangle",
+      width_property = "per-observation",
+      -- Observation interval.
+      width_left_upper_bound = 1.,
+      width_right_upper_bound = 1.,
+       ...
+\endprecode
+
+*/

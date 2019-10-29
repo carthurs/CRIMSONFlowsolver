@@ -1,0 +1,262 @@
+#!/usr/bin/env python
+
+# Copyright (C)  2005-2007, ENPC
+# Copyright (C)  2007-2009, INRIA
+#     Author(s): Vivien Mallet
+#
+# This file is part of the data assimilation library Verdandi.
+#
+# This file is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option)
+# any later version.
+#
+# This file is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Verdandi. If not, see http://www.gnu.org/licenses/.
+#
+# For more information, visit the Verdandi web site:
+#      http://verdandi.gforge.inria.fr/
+
+
+# This program partially formats source files according to Verdandi's rules.
+
+
+import os, sys, optparse, commands
+from tempfile import mkstemp
+from shutil import copyfile
+from os.path import basename
+
+usage = "%prog [options] [file(s) to be formatted]\n\n\
+This program partially formats source files according to Verdandi's rules.\n\
+It removes trailing spaces and indents the code.\n\
+It finally checks that no line goes beyond the 78th column."
+parser = optparse.OptionParser(usage = usage)
+
+### Options.
+
+parser.add_option("-I", "--no-indentation", help = "Skip indentation step.",
+                  action = "store_false", dest = "indentation",
+                  default = True)
+parser.add_option("-L", "--no-line-limit", help = "Skip line-length checks.",
+                  action = "store_false", dest = "check_line_length",
+                  default = True)
+parser.add_option("-S", "--keep-spaces", help = "Do not remove trailing.",
+                  action = "store_false", dest = "remove_spaces",
+                  default = True)
+parser.add_option("-E", "--skip-empty-lines", help = "Do not remove "
+                  + "trailing spaces in empty lines.", action = "store_false",
+                  dest = "remove_empty", default = True)
+parser.add_option("-b", "--backup-file", help = "Create a backup file "
+                  + "before changes.", action = "store_true",
+                  dest = "backup_files", default = False)
+parser.add_option("-i", "--interactive", help = "Interactive mode.",
+                  action = "store_true", dest = "interactive",
+                  default = False)
+parser.add_option("-r", "--reverse", help = "Indents before removing "
+                  "trailing spaces.", action = "store_true",
+                  dest = "reverse", default = False)
+
+### Parses arguments.
+
+(options, args) = parser.parse_args()
+
+if not args:
+    print "You must provide at least one file."
+    print "Option -h or --help for information about usage."
+    sys.exit(1)
+
+### Checks the environment and the options.
+
+# Checks the availability of emacs for indentation.
+if options.indentation and commands.getstatusoutput("which emacs")[0] != 0:
+    print "[WARNING] Cannot find Emacs: indentation will be skipped."
+    options.indentation = False
+
+local_directory = os.path.dirname(os.path.abspath(__file__))
+
+# Checks that there remains an action to be performed.
+if not options.indentation and not options.check_line_length \
+       and not options.remove_spaces:
+    print "[WARNING] Nothing to do."
+
+### Removing trailing spaces.
+
+def remove_trailing_spaces(filename, remove_empty = True):
+    import fileinput
+    for line in fileinput.input(filename, 1):
+        if line:
+            if line[-1] == '\n':
+                clean = line[:-1].rstrip(" \t")
+                if remove_empty or clean:
+                    print clean
+                else:
+                    print line[:-1]
+            else:
+                clean = line.rstrip(" \t")
+                if remove_empty or clean:
+                    print clean,
+                else:
+                    print line,
+        else:  # 'line' is empty.
+            print
+
+### Indenting.
+
+def indent(filename):
+    # Determines the langage.
+    extension = filename.split('.')[-1].lower()
+    # C++ indentation is also suited for C.
+    if extension == "c" or extension == "h" \
+           or extension == "cpp" or extension == "hpp" \
+           or extension == "cxx" or extension == "hxx":
+        langage = "cpp"
+    # ".f" and ".F" files are assumed to be Fortran 77 files.
+    elif extension == "f77" or extension == "f":
+        langage = "f77"
+    else:
+        langage = None
+    if langage:
+        import os
+        command = "emacs -batch " + filename + " -l " \
+                  + os.path.join(local_directory, "indent.el ") \
+                  + "-f indent_" + langage
+        if options.interactive:
+            import os
+            os.system(command)
+        else:
+            status, o = commands.getstatusoutput(command)
+            if status != 0:
+                raise Exception, "Indentation of \"" + filename \
+                      + "\" has failed with output:\n" + o
+    return langage
+
+### Lines lengths.
+
+def check_lines_lengths(filename, limit_length = 78):
+    import fileinput
+    lines = []
+    count = 1
+    for line in file(filename).readlines():
+        line = line.expandtabs()
+        if len(line) != 0 and len(line[:-1]) > limit_length:
+            lines.append(count)
+        count += 1
+    return lines
+
+### Printing facility.
+
+class PrintInPlace:
+    """
+    PrintInPlace enables to write and overwrite data on screen.
+    """
+    def __init__(self, length = 0):
+        """
+        @type length: integer
+        @param length: Number of characters to be overwritten next time
+        something is printed on screen.
+        """
+        self.length = length
+    def __call__(self, elt):
+        """
+        Prints a string on screen.
+
+        @type elt: string
+        @param elt: String to be printed on screen.
+        """
+        sys.stdout.write(chr(8) * self.length + ' ' * self.length
+                         + chr(8) * self.length + str(elt))
+        sys.stdout.flush()
+        self.length = len(str(elt))
+    def Print(self, elt):
+        """
+        Prints a string on screen.
+
+        @type elt: string
+        @param elt: String to be printed on screen.
+        """
+        self.__call__(elt)
+    def Reinit(self):
+        """
+        Reinits the instance: no character is removed next time something is
+        printed on screen.
+        """
+        self.length = 0
+    def Clear(self, elt = ''):
+        """
+        Reinits the instance: no character is removed next time something is
+        printed on screen, and the characters that were supposed to be
+        overwritten are cleared. A last string may be printed.
+
+        @type elt: string
+        @param elt: The last string to be printed.
+        """
+        sys.stdout.write(chr(8) * self.length + ' ' * self.length
+                         + chr(8) * self.length + str(elt))
+        sys.stdout.flush()
+        self.length = 0
+
+prt = PrintInPlace()
+
+### Loops on files.
+
+for filename in args:
+
+    # Determines the langage.
+    extension = filename.split('.')[-1].lower()
+    if extension == "f77" or extension == "f":
+        limit_length = 72
+    else:
+        limit_length = 78
+
+    if options.interactive:
+        print "Processing \"" + filename + "\"..."
+    else:
+        prt("Processing \"" + filename + "\"...")
+
+    if options.backup_files:
+        copyfile(filename, filename + "~")
+
+    if options.indentation or options.remove_spaces:
+        temporary_filename = mkstemp(suffix = basename(filename))[1]
+        copyfile(filename, temporary_filename)
+
+    if options.remove_spaces and not options.reverse:
+        remove_trailing_spaces(temporary_filename, options.remove_empty)
+
+    if options.indentation:
+        langage = indent(temporary_filename)
+        if langage == None:
+            if not options.interactive:
+                prt.Clear()
+            print "[WARNING] \"" + filename + "\" has not been indented: " \
+                  + "its langage cannot be determined or is not suited " \
+                  + "for automatic indentation."
+
+    if options.remove_spaces and options.reverse:
+        remove_trailing_spaces(temporary_filename, options.remove_empty)
+
+    if (options.indentation or (options.remove_spaces and options.reverse)) \
+           and (open(temporary_filename).readlines()
+                != open(filename).readlines()):
+        copyfile(temporary_filename, filename)
+
+    if options.check_line_length:
+        lines = check_lines_lengths(filename, limit_length)
+        if len(lines) != 0:
+            if not options.interactive:
+                prt.Clear()
+            message = "[ERROR] In \"" + filename + "\", characters are " \
+                      + "beyond column " + str(limit_length) + " at line(s): "
+            message += str(lines[0])
+            for i in lines[1:]:
+                message += ", " + str(i)
+            print message
+
+prt.Clear()
+
+sys.exit(0)

@@ -1,0 +1,332 @@
+Version 1.2.1 (2012-04-10)
+-------------
+
+* Methods
+
+- Added an option to 'ReducedOrderUnscentedKalmanFilter' to manage
+  observations provided as innovations.
+
+* Bug fixes
+
+- Removed illegal 'typename' keywords in 'ModelTemplate' definitions.
+
+
+Version 1.2 (2012-03-30)
+-----------
+
+* Methods
+
+- The state vectors are now passed by reference to the assimilation methods.
+  'GetState(state&)', 'SetState(state&)', 'GetFullState(state&)' and
+  'SetFullState(state&)' have been replaced with 'state& GetState()',
+  'StateUpdated()', 'state& GetFullState()' and 'FullStateUpdated()'.
+  Also replaced the model methods 'GetStateLowerBound(state&)' and
+  'GetStateUpperBound(state&)' with 'state& GetStateLowerBound()' and 
+  'state& GetStateUpperBound()'.
+- 'ForwardDriver' and 'ReducedOrderUnscentedKalmanFilter' can now efficiently
+  handle models parallelized by MPI.
+- Initial import of sequential aggregation (for ensemble forecasting) with
+  discounted ridge regression ('DiscountedRidgeRegression').
+- Added support for parallel computations in 'EnsembleKalmanFilter'.
+- Added support for parallel computations in 'ComputeBLUE_vector'.
+- Enforced the rule that the member functions of the data assimilation
+  methods are non const, except 'GetName'.
+- Modified the interface to 'MonteCarlo' so that it is consistent with the 
+  interface to 'EnsembleKalmanFilter'.
+- Made 'MonteCarlo' template of the perturbation manager.
+- Added methods 'GetModel', "GetObservationManager', 'GetPerturbationManager',
+  'GetOuputSaver', 'FinalizeStep' and 'Finalize' in all appropriate
+  assimilation methods.
+- Removed the references to 'VERDANDI_DENSE' and 'VERDANDI_SPARSE' in
+  'OptimalInterpolation".
+- Added consistency checks for the dimensions of the arguments of
+  'ComputeBLUE_matrix'.
+
+* Models
+
+- Added the possibility to use a model written in Python. A generic interface
+  between Python and C++ is implemented in 'PythonModel'.
+
+* Observation managers
+
+- Added the possibility to use an observation manager written in Python.  A
+  generic interface between Python and C++ is implemented in
+  'PythonObservationManager.
+
+* Example models
+
+- Added the new model 'PetscClampedBar', which implements 'ClampedBar' with
+  PETSc.
+- Extended the interface of the quadratic model for the ensemble Kalman
+  filter.
+- Added configuration for the 'MonteCarlo' example with the quadratic model.
+
+* Example observation managers
+
+- Added the new observation manager 'PetscLinearObservationManager', which
+  implements 'LinearObservationManager' with PETSc.
+- Added support for non constant time intervals between observations in
+  'LinearObservationManager'.
+
+* Output saver
+
+- Added 'OutputSaver::Activate' and 'OutputSaver::Deactivate'.
+
+* Perturbation managers
+
+- Added an interface to the random number generator library from C++ TR1.
+- Set TR1 as the default random number generator library.
+
+* Debugging 
+
+- Added the option "dump_env" to dump the SCons environment in the file 
+  "scons_env.log"
+
+* Documentation
+
+- Added the section "Plugging a Model".
+- Added a description of the Lorenz model.
+
+* Bug fixes
+
+- In 'EnsembleKalmanFilter', from one member to another, the
+  parameters were not perturbed around the same reference values.
+- The examples in "example/template" did not compile.
+
+* Miscellaneous
+
+- Updated Seldon version from 5.1 (patched for Verdandi) to 5.2 (release
+  candidate).
+- Renamed 'TRY' to 'VERDANDI_TRY' and 'END' to 'VERDANDI_END'
+- Initial import of "Functions_Vector2.*xx" and "Fuctions_Vector3.*xx".
+- Added the error class 'ErrorPythonUndefined'.
+- Moved "OutputSaver.*xx" and "Variable.*xx" to "share/".
+
+
+Version 1.1 (2011-10-25)
+-----------
+
+* Methods
+
+- Added an implementation of the ensemble Kalman filter
+  ('EnsembleKalmanFilter').
+- Modified 'UnscentedKalmanFilter' to support a model state of type
+  'Vector<Collection>'.
+- Improved the saving options in 'ReducedMinimax'.
+- Added in 'MonteCarlo::Initialize' the option to choose to initialize or not
+  the model and the perturbation manager.
+
+* Example models
+
+- Extended the interface of the shallow water model for the ensemble Kalman
+  filter.
+
+* Perturbation managers
+
+- The perturbation manager based on Newran can now accept several types of
+  seed, and it requires to explicitly choose this type in the configuration.
+
+* Bug fixes
+
+- In the reduced minimax filter, the observations were assimilated one model
+  time step earlier than expected.
+
+
+Version 1.0.2 (2011-08-23)
+-------------
+
+* Documentation
+
+- Added documentation about the compilation of the SWIG interface under
+  Windows.
+- Updated the documentation for the Python interface with the current naming
+  conventions.
+
+* Improvements
+
+- Made the SWIG interface compatible with Windows.
+
+* Bug fixes
+
+- In the perturbation managers, the mean and the covariance matrix were
+  erroneously modified when the constraints were not satisfied by the first
+  sampling.
+- The homogeneous log-normal perturbations were erroneous.
+- In the perturbation manager, several log-normal sampling functions did not
+  work properly.
+
+
+Version 1.0.1 (2011-06-16)
+-------------
+
+* Documentation
+
+- Added a section in the documentation about the compilation of Verdandi for a
+  64-bit architecture under Windows.
+
+* Bug fixes
+
+- Fixed compilation problems with Visual C++ compiler related to 'Ops::Ops'.
+- 'ForwardDriver' ignored the configuration variables 'forward.output.log' and
+  'forward.output.configuration'.
+- Added "python" in the library list so that it may be linked when the SWIG
+  interface is built. This is necessary under MacOS.
+- The random number generators were allocated twice, which led to minor memory
+  leaks.
+
+
+Version 1.0 (2011-05-27)
+-----------
+
+* Methods
+
+- Improved the handling of the sparse and dense options in the methods:
+  EKF, UKF, ROEKF and ROUKF.
+
+* Observations
+
+* Example models
+
+- Added a new method 'Model::GetNfull_state()'.
+- Changed the default configuration for the shallow-water model example: the
+  observations are now localized at specific points instead of all grid
+  points.
+
+* Documentation
+
+- Initial import of the documentation for the perturbation manager.
+
+* Miscellaneous
+
+- Improved 'GetCholesky' in the sparse case: the 'RowSparse' matrix is no
+  longer converted to a dense matrix but to an 'ArrayRowSymSparse' matrix
+  before the decomposition.
+
+* Bug fixes
+
+
+Version 0.9 (2011-05-12)
+-----------
+
+* Methods
+
+- Added an implementation of the 4D-Var method ('FourDimensionalVariational').
+- Redesigned the perturbation manager so that adding new generators and new
+  distributions is easier, and added support for the TRNG library.
+- Improved the implementation of 'ExtendedKalmanFilter' and
+  'ReducedOrderExtendedKalmanFilter'.
+- Improved the consistency of 'MonteCarlo' with Verdandi.
+- Initial import of the function 'ComputeBLUE_vector'.
+- Added options to 'Method::Initialize' to indicate if the model or
+  observation manager have to be initialized or not.
+- Improved the snapshot recording so that $H^T y$ and $H^T H x$ can be
+  recorded in 'ReducedMinimaxFilter'.
+- Added support for a model error variance provided as a scaled identity
+  matrix in 'ReducedMinimaxFilter'.
+- Added the ability to save the square root of the model error variance
+  in 'ReducedMinimaxFilter'.
+- Changed the initialization of the assimilation methods: the constructor now
+  takes no argument and the configuration file (as string or 'Ops' instance)
+  is the argument of the method 'Initialize'.
+
+* Observations
+
+- Added the ability to define a sparse observation operator with a Lua table.
+
+* Example models
+
+- Added the uncertainty description for the constant term in 'QuadraticModel'.
+- Removed 'ClampedBar' model, and renamed 'ParametricClampedBar' to
+  'ClampedBar'.
+
+* Documentation
+
+- Largely improved the installation description.
+- Initial import of the documentation for the example programs associated
+  with the shallow-water model and the clamped-bar model.
+- Added documentation on Lua configuration files.
+- Added documentation for the Monte Carlo method.
+- Made algorithms notation uniform in documentation.
+
+* Miscellaneous
+
+- Largely improved the compatibility with Visual C++.
+- Added support for a user-defined dependency list in the "SConstruct".
+- Extended the SWIG interface to the methods 'ForwardDriver' and
+  'ReducedOrderExtendedKalmanFilter', and to the 'ClampedBar' model.
+- Uniformized 'ClampedBar' example programs.
+
+* Bug fixes
+
+- In 'ReducedOrderExtendedKalmanFilter::Analyze()', the computation of the
+  matrix 'U' was erroneous.
+- The correlations between normal variables were properly handled only if they
+  were equal to 0 or 1 in 'BasePerturbationManager'.
+- The interpolation in 'ObservationAggregator' was erroneous.
+- The tangent linear model was applied at time "h + 1"  in the method
+  'PropagateCovianceMatrix()' of 'ExtendedKalmanFilter'.
+- In 'ReducedOrderExtendedKalmanFilter::PropagateCovianceMatrix()', the model
+  was applied at time "h + 1", but it was the tangent linear model that had
+  to be applied at time "h".
+- 'MessageHandler::RemoveRecipient' did not properly erase elements
+  from the recipients map.
+- The reduction failed when the number of snapshots was greater than
+  the size of the state in 'ReducedMinimaxFilter'.
+- An exception was raised when the size of the reduced state changed
+  in 'ReducedMinimaxFilter'.
+- In SWIG interface: the preprocessing directive 'VERDANDI_SPARSE' was defined
+  in "verdandi.i" while the directive 'VERDANDI_DENSE' was defined
+  in "verdandi.cpp".
+- In the methods 'BasePerturbationManager::Sample' for vector collections,
+  the perturbation were not deallocated.
+- The time was not initialized in the constructors of 'ClampedBar'.
+- Assembling Newmark matrices was erroneous in 'ClampedBar'.
+
+
+Version 0.8 (2010-12-07)
+-----------
+
+* Methods
+
+- Added the reduced-order extended Kalman filter
+  ('ReducedOrderExtendedKalmanFilter').
+- Added the reduced-order unscented Kalman filter
+  ('ReducedOrderUnscentedKalmanFilter').
+- Added the reduced minimax filter ('ReducedMinimax').
+- Added support for Monte Carlo simulations ('MonteCarlo').
+- Modified 'UnscentedKalmanFilter' to manage model states of type
+  'VectorCollection'.
+
+* Observations
+
+- Improved the error management in 'LinearObservationManager'.
+- Enabled reading a sparse observation operator from file in
+  'LinearObservationManager'.
+
+* Example models
+
+- Added the model 'ParametricClampedBar'.
+
+* Miscellaneous
+
+- Added options to the SConstruct to provide Mumps and UMFPack compilation.
+- Configured Ops so that, when an error occurs, the program throws an
+  exception instead of aborting.
+- Added option '%{rank}' to the Logger definition file to enable each process
+  to have its own log file.
+
+* Bug fixes
+
+- The quadratic term was not properly computed in the method 'Forward' (and
+  therefore in 'ApplyOperator' as well) of 'QuadraticModel'.
+- The tangent linear model of 'QuadraticModel' was erroneous in case no
+  quadratic term and no linear term were defined.
+
+
+Version 0.7 (2010-09-05)
+-----------
+
+First tagged version.
+
+
+The development started in 2008.

@@ -1,0 +1,55 @@
+/*! \file monte_carlo.dox
+    \brief Monte Carlo.
+*/
+
+/*!
+\page monte_carlo Monte Carlo
+
+Verdandi provides a C++ implementation of the Monte Carlo method.
+
+The Monte Carlo method is implemented in <code>MonteCarlo.hxx</code> and <code>MonteCarlo.cxx</code>. The class \link Verdandi::MonteCarlo MonteCarlo\endlink is a template class: <code>MonteCarlo<T, ClassModel></code>. <code>T</code> is the type of the elements to be stored (e.g., <code>double</code>), <code>ClassModel</code> is the type of the model (e.g., <code>QuadraticModel<double></code>).
+
+A simulation with the Monte Carlo method may be carried
+out with the following C++ lines:
+\precode
+MonteCarlo<real,  QuadraticModel<real> > driver; [1]
+
+driver.Initialize(argv[1]); [2]
+
+while (!driver.HasFinished()) [5]
+{
+    driver.InitializeStep(); [3]
+    driver.Forward(); [4]
+}
+\endprecode
+
+\comment
+  <li> First build the \link Verdandi::MonteCarlo MonteCarlo\endlink driver with the construction \link Verdandi::MonteCarlo::MonteCarlo() MonteCarlo\endlink. </li>
+
+  <li> Then initialize the driver, the model and the perturbation manager,and read option keys in the configuration file with the method \link Verdandi::MonteCarlo::Initialize(string configuration_file) Initialize(configuration_file)\endlink. Model parameters are perturbed at that stage. </li>
+
+  <li> Optionally initialize the model before a time step with the method \link Verdandi::MonteCarlo::InitializeStep() MonteCarlo()\endlink. Pertubations are applied to model parameters. </li>
+
+  <li> Perform a step forward with the method \link Verdandi::MonteCarlo::Forward() Forward()\endlink. </li>
+
+  <li> Compute until the model has finished: the method \link Verdandi::MonteCarlo::HasFinished() HasFinished()\endlink returns true if the simulation is done, false otherwise. </li>
+\endcomment
+
+Note that one call to the Monte Carlo driver will only run a single simulation. In order to compute a full Monte Carlo simulation, the program above should be called as many times as needed.
+
+\section mc_algorithm Monte Carlo algorithm
+
+The Monte Carlo method consists in perturbing selected parameters from the model. The perturbation is generated randomly and can be applied either at each step or only at the initial time. <br>
+
+<ol>
+        <li>At time \f$t_0\f$, the parameters (or some parameters) \f$p_0\f$ of the model are perturbed and denoted \f$\widetilde p_0\f$. The initial condition \f$x^f_0\f$ can also be perturbed. </li>
+        <li>For every time \f$t_h, h \ge 0\f$, 
+                - \f$x_{h+1}^f = \mathcal{M}_h(x_h^f, \widetilde p_h)\f$, <br>
+                - the parameters \f$p_{h+1}\f$ are pertubed and denoted \f$\widetilde p_{h+1}\f$. </li>
+</ol>
+With: <br>
+\f$x_h^f\f$ state vector; <br>
+\f$\mathcal{M}_h\f$ model; <br>
+\f$p_h\f$ model parameters; <br>
+\f$\widetilde p_h\f$ perturbed model parameters.
+*/

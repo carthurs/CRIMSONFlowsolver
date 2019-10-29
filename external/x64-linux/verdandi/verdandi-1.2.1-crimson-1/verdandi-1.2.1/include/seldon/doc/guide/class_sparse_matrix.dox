@@ -1,0 +1,2056 @@
+/*! \file class_sparse_matrix.dox
+    \brief Sparse Matrices.
+*/
+
+/*!
+\page class_sparse_matrix Sparse Matrices
+
+<p> First, methods and functions related to sparse matrices stored as a vector of sparse rows are detailed.  This type of matrix is interesting because it allows fast insertion of elements in the matrix.  Then the matrices using Harwell-Boeing format are detailed. Functions related to sparse matrices are explained. We advise the user to use always storage of matrix by rows, since this last storage is more efficient for the matrix-vector product. Row and column indices start at 0, as for dense matrices. </p>
+
+
+<h2>Basic declaration of easily modifiable sparse matrices:</h2>
+
+<i>These matrices are available only after <code>SeldonSolver.hxx</code> has been included.</i>
+
+<h4>Classes :</h4>
+<p><a>Matrix&lt;T, Prop, ArrayRowSparse&gt;</a> <br/>
+<a>Matrix&lt;T, Prop, ArrayColSparse&gt;</a> <br/>
+<a>Matrix&lt;T, Prop, ArrayRowSymSparse&gt;</a> <br/>
+<a>Matrix&lt;T, Prop, ArrayColSymSparse&gt;</a></p>
+
+
+<h4>Example :</h4>
+\precode
+// sparse matrix of doubles
+Matrix<double, General, ArrayRowSparse> A;
+
+// sparse symmetric matrix
+Matrix<float, Symmetric, ArrayRowSymSparse> B;
+
+// changing size of the matrix
+A.Reallocate(m, n);
+
+// a_13 = a_13 + 1.5
+A.AddInteraction(1, 3, 1.5);
+\endprecode
+
+
+<!--<h4>Related topics:</h4>-->
+<!--<p><a href="sparse_complex_matrices.php"> Page about sparse complex matrices</a></p>-->
+
+
+<h2>Methods for easily modifiable sparse matrices :</h2>
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#constructor"> Matrix constructors </a> </td> <td></td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#operator"> Matrix operators </a> </td> <td></td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetM </a> </td>
+ <td class="category-table-td"> returns the number of rows in the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getn"> GetN </a> </td>
+ <td class="category-table-td"> returns the number of columns in the matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdatasize"> GetDataSize </a> </td>
+ <td class="category-table-td"> returns the number of elements effectively stored </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdatasize"> GetNonZeros </a> </td>
+ <td class="category-table-td"> returns the number of elements effectively stored </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetData </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing the values </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getindex"> GetIndex </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing column numbers </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#setdata"> SetData </a> </td>
+ <td class="category-table-td"> sets the pointer to the arrays containing values and column numbers </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#nullify"> Nullify </a> </td>
+ <td class="category-table-td"> removes elements of the matrix without releasing memory</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#clear"> Clear </a> </td>
+ <td class="category-table-td"> removes all elements of the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#reallocate"> Reallocate </a> </td>
+ <td class="category-table-td"> changes the size of matrix (does not
+ keep previous elements) </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#resize"> Resize </a> </td>
+ <td class="category-table-td"> changes the size of matrix (keeps previous elements) </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#value"> Value </a> </td>
+ <td class="category-table-td"> direct access to a value</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#index"> Index </a> </td>
+ <td class="category-table-td"> direct access to a column number</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#zero"> Zero </a> </td>
+ <td class="category-table-td"> sets all elements to zero </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#setidentity"> SetIdentity </a> </td>
+ <td class="category-table-td"> sets matrix to identity matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#fill"> Fill </a> </td>
+ <td class="category-table-td"> sets all elements to a given value </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#fillrand"> FillRand </a> </td>
+ <td class="category-table-td"> fills randomly the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#reallocaterow"> ReallocateRow / ReallocateColumn </a> </td>
+ <td class="category-table-td"> changes the size of a row </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#resizerow"> ResizeRow / ResizeColumn </a> </td>
+ <td class="category-table-td"> changes the size of a row and keeps previous values</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#clearrow"> ClearRow / ClearColumn </a> </td>
+ <td class="category-table-td"> clears a row </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#swaprow"> SwapRow / SwapColumn </a> </td>
+ <td class="category-table-td"> exchanges two rows </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#replaceindexrow"> ReplaceIndexRow / ReplaceIndexColumn </a> </td>
+ <td class="category-table-td"> changes column numbers </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getrowsize"> GetRowSize / GetColumnSize </a> </td>
+ <td class="category-table-td"> returns the number of elements in the row </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#printrow"> PrintRow / PrintColumn </a> </td>
+ <td class="category-table-td"> prints a row </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#assemblerow"> AssembleRow / AssembleColumn </a> </td>
+ <td class="category-table-td"> assembles a row </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#addinteraction"> AddInteraction </a> </td>
+ <td class="category-table-td"> adds/inserts an element in the matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#addinteractionrow"> AddInteractionRow </a> </td>
+ <td class="category-table-td"> adds/inserts an element in a matrix row
+ </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#addinteractioncolumn"> AddInteractionColumn </a> </td>
+ <td class="category-table-td"> adds/inserts elements in a matrix
+ column </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#print"> Print </a> </td>
+ <td class="category-table-td"> displays the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#write"> Write </a> </td>
+ <td class="category-table-td"> writes the vector in binary format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#read"> Read </a> </td>
+ <td class="category-table-td"> reads the vector in binary format </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#writetext"> WriteText </a> </td>
+ <td class="category-table-td"> writes the vector in text format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#readtext"> ReadText </a> </td>
+ <td class="category-table-td"> reads the vector in text format </td> </tr>
+</table>
+
+
+<p> Another class of storage of sparse matrices is available, the so-called Harwell-Boeing format. The values are stored in a single array, preventing from a fast insertion of elements. Nevertheless, this type of storage requires slightly less memory and the associated matrix-vector product is more efficient.  </p>
+
+
+<h2>Basic declaration of Harwell-Boeing sparse matrices:</h2>
+
+<h4>Classes :</h4>
+<p><a>Matrix&lt;T, Prop, RowSparse&gt;</a> <br/>
+<a>Matrix&lt;T, Prop, ColSparse&gt;</a> <br/>
+<a>Matrix&lt;T, Prop, RowSymSparse&gt;</a> <br/>
+<a>Matrix&lt;T, Prop, ColSymSparse&gt;</a></p>
+
+
+<h4>Example :</h4>
+\precode
+// sparse matrix of doubles
+Matrix<double, General, RowSparse> A;
+
+// sparse symmetric matrix
+Matrix<float, Symmetric, RowSymSparse> B;
+\endprecode
+
+
+<h2>Methods for Harwell-Boeing sparse matrices :</h2>
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#csr_constructor"> Matrix constructors </a> </td> <td></td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#csr_operator"> Matrix operators </a> </td> <td></td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetM </a> </td>
+ <td class="category-table-td"> returns the number of rows in the
+ matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getn"> GetN </a> </td>
+ <td class="category-table-td"> returns the number of columns in the matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdatasize"> GetDataSize </a> </td>
+ <td class="category-table-td"> returns the number of elements effectively stored </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdatasize"> GetNonZeros </a> </td>
+ <td class="category-table-td"> returns the number of elements effectively stored </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#csr_getdata"> GetData </a> </td>
+ <td class="category-table-td"> returns a pointer to the array containing the values </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#csr_getind"> GetInd </a> </td>
+ <td class="category-table-td"> returns a pointer to the array
+ containing column numbers </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#csr_getptr"> GetPtr </a> </td>
+ <td class="category-table-td"> returns a pointer to the array
+ containing row numbers </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#csr_getptr"> GetPtrSize </a> </td>
+ <td class="category-table-td"> returns size of array Ptr </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#csr_getind"> GetIndSize </a> </td>
+ <td class="category-table-td"> returns size of array Ind </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#clear"> Clear </a> </td>
+ <td class="category-table-td"> removes all elements of the matrix </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#csr_setdata"> SetData </a> </td>
+ <td class="category-table-td"> sets the pointer to the array
+ containing the values</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#csr_nullify"> Nullify </a> </td>
+ <td class="category-table-td"> clears the matrix without releasing memory</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#print"> Print </a> </td>
+ <td class="category-table-td"> displays the matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#write"> Write </a> </td>
+ <td class="category-table-td"> writes the vector in binary format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#read"> Read </a> </td>
+ <td class="category-table-td"> reads the vector in binary format </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#writetext"> WriteText </a> </td>
+ <td class="category-table-td"> writes the vector in text format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#readtext"> ReadText </a> </td>
+ <td class="category-table-td"> reads the vector in text format </td> </tr>
+</table>
+
+<h2>Functions :</h2>
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#mlt">Mlt </a></td> 
+ <td class="category-table-td"> multiplication by a scalar or matrix-vector product </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#mltadd">MltAdd </a></td> 
+ <td class="category-table-td"> performs a matrix-vector product</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#add">Add </a></td> 
+ <td class="category-table-td"> adds two matrices </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#copy">Copy </a></td> 
+ <td class="category-table-td"> copies/converts one matrix into another one
+ </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#permutematrix">PermuteMatrix </a></td> 
+ <td class="category-table-td"> applies permutation to matrix</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#scalematrix">ScaleMatrix </a></td> 
+ <td class="category-table-td"> applies a scaling both for columns and
+ rows</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#scaleleftmatrix">ScaleLeftMatrix </a></td> 
+ <td class="category-table-td"> applies a left scaling (on rows)
+ </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#getrow">GetRow </a></td> 
+ <td class="category-table-td"> returns a matrix row </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#setrow">SetRow </a></td> 
+ <td class="category-table-td"> changes a matrix row </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_matrix.php#getcol">GetCol </a></td> 
+ <td class="category-table-td"> returns a matrix column </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_matrix.php#setcol">SetCol </a></td> 
+ <td class="category-table-td"> changes a matrix column </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_lapack.php#getlu">GetLU</a></td> 
+ <td class="category-table-td"> performs a LU (or LDL^t) factorization</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_lapack.php#getlu">SolveLU</a></td> 
+ <td class="category-table-td"> solves linear system by using LU factorization</td> </tr>
+ <tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="iterative.php#sor">SOR</a></td> 
+ <td class="category-table-td"> applies successive over-relaxations to matrix</td> </tr>
+ <tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="iterative.php#solvers">Cg, Gmres, BiCgSTAB, etc</a></td> 
+ <td class="category-table-td"> solves iteratively a linear system</td> </tr>
+</table>
+
+
+
+<div class="separator"><a name="constructor"></a></div>
+
+
+
+<h3>Matrix constructors for ArrayRowSparse, ArrayRowSymSparse</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  Matrix();
+  Matrix(int m, int n);
+</pre>
+
+
+
+<h4> Example : </h4>
+\precode
+// default constructor -> empty matrix
+Matrix<double, General, ArrayRowSparse> V;
+cout << "Number of elements "<< V.GetDataSize() << endl; // should return 0 
+// then you can use Reallocate to set the number of rows and columns
+V.Reallocate(3, 2);
+// the last command doesn't create any non-zero element
+// you can create one with AddInteraction for example
+V.AddInteraction(0, 1, 1.5);
+
+// we construct symmetric matrix with 4 rows
+Matrix<double, Symmetric, ArrayRowSymSparse> W(4, 4);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocate">Reallocate</a><br/>
+<a href="#addinteraction">AddInteraction</a></p>
+
+
+<h4>Location :</h4>
+<p> Class Matrix_ArraySparse <br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="csr_constructor"></a></div>
+
+
+
+<h3>Matrix constructors for RowSparse, RowSymSparse</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  Matrix();
+  Matrix(int m, int n);
+  Matrix(int m, int n, int nnz);
+  Matrix(m, n, values, ptr, ind);
+</pre>
+
+
+<h4> Example : </h4>
+\precode
+// default constructor -> empty matrix
+Matrix<double, General, RowSparse> V;
+cout << "Number of elements "<< V.GetDataSize() << endl; // should return 0 
+
+// the two other constructors are useless
+Matrix<double, Symmetric, ArrayRowSymSparse> W(4, 4);
+Matrix<double, General, RowSparse> A(3, 4, 10);
+
+// in the last constructor you provide
+int m = 5; // number of rows
+int n = 6; // number of columns
+int nnz = 12; // number of non-zero entries
+Vector<double> values(nnz); // values
+values.FillRand(); // you have to initialize values
+Vector<int> columns(nnz); // for each value column number
+// for each row, column numbers are sorted
+// first row
+columns(0) = 0;
+columns(1) = 2;
+columns(2) = 4;
+// second row
+columns(3) = 1;
+// third row
+columns(4) = 0;
+columns(5) = 1;
+columns(6) = 3;
+// fourth row
+columns(7) = 4;
+columns(8) = 5;
+// last row
+columns(9) = 2;
+columns(10) = 3;
+columns(11) = 5;
+// for each row, index of first value
+Vector<int> ptr(m+1); 
+ptr(0) = 0;
+ptr(1) = 3;
+ptr(2) = 4;
+ptr(3) = 7;
+ptr(4) = 9;
+ptr(5) = 12;
+// values on the row are to be seeked between ptr(i) and ptr(i+1)
+
+// Now the constructor:
+Matrix<double, General, RowSparse> M(m, n, values, ptr, columns);
+// Note that 'values', 'ptr' and 'columns' are nullified (that is, emptied):
+// the arrays to which they pointed have been transferred to M.
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocate">Reallocate</a><br/>
+<a href="#csr_setdata">SetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx</p>
+
+
+
+<div class="separator"><a name="operator"></a></div>
+
+
+
+<h3>Matrix operators for ArrayRowSparse, ArrayRowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  const T&amp; operator (int i, int j) const;
+  T&amp; operator (int i, int j);
+  Matrix&amp; operator =(const T0&amp; alpha)
+</pre>
+
+
+<p>The operator () can be used to insert or modify elements of matrix. However, this operator will create a non-zero entry (if it does not exist) except if the matrix is declared as const. </p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> V(3, 3);
+// use of operator () to modify matrix
+V(0, 0) = 2.0;
+V(1, 0) = V(0, 0) + 1.0;
+
+// this command will add a non-zero entry v_20
+cout << V(2, 0) << endl;
+
+// set all elements to a given value
+V = 1;
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#addinteraction">AddInteraction</a><br/>
+<a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="csr_operator"></a></div>
+
+
+
+<h3>Matrix operators for RowSparse, RowSymSparse</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T operator (int i, int j) const;
+</pre>
+
+
+<p>The operator () cannot be used to insert or modify elements of matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, RowSparse> V(3, 3);
+// use of operator () to read elements of matrix
+cout << "V(0,0) = " << V(0, 0) << endl;
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#setdata">SetData</a><br/></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx</p>
+
+
+
+<div class="separator"><a name="getm"></a></div>
+
+
+
+<h3>GetM</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetM() const;
+</pre>
+
+
+<p>This method returns the number of rows.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float, General, ArrayRowSparse> V(3, 2);
+// V.GetM() should return 3 
+cout << "Number of rows of V " << V.GetM() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Class Matrix_ArraySparse<br/>
+Matrix_Base.hxx 
+Matrix_Base.cxx<br/>
+Matrix_ArraySparse.hxx 
+Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="getn"></a></div>
+
+
+
+<h3>GetN</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetN() const;
+</pre>
+
+<p>This method returns the number of columns</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float, Symmetric, ArrayRowSymSparse> V(3, 2);
+// V.GetN() should return 2 
+cout << "Number of rows of V " << V.GetN() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Class Matrix_ArraySparse<br/>
+Matrix_Base.hxx 
+Matrix_Base.cxx<br/>
+Matrix_ArraySparse.hxx 
+Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="getdatasize"></a></div>
+
+
+
+<h3>GetDataSize, GetNonZeros</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetDataSize() const;
+  int GetNonZeros() const;
+</pre>
+
+
+<p>These methods returns the number of elements effectively stored in the matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<float, Symmetric, ArrayRowSymSparse> V(3, 3);
+V.AddInteraction(0, 1, 1.0);
+// V.GetDataSize() should return 1
+cout << "Number of elements of V " << V.GetSize() << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Class Matrix_ArraySparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx<br/>
+Matrix_ArraySparse.hxx 
+Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="getdata"></a></div>
+
+
+
+<h3>GetData for ArrayRowSparse, ArrayRowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T* GetData(int i) const;
+  Vector&lt;T, Vect_Sparse, Allocator&gt;* GetData() const;
+ </pre>
+
+
+<p>These methods are useful to retrieve the pointer to the values, but they need to be used with caution.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> V(3, 4); V.Fill();
+// values of second row are retrieved
+int irow = 1;
+double* data = V.GetData(irow);
+// you can use data as a normal C array
+// here the sum of elements of the row is computed
+double sum = 0;
+for (int i = 0; i < V.GetRowSize(irow); i++)
+  sum += data[i];
+
+// you can also retrieve all the rows
+Vector<double, Vect_Sparse>* all_rows = V.GetData();
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse <br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="clear"></a></div>
+
+
+
+<h3>Clear</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Clear();
+</pre>
+
+
+<p>This method removes all the elements of the matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(3, 3);
+A.AddInteraction(0, 2, 2.8);
+// clears matrix A
+A.Clear();
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Class Matrix_ArraySparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx<br/>
+Matrix_ArraySparse.hxx 
+Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="reallocate"></a></div>
+
+
+
+<h3>Reallocate</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Reallocate(int, int);
+</pre>
+
+
+<p>This method changes the size of the matrix, but removes previous elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 4);
+A.AddInteraction(0, 2, 2.8);
+// resizes matrix A
+A.Reallocate(4, 3);
+// previous elements are removed : A is empty
+cout << "number of non-zero entries " << A.GetDataSize() << endl;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#resize">Resize</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="resize"></a></div>
+
+
+
+<h3>Resize</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Resize(int, int);
+</pre>
+
+
+<p>This method changes the size of the matrix, and keeps previous elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, Symmetric, ArrayRowSymSparse> A(4,4);
+A(1,3) = 2.0;
+A(0,2) = -1.0;
+// resizes matrix A and keeps previous added interactions
+A.Resize(5,5);
+// GetDataSize() should return 2
+cout << "number of non-zero entries of A " << A.GetDataSize() << endl;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#reallocate">Reallocate</a></p>
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="setdata"></a></div>
+
+
+
+<h3>SetData for ArrayRowSparse, ArrayRowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetData(int, int, T*, int*);
+  void SetData(int, int, Vector&lt;T, Vect_Sparse&gt;*);
+</pre>
+
+
+<p>This method changes a row of the matrix or all the rows by directly changing pointers. This is a low-level method and should be used very cautiously. It is better to use other methods to modify the matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+// first use, you construct all the rows
+int m = 10, n = 9;
+Vector<Vector<double, Vect_Sparse> > rows(m);
+
+rows(0).AddInteraction(1, 2.4);
+rows(1).AddInteraction(3, -1.2);
+// ...
+
+// then you can feed a sparse matrix with rows
+Matrix<double, General, ArrayRowSparse> A;
+A.SetData(m, n, rows.GetData());
+// you nullify rows to avoid segmentation fault
+rows.Nullify();
+
+// second use, you specify one row
+Vector<double, Vect_Sparse> one_row;
+one_row.AddInteraction(4, 2.3);
+one_row.AddInteraction(0, -0.7);
+// and you put it in the matrix
+int irow = 2;
+A.SetData(irow, one_row.GetM(), one_row.GetData(), one_row.GetIndex());
+one_row.Nullify();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#getdata">GetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="nullify"></a></div>
+
+
+
+<h3>Nullify for ArrayRowSparse, ArrayRowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Nullify();
+  void Nullify(int);
+</pre>
+
+
+<p>This method clears the matrix without releasing memory.  You can also clear one single row.  This method should be used carefully, and generally in conjunction with method SetData.  </p>
+
+
+<h4>Example :</h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A;
+// you retrieve one row of A
+int irow = 2;
+Vector<double, Vect_Sparse> one_row;
+one_row.SetData(A.GetRowSize(irow), A.GetData(irow), A.GetIndex(irow));
+// you need to call Nullify to avoid segmentation fault
+A.Nullify(irow);
+
+// you can retrieve all the rows
+Vector<Vector<double, Vect_Sparse> > rows;
+rows.SetData(m, A.GetData());
+// again Nullify is necessary
+A.Nullify();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#setdata">SetData</a><br/>
+<a href="#getdata">GetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="getindex"></a></div>
+
+
+
+<h3>GetIndex for ArrayRowSparse, ArrayRowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void GetIndex(int);
+</pre>
+
+
+<p>This method returns the pointer to the array containing column numbers of the specified row.  </p>
+
+
+<h4>Example :</h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A;
+// you retrieve column numbers of row 1
+IVect col;
+int irow = 1;
+col.SetData(A.GetRowSize(irow), A.GetIndex(irow));
+// after use of col, don't forget to call Nullify
+col.Nullify();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#setdata">SetData</a><br/>
+<a href="#getdata">GetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="csr_setdata"></a></div>
+
+
+
+<h3>SetData for RowSparse, RowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetData(int, int, int, T*, int*, int*);
+  void SetData(int, int, Vector&lt;T&gt;, Vector&lt;int&gt;, Vector&lt;int&gt;);
+</pre>
+
+
+<p>This method initializes the matrix and is equivalent to a call to the
+ <a href="#csr_constructor">constructor</a>.</p>
+
+
+<h4>Example : </h4>
+\precode
+// first you construct the matrix by using arrays ptr, values, columns
+int m = 5; // number of rows
+int n = 6; // number of columns
+int nnz = 12; // number of non-zero entries
+Vector<double> values(nnz); // values
+values.FillRand(); // you have to initialize values
+Vector<int> columns(nnz); // for each value column number
+// for each row, column numbers are sorted
+// first row
+columns(0) = 0;
+columns(1) = 2;
+columns(2) = 4;
+// second row
+columns(3) = 1;
+// third row
+columns(4) = 0;
+columns(5) = 1;
+columns(6) = 3;
+// fourth row
+columns(7) = 4;
+columns(8) = 5;
+// last row
+columns(9) = 2;
+columns(10) = 3;
+columns(11) = 5;
+// for each row, index of first value
+Vector<int> ptr(m+1); 
+ptr(0) = 0;
+ptr(1) = 3;
+ptr(2) = 4;
+ptr(3) = 7;
+ptr(4) = 9;
+ptr(5) = 12;
+
+// then you call SetData
+Matrix<double, General, RowSparse> A;
+A.SetData(m, n, values, ptr, columns);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#csr_getdata">GetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx</p>
+
+
+
+<div class="separator"><a name="csr_nullify"></a></div>
+
+
+
+<h3>Nullify</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Nullify();
+</pre>
+
+
+<p>This method clears the matrix without releasing memory.  This method should be used carefully, and generally in conjunction with method SetData. You can look at the example shown in the explanation of method SetData.  </p>
+
+
+<h4>Related topics :</h4>
+<p><a href="#csr_setdata">SetData</a><br/>
+<a href="#csr_getdata">GetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx</p>
+
+
+
+<div class="separator"><a name="csr_getdata"></a></div>
+
+
+
+<h3>GetData for RowSparse, RowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T* GetData() const;
+ </pre>
+
+
+<p>This method retrieves the pointer to the values.</p>
+
+
+<h4>Example : </h4>
+\precode
+// construction of a sparse matrix
+Matrix<double, General, RowSparse> V(m, n, nnz, values, ptr, columns);
+// values of non-zero entries are retrieved
+double* data = V.GetData();
+// you can use data as a normal C array
+// here the sum of elements is computed
+double sum = 0;
+for (int i = 0; i < V.GetDataSize(); i++)
+  sum += data[i];
+
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#csr_setdata">SetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Base<br/>
+Matrix_Base.hxx
+ Matrix_Base.cxx</p>
+
+
+
+<div class="separator"><a name="csr_getptr"></a></div>
+
+
+
+<h3>GetPtr, GetPtrSize for RowSparse, RowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  int* GetPtr() const;
+  int GetPtrSize() const;
+ </pre>
+
+
+<p>This method retrieves the pointer to the indices of the first element of each row.</p>
+
+
+<h4>Example : </h4>
+\precode
+// construction of a sparse matrix (m = number of rows)
+Matrix<double, General, RowSparse> V(m, n, nnz, values, ptr, columns);
+// we get indices of the first element of each row
+int* ptr = V.GetPtr();
+// and also the size of this array (should be number of rows + 1)
+int size = V.GetPtrSize();
+// you can use data as a normal C array
+// here the number of elements of each row is computed
+Vector<int> size_row(m);
+for (int i = 0; i < m; i++)
+  size_row(i) = ptr[i+1] - ptr[i];
+
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#csr_setdata">SetData</a><br/>
+<a href="#csr_getdata">GetData</a><br/>
+<a href="#csr_getind">GetInd</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx</p>
+
+
+
+<div class="separator"><a name="csr_getind"></a></div>
+
+
+
+<h3>GetInd, GetIndSize for RowSparse, RowSymSparse</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  int* GetInd() const;
+  int GetIndSize() const;
+ </pre>
+
+
+<p>This method retrieves the pointer to the column numbers of each row.</p>
+
+
+<h4>Example : </h4>
+\precode
+// construction of a sparse matrix (m = number of rows)
+Matrix<double, General, RowSparse> V(m, n, nnz, values, ptr, columns);
+// we get column numbers
+int* ind = V.GetInd();
+// and also the size of this array (should be nnz)
+int size = V.GetIndSize();
+// you can use data as a normal C array
+// here the number of elements of each column is computed
+Vector<int> size_col(n);
+size_col.Zero();
+for (int i = 0; i < nnz; i++)
+  size_col(ind[i])++;
+
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#csr_setdata">SetData</a><br/>
+<a href="#csr_getdata">GetData</a><br/>
+<a href="#csr_getptr">GetPtr</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_Sparse<br/>
+Class Matrix_SymSparse<br/>
+Matrix_Sparse.hxx
+ Matrix_Sparse.cxx<br/>
+Matrix_SymSparse.hxx 
+Matrix_SymSparse.cxx</p>
+
+
+
+<div class="separator"><a name="index"></a></div>
+
+
+
+<h3>Index</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  int Index(int, int) const;
+  int&amp; Index(int, int);
+ </pre>
+
+
+<p>This method allows the user to modify directly the column numbers.  The drawback of this method is that the user has to take care that the column numbers are sorted and unique (no duplicate).</p>
+
+
+<h4>Example : </h4>
+\precode
+// declaration of a sparse matrix
+int m = 5;
+int n = 4;
+Matrix<double, General, ArrayRowSparse> V(m, n);
+
+// we set the number of non-zero entries of first row
+V.ReallocateRow(0, 2);
+// you initialize column numbers with Index, and values with Value
+V.Index(0, 0) = 1; V.Value(0, 0) = 0.5;
+V.Index(0, 1) = 3; V.Value(0, 1) = -0.5;
+// now matrix should be equal to [0 1 -0.5; 0 3 -0.5]
+cout << " V = " << V << endl;
+
+// if you add a new value on the first row
+V.ResizeRow(0, 3);
+V.Index(0, 2) = 0; V.Value(0, 2) = 1.1;
+// you better be careful because the new entry is not at the correct
+position
+// one way to fix that problem is to call Assemble
+V.AssembleRow(0);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocaterow">ReallocateRow</a><br/>
+<a href="#resizerow">ResizeRow</a><br/>
+<a href="#assemblerow">AssembleRow</a><br/>
+<a href="#addinteractionrow">AddInteractionRow</a><br/>
+<a href="#value">Value</a><br/></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="value"></a></div>
+
+
+
+<h3>Value</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  const T&amp; Value(int, int) const;
+  T&amp; Value(int, int);
+ </pre>
+
+
+<p>This method allows the user to modify directly the values.</p>
+
+
+<h4>Example : </h4>
+\precode
+// declaration of a sparse matrix
+int m = 5;
+int n = 4;
+Matrix<double, General, ArrayRowSparse> V(m, n);
+
+// we set the number of non-zero entries of first row
+V.ReallocateRow(0, 2);
+// you initialize column numbers with Index, and values with Value
+V.Index(0, 0) = 1; V.Value(0, 0) = 0.5;
+V.Index(0, 1) = 3; V.Value(0, 1) = -0.5;
+// now matrix should be equal to [0 1 -0.5; 0 3 -0.5]
+cout << " V = " << V << endl;
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocaterow">ReallocateRow</a><br/>
+<a href="#index">Index</a><br/></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="zero"></a></div>
+
+
+
+<h3>Zero</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Zero();
+</pre>
+
+
+<p>This method sets to 0 all values contained in non-zero entries.  This is useful when you want to keep the pattern of the sparse matrix, but initialize values to 0. </p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> V(5, 3);
+// creation of pattern
+V.AddInteraction(0, 3, 1.0);
+V.AddInteraction(2, 4, -1.0);
+
+// values are set to 0
+V.Zero();
+
+// then you can increment values of the pattern
+V(0, 3) += 1.5;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="setidentity"></a></div>
+
+
+
+<h3>SetIdentity</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetIdentity();
+</pre>
+
+
+<p>This method sets all elements to 0, except on the diagonal set to 1.  This forms the so-called identity matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, Symmetric, ArrayRowSymSparse> V(5, 5);
+// initialization
+V.SetIdentity();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="fill"></a></div>
+
+
+
+<h3>Fill</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Fill();
+  void Fill(const T0&amp; );
+</pre>
+
+
+<p>This method fills matrix with 0, 1, 2, etc or with a given value.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5,5);
+A(1,2) = 3;
+A(2,4) = 5;
+A(3,0) = 6;
+A.Fill();
+// A should contain [1 2 0.0, 2 4 1.0, 3 0 2.0]
+
+A.Fill(2);
+// A should contain [1 2 2.0, 2 4 2.0, 3 0 2.0]
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#zero">Zero</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="fillrand"></a></div>
+
+
+
+<h3>FillRand</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void FillRand();
+</pre>
+
+
+<p>This method sets values of non-zero entries randomly.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 3);
+A(1,2) = 0.1;
+A(2,4) = 0.1;
+A.FillRand();
+// A should contain 2 non-zero entries with random values
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="reallocaterow"></a></div>
+
+
+
+<h3>ReallocateRow / ReallocateColumn</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ReallocateRow(int, int );
+</pre>
+
+
+<p>ReallocateColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method creates n non-zero entries in specified row.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+// for second row, we create 3 non-zero entries
+int irow = 1;
+int n = 3;
+A.ReallocateRow(irow, n);
+// you need to initialize elements of the row
+A.Index(irow, 0) = 0; A.Value(irow, 0) = 0.5;
+A.Index(irow, 1) = 2; A.Value(irow, 1) = -0.4;
+A.Index(irow, 2) = 3; A.Value(irow, 2) = 0.6;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#index">Index</a><br/>
+<a href="#value">Value</a><br/>
+<a href="#resizerow">ResizeRow</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="resizerow"></a></div>
+
+
+
+<h3>ResizeRow / ResizeColumn</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ResizeRow(int, int );
+</pre>
+
+
+<p>ResizeColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method creates n non-zero entries in specified row, and keeps previous elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+// for second row, we create 3 non-zero entries
+int irow = 1;
+int n = 3;
+A.ReallocateRow(irow, n);
+// you need to initialize elements of the row
+A.Index(irow, 0) = 0; A.Value(irow, 0) = 0.5;
+A.Index(irow, 1) = 2; A.Value(irow, 1) = -0.4;
+A.Index(irow, 2) = 3; A.Value(irow, 2) = 0.6;
+
+// you can change the size of the row
+A.ResizeRow(irow, n+1);
+// you need to initialize only the new entry
+A.Index(irow, 3) = 5; A.Index(irow, 3) = 3.5;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#index">Index</a><br/>
+<a href="#value">Value</a><br/>
+<a href="#reallocaterow">ReallocateRow</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="clearrow"></a></div>
+
+
+
+<h3>ClearRow / ClearColumn</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ClearRow(int,);
+</pre>
+
+
+<p>ClearColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method removes non-zero entries in specified row.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+A(1, 3) = 4.0; // one non-zero entry in second row
+// we clear second row
+A.ClearRow(1);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#index">Index</a><br/>
+<a href="#value">Value</a><br/>
+<a href="#resizerow">ResizeRow</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="swaprow"></a></div>
+
+
+
+<h3>SwapRow / SwapColumn</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ClearRow(int);
+</pre>
+
+
+<p>SwapColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method swaps two rows. This method should be used very cautiously for symmetric matrices, since in that case only upper part of the matrix is stored.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+A(1, 3) = 4.0; // one non-zero entry in second row
+A(2, 4) = -1.0;
+// we swap third and second row
+A.SwapRow(1, 2);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="functions_matrix.php#permutematrix">PermuteMatrix</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="replaceindexrow"></a></div>
+
+
+
+<h3>ReplaceIndexRow / ReplaceIndexColumn</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ReplaceIndexRow(int, Vector&lt;int&gt;&amp;);
+</pre>
+
+
+<p>ReplaceIndexColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method changes column numbers of the specified row.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+A(1, 3) = 4.0;
+A(1, 4) = -1.0;
+// we change column numbers of second row
+IVect new_number(2);
+new_number(0) = 0;
+new_number(1) = 2;
+A.ReplaceIndexRow(1, new_number);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="getrowsize"></a></div>
+
+
+
+<h3>GetRowSize / GetColumnSize</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void GetRowSize(int) const;
+</pre>
+
+
+<p>GetColumnSize is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method returns the number of non-zero entries in the specified row.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+A(1, 3) = 4.0; 
+A(1, 4) = -1.0;
+// two non-zero entries in second row
+cout << "Number of elements in second row " << A.GetRowSize(1) << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="printrow"></a></div>
+
+
+
+<h3>PrintRow / PrintColumn</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void PrintRow(int) const;
+</pre>
+
+
+<p>PrintColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method returns the number of non-zero entries in the specified row.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 6);
+A(1, 3) = 4.0; 
+A(1, 4) = -1.0;
+// we print second row
+cout << "Second row of A " << A.PrintRow(1) << endl;
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="assemblerow"></a></div>
+
+
+
+<h3>AssembleRow / AssembleColumn</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void AssembleRow(int) const;
+</pre>
+
+
+<p>AssembleColumn is the name used for storages ArrayColSparse and ArrayColSymSparse.  This method sorts and merges non-zero entries of a row. You don't need to call this method if you are using methods <a href="#addinteraction">AddInteraction</a>, <a href="#addinteractionrow">AddInteractionRow</a> or the access operator ().</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 5);
+A.ReallocateRow(1, 3);
+// we initialize non-zero entries but non-sorted and with duplicates
+A.Index(1, 0) = 4; A.Value(1, 0) = 1.2;
+A.Index(1, 1) = 2; A.Value(1, 1) = -0.7;
+A.Index(1, 2) = 4; A.Value(1, 2) = 2.5;
+
+// we sort column numbers of row 1
+A.AssembleRow(1);
+// now A should be equal to [1 2 -0.7, 1 4 3.7]
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#index">Index</a><br/>
+<a href="#value">Value</a><br/>
+<a href="#addinteraction">AddInteraction</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="addinteraction"></a></div>
+
+
+
+<h3>AddInteraction</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void AddInteraction(int, int, T);
+</pre>
+
+
+<p>This methods adds/inserts a value in the matrix. This is equivalent to use the access operator () in conjunction with operator +=.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 5);
+// insertion
+A.AddInteraction(1, 3, 2.6);
+// we add
+A.AddInteraction(1, 3, -1.0);
+// now A should be equal to [1 3 1.6]
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#addinteractionrow">AddInteractionRow</a><br/>
+<a href="#addinteractioncolumn">AddInteractionColumn</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="addinteractionrow"></a></div>
+
+
+
+<h3>AddInteractionRow</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void AddInteractionRow(int, int, Vector&lt;int&gt;, Vector&lt;T&gt;);
+</pre>
+
+
+<p>This methods adds/inserts several values in a row of the matrix. This is more efficient to use that method rather than calling AddInteraction several times.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 5);
+// insertion, you don't need to sort column numbers
+int irow = 2;
+int nb_values = 3;
+IVect col(nb_values);
+Vector<double> values(nb_values);
+col(0) = 0; values(0) = 0.1;
+col(1) = 3; values(1) = 0.6;
+col(2) = 2; values(2) = -1.4;
+
+A.AddInteractionRow(irow, nb_values, col, values);
+
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#addinteraction">AddInteraction</a><br/>
+<a href="#addinteractioncolumn">AddInteractionColumn</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="addinteractioncolumn"></a></div>
+
+
+
+<h3>AddInteractionColumn</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void AddInteractionColumns(int, int, Vector&lt;int&gt;, Vector&lt;T&gt;);
+</pre>
+
+
+<p>This methods adds/inserts several values in a column of the matrix. </p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(5, 5);
+// insertion, you don't need to sort row numbers
+int icol = 2;
+int nb_values = 3;
+IVect row(nb_values);
+Vector<double> values(nb_values);
+row(0) = 0; values(0) = 0.1;
+row(1) = 3; values(1) = 0.6;
+row(2) = 2; values(2) = -1.4;
+
+A.AddInteractionColumn(icol, nb_values, row, values);
+
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#addinteraction">AddInteraction</a><br/>
+<a href="#addinteractionrow">AddInteractionRow</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="print"></a></div>
+
+
+
+<h3>Print</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Print() const;
+</pre>
+
+
+<p>This method displays the matrix.</p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="write"></a></div>
+
+
+
+<h3>Write</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Write(string) const;
+  void Write(ofstream&amp;) const;
+</pre>
+
+
+<p>This method writes the matrix on a file/stream in binary format.  The file will contain the number of rows, columns, non-zero entries, then the array of values, indices of first elements of rows, and finals the array of column numbers.</p>
+
+
+<h4>Example : </h4>
+\precode
+// construction of a sparse matrix
+Matrix<double, General, RowSparse> A(m, n, nnz, values, ptr, columns); 
+// you can write directly in a file
+A.Write("matrix.dat");
+
+// or open a stream with other datas
+ofstream file_out("matrix.dat");
+int my_info = 3;
+file_out.write(reinterpret_cast<char*>(&my_info), sizeof(int));
+A.Write(file_out);
+file_out.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="read"></a></div>
+
+
+
+<h3>Read</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Read(string);
+  void Read(ifstream&amp;);
+</pre>
+
+
+<p>This method sets the matrix from a file/stream in binary format.  The file contains the number of rows, columns, non-zero entries, then the array of values, indices of first elements of each row, column numbers.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General RowSparse> A; 
+// you can read directly on a file
+A.Read("matrix.dat");
+
+// or read from a stream
+ifstream file_in("matrix.dat");
+int my_info;
+file_in.read(reinterpret_cast<char*>(&my_info), sizeof(int));
+A.Read(file_in);
+file_in.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="writetext"></a></div>
+
+
+
+<h3>WriteText</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void WriteText(string) const;
+  void WriteText(ofstream&amp;) const;
+</pre>
+
+
+<p>This method writes the matrix on a file/stream in text format.  The file will contain on each line a non-zero entry, i.e. :</p>
+
+
+<p> <i> row_number col_number value </i></p> <p>The row numbers and columns numbers used 1-index convention, i.e. the first row has its row number equal to 1. An exemple of output file is </p> <p> <b> 1 1 0.123<br/> 1 3 0.254<br/> 1 4 -0.928<br/> 2 1 -0.2<br/> 2 5 -0.3 </b> </p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, General, ArrayRowSparse> A(4,4);
+A(1,3) = -1.0;
+A(2,2) = 2.5;
+// you can write directly in a file
+A.WriteText("matrix.dat");
+
+// or open a stream with other datas
+ofstream file_out("matrix.dat");
+int my_info = 3;
+file_out << my_info << '\n';
+A.WriteText(file_out);
+file_out.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+
+
+<div class="separator"><a name="readtext"></a></div>
+
+
+
+<h3>ReadText</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ReadText(string);
+  void ReadText(ifstream&amp;);
+</pre>
+
+
+<p>This method sets the matrix from a file/stream in text format.  The format is detailed in method <a href="#writetext">WriteText</a>.</p>
+
+
+<h4>Example : </h4>
+\precode
+Matrix<double, Symmetric, ArrayRowSymSparse> V; 
+// you can read directly on a file
+V.ReadText("matrix.dat");
+
+// or read from a stream
+ifstream file_in("matrix.dat");
+int my_info;
+file_in >> my_info;
+V.ReadText(file_in);
+file_in.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class Matrix_ArraySparse<br/>
+Matrix_ArraySparse.hxx
+ Matrix_ArraySparse.cxx</p>
+
+*/

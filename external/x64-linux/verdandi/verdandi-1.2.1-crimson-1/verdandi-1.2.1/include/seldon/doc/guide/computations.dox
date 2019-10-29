@@ -1,0 +1,150 @@
+/*! \file computations.dox
+    \brief Computations.
+*/
+
+/*!
+\page computations Computations
+
+<p> %Seldon is fully interfaced with <b>Blas</b> (level 1, 2 and 3), except for Blas functions involving banded matrices (since this format is not available for the moment) and rank operations. If Blas is not available to the user, a few alternative functions (same functions written in C++) may be used.</p>
+
+<h2>Blas</h2>
+
+<p> The interface is implemented in the files <code>Seldon-[version]/computation/interfaces/Blas_*</code>) if you have a doubt about the syntax. In the following list, C++ functions are detailed, and the equivalent BLAS subroutines mentionned in bold. Duplicate names are avoided, e.g. only <b> daxpy </b> is mentionned even if other subroutines <b>saxpy</b>, <b>caxpy</b> and <b> zaxpy </b> are interfaced as well. </p> <ul>
+
+  <li> <code>GenRot(a, b, c, s)</code> constructs givens plane rotation (<b>drotg</b>) </li>
+  
+  <li> <code>ApplyRot(X, Y, c, s)</code> applies givens plane rotation (<b>drot</b>)</li>
+  
+  <li> <code>GenModifRot(a, b, c, s, param)</code> constructs modified givens plane rotation (<b>drotmg</b>) </li>
+
+  <li> <code>ApplyModifRot(X, Y, param)</code> applies modified givens plane rotation (<b>drotm</b>) </li>
+  
+  <li> <code>Swap(X, Y)</code> exchanges two vectors (<b>dswap</b>).</li>
+  
+  <li> <code>Copy(X, Y)</code> copies vector X into vector Y (<b>dcopy</b>).</li>
+
+  <li> <code>Mlt(alpha, X)</code> multiplies vector X by alpha (<b>dscal</b>).</li>
+
+  <li> <code>Add(alpha, X, Y)</code> adds vector X to Y : alpha.X + Y -> Y (<b>daxpy</b>).</li>
+
+  <li> <code>DotProd(X, Y)</code> returns scalar product between two vectors (<b>ddot, zdotu</b>).</li>
+
+  <li> <code>DotProdConj(X, Y)</code> returns scalar product between two vectors, first vector being conjugated (<b>zdotc</b>).</li>
+  
+  <li> <code>Norm1(X)</code> computes 1-norm of vector X (<b>dasum</b>).</li>
+
+  <li> <code>Norm2(X)</code> computes 2-norm of vector X (<b>dnrm2</b>).</li>
+
+  <li> <code>GetMaxAbsIndex(X)</code> returns index where maximum of X is reached (<b>idamax</b>).</li>
+  
+  <li> <code>Mlt(A, X)</code> computes product of A by X for triangular matrices : A*X -> X (<b>dtrmv</b>, <b>dtpmv</b>).</li>
+  
+  <li> <code> MltAdd(alpha, A, X, beta, Y) </code> computes matrix-vector product alpha*A*X + beta*Y -> Y. This function is overloaded for all types of matrices (<b>dgemv</b>, <b>zhemv</b>, <b>zhpmv</b>, <b>dsymv</b>, <b>dspmv</b>). </li>
+  
+  <li> <code> Rank1Update(alpha, X, Y, M) </code> Performs rank 1 operation : alpha*X.Y' + M -> M (<b>dger</b>, <b>zgeru</b>) </li>
+
+  <li> <code> Rank1Update(alpha, X, conj, Y, M) </code> Performs rank 1 operation : alpha*X.Y' + M -> M by taking the conjugate of Y (<b>zgerc</b>) </li>
+
+  <li> <code> Rank1Update(alpha, X, M) </code> Performs rank 1 operation : alpha*X.X' + M -> M for symmetric/hermitian matrices (<b>dspr</b>, <b> zhpr</b>) </li>
+
+  <li> <code> Rank1Update(alpha, X, M) </code> Performs rank 2 operation : alpha*X.Y' + Y.X' + M -> M for symmetric/hermitian matrices (<b>dspr2</b>, <b>zhpr2</b>) </li>
+  
+  <li> <code> Solve(A, X) </code> Solves triangular linear system A\X -> X (<b>dtrsv</b>, <b>dtpsv</b>) </li>
+  
+  <li> <code> MltAdd(alpha, A, B, beta, C) </code> computes matrix-matrix product alpha*A*B + beta*C -> C. This function is overloaded for all types of matrices (<b>dgemm</b>, <b>dsymm</b>, <b> zhemm</b>). </li>
+  
+  <li> <code> Mlt(alpha, A, B) </code> computes matrix-matrix product alpha*A*B -> B with A triangular matrix (<b>dtrmm</b>, <b>dsymm</b>, <b> zhemm</b>). </li>
+
+  <li> <code> Solve(alpha, A, B) </code> Solves triangular linear system alpha*A\B -> B with B general matrix (<b>dtrsm</b>, <b> dtpsv</b>, <b> ztpsv </b>) </li>
+
+</ul>
+
+
+<p>Remember that, before the inclusion of %Seldon (<code>#include "Seldon.hxx"</code>), you must define <code>SELDON_WITH_BLAS</code>. For backward compatibility, <code>SELDON_WITH_CBLAS</code> is also accepted, but not recommended. Below is an example: </p>
+
+\precode
+
+#define SELDON_WITH_BLAS
+#include "Seldon.hxx"
+
+using namespace Seldon;
+
+// complex vectors
+int n = 10;
+ZVect X(n), Y(n); 
+X. Fill(); Y.Fill();
+
+// scalar product X'.Y (conjugate of X)
+complex<double> alpha = DotProdConj(X, Y);
+// norm of the vector
+double norm_vec = Norm2(X);
+// alpha*X + Y -> Y
+Add(alpha, X, Y);
+
+// matrices must have the good dimension before multiplication
+int n = 4, k = 5;
+Matrix<double> A(m,n), B(n,k), C(m,k);
+MltAdd(1.0, A, B, 2.0, C);
+
+// you can multiply with transpose
+A.Reallocate(n,m); A.Fill();
+MltAdd(1.0, SeldonTrans, A, SeldonNoTrans, B, 2.0, C);
+
+ \endprecode
+
+A comprehensive test of Blas interface is done in file <code>test/program/blas_test.cpp</code>.
+
+<h2>C++ functions</h2>
+
+C++ functions (that do not call Blas) are available in <code>Seldon-[version]/computation/basic_functions/*</code>. The syntax is the same as for the functions in the interface to Blas. The functions <code>Add</code>, <code> DotProd </code>, <code> DotProdConj </code>, <code> Mlt </code> and <code> MltAdd </code> are written in C++ for any type of matrix and vector, and those functions can be used without using the Blas interface.
+
+<h2>Lapack</h2>
+
+<p> The interface is implemented in the files <code>Seldon-[version]/computation/interfaces/Lapack_*</code>) if you have a doubt about the syntax. The following C++ names have been chosen (in bold, name of blas subroutines) </p> <ul>
+
+  <li> <code>GetLU(A, pivot)</code> factorization of matrix A with pivot.  (<b>dgetrf</b>, <b> dsytrf</b>, <b> dsptrf</b>, <b>zhetrf</b>, <b> zhptrf</b>) </li>
+  
+  <li> <code>SolveLU(A, pivot, X)</code> solves linear system, assuming that GetLU has been called before. (<b> dgetrs </b>, <b>dsytrs</b>, <b>dsptrs</b>, <b>zhetrs</b>, <b>zhptrs</b>, <b>dtrtrs</b>, <b> dtptrs </b>) </li>
+  
+  <li> <code> ReciprocalConditionNumber(A, pivot, norm, anorm) </code> returns the inverse of condition number of matrix A, assuming that GetLU has been called before (<b>dgecon</b>, <b>dsycon</b>, <b>dspcon</b>, <b> zhecon </b>, <b> zhpcon </b>, <b> dtrcon </b>, <b> dtpcon </b>) </li>
+
+
+  <li> <code>RefineSolutionLU(A, Alu, pivot, x, b, ferr, berr)</code> improves the solution computed by SolveLU and provides error bounds and backward error estimates.  (<b>dgerfs</b>, <b> dsyrfs</b>, <b> dsprfs</b>, <b>zherfs</b>, <b> zhprfs</b>) </li>
+  
+  <li> <code>GetInverse(A)</code> computes the inverse of A. This method first calls GetLU in order to factorize the matrix before forming the inverse.  (<b>dgetri</b>, <b> dsytri</b>, <b> dsptri</b>, <b>zhetri</b>, <b> zhptri</b>, <b> dtrtri </b>, <b> dtptri </b>) </li>
+
+  <li> <code>GetScalingFactors(A, row_scale, col_scale, row_cond_number, col_cond_number, amax)</code> computes row and column scalings intended to equilibrate a matrix and reduce its condition number. (<b>dgeequ</b>) </li>
+  
+  <li> <code>GetAndSolveLU(A, pivot, X)</code> factorization of matrix A, and resolution of linear system A X = b. </li>
+
+  <li> <code>GetQR(A, tau)</code> QR factorization of matrix A.  (<b>dgeqrf</b>) </li>
+
+  <li> <code>GetLQ(A, tau)</code> LQ factorization of matrix A.  (<b>dgelqf</b>) </li>
+
+  <li> <code>GetQ_FromQR(A, tau)</code> explicits matrix Q issued from QR factorization of matrix A. It is assumed that GetQR has been called before.  (<b>dorgqr</b>) </li>
+
+  <li> <code>MltQ_FromQR(A, tau, x)</code> multiplies by matrix Q issued from QR factorization of matrix A. It is assumed that GetQR has been called before.  (<b>dormqr</b>) </li>
+
+  <li> <code>SolveQR(A, tau, x)</code> solves least-squares problem by using QR factorization of matrix A. It is assumed that GetQR has been called before. </li>
+
+  <li> <code>SolveLQ(A, tau, x)</code> solves least-squares problem by using LQ factorization of matrix A. It is assumed that GetLQ has been called before. </li>
+
+  <li> <code>GetEigenvalues(A, lambda_real, lambda_imag)</code> computes eigenvalues (real part and imaginary part) of unsymmetric real matrix. (<b>dgeev</b> ) </li>
+
+  <li> <code>GetEigenvalues(A, lambda)</code> computes eigenvalues of matrix.  (<b>zgeev</b>, <b>dsyev</b>, <b>zheev</b>, <b>dspev</b>, <b>zhpev</b>) </li>
+
+  <li> <code>GetEigenvaluesEigenvectors(A, lambda_real, lambda_imag, W)</code> computes eigenvalues (real part and imaginary part) and eigenvectors of unsymmetric real matrix. </li>
+
+  <li> <code>GetEigenvaluesEigenvectors(A, lambda, W)</code> computes eigenvalues and eigenvectors of matrix.  </li>
+
+  <li> <code>GetEigenvalues(A, B, lambda)</code> solves generalized eigenvalue problem.  (<b>zggev</b>, <b>dsygv</b>, <b>zhegv</b>, <b>dspgv</b>, <b>zhpgv</b>) </li>
+
+  <li> <code>GetEigenvaluesEigenvectors(A, B, lambda, W)</code> solves generalized eigenvalue problem. </li>
+
+<li> <code>GetSVD(A, lambda, U, V)</code> computes singular value decomposition of matrix A.  (<b>dgesvd</b>) </li>
+  
+</ul>
+
+A comprehensive test of Lapack interface is done in file <code>test/program/lapack_test.cpp</code>.
+
+*/

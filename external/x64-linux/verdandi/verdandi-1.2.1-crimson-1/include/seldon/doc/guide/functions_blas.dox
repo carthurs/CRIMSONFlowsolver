@@ -1,0 +1,716 @@
+/*! \file functions_blas.dox
+    \brief Blas Functions.
+*/
+
+/*!
+\page functions_blas BLAS Functions
+
+<p>Those functions are available both for dense and sparse vectors.  In the
+ case of dense vectors, Blas subroutines are called if
+ <code>SELDON_WITH_BLAS</code> (or, for backward compatibility,
+ <code>SELDON_WITH_CBLAS</code>) is defined.</p>
+ 
+<table class="category-table">
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#mlt">Mlt </a></td> 
+ <td class="category-table-td"> multiplies the elements of the
+ vector/matrix by a scalar, or performs a matrix-vector product </td>
+ </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#mltadd">MltAdd </a></td> 
+ <td class="category-table-td"> performs a matrix-vector product or a
+ matrix-matrix product</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#add">Add </a></td> 
+ <td class="category-table-td"> adds two vectors or two matrices </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#copy">Copy </a></td> 
+ <td class="category-table-td"> copies a vector into another one, or
+ a matrix into another matrix </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#swap">Swap </a></td> 
+ <td class="category-table-td"> exchanges two vectors </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#genrot">GenRot </a></td> 
+ <td class="category-table-td"> computes givens rotation  </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#genrot">GenModifRot </a></td> 
+ <td class="category-table-td"> computes givens roation </td>
+ </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#genrot">ApplyRot </a></td> 
+ <td class="category-table-td"> applies givens rotation </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#genrot">ApplyModifRot </a></td> 
+ <td class="category-table-td"> applies givens rotation </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#dotprod">DotProd </a></td> 
+ <td class="category-table-td"> scalar product between two vectors</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#dotprod">DotProdConj </a></td> 
+ <td class="category-table-td"> scalar product between two vectors, first vector being conjugated</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#conjugate">Conjugate </a></td> 
+ <td class="category-table-td"> conjugates all elements of a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#getmaxabsindex">GetMaxAbsIndex </a></td> 
+ <td class="category-table-td"> returns index where highest absolute value is reached </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#norm1">Norm1 </a></td> 
+ <td class="category-table-td"> returns 1-norm of a vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#norm2">Norm2 </a></td> 
+ <td class="category-table-td"> returns 2-norm of a vector</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#rank1update">Rank1Update </a></td> 
+ <td class="category-table-td"> Adds a contribution X.Y' to a matrix
+ </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#rank2update">Rank2Update </a></td> 
+ <td class="category-table-td"> Adds a contribution X.Y' + Y.X' to a symmetric matrix
+ </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#solve">Solve </a></td> 
+ <td class="category-table-td"> solves a triangular system </td> </tr>
+</table>
+
+
+
+<div class="separator"><a name="mlt"></a></div>
+
+
+
+<h3>Mlt</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Mlt(T0, Vector&amp;);
+  void Mlt(T0, Matrix&amp;);
+  void Mlt(Matrix&amp;, const Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>This function multiplies all elements of vector/matrix by a constant. It can also perform a matrix-vector product.  This function is implemented both for dense and sparse vectors/matrices.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<double> X(3);
+X.Fill();
+// we multiply all elements by 2
+Mlt(2.0, X);
+
+// similar method for matrix
+Matrix<double> A(3,3);
+A.Fill();
+// we multiply all elements by -3.4
+Mlt(-3.4, A);
+
+// and sparse matrix as well
+Matrix<double, General, ArrayRowSparse> Asp(3,3);
+Asp(0, 1) = 1.4;
+Asp(1, 1) = -0.3; 
+Asp(2, 0) = 2.1;
+Mlt(2.1, Asp);
+
+// with Mlt, you can compute Y = Asp*X or Y = A*X
+Vector<double> Y(3);
+Mlt(A, X, Y);
+Mlt(Asp, X, Y);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="class_vector.php#operator">Vector operators</a><br/>
+<a href="class_matrix.php#operator">Matrix operators</a><br/>
+<a href="#mltadd">MltAdd</a></p>
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Functions_MatVect.cxx<br/>
+Functions_MatrixArray.cxx<br/>
+Blas_1.cxx<br/>
+Blas_2.cxx</p>
+
+
+
+<div class="separator"><a name="mltadd"></a></div>
+
+
+
+<h3>MltAdd</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void MltAdd(T0, const Matrix&amp;, const Vector&amp;, T0, Vector&amp;);
+  void MltAdd(T0, SeldonTrans, const Matrix&amp;, const Vector&amp;, T0, Vector&amp;);
+  void MltAdd(T0, const Matrix&amp;, const Matrix&amp;, T0, Matrix&amp;);
+  void MltAdd(T0, SeldonTrans, const Matrix&amp;, SeldonTrans, const Matrix&amp;,
+              T0, Matrix&amp;);
+</pre>
+
+
+<p>This function performs a matrix-vector product or a matrix-matrix product. You can specify a product with the transpose of the matrix, or the conjugate of the transpose. The size of matrices need to be compatible in order to complete the matrix-matrix product.  The matrix-matrix product is not available for sparse matrices.</p>
+
+
+<h4> Example : </h4>
+\precode
+// matrix-vector product
+Matrix<double> A(3,3);
+Vector<double> X(3), B(3);
+A.Fill();
+X.Fill();
+B.Fill(1.5);
+double beta = 2, alpha = 3;
+// computation of B = beta*B + alpha*A*X
+MltAdd(alpha, A, X, beta, B);
+
+// same function for sparse matrices
+Matrix<double, General, RowSparse> Asp(3, 3, nnz, values, ptr, ind);
+// computation of B = beta*B + alpha*Asp*X
+MltAdd(alpha, Asp, X, beta, B);
+
+// you can compute B = beta*B + alpha*transpose(Asp)*X
+MltAdd(alpha, SeldonTrans, Asp, X, beta, B);
+
+// similar method for matrix-matrix product
+Matrix<double> M(3,4), N(4,3);
+// computation of A = beta*A + alpha*M*N
+MltAdd(alpha, M, N, beta, A);
+
+// and you can use SeldonTrans, SeldonNoTrans, SeldonConjTrans
+
+// computation of A = beta*A + alpha*transpose(M)*N
+MltAdd(alpha, SeldonTrans, M, SeldonNoTrans, N, beta, A);
+
+// SeldonConjTrans is meaningfull for complex matrices
+Matrix<complex<double> > Ac(3, 3), Bc(3, 3), Cc(3, 3);
+
+// computation of Ac = beta * Ac
+//                     + alpha * conjugate(transpose(Bc)) * transpose(Cc)
+MltAdd(alpha, SeldonConjTrans, Bc, SeldonTrans, Cc, beta, Ac);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="class_vector.php#operator">Vector operators</a><br/>
+<a href="class_matrix.php#operator">Matrix operators</a><br/>
+<a href="#mlt">Mlt</a></p>
+
+
+<h4>Location :</h4>
+<p>Functions_MatVect.cxx<br/>
+Functions_Matrix.cxx<br/>
+Functions_MatrixArray.cxx<br/>
+Blas_2.cxx<br/>
+Blas_3.cxx</p>
+
+
+
+<div class="separator"><a name="add"></a></div>
+
+
+
+<h3>Add</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Add(T0, const Vector&amp;, Vector&amp;);
+  void Add(T0, const Matrix&amp;, Matrix&amp;);
+</pre>
+
+
+<p>This function adds two vectors or two matrices. This function is available both for sparse or dense vectors/matrices. The size of the vectors or the matrices to add should be the same.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<double> X(3), Y(3);
+X.Fill(); Y.Fill(1);
+double alpha = 2;
+// computation of Y = Y + alpha*X
+Add(alpha, X, Y);
+
+// similar method for matrix
+Matrix<double> A(3,3), B(3,3);
+A.Fill();
+B.SetIdentity();
+Add(alpha, A, B);
+
+// and sparse matrix as well
+Matrix<double, General, ArrayRowSparse> Asp(3,3), Bsp(3,3);
+Asp(0, 1) = 1.4;
+Asp(1, 1) = -0.3; 
+Asp(2, 0) = 2.1;
+Bsp.SetIdentity();
+Add(alpha, Asp, Bsp);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Functions_Matrix.cxx<br/>
+Functions_MatrixArray.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="copy"></a></div>
+
+
+
+<h3>Copy</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Copy(const Vector&amp;, Vector&amp;);
+  void Copy(const Matrix&amp; Matrix&amp;);
+</pre>
+
+
+<p>A vector is copied into another one. If BLAS is enabled, the two dense vectors have to be of the same size. The operator = is more flexible.  For sparse matrices, the function <code>Copy</code> is overloaded to enable the conversion between the different formats.</p>
+
+
+<h4>Example : </h4>
+\precode
+// vectors need to have the same size
+Vector<float> V(3), W(3);
+V.Fill();
+Copy(V, W);
+// it is equivalent to write W = V;
+W = V;
+
+// for sparse matrices, you can use Copy as a convert tool
+Matrix<double, General, ArrayRowSparse> A(3, 3);
+A.AddInteraction(0, 2, 2.5);
+A.AddInteraction(1, 1, -1.0);
+
+Matrix<double, General, RowSparse> B;
+Copy(A, B);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="class_vector.php#operator">Vector operators</a></p>
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx<br/>
+Matrix_Conversions.cxx</p>
+
+
+
+<div class="separator"><a name="swap"></a></div>
+
+
+
+<h3>Swap</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Swap(Vector&amp; Vector&amp;);
+</pre>
+
+
+<p>The two vectors are exchanged. If BLAS is enabled, the two dense vectors have to be of the same size.</p>
+
+
+<h4>Example : </h4>
+\precode
+// vectors need to have the same size
+Vector<float> V(3), W(3);
+V.Fill(); 
+W.Fill(1.0);
+Swap(V, W);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="class_vector.php#operator">Vector operators</a></p>
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="genrot"></a></div>
+
+
+
+<h3>GenRot, ApplyRot, GenModifRot, ApplyModifRot</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void GenRot(T&amp;, T&amp;, T&amp;, T&amp;);
+  void ApplyRot(Vector&amp;, Vector&amp;, T, T); 
+  void GenModifRot(T&amp;, T&amp;, T&amp;, T&amp;, T*);
+  void ApplyModifRot(Vector&amp;, Vector&amp;, T*); 
+</pre>
+
+
+<p>This function constructs the Givens rotation G = [cos_, sin_; -sin_, cos_] that zeros the second entry of the two vector (a,b).</p>
+
+
+<h4>Example : </h4>
+\precode
+double a, b, cos_, sin_;
+a = 2.0;
+b = 1.0;
+// we compute cos_ and sin_ so that
+// G = [cos_, sin_; -sin_, cos_] zeros second entry of vector [a;b]
+// i.e. G*[a;b] = [r;0]
+GenRot(a, b, cos_, sin_);
+
+// then we can apply rotation G to vectors X, Y
+// G*[x_i, y_i] for all i
+Vector<double> X(10), Y(10);
+X.FillRand(); 
+Y.FillRand();
+ApplyRot(X, Y, cos_, sin_);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="dotprod"></a></div>
+
+
+
+<h3>DotProd, DotProdConj</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T DotProd(const Vector&amp;, const Vector&amp;);
+  T DotProdConj(const Vector&amp;, const Vector&amp;);
+</pre>
+
+
+<p>This function returns the scalar product between two vectors. For <code>DotProdConj</code>, the first vector is conjugated.  In the case of dense vectors, they have to be of the same size.</p>
+
+
+<h4>Example : </h4>
+\precode
+// we construct two vectors of same size
+Vector<double> X(10), Y(10);
+X.FillRand(); 
+Y.FillRand();
+
+// computation of X*Y
+double scal = DotProd(X, Y);
+
+// for complex numbers
+Vector<complex<double> > Xc(10), Yc(10);
+Xc.Fill(); Yc.Fill();
+// computation of conj(X)*Y
+complex<double> scalc = DotProdConj(X, Y);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="conjugate"></a></div>
+
+
+
+<h3>Conjugate</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Conjugate(Vector&amp;);
+</pre>
+
+
+<p>Each component of the vector is conjugated. In the case of real numbers, the vector is not modified.</p>
+
+
+<h4>Example : </h4>
+\precode
+// complex vector
+Vector<complex<double> > X(10);
+X.FillRand(); 
+
+// we take the conjugate
+Conjugate(X);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="getmaxabsindex"></a></div>
+
+
+
+<h3>GetMaxAbsIndex</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+   int GetMaxAbsIndex(const Vector&amp;);
+</pre>
+
+
+<p>This function returns the index for which the vector reached its highest absolute value.</p>
+
+
+<h4>Example : </h4>
+\precode
+// complex vector
+Vector<complex<double> > X(10);
+X.FillRand(); 
+
+int imax = GetMaxAbsIndex(X);
+// maximum ?
+double maximum = abs(X(imax));
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="norm1"></a></div>
+
+
+
+<h3>Norm1</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+   T Norm1(const Vector&amp;);
+</pre>
+
+
+<p>This function returns the 1-norm of the vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+// complex vector
+Vector<complex<double> > X(10);
+X.Fill(); 
+
+// 1-norm
+double norme = Norm1(X);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="norm2"></a></div>
+
+
+
+<h3>Norm2</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+   T Norm2(const Vector&amp;);
+</pre>
+
+
+<p>This function returns the 2-norm of the vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+// complex vector
+Vector<complex<double> > X(10);
+X.Fill(); 
+
+// 2-norm
+double norme = Norm2(X);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Functions_Vector.cxx<br/>
+Blas_1.cxx</p>
+
+
+
+<div class="separator"><a name="rank1update"></a></div>
+
+
+
+<h3>Rank1Update</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Rank1Update(T, const Vector&amp;, const Vector&amp;, Matrix&amp;);
+  void Rank1Update(T, const Vector&amp;, SeldonConj, const Vector&amp;, Matrix&amp;);
+  void Rank1Update(T, const Vector&amp;, Matrix&amp;);
+</pre>
+
+
+<p>This function adds a contribution of rank 1 to matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+// two complex vectors
+Vector<complex<double> > X(10), Y(10);
+X.FillRand(); 
+Y.FillRand(); 
+
+// complex matrix
+Matrix<complex<double> > A(10, 10);
+A.SetIdentity();
+complex<double> alpha(1, 1);
+
+// we compute A = A + alpha*X*transpose(Y)
+Rank1Update(alpha, X, Y, A);
+// we can also compute A = A + alpha*X*conjugate(transpose(Y))
+Rank1Update(alpha, X, SeldonConj, Y, A);
+
+// for hermitian matrices, use of X only
+Matrix<complex<double>, General, RowHermPacked> B(10, 10);
+// we compute B = B + alpha*X*conjugate(transpose(X))
+Rank1Update(alpha, X, B);
+
+// for real numbers, use of symmetric matrices
+Vector<double> Xr(10);
+Xr.FillRand(); 
+Matrix<double, Symmetric, RowSymPacked> Br(10, 10);
+Br.Zero();
+double beta = 2;
+// computation of Br = Br + beta*Xr*tranpose(Xr)
+Rank1Update(beta, Xr, Br);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Blas_2.cxx</p>
+
+
+
+<div class="separator"><a name="rank2update"></a></div>
+
+
+
+<h3>Rank2Update</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Rank2Update(T, const Vector&amp;, const Vector&amp;, Matrix&amp;);
+</pre>
+
+
+<p>This function adds a contribution of rank 2 to a symmetric or Hermitian matrix.</p>
+
+
+<h4>Example : </h4>
+\precode
+// two complex vectors
+Vector<complex<double> > X(10), Y(10);
+X.FillRand(); 
+Y.FillRand(); 
+
+// hermitian matrix
+Matrix<complex<double>, General, RowHermPacked> A(10, 10);
+A.SetIdentity();
+complex<double> alpha(1, 1);
+
+// we compute A = A + alpha * (X * conjugate(transpose(Y))
+//                + Y * conjugate(transpose(X)))
+Rank2Update(alpha, X, Y, A);
+
+// for real numbers, use of symmetric matrices
+Vector<double> Xr(10), Yr(10);
+Xr.FillRand(); 
+Yr.FillRand(); 
+Matrix<double, Symmetric, RowSymPacked> Br(10, 10);
+Br.Zero();
+double beta = 2;
+// computation of Br = Br + beta*(Xr*transpose(Yr) + Yr*transpose(Xr))
+Rank2Update(beta, Xr, Yr, Br);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Blas_2.cxx</p>
+
+
+
+<div class="separator"><a name="solve"></a></div>
+
+
+
+<h3>Solve</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Solve(const Matrix&amp;, Vector&amp;);
+  void Solve(SeldonTrans, SeldonNonUnit, const Matrix&amp;, Vector&amp;);
+</pre>
+
+
+<p>This function solves a triangular linear system.</p>
+
+
+<h4>Example : </h4>
+\precode
+// right hand side
+Vector<double> B(3);
+B.Fill(); 
+
+// triangular matrix
+Matrix<double, General, RowUpTriangPacked> T(3, 3);
+T.Fill();
+
+// now you can solve T*X = B, the result overwrites B
+Solve(T, B);
+
+// if you want to solve transpose(T)*X = B
+Solve(SeldonTrans, SeldonNonUnit, T, B);
+
+// SeldonUnit can be used if you are assuming that T has 
+// a unitary diagonal (with 1)
+
+// we force unitary diagonal
+for (int i = 0; i < T.GetM(); i++)
+  T(i, i) = 1.0;
+
+// then we can call Solve with Seldonunit to solve T*X = B
+Solve(SeldonNoTrans, SeldonUnit, T, B);
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Blas_2.cxx</p>
+
+*/

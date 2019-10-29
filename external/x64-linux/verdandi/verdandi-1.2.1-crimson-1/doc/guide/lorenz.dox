@@ -1,0 +1,22 @@
+/*! \file lorenz.dox
+    \brief Lorenz attractor.
+*/
+
+/*!
+\page lorenz_model Lorenz model
+
+The Lorenz model is a 3-dimensional chaotic system. The equations of the model are:
+
+<center>
+\f$\partial_tx = Pr (y - x)\f$<br>
+\f$\partial_ty = x (Ra - z) -y\f$ <br>
+\f$\partial_tz = xy - b z\f$  <br>
+</center>
+
+where \f$Pr\f$ is the Prandtl number, \f$Ra\f$ the Rayleigh number, and \f$b\f$ is positive number.
+
+The Lorenz model is implemented in <code>Lorenz.hxx</code> and <code>Lorenz.cxx</code>. The class \link Verdandi::Lorenz Lorenz\endlink is a template class: <code>Lorenz<T></code>. <code>T</code> is the numerical type of the variables (e.g., <code>double</code>).
+
+The state vector is \f$(x, y, z)\f$.
+
+*/

@@ -1,0 +1,1801 @@
+/*! \file eigenvalue.dox
+    \brief Eigenvalue Solvers.
+*/
+
+/*!
+\page eigenvalue Eigenvalue Solvers
+
+<p>%Seldon is interfaced with libraries performing the research of eigenvalues and eigenvectors of very large sparse linear systems : <b><a href="http://www.caam.rice.edu/software/ARPACK/">Arpack</a></b> and <b><a href="http://trilinos.sandia.gov/packages/anasazi/">Anasazi</a></b>. An example file is located in test/program/eigenvalue_test.cpp. For an efficient computation, the user should compile with one of the direct solvers interfaced by Seldon (ie. Mumps, Pastix, SuperLU or UmfPack). For example, if you are compiling with SuperLU and Arpack, you have to type. </p>
+
+<pre class="fragment">g++ -DSELDON_WITH_SUPERLU -DSELDON_WITH_ARPACK eigenvalue_test.cpp -ISuperLUdir/SRC -LSuperLUdir -lsuperlu -LArpackdir -larpack </pre>
+
+<p>where <b>Arpackdir</b> denotes the directory where Arpack has been installed. </p>
+
+
+<h2>Syntax</h2>
+
+
+<p>The syntax of all eigenvalue solvers is similar </p>
+
+
+<pre class="syntax-box">
+void GetEigenvaluesEigenvectors(EigenPb&amp;, Vector&amp; lambda, Vector&amp; lambda_imag, Matrix&amp; eigen_vec);
+</pre>
+
+
+<p>The interface has been done only for double precision (real or complex numbers),
+ since single precision is not accurate enough when seeking eigenvalues of very large sparse linear systems.</p>
+
+
+<h2>Basic use</h2>
+
+
+<p> We provide an example of eigenvalue resolution with a sparse matrix.</p>
+
+
+\precode
+// first we construct a sparse matrix
+int n = 1000; // size of linear system
+// we assume that you will construct A correctly
+Matrix<double, General, ArrayRowSparse> A(n, n);
+// if A is symmetric, prefer a symmetric storage
+// so that dsaupd routine will be called (more efficient)
+
+// then we declare the eigenproblem K x = lambda M x
+// where K is the stiffness matrix, and M mass matrix
+// the syntax is SparseEigenProblem<T, MatrixStiff> 
+// where T is double or complex<double>
+// and MatrixStiff the type of the stiffness matrix K
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+
+// SparseEigenProblem is devoted to the research of eigenvalues for sparse
+// matrices (using Seldon format). If you want to consider dense matrices
+// you can DenseEigenProblem<T, Prop, Storage> var_eig;
+// If you have your own class of Matrix (in which only matrix vector product
+// has been defined), use MatrixFreeEigenProblem<T, MatStiff> var_eig;
+// where MatStiff is the type of the stiffness matrix
+
+// standard eigenvalue problem => K = A, and M = I
+var_eig.InitMatrix(A);
+
+// setting parameters of eigenproblem
+var_eig.SetStoppingCriterion(1e-12);
+var_eig.SetNbAskedEigenvalues(10);
+// you can ask largest eigenvalues of M^-1 K, smallest eigenvalues
+// or eigenvalues closest to a shift sigma
+var_eig.SetTypeSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+// for small eigenvalues
+var_eig.SetTypeSpectrum(var_eig.SMALL_EIGENVALUES, 0);
+// eigenvalues clustered around a shift sigma :
+double sigma = 0.5;
+var_eig.SetTypeSpectrum(var_eig.CENTERED_EIGENVALUES, sigma);
+
+// then you select the computational mode
+// REGULAR => you only need of matrix vector product K x (if M = I)
+// SHIFTED => the matrix (K - sigma M) will be factorized by
+//            using an available direct solver
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+
+// declaring arrays that will contains eigenvalues and eigenvectors
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+
+// for a generalized eigenvalue problem, you provide both K and M
+// default type of M is Matrix<double, Symmetric, ArrayRowSymSparse>
+Matrix<double, Symmetric, ArrayRowSymSparse> M(n, n);
+Matrix<double, General, ArrayRowSparse> K(n, n);
+
+var_eig.InitMatrix(K, M);
+
+// then you can compute eigenvalues as usual
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+// you can also give a specific type for mass Matrix :
+SparseEigenProblem<double, Matrix<double, General, RowSparse>, Matrix<double, Symmetric, RowSymSparse> > var_eig2;
+
+// then perform the same operations on var_eig2
+
+\endprecode
+
+
+<h2>Advanced use</h2>
+
+
+<p> It may sometimes be useful to compute eigenvalues by writing only a matrix-vector product. It could happen when the stiffness matrix is not effectively stored, and you wish to know large or small eigenvalues of this matrix with only this matrix-vector product. Here an example how to do that : </p>
+
+
+\precode
+
+
+// basic class defining a matrix
+// we take here the discretization of 1-D laplacien
+// with second-order finite difference method
+template<class T>
+class Matrix_Laplacian1D
+{
+protected :
+  int n;
+  double L;
+  
+public :
+  double dx;
+  
+  // this method is mandatory
+  int GetM() const
+  {
+    return n;
+  }
+
+  // this method is mandatory
+  int GetN() const
+  {
+    return n;
+  }
+
+  //  this method is not needed, it is placed here
+  // to initializa attributes of this specific class
+  void Init(int n_, double L_)
+  {
+    n = n_;
+    L = L_;
+    dx = L/(n+1);
+  }
+  
+};
+
+// matrix vector product Y = A*X
+// mandatory function and main function
+template<class T1, class T2, class T3>
+void Mlt(const Matrix_Laplacian1D<T1>& A,
+         const Vector<T2>& X, Vector<T3>& Y)
+{
+  int n = A.GetM();
+  Y(0) = 2.0*X(0) - X(1);
+  Y(n-1) = 2.0*X(n-1) - X(n-2);
+  for (int i = 1; i < n-1; i++)
+    Y(i) = 2.0*X(i) - X(i-1) - X(i+1);
+  
+  Mlt(1.0/(A.dx*A.dx), Y);
+}
+
+
+// returns true if the matrix is complex
+// mandatory function
+template<class T>
+bool IsComplexMatrix(const Matrix_Laplacian1D<T>& A)
+{
+  return false;
+}
+
+
+// returns true if the matrix is symmetric
+// mandatory function so that eigensolver knows if the matrix is symmetric or not
+template<class T>
+bool IsSymmetricMatrix(const Matrix_Laplacian1D<T>& A)
+{
+  return true;
+}
+
+
+int main()
+{
+    // testing matrix-free class (defined by the user)
+    Matrix_Laplacian1D<double> K;
+    K.Init(200, 2.0);
+    
+    // setting eigenvalue problem
+    MatrixFreeEigenProblem<double, Matrix_Laplacian1D<double> > var_eig;
+    var_eig.SetStoppingCriterion(1e-12);
+    var_eig.SetNbAskedEigenvalues(5);
+    var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+    var_eig.SetTypeSpectrum(var_eig.SMALL_EIGENVALUES, 0, var_eig.SORTED_MODULUS);
+
+    // finding large eigenvalues of K
+    var_eig.InitMatrix(K);
+    Vector<double> lambda, lambda_imag;
+    Matrix<double, General, ColMajor> eigen_vec;
+
+    // effective computation of eigenvalues and eigenvectors    
+    GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);    
+  }
+
+\endprecode
+
+<p> Classes DenseEigenProblem, SparseEigenProblem and MatrixFreeEigenProblem are deriving from
+ base class EigenProblem_Base, and are overloading some methods of this base class. Therefore
+ if you need to define a new class of eigenproblems, it could be a good idea to write a derived class.
+ In order to help you out, we have detailed all the methods of EigenProblem_Base : </p>
+
+<table class="category-table">
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#Init"> Init </a></td>
+<td class="category-table-td"> Initialization of the eigenvalue problem </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#InitMatrix"> InitMatrix </a></td>
+<td class="category-table-td"> Stiffness matrix (and optionall mass matrix) is given  </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetComputationalMode"> GetComputationalMode </a></td>
+<td class="category-table-td"> Returns the computational mode used (regular, shifted, ...) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetComputationalMode"> SetComputationalMode </a></td>
+<td class="category-table-td"> Sets the computational mode used (regular, shifted, ...) </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetNbAskedEigenvalues"> GetNbAskedEigenvalues </a></td>
+<td class="category-table-td"> Returns the number of wanted eigenvalues </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetNbAskedEigenvalues"> SetNbAskedEigenvalues </a></td>
+<td class="category-table-td"> Sets the number of wanted eigenvalues </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetTypeSpectrum"> GetTypeSpectrum </a></td>
+<td class="category-table-td"> Returns the type of spectrum wanted by the user </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetTypeSpectrum"> SetTypeSpectrum </a></td>
+<td class="category-table-td"> Sets the of spectrum wanted by the user </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetTypeSorting"> GetTypeSorting </a></td>
+<td class="category-table-td"> Returns how eigenvalues are sorted (real part, modulus, etc) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetShiftValue"> GetShiftValue </a></td>
+<td class="category-table-td"> Returns the shift </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetShiftValue"> GetImagShiftValue </a></td>
+<td class="category-table-td"> Returns imaginary part of the shift (real unsymmetric problem) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#SetCholeskyFactoForMass"> SetCholeskyFactoForMass </a></td>
+<td class="category-table-td"> Tells to find eigenvalues of L<sup>-1</sup> K L<sup>-T</sup> if M = L L<sup>T</sup> </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SetCholeskyFactoForMass"> UseCholeskyFactoForMass </a></td>
+<td class="category-table-td"> Returns true if eigenvalues of L<sup>-1</sup> K L<sup>-T</sup>are searched (M = L L<sup>T</sup>) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#SetDiagonalMass"> SetDiagonalMass </a></td>
+<td class="category-table-td"> Tells to find eigenvalues of M<sup>-1/2</sup> K M<sup>-1/2</sup>are searched (M diagonal) </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SetDiagonalMass"> DiagonalMass </a></td>
+<td class="category-table-td"> Returns true if eigenvalues of M<sup>-1/2</sup> K M<sup>-1/2</sup>are searched (M diagonal) </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#SetStoppingCriterion"> SetStoppingCriterion </a></td>
+<td class="category-table-td"> Sets the stopping criterion used by iterative process </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SetStoppingCriterion"> GetStoppingCriterion </a></td>
+<td class="category-table-td"> Returns the stopping criterion used by iterative process </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#SetNbMaximumIterations"> SetNbMaximumIterations </a></td>
+<td class="category-table-td"> Sets the maximum number of iterations allowed for the iterative process </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#SetNbMaximumIterations"> GetNbMaximumIterations </a></td>
+<td class="category-table-td"> Returns the maximum number of iterations allowed for the iterative process </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetNbMatrixVectorProducts"> GetNbMatrixVectorProducts </a></td>
+<td class="category-table-td"> Returns the number of iterations performed by the iterative process </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetNbArnoldiVectors"> GetNbArnoldiVectors </a></td>
+<td class="category-table-td"> Returns the number of Arnoldi vectors </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetNbArnoldiVectors"> SetNbArnoldiVectors </a></td>
+<td class="category-table-td"> Sets the number of Arnoldi vectors </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetM"> GetM </a></td>
+<td class="category-table-td"> Returns the number of rows of the stiffness matrix </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetM"> GetN </a></td>
+<td class="category-table-td"> Returns the number of columns of the stiffness matrix </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#GetPrintLevel"> GetPrintLevel </a></td>
+<td class="category-table-td"> Returns the print level </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#GetPrintLevel"> SetPrintLevel </a></td>
+<td class="category-table-td"> Sets the print level </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#IncrementProdMatVect"> IncrementProdMatVect </a></td>
+<td class="category-table-td"> Increments the number of iterations performed by the iterative process </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#PrintErrorInit"> PrintErrorInit </a></td>
+<td class="category-table-td"> Prints an error message if InitMatrix has not been called </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#IsSymmetricProblem"> IsSymmetricProblem </a></td>
+<td class="category-table-td"> Returns true if the stiffness matrix is symmetric </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#FactorizeDiagonalMass"> FactorizeDiagonalMass </a></td>
+<td class="category-table-td"> Computation of M<sup>1/2</sup>, once M is known </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#MltSqrtDiagonalMass"> MltInvSqrtDiagonalMass </a></td>
+<td class="category-table-td"> Multiplication by M<sup>-1/2</sup> </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#MltSqrtDiagonalMass"> MltSqrtDiagonalMass </a></td>
+<td class="category-table-td"> Multiplication by M<sup>1/2</sup> </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#ComputeDiagonalMass"> ComputeDiagonalMass </a></td>
+<td class="category-table-td"> Computation of diagonal of M </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#ComputeMassForCholesky"> ComputeMassForCholesky </a></td>
+<td class="category-table-td"> Multiplication by M<sup>-1/2</sup> </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#ComputeMassMatrix"> ComputeMassMatrix </a></td>
+<td class="category-table-td"> Computation of mass matrix M </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#MltMass"> MltMass </a></td>
+<td class="category-table-td"> Multiplication by mass matrix M </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#ComputeStiffnessMatrix"> ComputeStiffnessMatrix </a></td>
+<td class="category-table-td"> Computation of stiffness matrix K </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#MltStiffness"> MltStiffness </a></td>
+<td class="category-table-td"> Multiplication by stiffness matrix K </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#ComputeAndFactorizeStiffnessMatrix"> ComputeAndFactorizeStiffnessMatrix </a></td>
+<td class="category-table-td"> Computation and factorization of a M + b K </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#ComputeSolution"> ComputeSolution </a></td>
+<td class="category-table-td"> Computation and factorization of a M + b K </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#FactorizeCholeskyMass"> FactorizeCholeskyMass </a></td>
+<td class="category-table-td"> Computation of Cholesky factor L of mass matrix (M = L L<sup>T</sup> </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#MltCholeskyMass"> MltCholeskyMass </a></td>
+<td class="category-table-td"> Multiplication by L or L<sup>T</sup> </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#MltCholeskyMass"> SolveCholeskyMass </a></td>
+<td class="category-table-td"> Resolution of L x = b or L<sup>T</sup> x = b </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#Clear"> Clear </a></td>
+<td class="category-table-td"> Clears memory used by factorizations (if any present)</td> </tr>
+</table>
+
+<p> The choice of eigensolver is made when calling function <a href="#GetEigenvaluesEigenvectors">GetEigenvaluesEigenvectors</a> by providing an optional argument. If this argument is not provided, default eigenvalue solver will be used (Arpack). </p>
+
+<p><br/> <br/></p>
+
+
+
+<div class="separator"><a name="Init"></a></div>
+
+
+
+<h3>Init</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Init(int n);
+</pre>
+
+
+<p>This method is actually called by each eigenvalue solver before starting the research of eigenvalues.
+ For example, it resets the number of iterations. This method should not be overloaded, neither called by the user. </p>
+
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="InitMatrix"></a></div>
+
+
+
+<h3>InitMatrix</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void InitMatrix(Matrix& K);
+  void InitMatrix(Matrix& K, Matrix& M);
+</pre>
+
+
+<p>This method allows the initialization of pointers for the stiffness matrix and mass matrix.
+ It is mandatory to call it when using SparseEigenProblem, DenseEigenProblem or MatrixFreeEigenProblem. </p>
+
+<h4>Example :</h4>
+\precode
+
+{
+
+// declaration of the eigenproblem
+DenseEigenProblem<double, General, RowMajor> var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+// then you can construct the stiffness matrix
+int n = 20;
+Matrix<double, General, RowMajor> K(n, n);
+K.FillRand();
+
+// and you provide this matrix to the eigenproblem
+// standard eigenvalue problem K x = lambda x
+var_eig.InitMatrix(K);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+// for a generalized eigenvalue problem, provide M
+Matrix<double, Symmetric, RowSymPacked> M(n, n);
+M.SetIdentity();
+// searching K x = lambda M x
+var_eig.InitMatrix(K, M);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+// if the type of M is different from Matrix<double, Symmetric, RowSymPacked>
+// and is Matrix<Tm, PropM, StorageM>
+// use DenseEigenProblem<double, General, RowMajor, Tm, PropM, StorageM> var_eig;
+}
+
+{
+// for a sparse eigenproblem, similar stuff
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+// then you can construct the stiffness matrix
+int n = 20;
+Matrix<double, General, ArrayRowSparse> K(n, n);
+K.FillRand();
+
+// and you provide this matrix to the eigenproblem
+// standard eigenvalue problem K x = lambda x
+var_eig.InitMatrix(K);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+// for a generalized eigenvalue problem, provide M
+Matrix<double, Symmetric, ArrayRowSymSparse> M(n, n);
+M.SetIdentity();
+// searching K x = lambda M x
+var_eig.InitMatrix(K, M);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+// if the type of M is different from Matrix<double, Symmetric, ArrayRowSymSparse>
+// and is Matrix<Tm, PropM, StorageM>
+// use SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse>,
+//                                Matrix<Tm, PropM, StorageM> > var_eig;
+}
+
+{
+  // matrix-free eigenproblem
+  // stiffness matrix has type MyMatrixClass
+  MatrixFreeEigenProblem<double, MyMatrixClass> var_eig;
+
+  // you can set some parameters
+  var_eig.SetNbAskedEigenvalues(5);
+  var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+  var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+ 
+  // then you can construct the stiffness matrix
+  MyMatrixClass K;
+
+  // and you provide this matrix to the eigenproblem
+  // standard eigenvalue problem K x = lambda x
+  var_eig.InitMatrix(K);
+
+  // then you can call GetEigenvaluesEigenvectors
+  GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+  // no generalized problem for MatrixFreeEigenProblem
+}
+
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetComputationalMode"></a></div>
+
+
+
+<h3>GetComputationalMode, SetComputationalMode</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetComputationalMode(int);
+  int GetComputationalMode();
+</pre>
+
+
+<p><b>SetComputationalMode</b> sets the computational mode to use for the research of eigenvalues and eigenvectors, whereas <b>GetComputationalMode</b> returns the computation mode used. The default computational mode is REGULAR_MODE. This mode is particularly well suited if you are looking for largest eigenvalues of the matrix. However, it can induce a lot of iterations to converge if smallest eigenvalues are researched, and you can't compute eigenvalues closest to the shift with that mode. The following available modes are (we put equivalent mode numbers in Arpack) : </p>
+
+<ul>
+<li> REGULAR_MODE : regular mode (1 for standard eigenproblem, 2 for generalized one) : K x = &mu; M x </li>
+<li> SHIFTED_MODE : shifted mode (1 for standard eigenproblem, 3 for generalized one) : (K - &sigma; M)<sup>-1</sup> M x = &mu; x <</li>
+<li> IMAG_SHIFTED_MODE : shifted mode and use of imaginary part (4 for generalized eigenproblem, only for real unsymmetric matrices) : Imag{ (K- &sigma; M)<sup>-1</sup> M} x = &mu; x </li>
+<li> INVERT_MODE : multiplication by inverse of M to have a standard eigenvalue problem (only for generalized eigenproblem) : (K - &sigma; M)<sup>-1</sup> M x = &mu; x </li>
+<li> BUCKLING_MODE : available for  real generalized symmetric eigenproblems (4 for Arpack) :
+ (K - &sigma; M)<sup>-1</sup> K x = &mu; x </li>
+<li> CAYLEY_MODE : available for real generalized symmetric eigenproblems (5 for Arpack) : (K - &sigma; M)<sup>-1</sup> (K + &sigma; M) x = &mu; x  </li>
+</ul>
+
+<p> INVERT_MODE is not a computational mode of Arpack, but rather a trick in order to use mode 1 for generalized eigenvalue problems. Similarly, if you inform that the mass matrix is diagonal, or if you ask to perform a Cholesky factorization of the mass matrix, GetEigenvaluesEigenvectors will use mode 1 (a regular mode on K or (K - &sigma; M)<sup>-1</sup> M ) to compute eigenvalues. However for diagonal mass and Cholesky factorization, the eigenproblem stays symmetric, while INVERT_MODE breaks the symmetry, and the computation should be less efficient. </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+// and choose the computational mode relevant with researched spectrum
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+
+// then you can construct the stiffness matrix
+int n = 20;
+Matrix<double, General, ArrayRowSparse> K(n, n);
+K.FillRand();
+
+// and you provide this matrix to the eigenproblem
+// standard eigenvalue problem K x = lambda x
+var_eig.InitMatrix(K);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+// for a generalized eigenvalue problem, provide M
+Matrix<double, Symmetric, ArrayRowSymSparse> M(n, n);
+M.SetIdentity();
+// searching K x = lambda M x
+var_eig.InitMatrix(K, M);
+
+// searching eigenvalues close to a shift
+var_eig.SetTypeSpectrum(var_eig.CENTERED_EIGENVALUES, 0.5);
+var_eig.SetComputationalMode(var_eig.SHIFTED_MODE);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetNbAskedEigenvalues"></a></div>
+
+
+
+<h3>GetNbAskedEigenvalues</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetNbAskedEigenvalues(int nev);
+  int GetNbAskedEigenvalues();
+</pre>
+
+
+<p><b>SetNbAskedEigenvalues</b> sets the number of converged eigenvalues you desire to know, whereas <b>GetNbAskedEigenvaluse</b> returns the number of desired eigenvalues. This method is mandatory since the default number of eigenvalues is equal to 0. </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+// and choose the computational mode relevant with researched spectrum
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+
+// then you can construct the stiffness matrix
+int n = 20;
+Matrix<double, General, ArrayRowSparse> K(n, n);
+K.FillRand();
+
+// and you provide this matrix to the eigenproblem
+// standard eigenvalue problem K x = lambda x
+var_eig.InitMatrix(K);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetTypeSpectrum"></a></div>
+
+
+
+<h3>GetTypeSpectrum, SetTypeSpectrum</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetTypeSpectrum(int type, T sigma);
+  void SetTypeSpectrum(int type, T sigma, int type_sort);
+  int GetTypeSpectrum();
+</pre>
+
+
+<p><b>SetTypeSpectrum</b> sets the part of the spectrum you desire to know, whereas <b>GetTypeSpectrum</b> returns the type of researched spectrum. You can ask LARGE_EIGENVALUES, SMALL_EIGENVALUES and CENTERED_EIGENVALUES, to research largest eigenvalues, smallest eigenvalues and eigenvalues closest to the shift sigma. If you search largest or smallest eigenvalues, the shift won't be used, and you can only use REGULAR_MODE. In the case of small eigenvalues, this mode may induce a high number of iterations, it can be a good idea to search eigenvalues close to a small value. type_sort can be used to specify how values are sorted, you can search largest eigenvalues by their modulus, real part or imaginary part (SORTED_MODULUS, SORTED_REAL and SORTED_IMAG). SORTED_MODULUS is the default sorting strategy. </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+// for eigenvalues closest to 0.25+0.3i
+var_eig.SetSpectrum(var_eig.CENTERED_EIGENVALUES, complex<double>(0.25, 0.3), SORTED_IMAG);
+
+if (var_eig.GetTypeSpectrum() != var_eig.CENTERED_EIGENVALUES)
+  cout << "not possible" << endl;
+
+// and choose the computational mode relevant with researched spectrum
+var_eig.SetComputationalMode(var_eig.SHIFTED_MODE);
+
+// then you can construct the stiffness matrix
+int n = 20;
+Matrix<double, General, ArrayRowSparse> K(n, n);
+K.FillRand();
+
+// and you provide this matrix to the eigenproblem
+// standard eigenvalue problem K x = lambda x
+var_eig.InitMatrix(K);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetTypeSorting"></a></div>
+
+
+
+<h3>GetTypeSorting</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetTypeSorting();
+</pre>
+
+
+<p>This methods returns the sorting strategy used (SORTED_MODULUS, SORTED_REAL or SORTED_IMAG). </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+if (var_eig.GetTypeSorting() != var_eig.SORTED_MODULUS)
+  cout << "not possible" << endl;
+
+// and choose the computational mode relevant with researched spectrum
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+
+// then you can construct the stiffness matrix
+int n = 20;
+Matrix<double, General, ArrayRowSparse> K(n, n);
+K.FillRand();
+
+// and you provide this matrix to the eigenproblem
+// standard eigenvalue problem K x = lambda x
+var_eig.InitMatrix(K);
+
+// then you can call GetEigenvaluesEigenvectors
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+\endprecode
+
+
+
+<div class="separator"><a name="GetShiftValue"></a></div>
+
+
+
+<h3>GetShiftValue, GetImagShiftValue</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  T GetShiftValue();
+  T GetImagShiftValue();
+</pre>
+
+
+<p>This methods returns the shift. For real unsymmetric matrices, you can also retrieve imaginary part of the shift </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+
+// for eigenvalues closest to 0.25+0.3i
+var_eig.SetSpectrum(var_eig.CENTERED_EIGENVALUES, complex<double>(0.25, 0.3), SORTED_IMAG);
+
+// shift_r = 0.25 and shift_i = 0.3
+double shift_r = var_eig.GetShiftValue();
+double shift_i = var_eig.GetImagShiftValue();
+
+\endprecode
+
+
+
+<div class="separator"><a name="SetCholeskyFactoForMass"></a></div>
+
+
+
+
+<h3>SetCholeskyFactoForMass, UseCholeskyFactoForMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetCholeskyFactoForMass(bool);
+  void SetCholeskyFactoForMass();
+  bool UseCholeskyFactoForMass();
+</pre>
+
+
+<p>When solving generalized eigenvalue problems K x = &lambda; M x, if K and M are symmetric, it can be attractive to perform a Cholesky factorization of M = L L<sup>T</sup>, and consider the standard problem L<sup>-1</sup> K L<sup>-T</sup> x = &lambda; x. If you want to use that strategy, <b>SetCholeskyFactoForMass</b> has to be called. <b>UseCholeskyFactoForMass</b> returns true if this strategy is used. </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.CENTERED_EIGENVALUES, 0.4);
+
+// then use Cholesky factorization
+var_eig.SetCholeskyFactoForMass();
+if (var_eig.UseCholekyFactoForMass())
+    cout << "Searching eigenvalues of L^-1  K L^-T
+
+// if you want to cancel that, or solve another problem without Cholesky
+var_eig.SetCholeskyFactoForMass(false);
+
+// then declare a generalized problem
+var_eig.InitMatrix(K, M);
+
+\endprecode
+
+
+
+<div class="separator"><a name="SetDiagonalMass"></a></div>
+
+
+
+
+<h3>SetDiagonalMass, DiagonalMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetDiagonalMass();
+  void SetDiagonalMass(bool);
+  bool DiagonalMass();
+</pre>
+
+
+<p>When solving generalized eigenvalue problems K x = &lambda; M x, if K and M are symmetric and M diagonal, it can be attractive to consider the standard problem M<sup>-1/2</sup> K M<sup>-1/2</sup> x = &lambda; x. If you want to use that strategy, <b>SetDiagonalMass</b> has to be called. <b>DiagonalMass</b> returns true if this strategy is used. </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.CENTERED_EIGENVALUES, 0.4);
+
+// then inform that mass matrix is diagonal
+var_eig.SetDiagonalMass();
+if (var_eig.DiagonalMass())
+    cout << "Searching eigenvalues of M^-1/2  K M^-1/2
+
+// if you want to cancel that, or solve another problem without diagonal mass
+var_eig.SetDiagonalMass(false);
+
+// then declare a generalized problem
+var_eig.InitMatrix(K, M);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="SetStoppingCriterion"></a></div>
+
+
+
+
+<h3>SetStoppingCriterion, GetStoppingCriterion</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetStoppingCriterion(double);
+  double GetStoppingCriterion();
+</pre>
+
+
+<p>With those methods, you can modify and retrieve the stopping criterion used by the iterative algorithm. The default value is equal to 1e-6. </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetStoppingCriterion(1e-12);
+var_eig.SetSpectrum(var_eig.CENTERED_EIGENVALUES, 0.4);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="SetNbMaximumIterations"></a></div>
+
+
+
+
+<h3>SetNbMaximumIterations, GetNbMaximumIterations</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetNbMaximumIterations(int);
+  int GetNbMaximumIterations();
+</pre>
+
+
+<p>With those methods, you can modify and retrieve the maximal number of iterations completed by the iterative algorithm. If the iterative algorithm spends more iterations, it is stopped. The default value is equal to 1000.  </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+SparseEigenProblem<double, Matrix<double, General, ArrayRowSparse> > var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetStoppingCriterion(1e-12);
+var_eig.SetNbMaximumIterations(10000);
+var_eig.SetSpectrum(var_eig.CENTERED_EIGENVALUES, 0.4);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetNbMatrixVectorProducts"></a></div>
+
+
+
+<h3>GetNbMatrixVectorProducts</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetNbMatrixVectorProducts();
+</pre>
+
+
+<p>This method returns the number of matrix vector products (for shifted mode, it would be the number of resolutions by operator K - sigma M) performed by the iterative process.  </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+MatrixFreeEigenProblem<double, MyMatrixClass> var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0.0);
+
+var_eig.InitMatrix(K);
+
+// research of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, eigen_values, eigen_imag, eigen_vec);
+
+// then displaying the number of matrix vector products performed :
+cout << "Number of times K x has been done : " << var_eig.GetNbMatrixVectorProducts() << endl;
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetNbArnoldiVectors"></a></div>
+
+
+
+<h3>GetNbArnoldiVectors, SetNbArnoldiVectors</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetNbArnoldiVectors();
+  void SetNbArnoldiVectors(int n);
+</pre>
+
+
+<p>You can modify and retrieve the number of Arnoldi vectors used by the iterative algorithm. It can be a good idea to increase the number of Arnolid vectors in order to improve the convergence. By default, the number of Arnoldi vectors is set to 2 nev + 2  where nev is the number of asked eigenvalues.  </p>
+
+<h4>Example :</h4>
+\precode
+
+// declaration of the eigenproblem
+MatrixFreeEigenProblem<double, MyMatrixClass> var_eig;
+Vector<double> eigen_values, eigen_imag;
+Matrix<double> eigen_vec;
+
+// you can set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetSpectrum(var_eig.LARGE_EIGENVALUES, 0.0);
+
+// and require a larger number of Arnoldi vectors
+var_eig.SetNbArnoldiVectors(20);
+
+var_eig.InitMatrix(K);
+
+// research of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, eigen_values, eigen_imag, eigen_vec);
+
+cout << "Number of Arnoldi vectors used by simulation" << var_eig.GetNbArnoldiVectors() << endl;
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetM"></a></div>
+
+
+
+<h3>GetM, GetN</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetM();
+  int GetM();
+</pre>
+
+
+<p><b>GetM</b> returns the number of rows of the stiffness matrix, while <b>GetN</b> returns the number of columns.  </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetPrintLevel"></a></div>
+
+
+
+<h3>GetPrintLevel</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetPrintLevel();
+  void SetPrintLevel(int n);
+</pre>
+
+
+<p>By increasing print level, more messages should be displayed on the standard output. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="IncrementProdMatVect"></a></div>
+
+
+
+<h3>IncrementProdMatVect</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void IncrementProdMatVect();
+</pre>
+
+
+<p>This method is used internally to increment the variable containing the number of matrix vector products. It should not be called by the user. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="PrintErrorInit"></a></div>
+
+
+
+<h3>PrintErrorInit</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void PrintErrorInit();
+</pre>
+
+
+<p>This method is used internally to display an error message and stop the program if InitMatrix has not been called. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="IsSymmetricProblem"></a></div>
+
+
+
+<h3>IsSymmetricProblem</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+bool IsSymmetricProblem();
+</pre>
+
+
+<p>This method returns true if the eigenvalue problem involves symmetrix mass and stiffness matrices. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="FactorizeDiagonalMass"></a></div>
+
+
+
+<h3>FactorizeDiagonalMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void FactorizeDiagonalMass(Vector&);
+</pre>
+
+
+<p>This method computes the square root of diagonal mass matrix. It is used internally, and should not be called. However, if you derive a class for your own eigenproblem, and you want to change how diagonal mass matrices are handled, you can overload this method. Then, look at the example detailed in <a href="#MltSqrtDiagonalMass">MltSqrtDiagonalMass</a>. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="MltSqrtDiagonalMass"></a></div>
+
+
+
+<h3>MltSqrtDiagonalMass, MltInvSqrtDiagonalMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void MltSqrtDiagonalMass(Vector&);
+void MltInvSqrtDiagonalMass(Vector&);
+</pre>
+
+
+<p>These methods apply M<sup>1/2</sup> or M<sup>-1/2</sup> to a given vector. It is used internally, and should not be called. However, if you derive a class for your own eigenproblem, and you want to change how diagonal mass matrices are handled, you can overload this method as shown in the example below. </p>
+
+<h4>Example :</h4>
+\precode
+template<class T, class MatStiff, class MatMass>
+class MyOwnEigenProblem : EigenProblem_Base<T, MatStiff, MatMass>
+{
+  protected:
+  // you can add attributs to handle diagonal mass matrix
+  // for example, you could consider a diagonal with only
+  // two coefficient D = [alpha I, 0; 0, beta I]
+  double alpha, beta, sqrt_alpha, sqrt_beta;
+
+  public :
+  
+  // computation of diagonal mass matrix
+  void ComputeDiagonalMass(Vector<double>& D)
+  {
+    // you may use Mh
+    if (this->Mh != NULL)
+      {
+         alpha = (*this->Mh)(0, 0);
+         beta = (*this->Mh)(1, 1);
+      }  
+    else
+      {
+        // or not
+        alpha = 1.5; beta = 3.0;
+      }
+  }  
+
+  // computation of sqrt(D)
+  void FactorizeDiagonalMass(Vector<double>& D)
+  {
+    sqrt_alpha = sqrt(alpha);
+    sqrt_beta = sqrt(beta);
+  }
+  
+  // application of sqrt(D)
+  void MltSqrtDiagonalMass(Vector<double>& X)
+  {
+    for (int i = 0; i < X.GetM(); i+=2)
+     {
+       X(i) *= sqrt_alpha;
+       X(i+1) *= sqrt_beta;
+     }
+  }
+
+  // application of 1/sqrt(D)
+  void MltInvSqrtDiagonalMass(Vector<double>& X)
+  {
+    for (int i = 0; i < X.GetM(); i+=2)
+     {
+       X(i) /= sqrt_alpha;
+       X(i+1) /= sqrt_beta;
+     }
+  }
+};
+
+int main()
+{
+
+// then you can use this class :
+MyOwnEigenProblem<double, MyStiffMatrix, MyMassMatrix> var_eig;
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+
+// set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+// specify that mass matrix is actually diagonal
+var_eig.SetDiagonalMass();
+
+// initialized pointers to matrices
+var_eig.InitMatrix(K, M);
+
+// then call computation of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+} 
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="ComputeDiagonalMass"></a></div>
+
+
+
+<h3>ComputeDiagonalMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void ComputeDiagonalMass(Vector&);
+</pre>
+
+
+<p>This method computes the diagonal of mass matrix. It is used internally, it should not be called directly by the user. However, if you derive a class for your own eigenproblem, and you want to change how diagonal mass matrices are handled, you can overload this method. Then, look at the example detailed in <a href="#MltSqrtDiagonalMass">MltSqrtDiagonalMass</a>. An overload of this single method may be necessary if the extraction of the diagonal from the mass matrix is not standard. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="ComputeMassForCholesky"></a></div>
+
+
+
+<h3>ComputeMassForCholesky</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void ComputeMassForCholesky();
+</pre>
+
+
+<p>This method is assumed to compute the mass matrix when a Cholesky factorization is required. It can differ from the computation of the mass matrix when a matrix vector product is required, since that in that latter case, the matrix may be not stored. This method is used internally and should not be called directly by the user. However, if you need to change how Cholesky factorization is handled, you can overload this function as shown in the example of member function <a href="#FactorizeCholeskyMass">FactorizeCholeskyMass</a>. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="ComputeMassMatrix"></a></div>
+
+
+
+<h3>ComputeMassMatrix</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void ComputeMassMatrix();
+</pre>
+
+
+<p>This method is assumed to compute the mass matrix when a matrix vector product is required. This method is called internally, and the user should not call it directly. However, if you have your own storage and matrix-vector product with mass matrix, you can overload this function as shown in the example of member function <a href="#MltMass">MltMass</a>. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="MltMass"></a></div>
+
+
+
+<h3>MltMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void MltMass(const Vector& X, Vector& Y);
+</pre>
+
+
+<p>This method is assumed to compute Y = M X, where M is the mass matrix. This method is called internally, and the user should not call it directly. However, if you have your own storage and matrix-vector product with mass matrix, you can overload this function as shown below : </p>
+
+<h4>Example :</h4>
+\precode
+template<class T, class MatStiff, class MatMass>
+class MyOwnEigenProblem : EigenProblem_Base<T, MatStiff, MatMass>
+{
+  protected:
+  // you can add attributs to handle mass matrix
+  double coef;
+
+  public :
+  
+  // computation of mass matrix
+  void ComputeMassMatrix()
+  {
+    coef = 2.5;
+  }  
+
+  // application of mass matrix (tridiagonal here)
+  void MltMass(const Vector<T>& X, Vector<T>& Y)
+  {
+    int n = X.GetM();
+    Y(0) = 4.0*X(0) + X(1);
+    Y(n-1) = 4.0*X(n-1) + X(n-2);
+    for (int i = 1; i < n-1; i++)
+      Y(i) = 4.0*X(i) + X(i-1) + X(i+1);
+    
+    Mlt(coef, Y);
+  }
+};
+
+int main()
+{
+
+// then you can use this class :
+MyOwnEigenProblem<double, MyStiffMatrix, MyMassMatrix> var_eig;
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+
+// set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+
+// initializing pointers to matrices
+var_eig.InitMatrix(K, M);
+
+// then calling computation of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+} 
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="ComputeStiffnessMatrix"></a></div>
+
+
+
+<h3>ComputeStiffnessMatrix</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void ComputeStiffnessMatrix();
+void ComputeStiffnessMatrix(const T& a, const T& b);
+</pre>
+
+
+<p>This method is assumed to compute the stiffness matrix when a matrix vector product is required. This method is called internally, and the user should not call it directly. However, if you have your own storage and matrix-vector product with stiffness matrix, you can overload this function as shown in the example of member function <a href="#MltStiffness">MltStiffness</a>. One other option is to write your own class for stiffness matrix and overload function Mlt with this stiffness as shown in the section "Advanced Use", then you can use MatrixFreeEigenProblem class. Nevertheless, this class is not appropriate for shift-invert mode (only regular mode can be used). </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="MltStiffness"></a></div>
+
+
+
+<h3>MltStiffness</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void MltStiffness(const Vector& X, Vector& Y);
+void MltStiffness(const T& a, const T& b, const Vector& X, Vector& Y);
+</pre>
+
+
+<p>This method is assumed to compute Y = K X (or Y = (a M + b K) X ), where M is the mass matrix and K the stiffness matrix. This method is called internally, and the user should not call it directly. However, if you have your own storage and matrix-vector product with stiffness matrix, you can overload this function as shown below :  </p>
+
+<h4>Example :</h4>
+\precode
+template<class T, class MatStiff, class MatMass>
+class MyOwnEigenProblem : EigenProblem_Base<T, MatStiff, MatMass>
+{
+  protected:
+  // you can add attributs to handle stiffness matrix
+  double alpha, beta, gamma;
+
+  public :
+  
+  // computation of stiffness matrix
+  void ComputeStiffnessMatrix()
+  {
+    alpha = 1.4;
+    beta = 2.5;
+    gamma = 0.8;
+  }  
+
+  // application of stiffness matrix (tridiagonal here)
+  void MltStiffness(const Vector<T>& X, Vector<T>& Y)
+  {
+    int n = X.GetM();
+    Y(0) = beta*X(0) + gamma*X(1);
+    Y(n-1) = beta*X(n-1) + alpha*X(n-2);
+    for (int i = 1; i < n-1; i++)
+      Y(i) = beta*X(i) + alpha*X(i-1) + gamma*X(i+1);
+    
+  }
+
+
+  // computation of Y = (a M + b K) X
+  void MltStiffness(const T& a, const T& b, const Vector<T>& X, Vector<T>& Y)
+  { 
+    // to write only for Cayley mode actually ...
+    abort();    
+  }
+
+  
+};
+
+int main()
+{
+
+// then you can use this class :
+MyOwnEigenProblem<double, MyStiffMatrix, MyMassMatrix> var_eig;
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+
+// set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+
+// initializing pointers to matrices
+var_eig.InitMatrix(K, M);
+
+// then calling computation of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+} 
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="ComputeAndFactorizeStiffnessMatrix"></a></div>
+
+
+
+<h3>ComputeAndFactorizeStiffnessMatrix</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void ComputeAndFactorizeStiffnessMatrix(const T& a, const T& b);
+void ComputeAndFactorizeStiffnessMatrix(const compplex<T>& a, const complex<T>& b, bool real_part);
+</pre>
+
+
+<p>This method is assumed to compute matrix a M + b K and factorize this matrix. If this matrix is solved by an iterative algorithm, the factorization can consist of constructing a preconditioning. This method is called internally, and the user should not call it directly. However, if you have your own resolution of linear system (a M + b K) y = x , you can overload this function as shown in the example of member function <a href="#ComputeSolution">ComputeSolution</a>. For real unsymmetric matrices, coefficients a and b can be complex and we require real part or imaginary part of the factorization of a M + b K. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="ComputeSolution"></a></div>
+
+
+
+<h3>ComputeSolution</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void ComputeSolution(const Vector& X, Vector& Y);
+</pre>
+
+
+<p>This method is assumed to solve (a M + b K) Y = X, where M is the mass matrix and K the stiffness matrix. Coefficients a and b have been given when calling the function ComputeAndFactorizeStiffnessMatrix. This method is called internally, and the user should not call it directly. However, if you have your own resolution of linear system (a M + b K) y = x , you can overload this function as shown below :  </p>
+
+<h4>Example :</h4>
+\precode
+template<class T, class MatStiff, class MatMass>
+class MyOwnEigenProblem : EigenProblem_Base<T, MatStiff, MatMass>
+{
+  protected:
+  // you can add attributs to handle factorization
+  double alpha, beta;
+  Vector<double> precond;
+
+  public :
+  
+  // computation of  a M + b K and factorization
+  void ComputeAndFactorizeStiffnessMatrix(const T& a, const T& b)
+  {
+    alpha = a;
+    beta = b;
+    // iterative process, constructing preconditioning
+    // example of diagonal preconditioning
+    precond.Reallocate(this->n_);
+    for (int i = 0; i < this->n_; i++)
+      precond(i) = 1.0 / (a*(*this->Mh)(i, i) + b*(*this->Kh)(i, i));
+  }  
+
+  void ComputeAndFactorizeStiffnessMatrix(const complex<T>& a, const complex<T>& b, bool real_p = true)
+  {
+    // to implement if real unsymmetric stiffness matrix
+    abort();
+  }
+
+
+  // resolution of (a M + b K) y = x
+  void ComputeSolution(const Vector<T>& X, Vector<T>& Y)
+  {
+    // use of conjugate gradient to solve the linear system
+    Iteration<double> iter(10000, 1e-12); 
+    Cg(*this, Y, X, *this, iter);
+  }
+
+  void ApplyFct(const T& a, const Vector<T>& x, const T& b, Vector<T>& y)
+  {
+    MltAdd(a*alpha, *this->Mh, x, b, y);
+    MltAdd(a*beta, *this->Kh, x, T(1), y);
+  }
+ 
+  // application of preconditioning
+  template<class Matrix1>
+  void Solve(Matrix1& A, const Vector<T>& r, Vector<T>& z)
+  {
+    for (int i = 0; i < this->n_; i++)
+      z(i) = r(i)*precond(i);
+  }
+ 
+};
+
+template<class T, class MatStiff, class MatMass>
+void MltAdd(const T& alpha, MyOwnEigenProblem<T, MatStiff, MatMass>& var,
+            const Vector<T>& X, const T& beta, Vector<T>& Y)
+{
+  var.ApplyFct(alpha, x, beta, y);
+}
+
+int main()
+{
+
+// then you can use this class :
+MyOwnEigenProblem<double, MyStiffMatrix, MyMassMatrix> var_eig;
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+
+// set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+var_eig.SetTypeSpectrum(var_eig.CENTERED_EIGENVALUES, 0.1);
+var_eig.SetComputationalMode(var_eig.SHIFTED_MODE);
+
+// initializing pointers to matrices
+var_eig.InitMatrix(K, M);
+
+// then calling computation of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+} 
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="FactorizeCholeskyMass"></a></div>
+
+
+
+<h3>FactorizeCholeskyMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void FactorizeCholeskyMass();
+</pre>
+
+
+<p>This method computes a Cholesky factorization of mass matrix. It is used internally, and should not be called directly. However, if you derive a class for your own eigenproblem, and you want to change how Cholesky factorization is handled, you can overload this method. Then, look at the example detailed in <a href="#MltCholeskyMass">MltCholeskyMass</a>. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="MltCholeskyMass"></a></div>
+
+
+
+<h3>SolveCholeskyMass, MltCholeskyMass</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void MltCholeskyMass(SeldonTrans, Vector& x);
+void SolveCholeskyMass(SeldonTrans, Vector& x);
+</pre>
+
+
+<p>These methods apply L, L<sup>T</sup>, L<sup>-1</sup> or L<sup>-T</sup> to a given vector. It is used internally, and should not be called directly. However, if you derive a class for your own eigenproblem, and you want to change how Cholesky factorization is handled, you can overload this method as shown in the example below. </p>
+
+<h4>Example :</h4>
+\precode
+template<class T, class MatStiff, class MatMass>
+class MyOwnEigenProblem : EigenProblem_Base<T, MatStiff, MatMass>
+{
+  protected:
+  // you can add attributs to handle Cholesky mass matrix
+  // for example, you could consider a diagonal with only
+  // two coefficient D = [alpha I, 0; 0, beta I]
+  double alpha, beta, sqrt_alpha, sqrt_beta;
+
+  public :
+  
+  // computation of mass in preparation of Cholesky factorization
+  void ComputeMassForCholesky()
+  {
+    // you may use Mh
+    if (this->Mh != NULL)
+      {
+         alpha = (*this->Mh)(0, 0);
+         beta = (*this->Mh)(1, 1);
+      }  
+    else
+      {
+        // or not
+        alpha = 1.5; beta = 3.0;
+      }
+  }  
+
+  // computation of Cholesky factor
+  void FactorizeCholeskyMass()
+  {
+    sqrt_alpha = sqrt(alpha);
+    sqrt_beta = sqrt(beta);
+  }
+  
+  // application of L or L^T
+  template<class TransposeStatus>
+  void MltCholesyMass(const TransposeStatus& TransA, Vector<double>& X)
+  {
+    for (int i = 0; i < X.GetM(); i+=2)
+     {
+       X(i) *= sqrt_alpha;
+       X(i+1) *= sqrt_beta;
+     }
+  }
+
+  // application of L^-1 or L^-T
+  template<class TransposeStatus>
+  void SolveCholeskyMass(const TransposeStatus& TransA, Vector<double>& X)
+  {
+    for (int i = 0; i < X.GetM(); i+=2)
+     {
+       X(i) /= sqrt_alpha;
+       X(i+1) /= sqrt_beta;
+     }
+  }
+};
+
+int main()
+{
+
+// then you can use this class :
+MyOwnEigenProblem<double, MyStiffMatrix, MyMassMatrix> var_eig;
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+
+// set some parameters
+var_eig.SetNbAskedEigenvalues(5);
+// specify that you want to use Cholesky factors of mass matrix
+var_eig.SetCholeskyFactoForMass();
+
+// initialized pointers to matrices
+var_eig.InitMatrix(K, M);
+
+// then call computation of eigenvalues
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+} 
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="Clear"></a></div>
+
+
+
+<h3>Clear</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+void Clear();
+</pre>
+
+
+<p>This method releases memory used for the factorization of mass matrix and/or stiffness matrix. </p>
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+<div class="separator"><a name="GetEigenvaluesEigenvectors"></a></div>
+
+
+
+<h3>GetEigenvaluesEigenvectors</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+template<class EigenPb>
+void GetEigenvaluesEigenvectors(EigenPb& var, Vector& lambda, Vector& lambda_imag, Matrix& eigen_vec);
+
+template<class EigenPb>
+void GetEigenvaluesEigenvectors(EigenPb& var, Vector& lambda, Vector& lambda_imag, Matrix& eigen_vec, int type_solver);
+</pre>
+
+
+<p>This function compute some eigenvalues and eigenvectors of a matrix (dense, sparse or defined by the user) : K x = &lambda; x, or a generalized eigenvalue problem : K x = &lambda; M x, K being called stiffness matrix and M mass matrix. For dense matrices, you can use DenseEigenProblem. For sparse matrices (Seldon format), you can use SparseEigenProblem, it will use direct solvers interfaced by Seldon to solve intermediary linear systems (if needed). For matrices defined by the user, you can evaluate largest eigenvalues with only the matrix vector product thanks to the class MatrixFreeEigenProblem. Eigenvectors are placed in a dense matrix, each column being associated with the corresponding eigenvalue. In the case of real unsymmetric eigenvalue problems, the imaginary part of eigenvalues is placed in vector lambda_imag, and the column i of eigen_vec represents the real part u of the eigenvector, the column i+1 stores the imaginary part v (eigenvectors are then equal to u + i v and u - i v ). An optional last argument can be provided in order to select the eigenvalue solver you prefer. </p>
+
+
+\precode
+
+// declaration of the eigenvalue problem
+DenseEigenProblem<double, Symmetric, RowSymPacked> var_eig;
+
+// setting parameters of eigenproblem
+var_eig.SetStoppingCriterion(1e-12);
+var_eig.SetNbAskedEigenvalues(10);
+// you can ask largest eigenvalues of M^-1 K, smallest 
+// or eigenvalues closest to a shift sigma
+var_eig.SetTypeSpectrum(var_eig.LARGE_EIGENVALUES, 0);
+
+// then you select the computational mode
+var_eig.SetComputationalMode(var_eig.REGULAR_MODE);
+
+// giving matrices K and M to the eigenvalue problem
+int n = 20;
+Matrix<double, Symmetric, RowSymPacked> K(n, n), M(n, n);
+K.FillRand(); M.FillRand();
+var_eig.InitMatrix(K, M);
+
+// declaring arrays that will contains eigenvalues and eigenvectors
+Vector<double> lambda, lambda_imag;
+Matrix<double> eigen_vec;
+GetEigenvaluesEigenvectors(var_eig, lambda, lambda_imag, eigen_vec);
+
+\endprecode
+
+<h4>Location :</h4>
+<p>EigenvalueSolver.cxx</p>
+
+
+
+*/

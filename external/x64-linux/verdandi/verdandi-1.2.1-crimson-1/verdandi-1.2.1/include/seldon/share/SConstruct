@@ -1,0 +1,222 @@
+# Copyright (C) 2001-2009 Vivien Mallet
+#
+# This file is part of the linear-algebra library Seldon,
+# http://seldon.sourceforge.net/.
+#
+# Seldon is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation; either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# Seldon is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Seldon. If not, see http://www.gnu.org/licenses/.
+
+
+import os, glob
+
+
+####################
+# USEFUL FUNCTIONS #
+####################
+
+
+# Returns 'default' if the variable with name 'input_name' is not in the
+# global namespace; returns the variable otherwise.
+def create_variable(input_name, default):
+    exec("global " + input_name)
+    try:
+        exec("local_copy = " + input_name)
+        if local_copy is None:
+            return default
+        else:
+            return local_copy
+    except:
+        return default
+
+# Returns the input as a list of strings, if the input is a list of strings, a
+# string, None, or if the input can be converted to string. The input must be
+# provided as a string containing its name.
+def to_string_list(input_name):
+    exec("global " + input_name)
+    try:
+        exec("local_copy = " + input_name)
+    except:
+        return []
+    if local_copy is None:
+        return []
+    elif isinstance(local_copy, list):
+        return local_copy
+    else:
+        return Split(str(local_copy))
+
+
+# This function checks whether a supported argument has been provided, and it
+# sets the argument to its default value if the user has not given any value.
+def add_argument(name, value_list = None):
+    if value_list is None:
+        if not ARGUMENTS.has_key(name):
+            raise Exception, "The command line argument \"" + name + "\" is" \
+                  + " required, but it was not provided."
+    else:
+        ARGUMENTS[name] = ARGUMENTS.get(name, value_list[0])
+        if ARGUMENTS[name] not in value_list:
+            raise Exception, "Unsupported option \"" + ARGUMENTS[name] \
+                  + "\" for argument \"" + name + "\". Available options " \
+                  + "are: " \
+                  + ", ".join(["\"" + x + "\"" for x in value_list]) + "."
+
+
+#######################
+# COMPILER AND LINKER #
+#######################
+
+
+cpp_compiler = create_variable("cpp_compiler", None)
+linker = create_variable("linker", "$CXX")
+
+
+#############
+# ARGUMENTS #
+#############
+
+
+# The compiler and the linker may be changed with command line options.
+cpp_compiler = ARGUMENTS.get("cpp", cpp_compiler)
+linker = ARGUMENTS.get("link", linker)
+
+# Compilation options.
+add_argument("debug", ["0", "-1", "1", "2"])
+add_argument("mode_cpp", ["strict", "permissive"])
+
+if ARGUMENTS["debug"] == "-1":
+    compilation_option = ""
+elif ARGUMENTS["debug"] == "0":
+    compilation_option = " -O2"
+elif ARGUMENTS["debug"] == "1":
+    compilation_option = " -g"
+elif ARGUMENTS["debug"] == "2":
+    compilation_option = " -O2 -g"
+
+flag_cpp = create_variable("flag_cpp", "")
+flag_cpp = ARGUMENTS.get("flag_cpp", flag_cpp).strip()
+if flag_cpp != "":
+    compilation_option += " " + flag_cpp
+
+# With or without the compiled library.
+add_argument("lib", ["no", "yes"])
+
+add_argument("line", ["no", "yes"])
+
+
+###############
+# ENVIRONMENT #
+###############
+
+
+# Main environment variables.
+env = Environment(ENV = os.environ)
+
+# User-defined paths.
+env.Append(CPPPATH = seldon_path)
+library_path = create_variable("library_path", [])
+env.Append(CPPPATH = to_string_list("library_path"))
+include_path = create_variable("include_path", [])
+env.Append(CPPPATH = to_string_list("include_path"))
+
+# User shell configuration.
+if os.environ.has_key("LD_LIBRARY_PATH"):
+    env.Append(LIBPATH = os.environ["LD_LIBRARY_PATH"].split(":"))
+if os.environ.has_key("LIBRARY_PATH"):
+    env.Append(LIBPATH = os.environ["LIBRARY_PATH"].split(":"))
+if os.environ.has_key("CPATH"):
+    env.Append(CPPPATH = os.environ["CPATH"].split(":"))
+if os.environ.has_key("CPLUS_INCLUDE_PATH"):
+    env.Append(CPPPATH = os.environ["CPLUS_INCLUDE_PATH"].split(":"))
+
+# Compiler.
+if cpp_compiler is not None:
+    env.Replace(CXX = cpp_compiler)
+
+# In case of GNU compilers, a few options may be added.
+if len(env["CXX"]) >= 3 and env["CXX"][:3] == "g++" \
+       and ARGUMENTS["mode_cpp"] == "strict":
+    compilation_option += " -Wall -ansi -pedantic"
+if len(env["CXX"]) >= 3 and env["CXX"][:3] == "g++" \
+        and ARGUMENTS["lib"] == "yes":
+    # In order to use the compiled library, the compiler must be aware of
+    # "extern template", which is a feature of C++0x.
+    compilation_option += " -std=c++0x"
+env.Replace(CCFLAGS = compilation_option)
+
+# Linker.
+env.Replace(LINK = linker)
+
+# Checks for the libraries.
+conf = Configure(env)
+link_flag_list = ""
+for library in ["blas", "atlas", "lapack", "g2c", "gslcblas", "dmumps",
+                "zmumps", "pord", "mpi", "gfortran", "pthread", "metis",
+                "umfpack", "amd", "scalapack", "blacs", "superlu", "cppunit"]:
+    if conf.CheckLib(library):
+        link_flag_list += " -l" + library
+        env.Replace(LINKFLAGS = link_flag_list)
+env.Replace(LINK = "$CXX")
+
+if ARGUMENTS["line"] == "no":
+    env.Replace(CXXCOMSTR = "[C++] $SOURCE")
+    env.Replace(ARCOMSTR = "[Archiving] $TARGET")
+    env.Replace(RANLIBCOMSTR = "[Indexing] $TARGET")
+    env.Replace(LINKCOMSTR = "[Linking] $TARGET")
+
+
+################
+# THE PROGRAMS #
+################
+
+
+target_list = glob.glob("*.cpp")
+for filename in target_list:
+    if ARGUMENTS["lib"] == "yes":
+        env.Program(filename[:-4],
+                    [filename,
+                     os.path.join(seldon_path, "lib/libseldon.a")])
+    else:
+        env.Program(filename[:-4], filename)
+
+
+###############
+# THE LIBRARY #
+###############
+
+
+env_lib = env.Clone()
+
+if ARGUMENTS["lib"] == "yes":
+    env.Append(CCFLAGS = " -DSELDON_WITH_COMPILED_LIBRARY")
+
+if ARGUMENTS["lib"] == "yes":
+    # Generates the explicit instantiations.
+    template_file = \
+        ARGUMENTS.get("template",
+                      os.path.join(seldon_path, "lib/template-complete.def"))
+    template_file = os.path.abspath(template_file)
+    os.chdir(os.path.join(seldon_path, "lib"))
+    for filename in glob.glob("template-*.cpp"):
+        if not GetOption("clean"):
+            os.system("python " + "../share/expand.py "
+                      + template_file + " " + filename)
+    # Now it is assumed that all .cpp files, except those starting with
+    # "template-" are to be compiled in order to generate the compiled
+    # library.
+    library_file = ["lib/" + x for x in glob.glob("*.cpp")
+                    if len(x) <= 9 or x[:9] != "template-"]
+    library_file.append("share/Errors.cxx")
+    library_file = [os.path.join(seldon_path, x) for x in library_file]
+    env_lib.Library(os.path.join(seldon_path, "lib/libseldon.a"),
+                    library_file)
+    env_lib.Alias("libseldon.a", os.path.join(seldon_path, "lib/libseldon.a"))

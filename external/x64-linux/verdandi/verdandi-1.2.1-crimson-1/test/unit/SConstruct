@@ -1,0 +1,6 @@
+import os, glob
+
+# Path where "Verdandi.hxx" may be found.
+verdandi_path = "../.."
+
+execfile(os.path.join(verdandi_path, "share/SConstruct"))

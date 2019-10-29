@@ -1,0 +1,212 @@
+/*! \file exceptions.dox
+    \brief Exceptions.
+*/
+
+/*!
+\page exceptions Exceptions
+
+<h2>Options</h2>
+
+<p>Exceptions are raised if an error is detected. %Seldon is able to check for several mistakes:</p>
+
+<ul>
+
+  <li>SELDON_CHECK_IO: checks input/output operations on disk.</li>
+
+  <li>SELDON_CHECK_MEMORY: checks memory allocations and deallocations.</li>
+
+  <li>SELDON_CHECK_DIMENSIONS: checks that the dimensions of involved structures are compatible. Notice that there are methods in which the compatibility is not checked however.</li>
+
+  <li>SELDON_CHECK_BOUNDS: checks that indices are not out of range.</li>
+
+</ul>
+
+<p>To enable <code>SELDON_CHECK_MEMORY</code>, for example, put (before <code>#include &lt;Seldon.hxx&gt;</code>):</p>
+
+\precode #define SELDON_CHECK_MEMORY\endprecode
+
+<p>Alternatively, there are debug levels:</p>
+
+<ul>
+
+  <li>SELDON_DEBUG_LEVEL_0: nothing is checked.</li>
+
+  <li>SELDON_DEBUG_LEVEL_1: equivalent to SELDON_CHECK_IO plus SELDON_CHECK_MEMORY.</li>
+
+  <li>SELDON_DEBUG_LEVEL_2: equivalent to SELDON_DEBUG_LEVEL_1 plus SELDON_CHECK_DIMENSIONS.</li>
+
+  <li>SELDON_DEBUG_LEVEL_3: equivalent to SELDON_DEBUG_LEVEL_2 plus SELDON_CHECK_BOUNDS.</li>
+
+  <li>SELDON_DEBUG_LEVEL_4: equivalent to SELDON_DEBUG_LEVEL_3.</li>
+
+</ul>
+
+<p>In practice, it is advocated to choose SELDON_DEBUG_LEVEL_4 in the development stage and SELDON_DEBUG_LEVEL_2 for the stable version. Indeed SELDON_DEBUG_LEVEL_4 slows down the program but checks many things and SELDON_DEBUG_LEVEL_2 should not slow down the program and ensures that it is reasonably safe.</p>
+
+<p>Development stage:</p>
+\precode #define SELDON_DEBUG_LEVEL_4\endprecode
+
+<p>Stable version:</p>
+\precode #define SELDON_DEBUG_LEVEL_2\endprecode
+
+<h2>Exceptions raised</h2>
+
+<p>The objects that may be launched by %Seldon are of type: <code>WrongArgument</code>, <code>NoMemory</code>, <code>WrongDim</code>, <code>WrongIndex</code>, <code>WrongRow</code>, <code>WrongCol</code>, <code>IOError</code> and <code>LapackError</code>. They all derive from <code>Error</code>. They provide the method <code>What</code> that returns a string explaining the error, and the method <code>CoutWhat</code> that displays on screen this explanation. Therefore, to catch an exception raised by %Seldon, put:</p>
+
+\precode catch(Seldon::Error& Err)
+{
+Err.CoutWhat();
+}\endprecode
+
+<p>Two macros are defined to help:</p>
+
+<p><code>TRY</code>:</p>
+
+\precode #define TRY try {\endprecode
+
+<p><code>END</code>:</p>
+
+\precode #define END                                                     \
+  }                                                             \
+    catch(Seldon::Error& Err)                                   \
+      {                                                         \
+        Err.CoutWhat();                                         \
+        return 1;                                               \
+      }                                                         \
+    catch (std::exception& Err)                                 \
+      {                                                         \
+        cout << "C++ exception: " << Err.what() << endl;        \
+        return 1;                                               \
+      }                                                         \
+    catch (std::string& str)                                    \
+      {                                                         \
+        cout << str << endl;                                    \
+        return 1;                                               \
+      }                                                         \
+    catch (const char* str)                                     \
+      {                                                         \
+        cout << str << endl;                                    \
+        return 1;                                               \
+      }                                                         \
+    catch(...)                                                  \
+      {                                                         \
+        cout << "Unknown exception..." << endl;                 \
+        return 1;                                               \
+      }
+\endprecode
+
+<p>It is advocated that you enclose your code (in the <code>main</code> function) with <code>TRY;</code> and <code>END;</code>:</p>
+
+\precode
+int main(int argc, char** argv)
+{
+  TRY;
+
+  // Here goes your code.
+
+  END;
+
+  return 0;
+}
+\endprecode
+
+<h2>Exceptions and debugging</h2>
+
+<p>Suppose your code contains an error and raises an exception. You probably want to identify the function that raised the exception. The error message should contain the name of the function. But you probably want to know the exact line where the error occurred and the sequence of calls. Then, you have two options, using a debugger.</p>
+
+<p>One option is to place a breakpoint in <code>Error::Error(string function = "", string comment = "")</code> (see file share/Errors.cxx) because this constructor should be called before the exception is actually raised.</p>
+
+<p>Another option, more convenient because no breakpoint is to be placed, is to define <code>SELDON_WITH_ABORT</code>. With that flag activated, if a %Seldon exception is raised, the program will simply abort. The call stack is then at hand. See the example below, using gdb under Linux. The program <code> error.cpp</code> demonstrates the technique:</p>
+
+\precode
+#define SELDON_WITH_ABORT
+#define SELDON_DEBUG_LEVEL_4 // which checks bounds.
+#include "Seldon.hxx"
+using namespace Seldon;
+
+int main(int argc, char** argv)
+{
+  TRY;
+
+  IVect V(3);
+  cout << "Bad access: " << V(3) << endl;
+
+  END;
+
+  return 0;
+}
+\endprecode
+
+<p>The error and the calls sequence are easy to obtain:</p>
+
+\prescreen
+$ g++ -o error -g -I ~/src/seldon error.cpp
+$ ./error                                        
+ERROR!                                                     
+Index out of range in Vector<VectFull>::operator().        
+   Index should be in [0, 2], but is equal to 3.           
+Aborted
+$ gdb ./error
+GNU gdb 6.8-debian
+Copyright (C) 2008 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu"...
+(gdb) run
+Starting program: /tmp/error 
+ERROR!
+Index out of range in Vector<VectFull>::operator().
+   Index should be in [0, 2], but is equal to 3.
+
+Program received signal SIGABRT, Aborted.
+0x00007f4b7e136fb5 in raise () from /lib/libc.so.6
+(gdb) up
+#1  0x00007f4b7e138bc3 in abort () from /lib/libc.so.6
+(gdb) up
+#2  0x000000000040308e in WrongIndex (this=0x1a83370, function=
+        {static npos = 18446744073709551615, _M_dataplus = {<std::allocator<char>> = {<__gnu_cxx::new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x7fff86e3e0f0 "H?\001"}}, comment=
+        {static npos = 18446744073709551615, _M_dataplus = {<std::allocator<char>> = {<__gnu_cxx::new_allocator<char>> = {<No data fields>}, <No data fields>}, _M_p = 0x7fff86e3e100 "??\001"}}) at /home/mallet/src/seldon/share/Errors.cxx:206
+206	    abort();
+(gdb) up
+#3  0x0000000000404888 in Seldon::Vector<int, Seldon::VectFull, Seldon::MallocAlloc<int> >::operator() (this=0x7fff86e3e1c0, i=3)
+    at /home/mallet/src/seldon/vector/Vector.cxx:440
+440	      throw WrongIndex("Vector<VectFull>::operator()",
+(gdb) up
+#4  0x000000000040364b in main (argc=1, argv=0x7fff86e3e2d8) at error.cpp:11
+11	  cout << "Bad access: " << V(3) << endl;
+\endprescreen
+
+<h2>Notes</h2>
+
+<p>Apart from exceptions, two useful macros are defined to ease the debugging
+activities:</p>
+
+<p><code>ERR</code>:</p>
+
+\precode #define ERR(x) cout << "Hermes - " #x << endl\endprecode
+
+<p><code>DISP</code>:</p>
+
+\precode DISP(x) cout << #x ": " << x << endl\endprecode
+
+<p>In a code:</p>
+
+\precode
+ERR(5);
+ERR(5a);
+int i = 7;
+DISP(i + 1);
+ERR(Last line);
+\endprecode
+
+<p>returns on screen:</p>
+
+<pre class="fragment">Hermes - 5
+Hermes - 5a
+i + 1: 8
+Hermes - Last line
+</pre>
+
+*/

@@ -1,0 +1,81 @@
+/*! \file ensemble_kalman_filter.dox
+    \brief Ensemble Kalman Filter.
+*/
+
+/*!
+\page ensemble_kalman_filter Ensemble Kalman Filter
+
+Verdandi provides a C++ implementation of the Ensemble Kalman Filter (EnKF).
+
+The Ensemble Kalman Filter (EnKF) is implemented in <code>EnsembleKalmanFilter.hxx</code> and <code>EnsembleKalmanFilter.cxx</code>. The class \link Verdandi::EnsembleKalmanFilter EnsembleKalmanFilter\endlink is a template class: <code>EnsembleKalmanFilter<T, ClassModel, ClassObservationManager, ClassPerturbationManager></code>. <code>T</code> is the type of the elements to be stored (e.g., <code>double</code>), <code>ClassModel</code> is the type of the model (e.g., <code>ShallowWater<double></code>), <code>ClassObservationManager</code> is the type of the observation manager (e.g. <code>LinearObservationManager<double></code>), and <code>ClassPerturbationManager</code> is the type of the perturbation manager (e.g. <code>NewranPerturbationManager</code>).
+
+A simulation with Ensemble Kalman filter (EnKF) may be carried
+out with the following C++ lines:
+
+\precode
+EnsembleKalmanFilter<real, ShallowWater<real>,
+        LinearObservationManager<real>, NewranPerturbationManager> driver; [1]
+
+driver.Initialize(argv[1]); [2]
+
+while (!driver.HasFinished()) [6]
+{
+    driver.InitializeStep(); [3]
+    driver.Forward(); [4]
+    driver.Analyze(); [5]
+}
+\endprecode
+
+\comment
+  <li> First build the \link Verdandi::EnsembleKalmanFilter EnsembleKalmanFilter\endlink driver with the construction \link Verdandi::EnsembleKalmanFilter::EnsembleKalmanFilter() EnsembleKalmanFilter\endlink. </li>
+
+  <li> Then initialize the driver, the model, the observation manager, the perturbation manager and read option keys in the configuration file with \link Verdandi::EnsembleKalmanFilter::Initialize(string configuration_file, bool initialize_model, bool initialize_observation_manager) Initialize(configuration_file)\endlink. Model parameters or initial conditions are perturbed differently for each member of the ensemble at that stage.</li>
+
+  <li> Optionally initialize the model before a time step with \link Verdandi::EnsembleKalmanFilter::InitializeStep() InitializeStep()\endlink. Perturbations can be applied again.</li>
+
+  <li> Perform a step forward with \link Verdandi::EnsembleKalmanFilter::Forward() Forward()\endlink for all members of the ensemble. </li>
+
+  <li> Compute the analysis with \link Verdandi::EnsembleKalmanFilter::Analyze() Analyze()\endlink whenever observations are available. </li>
+
+  <li> Iterate until the model has finished: \link Verdandi::EnsembleKalmanFilter::HasFinished() HasFinished()\endlink returns true if the simulation is done, false otherwise. </li>
+\endcomment
+
+
+\section algorithm_enkf Ensemble Kalman Filter algorithm
+
+In the ensemble Kalman filter, the forecast error covariance matrix is estimated with an ensemble of simulations. Each member of the ensemble is defined with perturbations in the initial condition and in several uncertain input parameters. The filter estimator is given by the ensemble mean.
+
+<ol>
+        <li>At time \f$t_0\f$, an ensemble \f$(x^{f, \{i\} }_{0})_i\f$ of initial conditions is generated. The uncertain parameters \f$p_0\f$ of the model are perturbed in each member, and denoted \f$\widetilde p_0^{\{i\}}\f$.</li>
+        <li>For every time \f$t_h, h \ge 0\f$, 
+                - the forecast is the ensemble mean <br>
+                  \f$x_{h}^f = \frac{1}{N} \displaystyle\sum\limits_{i=1}^{N} x^{f, \{i\} }_{h}\f$
+                - if observations \f$y_h\f$ are available, the forecast error covariance matrix is approximated by, <br>
+                 \f$P_h^{f} = \frac{1}{N-1}                    \displaystyle\sum\limits_{i=1}^{N} (x_{h}^{f, \{i\}} - x_{h}^f)(x_{h}^{f, \{i\}} - x_{h}^f)^T\;.\f$ <br>
+                 The analysis is computed for each member of the ensemble: <br>
+                 \f$x_h^{a, \{i\}} = x_h^{f, \{i\}} + K_h(y_h - \mathcal{H}_h(x_h^{f, \{i\}}))\f$, <br>
+                  with <br>
+                   \f$K_h = P_h^{f}H_h^{T}(H_hP_h^{f}H_h^{T} + R_h)^{-1}\;.\f$ <br>
+                 The subsequent forecast is <br>
+                  \f$x_{h+1}^{f,\{i\}} = \mathcal{M}_h(x_h^{a ,\{i\}}, \widetilde p_h^{\{i\}})\;.\f$ <br>
+                  The parameters \f$p_{h+1}\f$ are then perturbed and denoted \f$\widetilde p_{h+1}\f$. </li>
+                - if there are no observations, the forecast is <br>
+                  \f$x_{h+1}^{f,\{i\}} = \mathcal{M}_h(x_h^{f ,\{i\}}, \widetilde p_h^{\{i\}})\;.\f$ <br>
+                  The parameters \f$p_{h+1}\f$ are then perturbed and denoted \f$\widetilde p_{h+1}\f$. </li>
+</ol>
+With: <br>
+\f$x_h^f\f$ forecast state vector (ensemble mean); <br>
+\f$x_h^a\f$ analysis state vector (ensemble mean); <br>
+\f$x_h^{f, \{i\}}\f$ forecast state vector of member \f$i\f$ of the ensemble; <br>
+\f$x_h^{a, \{i\}}\f$ analysis state vector of member \f$i\f$ of the ensemble; <br>
+\f$y_h\f$ observation vector; <br>
+\f$\mathcal{H}_h\f$ observation operator that maps the state space to the observation space; <br>
+\f$H^{\{i\}}_h\f$ observation operator linearized at \f$x^f_h\f$; <br>
+\f$P_h^{f}\f$ error covariance matrix of \f$x_h^f\f$; <br>
+\f$R_h\f$ observational error covariance matrix; <br>
+\f$K_h\f$ analysis gain matrix; <br>
+\f$p_h\f$ model parameters; <br>
+\f$\widetilde p_h\f$ perturbed model parameters; <br>
+\f$\mathcal{M}_h\f$ model.
+
+*/

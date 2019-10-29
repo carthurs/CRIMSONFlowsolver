@@ -1,0 +1,66 @@
+/*! \file tips.dox
+    \brief Tips.
+*/
+
+/*!
+\page tips Tips
+
+\section getting_started Getting started: how to compile your first program
+
+For the installation, see the section \ref installation.
+
+<code>Verdandi.hxx</code> is the only file to be included and it is located in the directory <code>Verdandi-[version]/</code> expanded from the archive. To include %Verdandi, edit your program to add the following lines (the second one is optional):
+
+\precode
+#include "Verdandi.hxx"
+using namespace Verdandi;
+\endprecode
+
+In the directory containing your program, copy the <code>SConstruct</code> file provided in the examples. Edit the <code>SConstruct</code> file to specify your <code>verdandi_path/</code> by adding this line:
+
+\precode
+verdandi_path = "your_verdandi_path"
+\endprecode
+
+Compile your program with:
+\prescreen
+scons
+\endprescreen
+
+If you want to compile one specific program:
+\prescreen
+scons my_executable_program
+\endprescreen
+
+\section options Options
+
+Here is the list of %Verdandi options you may define. To define an option <code>VERDANDI_OPTION</code>, add this line to your program:
+
+\precode
+#define VERDANDI_OPTION
+\endprecode
+
+Defining <code>VERDANDI_WITH_ABORT</code> makes the program abort if a %Verdandi exception is raised (see explanation below in section \ref exceptions_and_debugging of page \ref debugging). 
+
+Defining <code>VERDANDI_IGNORE_MESSAGE</code> skips the processing of messages sent between the objects.
+
+You may define either <code>VERDANDI_DENSE</code> or <code>VERDANDI_SPARSE</code>, respectively to work with dense or sparse matrices for the error variances and the observation tangent operator.  If none of these options is defined, the error variances and the observation operator are not stored in a matrix, and the computation is made row by row. The options defined with <code>VERDANDI_DENSE</code> are <code>VERDANDI_TANGENT_LINEAR_OPERATOR_DENSE</code> and
+<code>VERDANDI_STATE_ERROR_DENSE</code>. The options defined with <code>VERDANDI_SPARSE</code> are <code>VERDANDI_TANGENT_LINEAR_OPERATOR_SPARSE</code>, <code>VERDANDI_OBSERVATION_ERROR_SPARSE</code> and <code>VERDANDI_STATE_ERROR_SPARSE</code>. If you want to mix dense and sparse structures, you may define the option of your choice for each matrix (error variances and the observation tangent operator).
+
+A level of priority for the logger messages can be set by defining <code>VERDANDI_LOGGING_LEVEL</code>.
+
+\section matrix_vector Seldon matrices and vectors
+
+The structures manipulated in %Verdandi are <a href="http://seldon.sourceforge.net/">Seldon</a> vectors and matrices.
+
+Vectors are instances of the class <code>Vector</code>. Class <code>Vector</code> is a template class: <code>Vector&lt;T, Storage, Allocator&gt;</code>. <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>). <code>Storage</code> defines how the vector is stored.  <code>Storage</code> is equal to <code>VectFull</code> by default for full vectors, you can set it to <code>VectSparse</code> for sparse vectors. Finally, <code>Allocator</code> defines the way memory is managed. It is close to STL allocators. See the section "Allocators" for further details.
+
+Matrices are instances of the class <code>Matrix</code>. Class <code>Matrix</code> is a template class: <code>Matrix&lt;T, Prop, Storage, Allocator&gt;</code>. As for vectors, <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>).
+
+<code>Prop</code> indicates that the matrix has given properties (symmetric, hermitian, positive definite or whatever). This template parameter is never used by Seldon; so the user may define its own properties. Thanks to this template parameter, the user may overload some functions based on the properties of the matrix. Seldon defines two properties: <code>General</code> (default) and <code>Symmetric</code>.
+
+<code>Storage</code> defines how the matrix is stored. Matrices may be stored in several ways. <code>RowMajor</code> is the default storage.
+
+Finally, <code>Allocator</code> defines the way memory is managed. It is close to STL allocators.
+
+*/

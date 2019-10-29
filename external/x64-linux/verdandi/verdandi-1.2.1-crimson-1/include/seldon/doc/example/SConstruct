@@ -1,0 +1,15 @@
+import os, glob
+
+# Path where "Seldon.hxx" may be found.
+seldon_path = "../.."
+
+# If you want to compile with Mumps, UmfPack or SuperLU, and if the libraries
+# are not in your system directories, you may:
+# 1. put their paths in 'CPATH' (headers) and 'LD_LIBRARY_PATH' (compiled
+# library), or
+# 2. define below 'include_path' (headers) and 'library_path' (compiled
+# library), as a list of strings.
+include_path = []
+library_path = []
+
+execfile(os.path.join(seldon_path, "share/SConstruct"))

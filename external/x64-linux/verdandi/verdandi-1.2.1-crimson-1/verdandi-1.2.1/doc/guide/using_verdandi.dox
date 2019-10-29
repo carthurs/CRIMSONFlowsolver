@@ -1,0 +1,10 @@
+/*! \file using_verdandi.dox
+    \brief Using Verdandi.
+*/
+
+/*!
+\page using_verdandi Using %Verdandi
+
+In this section, you will find detailed explanations on how to use the \ref configuration_files "Lua configuration files" and the \ref scons "SConstruct files" used to compile Verdandi. Several \ref tips "general tips" are also provided.
+
+*/

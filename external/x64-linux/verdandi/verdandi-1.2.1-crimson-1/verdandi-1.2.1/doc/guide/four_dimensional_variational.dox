@@ -1,0 +1,104 @@
+/*! \file four_dimensional_variational.dox
+    \brief Four Dimensional Variational.
+*/
+
+/*!
+\page four_dimensional_variational Four Dimensional Variational
+
+Verdandi provides a C++ implementation of the Four Dimensional Variational assimilation method (4DVAR).
+
+The Four Dimensional Variational assimilation method (4DVAR) is implemented in <code>FourDimensionalVariational.hxx</code> and <code>FourDimensionalVariational.cxx</code>. The class
+\link Verdandi::FourDimensionalVariational FourDimensionalVariational\endlink is a template class: <code>FourDimensionalVariational<T, ClassModel,
+ClassObservationManager, ClassOptimization></code>. <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>),
+<code>ClassModel</code> is the type of the model (e.g. <code>ClampedBar<double></code>), <code>ClassObservationManager</code> is the
+type of the observation manager (e.g. <code>LinearObservationManager<double></code>), <code>ClassOptimization</code> is the type of the optimization algorithm (e.g. <code>Seldon::NLoptSolver</code>).
+
+A simulation with the Four Dimensional Variational assimilation method (4DVAR) may be carried out with the following C++ lines:
+
+\precode
+FourDimensionalVariational<real, ClampedBar<real>,
+        LinearObservationManager<real>, Seldon::NLoptSolver> driver; [1]
+
+driver.Initialize(argv[1]); [2]
+
+driver.Analyze(); [3]
+
+while (!driver.HasFinished()) [6]
+{
+    driver.InitializeStep(); [4]
+
+    driver.Forward(); [5]
+}
+\endprecode
+
+\comment
+  <li> First build the \link Verdandi::FourDimensionalVariational FourDimensionalVariational\endlink driver with the construction \link Verdandi::FourDimensionalVariational::FourDimensionalVariational() FourDimensionalVariational\endlink. </li>
+
+  <li> Then initialize the driver, the model and the observation manager, and read option keys in the configuration file with \link Verdandi::FourDimensionalVariational::Initialize(string configuration_file, bool initialize_model, bool initialize_observation_manager) Initialize(configuration_file)\endlink.</li>
+
+  <li> Compute the initial condition with \link Verdandi::FourDimensionalVariational::Analyze() Analyze()\endlink, whenever observations are available. </li>
+
+  <li> Optionally intialize a step with \link Verdandi::FourDimensionalVariational::InitializeStep() InitializeStep()\endlink. This initializes a step for the model. </li>
+
+  <li> Perform a step forward and propagate the state error variance with \link Verdandi::FourDimensionalVariational::Forward() Forward()\endlink. </li>
+
+  <li> Compute the data assimilation until the model has finished: \link Verdandi::FourDimensionalVariational::HasFinished() HasFinished()\endlink returns true if the simulation is done, false otherwise. </li>
+\endcomment
+
+
+\section algorithm4dv Four Dimensional Variational algorithm
+
+Let consider \f$ (x_h(\xi))_h \f$ such that \f$ x_{h=0}(\xi) = x_0 + \xi \f$.
+
+Given the observations \f$ y_h \f$ and the a priori on the initial condition
+\f$ x_0 \f$, we want to find the parameter \f$ \xi \f$ optimal for the quadratic
+criterion
+<center>
+\f$ \displaystyle \mathcal{J}(\xi) = \frac{1}{2} \| \xi \|^2_{P_0^{-1}}
++ \frac{1}{2} \displaystyle\sum\limits_{h=0}^{N_t} \|y_h - H_h x_h(\xi) \|^2_{R_h^{-1}} \f$.
+</center>
+
+The Four Dimensional Variational assimilation method (4DVAR) carries out the minimization of the previous cost function.
+
+\subsection algorithm4dv0 Gradient-based optimization
+
+Gradient descent algorithms are usually used in the minimization of the cost function. We therefore need to compute the gradient of the cost function \f$ \mathcal{J}\f$.
+
+\f$ \mathcal{J}\f$ admits a minimum at a point where \f$ \mathrm{d}_\xi \mathcal{J} = 0 \f$. Yet,
+<center>
+\f$ \mathrm{d}_\xi \mathcal{J} \cdot \delta \xi = \xi^T P_0^{-1} \delta \xi -
+\displaystyle\sum\limits_{h=0}^{N_t} (y_h - H_h x_h)^T R_h^{-1} H_h \mathrm{d}_\xi x_h \cdot \delta \xi \f$,
+</center>
+with
+<center>
+ \f$ \mathrm{d}_\xi x_{h+1} = M_{h+1} \mathrm{d}_\xi x_h \f$, \f$ \mathrm{d}_\xi x_0 = 1 \f$
+</center>
+Then, we introduce \f$ (p_h)_{1 \le h \le N_t}\f$ fulfilling the adjoint dynamic of \f$ x_h \f$,
+<center>
+\f$ \left\{
+\begin{array}{l}
+p_h - M_{h+1}^T p_{h+1} = H_h^T R_h^{-1} (y_h - H_h x_h) \\
+p_{N_t} = 0
+\end{array} \right. \\ \f$
+</center>
+And we can prove that
+<center>
+\f$ \mathrm{d} \mathcal{J}\cdot\delta \xi = \xi^T P_0^{-1} \delta \xi - p_0^T \delta \xi \f$.
+</center>
+
+\subsection algorithm4dv1 Derivative-free optimization
+
+One can also try derivative-free algorithms such as COBYLA (Constrained Optimization BY Linear Approximations)
+or PRAXIS (optimization via the "principal-axis method").
+
+\subsection algorithm4dvnotation Notation
+
+\f$x_h\f$ state vector; <br>
+\f$y_h\f$ observation vector; <br>
+\f$\mathcal{H}_h\f$ observation operator that maps the state space to the observation space; <br>
+\f$H_h\f$ observation operator linearized at \f$x_h\f$; <br>
+\f$P_h\f$ error covariance matrix of \f$x_h\f$; <br>
+\f$R_h\f$ observational error covariance matrix; <br>
+\f$\mathcal{M}_h\f$ model.
+
+*/

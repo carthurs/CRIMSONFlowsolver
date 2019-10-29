@@ -1,0 +1,31 @@
+Version 1.1 (2012-03-30)
+-----------
+
+* Improvements
+
+- Added 'Ops::IsTable()'.
+- Modified "SConstruct" so that the Python module may be built under MS
+  Windows.
+
+* Bug fix
+
+- When an error occurred, the exception was sometimes instantiated but not
+  thrown.
+
+
+Version 1.0.1 (2011-07-11)
+-------------
+
+* Bug fix
+
+- The stack was not cleared in 'Ops::Exists', which could lead to a crash
+  after numerous calls to 'Ops::Exists'.
+
+
+Version 1.0 (2010-09-05)
+-----------
+
+First tagged version.
+
+
+The development started on 28 May 2010.

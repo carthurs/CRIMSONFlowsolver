@@ -1,0 +1,106 @@
+/*! \file reduded_minimax_filter.dox
+    \brief Reduced Minimax Filter.
+*/
+
+/*!
+\page reduced_minimax_filter Reduced Minimax Filter
+
+Verdandi provides a C++ implementation of the Reduced Minimax Filter (RMF).
+
+The Reduced Minimax Filter (RMF) is implemented in
+<code>ReducedMinimax.hxx</code> and
+<code>ReducedMinimax.cxx</code>. The class \link
+Verdandi::ReducedMinimax ReducedMinimax\endlink is a
+template class: <code>ReducedMinimax<T, ClassModel,
+ClassObservationManager></code>. <code>T</code> is the type of the
+elements to be stored (e.g., <code>double</code>),
+<code>ClassModel</code> is the type of the model (e.g.,
+<code>ClampedBar<double></code>), <code>ClassObservationManager</code>
+is the type of the observation manager (e.g.
+<code>LinearObservationManager<double></code>).
+
+A simulation with the Reduced Minimax Filter (RMF) may be carried
+out with the following C++ lines:
+
+\precode
+ReducedMinimax<real, ClampedBar<real>,
+        LinearObservationManager<real> > driver; [1]
+
+driver.Initialize(argv[1]); [2]
+
+while (!driver.HasFinished()) [5]
+{
+    driver.InitializeStep(); [3]
+
+    driver.Forward(); [4]
+}
+\endprecode
+
+\comment
+  <li> First build the \link Verdandi::ReducedMinimax ReducedMinimax\endlink driver with the construction \link Verdandi::ReducedMinimax::ReducedMinimax() ReducedMinimax\endlink. </li>
+
+  <li> Then initialize the driver, the model and the observation manager, and read option keys in the configuration file with \link Verdandi::ReducedMinimax::Initialize(string configuration_file, bool initialize_model, bool initialize_observation_manager) Initialize(configuration_file)\endlink. </li>
+
+  <li> Initialize a step with \link Verdandi::ReducedMinimax::InitializeStep() InitializeStep()\endlink. This initializes a step for the model. </li>
+
+  <li> Perform a step forward, with assimilation of the observation, and propagate the minimax gain with \link Verdandi::ReducedMinimax::Forward() Forward()\endlink. </li>
+
+  <li> Iterate until the model has finished: \link Verdandi::ReducedMinimax::HasFinished() HasFinished()\endlink returns true if the simulation is done, false otherwise. </li>
+\endcomment
+
+
+\section algorithm_minimax_2 Reduced Minimax filter algorithm
+
+<ol>
+        <li>Initialization:
+            - \f$\hat x_0 = G^{-1}_0 \left(F_0^T S_0^{-1} \overline e +
+H_0^T R_0^{-1} (y_0- \overline \eta_0)\right)\f$<br>
+            - \f$G_0 = F_0^TS_0^{-1}F_0 + H_0^T R_0^{-1} H_0\f$<br>
+	    - \f$\beta_0=<  R_0^{-1} (y_0-\overline \eta_0),y_0-\overline
+\eta_0>\f$<br>
+</li>
+        
+        <li>Update:
+	    - \f$ x_{h+1}^f={\mathcal M}_h(F_h\hat x_h) \f$<br>
+            - \f$\hat x_{h+1} = F_{h+1}^Tx_{h+1}^f + G^{-1}_{h+1}H^T_{t
++1}R^{-1}_{h+1}[(y_{h+1}-\overline \eta_{h+1})-H_{h+1}F_{h+1}^T
+x_{h+1}^f] + c_{h+1}, \f$,<br>
+            - \f$c_{h+1} = G^{-1}_{h+1}F_{h+1}^T(Q_h+{\mathcal M}_hG_h^{-1}{\mathcal M}^T_h)^{-1}((I-F_hF_h^T)x_{h+1}^f+\overline w_h) \f$
+            - \f$G_{h+1} = F_{h+1}^T \left[ Q_h^{-1} - Q_h^{-1} M_h B_h
+M_h^T Q^{-1}_h \right] F_{h+1} + H_{h+1}^T R_{h+1}^{-1} H_{h+1} \f$<br>
+            - \f$B_h  = \left(G_h + M_h^T Q_h^{-1} M_h\right)^+ \f$<br>
+            - \f$\beta_{h+1} = \beta_h - < B^+_h G_h^{-1}\hat x_h,\hat x_h> + <
+F_h M^T_h Q_h M_h F_h^T \overline w_h, \overline w_h> + \gamma_{h+1}\f$<br>
+            - \f$\gamma_{h+1} = <  R_h^{-1} (y_h-\overline \eta_h),y_h-\overline \eta_h> \f$<br>
+</li>
+
+<li>Reachability set:
+    - \f$ \mathcal R(h) = \widehat x_h + \sqrt{1-\beta_h+<G_h\hat x_h,\hat
+x_h>}\mathcal X(t)\f$<br>
+    - \f$\mathcal X(h) = \{z: <G_h z, z>\le 1\} \f$<br>
+</li>
+</ol>
+With: <br>
+\f$x^f_h\f$ forecast state vector; <br>
+\f$\hat x_h\f$ analysis state vector; <br>
+\f$y_h\f$ observation vector; <br>
+\f$\mathcal{H}_h\f$ observation operator that maps the state space to
+the observation space; <br>
+\f$H_h\f$ tangent linear observation operator linearized at \f$x^f_h\f$; <br>
+\f$G_h\f$ minimax gain matrix; <br>
+\f$\mathcal R(h)\f$ the reachability set that is the set of all model
+states compatible with observations and uncertainty description; <br>
+\f$R_h\f$ observational error covariance matrix, possibly scaled; <br>
+\f$Q_h\f$ state error covariance matrix, possibly scaled; <br>
+\f$\mathcal X(h)\f$ a set describing how the model propagates uncertain
+initial condition, observation error and model error; <br>
+\f$\beta_h\f$ observation-dependent scaling factor; <br>
+\f$\mathcal{M}_h\f$ model; <br>
+\f$\overline e\f$ systematic error in the initial condition; <br>
+\f$\overline e_h\f$ systematic model error; <br>
+\f$\overline \eta_h\f$ systematic observation error; <br>
+\f$M_h\f$ tangent linear model linearized at \f$\hat x_h\f$; <br>
+\f$F^T_h\f$ is a reduction matrix mapping the state space into the
+reduced-state space.<br>
+
+*/

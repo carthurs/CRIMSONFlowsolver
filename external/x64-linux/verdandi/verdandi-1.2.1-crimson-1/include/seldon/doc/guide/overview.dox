@@ -1,0 +1,77 @@
+/*! \file overview.dox
+    \brief Overview of Seldon.
+*/
+
+/*!
+\page overview Overview
+
+<h2>Basic ideas</h2>
+
+<p> %Seldon provides matrix and vector structures (for numerical computations) which are not part of the C++ standard library. Those structures are a lot more convenient than basic arrays (like <code>float* vect = new float[5]</code> or <code>double mat[5][4]</code>). They can be resized, displayed, copied, automatically destroyed, etc. The use of %Seldon is therefore easy.  </p>
+
+<h2>Example 1 - basic example</h2>
+
+\includeexample{basic_example.cpp}
+
+<p>
+The example above does the following:
+</p>
+
+<ul>
+
+  <li> A "debug level" is defined. It defines the amount of checks that %Seldon will perform. A high debugging level will force %Seldon to check a lot of things (e.g. indices validity), while a low debugging level will lead to less checks but to a faster code.</li>
+  
+  <li> %Seldon is included. Its classes and functions are in the namespace Seldon.</li>
+  
+  <li> In the main function, the whole is included in a <code>try</code> block (macros <code>TRY</code> and <code>END</code>). This is not required, but it may catch %Seldon exceptions.</li>
+  
+  <li> A matrix of size 3 by 3 if declared.</li>
+  
+  <li> Two vectors are defined. Their sizes are unknown.</li>
+  
+  <li> The matrix <code>A</code> is set to the identity. Then its element at (0, 1) (first row, second column) is set to -1.0.</li>
+  
+  <li> <code>U</code> is reallocated so that its length is the number of columns of <code>A</code>. It is simply filled with 1, 2 and 3. Then it is displayed thanks to the method <code>Print</code>.</li>
+  
+  <li> The next operation is simply: 2.0 x A x U -&gt; V. Notice that V is reallocated to have the right size; otherwise an exception would have been raised. If Blas was used, <code>Mlt</code> would call it.</li>
+  
+  <li> The result <code>V</code> is displayed.</li>
+  
+</ul>
+
+<p> The output is: </p>
+
+\prescreen
+1       2       3
+-2      4       6
+\endprescreen
+
+<h2>Example 2 - exceptions</h2>
+
+\includeexample{basic_example_exception.cpp}
+
+<p> The example above does the following:</p>
+
+<ul>
+
+  <li> A high debugging level is defined. For example, the validity of indices is checked at every access.</li>
+  
+  <li> Within a try block, a matrix <code>A</code> of size 3 by 3 is defined.</li>
+  
+  <li> <code>A</code> is set to 0.</li>
+  
+  <li> One then tries to set to 2.0 the element in the first row and the fourth column. Obviously the column index is out of range. An exception is raised.</li>
+  
+  <li> The exception is caught, and the lines following the try block (i.e. after <code>END</code>) are executed.</li>
+  
+</ul>
+
+<p> The output is: </p>
+
+\prescreen
+ERROR!
+Column index out of range in Matrix_Pointers::operator().
+   Index should be in [0, 2], but is equal to 3.
+\endprescreen
+
+*/

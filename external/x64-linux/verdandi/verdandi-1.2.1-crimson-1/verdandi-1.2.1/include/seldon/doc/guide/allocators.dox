@@ -1,0 +1,27 @@
+/*! \file allocators.dox
+    \brief Allocators.
+*/
+
+/*!
+\page allocators Allocators
+
+<p>Allocators are used to allocate and deallocate memory. The last template argument of vectors and matrices is the allocator. For a vector: <code>Vector&lt;double, Vect_Full, CallocAlloc&lt;double&gt; &gt;</code>. <code>CallocAlloc</code> is an allocator based on <code>calloc</code>. <code>MallocAlloc</code> is another allocator based on <code>malloc</code>. The third available allocator is <code>NewAlloc</code>, based on <code>new</code>. The last one is <code>NaNAlloc</code>, based on <code>malloc</code> and which initializes allocated elements to "not a number". If a vector or a matrix managed by <code>NaNAlloc</code> is not properly filled, there will still be NaNs in the vector or the matrix, which is easy to detect.</p>
+
+<p>The default allocator is <code>MallocAlloc</code>. The default allocator may be changed thanks to <code>SELDON_DEFAULT_ALLOCATOR</code>:</p>
+
+<p><code>#define SELDON_DEFAULT_ALLOCATOR NewAlloc</code> defines <code>NewAlloc</code> as the default allocator. This line must be put before <code>Seldon.hxx</code> is included.  We strongly encourage beginner to set <code>NewAlloc</code> as the default allocator since only this allocator will call constructors of objects contained in the vector.  This property is essential when the elements of the vector are C++ classes.  </p>
+
+\precode
+#define SELDON_DEFAULT_ALLOCATOR NewAlloc
+#include "Seldon.hxx"
+
+using namespace Seldon;
+
+// For vector containing integers, MallocAlloc is okay
+Vector<int, Vect_Full, MallocAlloc<int> > X;
+
+// For vector containing vectors, NewAlloc is needed
+Vector<Vector<double> > Xvec;
+\endprecode
+
+*/

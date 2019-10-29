@@ -1,0 +1,92 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Presolver (gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "enter program name, for example ${workspaceFolder}/a.out",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Kalman Filter Estimator (gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/chris/workspace/simvascular_flowsolver_estimator/bin/estimator",
+            "args": ["assimilation.lua"],
+            "stopAtEntry": true,
+            "cwd": "/home/chris/WorkData/nanexamples_chrisRigidTube/3_estimation",
+            "environment": [{"name": "CRIMSON_FLOWSOLVER_HOME", "value":"/home/chris/workspace/simvascular_flowsolver_estimator/"},
+                            {"name": "PHASTA_CONFIG", "value":"/home/chris/workspace/simvascular_flowsolver_estimator/configs"},
+                            {"name": "LES_LICENSE_SERVER", "value": "blackbook2v2" },
+                            {"name": "LD_LIBRARY_PATH", "value": "$LD_LIBRARY_PATH:/usr/lib64/mpi/gcc/openmpi/lib64/"}],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Test suite (gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/chris/workspace/simvascular_flowsolver_estimator/testbin/test",
+            "args": ["--gtest_filter=testMainWithZeroDDomain.checkClosedLoopWithHeart","--gtest_catch_exceptions=false"],
+            "stopAtEntry": true,
+            "cwd": "/home/chris/workspace/simvascular_flowsolver_estimator/testbin",
+            "environment": [{"name": "CRIMSON_FLOWSOLVER_HOME", "value":"/home/chris/workspace/simvascular_flowsolver_estimator/"},
+                            {"name": "PHASTA_CONFIG", "value":"/home/chris/workspace/simvascular_flowsolver_estimator/configs"},
+                            {"name": "LES_LICENSE_SERVER", "value": "blackbook2v2" },
+                            {"name": "LD_LIBRARY_PATH", "value": "$LD_LIBRARY_PATH:/usr/lib64/mpi/gcc/openmpi/lib64/"}],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Flowsolver (gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/chris/workspace/simvascular_flowsolver_estimator/bin/flowsolver",
+            "args": ["the.supre"],
+            "stopAtEntry": false,
+            "cwd": "/home/chris/scalarProblemTest/",
+            "environment": [{"name": "CRIMSON_FLOWSOLVER_HOME", "value":"/home/chris/workspace/simvascular_flowsolver_estimator/"},
+                            {"name": "PHASTA_CONFIG", "value":"/home/chris/workspace/simvascular_flowsolver_estimator/configs"},
+                            {"name": "LES_LICENSE_SERVER", "value": "blackbook2v2" }],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

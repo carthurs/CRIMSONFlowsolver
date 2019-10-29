@@ -1,0 +1,70 @@
+/*! \file linear_observation_manager.dox
+    \brief Linear Observation Manager.
+*/
+
+/*!
+\page linear_observation_manager Linear Observation Manager
+
+This observation manager defines a linear observation operator \f$\mathcal{H}_h = H\f$, where \f$H\f$ is a time-independent matrix.
+
+The class \link Verdandi::LinearObservationManager LinearObservationManager\endlink
+is implemented in <code>LinearObservationManager.hxx</code> and
+<code>LinearObservationManager.cxx</code>. It is a template class:
+ <code>LinearObservationManager<T></code>. <code>T</code> is
+ the numerical type (e.g., <code>double</code>).
+
+\section observation1 Management of the observations
+
+\subsection sub11 How the observations are stored
+
+The observations should be available in binary format. One should define the path to the file storing the observations in the configuration file :
+
+\precode
+observation = {
+
+   file = observation_file,
+    ...
+\endprecode
+
+One should also define the period with which observations are available.
+
+At each time \f$t_h\f$, the provided observations can be an approximation of either the whole model
+state \f$x^t_{h}\f$ or the observations\f$\mathcal{H}_h(x^t_h)\f$ only.
+
+\subsection sub12 Observation contributions
+
+When a <b>data assimilation method</b> requests for observations to the \link Verdandi::LinearObservationManager LinearObservationManager\endlink at a given time \f$t_h\f$, it is possible that no observation is available at this time.
+
+The \link Verdandi::LinearObservationManager LinearObservationManager\endlink associates to each available observation \f$y_i\f$ a contribution \f$ \alpha_i\f$. The \ref observation_aggregator "observation aggregator" enables to compute, at each time \f$t_h\f$, the contribution \f$\alpha_i\f$ according to several rules: 'step', 'interpolation', 'triangle'.
+
+\section observation2 Observation operator
+
+There are two ways to define the observation operator.
+
+One can use a Lua table to define the observation operator:
+
+\precode
+observation = {
+
+    ...
+   operator = {
+
+        ...
+      value = {1, 0, 0, 0
+               0, 0, 1, 0}
+
+   },
+    ...
+
+\endprecode
+
+It is also possible to define the observation operator in binary format. One should define the path
+to the file storing the observation operator.
+
+\section observation3 Observation error variance
+
+The observation error variance \f$R_h\f$ is supposed to be a scaled identity
+matrix.
+
+
+*/

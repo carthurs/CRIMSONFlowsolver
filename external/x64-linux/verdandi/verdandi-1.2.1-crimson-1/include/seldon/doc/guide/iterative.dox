@@ -1,0 +1,1299 @@
+/*! \file iterative.dox
+    \brief Iterative Solvers.
+*/
+
+/*!
+\page iterative Iterative Solvers
+
+<h2>Syntax</h2>
+
+<p>The syntax of all iterative solvers is the same </p>
+
+<pre class="fragment">
+int Gmres(const Matrix&amp; A, Vector&amp; x, const Vector&amp; b,
+          Preconditioner&amp; M, Iteration&amp; iter);
+</pre>
+
+
+<p>The first argument <code>A</code> is the matrix to solve. The type of this argument is template, therefore you can provide your own class defining the matrix. The second and third argument are vectors, <code>x</code> contains the initial guess on input, the solution on output, <code>b</code> contains the right-hand-side. Again, the type of x and b is template, so you can have your own class to define the vectors. The fourth template argument is the preconditioner. For the moment, there is an implementation of the identity preconditioner (no preconditioning) and a SOR (Successive Over Relaxation) preconditioner. The last argument is a %Seldon structure defining the parameters of the iteration.</p>
+
+
+<h2>Basic use</h2>
+
+
+<p> We provide an example of iterative resolution using %Seldon structures for the matrices and the vectors.</p>
+
+
+\precode
+// first we construct a sparse matrix
+int n = 1000; // size of linear system
+// we assume that you know how to fill arrays values, ptr, ind
+Matrix<double, General, RowSparse< A(n, n, nnz, values, ptr, ind);
+
+// then we declare vectors
+Vector<double> b(n), x(n);
+
+// you fill right-hand side and initial guess
+b.Fill();
+x.Fill(0);
+
+// initialization of iteration parameters
+int nb_max_iter = 1000;
+// relative stopping criterion
+double tolerance = 1e-6;
+Iteration<double> iter(nb_max_iter, tolerance);
+
+// identity preconditioner -> no preconditioning
+Preconditioner_Base precond;
+
+// then you can call an iterative solver, Cg for example
+Cg(A, x, b, precond, iter);
+
+// if you are using Gmres, you can set the restart parameter
+// by default, this parameter is equal to 10
+iter.SetRestart(5);
+Gmres(A, x, b, precond, iter);
+\endprecode
+
+
+<h2>Advanced use</h2>
+
+
+<p>Now, we will show an example where we construct a new class for a matrix that we don't store. If you want to test iterative solvers with that kind of strategy, you can take a look at the file test/program/iterative_test.cpp. The main thing to do is to overload the functions <a href="functions_blas.php#mlt">Mlt</a> and <a href="functions_blas.php#mltadd">MltAdd</a> that are called by iterative solvers to perform the matrix-vector product.</p>
+
+
+\precode
+// Class for a new type of matrix.
+template<class T>
+class BlackBoxMatrix
+{
+protected :
+  // internal data used to represent the matrix
+  int n;
+  T beta;
+  Seldon::Vector<T> lambda;
+  
+public :
+  // basic constructor  
+  BlackBoxMatrix(int n_, const T& beta_)
+  {
+    beta = beta_; n = n_;
+    lambda.Reallocate(n);
+    for (int i = 0; i < n; i++)
+      lambda(i) = i+1;
+  }
+  
+  // this method is used by iterative solvers
+  // this should return the number of rows of the matrix
+  int GetM() const
+  {
+    return n;
+  }
+  
+};
+
+
+// We need to define MltAdd(alpha, A, X, beta, Y) : Y <- beta Y + alpha A X
+template<class T, class Vector>
+void MltAdd(const T& alpha, const BlackBoxMatrix<T>& A,
+	    const Vector& X, const T& beta, Vector& Y)
+{
+  if (beta == T(0))
+    Y.Fill(T(0));
+  else
+    Mlt(beta, Y);
+  
+  int n = A.GetM();
+  Vector C(X);
+  // C = S^{-1} C
+  for (int i = (n-2); i >= 0; i--)
+    C(i) -= A.beta*C(i+1);
+  
+  // C = B C
+  for (int i = 0; i < n; i++)
+    C(i) *= A.lambda(i);
+  
+  // C = S C
+  for (int i = 0; i < (n-1); i++)
+    C(i) += A.beta*C(i+1);
+  
+  // Y = Y + alpha C
+  Add(alpha, C, Y);
+}
+
+
+// and the transpose...
+template<class T, class Vector>
+void MltAdd(const T& alpha, const class_SeldonTrans& Trans,
+	    const BlackBoxMatrix<T>& A,
+	    const Vector& X, const T& beta, Vector& Y)
+{
+  if (beta == T(0))
+    Y.Fill(T(0));
+  else
+    Mlt(beta, Y);
+  
+  int n = A.GetM();
+  // Transpose of S B S^{-1} is S^{-t} B S^t
+  Vector C(X);
+  // Y = S^t Y
+  for (int i = (n-1); i >= 1; i--)
+    C(i) += A.beta*C(i-1);
+  
+  // Y = B Y
+  for (int i = 0; i < n; i++)
+    C(i) *= A.lambda(i);
+  
+  // Y = S^{-t} Y
+  for (int i = 1; i < n; i++)
+    C(i) -= A.beta*C(i-1);
+  
+  // Y = Y + alpha C
+  Add(alpha, C, Y);
+}
+
+
+template<class T, class Vector>
+void Mlt(const BlackBoxMatrix<T>& A, const Vector& X, Vector& Y)
+{
+  Y.Zero();
+  MltAdd(T(1), A, X, T(0), Y);
+}
+
+
+template<class T, class Vector>
+void Mlt(const class_SeldonTrans& Trans, const BlackBoxMatrix<T>& A,
+	 const Vector& X, Vector& Y)
+{
+  Y.Zero();
+  MltAdd(T(1), Trans, A, X, T(0), Y);
+}
+
+// class for preconditioning
+template<class T>
+class MyPreconditioner : public BlackBoxMatrix<T>
+{
+public : 
+  
+  MyPreconditioner(int n, T beta) : BlackBoxMatrix<T>(n, beta) { }  
+  
+  // solving M r = z
+  template<class Matrix, class Vector>
+  void Solve(const Matrix& A, const Vector& r, Vector& z)
+  {
+    Mlt(*this, r, z);
+  }
+  
+  // solving transpose(M) r = z
+  template<class Matrix, class Vector>
+  void TransSolve(const Matrix& A, const Vector& r, Vector& z)
+  {
+    Mlt(SeldonTrans, *this, r, z);
+  }
+  
+};
+
+int main()
+{
+  // now it is very classical like the previous example
+  int n = 20; double beta = 0.5;
+  BlackBoxMatrix<double>; A(n, beta);
+  Vector<double> b(n), x(n);
+  
+  // you fill right-hand side and initial guess
+  b.Fill();
+  x.Fill(0);
+  
+  // initialization of iteration parameters
+  int nb_max_iter = 1000;
+  double tolerance = 1e-6;
+  Iteration<double> iter(nb_max_iter, tolerance);
+
+  // your own preconditioner
+  MyPreconditioner<double> precond(n, 1.2);
+  
+  // then you can call an iterative solver, Qmr for example
+  Qmr(A, x, b, precond, iter);
+
+  return 0;
+}
+\endprecode
+
+
+<p>If you want to use your own class of vector, there are other functions to define : <a href="functions_blas.php#add">Add</a>, <a href="functions_blas.php#norm2">Norm2</a>, <a href="functions_blas.php#dotprod">DotProd</a>, <a href="functions_blas.php#dotprod">DotProdConj</a> , <a href="functions_blas.php#copy">Copy</a>, <a href="functions_blas.php#copy">Copy</a> and the method <a href="class_vector.php#zero">Zero</a>. </p>
+
+
+<h2>Methods of Preconditioner_Base:</h2>
+
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#solve"> Solve </a></td>
+<td class="category-table-td"> Applies the preconditioner </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#solve">TransSolve</a></td>
+<td class="category-table-td"> Applies the transpose of the preconditioner </td> </tr>
+</table>
+
+
+<h2>Methods of SorPreconditioner:</h2>
+
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#initsymmetricpreconditioning"> InitSymmetricPreconditioning</a></td>
+<td class="category-table-td"> Symmetric SOR will be used </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#initsymmetricpreconditioning"> InitUnsymmetricPreconditioning </a></td>
+<td class="category-table-td"> SOR will be used </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#setparameterrelaxation"> SetParameterRelaxation </a></td>
+<td class="category-table-td"> changes the relaxation parameter </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#setparameterrelaxation"> SetNumberIterations </a></td>
+<td class="category-table-td"> changes the number of iterations </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#sor_solve"> Solve</a></td>
+<td class="category-table-td"> Applies the preconditioner </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#sor_solve"> TransSolve</a></td>
+<td class="category-table-td"> Applies the transpose of the preconditioner </td> </tr>
+</table>
+
+
+<h2>Methods of Iteration:</h2>
+
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#constructor">Constructors</a></td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#restart">GetRestart</a></td>
+<td class="category-table-td"> returns restart parameter </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#restart">SetRestart</a></td>
+<td class="category-table-td"> changes restart parameter </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#tolerance">GetTolerance</a></td>
+<td class="category-table-td"> returns stopping criterion </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#tolerance">SetTolerance</a></td>
+<td class="category-table-td"> changes stopping criterion </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#maxiter">SetMaxIterationNumber</a></td>
+<td class="category-table-td"> changes maximum number of iterations </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#iter">GetIterationNumber</a></td>
+<td class="category-table-td"> returns iteration number </td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#iter">SetIterationNumber</a></td>
+<td class="category-table-td"> changes iteration number </td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#messages">ShowMessages</a></td>
+<td class="category-table-td"> displays residual each 100 iterations</td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#messages">HideMessages</a></td>
+<td class="category-table-td"> displays nothing</td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#messages">ShowFullHistory</a></td>
+<td class="category-table-td"> displays residual each iteration</td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#init">Init</a></td>
+<td class="category-table-td"> provides right hand side</td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#first">First</a></td>
+<td class="category-table-td"> returns true for the first iteration</td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#initguessnull">IsInitGuess_Null</a></td>
+<td class="category-table-td"> returns true if the initial guess is zero</td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#initguessnull">SetInitGuess</a></td>
+<td class="category-table-td"> informs if the initial guess is zero or no</td> </tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#finished">Finished</a></td>
+<td class="category-table-td"> returns true if the stopping criteria are satisfied</td> </tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#fail">Fail</a></td>
+<td class="category-table-td"> informs that the iterative solver failed</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#errorcode">ErrorCode</a></td>
+<td class="category-table-td"> returns error code </td> </tr>
+</table>
+
+
+<h2><a name="solvers">Functions :</a></h2>
+
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#sor">SOR</a></td>
+<td class="category-table-td"> Performs SOR iterations</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#bicg">BiCg</a></td>
+<td class="category-table-td"> BIConjugate Gradient </td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#bicgcr">BiCgcr</a></td>
+<td class="category-table-td"> BIConjugate Gradient Conjugate Residual</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#bicgstab">BiCgStab</a></td>
+<td class="category-table-td"> BIConjugate Gradient STABilized</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#bicgstabl">BiCgStabl</a></td>
+<td class="category-table-td"> BIConjugate Gradient STABilized (L)</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#cg">Cg</a></td>
+<td class="category-table-td"> Conjugate Gradient</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#cgne">Cgne</a></td>
+<td class="category-table-td"> Conjugate Gradient Normal Equation</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#cgs">Cgs</a></td>
+<td class="category-table-td"> Conjugate Gradient Squared</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#cocg">CoCg</a></td>
+<td class="category-table-td"> Conjugate Orthogonal Conjugate Gradient</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#gcr">Gcr</a></td>
+<td class="category-table-td"> Generalized Conjugate Residual</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#gmres">Gmres</a></td>
+<td class="category-table-td"> Generalized Minimum RESidual</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#lsqr">Lsqr</a></td>
+<td class="category-table-td"> Least SQuaRes</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#minres">MinRes</a></td>
+<td class="category-table-td"> Minimum RESidual</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#qcgs">QCgs</a></td>
+<td class="category-table-td"> Quasi Conjugate Gradient Squared</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#qmr">Qmr</a></td>
+<td class="category-table-td"> Quasi Minimum Residual</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#qmrsym">QmrSym</a></td>
+<td class="category-table-td"> Quasi Minimum Residual SYMmetric</td></tr>
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#symmlq">Symmlq</a></td>
+<td class="category-table-td"> SYMMetric Least sQuares</td></tr>
+<tr class="category-table-tr-1">
+<td class="category-table-td"> <a href="#tfqmr">TfQmr</a></td>
+<td class="category-table-td"> Transpose Free Quasi Minimum Residual</td></tr>
+</table>
+
+
+
+<div class="separator"><a name="solve"></a></div>
+
+
+
+<h3>Solve, TransSolve for Preconditioner_Base</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Solve(const Matrix&amp;, const Vector&amp;, Vector&amp;);
+  void TransSolve(const Matrix&amp;, const Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>These methods should be overloaded if you want to define your own preconditioner since they define the application of the preconditioner and its transpose to a vector.</p>
+
+
+<h4> Example : </h4>
+\precode
+// constructor of a matrix
+int n = 20;
+Matrix<double> A(n, n);
+A.Fill();
+
+// declaration of a preconditioner
+Preconditioner_Base M;
+
+// vectors
+Vector<double> r(n), z(n);
+r.Fill();
+
+// now we apply preconditioning, i.e. solving M z = r
+// for Preconditioner_Base, it will set z = r (identity preconditioner)
+M.Solve(A, r, z);
+
+// we can also apply the transpose of preconditioner
+// i.e. solving transpose(M) z = r
+M.TransSolve(A, r, z);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Preconditioner_Base<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="sor_solve"></a></div>
+
+
+
+<h3>Solve, TransSolve for SorPreconditioner</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Solve(const Matrix&amp;, const Vector&amp;, Vector&amp;);
+  void TransSolve(const Matrix&amp;, const Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>These methods define the application of the preconditioner and its transpose to a vector. The used preconditioner is SOR (Successive Over Relaxation).  It can be used in its symmetric version (SSOR), or the unsymmetric version.  In this last case, the application of the preconditioner consists of a forward sweep while the transpose consists of a backward sweep. If you are using %Seldon structures of sparse matrices, the function <a href="#sor">SOR</a> is available. If you are using other structures, it is necessary to overload the function SOR.</p>
+
+
+<h4> Example : </h4>
+\precode
+// constructor of a matrix
+int n = 20;
+Matrix<double> A(n, n);
+A.Fill();
+
+// declaration of a preconditioner
+SorPreconditioner<double> M;
+
+// by default, relaxation parameter omega = 1
+// number of iterations = 1
+// you can change that
+M.SetParameterRelaxation(1.5);
+M.SetNumberIterations(2);
+
+// if you prefer to use symmetric version
+M.InitSymmetricPreconditioning();
+
+// vectors
+Vector<double> r(n), z(n);
+r.Fill();
+
+// now we apply preconditioning, i.e. solving M z = r
+// for Preconditioner_Base, it will set z = r (identity preconditioner)
+M.Solve(A, r, z);
+
+// we can also apply the transpose of preconditioner
+// i.e. solving transpose(M) z = r
+M.TransSolve(A, r, z);
+
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#sor">SOR</a></p>
+
+<h4>Location :</h4>
+<p>Class SorPreconditioner<br/>
+Precond_Ssor.cxx</p>
+
+
+
+<div class="separator"><a name="initsymmetricpreconditioning"></a></div>
+
+
+
+<h3>InitSymmetricPreconditioning, InitUnSymmetricPreconditioning for SorPreconditioner</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void InitSymmetricPreconditioning();
+  void InitUnsymmetricPreconditioning();
+</pre>
+
+
+<p><code>InitSymmetricPreconditioning</code> sets SSOR as preconditioning. The symmetric SOR consists of a forward sweep followed by a backward sweep. <code>InitSymmetricPreconditioning</code> sets SOR, it consists of a forward sweep for the preconditioner, and a backward sweep for the transpose of the preconditioner.</p>
+
+
+<h4> Example : </h4>
+\precode
+// declaration of a preconditioner
+SorPreconditioner<double> M;
+
+// by default, symmetric preconditioning
+M.InitUnsymmetricPreconditioning();
+\endprecode
+
+
+<h4>Related topics:</h4>
+<p><a href="#sor">SOR</a></p>
+
+
+<h4>Location :</h4>
+<p>Class SorPreconditioner<br/>
+Precond_Ssor.cxx</p>
+
+
+
+<div class="separator"><a name="setparameterrelaxation"></a></div>
+
+
+
+<h3>SetParameterRelaxation for SorPreconditioner</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetParameterRelaxation(const T&amp; omega);
+</pre>
+
+
+<p>This methods changes the relaxation parameter.</p>
+
+
+<h4>Location :</h4>
+<p>Class SorPreconditioner<br/>
+Precond_Ssor.cxx</p>
+
+
+
+<div class="separator"><a name="setnumberiterations"></a></div>
+
+
+
+<h3>SetNumberIterations for SorPreconditioner</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetNumberIterations(int);
+</pre>
+
+
+<p>This methods changes the number of SOR iterations.</p>
+
+
+<h4>Location :</h4>
+<p>Class SorPreconditioner<br/>
+Precond_Ssor.cxx</p>
+
+
+
+<div class="separator"><a name="constructor"></a></div>
+
+
+
+<h3>Constructors for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  Iteration();
+  Iteration(int, const T&amp;);
+</pre>
+
+
+<p>The second constructor specifies the maximum number of iterations and the stopping criterion</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="restart"></a></div>
+
+
+
+<h3>GetRestart, SetRestart for Iteration</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetRestart();
+  void SetRestart(int);
+</pre>
+
+
+<p>These methods give access to the restart parameter, which is used by some iterative solvers, e.g. BiCgSTAB(l), Gmres and Gcr.  The default value is equal to 10.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="tolerance"></a></div>
+
+
+
+<h3>GetTolerance, SetTolerance for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  T GetTolerance();
+  void SetTolerance(T);
+</pre>
+
+
+<p>These methods give access to the stopping criterion.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="maxiter"></a></div>
+
+
+
+<h3>SetMaxIterationNumber for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SetMaxIterationNumber(int);
+</pre>
+
+
+<p>This method gives access to the maximum iteration number.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="iter"></a></div>
+
+
+
+<h3>GetIterationNumber, SetIterationNumber for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetIterationNumber();
+  void SetIterationNumber(int);
+</pre>
+
+
+<p>This method gives access to the iteration number.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="messages"></a></div>
+
+
+
+<h3>ShowMessages, HideMessages, ShowFullHistory for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void ShowMessages();
+  void HideMessages();
+  void ShowFullHistory();
+</pre>
+
+
+<p>If <code>ShowMessages</code> is called, it will display residual each 100 iterations during the resolution. If <code>HideMessages</code> is called, there is no display at all, whereas <code>ShowFullHistory</code> displays residual each iteration.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="init"></a></div>
+
+
+
+<h3>Init for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Init(const Vector&amp;);
+</pre>
+
+
+<p>This method is used by iterative solvers to initialize the computation of residuals. Since relative residual is computed, we need to know the norm of the first residual.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="first"></a></div>
+
+
+
+<h3>First for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  bool First();
+</pre>
+
+
+<p>This method returns true for the first iteration.</p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="initguessnull"></a></div>
+
+
+
+<h3>SetInitGuess, IsInitGuess_Null for Iteration </h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  bool IsInitGuess_Null();
+  void SetInitGuess(bool);
+</pre>
+
+
+<p><code>SetInitGuess</code> allows you to inform the iterative solver that your initial guess is null. This can spare one matrix-vector product, which is good if the expected number of iterations is small.</p>
+
+
+<h4>Example :</h4>
+\precode
+int n = 10;
+Matrix<double> A(n, n);
+Vector<double> x(n), b(n);
+A.Fill();
+b.Fill();
+
+Iteration<double> iter(100, 1e-6);
+// you inform that initial guess is null
+iter.SetInitGuess(true);
+
+// if the initial guess is null
+// and x is non-null, the solver enforces x to be 0
+Preconditioner_Base M;
+Gmres(A, x, b, M, iter);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="finished"></a></div>
+
+
+
+<h3>Finished for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  bool Finished(const Vector&amp;);
+</pre>
+
+
+<p>This method is used by iterative solvers to know if the stopping criterion is reached. This method also displays the residual if required. </p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="fail"></a></div>
+
+
+
+<h3>Fail for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  bool Fail(int, const string&amp;);
+</pre>
+
+
+<p>This method is used by iterative solvers when a breakdown occurs, often due to a division by 0. </p>
+
+
+<h4>Location :</h4>
+<p> Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="errorcode"></a></div>
+
+
+
+<h3>ErrorCode for Iteration</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int ErrorCode();
+</pre>
+
+
+<p>This method returns the error code after the resolution.  If the resolution has been successful, it should return 0. </p>
+
+
+<h4>Location :</h4>
+<p>Class Iteration<br/>
+Iterative.hxx<br/>
+Iterative.cxx</p>
+
+
+
+<div class="separator"><a name="sor"></a></div>
+
+
+
+<h3>SOR</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void SOR(const Matrix&amp;, Vector&amp;, const Vector&amp;, const T&amp;, int);
+  void SOR(const Matrix&amp;, Vector&amp;, const Vector&amp;, const T&amp;, int, int);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> with n iterations of SOR. </p>
+
+
+<h4>Example :</h4>
+\precode
+int n = 1000;
+Matrix<double, General, RowSparse> A;
+// you initialize A as you want (SetData for example)
+
+// then vectors
+Vector<double> x(n), b(n); 
+x.Zero();
+b.Fill();
+
+// we want to solve A x = b
+// 2 Sor iterations (forward sweep) with omega = 0.5
+double omega = 0.5;
+int nb_iterations = 2;
+SOR(A, x, b, omega, nb_iterations);
+
+// you can ask for symmetric SOR: forward sweeps followed
+//                                by backward sweeps
+SOR(A, x, b, omega, nb_iterations, 0);
+
+// if you need backward sweep
+SOR(A, x, b, omega, nb_iterations, 3);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Relaxation_MatVect.cxx</p>
+
+
+
+<div class="separator"><a name="bicg"></a></div>
+
+
+
+<h3>BiCg</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int BiCg(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+           Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICG algorithm.  This algorithm can solve complex general linear systems and calls matrix-vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>BiCg.cxx</p>
+
+
+
+<div class="separator"><a name="bicgcr"></a></div>
+
+
+
+<h3>BiCgcr</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int BiCgcr(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+             Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICGCR algorithm.  This algorithm can solve symmetric complex linear systems. </p>
+
+
+<h4>Location :</h4>
+<p>BiCgcr.cxx</p>
+
+
+
+<div class="separator"><a name="bicgstab"></a></div>
+
+
+
+<h3>BiCgStab</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int BiCgStab(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+               Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICGSTAB algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>BiCgStab.cxx</p>
+
+
+
+<div class="separator"><a name="bicgstabl"></a></div>
+
+
+
+<h3>BiCgStabl</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int BiCgStabl(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+                Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICGSTAB(l) algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>BiCgStabl.cxx</p>
+
+
+
+<div class="separator"><a name="cg"></a></div>
+
+
+
+<h3>Cg</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Cg(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+         Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using CG algorithm.  This algorithm can solve real symmetric or hermitian linear systems. </p>
+
+
+<h4>Location :</h4>
+<p>Cg.cxx</p>
+
+
+
+<div class="separator"><a name="cgne"></a></div>
+
+
+
+<h3>Cgne</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Cgne(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+           Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using CGNE algorithm.  This algorithm can solve complex general linear systems and calls matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>Cgne.cxx</p>
+
+
+
+<div class="separator"><a name="cgs"></a></div>
+
+
+
+<h3>Cgs</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Cgs(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+          Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using CGS algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>Cgs.cxx</p>
+
+
+
+<div class="separator"><a name="cocg"></a></div>
+
+
+
+<h3>Cocg</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Cocg(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+           Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICGSTAB algorithm.  This algorithm can solve complex symmetric linear systems. </p>
+
+
+<h4>Location :</h4>
+<p>CoCg.cxx</p>
+
+
+
+<div class="separator"><a name="gcr"></a></div>
+
+
+
+<h3>Gcr</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Gcr(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+          Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICGSTAB algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>Gcr.cxx</p>
+
+
+
+<div class="separator"><a name="gmres"></a></div>
+
+
+
+<h3>Gmres</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Gmres(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+            Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using restarted GMRES algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>Gmres.cxx</p>
+
+
+
+<div class="separator"><a name="lsqr"></a></div>
+
+
+
+<h3>Lsqr</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Lsqr(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+           Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using LSQR algorithm.  This algorithm can solve complex general linear systems and calls matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>Lsqr.cxx</p>
+
+
+
+<div class="separator"><a name="minres"></a></div>
+
+
+
+<h3>MinRes</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int MinRes(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+             Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using BICGSTAB algorithm.  This algorithm can solve complex symmetric linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>MinRes.cxx</p>
+
+
+
+<div class="separator"><a name="qcgs"></a></div>
+
+
+
+<h3>QCgs</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int QCgs(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+           Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using QCGS algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>QCgs.cxx</p>
+
+
+
+<div class="separator"><a name="qmr"></a></div>
+
+
+
+<h3>Qmr</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Qmr(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+          Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using QMR algorithm.  This algorithm can solve complex general linear systems and calls matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>Qmr.cxx</p>
+
+
+
+<div class="separator"><a name="qmrsym"></a></div>
+
+
+
+<h3>QmrSym</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int QmrSym(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+             Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using symmetric QMR algorithm.  This algorithm can solve complex symmetric linear systems. </p>
+
+
+<h4>Location :</h4>
+<p> QmrSym.cxx</p>
+
+
+
+<div class="separator"><a name="symmlq"></a></div>
+
+
+
+<h3>Symmlq</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int Symmlq(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+             Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using SYMMLQ algorithm.  This algorithm can solve complex symmetric linear systems. </p>
+
+
+<h4>Location :</h4>
+<p>Symmlq.cxx</p>
+
+
+
+<div class="separator"><a name="tfqmr"></a></div>
+
+
+
+<h3>TfQmr</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int TfQmr(const Matrix&amp;, Vector&amp;, const Vector&amp;,
+            Preconditioner&amp;, Iteration&amp;);
+</pre>
+
+
+<p>This method tries to solve <code>A x = b</code> by using TFQMR algorithm.  This algorithm can solve complex general linear systems and doesn't call matrix vector products with the transpose matrix. </p>
+
+
+<h4>Location :</h4>
+<p>TfQmr.cxx</p>
+
+*/

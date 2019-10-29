@@ -1,0 +1,48 @@
+/*! \file array3d.dox
+    \brief 3D Arrays.
+*/
+
+/*!
+\page array3d 3D Arrays
+
+<h2>Definition</h2>
+
+<p> 3D arrays are instances of the class <code>Array3D</code>. Class <code>Array3D</code> is a template class: <code>Array3D&lt;T, Allocator&gt;</code>. As for vectors, <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>). <code>Allocator</code> defines the way memory is managed. It is close to STL allocators. See the section "Allocators" for further details.  </p>
+
+<h2>Declaration</h2>
+
+<p> There is a default <code>Allocator</code> (see the section "Allocators"). It means that the last template parameter may be omitted. Then a 3D array of integers may be declared thanks to the line: </p>
+
+\precode Array3D<int> A;\endprecode
+
+<p> This defines an array of size 0 x 0 x 0, that is to say an empty array. To define a 3D array of size 5 x 3 x 6, one may write: </p>
+
+\precode Array3D<int> A(5, 3, 6);\endprecode
+
+<h2>Use of 3D arrays</h2>
+
+<p> Only a few methods are available for 3D arrays because they are not the main concern of %Seldon. Mainly, the access to elements is achieved through the <code>operator(int, int, int)</code>, and indices start at 0: </p>
+
+\precode
+Array3D<double> A(5, 6, 3);
+A(0, 1, 3) = -3.1;
+A(0, 0, 5) = 1.2 * A(0, 1, 3);
+\endprecode
+
+<p> One may point out some methods:</p>
+
+<ul>
+
+  <li> <code>GetLength1()</code>, <code>GetLength2()</code> and <code>GetLength3()</code> return lengths in dimensions #1, #2 and #3.</li>
+  
+  <li> <code>Fill</code> fills with 0, 1, 2, 3, etc. or fills the array with a given value.</li>
+  
+  <li> <code>Reallocate</code> resizes the array (warning, data may be lost, depending on the allocator).</li>
+  
+  <li> <code>Copy</code> enables to duplicate an array.</li>
+  
+</ul>
+
+A comprehensive test of this class is done in file <code>test/program/array3d_test.cpp</code>.
+
+*/

@@ -1,0 +1,122 @@
+// Copyright (C) 2001-2009 Vivien Mallet
+//
+// This file is part of the linear-algebra library Seldon,
+// http://seldon.sourceforge.net/.
+//
+// Seldon is free software; you can redistribute it and/or modify it under the
+// terms of the GNU Lesser General Public License as published by the Free
+// Software Foundation; either version 2.1 of the License, or (at your option)
+// any later version.
+//
+// Seldon is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
+// more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Seldon. If not, see http://www.gnu.org/licenses/.
+
+
+(define @storage = ColMajor, RowMajor, ColSparse, RowSparse, ColComplexSparse,
+ RowComplexSparse, ColSymSparse, RowSymSparse, ColSymComplexSparse,
+ RowSymComplexSparse, ArrayRowSparse, ArrayColSparse, ArrayRowSymSparse,
+ ArrayColSymSparse, ArrayRowComplexSparse, ArrayRowSymComplexSparse,
+ ArrayColComplexSparse, ArrayColSymComplexSparse, ColSymPacked, RowSymPacked,
+ ColSym, RowSym, ColHerm, RowHerm, ColHermPacked, RowHermPacked, ColUpTriang,
+ ColLoTriang, RowUpTriang, RowLoTriang, ColUpTriangPacked, ColLoTriangPacked,
+ RowUpTriangPacked, RowLoTriangPacked);
+
+// Dense matrices.
+(define @storage_full = ColMajor, RowMajor, ColSymPacked, RowSymPacked,
+ ColSym, RowSym, ColHerm, RowHerm, ColHermPacked, RowHermPacked, ColUpTriang,
+ ColLoTriang, RowUpTriang, RowLoTriang, ColUpTriangPacked, ColLoTriangPacked,
+ RowUpTriangPacked, RowLoTriangPacked);
+
+// Full storage, complex and real values accepted.
+(define @storage_full_real_complex = ColMajor, RowMajor, ColSymPacked,
+ RowSymPacked, ColSym, RowSym, ColUpTriang, ColLoTriang, RowUpTriang,
+ RowLoTriang, ColUpTriangPacked, ColLoTriangPacked, RowUpTriangPacked,
+ RowLoTriangPacked);
+
+// Full storage, only complex accepted.
+(define @storage_full_complex = ColHerm, RowHerm, ColHermPacked,
+ RowHermPacked);
+
+// Blas matrices.
+(define @storage_blas = ColMajor, RowMajor, ColSymPacked, RowSymPacked,
+ ColSym, RowSym, ColHerm, RowHerm, ColHermPacked, RowHermPacked, ColUpTriang,
+ ColLoTriang, RowUpTriang, RowLoTriang, ColUpTriangPacked, ColLoTriangPacked,
+ RowUpTriangPacked, RowLoTriangPacked);
+
+// Blas matrices, complex and real values accepted.
+(define @storage_blas_real_complex = ColMajor, RowMajor, ColSymPacked,
+ RowSymPacked, ColSym, RowSym, ColUpTriang, ColLoTriang, RowUpTriang,
+ RowLoTriang, ColUpTriangPacked, ColLoTriangPacked, RowUpTriangPacked,
+ RowLoTriangPacked);
+
+// Blas matrices, only complex accepted.
+(define @storage_blas_complex = ColHerm, RowHerm, ColHermPacked,
+ RowHermPacked);
+
+// Blas matrices per category.
+(define @storage_blasGE = ColMajor, RowMajor);
+(define @storage_blasHE = ColHerm, RowHerm);
+(define @storage_blasHP = ColHermPacked, RowHermPacked);
+(define @storage_blasSY = ColSym, RowSym);
+(define @storage_blasSP = ColSymPacked, RowSymPacked);
+(define @storage_blasTR = ColUpTriang, ColLoTriang, RowUpTriang, RowLoTriang);
+(define @storage_blasTP = ColUpTriangPacked, ColLoTriangPacked,
+ RowUpTriangPacked, RowLoTriangPacked);
+(define @storage_blasT = ColUpTriang, ColLoTriang, RowUpTriang, RowLoTriang,
+ ColUpTriangPacked, ColLoTriangPacked, RowUpTriangPacked, RowLoTriangPacked);
+
+(define @storage_sparse = ColSparse, RowSparse, ColComplexSparse,
+ RowComplexSparse, ColSymSparse, RowSymSparse, ColSymComplexSparse,
+ RowSymComplexSparse, ArrayRowSparse, ArrayColSparse, ArrayRowSymSparse,
+ ArrayColSymSparse, ArrayRowComplexSparse, ArrayRowSymComplexSparse,
+ ArrayColComplexSparse, ArrayColSymComplexSparse);
+
+(define @storage_rectangular = ColMajor, RowMajor, ColSparse, RowSparse,
+ ColComplexSparse, RowComplexSparse, ArrayRowSparse, ArrayColSparse,
+ ArrayRowComplexSparse, ArrayColComplexSparse);
+
+(define @storage_rectangular_full = ColMajor, RowMajor);
+
+(define @storage_rectangular_sparse = ColSparse, RowSparse, ColComplexSparse,
+ RowComplexSparse, ArrayRowSparse, ArrayColSparse, ArrayRowComplexSparse,
+ ArrayColComplexSparse);
+
+(define @storage_square = ColSymSparse, RowSymSparse, ColSymComplexSparse,
+ RowSymComplexSparse, ArrayRowSymSparse, ArrayColSymSparse,
+ ArrayRowSymComplexSparse, ArrayColSymComplexSparse, ColSymPacked,
+ RowSymPacked, ColSym, RowSym, ColHerm, RowHerm, ColHermPacked, RowHermPacked,
+ ColUpTriang, ColLoTriang, RowUpTriang, RowLoTriang, ColUpTriangPacked,
+ ColLoTriangPacked, RowUpTriangPacked, RowLoTriangPacked);
+
+(define @storage_square_full = ColSymPacked, RowSymPacked, ColSym, RowSym,
+ ColHerm, RowHerm, ColHermPacked, RowHermPacked, ColUpTriang, ColLoTriang,
+ RowUpTriang, RowLoTriang, ColUpTriangPacked, ColLoTriangPacked,
+ RowUpTriangPacked, RowLoTriangPacked);
+
+(define @storage_square_sparse = ColSymSparse, RowSymSparse,
+ ColSymComplexSparse, RowSymComplexSparse, ArrayRowSymSparse,
+ ArrayColSymSparse, ArrayRowSymComplexSparse, ArrayColSymComplexSparse);
+
+(define @real = float, double);
+
+(define @complex = complexfloat, complexdouble);
+
+(define @real_complex = float, double, complexfloat, complexdouble);
+
+// Seldon objects.
+(define @trans = SeldonTrans, SeldonNoTrans, SeldonConjTrans);
+(define @trans+ = SeldonTrans, SeldonNoTrans, SeldonConjTrans);
+(define @diag = SeldonUnit, SeldonNonUnit);
+(define @uplo = SeldonUpper, SeldonLower);
+(define @norm = SeldonNorm1, SeldonNormInf);
+(define @conj = SeldonConj, SeldonUnconj);
+(define @side = SeldonLeft, SeldonRight);
+
+// Miscellaneous.
+(define @colrow = Col, Row);
+(define @ul = Up, Lo);

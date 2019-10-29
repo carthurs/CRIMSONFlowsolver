@@ -1,0 +1,955 @@
+/*! \file class_vector.dox
+    \brief Full vectors.
+*/
+
+/*!
+\page class_vector Dense Vectors
+
+<p> Vectors contains contiguous elements. In that page, methods and functions related to dense vectors are detailed. </p>
+
+<h2>Basic declaration :</h2>
+\precode
+// dense vector of doubles
+Vector<double> U;
+
+// dense vector of integers : IVect or Vector<int>
+IVect num;
+
+// with a different allocator
+Vector<float, VectFull, NewAlloc<float> > V;
+\endprecode
+
+<h2>Methods :</h2>
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+<td class="category-table-td"> <a href="#constructor"> Vector constructors </a> </td> <td></td></tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#operator"> Vector operators </a> </td> <td></td></tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetM </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getm"> GetLength </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetSize </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdata"> GetData </a> </td>
+ <td class="category-table-td"> returns a pointer to the array contained in the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetDataConst </a> </td>
+ <td class="category-table-td"> returns a pointer to the array contained in the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getdata"> GetDataVoid </a> </td>
+ <td class="category-table-td"> returns a pointer to the array contained in the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getdata"> GetDataConstVoid </a> </td>
+ <td class="category-table-td"> returns a pointer to the array contained in the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#clear"> Clear </a> </td>
+ <td class="category-table-td"> removes all elements of the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#reallocate"> Reallocate </a> </td>
+ <td class="category-table-td"> changes the size of vector (removes previous elements) </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#resize"> Resize </a> </td>
+ <td class="category-table-td"> changes the size of vector (keeps previous elements) </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#setdata"> SetData </a> </td>
+ <td class="category-table-td"> sets the pointer to the array contained in the vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#nullify"> Nullify </a> </td>
+ <td class="category-table-td"> clears the vector without releasing memory</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#copy"> Copy </a> </td>
+ <td class="category-table-td"> copies a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#pushback"> PushBack </a> </td>
+ <td class="category-table-td"> adds an element to the end of the vector</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getm"> GetDataSize </a> </td>
+ <td class="category-table-td"> returns the number of elements in the vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#zero"> Zero </a> </td>
+ <td class="category-table-td"> sets all elements to zero </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#fill"> Fill </a> </td>
+ <td class="category-table-td"> sets all elements to a given value </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#fillrand"> FillRand </a> </td>
+ <td class="category-table-td"> fills randomly the vector </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#getnorminf"> GetNormInf </a> </td>
+ <td class="category-table-td"> returns highest absolute value </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#getnorminf"> GetNormInfIndex </a> </td>
+ <td class="category-table-td"> returns the index of the highest absolute value </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#print"> Print </a> </td>
+ <td class="category-table-td"> displays the vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#write"> Write </a> </td>
+ <td class="category-table-td"> writes the vector in binary format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#read"> Read </a> </td>
+ <td class="category-table-td"> reads the vector in binary format </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"> <a href="#writetext"> WriteText </a> </td>
+ <td class="category-table-td"> writes the vector in text format </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"> <a href="#readtext"> ReadText </a> </td>
+ <td class="category-table-td"> reads the vector in text format </td> </tr>
+</table>
+
+<h2>Functions :</h2>
+<table class="category-table">
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#mlt">Mlt </a></td> 
+ <td class="category-table-td"> multiplies the elements of the vector by a scalar </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#add">Add </a></td> 
+ <td class="category-table-td"> adds two vectors </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#copy">Copy </a></td> 
+ <td class="category-table-td"> copies one vector into another one </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#swap">Swap </a></td> 
+ <td class="category-table-td"> exchanges two vectors </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#genrot">ApplyRot </a></td> 
+ <td class="category-table-td"> applies rotation to 2-D points </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#genrot">ApplyModifRot </a></td> 
+ <td class="category-table-td"> applies rotation to 2-D points </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#dotprod">DotProd </a></td> 
+ <td class="category-table-td"> scalar product between two vectors</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#dotprod">DotProdConj </a></td> 
+ <td class="category-table-td"> scalar product between two vectors, first vector being conjugated</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#conjugate">Conjugate </a></td> 
+ <td class="category-table-td"> conjugates a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#getmaxabsindex">GetMaxAbsIndex </a></td> 
+ <td class="category-table-td"> returns index where highest absolute value is reached </td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_blas.php#norm1">Norm1 </a></td> 
+ <td class="category-table-td"> returns 1-norm of a vector </td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_blas.php#norm2">Norm2 </a></td> 
+ <td class="category-table-td"> returns 2-norm of a vector</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_vector.php#quicksort">QuickSort </a></td> 
+ <td class="category-table-td"> sorts a vector with quick sort algorithm</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_vector.php#mergesort">MergeSort </a></td> 
+ <td class="category-table-td"> sorts a vector with merge sort algorithm</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_vector.php#sort">Sort </a></td> 
+ <td class="category-table-td"> sorts a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="functions_vector.php#assemble">Assemble </a></td> 
+ <td class="category-table-td"> assembles a vector</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="functions_vector.php#removeduplicate">RemoveDuplicate </a></td> 
+ <td class="category-table-td"> sorts and removes duplicate elements of a vector</td> </tr>
+</table>
+
+
+
+<div class="separator"><a name="constructor"></a></div>
+
+
+
+<h3>Vector constructors</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  Vector();
+  Vector(const Vector&amp; X );
+  Vector(int n);
+</pre>
+
+
+<h4> Example : </h4>
+\precode
+// default constructor -> empty vector
+Vector<int> V;
+cout << "Number of elements "<< V.GetM() << endl; // It should return 0 
+// then you can use Reallocate to set the size
+V.Reallocate(3);
+V.Fill();
+
+// copy constructor (V -> U)
+Vector<int> V = U;
+
+// constructor specifying the size of V
+Vector<double> W(4);
+// W is not initialized, you have to fill it
+W.Fill(1.0);
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#reallocate">Reallocate</a><br/>
+<a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p> Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="operator"></a></div>
+
+
+
+<h3>Vector operators</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  const T&amp; operator (int) const;
+  T&amp; operator (int);
+  Vector&amp; operator =(const Vector&amp; )
+  Vector&amp; operator =(const T0&amp; alpha)
+  Vector&amp; operator *=(const T0&amp; alpha)
+</pre>
+
+
+<h4>Example : </h4>
+\precode
+Vector<string> V(3);
+// use of operator () to modify vector
+V(0) = string("element 0");
+V(1) = V(0) + string(" and 1");
+
+Vector<string> W;
+// use of operator = to copy contents of vector V
+W = V;
+
+// you can set all elements to a given value
+Vector<double> U(3);
+U = 1; // all elements of U are equal to 1
+
+// multiplication by a scalar
+U.Fill();
+U *= 1.5;
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p><a href="#copy">Copy</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="getm"></a></div>
+
+
+
+<h3>GetM, GetLength, GetSize, GetDataSize</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  int GetM() const;
+  int GetLength() const;
+  int GetSize() const;
+  int GetDataSize() const;
+</pre>
+
+<p> All those methods are identic and return the number of elements contained in the vector.  </p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<float> V(3);
+cout << "Number of elements of V " << V.GetM() << endl;
+V.Reallocate(5);
+cout << "Number of elements of V " << V.GetSize() << endl;
+\endprecode
+
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector_Base</code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="getdata"></a></div>
+
+
+
+<h3>GetData, GetDataConst, GetDataVoid, GetDataConstVoid</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T* GetData() const;
+  const T* GetDataConst() const;
+  void* GetDataVoid() const;
+  const void* GetDataConstVoid() const;
+</pre>
+
+
+<p>Those methods are useful to retrieve the pointer to the array.  In practice, you can use those methods in order to interface with C/fortran subroutines or to perform some low level operations.  But in this last case, you have to be careful, because debugging operations will be more tedious.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(3); V.Fill();
+double* data = V.GetData();
+// you can use data as a normal C array
+// here the sum of elements is computed
+double sum = 0;
+for (int i = 0; i < V.GetM(); i++)
+  sum += data[i];
+
+// this would be equivalent and safer to write
+sum = 0;
+for (int i = 0; i < V.GetM(); i++)
+  sum += V(i);
+
+// if you want to call a fortran subroutine daxpy
+Vector<double> X(3), Y(3); 
+double coef = 2.0;
+// in this case, X is constant
+int n = X.GetM();
+daxpy_(&amp; coef, &amp; n, X.GetDataConst(), Y.GetData());
+
+// for complex numbers, conversion to void* is needed :
+Vector<complex<double> > Xc(4), Yc(4);
+complex<double> beta(1,1);
+zaxpy(reinterpret_cast<const void*>(beta),
+      Xc.GetDataConstVoid(), Yc.GetDataVoid());
+\endprecode
+
+
+<h4>Related topics : </h4>
+<p> <a href="#setdata">SetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector_Base</code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="clear"></a></div>
+
+
+
+<h3>Clear</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Clear();
+</pre>
+
+
+<p>This method removes all the elements of the vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(3);
+V.Fill();
+// clears vector V
+V.Clear();
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="reallocate"></a></div>
+
+
+
+<h3>Reallocate</h3>
+
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Reallocate(int);
+</pre>
+
+<p>This method changes the size of the vector, but removes previous elements.</p>
+
+<h4>Example : </h4>
+\precode
+Vector<long int> V(5);
+V.Fill();
+// resizes vector V
+V.Reallocate(20);
+// you need to initialize all vector
+V.Zero();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#resize">Resize</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="resize"></a></div>
+
+
+
+<h3>Resize</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Resize(int);
+</pre>
+
+<p> This method changes the size of the vector, and keeps previous elements.  </p>
+
+<h4>Example : </h4>
+\precode
+Vector<long double> V(5); V.Fill();
+// resizes vector V
+V.Resize(20);
+// you need to initialize new elements if there are new
+for (int i = 5; i < 20; i++)
+  V(i) = 0;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#reallocate">Reallocate</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="setdata"></a></div>
+
+
+
+<h3>SetData</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void SetData(int, T*);
+</pre>
+
+
+<p>This method sets the pointer to the array containing elements.  This method should be used carefully, and generally in conjunction with method Nullify.</p>
+
+
+<h4>Example : </h4>
+\precode
+// for example, you can define a function with a pointer as argument
+void f(double* data)
+{
+  // and sets this array into a Vector instance
+  Vector<double> V;
+  V.SetData(5, data);
+  // then you use a C++ method
+  double rhs = Norm2(V);
+  // you don't release memory, because data is used after the function
+  V.Nullify();
+}
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#getdata">GetData</a><br/>
+<a href="#nullify">Nullify</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="nullify"></a></div>
+
+
+
+<h3>Nullify</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Nullify();
+</pre>
+
+
+<p>This method clears the vector without releasing memory.  This method should be used carefully, and generally in conjunction with method SetData. You can look at the example shown in the explanation of method SetData.</p>
+
+
+<h4>Related topics :</h4>
+<p><a href="#setdata">SetData</a><br/>
+<a href="#getdata">GetData</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="copy"></a></div>
+
+
+
+<h3>Copy</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Copy(const Vector<T>&amp;);
+</pre>
+
+
+<p>This method copies a vector into the current vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+// copy of a vector V
+Vector<double> V(10), W;
+V.FillRand();
+W.Copy(V);
+// this is equivalent to use operator =
+W = V;
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#operator">Vector operators</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="pushback"></a></div>
+
+
+
+<h3>PushBack</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void PushBack(const T0&amp;);
+  void PushBack(const Vector<T>&amp;);
+</pre>
+
+
+<p> This method inserts a single element, or a vector to the end of the vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V;
+// a single element is appended
+V.PushBack(1.0);
+// now another vector is appended
+Vector<double> W(2);
+W(0) = 1.5; W(1) = -1.0;
+V.PushBack(W);
+// W should contain [1.0 1.5 -1.0]
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#resize">Resize</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="zero"></a></div>
+
+
+
+<h3>Zero</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Zero();
+</pre>
+
+
+<p>This method fills memory of 0, is convenient for vector made of doubles, integers, floats, but not for more complicated types.  In that case, it is better to use the method <a href="#fill">Fill</a>.  </p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(5);
+// initialization
+V.Fill();
+
+Vector<IVect> W(10);
+// W.Zero() is incorrect and would generate an error at the execution
+// a good initialization is to use Fill
+IVect zero(5); zero.Zero();
+W.Fill(zero);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="fill"></a></div>
+
+
+
+<h3>Fill</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Fill();
+  void Fill(const T0&amp; );
+</pre>
+
+
+<p>This method fills vector with 0, 1, 2, etc or with a given value.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<int> V(5);
+V.Fill();
+// V should contain [0 1 2 3 4]
+
+V.Fill(2);
+// V should contain [2 2 2 2 2]
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#zero">Zero</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="fillrand"></a></div>
+
+
+
+<h3>FillRand</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void FillRand();
+</pre>
+
+
+<p>This method fills the vector randomly.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(5);
+V.FillRand();
+// V should contain 5 random values
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#fill">Fill</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="getnorminf"></a></div>
+
+
+
+<h3>GetNormInf, GetNormInfIndex</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  T GetNormInf() const;
+  int GetNormInfIndex() const;
+</pre>
+
+
+<p> <code>GetNormInf</code> returns the highest absolute value whereas <code>GetNormInfIndex</code> returns the index where this maximum is reached. This method does not work for complex numbers.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<int> V(3);
+V(0) = 1; V(1) = -2; V(3) = 0;
+int imax = V.GetNormInf(); // should return 2
+int pos = V.GetNormInfIndex(); // should return 1
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="print"></a></div>
+
+
+
+<h3>Print</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Print() const;
+</pre>
+
+
+<p>This method displays the vector.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<string> V(2);
+V.PushBack("hello");
+V.PushBack("world");
+V.Print(); // should display "hello world"
+\endprecode
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="write"></a></div>
+
+
+
+<h3>Write</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Write(string) const;
+  void Write(ofstream&amp;) const;
+</pre>
+
+<p>This method writes the vector on a file/stream in binary format.  The file will contain the number of elements, then the list of elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(2); 
+// you can write directly in a file
+V.Fill();
+V.Write("vector.dat");
+
+// or open a stream with other datas
+ofstream file_out("vector.dat");
+int my_info = 3;
+file_out.write(reinterpret_cast<char*>(&amp;my_info), sizeof(int));
+V.Write(file_out);
+file_out.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="read"></a></div>
+
+
+
+<h3>Read</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void Read(string);
+  void Read(istream&amp;);
+</pre>
+
+
+<p>This method sets the vector from a file/stream in binary format.  The file contains the number of elements, then the list of elements. The method ReadText can also be useful to initialize an array with a string. </p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V; 
+// you can read directly on a file
+V.Read("vector.dat");
+
+// or read from a stream
+ifstream file_in("vector.dat");
+int my_info;
+file_in.read(reinterpret_cast<char*<(&amp;my_info), sizeof(int));
+V.Read(file_in);
+file_in.close();
+
+// or initialize values of a vector with a string
+string values("1.23  -4.1  2.5  0.1 0.6 -0.7");
+istringstream stream_data(values);
+V.ReadText(stream_data);
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#writetext">WriteText</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="writetext"></a></div>
+
+
+
+<h3>WriteText</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void WriteText(string) const;
+  void WriteText(ofstream&amp;) const;
+</pre>
+
+
+<p>This method writes the vector on a file/stream in text format.  The file will contain the list of elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V(2); 
+// you can write directly in a file
+V.Fill();
+V.WriteText("vector.dat");
+
+// or open a stream with other datas
+ofstream file_out("vector.dat");
+int my_info = 3;
+file_out << my_info << '\n';
+V.WriteText(file_out);
+file_out.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#readtext">ReadText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+
+
+<div class="separator"><a name="readtext"></a></div>
+
+
+
+<h3>ReadText</h3>
+
+<h4>Syntax : </h4>
+ <pre class="syntax-box">
+  void ReadText(string);
+  void ReadText(istream&amp;);
+</pre>
+
+
+<p>This method sets the vector from a file/stream in text format.  The file contains the list of elements.</p>
+
+
+<h4>Example : </h4>
+\precode
+Vector<double> V; 
+// you can read directly on a file
+V.ReadText("vector.dat");
+
+// or read from a stream
+ifstream file_in("vector.dat");
+int my_info;
+file_in >> my_info;
+V.ReadText(file_in);
+file_in.close();
+\endprecode
+
+
+<h4>Related topics :</h4>
+<p><a href="#write">Write</a><br/>
+<a href="#read">Read</a><br/>
+<a href="#writetext">WriteText</a></p>
+
+
+<h4>Location :</h4>
+<p>Class <code>Vector<T, VectFull></code><br/>
+Vector.hxx<br/>
+Vector.cxx</p>
+
+*/

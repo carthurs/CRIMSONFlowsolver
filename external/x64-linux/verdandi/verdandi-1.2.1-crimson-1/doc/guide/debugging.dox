@@ -1,0 +1,112 @@
+/*! \file debugging.dox
+    \brief Debugging.
+*/
+
+/*!
+\page debugging Debugging
+
+\section logger Logger
+%Verdandi offers the ability to write messages in a log file or in the standard output thanks to its static class \link Verdandi::Logger \endlink.
+
+\subsection logger_status Logger status
+
+It is possible to change the logger status using the methods \link Verdandi::Logger::Activate() \endlink and \link Verdandi::Logger::Deactivate() \endlink. These methods enable to activate or deactivate the logger.
+
+<code>VERDANDI_LOG_IS_ACTIVE</code> specifies the logger status (active by default).
+
+To deactivate the logger, put before <code>\#include &lt;Verdandi.hxx&gt;</code>:
+
+\precode
+#define VERDANDI_LOG_IS_ACTIVE false
+\endprecode
+
+\subsection logger_file_name Logger file name
+
+<code>VERDANDI_LOG_FILENAME</code> defines the name of the log file (<code>verdandi.log</code> by default).
+
+To change the log file name, for example, put before <code>\#include &lt;Verdandi.hxx&gt;</code>:
+
+\precode
+#define VERDANDI_LOG_FILENAME "verdandi-%{D}.log"
+\endprecode
+
+The special character <code>%{D}</code> will be replaced by the current date.
+
+It is also possible to define the log file in a configuration file, if the method Verdandi::Logger::Initialize(string file_name, string section_name) is called. For instance:
+
+\precode
+Logger::Initialize("configuration.cfg", "logger/");
+\endprecode
+
+Then, in order to set the path of the log file, you have to define or to change the variable <code>File</code> in the section <code>logger</code> of the configuration file <code>configuration.cfg</code>.
+
+\subsection logger_methods Two methods
+
+The logger mainly comes with the methods \link Verdandi::Logger::Log() \endlink and \link Verdandi::Logger::StdOut() \endlink.
+
+\link Verdandi::Logger::Log() \endlink writes the messages in the log file, and also on the standard output when the messages are important enough. \link Verdandi::Logger::StdOut() \endlink writes the messages on the standard output, and in the log file too (unless configured otherwise).
+
+\subsection logger_options Logger options
+
+It is possible to tune where and how the messages are actually written:
+<ul>
+  <li>Usually, one wants the messages to appear in the log file. It is however possible to deactivate this with the method \link Verdandi::Logger::SetFile(bool) \endlink. After the call <code>Logger::SetFile(false)</code>, the logger will not write the messages to the log file. </li>
+
+  <li> \link Verdandi::Logger::StdOut() \endlink will always print its messages on the standard output. In the default setting, \link Verdandi::Logger::Log() \endlink will write the important messages on the standard output (see below the subsection about priorities). If you want that \link Verdandi::Logger::Log() \endlink writes all messages on the standard output, use \link Verdandi::Logger::SetStdout(bool) \endlink.</li>
+
+  <li>The method \link Verdandi::Logger::SetUppercase(bool) \endlink determines whether the messages will be written in uppercase or not. The default behavior is not to write the log messages in uppercase.</li>
+</ul>
+
+Instead of calling the three previous methods, it is possible to set up the corresponding options with <code>VERDANDI_LOG_OPTIONS</code>. These options are encoded using the constants called <code>Verdandi::Logger::file_</code>, <code>Verdandi::Logger::stdout_</code> and <code>Verdandi::Logger::upper_case_</code>. The default value of <code>VERDANDI_LOG_OPTIONS</code> is
+\precode
+#define VERDANDI_LOG_OPTIONS Verdandi::Logger::file_
+\endprecode
+
+If you want to deactivate the log file, and activate the two other options (standard output and uppercase), then put the following definition before <code>\#include &lt;Verdandi.hxx&gt;</code>:
+
+\precode
+#define VERDANDI_LOG_OPTIONS Verdandi::Logger::stdout_ | Verdandi::Logger::upper_case_
+\endprecode
+
+\subsection formatting_messages Formatting message
+
+<code>VERDANDI_LOG_WIDTH</code> defines the number of characters per line (78 by default).
+
+\subsection level_of_priority Level of priority
+
+A level of priority may be associated to each call of \link Verdandi::Logger::Log() \endlink using a template parameter. Only messages whose priority levels are greater than or equal to the level of verbosity are actually written. 
+
+<code>VERDANDI_LOGGING_LEVEL</code> defines the level of verbosity (0 by default).
+
+<code>VERDANDI_EXCEPTION_LOGGING_LEVEL</code> defines the priority level for exception messages (15 by default).
+
+When a message is written on the standard output, it is also written in the log file if <code>VERDANDI_STDOUT_LOGGING_LEVEL</code> is greater than or equal to the logging level. In the default setting, this is the case since <code>VERDANDI_STDOUT_LOGGING_LEVEL</code> is set to 7.
+
+\subsection example Example
+
+\includeexample{basic_example_logger.cpp}
+
+\section message_handler Message handler
+
+\section exceptions Exceptions raised
+
+The objects that may be launched by %Verdandi are of type: \link Verdandi::ErrorConfiguration ErrorConfiguration\endlink, \link Verdandi::ErrorIO ErrorIO\endlink, \link Verdandi::ErrorProcessing ErrorProcessing\endlink, \link Verdandi::ErrorUndefined ErrorUndefined\endlink, \link Verdandi::ErrorArgument ErrorArgument\endlink. They all derive from \link Verdandi::Error Error\endlink. They provide the method \link Verdandi::Error::What() What()\endlink that returns a string explaining the error, and the method \link Verdandi::Error::CoutWhat() CoutWhat()\endlink that displays on screen this explanation.
+
+\section exceptions_and_debugging Exceptions and debugging
+
+Suppose your code contains an error and raises an exception. You probably want to identify the function that raised the exception. The error message should contain the name of the function. But you probably want to know the exact line where the error occurred and the sequence of calls. Then, you have two options, using a debugger.
+
+One option is to place a breakpoint in \link Verdandi::Error::Error(string function = "", string comment = "") Error::Error(string function = "", string comment = "")\endlink (see file <code>share/Error.cxx</code>) because this constructor should be called before the exception is actually raised.
+
+Another option, more convenient because no breakpoint is to be placed, is to define <code>VERDANDI_WITH_ABORT</code>. With that flag activated, if a %Verdandi exception is raised, the program will simply abort. The call stack is then at hand.
+
+\section dumping_scons_environment Dumping SCons environment
+
+If you need to access the SCons environment variables, you may launch
+\prescreen
+$ scons dump_env=yes
+\endprescreen
+
+This will create a file <code>scons_env.log</code> that describes the entire SCons environment.
+
+*/

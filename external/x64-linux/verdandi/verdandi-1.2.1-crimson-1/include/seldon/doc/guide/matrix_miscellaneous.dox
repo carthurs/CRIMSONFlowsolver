@@ -1,0 +1,28 @@
+/*! \file matrix_miscellaneous.dox
+    \brief Miscellaneous documentation on matrices.
+*/
+
+/*!
+\page matrix_miscellaneous Miscellaneous Documentation on Matrices
+
+\section matrix_market Loading Matrices from the "Matrix Market"
+
+The <a href="http://math.nist.gov/MatrixMarket/">Matrix Market</a> is a repository with hundreds of sparse matrices. Most of these matrices can be downloaded in a file in Harwell-Boeing format. %Seldon provides a function to read a subset of these files.
+
+A file from the Matrix Market is associated with a type encoded in three characters (which is usually its extension). The supported types have:
+- 'R' (real) or 'P' (pattern) as first character; complex-valued matrices ('C') are not supported;
+- 'U' (unsymmetric) or 'R' (rectangular) as second character; 'S' (symmetric), 'H' (Hermitian) and 'Z' (skew symmetric) are not supported;
+- 'A' (assembled) as third character; 'E' (elemental) is not supported.
+
+In short, %Seldon can read Harwell-Boeing files from the Matrix Market providing their extensions meet the regular expression <code>[rp][ur]a</code>. Once read, the matrix is stored in a matrix of type <code>Matrix<double, Prop, ColSparse, Allocator></code> or <code>Matrix<float, Prop, ColSparse, Allocator></code>. %Seldon can also write real and complex matrices in Harwell-Boeing files (.rua or .cua extension), symmetric matrices will be written as unsymmetric matrices.
+
+See the functions:
+- Seldon::ReadHarwellBoeing(string filename, Matrix<float, Prop, ColSparse, Allocator>& A),
+- Seldon::ReadHarwellBoeing(string filename, Matrix<double, Prop, ColSparse, Allocator>& A).
+- Seldon::WriteHarwellBoeing(const Matrix<T, Prop, Storage, Allocator>& A, const string& file_name).
+
+Note that these functions are only available after the file <code>matrix_sparse/IOMatrixMarket.cxx</code> has been included:
+
+\includeexample{matrix_market.cpp}
+
+*/

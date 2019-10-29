@@ -1,0 +1,383 @@
+# Copyright (C) 2008 INRIA
+# Author(s): Vivien Mallet
+#
+# This file is part of the data assimilation library Verdandi.
+#
+# Verdandi is free software; you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation; either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# Verdandi is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Verdandi. If not, see http://www.gnu.org/licenses/.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Verdandi. If not, see http://www.gnu.org/licenses/.
+#
+# For more information, visit the Verdandi web site:
+#      http://verdandi.gforge.inria.fr/
+
+
+import os, sys, glob
+import distutils.sysconfig
+
+# Main environment variables.
+env = Environment(ENV = os.environ)
+
+
+####################
+# USEFUL FUNCTIONS #
+####################
+
+
+# Returns 'default' if the variable with name 'input_name' is not in the
+# global namespace; returns the variable otherwise.
+def create_variable(input_name, default):
+    exec("global " + input_name)
+    try:
+        exec("local_copy = " + input_name)
+        if local_copy is None:
+            return default
+        else:
+            return local_copy
+    except:
+        return default
+
+# Returns the input as a list of strings, if the input is a list of strings, a
+# string, None, or if the input can be converted to string. The input must be
+# provided as a string containing its name.
+def to_string_list(input_name):
+    exec("global " + input_name)
+    try:
+        exec("local_copy = " + input_name)
+    except:
+        return []
+    if local_copy is None:
+        return []
+    elif isinstance(local_copy, list):
+        return local_copy
+    else:
+        return Split(str(local_copy))
+
+
+# This function checks whether a supported argument has been provided, and it
+# sets the argument to its default value if the user has not given any value.
+def add_argument(name, value_list = None):
+    if value_list is None:
+        if not ARGUMENTS.has_key(name):
+            raise Exception, "The command line argument \"" + name + "\" is" \
+                  + " required, but it was not provided."
+    else:
+        ARGUMENTS[name] = ARGUMENTS.get(name, value_list[0])
+        if ARGUMENTS[name] not in value_list:
+            raise Exception, "Unsupported option \"" + ARGUMENTS[name] \
+                  + "\" for argument \"" + name + "\". Available options " \
+                  + "are: " \
+                  + ", ".join(["\"" + x + "\"" for x in value_list]) + "."
+
+
+# Returns the debug flags.
+def debug_flag(name):
+    if ARGUMENTS[name] == "-1" or env['PLATFORM'] in ['win32', 'win64']:
+        return ""
+    elif ARGUMENTS[name] == "0":
+        return "-O2"
+    elif ARGUMENTS[name] == "1":
+        return "-g"
+    elif ARGUMENTS[name] == "2":
+        return "-O2 -g"
+
+
+#######################
+# COMPILER AND LINKER #
+#######################
+
+
+cpp_compiler = create_variable("cpp_compiler", None)
+fortran_compiler = create_variable("fortran_compiler", None)
+linker = create_variable("linker", "$CXX")
+
+
+#############
+# ARGUMENTS #
+#############
+
+
+# Parallelism.
+add_argument("mpi", ["no", "yes"])
+add_argument("omp", ["no", "yes"])
+
+# The compilers and the linker may be changed with command line options.
+cpp_compiler = ARGUMENTS.get("cpp", cpp_compiler)
+fortran_compiler = ARGUMENTS.get("fortran", fortran_compiler)
+linker = ARGUMENTS.get("link", linker)
+
+if ARGUMENTS["mpi"] == "yes":
+    mpi_cxx_compiler = None
+    # search for known good MPI C++ compilers
+    option_list = ['mpicxx','mpiCC','mpic++']
+    for o in option_list:
+        if WhereIs(o) != None:
+            mpi_cxx_compiler = WhereIs(o)
+            break
+    if mpi_cxx_compiler is None:
+        raise Exception, \
+            "Unable to find a MPI compiler (mpicxx, mpiCC or mpic++)."
+
+# Compilation options.
+add_argument("debug", ["0", "-1", "1", "2"])
+add_argument("debug_cpp", [ARGUMENTS["debug"], "-1", "0", "1", "2"])
+add_argument("debug_fortran",
+             [ARGUMENTS["debug"], "-1", "0", "1", "2"])
+add_argument("mode_cpp", ["strict", "permissive"])
+add_argument("mode_fortran", ["strict", "permissive"])
+
+# C++-specific compilation options.
+cpp_compilation_option = debug_flag("debug_cpp")
+flag_cpp = create_variable("flag_cpp", "")
+flag_cpp = ARGUMENTS.get("flag_cpp", flag_cpp).strip()
+if flag_cpp != "":
+    cpp_compilation_option += " " + flag_cpp
+
+# Fortran-specific compilation options.
+fortran_compilation_option = debug_flag("debug_fortran")
+
+add_argument("dump_env", ["no", "yes"])
+add_argument("line", ["no", "yes"])
+add_argument("mumps", ["no", "yes"])
+add_argument("umfpack", ["no", "yes"])
+
+# Path to Verdandi.
+try:
+    verdandi_path = create_variable("verdandi_path", None)
+    verdandi_path = ARGUMENTS.get("verdandi", verdandi_path)
+    verdandi_path = os.path.abspath(verdandi_path)
+except:
+    raise Exception, "\"verdandi_path\" is not defined!"
+if not os.path.isdir(verdandi_path):
+    raise Exception, "The Verdandi path \"" + verdandi_path \
+          + "\" does not appear to be a valid path."
+
+if ARGUMENTS["dump_env"] == "yes":
+    scons_env_file = open("scons_env.log", "w")
+    scons_env_file.write(env.Dump())
+    scons_env_file.close()
+
+
+###############
+# ENVIRONMENT #
+###############
+
+
+# Environment for Lua library.
+env_lua = Environment(ENV = os.environ)
+
+env.Replace(CONFIGURELOG = "#/.scons.log")
+env_lua.Replace(CONFIGURELOG = "#/.scons.log")
+
+# User-defined paths for includes.
+include_path = to_string_list("include_path")
+include_path_list = []
+for path in include_path:
+    if os.path.isdir(path):
+        include_path_list.append(path)
+    elif os.path.isdir(os.path.join(verdandi_path, path)):
+        include_path_list.append(os.path.join(verdandi_path, path))
+    else:
+        raise Exception, "Unable to find the include directory \"" \
+              + path + "\" (even in Verdandi directory, \"" \
+              + verdandi_path + "\")."
+env.Append(CPPPATH = include_path_list)
+env.Append(F77PATH = include_path_list)
+env.Append(FORTRANPATH = include_path_list)
+
+# Verdandi paths for includes.
+env.Append(CPPPATH = [verdandi_path])
+for path in ["container", "error", "method", "model", "observation_manager",
+             "output_saver", "share", "include", "include/lua/src"]:
+    env.Append(CPPPATH = [os.path.join(verdandi_path, path)])
+
+if ARGUMENTS["mumps"] == "yes":
+    for path in ["include/Mumps/libseq/", "include/Metis/",
+                 "include/Mumps/include/"]:
+        env.Append(CPPPATH = [os.path.join(verdandi_path, path)])
+
+if ARGUMENTS["umfpack"] == "yes":
+    for path in ["include/AMD/Include", "include/UMFPACK/Include",
+                 "include/UFconfig/"]:
+        env.Append(CPPPATH = [os.path.join(verdandi_path, path)])
+
+# Libraries.
+library_path = to_string_list("library_path")
+for path in library_path:
+    if os.path.isdir(path):
+        env.Append(LIBPATH = [path])
+    elif os.path.isdir(os.path.join(verdandi_path, path)):
+        env.Append(LIBPATH = [os.path.join(verdandi_path, path)])
+    else:
+        raise Exception, "Unable to find the library directory \"" \
+              + path + "\" (even in Verdandi directory, \"" \
+              + verdandi_path + "\")."
+
+if ARGUMENTS["mumps"] == "yes":
+    env.Append(LIBPATH = ["../../include/Mumps/libseq/"])
+    env.Append(LIBPATH = ["../../include/Mumps/lib/"])
+    env.Append(LIBPATH = ["../../include/Metis/Lib/"])
+
+if ARGUMENTS["umfpack"] == "yes":
+    env.Append(LIBPATH = ["../../include/UMFPACK/Lib/"])
+    env.Append(LIBPATH = ["../../include/AMD/Lib/"])
+
+# User shell configuration.
+if os.environ.has_key("LD_LIBRARY_PATH"):
+    env.Append(LIBPATH = os.environ["LD_LIBRARY_PATH"].split(":"))
+if os.environ.has_key("LIBRARY_PATH"):
+    env.Append(LIBPATH = os.environ["LIBRARY_PATH"].split(":"))
+if os.environ.has_key("CPATH"):
+    env.Append(CPPPATH = os.environ["CPATH"].split(":"))
+if os.environ.has_key("CPLUS_INCLUDE_PATH"):
+    env.Append(CPPPATH = os.environ["CPLUS_INCLUDE_PATH"].split(":"))
+
+# Compiler.
+if ARGUMENTS["mpi"] == "no":
+   if cpp_compiler is not None:
+        env.Replace(CXX = cpp_compiler)
+if ARGUMENTS["mpi"] == "yes":
+    env.Replace(CXX = mpi_cxx_compiler)
+
+if fortran_compiler is not None:
+    env.Replace(F77 = fortran_compiler)
+    env.Replace(F90 = fortran_compiler)
+    env.Replace(F95 = fortran_compiler)
+    env.Replace(FORTRAN = fortran_compiler)
+
+# In case of GNU compilers, a few options may be added.
+if "g++" in env["CXX"] and ARGUMENTS["mode_cpp"] == "strict":
+    cpp_compilation_option += " -Wall -ansi -pedantic -Wno-unused" \
+        + " -Wno-parentheses -Wno-variadic-macros -Wno-long-long"
+    # For latest GCC versions.
+    import commands
+    s, o = commands.getstatusoutput(env["CXX"] + " -dumpversion")
+    if s == 0:
+        version = [int(x) for x in o.split('.')]
+        if version >= [3, 4]:
+            cpp_compilation_option += " -Wextra"
+        if version >= [4, 3, 2]:
+            cpp_compilation_option += " -Wno-empty-body"
+if env["FORTRAN"] in ["g77", "gfortran"] \
+       and ARGUMENTS["mode_fortran"] == "strict":
+    fortran_compilation_option += " -Wall -pedantic"
+
+# Compilation options.
+env.Replace(CCFLAGS = cpp_compilation_option)
+env.Replace(F77FLAGS = fortran_compilation_option)
+env.Replace(FORTRANFLAGS = fortran_compilation_option)
+
+# Linker.
+env.Replace(LINK = linker)
+
+# Checks for the libraries, and sets the link flags.
+library_list = to_string_list("library_list")
+for library in ["simvascular_flowsolver","simvascular_solverio","les","simvascular_flowsolver",
+                "rt",
+                #"blas", "atlas", "lapack", 
+                #"gslcblas", "cblas", 
+                #"g2c", "gfortran",
+                "metis",
+                "petsc",
+                "metis","CGAL","CGAL_Core","CGAL_ImageIO",
+                "boost_thread"]:
+    #if library not in library_list:
+        library_list += [library]
+if env['PLATFORM'] in ['win32', 'win64'] and "lua" not in library_list:
+    library_list += ["lua"]
+for flag in to_string_list("link_flag"):
+    env.Append(LINKFLAGS = flag)
+conf = Configure(env)
+for library in library_list:
+    conf.CheckLib(library)
+    #    if env['PLATFORM'] != 'win32':
+    #        env.Append(LINKFLAGS = "-l" + library)
+    
+env.Append(LINKFLAGS = "-lmkl_intel_lp64 -lmkl_core -lmkl_sequential")    
+
+# Link to the appropriate version of Python.
+for python_version in ["2.7", "2.6", "2.5", ""]:
+    if conf.CheckLib("python" + python_version):
+        env.Append(LINKFLAGS = "-l" + "python" + python_version)
+        env.Append(CXXFLAGS = ["-DVERDANDI_PYTHON_VERSION=" + python_version])
+        break
+
+if ARGUMENTS["line"] == "no":
+    env.Replace(CXXCOMSTR = "[C++] $SOURCE")
+    env.Replace(F77COMSTR = "[F77] $SOURCE")
+    env.Replace(F90COMSTR = "[F90] $SOURCE")
+    env.Replace(FORTRANCOMSTR = "[FORTRAN] $SOURCE")
+    env.Replace(LINKCOMSTR = "[Linking] $TARGET")
+    env.Replace(SHCXXCOMSTR = "[Shared C++] $SOURCE")
+    env.Replace(SHLINKCOMSTR = "[Shared linking] $TARGET")
+    env.Replace(SWIGCOMSTR = "[SWIG] $TARGET")
+
+    env_lua.Replace(CCCOMSTR = "[C] $SOURCE")
+    env_lua.Replace(ARCOMSTR = "[Archiving] $TARGET")
+    env_lua.Replace(RANLIBCOMSTR = "[Indexing] $TARGET")
+
+
+if ARGUMENTS["omp"] == "yes":
+    env.Append(CXXFLAGS = ["-fopenmp"])
+    env.Append(LINKFLAGS = ["-fopenmp"])
+
+################
+# THE PROGRAMS #
+################
+
+
+# Dependency list.
+dependency_list = to_string_list("dependency_list")
+# In case there is a list of dependencies to be excluded.
+exclude_dependency = to_string_list("exclude_dependency")
+for expression in exclude_dependency:
+    for dependency in dependency_list[:]:
+        import re
+        if re.search(expression, dependency) is not None:
+            dependency_list.remove(dependency)
+
+# For Lua 5.1.4.
+if os.name == "posix":
+    env_lua.Append(CFLAGS = "-DLUA_USE_POSIX")
+if env_lua['PLATFORM'] != 'win32':
+    lua_dependency_list = ["lapi", "lcode", "ldebug", "ldo", "ldump", "lfunc",
+                           "lgc", "llex", "lmem", "lobject", "lopcodes",
+                           "lparser", "lstate", "lstring", "ltable", "ltm",
+                           "lundump", "lvm", "lzio", "lauxlib", "lbaselib",
+                           "ldblib", "liolib", "lmathlib", "loslib",
+                           "ltablib", "lstrlib", "loadlib", "linit"]
+    lua_dependency_list_c = [os.path.join(verdandi_path, "include/lua/src/"
+                                      + t + ".c")
+                             for t in lua_dependency_list]
+    # Makes sure that the library is compiled only if not already
+    # available. Indeed, if the library was compiled using the Lua makefile or
+    # if another version of Lua is used, it should not be combined by
+    # SCons. In addition, "scons -c" should not remove the library.
+    lua_library = os.path.join(verdandi_path, "include/lua/src/liblua.a")
+    if not os.path.isfile(lua_library):
+        env_lua.StaticLibrary(lua_library, lua_dependency_list_c)
+    if "g++" in env["CXX"]:
+        env_lua.Append(CFLAGS = "-fPIC") # for SWIG.
+
+# The default targets are all ".cpp" files, but targets can be excluded.
+target_list = glob.glob("*.cpp")
+exclude_target = to_string_list("exclude_target")
+for filename in target_list[:]:
+    if filename in exclude_target or filename[:-4] in exclude_target:
+        target_list.remove(filename)
+for filename in target_list:
+    if env['PLATFORM'] in ['win32', 'win64']:
+        env.Program(filename[:-4], [filename] + dependency_list)
+    else:
+        env.Program(filename[:-4], [filename, lua_library] + dependency_list)

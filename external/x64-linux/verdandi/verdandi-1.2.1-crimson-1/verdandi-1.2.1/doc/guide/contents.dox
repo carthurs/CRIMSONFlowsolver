@@ -1,0 +1,41 @@
+/*! \file contents.dox
+    \brief Contents.
+*/
+
+/*!
+\page contents Contents
+
+
+\section design Design
+
+The required interface for the <b>numerical model</b> will greatly vary with the data assimilation method. The class <code>Model</code> may give access to:
+
+<ul>
+
+  <li> the time integration over one time step, with <code>Forward</code>; </li>
+  <li> the state vector, with <code>GetState</code>; </li>
+  <li> the date that the model has reached (in its time integration), with <code>GetDate</code> returning an integer; </li>
+  <li> the covariance error objects, with <code>GetBackgroundErrorVariance</code> for background and <code>GetModelErrorVariance</code> for model error; </li>
+  <li> the model input data and parameters, so that they could be perturbed; </li>
+  <li> the tangent linear model; </li>
+  <li> the adjoint model, with a backward mode (<code>StepBack</code>) and access to adjoint variables; </li>
+  <li> some source term of the underlying equation (for nudging). </li>
+
+</ul>
+
+The <b>observations</b> are handled by a class called <code>ObservationManager</code>, which interface may give access to:
+
+<ul>
+
+  <li> a method <code>LoadObservation</code> that tells the manager to load/read the observations at a given date (<code>integer Model::GetDate</code>);
+  <li> a method <code>HasObservation</code> that tells whether observations are available at current date, or whether observations have been available between the previous date and the current date;
+  <li> the observations, with <code>GetObservation</code>;
+  <li> the covariance error object for the observations, with <code>GetObservationErrorVariance</code>;
+  <li> a method to perturb the observations (useful in twin experiments); </li>
+  <li> the tangent linear version; </li>
+  <li> the adjoint version; </li>
+  <li> the observation operator. </li>
+
+</ul>
+
+*/

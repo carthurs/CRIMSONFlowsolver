@@ -1,0 +1,91 @@
+/*! \file unscented_kalman_filter.dox
+    \brief Unscented Kalman Filter.
+*/
+
+/*!
+\page unscented_kalman_filter Unscented Kalman Filter
+
+Verdandi provides a C++ implementation of the unscented Kalman filter (UKF). 
+
+The unscented Kalman filter (UKF) is implemented in <code>UnscentedKalmanFilter.hxx</code> and <code>UnscentedKalmanFilter.cxx</code>. The class \link Verdandi::UnscentedKalmanFilter UnscentedKalmanFilter\endlink is a template class: <code>UnscentedKalmanFilter<T, ClassModel, ClassObservationManager></code>. <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>), <code>ClassModel</code> is the type of the model (e.g. <code>ClampedBar<double></code>), <code>ClassObservationManager</code> is the type of the observation manager (e.g. <code>LinearObservationManager<double></code>).
+
+A simulation with the unscented Kalman filter (UKF) may be carried
+out with the following C++ lines:
+
+\precode
+UnscentedKalmanFilter<real, ClampedBar<real>,
+        LinearObservationManager<real> > driver; [1]
+
+driver.Initialize(argv[1]); [2]
+
+while (!driver.HasFinished()) [6]
+{
+    driver.InitializeStep(); [3]
+
+    driver.Forward(); [4]
+
+    driver.Analyze(); [5]
+}
+\endprecode
+
+\comment
+  <li> First build the \link Verdandi::UnscentedKalmanFilter UnscentedKalmanFilter\endlink driver with the construction \link Verdandi::UnscentedKalmanFilter::UnscentedKalmanFilter() UnscentedKalmanFilter\endlink. </li>
+
+  <li> Then initialize the driver, the model and the observation manager, and read option keys in the configuration file with \link Verdandi::UnscentedKalmanFilter::Initialize(string configuration_file, bool initialize_model, bool initialize_observation_manager) Initialize(configuration_file)\endlink. This optionally computes an analysis with the model initial condition. </li>
+
+  <li> Optionally intialize a step with \link Verdandi::UnscentedKalmanFilter::InitializeStep() InitializeStep()\endlink. This initializes a step for the model. </li>
+
+  <li> Perform a step forward and propagate the state error variance with \link Verdandi::UnscentedKalmanFilter::Forward() Forward()\endlink. </li>
+
+  <li> Compute the analysis with \link Verdandi::UnscentedKalmanFilter::Analyze() Analyze()\endlink, whenever observations are available. </li>
+
+  <li> Compute the data assimilation until the model has finished: \link Verdandi::UnscentedKalmanFilter::HasFinished() HasFinished()\endlink returns true if the simulation is done, false otherwise. </li>
+\endcomment
+
+
+\section algorithm3 Unscented Kalman filter algorithm
+
+The unscented Kalman filter (UKF) is based on using well-chosen "interpolation points" (sigma-points) in order to propagate the mean and covariance of a random variable with improved accuracy with respect to standard extended Kalman filtering (EKF).
+Different choices of sigma-points are implemented in %Verdandi:
+<ol>
+            <li>canonical sigma-points: aligned with the canonical \f$(e_i)\f$ of the space with associated coefficient \f$\alpha_i = \frac{1}{2n}\f$
+            - \f$I^{(i)} = \sqrt n e_i \f$, for \f$1 \le i \le n\f$ <br>
+            - \f$I^{(i)} = - \sqrt n e_i \f$, for \f$n + 1 \le i \le 2n \f$ ;</li>
+            <li>star sigma-points: the origin is added to the previous canonical points;</li>
+            <li>simplex sigma-points: this represents the smallest number of necessary sigma-points \f$ r = n + 1 \f$, which are located on a regular polyhedron of radius \f$ \sqrt n \f$.</li>
+</ol>
+
+The principle of the UKF filter is to replace the means and covariances of the Kalman filter by the empirical means and covariances propagated by the dynamical operator \f$\mathcal{M}\f$ during the prediction, and by the observation operator \f$\mathcal{H}\f$ during the correction. This lead the following algorithm:
+<ol>
+            <li>Prediction:
+            - \f$x_{h}^{(i)a} = x_h^a + \sqrt{P_h^a} I^{(i)} \f$<br>
+            - \f$x_{h+1}^f = E_{\alpha}(\mathcal{M}_{h}(x_h^{(*)a}))\f$<br>
+            - \f$P_{h+1}^f = Cov_{\alpha}(\mathcal{M}_{h}(x_h^{(*)a}))\f$</li>
+           <li>Update:
+            - \f$x_{h+1}^{(i)f} = x_{h+1}^f + \sqrt{P_{h+1}^f} I^{(i)} \f$<br>
+            - \f$y_{h+1}^{(i)} = \mathcal{H}_{h+1}(x_{h+1}^{(i)f})\f$<br>
+            - \f$P_{\alpha}^{xy} = Cov_{\alpha}(x_{h+1}^{(*)f}, y_{h+1}^{(*)})\f$<br>
+            - \f$P_{\alpha}^{y} = R_{h+1} + Cov_{\alpha}(y_{h+1}^{(*)}, y_{h+1}^{(*)})\f$<br>
+            - \f$K_{h+1} = P_{\alpha}^{xy}(P_{\alpha}^{y})^{-1}\f$ <br>
+            - \f$x_{h+1}^a = x_{h+1}^f + K_{h+1}(y_{h+1} - E_{\alpha}(y_{h+1}^{(*)}))\f$<br>
+            - \f$P_{h+1}^a = P_{h+1}^f - P_{\alpha}^{xy}(P_{\alpha}^{y})^{-1}(P_{\alpha}^{xy})^T\f$</li>
+
+</ol>
+With: <br>
+\f$x_h^f\f$ forecast state vector; <br>
+\f$x_h^a\f$ analysis state vector; <br>
+\f$y_h\f$ observation vector; <br>
+\f$\mathcal{H}_h\f$ observation operator that maps the state space to the observation space; <br>
+\f$H_h\f$ observation operator linearized at \f$x^f_h\f$; <br>
+\f$P^f_h\f$ error covariance matrix of \f$x_h^f\f$; <br>
+\f$P^a_h\f$ error covariance matrix of \f$x_h^a\f$; <br>
+\f$R_h\f$ observational error covariance matrix; <br>
+\f$K_h\f$ analysis gain matrix; <br>
+\f$\mathcal{M}_h\f$ model.
+
+\section ukf_ref Reference
+
+For more detail about the unscented Kalman filtering see<br>
+ <a href="http://dx.doi.org/10.1051/cocv/2010006" style="color:black">Reduced-order Unscented Kalman Filtering with application to parameter identification in large-dimensional systems (P. Moireau, D. Chapelle)</a>.
+
+*/

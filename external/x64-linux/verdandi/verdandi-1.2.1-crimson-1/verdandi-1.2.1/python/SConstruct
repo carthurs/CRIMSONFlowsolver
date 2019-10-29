@@ -1,0 +1,57 @@
+# Copyright (C) 2010 INRIA
+# Author(s): Vivien Mallet, Claire Mouton
+#
+# This file is part of the data assimilation library Verdandi.
+#
+# Verdandi is free software; you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation; either version 2.1 of the License, or (at your option)
+# any later version.
+#
+# Verdandi is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with Verdandi. If not, see http://www.gnu.org/licenses/.
+#
+# For more information, visit the Verdandi web site:
+#      http://verdandi.gforge.inria.fr/
+
+import os, glob
+
+# Put the path to Verdandi.
+# Also editable from command line with option "verdandi".
+verdandi_path = ".."
+
+exclude_target = glob.glob("*.cpp") # excludes all default targets.
+
+execfile(os.path.join(verdandi_path, "share/SConstruct"))
+
+
+########
+# SWIG #
+########
+
+
+env_swig = env.Clone()
+
+env_swig.Replace(SWIGFLAGS = ["-Wall", "-c++", "-python"])
+env_swig.Append(SWIGPATH = env_swig["CPPPATH"])
+env_swig.Replace(CCFLAGS = debug_flag("debug_cpp"))
+env_swig.Append(CPPFLAGS = ["-DSELDON_EXCLUDE_FROM_EXPLICIT_INSTANTIATION",
+                            "-DVERDANDI_DEBUG_LEVEL_4"])
+env_swig.Append(CPPPATH = distutils.sysconfig.get_python_inc())
+env_swig.Replace(SHLIBPREFIX = "")
+
+if env_swig['PLATFORM'] == 'win32':
+    env_swig.Replace(SHLIBSUFFIX = ".pyd")
+    env_swig.Replace(LINK = "LINK")
+    env_swig.SharedLibrary("_verdandi", ["verdandi.cpp", "verdandi.i"])
+else:
+    env_swig['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
+    env_swig.SharedLibrary("_verdandi.so",
+                           ["verdandi.cpp", "verdandi.i", lua_library])
+
+env_swig.Alias(["swig", "verdandi.py"], "_verdandi.so")

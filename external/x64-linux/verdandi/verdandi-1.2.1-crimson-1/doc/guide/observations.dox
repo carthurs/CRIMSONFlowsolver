@@ -1,0 +1,24 @@
+/*! \file observations.dox
+    \brief Observations.
+*/
+
+/*!
+\page observations Observations
+
+Two <b>observation managers</b> have been implemented in Verdandi:
+
+<ul>
+<li> \ref linear_observation_manager "linear observation manager"; </li>
+<li> \ref grid_to_network_observation_manager "grid to network observation manager". </li>
+</ul>
+
+An <b>observation aggregator</b> which allows to compute aggregated (in time) and flattened observations is also available:
+<ul>
+<li> \ref observation_aggregator "observation aggregator". </li>
+</ul>
+
+The \ref observation_aggregator "observation aggregator" is coupled with the \ref linear_observation_manager "linear observation manager".
+One can use the \ref observation_aggregator "observation aggregator" in his own <b>observation manager</b>. For more detail about how
+to write a new <b>observation manager</b> see \ref plugging_observation "this page".
+
+*/

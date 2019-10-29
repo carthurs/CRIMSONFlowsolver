@@ -1,0 +1,73 @@
+/*! \file optimal_interpolation.dox
+    \brief Optimal Interpolation.
+*/
+
+/*!
+\page optimal_interpolation Optimal Interpolation
+
+Verdandi provides a C++ implementation of the optimal interpolation.
+
+The optimal interpolation is a sequential data assimilation method. It is implemented in <code>OptimalInterpolation.hxx</code> and <code>OptimalInterpolation.cxx</code>. The class \link Verdandi::OptimalInterpolation OptimalInterpolation\endlink is a template class: <code>OptimalInterpolation<T, ClassModel, ClassObservationManager></code>. <code>T</code> is the type of the elements to be stored (e.g. <code>double</code>), <code>ClassModel</code> is the type of the model (e.g. <code>ShallowWater<double></code>), <code>ClassObservationManager</code> is the type of the observation manager (e.g. <code>GridToNetworkObservationManager<double></code>).
+
+A simulation with the optimal interpolation may be carried
+out with the following C++ lines:
+
+\precode
+OptimalInterpolation<double,  ShallowWater<double>,
+         GridToNetworkObservationManager<double> > driver; [1]
+
+driver.Initialize(argv[1]); [2]
+
+while (!driver.HasFinished()) [6]
+{
+    driver.InitializeStep(); [3]
+    driver.Forward(); [4]
+    driver.Analyze(); [5]
+}
+\endprecode
+
+\comment
+  <li> First build the \link Verdandi::OptimalInterpolation OptimalInterpolation\endlink driver with the construction \link Verdandi::OptimalInterpolation::OptimalInterpolation() OptimalInterpolation\endlink. </li>
+
+  <li> Then initialize the driver, the model and the observation manager, and read the option keys in the configuration file with the method \link Verdandi::OptimalInterpolation::Initialize(string configuration_file, bool initialize_model, bool initialize_observation_manager) Initialize(configuration_file)\endlink. This optionally computes an analysis (BLUE) with the model initial condition. </li>
+
+  <li> Optionally intialize a step for the optimal interpolation with the method \link Verdandi::OptimalInterpolation::InitializeStep() InitializeStep()\endlink. This initializes a step for the model. </li>
+
+  <li> Perform a step forward without optimal interpolation with the method \link Verdandi::OptimalInterpolation::Forward() Forward()\endlink. </li>
+
+  <li> Compute the analysis with the method \link Verdandi::OptimalInterpolation::Analyze() Analyze()\endlink. Whenever observations are available, it assimilates them through the computation of BLUE. </li>
+
+  <li> Compute the data assimilation until the model has finished: the method \link Verdandi::OptimalInterpolation::HasFinished() HasFinished()\endlink returns true if the simulation is done, false otherwise. </li>
+\endcomment
+
+
+\section oi_algorithm Optimal interpolation algorithm
+
+The optimal interpolation method is a sequential data assimilation method implementing the BLUE (Best Linear Unbiased Estimator) analysis. The BLUE is so-called since (1) it is linearly deduced from the state vector and the observation vector, (2) its error is unbiased and (3) it is optimal in the sense that it has the lowest total variance. Each time observations are available, BLUE is computed, with prescribed state error variance \f$B\f$ and observational error variance \f$R\f$. Here is the algorithm: <br>
+
+<ol>
+        <li>At time \f$t_0\f$, the initial condition \f$x^{f}_{0}\f$ is available. </li>
+        <li>For every time \f$t_h, h \ge 0\f$, 
+                - if observations \f$y_h\f$ are available, <br>
+                 the analysis takes the BLUE value <br>
+                 \f$x_h^a = x_h^f + K_h(y_h - H_h(x_h^f))\f$, <br>
+                  with <br>
+                   \f$K_h = B_hH_h^{T}(H_hB_hH_h^{T} + R_h)^{-1}\f$, <br>
+                 and the forecast is <br>
+                  \f$x_{h+1}^f = \mathcal{M}_h(x_h^a)\f$;
+                - if there are no observations, <br>
+                  the forecast is <br>
+                  \f$x_{h+1}^f = \mathcal{M}_h(x_h^f)\f$. </li>
+</ol>
+With: <br>
+\f$x_h^f\f$ background state vector; <br>
+\f$x_h^a\f$ analysis state vector; <br>
+\f$y_h\f$ observation vector; <br>
+\f$H_h\f$ linear observation operator that maps the state space to the observation space; <br>
+\f$H_h\f$ observation operator linearized at \f$x^f_h\f$; <br>
+\f$B_h\f$ background error covariance matrix (error variance of \f$x_h^f\f$); <br>
+\f$R_h\f$ observational error covariance matrix; <br>
+\f$K_h\f$ analysis gain matrix; <br>
+\f$\mathcal{M}_h\f$ model.
+
+*/

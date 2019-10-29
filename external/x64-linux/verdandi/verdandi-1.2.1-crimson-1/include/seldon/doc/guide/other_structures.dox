@@ -1,0 +1,18 @@
+/*! \file other_structures.dox
+    \brief Other structures: 3D arrays, Vector2.
+*/
+
+/*!
+\page other_structures Other Structures
+
+<p> %Seldon provides additional structures: </p>
+
+<ul>
+
+  <li> <code>Vector2</code> is a structure that acts like a vector of vectors. The inner vectors can be of any dimension, so that this structure is more flexible than a matrix. </li>
+  
+  <li> <code>Array3D</code> is a three-dimensional array.</li>
+
+</ul>
+
+*/

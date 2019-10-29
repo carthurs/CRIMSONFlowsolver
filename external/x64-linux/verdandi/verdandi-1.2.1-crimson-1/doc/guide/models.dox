@@ -1,0 +1,22 @@
+/*! \file models.dox
+    \brief Models.
+*/
+
+/*!
+\page models Models
+
+Several <b>models</b> have been implemented in %Verdandi.
+
+Follow the links below for a description of three available <b>models</b>:
+
+<ul>
+<li> \ref quadratic_model "Quadratic Model"; </li>
+<li> \ref shallow_water_model "Shallow-water"; </li>
+<li> \ref clamped_bar_model "Clamped Bar"; </li>
+<li> \ref lorenz_model "Lorenz Model". </li>
+</ul>
+
+For details about how to apply <b>data assimilation methods</b> on these models see
+\ref example_programs.
+
+*/

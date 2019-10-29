@@ -1,0 +1,293 @@
+Version 5.2, RC1 (2012-03-30)
+----------------
+
+The change log has not been updated yet.
+
+
+Version 5.1.2 (2011-06-14)
+-------------
+
+* Bug fixes and improvements
+
+- Fixed a bug: the methods 'Read' and 'Write' did not work properly under MS
+  Windows because the streams were not opened with the option 'binary'.
+- Fixed a bug: 'MallocObject' could fail to deallocate or reallocate memory
+  under MS Windows because of alignment problems.
+- The method 'Fill(const T0& x)' for matrices was called instead of the
+  assignment operator which is not inherited in C++. This led to a compilation
+  error.
+- Set 'data_' to 'NULL' in 'Matrix_Base' copy constructor, so that the copy
+  constructors of all derived classes will be safe, even if they call the copy
+  constructor of 'Matrix_Base'.
+- Fixed a few error messages related to input/output operations.
+- The copy constructor of 'Matrix_Sparse' now calls that of 'Matrix_Base' in
+  order to avoid a compilation warning.
+- Added the prefix 'std::' to 'cout' and 'endl' in the preprocessor directives
+  ERR, DISP, DISPLAY and END.
+- 'Matrix_Pointers::Resize' does not perform a useless copy anymore when the
+  dimensions do not change.
+
+
+Version 5.1.1 (2011-05-11)
+-------------
+
+
+Version 5.1 (2011-03-03)
+-----------
+
+* Improvements
+
+** New structures
+
+- Introduced 'Matrix<Collection>' which implements block matrices.
+- Introduced 'Matrix<FloatDouble, DenseSparseCollection>' which implements
+  heterogeneous (float/double dense/sparse) block matrices.
+- Introduced 'Vector<Collection>' which implements block vectors.
+- Introduced 'Vector<FloatDouble, DenseSparseCollection>' which implements
+  heterogeneous (float/double VectFull/VectSparse) block vectors.
+- Introduced the class 'Vector2' which handles vectors of vectors.
+- Introduced the class 'Vector3' which handles vectors of vectors of vectors.
+- Added support for sub-matrices.
+
+** Sparse matrices
+
+- Added facilities to read matrices from the Matrix Market.
+- Added 'Add(alpha, A, B)', 'Mlt(A, B, C)', 'MltNoTransTrans(A, B, C)' and
+  'MltAdd(alpha, A, B, beta, C)' for 'RowSparse' matrices.
+- Added 'ApplyInversePermutation' for 'RowSparse' and 'ColSparse' matrices.
+- Added 'Transpose' for 'RowSparse' matrices.
+- Added 'FillRand(Nelement)' and 'FillRand(Nelement, x)' to 'RowSparse' matrices.
+- Added 'Fill()', 'Fill(x)' and 'FillRand()' for Harwell-Boeing real matrices.
+- Added the methods 'SetIdentity', 'AddInteraction' and 'Zero' to
+  Harwell-Boeing real matrices.
+- Added 'GetRow', 'GetCol', 'SetRow' and 'SetCol' for 'RowSparse' matrices.
+- Added the generic function 'Copy(A, B)' for matrices. Added the function
+  'Copy' to convert from 'RowSparse' to 'ColSparse', from 'ColSymSparse' to
+  'RowSymSparse' and from 'ArrayRowSymSparse' to 'ColSparse'.
+- Added methods 'Val(int, int)' to sparse matrices.
+- Added 'GetSymmetricPattern(Matrix A, Matrix<int, Symmetric, RowSymSparse>& B)'.
+- Added 'WriteText(string)' and 'WriteText(ofstream&)' for
+  'ArrayComplexSparse' matrices.
+- Added two methods 'WriteText' for 'SymSparse' matrices.
+- Improved the conversion from coordinate format to 'RowSparse': duplicates
+  are now accepted.
+
+** Other structures and facilities
+
+- Added the allocator 'MallocObject' which allows to resize an array of
+  objects with a minimal number of recopies.
+- Added method 'Val(int)' to sparse vectors.
+- Added the methods 'SetData(const Vector<VectFull/VectSparse>&)' and the
+  typedef 'storage' in VectFull/VectSparse vectors.
+- Added 'Vector<T, VectFull>::Vector(int i, pointer data)'.
+- Added the optional argument 'with_size' to 'Vector<Vect_Full>::Read' and to
+  'Matrix_Pointers::Read' for the files or streams that do not contain the
+  vector length or the matrix dimensions.
+- Added the typedef declarations 'access_type' and 'const_access_type', and
+  added or extended the typedef declarations in many matrix structures.
+- Slightly modified 'Vector::GetNormInf' and 'Vector::GetNormInfIndex' so that
+  they may be compiled for vectors of Booleans.
+
+** Solvers
+
+- Initial import of the interface to Pastix (5.1.3).
+- Added 'PerformAnalysis' and 'PerformFactorization' to 'MatrixMumps' and
+  'MatrixUmfPack<double>'.
+- Added support for multiple right-hand sides with Mumps.
+- Added support for transposed matrices in the interface to SuperLU.
+- In the SuperLU interface, added 'GetLU(L, U, permuted)' so that the matrices
+  L and U may be accessed in 'ColSparse' format or 'RowSparse' format. Also
+  added 'GetRowPermutation' and 'GetColPermutation'.
+- Messages from Mumps, Pastix, UmfPack and SuperLU are now switched off by
+  default.
+- Added the function 'GetAndSolveLU(M, Y)' for sparse matrices.
+- Added 'SolveSylvester' for 'RowMajor' matrices in double precision.
+
+** Python and compiled library
+
+- Initial import of an experimental mechanism for the generation of a (rich)
+  compiled library.
+- Added 'ifstream' and 'ofstream' to the Python interface. This is useful for
+  the methods 'Read' and 'Write'.
+- Added 'VectorSparseDouble' and 'MatrixSparseDouble' to the Python interface.
+- The Python interface is now aware of the default arguments.
+
+** Other functions
+
+- Added support for Cholesky factorization, either with native C++ code or
+  with an interface to Cholmod.
+- Added incomplete factorization for symmetric matrices and unsymmetric
+  matrices.
+- Switched from 'QuickSort' to 'MergeSort' as default sorting algorithm.
+- Added the function 'Mlt(SeldonTrans&, const Matrix& M, const Vector& X,
+  Vector& Y)'.
+- Added 'ApplyPermutation' and 'ApplyInversePermutation' for row-major and
+  column-major dense matrices.
+
+* Bug fixes
+
+- The constructor 'Matrix_ArrayComplexSparse(int i, int j)' swapped the number
+  of rows and the number of columns, in the case of a column-major matrix.
+- The copy constructors of several sparse matrices did not properly copy the
+  attributes 'ind_' and ptr_'.
+- In 'TransposeConj(Matrix& A)', the diagonal was not conjugated.
+- in 'Matrix<ArrayRowComplexSparse>::AddInteractionRow(int, int, IVect,
+  Vector<complex<T>, VectFull>&)': the imaginary part was not properly added.
+- Fixed bugs in 'GetSVD'. In the complex cases, the singular values were not
+  returned in a real-valued vector. The functions 'cgesvd_' and 'zgesvd_' were
+  not declared in "clapack.h". For 'RowMajor' matrices, the memory was not
+  allocated for the output matrices U and V^T.
+- 'MergeSort' did nothing!
+- 'Mlt(SeldonNoTrans, A, x, b)' was computing 'b = 111 * A * x' when Blas was
+  not called.
+- In matrix conversions, there could be free/delete mismatches when the
+  allocators were badly mixed.
+- Bad calls to 'SetData' led to compilation errors in
+  'ConvertMatrix_from_Coordinates' for 'RowSparse', 'ColSparse',
+  'RowSymSparse' and 'ColSymSparse'.
+- 'CheckDim' was activated with 'SELDON_CHECK_BOUNDS instead of
+  'SELDON_CHECK_DIMENSIONS'.
+- A sparse matrix with 0 row can now be created.
+- Several constructors in the form 'Matrix(int, int)' were declared but not
+  defined.
+- 'MltAdd' for 'ArrayRowSymSparse' did not accept complex vectors with a real
+  matrix.
+- Some compilation errors with Microsoft Visual C++.
+
+* Miscellaneous
+
+- Included "superlu/slu_zdefs.h" instead of "slu_zdefs.h" in the SuperLU
+  interface, so as to be consistent with the structure of common SuperLU
+  packages.
+- Renamed 'SELDON_WITH_CBLAS' to 'SELDON_WITH_BLAS'. For backward
+  compatibility, 'SELDON_WITH_CBLAS' is still valid.
+- Added a number of unit tests.
+- The user's guide is now written in Doxygen format, which gives a better
+  integration with the reference documentation.
+
+
+Version 5.0 (2009-05-23)
+-----------
+
+Since this version is tagged after several years of development, it comes with
+far too many changes to be listed. About 40,000 source lines of code have been
+added. Below is a partial and short summary of the main changes (compared to
+version 4.1):
+- Added many functions for computing: extended the Blas interface, added an
+  interface to Lapack (eigenvalues and eigenvectors, least squares and
+  solvers), added iterative solvers (Gmres, BiCg, QCgs, ...), added a
+  preconditioner, added interfaces for SuperLU, Mumps and UmfPack, ...
+- Added Hermitian, Hermitian packed, symmetric, triangular and triangular
+  packed matrices.
+- Added (real and complex) sparse matrices stored as a vector of sparse
+  vectors.
+- Added sparse vectors.
+- Added many convenient methods and functions to manipulate vectors and
+  matrices; e.g., sorting algorithms, matrix conversions, construction of
+  structures from existing memory blocks.
+- Added unit tests.
+- Added a partial Python interface, generated by Swig.
+- Introduced compilation with SCons.
+
+
+Intermediate versions (not tagged)
+---------------------
+
+- 2009-03-04
+- 2009-02-17
+- 2008-11-12
+- 2005-05-15
+- 2004-12-03
+- 2004-11-08
+- 2004-09-20
+
+
+Version 4.1 (2003-12-14)
+-----------
+
+
+Version 4.0.2 (2003-09-05)
+-------------
+
+
+Version 4.0.1 (2003-09-05)
+-------------
+
+
+Version 4.0 (2003-08-31)
+-----------
+
+** Improvements:
+
+- Added row-major and column-major symmetric matrices stored in packed form
+  (Blas format).
+- Added the interface to the Blas (level 1) functions:
+    + 'Add' (xAXPY)
+    + 'ApplyModifRot' (xROTM)
+    + 'ApplyRot' (xROT)
+    + 'Copy' (xCOPY)
+    + 'DotProd' (xDOT)
+    + 'DotProjConj' (xDOTC)
+    + 'DotProdDouble' (SDSDOT)
+    + 'GetMaxAbsIndex' (IxAMAX)
+    + 'GenModifRot' (xROTMG)
+    + 'GenRot' (xROTG)
+    + 'Mlt(const T, Vector&)' (xSCAL)
+    + 'Norm1' (xASUM)
+    + 'Norm2' (xNRM2)
+    + 'Swap' (xSWAP)
+- Added the interface to some Blas (level 2) functions:
+    + 'MltAdd' (xGEMV and xSPMV)
+- Overloaded operator << for matrices and vectors.
+- Overloaded methods 'Write', 'WriteText' and 'Read' (for matrices and
+  vectors) with arguments of 'ofstream' or 'ifstream' type.
+- Added methods:
+    + 'Clear'
+    + 'SetData'
+  to matrices and vectors classes to allow for low level manipulations.
+- Improved error management in methods 'Write', 'WriteText' and 'Read' (for
+  matrices and vectors).
+- Improved error messages in case of indices out of range.
+
+** Bug fixes:
+
+- 'FILE_FUNCTIONS_VECTOR_CXX' was not defined at the end of
+  "Functions_Vector.cxx", which led to compilation problems in case of
+  multiple inclusions.
+
+
+Version 3.3 (2003-08-02)
+-----------
+
+** Improvements:
+
+- Improved input/output operations ('Write', 'WriteText' and 'Read').
+- Added convenient macros and functions:
+    + to_str and to_num
+    + ERR, DISP and DISPLAY
+- Changed 'include' statements to be fully compliant with the C++ standard.
+
+** Bug fixes:
+
+
+Version 3.2 (2003-06-09)
+-----------
+
+
+Version 3.1 (2002-12-06)
+-----------
+
+
+Version 3.0 (2002-02-27)
+-----------
+
+
+Version 2.0 (2002-01-10)
+-----------
+
+
+Version 1.0 (2001-09-18)
+-----------
+
+
+The development started in 2001.

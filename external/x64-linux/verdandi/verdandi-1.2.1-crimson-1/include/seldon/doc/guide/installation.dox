@@ -1,0 +1,64 @@
+/*! \file installation.dox
+    \brief Installation of Seldon.
+*/
+
+/*!
+\page installation Installation
+
+<h2>The compiler</h2>
+
+<p> %Seldon is supposed to be fully compliant with the <b>C++
+standard</b>. Therefore, it can be compiled by GNU GCC (>=3.0; all released x.y versions were tested
+from version 3.2 to version 4.5) and by the
+Intel C++ compiler icc (tested with icc 7.1, 8.0 and 12.0). No tests were conducted with proprietary compilers under Unix, but the compliance with the C++ standard should ensure portability. </p>
+
+<h2>Installation</h2>
+
+<p>Download the source code (<a href="http://seldon.sourceforge.net/">Seldon homepage</a>), usually available in a compressed file, e.g. Seldon-[version].tar.bz2. Uncompress the file, i.e. under Unix: <code>bunzip2 Seldon-[version].tar.bz2</code> followed by <code>tar -xvf Seldon-[version].tar</code>. This will create the directory <code>Seldon-[version]</code> in which you will find %Seldon.</p>
+
+<h2>Installation of CBlas</h2>
+
+<p>If you want to use the interface with Blas, you also need to have Blas (of course) and CBlas (C interface to the Blas) installed. %Seldon uses CBlas to ensure portability of the interface.</p>
+
+<p>Blas is usually installed. If not, you may refer to the dedicated documentation. As for CBlas, download it at <a href="http://www.netlib.org/blas/">http://www.netlib.org/blas/</a>, expand it (e.g. <code>tar -zxvf cblas.tgz</code>), and compile it (e.g. make all). The installation is then complete.</p>
+
+<h2>Tests</h2>
+
+<p>First compile and run <code>test.cpp</code> which is an example provided with %Seldon (in the directory test/program). For example:</p>
+
+\prescreen g++ -I../.. test.cpp && ./a.out\endprescreen
+
+<p>This should return:</p>
+
+\prescreen
+Seldon: compilation test
+Vector: 0       1       2
+Vector: 0       1       2       19
+\endprescreen
+
+<p>In <code>test.cpp</code>, the first line includes %Seldon through <code>Seldon.hxx</code>. <code>Seldon.hxx</code> is the only file to be included and it is located in the directory <code>Seldon-[version]</code> expanded from the downloaded file (see section Installation). If you compile your own code on top of %Seldon, just provide the path to <code>Seldon-[version]</code> to the compiler, e.g.:</p>
+
+\prescreen g++ -I/path/to/Seldon-[version] your_code.cpp && ./a.out\endprescreen
+
+<p>A second test is provided: <code>test_Blas.cpp</code>. If Blas and CBlas are properly installed and the library file of CBlas is located in <code>[CBlas-library]</code> (e.g. [CBlas-directory]/lib/LINUX/cblas_LINUX.a), the compilation line should be:</p>
+
+\prescreen g++ -I../.. test_Blas.cpp [CBlas-library] -lblas -lg2c && ./a.out\endprescreen
+
+<p>This should return:</p>
+
+\prescreen
+Seldon: compilation test with Blas
+U = 1.3 1.3     1.3
+V = 0   1       2
+2. * U + V = 2.6     3.6     4.6
+\endprescreen
+
+<p>If Cblas is already installed in your system or if you installed it by using apt-get on linux or fink on mac, you may type the following compilation line:</p>
+
+\prescreen g++ -I../.. test_Blas.cpp -lcblas -lblas -lg2c && ./a.out\endprescreen
+
+<p>For recent versions of gcc, g77 has been superseded by gfortran and
+-lg2c should be replaced by -lgfortran. If you are using intel
+compiler icc, it should be -lifcore. </p>
+
+*/

@@ -1,0 +1,41 @@
+// Copyright (C) 2008-2010, INRIA
+// Author(s): Vivien Mallet, Claire Mouton, Marc Fragu
+//
+// This file is part of the data assimilation library Verdandi.
+//
+// Verdandi is free software; you can redistribute it and/or modify it under
+// the terms of the GNU Lesser General Public License as published by the Free
+// Software Foundation; either version 2.1 of the License, or (at your option)
+// any later version.
+//
+// Verdandi is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
+// more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Verdandi. If not, see http://www.gnu.org/licenses/.
+//
+// For more information, visit the Verdandi web site:
+//      http://verdandi.gforge.inria.fr/
+
+#define VSWIG_REAL double
+
+#define VSWIG_MODEL QuadraticModel<VSWIG_REAL>
+#define VSWIG_MODEL1 ClampedBar<VSWIG_REAL>
+#define VSWIG_MODEL2 PythonModel
+#define VSWIG_GRID_TO_NETWORK_OBSERVATION GridToNetworkObservationManager<VSWIG_REAL>
+#define VSWIG_LINEAR_OBSERVATION LinearObservationManager<VSWIG_REAL>
+#define VSWIG_LINEAR_OBSERVATION2 PythonObservationManager
+
+// Instantiate one or several of the following methods.
+#define VSWIG_METHOD ForwardDriver<VSWIG_MODEL >
+#define VSWIG_METHOD1 OptimalInterpolation<VSWIG_REAL, VSWIG_MODEL, \
+                                          VSWIG_LINEAR_OBSERVATION >
+#define VSWIG_METHOD2 ForwardDriver<VSWIG_MODEL1 >
+#define VSWIG_METHOD3 ReducedOrderExtendedKalmanFilter<VSWIG_REAL, \
+                                          VSWIG_MODEL1, \
+                                          VSWIG_LINEAR_OBSERVATION >
+#define VSWIG_METHOD4 ForwardDriver<VSWIG_MODEL2 >
+#define VSWIG_METHOD5 OptimalInterpolation<VSWIG_REAL, VSWIG_MODEL2, \
+                                          VSWIG_LINEAR_OBSERVATION2 >

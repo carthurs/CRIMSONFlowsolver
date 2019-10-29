@@ -1,0 +1,134 @@
+/*! \file overview.dox
+    \brief Overview of Verdandi.
+*/
+
+/*!
+\page overview Overview
+
+Below is a summary of %Verdandi contents.
+
+\section methods Methods
+
+In the directory <code>method/</code>, several <b>data assimilation methods</b>:
+
+<ul>
+<li> \ref optimal_interpolation "optimal interpolation (OI)"; </li>
+<li> \ref extended_kalman_filter "extended Kalman filter (EKF)"; </li>
+<li> \ref reduced_order_extended_kalman_filter "reduced order extended Kalman filter (ROEKF)"; </li>
+<li> \ref unscented_kalman_filter "unscented Kalman filter (UKF)"; </li>
+<li> \ref reduced_order_unscented_kalman_filter "reduced order unscented Kalman filter (ROUKF)"; </li>
+<li> \ref reduced_minimax_filter "reduced minimax filter (RMF)"; </li>
+<li> \ref four_dimensional_variational "four dimensional variational (4DVAR)"; </li>
+<li> \ref ensemble_kalman_filter "ensemble Kalman filter (EnKF)". </li>
+</ul>
+
+
+<h3>Source code</h3>
+class \link Verdandi::OptimalInterpolation OptimalInterpolation<T, ClassModel, ClassObservationManager> \endlink <br>
+OptimalInterpolation.hxx <br>
+OptimalInterpolation.cxx <br>
+class \link Verdandi::ExtendedKalmanFilter ExtendedKalmanFilter<T, ClassModel, ClassObservationManager>\endlink <br>
+ExtendedKalmanFilter.hxx <br>
+ExtendedKalmanFilter.cxx <br>
+class \link Verdandi::UnscentedKalmanFilter UnscentedKalmanFilter<T, ClassModel, ClassObservationManager>\endlink <br>
+UnscentedKalmanFilter.hxx <br>
+UnscentedKalmanFilter.cxx <br>
+class \link Verdandi::ReducedOrderExtendedKalmanFilter ReducedOrderExtendedKalmanFilter<T, ClassModel, ClassObservationManager>\endlink <br>
+ReducedOrderExtendedKalmanFilter.hxx <br>
+ReducedOrderExtendedKalmanFilter.cxx <br>
+class \link Verdandi::ReducedOrderUnscentedKalmanFilter ReducedOrderUnscentedKalmanFilter<T, ClassModel, ClassObservationManager>\endlink <br>
+ReducedOrderUnscentedKalmanFilter.hxx <br>
+ReducedOrderUnscentedKalmanFilter.cxx <br>
+class \link Verdandi::BasePerturbationManager BasePerturbationManager\endlink <br>
+BasePerturbationManager.hxx <br>
+BasePerturbationManager.cxx
+
+\section overview_models Models
+
+In the directory <code>model/</code>, several sample <b>models</b>:
+
+<ul>
+<li> \ref quadratic_model "Quadratic Model"; </li>
+<li> \ref shallow_water_model "Shallow-water"; </li>
+<li> \ref clamped_bar_model "Clamped Bar"; </li>
+<li> \ref lorenz_model "Lorenz Model". </li>
+</ul>
+
+<h3>Source code</h3> 
+class \link Verdandi::ClampedBar ClampedBar<T>\endlink <br>
+ClampedBar.hxx <br>
+ClampedBar.cxx <br>
+class \link Verdandi::ShallowWater ShallowWater<T>\endlink <br>
+ShallowWater.hxx <br>
+ShallowWater.cxx <br>
+class \link Verdandi::Lorenz Lorenz<T>\endlink <br>
+Lorenz.hxx <br>
+Lorenz.cxx <br>
+class \link Verdandi::QuadraticModel QuadraticModel<T>\endlink <br>
+QuadraticModel.hxx <br>
+QuadraticModel.cxx
+
+\section overview_observations Observation managers
+
+In the directory <code>observation_manager/</code>, two (linear) <b>observation managers</b>: 
+
+<ul>
+<li> a linear observation manager whose observation operator is simply defined with a matrix; </li>
+<li> a grid to network observation manager with an observation operator that maps from a model grid to an observation network; </li>
+<li> an observation aggregator. </li>
+</ul>
+
+<h3>Source code</h3> 
+class \link Verdandi::LinearObservationManager LinearObservationManager<T>\endlink <br>
+LinearObservationManager.hxx <br>
+LinearObservationManager.cxx <br>
+class \link Verdandi::GridToNetworkObservationManager GridToNetworkObservationManager<T>\endlink <br>
+GridToNetworkObservationManager.hxx <br>
+GridToNetworkObservationManager.cxx <br>
+class \link Verdandi::ObservationAggregator ObservationAggregator<T>\endlink <br>
+ObservationAggregator.hxx <br>
+ObservationAggregator.cxx
+
+
+\section miscellaneous Miscellaneous
+
+In the directory <code>output_saver/</code>, one may find a class to save several kinds of output results.
+
+<h3>Source code</h3>
+class \link Verdandi::OutputSaver OutputSaver \endlink <br>
+OutputSaver.hxx <br>
+OutputSaver.cxx
+
+In the directory <code>share/</code>, one may find a class for objects to communicate.
+
+<h3>Source code</h3>
+class \link Verdandi::MessageHandler MessageHandler \endlink <br>
+MessageHandler.hxx <br>
+MessageHandler.cxx
+
+Sparse matrices (for error variances and linear observation operators) are managed.
+
+\section scripts Scripts
+
+Useful <b>scripts</b> may be found in the directory <code>bin/</code>.
+
+The script <code>format</code> partially formats source files according to Verdandi's rules: it removes trailing spaces and indents the code; it finally checks that no line goes beyond the 78th column.
+
+\section directories Verdandi directories
+
+%Verdandi directories are the following:
+
+<ul>
+
+  <li> <code>bin/</code>: useful scripts; </li>
+  <li> <code>error/</code>: error variances; </li>
+  <li> <code>example/</code>: example programs for several models and configurations; </li>  
+  <li> <code>method/</code>: the data assimilation algorithms; </li>
+  <li> <code>model/</code>: several example models; </li>
+  <li> <code>observation_manager/</code>: example observation managers; </li>
+  <li> <code>output_saver/</code>: a convenient class to save (on disk) different kinds of variables;</li>
+  <li> <code>share/</code>: functionalities shared between the objects, such as the handling of messages, the error management and some useful functions.</li>
+
+</ul>
+ 
+*/

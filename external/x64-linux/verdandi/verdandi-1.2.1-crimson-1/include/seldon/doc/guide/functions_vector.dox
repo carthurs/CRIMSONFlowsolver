@@ -1,0 +1,283 @@
+/*! \file functions_vector.dox
+    \brief Functions for Vectors.
+*/
+
+/*!
+\page functions_vector Functions for Vectors
+
+<p> In that page, we detail functions that are not related to
+<a href="functions_blas.php">Blas</a> </p>
+
+<table class="category-table">
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#quicksort">QuickSort </a></td> 
+ <td class="category-table-td"> sorts a vector with quick sort algorithm</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#mergesort">MergeSort </a></td> 
+ <td class="category-table-td"> sorts a vector with merge sort algorithm</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#sort">Sort </a></td> 
+ <td class="category-table-td"> sorts a vector</td> </tr>
+<tr class="category-table-tr-1">
+ <td class="category-table-td"><a href="#assemble">Assemble </a></td> 
+ <td class="category-table-td"> assembles a vector</td> </tr>
+<tr class="category-table-tr-2">
+ <td class="category-table-td"><a href="#removeduplicate">RemoveDuplicate </a></td> 
+ <td class="category-table-td"> sorts and removes duplicate elements of a vector</td> </tr>
+</table>
+
+
+
+<div class="separator"><a name="quicksort"></a></div>
+
+
+
+<h3>QuickSort</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void QuickSort(int, int, Vector&amp;);
+  void QuickSort(int, int, Vector&amp;, Vector&amp;);
+  void QuickSort(int, int, Vector&amp;, Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>This function sorts a vector with quick sort algorithm, and affects the permutation to other vectors.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<int> X(4), Y(4), Z(4);
+X(0) = 3;
+X(1) = 0;
+X(2) = 2;
+X(3) = 1;
+Y = X;
+ 
+// if you want to sort all elements of X
+// the start index is 0, the final index is X.GetM()-1 
+QuickSort(0, Y.GetM()-1, Y);
+
+// if you want to retrieve the permutation vector
+// sorting operations will affect vector Y
+Y.Fill();
+QuickSort(0, X.GetM()-1, X, Y);
+
+// you can ask that a third vector is affected like the second vector
+QuickSort(0, X.GetM()-1, X, Y, Z);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Functions_Arrays.cxx</p>
+
+
+
+<div class="separator"><a name="mergesort"></a></div>
+
+
+
+<h3>MergeSort</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void MergeSort(int, int, Vector&amp;);
+  void MergeSort(int, int, Vector&amp;, Vector&amp;);
+  void MergeSort(int, int, Vector&amp;, Vector&amp;, Vector&amp;);
+</pre>
+
+
+
+<p>This function sorts a vector with merge sort algorithm, and affects the permutation to other vectors.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<int> X(4), Y(4), Z(4);
+X(0) = 3;
+X(1) = 0;
+X(2) = 2;
+X(3) = 1;
+Y = X;
+
+// if you want to sort all elements of X
+// the start index is 0, the final index is X.GetM()-1 
+MergeSort(0, Y.GetM()-1, Y);
+
+// if you want to retrieve the permutation vector
+// sorting operations will affect vector Y
+Y.Fill();
+MergeSort(0, X.GetM()-1, X, Y);
+
+// you can ask that a third vector is affected like the second vector
+MergeSort(0, X.GetM()-1, X, Y, Z);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Functions_Arrays.cxx</p>
+
+
+
+<div class="separator"><a name="sort"></a></div>
+
+
+
+<h3>Sort</h3>
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Sort(int, int, Vector&amp;);
+  void Sort(int, int, Vector&amp;, Vector&amp;);
+  void Sort(int, int, Vector&amp;, Vector&amp;, Vector&amp;);
+
+  void Sort(int, Vector&amp;);
+  void Sort(int, Vector&amp;, Vector&amp;);
+  void Sort(int, Vector&amp;, Vector&amp;, Vector&amp;);
+
+  void Sort(Vector&amp;);
+  void Sort(Vector&amp;, Vector&amp;);
+  void Sort(Vector&amp;, Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>This function sorts a vector and affects the permutation to other vectors.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<int> X(4), Y(4), Z(4);
+X(0) = 3;
+X(1) = 0;
+X(2) = 2;
+X(3) = 1;
+Y = X;
+
+Sort(Y);
+
+// if you want to retrieve the permutation vector
+// sorting operations will affect vector Y
+Y.Fill();
+Sort(X, Y);
+// you should get X = [0 1 2 3], Y = [1 3 2 0]
+
+// you can ask that a third vector is affected like the second vector
+Sort(X, Y, Z);
+
+// you can ask to sort only the first n elements of vector
+int n = 3;
+Sort(n, X);
+
+// or ask to sort the elements between two indices of the vector
+int start_index = 1, end_index = 3;
+Sort(start_index, end_index, X);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Functions_Arrays.cxx</p>
+
+
+
+<div class="separator"><a name="assemble"></a></div>
+
+
+
+<h3>Assemble</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void Assemble(int&amp;, Vector&amp;);
+  void Assemble(int&amp;, Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>This function sorts the first vector and removes duplicate elements. If a second vector is present in the arguments, the elements of the second vector are added when there are duplicate elements in the first vector. The vectors are not resized, and the first argument is an integer that will contain the new number of elements.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<int> num(4);
+Vector<double> values(4);
+// we initialize with duplicate numbers
+num(0) = 2;
+num(1) = 1;
+num(2) = 3;
+num(3) = 1;
+values(0) = 0.2;
+values(1) = 0.7;
+values(2) = -1.2;
+values(3) = 0.8;
+
+// you provide the number of elements to assemble
+int nb = num.GetM();
+Assemble(nb, num, values);
+
+// in this example, there is one duplicate element -> 1
+// as a result, after the call to Assemble, you should have
+// nb = 3,  num = [1 2 3],  values = [1.5 0.2 -1.2]
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Functions_Arrays.cxx</p>
+
+
+
+<div class="separator"><a name="removeduplicate"></a></div>
+
+
+
+<h3>RemoveDuplicate</h3>
+
+
+<h4>Syntax :</h4>
+ <pre class="syntax-box">
+  void RemoveDuplicate(int&amp;, Vector&amp;);
+  void RemoveDuplicate(int&amp;, Vector&amp;, Vector&amp;);
+  void RemoveDuplicate(Vector&amp;);
+  void RemoveDuplicate(Vector&amp;, Vector&amp;);
+</pre>
+
+
+<p>This function sorts the first vector and removes duplicate
+elements. If an integer is given as first argument, the vectors are
+not resized,
+ and the first argument will contain the new number of elements.
+The second vector is affected by the operations made on the first vector.</p>
+
+
+<h4> Example : </h4>
+\precode
+Vector<int> num(4), permutation(4);
+// we initialize with duplicate numbers
+num(0) = 2;
+num(1) = 1;
+num(2) = 3;
+num(3) = 1;
+permutation.Fill();
+
+// you remove duplicate elements, and find the permutation vector
+// vectors are resized
+RemoveDuplicate(num, permutation);
+
+
+// you can also provide the number of elements to treat
+// and vectors will not be resized, but you get the new number of elements
+int nb_elt = num.GetM();
+RemoveDuplicate(nb_elt, num, permutation);
+
+\endprecode
+
+
+<h4>Location :</h4>
+<p> Functions_Arrays.cxx</p>
+
+*/

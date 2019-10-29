@@ -126,7 +126,7 @@ void PureZeroDDriver::iter_step()
 		try {
 			if (m_pressuresOrFlowsAtBoundaries.at(ii).first == Boundary_Pressure)
 			{
-				assert(!isnan(allNetlistBoundaryImplicitCoeffs.at(ii).second));
+				assert(!boost::math::isnan(allNetlistBoundaryImplicitCoeffs.at(ii).second));
 				m_pressuresOrFlowsAtBoundaries.at(ii).second = allNetlistBoundaryImplicitCoeffs.at(ii).second;
 			}
 		} catch (const std::exception& e) {
@@ -209,7 +209,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 		{
 			if (boundaryPressureOrFlow->first == Boundary_Flow)
 			{
-				assert(!isnan(boundaryPressureOrFlow->second));
+				assert(!boost::math::isnan(boundaryPressureOrFlow->second));
 				mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] = boundaryPressureOrFlow->second;
 				// Set NaN in the pressure storage for this point, so that we notice if we accidentally read it for this surface!
 				// (we should only ever read the flow at location boundaryConditionIndex)
@@ -217,7 +217,7 @@ void PureZeroDDriver::placePressuresAndFlowsInStorageArrays_toGiveTo3DDomainRepl
 			}
 			else if (boundaryPressureOrFlow->first == Boundary_Pressure)
 			{
-				assert(!isnan(boundaryPressureOrFlow->second));
+				assert(!boost::math::isnan(boundaryPressureOrFlow->second));
 				mp_interfacePressuresToBeReadBy3DDomainReplacement[boundaryConditionIndex] = boundaryPressureOrFlow->second;
 				// Set NaN in the flow storage for this point, so that we notice if we accidentally read it for this surface!
 				mp_interfaceFlowsToBeReadBy3DDomainReplacement[boundaryConditionIndex] = NAN;

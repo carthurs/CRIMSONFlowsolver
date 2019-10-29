@@ -198,7 +198,7 @@ void BoundaryConditionManager::setPressureFromFortran()
   {
     if (typeid(**boundaryCondition)==typeid(RCR))
     {
-      std::cout << "setting pressure for C++ RCRs" << std::endl;
+      // std::cout << "setting pressure for C++ RCRs" << std::endl;
       RCR* downcastRCR = dynamic_cast<RCR*>(boundaryCondition->get());
       downcastRCR->setPressureFromFortran();
     }

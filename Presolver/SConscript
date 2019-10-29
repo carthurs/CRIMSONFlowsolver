@@ -1,21 +1,25 @@
+from __future__ import print_function
 import buildoptions as bop
 import string
 from subprocess import call
 from sys import exit
 from os import chdir
 from os.path import isdir
+from six.moves import input
 
 def checkFailureDuringGitPull(failureFlag, failurePositionMarker):
 	if failureFlag:
+		call(['mkdir','./Presolver'])
+		call(['cp','./SConscript','./Presolver/SConscript'])  # Ensure the SConscript file is put back for next time we try
 		raise RuntimeError("Failed during git pull, code " + str(failurePositionMarker[0]) + ".\nContact the developers.")
 	failurePositionMarker[0] += 1
 
 def deleteExistingPresolverFiles():
-	userResponse = raw_input("About to delete existing local Presolver source. You should not edit it here; edit in the CRIMSON GUI repository.\nProceed with delete? [y/n]").lower()
+	userResponse = input("About to delete existing local Presolver source. You should not edit it here; edit in the CRIMSON GUI repository.\nProceed with delete? [y/n]").lower()
 	validPositiveResponses = ['y','yes']
 	validNegativeResponses = ['n','no']
 	while userResponse not in (validPositiveResponses + validNegativeResponses):
-		userResponse = raw_input("Please enter \'y\' or \'n\'").lower()
+		userResponse = input("Please enter \'y\' or \'n\'").lower()
 	if userResponse in validPositiveResponses:
 
 		failure = 0
@@ -26,15 +30,15 @@ def deleteExistingPresolverFiles():
 		failure |= call(['cp','./Presolver/SConscript','.'])
 		checkFailureDuringGitPull(failure, failurePositionMarker)
 		
-		print "Removing Presolver folder:"
+		print("Removing Presolver folder:")
 		# Dont check for errors here, as the dir may not be present:
 		call(['rm','-rf','Presolver'])
-		print "Removing existing .git repository:"
+		print("Removing existing .git repository:")
 		# Dont check for errors here, as the dir may not be present:
 		call(['rm','-rf','.git'])
 
 	elif userResponse in validNegativeResponses:
-		print "Cancelling build. Try again, or remove the presolver build flag from the command line."
+		print("Cancelling build. Try again, or remove the presolver build flag from the command line.")
 		exit(1)
 	else:
 		raise RuntimeError("Logic error in selecting presolver build. Contact the developers.")
@@ -45,7 +49,7 @@ def performGitPull():
 	if not (zeroIfGitCallSucceeded == 0):
 		raise RuntimeError("Could not build Presolver: git was not available.\nPlease install it using your system package manager and ensure it\'s on your PATH.")
 
-	presolverSourceGitRepository = raw_input("Please give the URL for the CRIMSON GUI Git repositry (e.g. https://<USERNAME>@bitbucket.org/cafa/crimson.git): ")
+	presolverSourceGitRepository = input("Please give the URL for the CRIMSON GUI Git repositry (e.g. https://<USERNAME>@bitbucket.org/cafa/crimson.git): ")
 
 	deleteExistingPresolverFiles()
 	failure = 0
@@ -103,7 +107,7 @@ env.Append(F90PATH=bop.SPARSE_INCDIR+bop.NSPCG_INCDIR+bop.ZLIB_INCDIR)
 env.Append(LIBPATH=bop.SPARSE_LIBSDIR+bop.NSPCG_LIBSDIR+bop.ZLIB_LIBSDIR)
 env.Append(LIBS=bop.SPARSE_LIBSLIST+bop.NSPCG_LIBSLIST+bop.ZLIB_LIBSLIST)
 
-sources=string.split("""
+sources="""
 	directsolve.c
 	cmd.cxx
 	displacements.cxx
@@ -111,18 +115,17 @@ sources=string.split("""
 	supre-cmds.cxx
 	supre.cxx
 	Fortran/stannspcg.f
-	""")
+	""".split()
 
 object_list=env.Object(source=sources)
 
-# Strip out the .mod files (not needed for linking!)
-object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
-
+# Keep only the .o files
+object_list_withoutDotModFiles = [x for x in object_list if x.get_suffix() == ".o"]
 
 # Set the source and output file name ("target"):
-default = env.Program(target='presolver', source=object_list_withoutDotModFiles)
-copyLibrary = env.Command("../bin/presolver", "./presolver", Copy("$TARGET", "$SOURCE"))
+build_presolver = env.Program(target='presolver', source=object_list_withoutDotModFiles)
+copyBinary = env.Command("../bin/presolver", "./presolver", Copy("$TARGET", "$SOURCE"))
 
 
 # Define SCons' default action:
-Default(default,copyLibrary)
+Default(copyBinary)

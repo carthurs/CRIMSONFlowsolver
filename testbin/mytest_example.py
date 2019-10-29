@@ -1,3 +1,4 @@
+script_raw = """
 #!/bin/bash
 ulimit -s unlimited
 
@@ -44,7 +45,7 @@ seedCommand=
 if [ $crimsonShuffleBool == 1 ]; then
   if [ $crimsonRandomSeedProvidedOnCommandLine == 0 ]; then
     # gtest works with a random seed between 0 and 99,999. We approximate this range (generating a random number between 0 and 98301):
-    randomSeed=$(($RANDOM*($RANDOM%3+1)))
+    randomSeed=$(($RANDOM*($RANDOM%%3+1)))
   else
     randomSeed=$crimsonRandomSeed
   fi
@@ -52,11 +53,11 @@ if [ $crimsonShuffleBool == 1 ]; then
   seedCommand=--gtest_random_seed=$randomSeed
 fi
 
-export LES_LICENSE_SERVER="blackbook2v2"
-export PHASTA_CONFIG="/home/carthurs/workspace/merged_simvascular/simvascular_flowsolver_estimator/configs"
-export LD_LIBRARY_PATH="/usr/local/OpenMPI-intel/lib:/opt/intel/mkl/lib/intel64"
+export CRIMSON_FLOWSOLVER_HOME="%s"
+export PHASTA_CONFIG="%s/configs"
+export LD_LIBRARY_PATH=""
 # SET PYTHON PATH HERE IF YOU'RE HAVING PROBLEMS WITH MODULE LOADS IN PYTHON
 #export PYTHONPATH=/usr/lib/python2.7/dist-packages
 
 mpirun -np $1 ./test $shuffleCommand $seedCommand $2 $3 $4 $5 $6 $7 $8 $9
-
+"""

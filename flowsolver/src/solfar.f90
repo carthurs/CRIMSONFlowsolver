@@ -324,6 +324,7 @@
 #endif      
 
       !aperm = zero
+#ifndef NO_ACUSIM
       call usrNew ( usr,        eqnType,          aperm, &
                     atemp,      rtmp,             solinc,           &
                     flowDiag,   sclrDiag,         lesP,    &
@@ -338,6 +339,7 @@
 !
       call myfLesSolve ( lesId, usr )
       call getSol ( usr, solinc )
+#endif
 
 
 #if DEBUG_ALE == 1
@@ -508,7 +510,7 @@
       eqnType = 2
 !
 !.... setup the linear algebra solver
-!
+#ifndef NO_ACUSIM
       call usrNew ( usr,        eqnType,          apermS, &
                     atempS,     res,              solinc,           &
                     flowDiag,   sclrDiag,         lesP,    &
@@ -521,8 +523,10 @@
 !
 !.... solve linear system
 !
+
       call myfLesSolve ( lesId, usr )
       call getSol ( usr, solinc )
+#endif
 
       if (numpe > 1) then
          call commu ( solinc, ilwork, 1, 'out')

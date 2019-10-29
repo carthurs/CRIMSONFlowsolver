@@ -8,10 +8,10 @@ env.Append(CPPPATH=bop.SOLVERIO_INCDIR)
 env.Append(LIBPATH=bop.SOLVERIO_LIBSDIR)
 env.Append(LIBS=bop.SOLVERIO_LIBSLIST)
 
-sources=string.split("""
+sources="""
 	Reduce.cxx
 	wrtc.cxx
-	""")
+	""".split()
 
 object_list=env.Object(source=sources)
 
@@ -20,8 +20,8 @@ object_list_withoutDotModFiles = [object_list for object_list in object_list if 
 
 
 # Set the source and output file name ("target"):
-default = env.Program(target='postsolver', source=object_list_withoutDotModFiles)
-copyLibrary = env.Command("../../bin/postsolver", "./postsolver", Copy("$TARGET", "$SOURCE"))
+default = env.Program(target='postsolver.exe', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../../bin/postsolver.exe", "./postsolver.exe", Copy("$TARGET", "$SOURCE"))
 
 
 # Define SCons' default action:

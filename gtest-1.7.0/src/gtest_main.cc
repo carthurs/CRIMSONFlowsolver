@@ -51,8 +51,9 @@ static int dummy5 =PullInMyLibraryTestMainWithZeroDDomain();
 static char help[] = "Google test, modified to work with CRIMSON.\n\n";
 
 GTEST_API_ int main(int argc, char **argv) {
+  std::cout << "Test suite starting..." << std::endl;
   // Fake command line input for the flowsolver, so we don't have to pass it:
-  int fake_argc = 2;
+  int fake_argc = 3;
   char *fake_argv_temp[4] = {"testMain","1","solver.inp",NULL};
   char** fake_argv= (char**) fake_argv_temp;
 

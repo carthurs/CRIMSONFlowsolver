@@ -1,5 +1,4 @@
 import buildoptions as bop
-import string
 
 
 Import('env')
@@ -10,35 +9,35 @@ env_local.Append(CFLAGS=bop.GLOBAL_CFLAGS)
 env_local.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
 env_local.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
 
-env_local.Append(CPPPATH=bop.GOOGLETEST_INCDIR+bop.LESLIB_INCDIR)
+env_local.Append(CPPPATH=bop.GOOGLETEST_INCDIR)
 env_local.Append(CPPPATH=[bop.GOOGLETEST_TOP])
 
 env_local.Prepend(LIBS=bop.GOOGLETEST_LIBSLIST)
 env_local.Append(CPPPATH=bop.MPI_INCDIR+bop.FLOWSOLVER_INCDIR)
 
-env_local.Append(F90PATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR)
-env_local.Append(LIBPATH=bop.FLOWSOLVER_LIBSDIR+bop.BLASLAPACK_LIBSDIR+bop.MPI_LIBSDIR+bop.SOLVERIO_LIBSDIR+bop.LESLIB_LIBSDIR+bop.RUNTIME_LIBSDIR)
+env_local.Append(F90PATH=bop.MPI_INCDIR)
+env_local.Append(LIBPATH=bop.FLOWSOLVER_LIBSDIR+bop.BLASLAPACK_LIBSDIR+bop.MPI_LIBSDIR+bop.SOLVERIO_LIBSDIR+bop.RUNTIME_LIBSDIR)
 
 env_local.Prepend(LIBPATH=bop.BOOSTCPP_LIBSDIR)
 
-env_local.Append(LIBS=bop.BOOSTCPP_LIBSLIST)
-env_local.Append(LIBS=bop.MPI_LIBSLIST)
 env_local.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
 env_local.Append(LIBS=bop.SOLVERIO_LIBSLIST)
 env_local.Append(LIBS=bop.METIS_LIBSLIST)
-env_local.Append(LIBS=bop.LESLIB_LIBSLIST)
 env_local.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
 env_local.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
 env_local.Append(LIBS=bop.F90_LIBS)
 env_local.Append(LIBS=bop.RUNTIME_LIBSLIST)
-env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
+env_local.Append(LIBS=bop.CRIMSON_COMMON_LIBSLIST)
 env_local.Append(LIBS=bop.PETSC_LIBSLIST)
 env_local.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
+env_local.Append(LIBS=bop.PYTHON_LIBSLIST)
+env_local.Append(LIBS=bop.BOOSTCPP_LIBSLIST)
+env_local.Append(LIBS=bop.MPI_LIBSLIST)
 
-sources=string.split("""
+sources="""
 	gtest_main.cc
 	gtest-all.cc
-	""")
+	""".split()
 
 object_list=env_local.Object(source=sources)
 

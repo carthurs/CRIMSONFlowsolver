@@ -1,37 +1,25 @@
+from __future__ import print_function
 import buildoptions as bop
-import string
+
 
 Import('env')
 
-env.Append(CFLAGS=bop.LESLIB_DEFS)
-env.Append(CPPPATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR+bop.SOLVERIO_INCDIR)
+env.Append(CPPPATH=bop.MPI_INCDIR+bop.SOLVERIO_INCDIR)
 env.Append(CPPPATH=bop.BOOSTCPP_INCDIR)
-env.Append(CXXFLAGS=bop.LESLIB_DEFS)
 env.Append(CPPPATH=bop.PETSC_INCDIR+bop.METIS_INCDIR+bop.VTK_INCDIR+bop.PYTHON_INCDIR)
 env.Append(CPPPATH=bop.GOOGLETEST_INCDIR)
-env.Append(F90FLAGS=bop.LESLIB_DEFS)
-env.Append(F90PATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR)
+env.Append(F90PATH=bop.MPI_INCDIR)
 env.Append(CPPPATH=bop.ESTIMATOR_INCDIR)
 
 env.Append(LIBPATH=bop.BOOSTCPP_LIBSDIR)
 
-env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.MPI_LIBSDIR+bop.METIS_LIBSDIR+bop.RUNTIME_LIBSDIR+bop.LESLIB_LIBSDIR+bop.PYTHON_LIBSDIR)
+env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.MPI_LIBSDIR+bop.METIS_LIBSDIR+bop.RUNTIME_LIBSDIR+bop.PYTHON_LIBSDIR)
 
 env.Prepend(LIBS=bop.MPI_LIBSLIST)
-env.Prepend(LIBS=bop.LESLIB_LIBSLIST)
 env.Append(LIBS=bop.METIS_LIBSLIST+bop.RUNTIME_LIBSLIST)
 env.Append(LIBS=bop.PETSC_LIBSLIST+bop.PYTHON_LIBSLIST)
 
-# env.Append(LIBPATH=[bop.PETSC_LIBSDIR,bop.VTK_LIBSDIR,bop.LUA_LIBSDIR,bop.FLOWSOLVER_LIBSDIR,bop.BLASLAPACK_LIBSDIR,bop.MPI_LIBSDIR,bop.SOLVERIO_LIBSDIR])
-# env.Append(LIBS=[bop.PETSC_LIBSLIST])
-# env.Append(LIBS=['vtkGraphics','vtkFiltering','vtkGenericFiltering','vtkIO','vtkCommon','vtksys'])
-# env.Append(LIBS=[bop.LUA_LIBSLIST])
-# env.Append(LIBS=[bop.FLOWSOLVER_LIBSLIST])
-# env.Append(LIBS=[bop.BLASLAPACK_LIBSLIST])
-# env.Append(LIBS=[bop.MPI_LIBSLIST])
-# env.Append(Libs=[bop.SOLVERIO_LIBSLIST])
-
-sources=string.split("""
+sources="""
 	customCRIMSONContainers.cxx
 	Interpolators.cxx
 	newshape.cxx
@@ -77,7 +65,6 @@ sources=string.split("""
 	Fn.cxx
 	FnDrv.cxx
 	getIntPnts.cxx
-	lestools.cxx
 	modeShape.cxx
 	modeShapeDrv.cxx
 	new_interface.cxx
@@ -98,7 +85,6 @@ sources=string.split("""
 	symwdg.c
 	tmrc.cxx
 	uniformP.c
-	usr.cxx
 	write_hessian.c
 	cpp_interface.f90
 	common.f90
@@ -205,7 +191,7 @@ sources=string.split("""
 	timeseries.f90
 	estimation_helpers.f90
 	errorManagement.f90
-	""")
+	""".split()
 
 object_list=env.Object(source=sources)
 
@@ -213,8 +199,8 @@ object_list=env.Object(source=sources)
 object_list_withoutDotModFiles = [x for x in object_list if x.get_suffix() == ".o"]
 
 # Set the source and output file name ("target"):
-default = env.Library(target='libsimvascular_flowsolver.a', source=object_list_withoutDotModFiles)
-copyLibrary = env.Command("../../lib/libsimvascular_flowsolver.a", "./libsimvascular_flowsolver.a", Copy("$TARGET", "$SOURCE"))
+default = env.Library(target='libcrimson_flowsolver.a', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../../lib/libcrimson_flowsolver.a", "./libcrimson_flowsolver.a", Copy("$TARGET", "$SOURCE"))
 
 # Define SCons' default action:
 Default(default,copyLibrary)

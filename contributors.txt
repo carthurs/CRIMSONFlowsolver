@@ -1,4 +1,4 @@
-Contributors to CRIMSON
+Contributors to CRIMSON Flowsolver
 
 Alberto Figueroa <figueroc@med.umich.edu>
 Marija Marcan <marija.marcan@gmail.com>

@@ -1,5 +1,4 @@
 import buildoptions as bop
-import string
 
 
 Import('env')
@@ -8,27 +7,20 @@ env.Append(CFLAGS=bop.GLOBAL_CFLAGS)
 env.Append(CXXFLAGS=bop.GLOBAL_CXXFLAGS)
 env.Append(F90FLAGS=bop.GLOBAL_FFLAGS)
 
-env.Append(CFLAGS=bop.LESLIB_DEFS)
-env.Append(CPPPATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR+bop.SOLVERIO_INCDIR+bop.BOOSTCPP_INCDIR)
-env.Append(CXXFLAGS=bop.LESLIB_DEFS)
+env.Append(CPPPATH=bop.MPI_INCDIR+bop.SOLVERIO_INCDIR+bop.BOOSTCPP_INCDIR)
 env.Append(CPPPATH=bop.PETSC_INCDIR+bop.METIS_INCDIR+bop.VTK_INCDIR)
 env.Append(CPPPATH=bop.GOOGLETEST_INCDIR)
-env.Append(F90FLAGS=bop.LESLIB_DEFS)
-env.Append(F90PATH=bop.MPI_INCDIR+bop.LESLIB_INCDIR)
+env.Append(F90PATH=bop.MPI_INCDIR)
 
-env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.MPI_LIBSDIR+bop.METIS_LIBSDIR+bop.RUNTIME_LIBSDIR+bop.LESLIB_LIBSDIR)
+env.Append(LIBPATH=bop.PETSC_LIBSDIR+bop.MPI_LIBSDIR+bop.METIS_LIBSDIR+bop.RUNTIME_LIBSDIR)
 
 env.Prepend(LIBS=bop.MPI_LIBSLIST)
-env.Prepend(LIBS=bop.LESLIB_LIBSLIST)
 env.Append(LIBS=bop.METIS_LIBSLIST+bop.RUNTIME_LIBSLIST)
 env.Append(LIBS=bop.PETSC_LIBSLIST)
 
-# HDRS	= cvSolverIO.h
-# CXXSRCS = cvSolverIO.cxx
-
-sources=string.split("""
+sources="""
 	cvSolverIO.cxx
-	""")
+	""".split()
 
 object_list=env.Object(source=sources)
 
@@ -37,22 +29,7 @@ object_list_withoutDotModFiles = [object_list for object_list in object_list if 
 
 
 # Set the source and output file name ("target"):
-default = env.Library(target='libsimvascular_solverio.a', source=object_list_withoutDotModFiles)
-copyLibrary = env.Command("../../lib/libsimvascular_solverio.a", "./libsimvascular_solverio.a", Copy("$TARGET", "$SOURCE"))
+default = env.Library(target='libcrimson_solverio.a', source=object_list_withoutDotModFiles)
+copyLibrary = env.Command("../../lib/libcrimson_solverio.a", "./libcrimson_solverio.a", Copy("$TARGET", "$SOURCE"))
 
-# copy.execute()
-# Define SCons' default action:
 Default(default,copyLibrary)
-
-# SRCS	= $(CSRCS) $(CXXSRCS)
-
-# OBJS	= $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
-
-# TARGET_LIB = libsimvascular_solverio.$(STATICEXT)
-
-# $(TOP)/lib/$(TARGET_LIB) : $(OBJS)
-# 	$(AR)$(TARGET_LIB) $(OBJS)
-# 	mv $(TARGET_LIB) $(TOP)/lib
-	
-# clean:
-# 	-$(RM) $(OBJS) $(TOP)/lib/$(TARGET_LIB) *.pdb *.manifest

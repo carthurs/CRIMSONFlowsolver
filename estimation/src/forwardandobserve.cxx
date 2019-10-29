@@ -60,15 +60,15 @@ int main(int argc, char** argv)
     char buildTime[100];
     getBuildNumber(buildNumber);
     getBuildTime(buildTime);
-    std::cout << "This is Simvascular version " << buildNumber << ", built at " << buildTime << "." << std::endl;
+    std::cout << "This is CRIMSON Flowsolver version " << buildNumber << ", built at " << buildTime << "." << std::endl;
 
     // Expiry date check (uncomment enableExpiryDate() call below to enable):
     expiryDate expiry = expiryDate();
-    expiry.setExpiryDayOfMonth(14);
-    expiry.setExpiryMonthOfYear(11);
-    expiry.setExpiryYear(2014);
+    expiry.setExpiryDayOfMonth(30);
+    expiry.setExpiryMonthOfYear(4);
+    expiry.setExpiryYear(2020);
     // UNCOMMENT TO DO A BUILD WITH AN EXPIRY DATE!
-    // expiry.enableExpiryDate();
+    expiry.enableExpiryDate();
     expiry.checkWhetherExpiryDatePassed();
 
 

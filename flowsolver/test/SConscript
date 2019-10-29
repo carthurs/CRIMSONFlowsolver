@@ -1,5 +1,4 @@
 import buildoptions as bop
-import string
 
 
 Import('env')
@@ -18,42 +17,21 @@ env_local.Append(LIBS=bop.BOOSTCPP_LIBSLIST)
 
 env_local.Prepend(LIBS=bop.GOOGLETEST_LIBSLIST)
 env_local.Prepend(LIBS=bop.FLOWSOLVER_LIBSLIST)
-env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
+env_local.Append(LIBS=bop.CRIMSON_COMMON_LIBSLIST)
 
-# HDRS	= cvSolverIO.h
-# CXXSRCS = cvSolverIO.cxx
-
-sources=string.split("""
+sources="""
 	testMultidom.cxx
 	testFileReaders.cxx
 	testMain.cxx
 	testOrphans.cxx
 	testMainWithZeroDDomain.cxx
-	""")
+	""".split()
 
 object_list=env_local.Object(source=sources)
-
-# Strip out the .mod files (not needed for linking!)
-# object_list_withoutDotModFiles = [object_list for object_list in object_list if object_list.get_suffix() == ".o"]
-
 
 # Set the source and output file name ("target"):
 default = env_local.Library(target='libtest_flowsolver.a', source=object_list)
 copyLibrary = env_local.Command("../../lib/libtest_flowsolver.a", "./libtest_flowsolver.a", Copy("$TARGET", "$SOURCE"))
 
-# copy.execute()
 # Define SCons' default action:
 Default(default,copyLibrary)
-
-# SRCS	= $(CSRCS) $(CXXSRCS)
-
-# OBJS	= $(CSRCS:.c=.$(OBJECTEXT)) $(CXXSRCS:.cxx=.$(OBJECTEXT))
-
-# TARGET_LIB = libsimvascular_solverio.$(STATICEXT)
-
-# $(TOP)/lib/$(TARGET_LIB) : $(OBJS)
-# 	$(AR)$(TARGET_LIB) $(OBJS)
-# 	mv $(TARGET_LIB) $(TOP)/lib
-	
-# clean:
-# 	-$(RM) $(OBJS) $(TOP)/lib/$(TARGET_LIB) *.pdb *.manifest

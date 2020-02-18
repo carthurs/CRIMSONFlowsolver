@@ -17,7 +17,7 @@ These instructions explain how to build CRIMSON Flowsolver on openSUSE Leap 15.1
  - make && make install
 5. Configure CRIMSON Flowsolver
  - Copy `buildoptions.py.example` from the CRIMSON root to `buildoptions.py`.
- - Edit `buildoptions.py`, setting the `#setme` fields. Not all of these will be required, particularly if some of the libraries are in the system lib64 folder. As a minimum, you'll need to set PETSC_TOP (to point at the petsc root folder) PETSC_BUILD (to be the value you set in PETSC_ARCH during the petsc configure call), VTK_TOP (to be whatever CMAKE_INSTALL_PREFIX you set during the vtk cmake step)
+ - Edit `buildoptions.py`, setting the `#setme` fields. Not all of these will be required, particularly if some of the libraries are in the system lib64 folder. As a minimum, you'll need to set PETSC_TOP (to point at the petsc root folder) PETSC_BUILD (to be the value you set in PETSC_ARCH during the petsc configure call), VTK_TOP (to be whatever CMAKE_INSTALL_PREFIX you set during the vtk cmake step). Be careful to note how the paths are assembled in this script: relative paths and special characters such as ~ are not supported.
 6. Compile CRIMSON Flowsolver
  - In the CRIMSON root, run `scons -jN test=1 debug=0` to compile using N processes
  - After a successful build, go into the `testbin` subfolder, and run `./mytest N`, to test on N processes. Allow the test suite to finish.

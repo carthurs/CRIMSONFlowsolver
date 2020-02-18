@@ -28,7 +28,8 @@ These instructions explain how to build CRIMSON Flowsolver on openSUSE Leap 15.1
  # Running postsolver
  - For Linux builds, you will first need to rename `postsolver.exe` to `postsolver` in the bin/ folder.
  - To reduce the output timesteps into one file, and generate a pht file that can be visualized in paraview, use the multipostsolver script in the scripts/ directory.
- - First, edit the line in the multipostsolver script that calls the postsolver binary, make the path to the binary match where the executable is on your machine, a full path should be used. e.g., the part of the code that calls postsolver code should look something like this:
+ - First, edit the line in the multipostsolver script that calls the postsolver binary, make the path to the binary match where the executable is on your machine, a full path should be used.
+- e.g., the loop that calls postsolver should look something like this:
  ```sh
 ...
  # reduce the restarts for each time step requested

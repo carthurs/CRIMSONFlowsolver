@@ -23,3 +23,22 @@ These instructions explain how to build CRIMSON Flowsolver on openSUSE Leap 15.1
  - After a successful build, go into the `testbin` subfolder, and run `./mytest N`, to test on N processes. Allow the test suite to finish.
 7. Use the CRIMSON Flowsolver on your own simulations
  - To run CRIMSON Flowsolver, use the script in the bin folder: `mysolver`. Invoke this from the directory containing your simulation files, as `/path/to/mysolver N solver.inp` to run on N processes
+ - note that solver.inp must be in your console's current working directory, flowsolver does not accept a path for solver.inp.
+ 
+ # Running postsolver
+ - For Linux builds, you will first need to rename `postsolver.exe` to `postsolver` in the bin/ folder.
+ - To reduce the output timesteps into one file, and generate a pht file that can be visualized in paraview, use the multipostsolver script in the scripts/ directory.
+ - First, edit the line in the multipostsolver script that calls the postsolver binary, make the path to the binary match where the executable is on your machine, a full path should be used. e.g., the code should look something like this:
+ ```sh
+ # reduce the restarts for each time step requested
+k=0
+for ((i=$1 ;i<=$2; i+=$3));
+do
+  echo "Multipostsolver is reducing timestep: $i"
+  let k++
+  /home/alex2/CRIMSONFlowsolver/bin/postsolver -sn $i -newsn $i -ph -td -bflux -wss $5 $6 $7 $8 $9 $10 $11
+done
+```
+ - Then run the multipostsolver script, with parameters in the form `multipostsolver start_index end_index increment folder_name`
+ - e.g.,  `multipostsolver 0 95 5 outputfolder` in your N-procs-case folder (where N is the number of processes you set for simulation)
+ - multipostsolver will store the results in a folder named `restarts-outputfolder-0-95-5`, in the parent folder of the one you ran it in.

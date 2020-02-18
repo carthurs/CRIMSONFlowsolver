@@ -22,4 +22,4 @@ These instructions explain how to build CRIMSON Flowsolver on openSUSE Leap 15.1
  - In the CRIMSON root, run `scons -jN test=1 debug=0` to compile using N processes
  - After a successful build, go into the `testbin` subfolder, and run `./mytest N`, to test on N processes. Allow the test suite to finish.
 7. Use the CRIMSON Flowsolver on your own simulations
- - To run CRIMSON Flowsolver, use the script in the bin folder: `mysolver`. Invoke this from the directory containing your simulation files, as `/path/to/mytest N solver.inp` to run on N processes
+ - To run CRIMSON Flowsolver, use the script in the bin folder: `mysolver`. Invoke this from the directory containing your simulation files, as `/path/to/mysolver N solver.inp` to run on N processes

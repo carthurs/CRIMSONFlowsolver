@@ -1,8 +1,8 @@
 CRIMSON Flowsolver: The incompressibe Navier-Stokes finite element
 solver for computational haemodynamics.
 
-Copyright (C) 2016 The Regents of the University of Michigan 
-Copyright (C) 2016 King's College London
+Copyright (C) 2014 The Regents of the University of Michigan 
+Copyright (C) 2011 King's College London
 
 http://www.crimson.software
 https://bloodflow.engin.umich.edu/

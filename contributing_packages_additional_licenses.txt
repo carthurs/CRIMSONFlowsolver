@@ -1,3 +1,7 @@
+This file contains additional licenses for packages which contribute
+to CRIMSON Flowsolver. It applies only to the packages indicated
+herein.
+
 ======================================================================
 Simvascular
 ======================================================================

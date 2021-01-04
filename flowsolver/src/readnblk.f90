@@ -664,7 +664,7 @@
       !----------------------------------------
       call initialize_ALE(aleType)
 
-      write(*,*) "ale initialized 1"
+      ! write(*,*) "ale initialized 1"
 
       aMesh(:,:) = zero
       aMeshold(:,:) = zero
@@ -678,7 +678,7 @@
       x_iniMesh = x !Initial coordinates to be used when updating the ALE mesh displacement MAF 11/10/2016
       xMeshold = x
 
-      write(*,*) "ale initialized 2"
+      ! write(*,*) "ale initialized 2"
 
 
       ! if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity

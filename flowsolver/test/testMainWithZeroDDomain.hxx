@@ -41,12 +41,12 @@
 	 protected:
 	  // You can remove any or all of the following functions if its body
 	  // is empty.
-	 	std::string dirBinaryCalledFrom;
+	 	boost::filesystem::path dirBinaryCalledFrom;
 
 	 	// This test environment should setup exactly as main.cxx does in estimation/src/main.cxx
 		testMainWithZeroDDomain() {
 			MPI_Barrier(MPI_COMM_WORLD);
-			dirBinaryCalledFrom = get_current_dir_name();
+			dirBinaryCalledFrom = boost::filesystem::current_path();
 			getRank();
 		}
 
@@ -204,7 +204,7 @@
 
 	  virtual ~testMainWithZeroDDomain() {
 	    // You can do clean-up work that doesn't throw exceptions here.
-	    chdir(dirBinaryCalledFrom.c_str());
+	    boost::filesystem::current_path(dirBinaryCalledFrom);
 	  }
 
 	  // If the constructor and destructor are not enough for setting up

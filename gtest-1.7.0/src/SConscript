@@ -21,8 +21,6 @@ env_local.Append(LIBPATH=bop.FLOWSOLVER_LIBSDIR+bop.BLASLAPACK_LIBSDIR+bop.MPI_L
 
 env_local.Prepend(LIBPATH=bop.BOOSTCPP_LIBSDIR)
 
-env_local.Append(LIBS=bop.BOOSTCPP_LIBSLIST)
-env_local.Append(LIBS=bop.MPI_LIBSLIST)
 env_local.Append(LIBS=bop.FLOWSOLVER_LIBSLIST)
 env_local.Append(LIBS=bop.SOLVERIO_LIBSLIST)
 env_local.Append(LIBS=bop.METIS_LIBSLIST)
@@ -34,6 +32,9 @@ env_local.Append(LIBS=bop.RUNTIME_LIBSLIST)
 env_local.Append(LIBS=bop.SIMVASCULAR_COMMON_LIBSLIST)
 env_local.Append(LIBS=bop.PETSC_LIBSLIST)
 env_local.Append(LIBS=bop.BLASLAPACK_LIBSLIST)
+env_local.Append(LIBS=bop.PYTHON_LIBSLIST)
+env_local.Append(LIBS=bop.BOOSTCPP_LIBSLIST)
+env_local.Append(LIBS=bop.MPI_LIBSLIST)
 
 sources=string.split("""
 	gtest_main.cc
@@ -44,7 +45,7 @@ object_list=env_local.Object(source=sources)
 
 # Set the source and output file name ("target"):
 default = env_local.Program(target='test', source=object_list)
-copyLibrary = env_local.Command(bop.HOME_DIR+'/testbin/test', "./test", Copy("$TARGET", "$SOURCE"))
+copyLibrary = env_local.Command(bop.HOME_DIR+'/testbin/test.exe', "./test.exe", Copy("$TARGET", "$SOURCE"))
 
 # Define SCons' default action:
 Default(default,copyLibrary)

@@ -10,6 +10,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sstream>
+#include "boost/filesystem.hpp"
+#include "boost/range/iterator_range.hpp"
+#include "boost/algorithm/string.hpp"
+
 
 //#include <boost/optional/optional.hpp>
 //#include <tuple>
@@ -157,6 +161,22 @@ readDataArray(int fileId, const char* format, const char* arrayName, int nIntsIn
 	return result; */
 }
 
+void copyFilesToProcsCaseFolderWithExtension(std::string extension)
+{
+	boost::filesystem::directory_iterator directoryContentsStartIterator(boost::filesystem::current_path());
+
+	for (auto& item : boost::make_iterator_range(directoryContentsStartIterator, {}))
+	{
+		if (item.path().extension().compare(extension) == 0 )
+		{
+			cout << "Copying " << item.path() << " to simulation folder..." << endl;
+			boost::filesystem::path copyTarget(boost::filesystem::current_path() /= _directory_name);
+			copyTarget /= item.path().filename();
+			boost::filesystem::copy_file(item.path(), copyTarget, boost::filesystem::copy_option::overwrite_if_exists);
+		}
+	}
+}
+
 void Partition_Problem(int numProcs) {
 	int stepno;
 	int igeombc; /* file handle for geombc */
@@ -248,8 +268,12 @@ void Partition_Problem(int numProcs) {
 	char systemcmd[bufferSize];
 	systemcmd[0] = '\0';
 
-	sprintf(systemcmd, "cp *.dat %s", _directory_name);
-	system(systemcmd);
+	// int outcome = sprintf(systemcmd, "copy *.dat %s", "2-procs-case"); //_directory_name);
+	// cout << systemcmd << " result code: " << outcome << endl;
+	// system(systemcmd);
+	// system("copydat.bat");
+
+	copyFilesToProcsCaseFolderWithExtension(".dat");
 
 	char* inpfilename_env = NULL;
 	inpfilename_env = getenv("PHASTA_INPFILE");
@@ -260,31 +284,26 @@ void Partition_Problem(int numProcs) {
 		// simulation. The copied verison is not read by the flowsolver.
 		int lengthOfAttemptedBufferWrite = snprintf(systemcmd, bufferSize, "cp %s %s", inpfilename_env, _directory_name);
 		assert(lengthOfAttemptedBufferWrite < bufferSize); // paranoia
+		// this will not work in Windows; if you need this, consider a solution using the portable
+		// copyFilesToProcsCaseFolderWithExtension().
+		system(systemcmd);
 	}
 	else
 	{
 		// If the environmental variable for which .inp file to use wasn't set,
 		// just get all the .inps from the directory. This is not great; prefer 
 		// setting the environmental variable if possible.
-		sprintf(systemcmd, "cp *.inp %s", _directory_name);
+		copyFilesToProcsCaseFolderWithExtension(".inp");
+		// sprintf(systemcmd, "cp *.inp %s", _directory_name);
 	}
-	system(systemcmd);
 
-	sprintf(systemcmd, "cp *.xml %s", _directory_name);
-	system(systemcmd);
-
-	sprintf(systemcmd, "cp *.lua %s", _directory_name);
-	system(systemcmd);
-
-	sprintf(systemcmd, "cp *.py %s", _directory_name);
-	system(systemcmd);
-
-	sprintf(systemcmd, "cp *.pickle %s", _directory_name);
-	system(systemcmd);
+	copyFilesToProcsCaseFolderWithExtension(".xml");
+	copyFilesToProcsCaseFolderWithExtension(".lua");
+	copyFilesToProcsCaseFolderWithExtension(".py");
+	copyFilesToProcsCaseFolderWithExtension(".pickle");
 
 	if (numProcs < 2) {
-		sprintf(systemcmd, "cp *.1 %s", _directory_name);
-		system(systemcmd);
+		copyFilesToProcsCaseFolderWithExtension(".1");
 
 		if (nomodule.writeSpecificNodalDataEveryTimestep)
 		{
@@ -1749,7 +1768,7 @@ void Partition_Problem(int numProcs) {
 
 	    // Here writing data required for memLS
 	    for( int a=0; a < numProcs ; a++ ) {
-	        bzero( (void*)filename, 255 );
+	        memset( (void*)filename, 0, 255 );
 	        ofstream myfileltg;
 	        sprintf( filename, "%sltg.dat.%d",_directory_name,a);
 	        myfileltg.open (filename, ios::out);
@@ -2435,7 +2454,7 @@ void Partition_Problem(int numProcs) {
 
 void writeNodalOutputIndicesForProcessor(const int processorId, const std::vector<std::vector<int>>& processorZeroIndexToLocalNodalFlowAndPressureOutputNodeIndices_in)
 {
-    bzero( (void*)filename, 255 );
+    memset( (void*)filename, 0, 255 );
     ofstream nodalOutputFileStream;
     sprintf( filename, "%snodalOutputIndices.dat.%d",_directory_name, processorId);
     nodalOutputFileStream.open (filename, ios::out);

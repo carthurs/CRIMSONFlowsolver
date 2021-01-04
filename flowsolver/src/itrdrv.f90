@@ -754,16 +754,16 @@ subroutine itrdrv_init() bind(C, name="itrdrv_init")
     ! It's a least-bad hack to get around the chicken-and-egg initialisation
     ! order issues for the 3D and multidomain. If we want to avoid this,
     ! the Fortran code needs refactoring.
-    write(*,*) "setting pressure for C++ RCRs"
+    ! write(*,*) "setting pressure for C++ RCRs"
     call callCPPSetPressureFromFortran()
     ! call callCPPLoadAllNetlistComponentFlowsAndNodalPressures()
 
     if (aleType.eq.3) then !Initial conditions for mesh acceleration, velocity
         call getMeshVelocities(aleType,uMesh,aMesh,x_iniMesh,nshg,0,Delt(1))
-        write(*,*) "ale initialized 3"
+        ! write(*,*) "ale initialized 3"
         uMeshold = uMesh
         aMeshold = aMesh
-        write(*,*) "ale initialized 4"
+        ! write(*,*) "ale initialized 4"
         !add mesh velocity to initial condition
         y(:,1) = y(:,1) + uMesh(:,1)
         y(:,2) = y(:,2) + uMesh(:,2)

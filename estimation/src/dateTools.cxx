@@ -18,7 +18,7 @@ void expiryDate::setExpiryYear(int year_in)
 
 void expiryDate::enableExpiryDate()
 {
-	thisBuildHasAnExpiryDate = int(1);
+	thisBuildHasAnExpiryDate = true;
 }
 
 void expiryDate::checkWhetherExpiryDatePassed()
@@ -27,13 +27,13 @@ void expiryDate::checkWhetherExpiryDatePassed()
 	{
 		writeExpiryDate();
 
-		if (theDate.getYear() >= year &&
-			theDate.getMonth() >= month &&
-			theDate.getDay() > day)
+		if ((theDate.getYear() > year) ||
+			(theDate.getYear() == year && theDate.getMonth() > month) ||
+			(theDate.getYear() == year && theDate.getMonth() == month && theDate.getDay() > day))
 			{
 				if (mMpiRank==0)
 				{
-			    	std::cout << "This copy of Simvascular Flowsolver has expired." << std::endl;
+			    	std::cout << "This copy of CRIMSON Flowsolver has expired." << std::endl;
 				}
 				MPI_Barrier(MPI_COMM_WORLD);
 			    std::exit(1);
@@ -43,14 +43,15 @@ void expiryDate::checkWhetherExpiryDatePassed()
 	{
 		if (mMpiRank==0)
 		{
-			std::cout << "This Simvascular Flowsolver binary has no built-in expiry date." << std::endl;
+			std::cout << "This CRIMSON Flowsolver binary has no built-in expiry date." << std::endl;
 		}
 	}
 }
 
 void expiryDate::writeExpiryDate()
 {
-	std::cout << "This copy of Simvascular Flowsolver expires on " << year << "/" << month << "/" << day << std::endl;
+	std::cout << "This copy of CRIMSON Flowsolver expires on " << year << "/" << month << "/" << day << std::endl;
+	std::cout << "The date today is " << theDate.getYear() << "/" << theDate.getMonth() << "/" << theDate.getDay() << std::endl;
 }
 
    // std::cout << "the year is " << theDate.now->tm_year <<std::endl;

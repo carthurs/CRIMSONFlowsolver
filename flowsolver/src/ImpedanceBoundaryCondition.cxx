@@ -10,7 +10,7 @@
 void checkSafetyCounter(const int safetyCounter, const std::stringstream& currentAction)
 {
 	if (safetyCounter > WHILE_LOOP_WARNING_ITERATION_COUNT){
-		std::cout << "WARNING: Exceeded " << WHILE_LOOP_WARNING_ITERATION_COUNT << " line reads during: " << currentAction << "\n";
+		std::cout << "WARNING: Exceeded " << WHILE_LOOP_WARNING_ITERATION_COUNT << " line reads during: " << currentAction.str() << "\n";
 	}
 }
 

@@ -61,7 +61,7 @@ public:
 	expiryDate()
 	{
 		theDate = currentDate();
-		thisBuildHasAnExpiryDate = int(0);
+		thisBuildHasAnExpiryDate = false;
 		MPI_Comm_rank(MPI_COMM_WORLD, &mMpiRank);
 	}
 
@@ -75,7 +75,7 @@ public:
 	void writeExpiryDate();
 private:
 	currentDate theDate;
-	int thisBuildHasAnExpiryDate;
+	bool thisBuildHasAnExpiryDate;
 	int mMpiRank;
 
 };

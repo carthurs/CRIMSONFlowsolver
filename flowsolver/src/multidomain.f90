@@ -2736,9 +2736,9 @@
       integer :: iii
       real*8 :: flows(0:maxsurf)
       a%flow_n(1:nflows) = flows(1:nflows)
-      do iii=1,nflows
-         write(*,*) "flow set: ", iii, a%flow_n(iii)
-      enddo
+      ! do iii=1,nflows
+      !    write(*,*) "flow set: ", iii, a%flow_n(iii)
+      ! enddo
       return
       end subroutine 
 !

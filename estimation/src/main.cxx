@@ -64,9 +64,9 @@ int main(int argc, char **argv) {
 
    // Expiry date check (uncomment enableExpiryDate() call below to enable):
    expiryDate expiry = expiryDate();
-   expiry.setExpiryDayOfMonth(30);
-   expiry.setExpiryMonthOfYear(4);
-   expiry.setExpiryYear(2020);
+   expiry.setExpiryDayOfMonth(31);
+   expiry.setExpiryMonthOfYear(12);
+   expiry.setExpiryYear(2021);
    // UNCOMMENT TO DO A BUILD WITH AN EXPIRY DATE!
    expiry.enableExpiryDate();
    expiry.checkWhetherExpiryDatePassed();

@@ -64,6 +64,8 @@ static char help[] = "ROUKF driver.\n\n";
 
 int main(int argc, char** argv)
 {
+    PetscInitialize(&argc, &argv, (char *)0, help);
+
     kalmanFilterActive.kalmanFilterOn = true;
     char buildNumber[100];
     char buildTime[100];
@@ -73,9 +75,9 @@ int main(int argc, char** argv)
 
     // Expiry date check (uncomment enableExpiryDate() call below to enable):
     expiryDate expiry = expiryDate();
-    expiry.setExpiryDayOfMonth(30);
-    expiry.setExpiryMonthOfYear(4);
-    expiry.setExpiryYear(2020);
+    expiry.setExpiryDayOfMonth(31);
+    expiry.setExpiryMonthOfYear(12);
+    expiry.setExpiryYear(2021);
     // UNCOMMENT TO DO A BUILD WITH AN EXPIRY DATE!
     expiry.enableExpiryDate();
     expiry.checkWhetherExpiryDatePassed();
@@ -109,8 +111,6 @@ int main(int argc, char** argv)
 #if defined(SELDON_WITH_MKL)
 	mkl_cbwr_set(MKL_CBWR_AUTO);
 #endif
-
-	PetscInitialize(&argc, &argv, (char *)0, help);
     
     // Initialise Python integration
     initialisePython();

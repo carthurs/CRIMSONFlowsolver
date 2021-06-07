@@ -1,7 +1,7 @@
-#ifndef SIMVASCULAROBSERVATIONMANAGER_CXX
-#define SIMVASCULAROBSERVATIONMANAGER_CXX
+#ifndef CrimsonObservationManager_CXX
+#define CrimsonObservationManager_CXX
 
-#include "SimvascularObservationManager.hxx"
+#include "CrimsonObservationManager.hxx"
 #include <boost/filesystem.hpp>
 
 namespace Verdandi {
@@ -10,7 +10,7 @@ namespace Verdandi {
 
 /* */
 /* */
-SimvascularObservationType::SimvascularObservationType()
+CrimsonObservationType::CrimsonObservationType()
 :Nobservation_local_(0),
  load_data_from_datfile_(0),
  isDistributed_(0)
@@ -21,11 +21,11 @@ SimvascularObservationType::SimvascularObservationType()
 }
 
 
-SimvascularObservationType::~SimvascularObservationType() {
+CrimsonObservationType::~CrimsonObservationType() {
 
 }
 
-void SimvascularObservationType::LoadData(int linetoread, Vector<double>& dataarray, int obs_start_index) {
+void CrimsonObservationType::LoadData(int linetoread, Vector<double>& dataarray, int obs_start_index) {
 
 	if (load_data_from_datfile_) {
 		int icounter = 0;
@@ -49,13 +49,13 @@ void SimvascularObservationType::LoadData(int linetoread, Vector<double>& dataar
 			data_file_in_.close();
 		}
 		else {
-			throw Error("SimvascularObservationType::LoadData: Unable to open data file "+data_file_name_);
+			throw Error("CrimsonObservationType::LoadData: Unable to open data file "+data_file_name_);
 		}
 	}
 
 }
 
-void SimvascularObservationType::SaveObservations(const state& x) {
+void CrimsonObservationType::SaveObservations(const state& x) {
 
 	observation Hx1,Hx2;
 
@@ -80,27 +80,27 @@ void SimvascularObservationType::SaveObservations(const state& x) {
 
 }
 
-int SimvascularObservationType::getNobservation_local() const {
+int CrimsonObservationType::getNobservation_local() const {
 	return Nobservation_local_;
 }
 
-double SimvascularObservationType::getErrorVarianceValue(int ind) const {
+double CrimsonObservationType::getErrorVarianceValue(int ind) const {
 	return error_variance_value_[ind];
 }
 
-std::string SimvascularObservationType::getName() const {
+std::string CrimsonObservationType::getName() const {
 	return name_;
 }
 
 /* */
 /* */
-SimvascularNodalSolutionObservation::SimvascularNodalSolutionObservation() {
+CrimsonNodalSolutionObservation::CrimsonNodalSolutionObservation() {
 }
 
-SimvascularNodalSolutionObservation::~SimvascularNodalSolutionObservation() {
+CrimsonNodalSolutionObservation::~CrimsonNodalSolutionObservation() {
 }
 
-void SimvascularNodalSolutionObservation::Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) {
+void CrimsonNodalSolutionObservation::Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration) {
 
 	int icounter = 0, ncounter = 0;
 
@@ -119,8 +119,8 @@ void SimvascularNodalSolutionObservation::Initialize(std::string name, const Sim
 	double error_variance_value_nodal;
 	configuration.Set("error.variance_nodal", "v > 0", error_variance_value_nodal);
 
-	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
-    gat = SimvascularGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of CrimsonGlobalArrayTransfer
+    gat = CrimsonGlobalArrayTransfer::Get();
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
@@ -165,7 +165,7 @@ void SimvascularNodalSolutionObservation::Initialize(std::string name, const Sim
 
 }
 
-void SimvascularNodalSolutionObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
+void CrimsonNodalSolutionObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
 
 	int icounter = 0;
 
@@ -182,15 +182,15 @@ void SimvascularNodalSolutionObservation::ApplyOperator(const state& x, observat
 
 /* */
 /* */
-SimvascularNodalDisplacementObservation::SimvascularNodalDisplacementObservation() {
+CrimsonNodalDisplacementObservation::CrimsonNodalDisplacementObservation() {
 
 }
 
-SimvascularNodalDisplacementObservation::~SimvascularNodalDisplacementObservation() {
+CrimsonNodalDisplacementObservation::~CrimsonNodalDisplacementObservation() {
 
 }
 
-void SimvascularNodalDisplacementObservation::Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) {
+void CrimsonNodalDisplacementObservation::Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration) {
 
 	int icounter = 0, ncounter = 0;
 
@@ -208,8 +208,8 @@ void SimvascularNodalDisplacementObservation::Initialize(std::string name, const
 	configuration.Set("error.variance_nodal", "v > 0", error_variance_value_nodal);
 	std::cout << "error variance dist " << error_variance_value_nodal << std::endl;
 
-	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
-	gat = SimvascularGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of CrimsonGlobalArrayTransfer
+	gat = CrimsonGlobalArrayTransfer::Get();
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 		int actualIdx = (gat->pointerMapInt_["local index of unique nodes"])[unitIdx];
@@ -240,7 +240,7 @@ void SimvascularNodalDisplacementObservation::Initialize(std::string name, const
 	std::cout << "[" << name_ << "] at rank (" << rank_ << ")" << " # of obs.: " << Nobservation_local_ << std::endl;
 }
 
-void SimvascularNodalDisplacementObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
+void CrimsonNodalDisplacementObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
 
 	int icounter = 0;
 
@@ -257,13 +257,13 @@ void SimvascularNodalDisplacementObservation::ApplyOperator(const state& x, obse
 
 /* */
 /* */
-SimvascularDistanceObservation::SimvascularDistanceObservation() {
+CrimsonDistanceObservation::CrimsonDistanceObservation() {
 }
 
-SimvascularDistanceObservation::~SimvascularDistanceObservation() {
+CrimsonDistanceObservation::~CrimsonDistanceObservation() {
 }
 
-void SimvascularDistanceObservation::Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) {
+void CrimsonDistanceObservation::Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration) {
 
 	int icounter = 0, ncounter = 0;
 
@@ -281,8 +281,8 @@ void SimvascularDistanceObservation::Initialize(std::string name, const Simvascu
 	configuration.Set("error.variance_dist", "v > 0", error_variance_value_dist);
 	std::cout << "error variance p avg " << error_variance_value_dist << std::endl;
 
-	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
-	gat = SimvascularGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of CrimsonGlobalArrayTransfer
+	gat = CrimsonGlobalArrayTransfer::Get();
 
 	for(int unitIdx=0; unitIdx < conpar.nshguniq; unitIdx++) {
 
@@ -320,7 +320,7 @@ void SimvascularDistanceObservation::Initialize(std::string name, const Simvascu
 	std::cout << "[" << name_ << "] at rank (" << rank_ << ")" << " # of obs.: " << Nobservation_local_ << std::endl;
 }
 
-void SimvascularDistanceObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
+void CrimsonDistanceObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
 
 	int icounter = 0;
 
@@ -370,18 +370,18 @@ void SimvascularDistanceObservation::ApplyOperator(const state& x, observation& 
 
 /* */
 /* */
-SimvascularFlowPressObservation::SimvascularFlowPressObservation()
+CrimsonFlowPressObservation::CrimsonFlowPressObservation()
 :Nobservation_flow_(0),Nobservation_avgpressure_(0),Nobservation_area_(0)
 {
 }
 
-SimvascularFlowPressObservation::~SimvascularFlowPressObservation() {
+CrimsonFlowPressObservation::~CrimsonFlowPressObservation() {
 }
 
-void SimvascularFlowPressObservation::Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) {
+void CrimsonFlowPressObservation::Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration) {
 
-	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
-	gat = SimvascularGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of CrimsonGlobalArrayTransfer
+	gat = CrimsonGlobalArrayTransfer::Get();
 
 	name_ = name;
 	std::cout << "Initializing " << name << std::endl;
@@ -408,7 +408,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_ != csobs_normals_.size() ||
 		(unsigned int)Nobservation_flow_+Nobservation_avgpressure_+Nobservation_area_ != csobs_radii_.size()) {
 
-		throw Error("SimvascularObservationManager::Initialize: number of observation locations does not match listed locations!");
+		throw Error("CrimsonObservationManager::Initialize: number of observation locations does not match listed locations!");
 	}
 
 	double error_variance_value_flow, error_variance_value_avgpress, error_variance_value_area;
@@ -667,7 +667,7 @@ void SimvascularFlowPressObservation::Initialize(std::string name, const Simvasc
 
 }
 
-void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
+void CrimsonFlowPressObservation::ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const {
 
 	int icounter = 0;
 
@@ -825,7 +825,7 @@ void SimvascularFlowPressObservation::ApplyOperator(const state& x, observation&
 /////////////////////////////////
 
 
-SimvascularObservationManager::SimvascularObservationManager()
+CrimsonObservationManager::CrimsonObservationManager()
 :   Nobservation_(0),
     Nobservation_local_(0),
     Nobservation_flow_(0),
@@ -850,7 +850,7 @@ SimvascularObservationManager::SimvascularObservationManager()
 }
 
 
-SimvascularObservationManager::~SimvascularObservationManager() {
+CrimsonObservationManager::~CrimsonObservationManager() {
 	// Operations to be performed when the object is destroyed.
 
 }
@@ -863,10 +863,10 @@ SimvascularObservationManager::~SimvascularObservationManager() {
 /*!
  \param[in] model model.
  \param[in] configuration_file configuration file.
- \tparam Model the model type; e.g. SimvascularVerdandiModel<double>
+ \tparam Model the model type; e.g. CrimsonVerdandiModel<double>
  */
 template<class Model>
-void SimvascularObservationManager::Initialize(const Model& model,
+void CrimsonObservationManager::Initialize(const Model& model,
 		string configuration_file) {
 	VerdandiOps configuration(configuration_file);
 
@@ -877,8 +877,8 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	Nstate_model_ = model.GetNstate();
 	Nobservation_local_ = 0;
 
-	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
-	gat = SimvascularGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of CrimsonGlobalArrayTransfer
+	gat = CrimsonGlobalArrayTransfer::Get();
 
 	configuration.SetPrefix("observation.");
 	//configuration.Set("use_restarts",use_restarts_);
@@ -897,32 +897,32 @@ void SimvascularObservationManager::Initialize(const Model& model,
 	configuration.Set("Nobservation_avgpressure","",0,Nobservation_avgpressure_);
 
 	/* experimental */
-	SimvascularObservationType* obsobjptr;
+	CrimsonObservationType* obsobjptr;
 
 	if (execute_nodal_observations_ > 0 && nomodule.ideformwall > 0) {
-		obsobjptr = new SimvascularNodalDisplacementObservation;
+		obsobjptr = new CrimsonNodalDisplacementObservation;
 		obsobjptr->Initialize("Nodal",model.GetAugStateDstrb("displacement") , configuration);
 		observations_dstrb_.push_back(obsobjptr);
 	}
 
 	if (execute_distance_observations_ && nomodule.ideformwall > 0) {
-		obsobjptr = new SimvascularDistanceObservation;
+		obsobjptr = new CrimsonDistanceObservation;
 		obsobjptr->Initialize("Distance",model.GetAugStateDstrb("displacement") , configuration);
 		observations_dstrb_.push_back(obsobjptr);
 	}
 
 	if (Nobservation_flow_+Nobservation_avgpressure_ > 0) {
-		obsobjptr = new SimvascularFlowPressObservation;
+		obsobjptr = new CrimsonFlowPressObservation;
 		obsobjptr->Initialize("FlowPress",model.GetAugStateDstrb("solution") , configuration);
 		observations_single_.push_back(obsobjptr);
 	}
 
 
 	// count the number of observations on this processor
-	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
+	for (std::vector <CrimsonObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
 		Nobservation_local_ += (*it)->getNobservation_local();
 
-	for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it)
+	for (std::vector <CrimsonObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it)
 		Nobservation_local_ += (*it)->getNobservation_local();
 
 	// compute the global number of observation
@@ -945,7 +945,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	int ncounter = 0;
 
-	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
+	for (std::vector <CrimsonObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it)
 		for (int kk = 0; kk < (*it)->getNobservation_local(); ++kk) {
 			error_variance_inverse_diag_.SetBuffer( local_start+ncounter, double(1) / (*it)->getErrorVarianceValue(kk)  );
 			ncounter++;
@@ -953,7 +953,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 	if (rank_ == numProcs_ - 1) {
 
-		for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it)
+		for (std::vector <CrimsonObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it)
 			for (int kk = 0; kk < (*it)->getNobservation_local(); ++kk) {
 				error_variance_inverse_diag_.SetBuffer( local_start+ncounter, double(1) / (*it)->getErrorVarianceValue(kk)  );
 				ncounter++;
@@ -965,7 +965,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
 
 #else
 
-	throw ErrorUndefined("SimvascularObservationManager::"
+	throw ErrorUndefined("CrimsonObservationManager::"
 	                                 "Initialize()", "Serial algorithm for storing observations not implemented.");
 
 //#ifdef VERDANDI_OBSERVATION_ERROR_SPARSE
@@ -993,7 +993,7 @@ void SimvascularObservationManager::Initialize(const Model& model,
  \param[in] time a given time.
  */
 template<class Model>
-void SimvascularObservationManager::SetTime(const Model& model, double time) {
+void CrimsonObservationManager::SetTime(const Model& model, double time) {
 	if (time_ == time)
 		return;
 
@@ -1009,19 +1009,19 @@ void SimvascularObservationManager::SetTime(const Model& model, double time) {
       \param[in] discard_observation if set to true, each observation will be
       used at most one time.
 
-      The discard observation flag currently has no use in SimvascularObservationManager.
+      The discard observation flag currently has no use in CrimsonObservationManager.
  */
-void SimvascularObservationManager::DiscardObservation(bool discard_observation)
+void CrimsonObservationManager::DiscardObservation(bool discard_observation)
 {
 	discard_observation_ = discard_observation;
 }
 
 
-void SimvascularObservationManager::GetObservation(
-		SimvascularObservationManager::observation& observation) {
+void CrimsonObservationManager::GetObservation(
+		CrimsonObservationManager::observation& observation) {
 	throw ErrorUndefined(
-			"void SimvascularObservationManager::GetObservation(const state& x,"
-			"SimvascularObservationManager::observation& observation)");
+			"void CrimsonObservationManager::GetObservation(const state& x,"
+			"CrimsonObservationManager::observation& observation)");
 }
 
 ////////////////
@@ -1035,9 +1035,9 @@ void SimvascularObservationManager::GetObservation(
  \param[out] innovation innovation vector.
  */
 template<class state>
-void SimvascularObservationManager::GetInnovation(const state& x, observation& innovation) {
+void CrimsonObservationManager::GetInnovation(const state& x, observation& innovation) {
 	throw ErrorUndefined(
-			"void SimvascularObservationManager::"
+			"void CrimsonObservationManager::"
 			"GetInnovation(const state& x, observation& innovation)");
 }
 
@@ -1049,14 +1049,14 @@ void SimvascularObservationManager::GetInnovation(const state& x, observation& i
  */
 #if defined(VERDANDI_ROUKF_PARALLEL_INNOVATION)
 template<class state>
-void SimvascularObservationManager::GetInnovation(const state& x,
+void CrimsonObservationManager::GetInnovation(const state& x,
 		state& innovation_p_orig,
 		state& innovation_p_fe) {
 #else
 template<class state>
-void SimvascularObservationManager::GetInnovation(const state& x,
-		SimvascularObservationManager::observation& innovation_orig,
-		SimvascularObservationManager::observation& innovation_fe) {
+void CrimsonObservationManager::GetInnovation(const state& x,
+		CrimsonObservationManager::observation& innovation_orig,
+		CrimsonObservationManager::observation& innovation_fe) {
 #endif
 
 	// for now, load the full state from an existing set of results
@@ -1194,12 +1194,12 @@ void SimvascularObservationManager::GetInnovation(const state& x,
 /*!
  \param[in] time a given time.
  */
-bool SimvascularObservationManager::HasObservation(double time) {
+bool CrimsonObservationManager::HasObservation(double time) {
 	return time_ <= final_time_ && time_ >= initial_time_;
 }
 
 
-bool SimvascularObservationManager::HasObservation() const {
+bool CrimsonObservationManager::HasObservation() const {
 	return time_ <= final_time_ && time_ >= initial_time_;
 }
 
@@ -1207,7 +1207,7 @@ bool SimvascularObservationManager::HasObservation() const {
 /*!
  \return The total number of observation at current time.
  */
-int SimvascularObservationManager::GetNobservation() const {
+int CrimsonObservationManager::GetNobservation() const {
 	return Nobservation_;
 }
 
@@ -1215,7 +1215,7 @@ int SimvascularObservationManager::GetNobservation() const {
 /*!
       \return The size of the local state vector.
  */
-int SimvascularObservationManager::GetLocalNobservation() const {
+int CrimsonObservationManager::GetLocalNobservation() const {
 	return Nobservation_local_; // this is used in reallocate routine for petsc matrices in ROUKF
 }
 
@@ -1231,12 +1231,12 @@ int SimvascularObservationManager::GetLocalNobservation() const {
  if needed.
  */
 template<class state>
-void SimvascularObservationManager::ApplyOperator(const state& x, observation& y) const {
+void CrimsonObservationManager::ApplyOperator(const state& x, observation& y) const {
 
 	// not implemented as of now since we will always use the getInnovation
 
 	throw ErrorUndefined(
-				"void SimvascularObservationManager::ApplyOperator(const state& x, observation& y)");
+				"void CrimsonObservationManager::ApplyOperator(const state& x, observation& y)");
 
 }
 
@@ -1248,7 +1248,7 @@ void SimvascularObservationManager::ApplyOperator(const state& x, observation& y
  if needed.
  */
 template<class state>
-void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observation& Hx1, observation& Hx2) {
+void CrimsonObservationManager::ApplyOperatorLocal(const state& x, observation& Hx1, observation& Hx2) {
 
 	observation Hx_cs;
 
@@ -1264,12 +1264,12 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
 	Hx1.Zero();
 	Hx2.Zero();
 
-	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
+	for (std::vector <CrimsonObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
 		(*it)->ApplyOperator(x,Hx1,Hx2,ncounter);
 		ncounter += (*it)->getNobservation_local();
 	}
 
-	for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
+	for (std::vector <CrimsonObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
 		(*it)->ApplyOperator(x,Hx1,Hx2,ncounter);
 		ncounter += (*it)->getNobservation_local();
 	}
@@ -1282,8 +1282,8 @@ void SimvascularObservationManager::ApplyOperatorLocal(const state& x, observati
  \param[in] j column index.
  \return The element (\a i, \a j) of the observation error variance.
  */
-double SimvascularObservationManager::GetErrorVariance(int i, int j) const {
-	throw ErrorUndefined("double SimvascularObservationManager"
+double CrimsonObservationManager::GetErrorVariance(int i, int j) const {
+	throw ErrorUndefined("double CrimsonObservationManager"
 			"::GetErrorVariance(int i, int j) const");
 }
 
@@ -1291,37 +1291,37 @@ double SimvascularObservationManager::GetErrorVariance(int i, int j) const {
 /*!
  \return The observation error covariance matrix.
  */
-const SimvascularObservationManager::error_variance&
-SimvascularObservationManager::GetErrorVariance() const {
+const CrimsonObservationManager::error_variance&
+CrimsonObservationManager::GetErrorVariance() const {
 	throw ErrorUndefined("const typename"
-			"SimvascularObservationManager::error_variance& "
-			"SimvascularObservationManager::GetErrorVariance() const");
+			"CrimsonObservationManager::error_variance& "
+			"CrimsonObservationManager::GetErrorVariance() const");
 }
 
 
 /*!
  \return The inverse of the matrix of the observation error covariance.
  */
-const SimvascularObservationManager::error_variance&
-SimvascularObservationManager::GetErrorVarianceInverse() const {
+const CrimsonObservationManager::error_variance&
+CrimsonObservationManager::GetErrorVarianceInverse() const {
 	return error_variance_inverse_;
 }
 
 
-void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, Vector<double>& dataarray) {
+void CrimsonObservationManager::LoadObservationSingleLocal(int timeindex, Vector<double>& dataarray) {
 
 	// in simvascular we assume that the time index is always an integral value
 	// we need to sequentially read the file until
 	int linetoread = timeindex / Nskip_;
 	int ncounter = 0;
 
-	for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
+	for (std::vector <CrimsonObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
 		(*it)->LoadData(linetoread,dataarray,ncounter);
 		ncounter += (*it)->getNobservation_local();
 	}
 
 	if (rank_ == numProcs_ - 1)
-		for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
+		for (std::vector <CrimsonObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
 			(*it)->LoadData(linetoread,dataarray,ncounter);
 			ncounter += (*it)->getNobservation_local();
 		}
@@ -1333,7 +1333,7 @@ void SimvascularObservationManager::LoadObservationSingleLocal(int timeindex, Ve
 
  */
 template<class state>
-void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
+void CrimsonObservationManager::SaveObservationSingleLocal(const state& x) {
 
 	// we assumed that the time has been set from the model time
 	if ((int)time_ % Nskip_ == 0) {
@@ -1344,12 +1344,12 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 		if (rank_ == 0)
 			std::cout << "SAVING OBSERVATIONS" << std::endl;
 
-		for (std::vector <SimvascularObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
+		for (std::vector <CrimsonObservationType*>::iterator it = observations_dstrb_.begin(); it != observations_dstrb_.end(); ++it) {
 			(*it)->SaveObservations(x);
 			ncounter += (*it)->getNobservation_local();
 		}
 
-		for (std::vector <SimvascularObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
+		for (std::vector <CrimsonObservationType*>::iterator it = observations_single_.begin(); it != observations_single_.end(); ++it) {
 			(*it)->SaveObservations(x);
 			ncounter += (*it)->getNobservation_local();
 		}
@@ -1365,15 +1365,15 @@ void SimvascularObservationManager::SaveObservationSingleLocal(const state& x) {
 /*!
  \return The name of the class.
  */
-string SimvascularObservationManager::GetName() const {
-	return "SimvascularObservationManager";
+string CrimsonObservationManager::GetName() const {
+	return "CrimsonObservationManager";
 }
 
 //! Receives and handles a message.
 /*
  \param[in] message the received message.
  */
-void SimvascularObservationManager::Message(string message) {
+void CrimsonObservationManager::Message(string message) {
 	// Put here any processing you need.
 }
 

@@ -1,5 +1,5 @@
-#ifndef _SIMVASCULARGLOBALARRAYTRANSFER_H_
-#define _SIMVASCULARGLOBALARRAYTRANSFER_H_
+#ifndef _CrimsonGlobalArrayTransfer_H_
+#define _CrimsonGlobalArrayTransfer_H_
 
 #include <stdlib.h>
 #include <vector>
@@ -9,17 +9,17 @@
 #include <boost/shared_array.hpp>
 #include <iostream>
 
-class SimvascularGlobalArrayTransfer {
+class CrimsonGlobalArrayTransfer {
 public:
 
 	//! returns the only instance of this class
-	static SimvascularGlobalArrayTransfer *Get()
+	static CrimsonGlobalArrayTransfer *Get()
 	{
 		if (!instance) {
-			instance = new SimvascularGlobalArrayTransfer();
+			instance = new CrimsonGlobalArrayTransfer();
 		}
 		return instance;
-		// static SimvascularGlobalArrayTransfer instance;
+		// static CrimsonGlobalArrayTransfer instance;
 		// return &instance;
 	}
 
@@ -55,7 +55,7 @@ public:
 	}
 	double getValueFromPointerMapDP(const std::string& keyName, const int dataLocation)
 	{
-		// If SimvascularGlobalArrayTransfer is managing a pointer to this value (i.e. it's from C++),
+		// If CrimsonGlobalArrayTransfer is managing a pointer to this value (i.e. it's from C++),
 		// get the value from its true location in the class that owns it (e.g. compliance in the RCR class)	
 		synchronisePointerMapDPArraysIfNecessary_get(keyName, dataLocation);
 		// std::cout << "Return 1: " << keyName << " " << pointerMapDP_.at(keyName)[dataLocation] << std::endl;
@@ -92,7 +92,7 @@ public:
 	void setValueInPointerMapDP(const std::string& keyName, const int dataLocation, const double valueToSet)
 	{
 		pointerMapDP_.at(keyName)[dataLocation] = valueToSet;
-		// If SimvascularGlobalArrayTransfer is managing a pointer to this value (i.e. it's from C++),
+		// If CrimsonGlobalArrayTransfer is managing a pointer to this value (i.e. it's from C++),
 		// push the set value out to its true location in the class that owns it (e.g. compliance in the RCR class)	
 		synchronisePointerMapDPArraysIfNecessary_set(keyName, dataLocation);
 	}
@@ -129,13 +129,13 @@ public:
 	}
 
 private:
-	SimvascularGlobalArrayTransfer()
+	CrimsonGlobalArrayTransfer()
 	{
 		m_numberOfRCRSurfacesHasBeenSet = false;
 	}
-	~SimvascularGlobalArrayTransfer() {}
-	SimvascularGlobalArrayTransfer(const SimvascularGlobalArrayTransfer &) { }
-	SimvascularGlobalArrayTransfer &operator=(const SimvascularGlobalArrayTransfer &) { return *this; }
+	~CrimsonGlobalArrayTransfer() {}
+	CrimsonGlobalArrayTransfer(const CrimsonGlobalArrayTransfer &) { }
+	CrimsonGlobalArrayTransfer &operator=(const CrimsonGlobalArrayTransfer &) { return *this; }
 
 	void setupArraysForWindkesselFiltering();
 
@@ -187,7 +187,7 @@ private:
 	// to the actual data:
 	std::map<std::string, double*> netlistActualDataPointerMap_;
 
-	static SimvascularGlobalArrayTransfer* instance;
+	static CrimsonGlobalArrayTransfer* instance;
 };
 
 #endif

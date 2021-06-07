@@ -1,21 +1,21 @@
-#include "SimvascularAugStatePart.h"
+#include "CrimsonAugStatePart.h"
 
 /*!
- *    This is the constructor for SimvascularAugStatePart.
+ *    This is the constructor for CrimsonAugStatePart.
  *    Currently, it sets the multiplying constant to 1.0
  *    and the name to an initial value.
  */
-SimvascularAugStatePart::SimvascularAugStatePart()
+CrimsonAugStatePart::CrimsonAugStatePart()
 :   premulconst_(1.0)
 {
 	name_ = "undefined";
 }
 
 /*!
- *    This is the destructor for SimvascularAugStatePart.
+ *    This is the destructor for CrimsonAugStatePart.
  *    Currently, nothing is explicitly done here.
  */
-SimvascularAugStatePart::~SimvascularAugStatePart() {
+CrimsonAugStatePart::~CrimsonAugStatePart() {
 
 }
 
@@ -27,7 +27,7 @@ SimvascularAugStatePart::~SimvascularAugStatePart() {
       out currently is assigning the name of the
       augmented state part.
  */
-void SimvascularAugStatePart::Initialize(const std::string& setname) {
+void CrimsonAugStatePart::Initialize(const std::string& setname) {
 	name_ = setname;
 }
 
@@ -38,7 +38,7 @@ void SimvascularAugStatePart::Initialize(const std::string& setname) {
       This function adds a pointer to the
       internal vector of pointers.
  */
-void SimvascularAugStatePart::addDataPointer(double* data_pointer) {
+void CrimsonAugStatePart::addDataPointer(double* data_pointer) {
 	pointers_.push_back(data_pointer);
 }
 
@@ -52,7 +52,7 @@ void SimvascularAugStatePart::addDataPointer(double* data_pointer) {
       is included in the estimated portion
       of the augmented state.
  */
-void SimvascularAugStatePart::addIsEstimated(bool val) {
+void CrimsonAugStatePart::addIsEstimated(bool val) {
 	is_estimated_.push_back(val);
 }
 
@@ -61,11 +61,11 @@ void SimvascularAugStatePart::addIsEstimated(bool val) {
       \param[in] int ind
 
       This function assigns the index
-      in SimvascularVerdandiModel::duplicated_state_
-      that is used by SimvascularVerdandiModel::GetState()
-      and SimvascularVerdandiModel::StateUpdated()
+      in CrimsonVerdandiModel::duplicated_state_
+      that is used by CrimsonVerdandiModel::GetState()
+      and CrimsonVerdandiModel::StateUpdated()
  */
-void SimvascularAugStatePart::addDuplicatedStateIndex(int ind) {
+void CrimsonAugStatePart::addDuplicatedStateIndex(int ind) {
 	duplicated_state_indices_.push_back(ind);
 }
 
@@ -77,7 +77,7 @@ void SimvascularAugStatePart::addDuplicatedStateIndex(int ind) {
       This function assigns a pointer
       to a specific location in the internal array of pointers.
  */
-void SimvascularAugStatePart::setDataPointer(int position, double* data_pointer) {
+void CrimsonAugStatePart::setDataPointer(int position, double* data_pointer) {
 	pointers_[position] = data_pointer;
 }
 
@@ -95,7 +95,7 @@ void SimvascularAugStatePart::setDataPointer(int position, double* data_pointer)
       assigned value is pow(2.0,val), i.e.
       the estimated quantity is re-parameterized.
  */
-void SimvascularAugStatePart::setData(int position, double val) {
+void CrimsonAugStatePart::setData(int position, double val) {
 	is_estimated_[position] ? *(pointers_[position]) = pow(2.0,val)/premulconst_ : *(pointers_[position]) = val/premulconst_;
 }
 
@@ -110,7 +110,7 @@ void SimvascularAugStatePart::setData(int position, double val) {
       at the specified position.
 
  */
-void SimvascularAugStatePart::setIsEstimated(int position, bool val) {
+void CrimsonAugStatePart::setIsEstimated(int position, bool val) {
 	is_estimated_[position] = val;
 }
 
@@ -122,7 +122,7 @@ void SimvascularAugStatePart::setIsEstimated(int position, bool val) {
       for the constant that is multiplied
       to the output of getData().
  */
-void SimvascularAugStatePart::setPremulConstant(double val) {
+void CrimsonAugStatePart::setPremulConstant(double val) {
 	premulconst_ = val;
 }
 
@@ -135,7 +135,7 @@ void SimvascularAugStatePart::setPremulConstant(double val) {
       Use this function to provide external access
       to the pointers_ array.
  */
-double * SimvascularAugStatePart::getDataPointer(int position) {
+double * CrimsonAugStatePart::getDataPointer(int position) {
 	return pointers_[position];
 }
 
@@ -148,7 +148,7 @@ double * SimvascularAugStatePart::getDataPointer(int position) {
       If the associated is_estimated_ flag is true
       then the return value is actually log2 of the internal value.
  */
-double SimvascularAugStatePart::getData(int position) {
+double CrimsonAugStatePart::getData(int position) {
 	return is_estimated_[position] ? log2((*pointers_[position])*premulconst_) : (*pointers_[position])*premulconst_;
 }
 
@@ -157,7 +157,7 @@ double SimvascularAugStatePart::getData(int position) {
  *    This function returns
  *    the value of the multiplier constant
  */
-double SimvascularAugStatePart::getPremulConstant() {
+double CrimsonAugStatePart::getPremulConstant() {
 	return premulconst_;
 }
 
@@ -168,7 +168,7 @@ double SimvascularAugStatePart::getPremulConstant() {
       This returns the value of the is_estimated_
       flag at a specified position
  */
-bool SimvascularAugStatePart::getIsEstimated(int position) {
+bool CrimsonAugStatePart::getIsEstimated(int position) {
 	return is_estimated_[position];
 }
 
@@ -179,7 +179,7 @@ bool SimvascularAugStatePart::getIsEstimated(int position) {
       This returns the duplicated state index
       at a specified position
  */
-int SimvascularAugStatePart::getDuplicatedStateIndex(int position) const {
+int CrimsonAugStatePart::getDuplicatedStateIndex(int position) const {
 	return duplicated_state_indices_[position];
 }
 
@@ -190,7 +190,7 @@ int SimvascularAugStatePart::getDuplicatedStateIndex(int position) const {
  *    This function returns the size of the
  *    internal pointers_ vector
  */
-std::size_t SimvascularAugStatePart::getSize() const {
+std::size_t CrimsonAugStatePart::getSize() const {
 	return pointers_.size();
 }
 
@@ -202,7 +202,7 @@ std::size_t SimvascularAugStatePart::getSize() const {
  *    number of estimated variables in
  *    the augmented state component
  */
-unsigned int SimvascularAugStatePart::getNumEstimated() {
+unsigned int CrimsonAugStatePart::getNumEstimated() {
 	unsigned int sum_of_elems=0;
 	for(std::vector<bool>::iterator j=is_estimated_.begin();j!=is_estimated_.end();++j)
 	    sum_of_elems += *j;
@@ -217,7 +217,7 @@ unsigned int SimvascularAugStatePart::getNumEstimated() {
  *    variable
  *    in the augmented state component
  */
-int SimvascularAugStatePart::getFirstEstimated() {
+int CrimsonAugStatePart::getFirstEstimated() {
 	std::vector<bool>::iterator j;
 	int k;
 	for(j=is_estimated_.begin(), k = 0;j!=is_estimated_.end();j++,k++) {
@@ -235,7 +235,7 @@ int SimvascularAugStatePart::getFirstEstimated() {
  *    Returns the name
  *    of the augmented state component
  */
-std::string SimvascularAugStatePart::getName() const {
+std::string CrimsonAugStatePart::getName() const {
     return name_;
 }
 
@@ -246,7 +246,7 @@ std::string SimvascularAugStatePart::getName() const {
  *    the multiplying constant to 1.0
  *
  */
-void SimvascularAugStatePart::Clear() {
+void CrimsonAugStatePart::Clear() {
 	pointers_.clear();
 	is_estimated_.clear();
 	premulconst_ = 1.0;

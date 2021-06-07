@@ -39,8 +39,8 @@
 #include "seldon/vector/PetscVector.cxx"
 #include "seldon/matrix/PetscMatrix.cxx"
 
-#include "SimvascularVerdandiModel.cxx"
-#include "SimvascularObservationManager.cxx"
+#include "CrimsonVerdandiModel.cxx"
+#include "CrimsonObservationManager.cxx"
 #include "method/ReducedOrderUnscentedKalmanFilter.cxx"
 
 #include "ROUKFModified.cxx"
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
 
     cout << input_filename.substr(input_filename.find_last_of("\\/")+1,input_filename.length()-1) << endl;
 
-    ROUKFModified<double,SimvascularVerdandiModel, SimvascularObservationManager> driver;
+    ROUKFModified<double,CrimsonVerdandiModel, CrimsonObservationManager> driver;
 
     driver.Initialize(argv[1], true);
 

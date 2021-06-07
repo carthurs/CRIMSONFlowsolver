@@ -1,5 +1,5 @@
-#ifndef VERDANDI_FILE_MODEL_SimvascularVerdandiModel_HXX
-#define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_HXX
+#ifndef VERDANDI_FILE_MODEL_CrimsonVerdandiModel_HXX
+#define VERDANDI_FILE_MODEL_CrimsonVerdandiModel_HXX
 
 #include "mpi.h"
 
@@ -28,17 +28,17 @@
 #include "multidom.hxx"
 #include "itrPC.h"
 
-#include "SimvascularGlobalArrayTransfer.h"
+#include "CrimsonGlobalArrayTransfer.h"
 
-#include "SimvascularAugStatePart.h"
+#include "CrimsonAugStatePart.h"
 
 
 namespace Verdandi
 {
-//! This class is the "model" interface for the simvascular/phasta flowsolver
+//! This class is the "model" interface for the Crimson flowsolver
 //! to the Verdandi data assimilation library.
 //! It provides the necessary member functions for the Reduced Order Unscented Kalman Filter driver.
-class SimvascularVerdandiModel: public VerdandiBase
+class CrimsonVerdandiModel: public VerdandiBase
 {
 public:
 	//! The numerical type (e.g., double).
@@ -68,16 +68,16 @@ protected:
 	state duplicated_state_;
 
 	//! Vector of distributed augmented state components
-	std::vector<SimvascularAugStatePart> dstrb_parts_;
+	std::vector<CrimsonAugStatePart> dstrb_parts_;
 
 	//! Vector of non-distributed augmented state components
-	std::vector<SimvascularAugStatePart> shared_parts_;
+	std::vector<CrimsonAugStatePart> shared_parts_;
 
 	//! Map allowing access to distributed augmented state components by name
-	std::map<std::string,SimvascularAugStatePart*> dstrb_parts_map_;
+	std::map<std::string,CrimsonAugStatePart*> dstrb_parts_map_;
 
 	//! Map allowing access to non-distributed augmented state components by name
-	std::map<std::string,SimvascularAugStatePart*> shared_parts_map_;
+	std::map<std::string,CrimsonAugStatePart*> shared_parts_map_;
 
 	//! Estimation error covariance diagonal values
 	std::vector<double> state_error_variance_value_;
@@ -102,8 +102,8 @@ protected:
 	//! Flags to denote that individual CPP Windkessel-RCR R1 are estimated
 	std::vector<int> cp_rcr_include_distal_resistance_cpp_;
 
-	//! Pointer to the singleton instance of SimvascularGlobalArrayTransfer
-	SimvascularGlobalArrayTransfer *gat;
+	//! Pointer to the singleton instance of CrimsonGlobalArrayTransfer
+	CrimsonGlobalArrayTransfer *gat;
 
 	//! Dynamic start
 	int dynamic_start_;
@@ -190,10 +190,10 @@ protected:
 public:
 
 	//! Constructor.
-	SimvascularVerdandiModel();
+	CrimsonVerdandiModel();
 
 	//! Destructor.
-	~SimvascularVerdandiModel();
+	~CrimsonVerdandiModel();
 
 	//! Initializes the model.
 	void Initialize(string configuration_file);
@@ -201,7 +201,7 @@ public:
 	//! Initializes the model.
 	void Initialize();
 
-	//! Organizes the array pointers from simvascular
+	//! Organizes the array pointers from Crimson
 	void BuildAugmentedState();
 
 	//! Initializes the first time step for the model.
@@ -267,10 +267,10 @@ public:
 
 
 	//! Return pointer to vector of distributed augmented state components
-	SimvascularAugStatePart& GetAugStateDstrb(std::string name) const;
+	CrimsonAugStatePart& GetAugStateDstrb(std::string name) const;
 
 	//! Return pointer to vector of shared augmented state components
-	SimvascularAugStatePart& GetAugStateShared(std::string name) const;
+	CrimsonAugStatePart& GetAugStateShared(std::string name) const;
 
 	//! Write only the estimated parameters to file
 	void WriteEstimates();

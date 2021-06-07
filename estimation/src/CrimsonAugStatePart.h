@@ -1,5 +1,5 @@
-#ifndef SimvascularAugStatePart_HXX
-#define SimvascularAugStatePart_HXX
+#ifndef CrimsonAugStatePart_HXX
+#define CrimsonAugStatePart_HXX
 
 #include <string>
 #include <vector>
@@ -7,15 +7,15 @@
 
 //! This class organizes the pointers to the PHASTA arrays
 //! into augmented state components
-class SimvascularAugStatePart
+class CrimsonAugStatePart
 {
 public:
 
 	//! Constructor.
-	SimvascularAugStatePart();
+	CrimsonAugStatePart();
 
 	//! Destructor
-	~SimvascularAugStatePart();
+	~CrimsonAugStatePart();
 
 	//! Initialize with a name
 	void Initialize(const std::string& setname);

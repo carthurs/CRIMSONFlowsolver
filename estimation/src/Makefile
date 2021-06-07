@@ -9,7 +9,7 @@ FFLAGS   = $(GLOBAL_FFLAGS) $(MPI_INCDIR) $(METIS_INCDIR)
 
 HDRS  =   
 
-CXXSRCS  = SimvascularGlobalArrayTransfer.cxx SimvascularAugStatePart.cxx
+CXXSRCS  = CrimsonGlobalArrayTransfer.cxx CrimsonAugStatePart.cxx
 CXXSRCS1 = ROUKF_flowsolver.cxx $(CXXSRCS)
 CXXSRCS2 = forwardandobserve.cxx $(CXXSRCS)
 CXXSRCS3 = main.cxx $(CXXSRCS) 

@@ -1,7 +1,7 @@
-#ifndef VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
-#define VERDANDI_FILE_MODEL_SimvascularVerdandiModel_CXX
+#ifndef VERDANDI_FILE_MODEL_CrimsonVerdandiModel_CXX
+#define VERDANDI_FILE_MODEL_CrimsonVerdandiModel_CXX
 
-#include "SimvascularVerdandiModel.hxx"
+#include "CrimsonVerdandiModel.hxx"
 #include "BoundaryConditionManager.hxx"
 #include <boost/algorithm/string.hpp>
 
@@ -32,11 +32,11 @@ namespace Verdandi {
 
 
 /*
- *    This is the default constructor for SimvascularVerdandiModel.
+ *    This is the default constructor for CrimsonVerdandiModel.
  *    Currently, it sets initial values for the
  *    data members.
  */
-SimvascularVerdandiModel::SimvascularVerdandiModel()
+CrimsonVerdandiModel::CrimsonVerdandiModel()
 :   gat(NULL),
     dynamic_start_(0),
     event_started_(0),
@@ -64,9 +64,9 @@ SimvascularVerdandiModel::SimvascularVerdandiModel()
 
 
 /*
- *    This is the default destructor for SimvascularVerdandiModel.
+ *    This is the default destructor for CrimsonVerdandiModel.
  */
-SimvascularVerdandiModel::~SimvascularVerdandiModel() {
+CrimsonVerdandiModel::~CrimsonVerdandiModel() {
 	Eoutfile_.close();
 	//MPI_Finalize();
 }
@@ -85,11 +85,11 @@ SimvascularVerdandiModel::~SimvascularVerdandiModel() {
       and reads in configuration settings for the model.
       It then calls the default Initialize.
  */
-void SimvascularVerdandiModel::Initialize(string configuration_file) {
+void CrimsonVerdandiModel::Initialize(string configuration_file) {
 
 	VerdandiOps configuration(configuration_file);
 
-	configuration.SetPrefix("simvascular_model.");
+	configuration.SetPrefix("crimson_model.");
 	configuration.Set("state_reduced_has_wall_parameters",nreduced_has_wall_parameters_);
 	configuration.Set("state_reduced_has_coupled_parameters",nreduced_has_coupled_parameters_);
 
@@ -141,12 +141,12 @@ void SimvascularVerdandiModel::Initialize(string configuration_file) {
       and the estimated part of the augmented state
       are tabulated.
  */
-void SimvascularVerdandiModel::Initialize() {
+void CrimsonVerdandiModel::Initialize() {
 
 	char pathToProcsCaseDir[100];
 
-	// Get pointer to the single instance of SimvascularGlobalArrayTransfer
-	gat = SimvascularGlobalArrayTransfer::Get();
+	// Get pointer to the single instance of CrimsonGlobalArrayTransfer
+	gat = CrimsonGlobalArrayTransfer::Get();
 
 	// save the communicator
 	iNewComm_C_ = MPI_COMM_WORLD;
@@ -196,21 +196,21 @@ void SimvascularVerdandiModel::Initialize() {
 
     itrdrv_init(); // initialize solver
 
-    // organize the arrays from PHASTA into the SimvascularAugStatePart class
+    // organize the arrays from PHASTA into the CrimsonAugStatePart class
     BuildAugmentedState();
 
     int estimated_total = 0, state_total = 0;
 
     std::cout << "at rank " << rank_ << " number of states " << dstrb_parts_.size() << std::endl;
 
-    for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
+    for(std::vector<CrimsonAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
     	std::cout << "at rank " << rank_ << " " << it->getName().c_str() << " " << it->getSize() <<  std::endl;
     	state_total += (int)it->getSize();
     }
 
     if (rank_ == numProcs_ - 1) {
 
-    	for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
+    	for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
     		std::cout << "at rank " << rank_ << " " << it->getName().c_str() << " " << it->getSize() << std::endl;
 
     		int first_estimated = it->getFirstEstimated();
@@ -223,7 +223,7 @@ void SimvascularVerdandiModel::Initialize() {
     	}
     }
 
-    for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+    for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
     	shared_parts_size_ += it->getSize();
 
     Nstate_local_ = state_total; // the size of the on-proc duplicated_state_
@@ -259,12 +259,12 @@ void SimvascularVerdandiModel::Initialize() {
 
 	icounter = state_start;
 
-	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+	for(std::vector<CrimsonAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
 		for (std::size_t jj = 0; jj < it->getSize(); jj++)
 			it->addDuplicatedStateIndex(icounter++);
 
 	if (rank_ == numProcs_ - 1)
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				it->addDuplicatedStateIndex(icounter++);
 
@@ -288,14 +288,14 @@ void SimvascularVerdandiModel::Initialize() {
 
 }
 
-void SimvascularVerdandiModel::setupNetlistFiltering() {
+void CrimsonVerdandiModel::setupNetlistFiltering() {
 	std::map<std::string, double*> filteredNetlistParameters = gat->getRawPointersToNetlistParameters();
 	for (std::pair<std::string, double*> filteredParameter : filteredNetlistParameters)
 	{
 		std::string filteredParameterName = filteredParameter.first;
 		double* filteredParameterPointer = filteredParameter.second;
 		
-		SimvascularAugStatePart state_part;
+		CrimsonAugStatePart state_part;
 		state_part.Initialize(filteredParameterName.c_str());
 		state_part.addDataPointer(filteredParameterPointer);
 		state_part.addIsEstimated(1);
@@ -310,12 +310,12 @@ void SimvascularVerdandiModel::setupNetlistFiltering() {
  *    build up the augmented state.
  *    Specifically, it populates
  *    the dstrb_parts_ and shared_parts_ vectors
- *    with SimvascularAugStatePart instances,
+ *    with CrimsonAugStatePart instances,
  *    corresponding to various PHASTA Fortran arrays.
  */
-void SimvascularVerdandiModel::BuildAugmentedState() {
+void CrimsonVerdandiModel::BuildAugmentedState() {
 
-	SimvascularAugStatePart state_part;
+	CrimsonAugStatePart state_part;
 
 	// velocity and pressure field
 	// here we are loop through the nodes only on this processor, i.e. unique/not shared
@@ -427,12 +427,12 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 
 	try {
-		for (std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
 		{
 			dstrb_parts_map_.insert(std::make_pair(it->getName(), &(*it)));
 		}
 	
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 		{
 			shared_parts_map_.insert(std::make_pair(it->getName(), &(*it)));
 		}
@@ -445,7 +445,7 @@ void SimvascularVerdandiModel::BuildAugmentedState() {
 
 // see also initialiseFortranRCRFiltering() .It depends which impementation (Cpp or Fortran)
 // of the same thing you're using.
-void SimvascularVerdandiModel::initialiseCppRCRFiltering() {
+void CrimsonVerdandiModel::initialiseCppRCRFiltering() {
 	if (cp_rcr_estimate_compliance_cpp_) {
 		addParameterForEstimation("Cpp RCR C", "WindkesselRCR_Params_Cpp", grcrbccom.numGRCRSrfs, 1, 3, cp_rcr_include_compliance_cpp_);
 	}
@@ -460,8 +460,8 @@ void SimvascularVerdandiModel::initialiseCppRCRFiltering() {
 
 }
 
-void SimvascularVerdandiModel::addParameterForEstimation(const char* parameterTypeName, const char* parameterArrayKeyInGlobalArrayTransfer, const int numberOfParametersToAdd, const int offsetOfPointerInArray, const int strideBetweenPointers, const std::vector<int> includeParameterFlag) {
-	SimvascularAugStatePart state_part;
+void CrimsonVerdandiModel::addParameterForEstimation(const char* parameterTypeName, const char* parameterArrayKeyInGlobalArrayTransfer, const int numberOfParametersToAdd, const int offsetOfPointerInArray, const int strideBetweenPointers, const std::vector<int> includeParameterFlag) {
+	CrimsonAugStatePart state_part;
 
 	state_part.Initialize(parameterTypeName);
 	for(int parIdx = 0; parIdx < numberOfParametersToAdd; parIdx++) {
@@ -485,8 +485,8 @@ void SimvascularVerdandiModel::addParameterForEstimation(const char* parameterTy
 
 // see also initialiseCppRCRFiltering() .It depends which impementation (Cpp or Fortran)
 // of the same thing you're using.
-void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
-	SimvascularAugStatePart state_part;
+void CrimsonVerdandiModel::initialiseFortranRCRFiltering() {
+	CrimsonAugStatePart state_part;
 	// for RCR C
 	if (cp_rcr_estimate_compliance_) {
 
@@ -574,9 +574,9 @@ void SimvascularVerdandiModel::initialiseFortranRCRFiltering() {
 // Adds the non-parameter LPN state values to the filtered state vector
 // (because the kalman filter does combined state-parameter estimation, this is necessary
 // despite the fact that we're not /estimating/ these internal netlist LPN state variables)
-void SimvascularVerdandiModel::initialiseNetlistFiltering()
+void CrimsonVerdandiModel::initialiseNetlistFiltering()
 {
-	SimvascularAugStatePart state_part;
+	CrimsonAugStatePart state_part;
 	state_part.Initialize("NetlistCapacitorPressureNodes");
 	std::vector<double*> netlistCapacitorNodalHistoryPressurePointers = BoundaryConditionManager::Instance()->getPointersToAllNetlistCapacitorNodalHistoryPressures();
 	for (auto nodalPressureSharedPointer : netlistCapacitorNodalHistoryPressurePointers)
@@ -591,9 +591,9 @@ void SimvascularVerdandiModel::initialiseNetlistFiltering()
 	state_part.Clear();
 }
 
-void SimvascularVerdandiModel::initialiseHeartModelFiltering() 
+void CrimsonVerdandiModel::initialiseHeartModelFiltering() 
 {
-	SimvascularAugStatePart state_part;
+	CrimsonAugStatePart state_part;
     // for heart model EMax 
 	if (cp_hrt_estimate_emax_) {
 
@@ -654,7 +654,7 @@ void SimvascularVerdandiModel::initialiseHeartModelFiltering()
  *    to initalize the first time step
  *    of the model should go here.
  */
-void SimvascularVerdandiModel::InitializeFirstStep() {
+void CrimsonVerdandiModel::InitializeFirstStep() {
 
 }
 
@@ -664,7 +664,7 @@ void SimvascularVerdandiModel::InitializeFirstStep() {
  *    to initialize a time step
  *    should go here.
  */
-void SimvascularVerdandiModel::InitializeStep() {
+void CrimsonVerdandiModel::InitializeStep() {
 
 	// if dynamic_start_ is true and event_started_ is false
 	// and the heart valve is opened, event_started_ is set to true
@@ -688,7 +688,7 @@ void SimvascularVerdandiModel::InitializeStep() {
  *    Currently, this calls the finalize
  *    portion of the itrdrv Fortran routine
  */
-void SimvascularVerdandiModel::Finalize() {
+void CrimsonVerdandiModel::Finalize() {
 
 	itrdrv_finalize();
 	multidom_finalise();
@@ -708,7 +708,7 @@ void SimvascularVerdandiModel::Finalize() {
  *    \f[X_{k+1} = A_k(X_k, \theta_k)\,.\f]
  *
  */
-void SimvascularVerdandiModel::Forward() {
+void CrimsonVerdandiModel::Forward() {
 
 	itrdrv_iter_init();
 
@@ -725,7 +725,7 @@ void SimvascularVerdandiModel::Forward() {
  *    to allow moving on to the
  *    next time step
  */
-void SimvascularVerdandiModel::FinalizeStep() {
+void CrimsonVerdandiModel::FinalizeStep() {
 
 	if(dynamic_start_ && event_started_){
 		time_shifted_++;
@@ -752,7 +752,7 @@ void SimvascularVerdandiModel::FinalizeStep() {
       Previously the name loop control
       was done entirely in itrdrv.
  */
-bool SimvascularVerdandiModel::HasFinished() const {
+bool CrimsonVerdandiModel::HasFinished() const {
 
 	return timdat.istep >= inpdat.nstep[0];
 }
@@ -785,7 +785,7 @@ bool SimvascularVerdandiModel::HasFinished() const {
       to ApplyOperator will happen (i.e., multiple particles)
       before we will finalize the time step.
  */
-void SimvascularVerdandiModel::ApplyOperator(state& x,
+void CrimsonVerdandiModel::ApplyOperator(state& x,
 		bool forward, bool preserve_state) {
 
 	//double saved_time = 0;
@@ -841,7 +841,7 @@ void SimvascularVerdandiModel::ApplyOperator(state& x,
 /*!
       \return: The current time in the model.
  */
-double SimvascularVerdandiModel::GetTime() const {
+double CrimsonVerdandiModel::GetTime() const {
 	if(!dynamic_start_){
 		return (double)(timdat.currentTimestepIndex);
 	} else {
@@ -858,8 +858,8 @@ double SimvascularVerdandiModel::GetTime() const {
 /*!
       \param[in] time a given time.
  */
-void SimvascularVerdandiModel::SetTime(double time) {
-	throw ErrorUndefined("SimvascularVerdandiModel"
+void CrimsonVerdandiModel::SetTime(double time) {
+	throw ErrorUndefined("CrimsonVerdandiModel"
 			"::SetTime(double time)");
 }
 
@@ -868,7 +868,7 @@ void SimvascularVerdandiModel::SetTime(double time) {
 /*!
       \return The augmented state vector size.
  */
-int SimvascularVerdandiModel::GetNstate() const {
+int CrimsonVerdandiModel::GetNstate() const {
 	return Nstate_;
 }
 
@@ -877,7 +877,7 @@ int SimvascularVerdandiModel::GetNstate() const {
 /*!
       \return The size of the local augmented state vector.
  */
-int SimvascularVerdandiModel::GetLocalNstate() const {
+int CrimsonVerdandiModel::GetLocalNstate() const {
 	return Nstate_local_;
 }
 
@@ -885,7 +885,7 @@ int SimvascularVerdandiModel::GetLocalNstate() const {
 /*!
       \return The starting index of the local reduced state vector.
  */
-int SimvascularVerdandiModel::GetLocalReducedStart() const {
+int CrimsonVerdandiModel::GetLocalReducedStart() const {
 	return state_reduced_start_local_;
 }
 
@@ -906,13 +906,13 @@ int SimvascularVerdandiModel::GetLocalReducedStart() const {
       It then returns a reference to the
       update duplicated_state_.
  */
-SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
+CrimsonVerdandiModel::state& CrimsonVerdandiModel::GetState() {
 
 	if (rank_ == 0)
 		std::cout << "getting state ";
 
 	// bool onceOnly = true;
-	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
+	for(std::vector<CrimsonAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it) {
 		//cout << it->getName() << endl;
 		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
 		{
@@ -929,7 +929,7 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
 	}
 
 	if (rank_ == numProcs_ - 1)
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it) {
 			for (std::size_t jj = 0; jj < it->getSize(); ++jj)
 			{
 				std::cout << " in GetSTate(): " << it->getName() << " value " << it->getData((int)jj) <<  std::endl;
@@ -957,7 +957,7 @@ SimvascularVerdandiModel::state& SimvascularVerdandiModel::GetState() {
  *    PHASTA Fortran arrays via the pointers
  *    stored in dstrb_parts_ and shared_parts_.
  */
-void SimvascularVerdandiModel::StateUpdated() {
+void CrimsonVerdandiModel::StateUpdated() {
 
 	if (rank_ == 0)
 	{
@@ -965,7 +965,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 	}
 
 	// bool onceOnly = true;
-	for(std::vector<SimvascularAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
+	for(std::vector<CrimsonAugStatePart>::iterator it = dstrb_parts_.begin(); it != dstrb_parts_.end(); ++it)
 	{
 		for (std::size_t jj = 0; jj < it->getSize(); ++jj)
 		{
@@ -985,7 +985,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 	int tcounter = 0;
 
 	if (rank_ == numProcs_ - 1) {
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 		{
 			for (std::size_t jj = 0; jj < it->getSize(); jj++) {
 				it->setData( (int)jj, duplicated_state_( it->getDuplicatedStateIndex((int)jj) ) );
@@ -1003,7 +1003,7 @@ void SimvascularVerdandiModel::StateUpdated() {
 		MPI_Bcast(tempArray, shared_parts_size_, MPI_DOUBLE, numProcs_-1, iNewComm_C_);
 
 		tcounter = 0;
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				*it->getDataPointer((int)jj) = tempArray[tcounter++];
 	}
@@ -1031,7 +1031,7 @@ void SimvascularVerdandiModel::StateUpdated() {
       \param[out] U the matrix \f$U\f$.
  */
 template <class L_matrix, class U_matrix>
-void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U) {
+void CrimsonVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& U) {
 
 	// L is distributed across processes (since one of its dimensions is Nstate)
 	// but U is on every processes (dimensions of Nparameter)
@@ -1046,7 +1046,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 
 		int ncounter = 0;
 
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				if (it->getIsEstimated((int)jj)) {
 					L.SetBuffer(start_ind_local + state_reduced_start_local_ + ncounter, ncounter, double(1));
@@ -1090,7 +1090,7 @@ void SimvascularVerdandiModel::GetStateErrorVarianceSqrt(L_matrix& L, U_matrix& 
 /*!
       \return The pointer to distributed state parts
  */
-SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateDstrb(std::string name) const {
+CrimsonAugStatePart& CrimsonVerdandiModel::GetAugStateDstrb(std::string name) const {
 
     try {
     	return *dstrb_parts_map_.at(name);
@@ -1104,7 +1104,7 @@ SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateDstrb(std::string 
 /*!
       \return The pointer to shared state parts
  */
-SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateShared(std::string name) const {
+CrimsonAugStatePart& CrimsonVerdandiModel::GetAugStateShared(std::string name) const {
 
     try {
     	return *shared_parts_map_.at(name);
@@ -1121,7 +1121,7 @@ SimvascularAugStatePart& SimvascularVerdandiModel::GetAugStateShared(std::string
  *    only the part of augmented state that is estimated
  *    (i.e., the parameters).
  */
-void SimvascularVerdandiModel::WriteEstimates() {
+void CrimsonVerdandiModel::WriteEstimates() {
 	// write down the parameter values in a file
 	//int state_start, state_end;
 
@@ -1131,7 +1131,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 
 		int ncounter = 0;
 
-		for (std::vector<SimvascularAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
+		for (std::vector<CrimsonAugStatePart>::iterator it = shared_parts_.begin(); it != shared_parts_.end(); ++it)
 			for (std::size_t jj = 0; jj < it->getSize(); jj++)
 				if (it->getIsEstimated((int)jj)) {
 					Eoutfile_ << *it->getDataPointer((int)jj) << " ";
@@ -1147,7 +1147,7 @@ void SimvascularVerdandiModel::WriteEstimates() {
 /*!
       \return The number of MPI processes.
  */
-int SimvascularVerdandiModel::GetNumProcs() const {
+int CrimsonVerdandiModel::GetNumProcs() const {
     return numProcs_;
 }
 
@@ -1155,7 +1155,7 @@ int SimvascularVerdandiModel::GetNumProcs() const {
 /*!
       \return The rank of the MPI process
  */
-int SimvascularVerdandiModel::GetRank() const {
+int CrimsonVerdandiModel::GetRank() const {
 	return rank_;
 }
 
@@ -1164,9 +1164,9 @@ int SimvascularVerdandiModel::GetRank() const {
 /*!
       \return The name of this class
  */
-string SimvascularVerdandiModel::GetName() const {
+string CrimsonVerdandiModel::GetName() const {
 
-	return "SimvascularVerdandiModel";
+	return "CrimsonVerdandiModel";
 }
 
 
@@ -1174,7 +1174,7 @@ string SimvascularVerdandiModel::GetName() const {
 /*
       \param[in] message the received message.
  */
-void SimvascularVerdandiModel::Message(string message) {
+void CrimsonVerdandiModel::Message(string message) {
 
 	// Put here any processing you need.
 }

@@ -1,5 +1,5 @@
-#ifndef SIMVASCULAROBSERVATIONMANAGER_HXX
-#define SIMVASCULAROBSERVATIONMANAGER_HXX
+#ifndef CrimsonObservationManager_HXX
+#define CrimsonObservationManager_HXX
 
 #include <limits>
 #include <iostream>
@@ -35,7 +35,7 @@
 namespace Verdandi {
 
 //! This is the base class for the different types of observations
-class SimvascularObservationType {
+class CrimsonObservationType {
 
 public:
 
@@ -71,8 +71,8 @@ protected:
 	//! Output file stream
 	std::ofstream data_file_out_;
 
-	//! Pointer to the single instance of SimvascularGlobalArrayTransfer
-	SimvascularGlobalArrayTransfer *gat;
+	//! Pointer to the single instance of CrimsonGlobalArrayTransfer
+	CrimsonGlobalArrayTransfer *gat;
 
 	//! Number of observations on this process
 	int Nobservation_local_;
@@ -95,13 +95,13 @@ protected:
 public:
 
 	//! Constructor
-	SimvascularObservationType();
+	CrimsonObservationType();
 
 	//! Destructor
-	~SimvascularObservationType();
+	~CrimsonObservationType();
 
 	//! Initialization
-	virtual void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration) = 0;
+	virtual void Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration) = 0;
 
 	//! Apply the observation operator
 	virtual void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const = 0;
@@ -123,43 +123,43 @@ public:
 
 };
 
-class SimvascularNodalSolutionObservation : public SimvascularObservationType {
+class CrimsonNodalSolutionObservation : public CrimsonObservationType {
 protected:
 public:
 
 	//! Constructor
-	SimvascularNodalSolutionObservation();
+	CrimsonNodalSolutionObservation();
 
 	//! Destructor
-	~SimvascularNodalSolutionObservation();
+	~CrimsonNodalSolutionObservation();
 
 	//! Initialization
-	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+	void Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration);
 
 	//! Apply the observation operator
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
 
-class SimvascularNodalDisplacementObservation : public SimvascularObservationType {
+class CrimsonNodalDisplacementObservation : public CrimsonObservationType {
 protected:
 public:
 
 	//! Constructor
-	SimvascularNodalDisplacementObservation();
+	CrimsonNodalDisplacementObservation();
 
 	//! Destructor
-	~SimvascularNodalDisplacementObservation();
+	~CrimsonNodalDisplacementObservation();
 
 	//! Initialization
-	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+	void Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration);
 
 	//! Apply the observation operator
 	void ApplyOperator(const state&x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
 
-class SimvascularDistanceObservation : public SimvascularObservationType {
+class CrimsonDistanceObservation : public CrimsonObservationType {
 protected:
 
 	//! Indices in the duplicated state vector for the distance field
@@ -167,20 +167,20 @@ protected:
 public:
 
 	//! Constructor
-	SimvascularDistanceObservation();
+	CrimsonDistanceObservation();
 
 	//! Destructor
-	~SimvascularDistanceObservation();
+	~CrimsonDistanceObservation();
 
 	//! Initialization
-	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+	void Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration);
 
 	//! Apply the observation operator
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
 
 };
 
-class SimvascularFlowPressObservation : public SimvascularObservationType {
+class CrimsonFlowPressObservation : public CrimsonObservationType {
 protected:
 
 	//! Origins of the cut planes
@@ -229,13 +229,13 @@ protected:
 public:
 
     //! Constructor
-	SimvascularFlowPressObservation();
+	CrimsonFlowPressObservation();
 
 	//! Destructor
-	~SimvascularFlowPressObservation();
+	~CrimsonFlowPressObservation();
 
 	//! Initialization
-	void Initialize(std::string name, const SimvascularAugStatePart &aug_state_part, VerdandiOps &configuration);
+	void Initialize(std::string name, const CrimsonAugStatePart &aug_state_part, VerdandiOps &configuration);
 
 	//! Apply the observation operator
 	void ApplyOperator(const state& x, observation& Hx1, observation& Hx2, int obs_start_index) const;
@@ -243,11 +243,11 @@ public:
 };
 
 ///////////////////////////////////
-// SIMVASCULAROBSERVATIONMANAGER //
+// CrimsonObservationManager //
 ///////////////////////////////////
 
-//! This class is an observation manager for the Simvascular flowsolver.
-class SimvascularObservationManager: public VerdandiBase {
+//! This class is an observation manager for the Crimson flowsolver.
+class CrimsonObservationManager: public VerdandiBase {
 
 public:
 
@@ -274,8 +274,8 @@ protected:
 
 	/*** Observation file structure ***/
 
-	std::vector <SimvascularObservationType*> observations_dstrb_;
-	std::vector <SimvascularObservationType*> observations_single_;
+	std::vector <CrimsonObservationType*> observations_dstrb_;
+	std::vector <CrimsonObservationType*> observations_single_;
 
 	//! Directory that stores the forward results.
 	std::string data_directory_;
@@ -356,8 +356,8 @@ protected:
     //! Upper value for linear interpolation
     int current_upper_bound_;
 
-    //! pointer to the single instance of SimvascularGlobalArrayTransfer
-	SimvascularGlobalArrayTransfer *gat;
+    //! pointer to the single instance of CrimsonGlobalArrayTransfer
+	CrimsonGlobalArrayTransfer *gat;
 
     //! Arrays for linear interpolation
     Vector<double> dataarrays_lower_;
@@ -374,10 +374,10 @@ protected:
 public:
 
 	//! Default constructor.
-	SimvascularObservationManager();
+	CrimsonObservationManager();
 
 	//! Destructor.
-	~SimvascularObservationManager();
+	~CrimsonObservationManager();
 
 	/*** Initialization ***/
 

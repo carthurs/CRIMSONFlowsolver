@@ -66,9 +66,9 @@ int main(int argc, char **argv) {
    expiryDate expiry = expiryDate();
    expiry.setExpiryDayOfMonth(31);
    expiry.setExpiryMonthOfYear(12);
-   expiry.setExpiryYear(2021);
+   expiry.setExpiryYear(2022);
    // UNCOMMENT TO DO A BUILD WITH AN EXPIRY DATE!
-   // expiry.enableExpiryDate();
+   expiry.enableExpiryDate();
    expiry.checkWhetherExpiryDatePassed();
 
    if ( argc < 2 ) {

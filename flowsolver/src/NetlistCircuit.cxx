@@ -2,7 +2,7 @@
 #include "fileReaders.hxx"
 #include "fileWriters.hxx"
 #include "indexShifters.hxx"
-#include "SimvascularGlobalArrayTransfer.h"
+#include "CrimsonGlobalArrayTransfer.h"
 
 void NetlistCircuit::initialisePetscArrayNames()
 {
@@ -251,7 +251,7 @@ void NetlistCircuit::createBasicCircuitDescription()
 
         // Kalman filtering setup
         {
-            SimvascularGlobalArrayTransfer* gat = SimvascularGlobalArrayTransfer::Get();
+            CrimsonGlobalArrayTransfer* gat = CrimsonGlobalArrayTransfer::Get();
             // see if the component's index is on the list of Kalman-filtered components:
             if (retrievedKalmanFilteredComponentIndices.count((*component)->getIndex()) == 1)
             {

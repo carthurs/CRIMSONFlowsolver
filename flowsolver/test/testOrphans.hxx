@@ -10,7 +10,7 @@
 #include <typeinfo>
 #include "debuggingToolsForCpp.hxx"
 #include <boost/shared_ptr.hpp>
-#include "SimvascularGlobalArrayTransfer.h"
+#include "CrimsonGlobalArrayTransfer.h"
 #include "mpi.h"
 
 	// The fixture for testing class Foo.
@@ -91,7 +91,7 @@
 	    NetlistXmlReader::Term();
 	    boundaryConditionManager_instance->Term();
 	    fortranPointerManager_instance->tearDown();
-	    SimvascularGlobalArrayTransfer::Get()->tearDown();
+	    CrimsonGlobalArrayTransfer::Get()->tearDown();
 	  }
 
 	  void overrideMissingDataForTesting() {

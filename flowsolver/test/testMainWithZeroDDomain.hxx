@@ -22,7 +22,7 @@
 #include "FortranBoundaryDataPointerManager.hxx"
 #include "fileReaders.hxx"
 #include "BoundaryConditionManager.hxx"
-#include "SimvascularGlobalArrayTransfer.h"
+#include "CrimsonGlobalArrayTransfer.h"
 
 #include "debuggingToolsForCpp.hxx"
 #include <boost/filesystem/path.hpp>
@@ -219,7 +219,7 @@
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
 	    FortranBoundaryDataPointerManager::Get()->tearDown();
-	    SimvascularGlobalArrayTransfer::Get()->tearDown();
+	    CrimsonGlobalArrayTransfer::Get()->tearDown();
 	    // BoundaryConditionManager::Instance()->Term();
 	  }
 	private:

@@ -3,7 +3,7 @@
 
 #include "AbstractBoundaryCondition.hxx"
 #include "fileReaders.hxx"
-#include "../../estimation/src/SimvascularGlobalArrayTransfer.h"
+#include "../../estimation/src/CrimsonGlobalArrayTransfer.h"
 #include "datatypesInCpp.hxx"
 #include "Interpolators.hxx"
 
@@ -30,10 +30,10 @@ public:
 		lengthOftimeDataPdist = rcrtReader_instance->getNumDataRCR()[m_indexOfThisRCR];
 
 		// Set up for Kalman filtering:
-		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselProximalResistance(&proximalResistance, m_indexOfThisRCR);
-		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselDistalResistance(&distalResistance, m_indexOfThisRCR);
-		SimvascularGlobalArrayTransfer::Get()->setPointerToWindkesselCompilance(&capacitance, m_indexOfThisRCR);
-		SimvascularGlobalArrayTransfer::Get()->setPointerToRCRSurfacePressure(&pressure_n, m_indexOfThisRCR);
+		CrimsonGlobalArrayTransfer::Get()->setPointerToWindkesselProximalResistance(&proximalResistance, m_indexOfThisRCR);
+		CrimsonGlobalArrayTransfer::Get()->setPointerToWindkesselDistalResistance(&distalResistance, m_indexOfThisRCR);
+		CrimsonGlobalArrayTransfer::Get()->setPointerToWindkesselCompilance(&capacitance, m_indexOfThisRCR);
+		CrimsonGlobalArrayTransfer::Get()->setPointerToRCRSurfacePressure(&pressure_n, m_indexOfThisRCR);
 	}
 	
  	void setPressureFromFortran();

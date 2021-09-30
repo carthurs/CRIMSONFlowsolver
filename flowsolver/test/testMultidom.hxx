@@ -11,7 +11,7 @@
 #include <typeinfo>
 #include "debuggingToolsForCpp.hxx"
 #include <boost/shared_ptr.hpp>
-#include "SimvascularGlobalArrayTransfer.h"
+#include "CrimsonGlobalArrayTransfer.h"
 
 	// The fixture for testing class Foo.
 	class testMultidom : public ::testing::Test {
@@ -146,7 +146,7 @@
 
 	    // get the boundary condition manager
 		// boundaryConditionManager_instance->boundaryConditions.clear();
-		SimvascularGlobalArrayTransfer::Get()->initialiseForRCRFiltering(2);
+		CrimsonGlobalArrayTransfer::Get()->initialiseForRCRFiltering(2);
 		boundaryConditionManager_instance->setSimulationModePurelyZeroD(0);
 		boundaryConditionManager_instance->setSurfaceList(surfaceList);
 		
@@ -178,7 +178,7 @@
 	    multidom_finalise();
 	    fortranPointerManager_instance->tearDown();
 	    boundaryConditionManager_instance->tearDown();
-	    SimvascularGlobalArrayTransfer::Get()->tearDown();
+	    CrimsonGlobalArrayTransfer::Get()->tearDown();
 	    // retrievedBoundaryConditions = 0;
 
 	    // we do this because the new NetlistXmlReader does not allow the use of 

@@ -5990,7 +5990,7 @@
 
       class(numericalheart), target :: a
 
-      ! set pointer to EMax, added to map of pointers in SimvascularGlobalArrayTransfer.cxx
+      ! set pointer to EMax, added to map of pointers in CrimsonGlobalArrayTransfer.cxx
       call PhAssignPointerDP(c_loc(a%emax), c_char_"Heart_EMax"//c_null_char)
 
       ! set pointer to TMax, added to map of pointers

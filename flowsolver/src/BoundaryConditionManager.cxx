@@ -6,7 +6,7 @@
 #include "FortranBoundaryDataPointerManager.hxx"
 #include "fileWriters.hxx"
 #include "fileIOHelpers.hxx"
-#include "../../estimation/src/SimvascularGlobalArrayTransfer.h"
+#include "../../estimation/src/CrimsonGlobalArrayTransfer.h"
 
 // This file contains (and should continue to contain) all the tools needed to control the boundary conditions.
 //
@@ -31,7 +31,7 @@ void BoundaryConditionManager::setNumberOfRCRSurfaces(const int numGRCRSrfs)
   assert(m_NumberOfRCRSurfaces == 0);
   m_NumberOfRCRSurfaces = numGRCRSrfs;
   m_numberOfBoundaryConditionsManaged += m_NumberOfRCRSurfaces;
-  SimvascularGlobalArrayTransfer::Get()->initialiseForRCRFiltering(numGRCRSrfs);
+  CrimsonGlobalArrayTransfer::Get()->initialiseForRCRFiltering(numGRCRSrfs);
 }
 
 void BoundaryConditionManager::setNumberOfControlledCoronarySurfaces(const int numControlledCoronarySrfs)

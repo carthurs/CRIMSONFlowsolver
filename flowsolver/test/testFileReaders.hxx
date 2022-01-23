@@ -3,7 +3,7 @@
 
 #include "fileReaders.cxx"
 #include "gtest/gtest.h"
-#include "SimvascularGlobalArrayTransfer.h"
+#include "CrimsonGlobalArrayTransfer.h"
 
 
 
@@ -36,7 +36,7 @@
 	    // Code here will be called immediately after each test (right
 	    // before the destructor).
 	    rcrtReader_instance->tearDown();
-	    SimvascularGlobalArrayTransfer::Get()->tearDown();
+	    CrimsonGlobalArrayTransfer::Get()->tearDown();
 	  }
 
 	  // Objects declared here can be used by all tests in the test case for Foo.

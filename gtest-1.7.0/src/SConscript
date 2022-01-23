@@ -42,8 +42,8 @@ sources="""
 object_list=env_local.Object(source=sources)
 
 # Set the source and output file name ("target"):
-default = env_local.Program(target='test', source=object_list)
-copyLibrary = env_local.Command(bop.HOME_DIR+'/testbin/test', "./test", Copy("$TARGET", "$SOURCE"))
+default = env_local.Program(target='test.exe', source=object_list)
+copyLibrary = env_local.Command(bop.HOME_DIR+'/testbin/test.exe', "./test.exe", Copy("$TARGET", "$SOURCE"))
 
 # Define SCons' default action:
 Default(default,copyLibrary)
